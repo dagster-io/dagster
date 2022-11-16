@@ -45,15 +45,13 @@ export const LaunchAssetObservationButton: React.FC<{
   const count = assetKeys.length > 1 ? ` (${assetKeys.length})` : '';
   const label = `Observe source ${count}`;
 
-  if (!assetKeys.length || !canLaunchPipelineExecution.enabled) {
+  if (!assetKeys.length) {
+    return <span />;
+  }
+
+  if (!canLaunchPipelineExecution.enabled) {
     return (
-      <Tooltip
-        content={
-          !canLaunchPipelineExecution.enabled
-            ? 'You do not have permission to observe source assets'
-            : 'Select one or more source assets to observe.'
-        }
-      >
+      <Tooltip content="You do not have permission to observe source assets">
         <Button intent={intent} icon={<Icon name="observation" />} disabled>
           {label}
         </Button>

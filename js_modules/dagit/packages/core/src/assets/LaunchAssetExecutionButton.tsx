@@ -1,5 +1,5 @@
 import {ApolloClient, gql, useApolloClient} from '@apollo/client';
-import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui';
+import {Box, Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
 import React from 'react';
@@ -58,35 +58,51 @@ type LaunchAssetsState =
       executionParams: LaunchPipelineExecutionVariables['executionParams'];
     };
 
+const countOrBlank = (k: unknown[]) => (k.length > 1 ? ` (${k.length})` : '');
+
 export const LaunchAssetExecutionButton: React.FC<{
-  assetKeys: AssetKey[]; // Memoization not required
-  context?: 'all' | 'selected';
+  allAssetKeys?: AssetKey[]; // Memoization not required
+  selectedAssetKeys?: AssetKey[]; // Memoization not required
+  staleAssetKeys?: AssetKey[]; // Memoization not required
   intent?: 'primary' | 'none';
   preferredJobName?: string;
-}> = ({assetKeys, preferredJobName, context, intent = 'primary'}) => {
+}> = ({staleAssetKeys, allAssetKeys, selectedAssetKeys, preferredJobName, intent = 'primary'}) => {
   const {canLaunchPipelineExecution} = usePermissions();
+  const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
+  const [isOpen, setIsOpen] = React.useState(false);
 
-  const count = assetKeys.length > 1 ? ` (${assetKeys.length})` : '';
-  const label = `Materialize${
-    context === 'all' ? ` stale${count}` : context === 'selected' ? ` selected${count}` : count
-  }`;
+  const options: {assetKeys: AssetKey[]; label: string}[] = [];
 
-  const {onClick, loading, launchpadElement} = useMaterializationAction(
-    assetKeys,
-    preferredJobName,
-  );
+  if (selectedAssetKeys?.length) {
+    options.push({
+      assetKeys: selectedAssetKeys,
+      label: `Materialize selected${countOrBlank(selectedAssetKeys)}`,
+    });
+  } else {
+    if (allAssetKeys) {
+      options.push({
+        assetKeys: allAssetKeys,
+        label: allAssetKeys.length > 1 ? `Materialize all` : `Materialize`,
+      });
+    }
+    if (staleAssetKeys) {
+      options.push({
+        assetKeys: staleAssetKeys,
+        label: `Stale and missing${countOrBlank(staleAssetKeys)}`,
+      });
+    }
+  }
 
-  if (!assetKeys.length || !canLaunchPipelineExecution.enabled) {
+  const firstOption = options[0];
+  if (!firstOption) {
+    return <span />;
+  }
+
+  if (!canLaunchPipelineExecution.enabled) {
     return (
-      <Tooltip
-        content={
-          !canLaunchPipelineExecution.enabled
-            ? 'You do not have permission to materialize assets'
-            : 'Select one or more assets to materialize.'
-        }
-      >
+      <Tooltip content="You do not have permission to materialize assets" position="bottom-right">
         <Button intent={intent} icon={<Icon name="materialization" />} disabled>
-          {label}
+          {firstOption.label}
         </Button>
       </Tooltip>
     );
@@ -94,28 +110,67 @@ export const LaunchAssetExecutionButton: React.FC<{
 
   return (
     <>
-      <Tooltip content="Shift+click to add configuration">
-        <Button
-          intent={intent}
-          onClick={onClick}
-          icon={loading ? <Spinner purpose="body-text" /> : <Icon name="materialization" />}
-        >
-          {label}
-        </Button>
-      </Tooltip>
+      <Box flex={{alignItems: 'center'}}>
+        <Tooltip content="Shift+click to add configuration" position="bottom-right">
+          <Button
+            intent={intent}
+            onClick={(e) => onClick(firstOption.assetKeys, e)}
+            style={
+              options.length > 1
+                ? {
+                    borderTopRightRadius: 0,
+                    borderBottomRightRadius: 0,
+                    borderRight: `1px solid rgba(255,255,255,0.2)`,
+                  }
+                : {}
+            }
+            disabled={!firstOption.assetKeys.length}
+            icon={loading ? <Spinner purpose="body-text" /> : <Icon name="materialization" />}
+          >
+            {firstOption.label}
+          </Button>
+        </Tooltip>
+        {options.length > 1 && (
+          <Popover
+            isOpen={isOpen}
+            onInteraction={(nextOpen) => setIsOpen(nextOpen)}
+            position="bottom-right"
+            content={
+              <Menu>
+                {options.slice(1).map((option) => (
+                  <MenuItem
+                    key={option.label}
+                    text={option.label}
+                    icon="materialization"
+                    disabled={option.assetKeys.length === 0}
+                    onClick={(e) => onClick(option.assetKeys, e)}
+                  />
+                ))}
+              </Menu>
+            }
+          >
+            <Button
+              role="button"
+              style={{minWidth: 'initial', borderTopLeftRadius: 0, borderBottomLeftRadius: 0}}
+              icon={<Icon name="arrow_drop_down" />}
+              intent={intent}
+            />
+          </Popover>
+        )}
+      </Box>
       {launchpadElement}
     </>
   );
 };
 
-export const useMaterializationAction = (assetKeys: AssetKey[], preferredJobName?: string) => {
+export const useMaterializationAction = (preferredJobName?: string) => {
   const launchWithTelemetry = useLaunchWithTelemetry();
   const client = useApolloClient();
   const confirm = useConfirmation();
 
   const [state, setState] = React.useState<LaunchAssetsState>({type: 'none'});
 
-  const onClick = async (e: React.MouseEvent<any>) => {
+  const onClick = async (assetKeys: AssetKey[], e: React.MouseEvent<any>) => {
     if (state.type === 'loading') {
       return;
     }

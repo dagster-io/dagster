@@ -188,7 +188,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         right={
           <Box style={{margin: '-4px 0'}}>
             {definition && definition.jobNames.length > 0 && upstream && (
-              <LaunchAssetExecutionButton assetKeys={[definition.assetKey]} />
+              <LaunchAssetExecutionButton allAssetKeys={[definition.assetKey]} />
             )}
           </Box>
         }

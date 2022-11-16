@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, FontFamily, Box, CaptionMono, Caption} from '@dagster-io/ui';
+import {Colors, Icon, FontFamily, Box, CaptionMono, Caption, Spinner} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import styled from 'styled-components/macro';
@@ -10,7 +10,7 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 import {AssetLatestRunSpinner, AssetLatestRunWithNotices, AssetRunLink} from './AssetRunLinking';
-import {LiveDataForNode, MISSING_LIVE_DATA} from './Utils';
+import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_ANNOTATIONS_MAX_WIDTH, ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
 
@@ -130,18 +130,30 @@ export const AssetNodeStatusRow: React.FC<{
   liveData: LiveDataForNode | undefined;
   stepKey: string;
 }> = ({definition, liveData, stepKey}) => {
+  if (definition.isSource) {
+    return <span />;
+  }
+
+  if (!liveData) {
+    return (
+      <Box
+        padding={{horizontal: 8}}
+        style={{borderBottomLeftRadius: 4, borderBottomRightRadius: 4, height: 24}}
+        flex={{justifyContent: 'space-between', alignItems: 'center'}}
+        background={Colors.Gray100}
+      >
+        <Spinner purpose="caption-text" />
+      </Box>
+    );
+  }
+
   const {
     currentLogicalVersion,
     projectedLogicalVersion,
     lastMaterialization,
     runWhichFailedToMaterialize,
     freshnessInfo,
-  } = liveData || MISSING_LIVE_DATA;
-
-  if (definition.isSource) {
-    return <span />;
-  }
-
+  } = liveData;
   const late = freshnessInfo && (freshnessInfo.currentMinutesLate || 0) > 0;
 
   if (runWhichFailedToMaterialize || late) {

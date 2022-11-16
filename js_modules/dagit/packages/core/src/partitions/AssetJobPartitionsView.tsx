@@ -82,8 +82,7 @@ export const AssetJobPartitionsView: React.FC<{
             {showAssets ? 'Hide per-asset status' : 'Show per-asset status'}
           </Button>
           <LaunchAssetExecutionButton
-            context="all"
-            assetKeys={assetGraph.graphAssetKeys}
+            allAssetKeys={assetGraph.graphAssetKeys}
             preferredJobName={pipelineName}
           />
         </Box>
