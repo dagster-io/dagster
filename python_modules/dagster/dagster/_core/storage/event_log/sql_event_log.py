@@ -220,6 +220,7 @@ class SqlEventLogStorage(EventLogStorage):
         self, event_record: EventLogRecord, new_tags: Mapping[str, str]
     ) -> None:
         check.inst_param(event_record, "event_record", EventLogRecord)
+        check.mapping_param(new_tags, "new_tags", key_type=str, value_type=str)
 
         if not self.has_asset_event_tags_table:
             raise DagsterInvalidInvocationError(
@@ -227,64 +228,67 @@ class SqlEventLogStorage(EventLogStorage):
                 "create the AssetEventTags table."
             )
 
-        if not (
-            event_record.event_log_entry.dagster_event
+        if (
+            event_record.asset_key
+            and event_record.storage_id
+            and event_record.event_log_entry.dagster_event
             and event_record.event_log_entry.dagster_event.asset_key
             and event_record.event_log_entry.dagster_event.is_step_materialization
             and isinstance(
                 event_record.event_log_entry.dagster_event.step_materialization_data.materialization,
                 AssetMaterialization,
-            ),
+            )
         ):
-            return
 
-        asset_key_str = event_record.asset_key.to_string()
-        current_tags_list = self.get_event_tags_for_asset(
-            event_record.asset_key, event_id=event_record.storage_id
-        )
-        if len(current_tags_list) == 0:
-            current_tags = {}
-        else:
-            current_tags = current_tags_list[0]
+            asset_key = event_record.asset_key
+            event_id = event_record.storage_id
+            current_tags_list = self.get_event_tags_for_asset(asset_key, filter_event_id=event_id)
 
-        with self.index_connection() as conn:
-            current_tags_set = set(current_tags.keys())
-            new_tags_set = set(new_tags.keys())
+            asset_key_str = asset_key.to_string()
 
-            existing_tags = current_tags_set & new_tags_set
-            added_tags = new_tags_set.difference(existing_tags)
+            if len(current_tags_list) == 0:
+                current_tags: Mapping[str, str] = {}
+            else:
+                current_tags = current_tags_list[0]
 
-            for tag in existing_tags:
-                conn.execute(
-                    AssetEventTagsTable.update()  # pylint: disable=no-value-for-parameter
-                    .where(
-                        db.and_(
-                            AssetEventTagsTable.c.event_id == event_record.storage_id,
-                            AssetEventTagsTable.c.asset_key == asset_key_str,
-                            AssetEventTagsTable.c.key == tag,
+            with self.index_connection() as conn:
+                current_tags_set = set(current_tags.keys())
+                new_tags_set = set(new_tags.keys())
+
+                existing_tags = current_tags_set & new_tags_set
+                added_tags = new_tags_set.difference(existing_tags)
+
+                for tag in existing_tags:
+                    conn.execute(
+                        AssetEventTagsTable.update()  # pylint: disable=no-value-for-parameter
+                        .where(
+                            db.and_(
+                                AssetEventTagsTable.c.event_id == event_record.storage_id,
+                                AssetEventTagsTable.c.asset_key == asset_key_str,
+                                AssetEventTagsTable.c.key == tag,
+                            )
                         )
+                        .values(value=new_tags[tag])
                     )
-                    .values(value=new_tags[tag])
-                )
 
-            if added_tags:
-                conn.execute(
-                    AssetEventTagsTable.insert(),  # pylint: disable=no-value-for-parameter
-                    [
-                        dict(
-                            event_id=event_record.storage_id,
-                            asset_key=asset_key_str,
-                            key=tag,
-                            value=new_tags[tag],
-                            # Postgres requires a datetime that is in UTC but has no timezone info
-                            # set in order to be stored correctly
-                            event_timestamp=datetime.utcfromtimestamp(
-                                event_record.event_log_entry.timestamp
-                            ),
-                        )
-                        for tag in added_tags
-                    ],
-                )
+                if added_tags:
+                    conn.execute(
+                        AssetEventTagsTable.insert(),  # pylint: disable=no-value-for-parameter
+                        [
+                            dict(
+                                event_id=event_record.storage_id,
+                                asset_key=asset_key_str,
+                                key=tag,
+                                value=new_tags[tag],
+                                # Postgres requires a datetime that is in UTC but has no timezone info
+                                # set in order to be stored correctly
+                                event_timestamp=datetime.utcfromtimestamp(
+                                    event_record.event_log_entry.timestamp
+                                ),
+                            )
+                            for tag in added_tags
+                        ],
+                    )
 
     def store_asset_event_tags(self, event: EventLogEntry, event_id: int) -> None:
         check.inst_param(event, "event", EventLogEntry)
@@ -1293,7 +1297,7 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         asset_key: AssetKey,
         filter_tags: Optional[Mapping[str, str]] = None,
-        event_id: Optional[int] = None,
+        filter_event_id: Optional[int] = None,
     ) -> Sequence[Mapping[str, str]]:
         """
         Fetches asset event tags for the given asset key.
@@ -1303,7 +1307,7 @@ class SqlEventLogStorage(EventLogStorage):
         partition tags with a fixed dimension value, e.g. all of the tags for events where
         "country" == "US".
 
-        If event_id is provided, fetches only tags applied to the given event.
+        If filter_event_id is provided, fetches only tags applied to the given event.
 
         Returns a list of dicts, where each dict is a mapping of tag key to tag value for a
         single event.
@@ -1312,7 +1316,7 @@ class SqlEventLogStorage(EventLogStorage):
         filter_tags = check.opt_mapping_param(
             filter_tags, "filter_tags", key_type=str, value_type=str
         )
-        event_id = check.opt_int_param(event_id, "event_id")
+        filter_event_id = check.opt_int_param(filter_event_id, "filter_event_id")
 
         if not self.has_table(AssetEventTagsTable.name):
             raise DagsterInvalidInvocationError(
@@ -1374,8 +1378,8 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             )
 
-        if event_id is not None:
-            tags_query = tags_query.where(AssetEventTagsTable.c.event_id == event_id)
+        if filter_event_id is not None:
+            tags_query = tags_query.where(AssetEventTagsTable.c.event_id == filter_event_id)
 
         with self.index_connection() as conn:
             results = conn.execute(tags_query).fetchall()
