@@ -6,17 +6,14 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
-import {
-  AssetLatestRunWithNotices,
-  AssetRunLink,
-  ASSET_NODE_LIVE_FRAGMENT,
-  ComputeStatusNotice,
-} from '../asset-graph/AssetNode';
+import {ASSET_NODE_LIVE_FRAGMENT} from '../asset-graph/AssetNode';
+import {AssetLatestRunWithNotices, AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {buildLiveDataForNode} from '../asset-graph/Utils';
 import {ASSET_LATEST_INFO_FRAGMENT} from '../asset-graph/useLiveDataForAssetKeys';
 import {AssetActionMenu} from '../assets/AssetActionMenu';
 import {AssetLink} from '../assets/AssetLink';
 import {ASSET_TABLE_FRAGMENT} from '../assets/AssetTable';
+import {StaleTag} from '../assets/StaleTag';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -224,7 +221,7 @@ const AssetRow = (props: JobRowProps) => {
                   />
                 </AssetRunLink>
               </>
-              <ComputeStatusNotice computeStatus={liveData?.computeStatus} />
+              <StaleTag liveData={liveData} />
             </Box>
           ) : (
             <LoadingOrNone queryResult={queryResult} />
@@ -232,7 +229,7 @@ const AssetRow = (props: JobRowProps) => {
         </RowCell>
         <RowCell>
           {liveData ? (
-            <AssetLatestRunWithNotices liveData={liveData} includeFreshness />
+            <AssetLatestRunWithNotices liveData={liveData} includeFreshness includeRunStatus />
           ) : (
             <LoadingOrNone queryResult={queryResult} />
           )}

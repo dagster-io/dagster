@@ -18,12 +18,9 @@ import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
-import {
-  AssetLatestRunWithNotices,
-  AssetRunLink,
-  ComputeStatusNotice,
-} from '../asset-graph/AssetNode';
+import {AssetLatestRunWithNotices, AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {LiveData, toGraphId} from '../asset-graph/Utils';
+import {StaleTag} from '../assets/StaleTag';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -277,11 +274,15 @@ const AssetEntryRow: React.FC<{
               ) : (
                 <span>–</span>
               )}
-              <ComputeStatusNotice computeStatus={liveData?.computeStatus} />
+              <StaleTag liveData={liveData} />
             </Box>
           ) : undefined}
         </td>
-        <td>{liveData && <AssetLatestRunWithNotices liveData={liveData} includeFreshness />}</td>
+        <td>
+          {liveData && (
+            <AssetLatestRunWithNotices liveData={liveData} includeFreshness includeRunStatus />
+          )}
+        </td>
         <td>
           {asset ? (
             <Box flex={{gap: 8, alignItems: 'center'}}>

@@ -1,7 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
-  BaseTag,
   Box,
   ButtonLink,
   Colors,
@@ -21,13 +20,12 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
-import {CurrentMinutesLateTag} from '../asset-graph/AssetNode';
 import {GraphData, LiveDataForNode, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
+import {StaleTag} from '../assets/StaleTag';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {AssetComputeStatus} from '../types/globalTypes';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -39,6 +37,7 @@ import {AssetLineageScope} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetPartitions} from './AssetPartitions';
 import {AssetPlots} from './AssetPlots';
+import {CurrentMinutesLateTag} from './CurrentMinutesLateTag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
 import {
@@ -411,7 +410,6 @@ const AssetViewPageHeaderTags: React.FC<{
   liveData?: LiveDataForNode;
   onShowUpstream: () => void;
 }> = ({definition, liveData, onShowUpstream}) => {
-  const isUpstreamChanged = liveData?.computeStatus === AssetComputeStatus.OUT_OF_DATE;
   const repoAddress = definition
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;
@@ -436,16 +434,7 @@ const AssetViewPageHeaderTags: React.FC<{
         </Tag>
       )}
       {liveData?.freshnessPolicy && <CurrentMinutesLateTag liveData={liveData} policyOnHover />}
-      {isUpstreamChanged ? (
-        <Box onClick={onShowUpstream}>
-          <BaseTag
-            fillColor={Colors.Yellow50}
-            textColor={Colors.Yellow700}
-            label="Upstream changed"
-            interactive
-          />
-        </Box>
-      ) : undefined}
+      <StaleTag liveData={liveData} onClick={onShowUpstream} />
     </>
   );
 };

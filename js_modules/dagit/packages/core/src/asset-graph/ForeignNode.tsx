@@ -2,36 +2,23 @@ import {Colors, Icon, FontFamily} from '@dagster-io/ui';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {AssetNodeBox, AssetNodeContainer, VersionedBadge} from './AssetNode';
 import {displayNameForAssetKey} from './Utils';
 
-export const SourceAssetNode: React.FC<{
+export const AssetNodeLink: React.FC<{
   assetKey: {path: string[]};
-  backgroundColor?: string;
-  selected: boolean;
-  observable?: boolean;
-}> = React.memo(({assetKey, backgroundColor, selected, observable}) => (
-  <AssetNodeContainer $selected={selected}>
-    <AssetNodeBox $selected={selected}>
-      <SourceAssetNodeLink style={{backgroundColor}}>
-        <span className="label">{displayNameForAssetKey(assetKey)}</span>
-        {observable ? (
-          <VersionedBadge $isSource={true} $isStale={false}>
-            V
-          </VersionedBadge>
-        ) : null}
-        <Icon name="open_in_new" color={Colors.Gray500} />
-      </SourceAssetNodeLink>
-    </AssetNodeBox>
-  </AssetNodeContainer>
+}> = React.memo(({assetKey}) => (
+  <AssetNodeLinkContainer>
+    <Icon name="open_in_new" color={Colors.Link} />
+    <span className="label">{displayNameForAssetKey(assetKey)}</span>
+  </AssetNodeLinkContainer>
 ));
 
-const SourceAssetNodeLink = styled.div`
+const AssetNodeLinkContainer = styled.div`
   display: flex;
   padding: 4px 8px 6px;
   line-height: 30px;
   font-family: ${FontFamily.monospace};
-  color: ${Colors.Gray500};
+  color: ${Colors.Link};
   align-items: center;
   font-weight: 600;
   gap: 4px;

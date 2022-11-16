@@ -1,11 +1,11 @@
 import {Body, Box, Colors, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {CurrentMinutesLateTag, freshnessPolicyDescription} from '../asset-graph/AssetNode';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
+import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunsSinceMaterializationBanner} from './FailedRunsSinceMaterializationBanner';
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';

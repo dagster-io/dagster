@@ -4,7 +4,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {Timestamp} from '../app/time/Timestamp';
-import {AssetRunLink} from '../asset-graph/AssetNode';
+import {AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
