@@ -7,6 +7,7 @@ from dagster import DagsterInstance
 from dagster import _check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.logical_version import (
+    DEFAULT_LOGICAL_VERSION,
     UNKNOWN_VALUE,
     LogicalVersion,
     LogicalVersionProvenance,
@@ -477,7 +478,14 @@ class ProjectedLogicalVersionLoader:
     def _get_version(self, *, key: AssetKey) -> LogicalVersion:
         node = self._fetch_node(key)
         if node.is_source:
-            version = self._instance.get_current_logical_version(key, True)
+            event = self._instance.get_latest_logical_version_record(key, True)
+            if event:
+                version = (
+                    extract_logical_version_from_entry(event.event_log_entry)
+                    or DEFAULT_LOGICAL_VERSION
+                )
+            else:
+                version = DEFAULT_LOGICAL_VERSION
         elif node.op_version is not None:
             version = self._compute_projected_new_materialization_logical_version(node)
         else:
@@ -494,7 +502,7 @@ class ProjectedLogicalVersionLoader:
                 ):
                     version = self._compute_projected_new_materialization_logical_version(node)
                 else:
-                    version = self._instance.get_current_logical_version(key, False)
+                    version = logical_version
         return version
 
     # Returns true if the current logical version of at least one input asset differs from the

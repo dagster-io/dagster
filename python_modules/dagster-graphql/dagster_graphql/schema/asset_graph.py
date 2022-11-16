@@ -21,6 +21,10 @@ from dagster_graphql.schema.solids import (
 from dagster import AssetKey
 from dagster import _check as check
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.logical_version import (
+    DEFAULT_LOGICAL_VERSION,
+    extract_logical_version_from_entry,
+)
 from dagster._core.errors import DagsterUndefinedLogicalVersionError
 from dagster._core.host_representation import ExternalRepository, RepositoryLocation
 from dagster._core.host_representation.external import ExternalPipeline
@@ -452,13 +456,17 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._external_asset_node.compute_kind
 
     def resolve_currentLogicalVersion(self, graphene_info: HasContext) -> Optional[str]:
-        try:
-            return graphene_info.context.instance.get_current_logical_version(
-                self._external_asset_node.asset_key,
-                self._external_asset_node.is_source,
-            ).value
-        except DagsterUndefinedLogicalVersionError:
+        event = graphene_info.context.instance.get_latest_logical_version_record(
+            self._external_asset_node.asset_key,
+            self._external_asset_node.is_source,
+        )
+        if event is None and self._external_asset_node.is_source:
+            return DEFAULT_LOGICAL_VERSION.value
+        elif event is None:
             return None
+        else:
+            logical_version = extract_logical_version_from_entry(event.event_log_entry)
+            return (logical_version or DEFAULT_LOGICAL_VERSION).value
 
     def resolve_projectedLogicalVersion(self, _graphene_info) -> Optional[str]:
         if self.external_asset_node.is_source:
