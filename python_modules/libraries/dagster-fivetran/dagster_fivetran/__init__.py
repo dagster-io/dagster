@@ -12,7 +12,7 @@ try:
     from .managed import FivetranConnector, FivetranDestination, FivetranManagedElementReconciler
 
 except ImportError:
-    raise
+    pass
 
 
 check_dagster_package_version("dagster-fivetran", __version__)

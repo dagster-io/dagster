@@ -3,7 +3,6 @@ from itertools import chain
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
 from dagster_fivetran import FivetranResource
-from dagster_fivetran.resources import FivetranResource
 from dagster_managed_elements import ManagedElementCheckResult, ManagedElementDiff
 from dagster_managed_elements.types import ManagedElementReconciler, is_key_secret
 from dagster_managed_elements.utils import diff_dicts
