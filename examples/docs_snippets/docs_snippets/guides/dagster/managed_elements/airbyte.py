@@ -47,7 +47,7 @@ def scope_define_reconciler():
         name="download-cereals",
         source=cereals_csv_source,
         destination=local_json_destination,
-        stream_config={"cereals": AirbyteSyncMode.FULL_REFRESH_OVERWRITE},
+        stream_config={"cereals": AirbyteSyncMode.full_refresh_overwrite()},
     )
     # end_define_connection
 
@@ -60,8 +60,24 @@ def scope_define_reconciler():
 
     # start_new_reconciler_delete
     airbyte_reconciler = AirbyteManagedElementReconciler(
-        airbyte=airbyte_instance,
-        connections=[...],
-        delete_unmentioned_resources=True
+        airbyte=airbyte_instance, connections=[...], delete_unmentioned_resources=True
     )
     # end_new_reconciler_delete
+
+    # start_load_assets
+    from dagster_airbyte import load_assets_from_connections, airbyte_resource
+
+    airbyte_instance = airbyte_resource.configured(
+        {
+            "host": "localhost",
+            "port": 8000,
+            # If using basic auth, include username and password:
+            "username": "airbyte",
+            "password": {"env": "AIRBYTE_PASSWORD"},
+        }
+    )
+
+    airbyte_assets = load_assets_from_connections(
+        airbyte=airbyte_instance, connections=[cereals_connection]
+    )
+    # end_load_assets

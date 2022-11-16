@@ -120,7 +120,31 @@ These changes look like what we expect, so we'll apply them:
 dagster-me apply --module my_python_module.my_submodule:reconciler
 ```
 
-Now, we should see our new connection in the Airbyte UI!
+Now, we should see our new connection in the Airbyte UI.
+
+## 6. Loading connections into Dagster
+
+In order to load managed connections into Dagster, you can use the `load_assets_from_connections` utility method. This functions similarly to [`load_assets_from_airbyte_instance`](/integrations/airbyte#loading-airbyte-asset-definitions-from-an-airbyte-instance), but will validate that the connections you pass in match the connections defined in your Airbyte instance.
+
+```python startafter=start_load_assets endbefore=end_load_assets file=/guides/dagster/managed_elements/airbyte.py dedent=4
+from dagster_airbyte import load_assets_from_connections, airbyte_resource
+
+airbyte_instance = airbyte_resource.configured(
+    {
+        "host": "localhost",
+        "port": 8000,
+        # If using basic auth, include username and password:
+        "username": "airbyte",
+        "password": {"env": "AIRBYTE_PASSWORD"},
+    }
+)
+
+airbyte_assets = load_assets_from_connections(
+    airbyte=airbyte_instance, connections=[cereals_connection]
+)
+```
+
+For more information on managing Airbyte assets in Dagster, see the [Airbyte guide](/integrations/airbyte).
 
 ## Additional configuration options
 
@@ -130,8 +154,6 @@ By default, the reconciler will not modify any sources, destinations, or connect
 
 ```python startafter=start_new_reconciler_delete endbefore=end_new_reconciler_delete file=/guides/dagster/managed_elements/airbyte.py dedent=4
 airbyte_reconciler = AirbyteManagedElementReconciler(
-    airbyte=airbyte_instance,
-    connections=[...],
-    delete_unmentioned_resources=True
+    airbyte=airbyte_instance, connections=[...], delete_unmentioned_resources=True
 )
 ```

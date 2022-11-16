@@ -53,7 +53,7 @@ from dagster_airbyte import airbyte_resource
 airbyte_instance = airbyte_resource.configured(
     {
         "host": "localhost",
-        "port": 8000,
+        "port": "8000",
         # If using basic auth, include username and password:
         "username": "airbyte",
         "password": {"env": "AIRBYTE_PASSWORD"},
