@@ -832,10 +832,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         for key in all_dep_keys:
             event = self.instance.get_latest_logical_version_record(key)
             is_source = self.pipeline_def.asset_layer.is_source_for_asset(key)
-            if event is None and not is_source:
-                raise DagsterUndefinedLogicalVersionError(
-                    f"No logical version defined for asset {key}; no materialization events found.",
-                )
             self._input_asset_records[key] = event
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
