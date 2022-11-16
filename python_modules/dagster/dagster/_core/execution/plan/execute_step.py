@@ -587,7 +587,9 @@ def _build_logical_version_tags(
     tags[CODE_VERSION_TAG_KEY] = code_version
     for key, event in input_asset_records.items():
         if event is not None:
-            logical_version = extract_logical_version_from_entry(event.event_log_entry) or DEFAULT_LOGICAL_VERSION
+            logical_version = (
+                extract_logical_version_from_entry(event.event_log_entry) or DEFAULT_LOGICAL_VERSION
+            )
         else:
             logical_version = DEFAULT_LOGICAL_VERSION
         input_logical_versions[key] = logical_version

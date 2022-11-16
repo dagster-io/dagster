@@ -154,6 +154,7 @@ def compute_logical_version(
     hash_sig.update(bytearray("".join(all_inputs), "utf8"))
     return LogicalVersion(hash_sig.hexdigest())
 
+
 def get_current_logical_version_from_latest_event(
     key: AssetKey,
     is_source: bool,
@@ -168,6 +169,7 @@ def get_current_logical_version_from_latest_event(
     else:
         logical_version = extract_logical_version_from_entry(event.event_log_entry)
         return logical_version or DEFAULT_LOGICAL_VERSION
+
 
 def extract_logical_version_from_entry(
     entry: EventLogEntry,
@@ -204,6 +206,7 @@ def _extract_event_data_from_entry(
     assert isinstance(event_data, (AssetMaterialization, AssetObservation))
     return event_data
 
+
 def get_current_logical_version(
     key: AssetKey,
     is_source: bool,
@@ -213,7 +216,9 @@ def get_current_logical_version(
 ) -> LogicalVersion:
 
     if event is None:
-        instance = check.not_none(instance,"Must provide either an a logical version event or DagsterInstance")
+        instance = check.not_none(
+            instance, "Must provide either an a logical version event or DagsterInstance"
+        )
         event = instance.get_latest_logical_version_record(key, is_source)
 
     if event is None and is_source:
@@ -225,4 +230,3 @@ def get_current_logical_version(
     else:
         logical_version = extract_logical_version_from_entry(event.event_log_entry)
         return logical_version or DEFAULT_LOGICAL_VERSION
-

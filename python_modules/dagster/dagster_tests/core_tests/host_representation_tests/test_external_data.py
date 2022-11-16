@@ -635,6 +635,7 @@ def test_unused_source_asset():
     external_asset_nodes = external_asset_graph_from_defs(
         [], source_assets_by_key={AssetKey("foo"): foo, AssetKey("bar"): bar}
     )
+    print(external_asset_nodes)
     assert external_asset_nodes == [
         ExternalAssetNode(
             asset_key=AssetKey("foo"),
@@ -643,6 +644,7 @@ def test_unused_source_asset():
             depended_by=[],
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
+            is_source=True,
         ),
         ExternalAssetNode(
             asset_key=AssetKey("bar"),
@@ -651,6 +653,7 @@ def test_unused_source_asset():
             depended_by=[],
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
+            is_source=True,
         ),
     ]
 
@@ -675,6 +678,7 @@ def test_used_source_asset():
             depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey(["foo"]))],
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
+            is_source=True,
         ),
         ExternalAssetNode(
             asset_key=AssetKey("foo"),

@@ -7,6 +7,7 @@ for that.
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union, cast
+from dagster._core.definitions.op_definition import OpDefinition
 
 import pendulum
 
@@ -999,6 +1000,10 @@ def external_asset_graph_from_defs(
             node_defs_by_asset_key[output_key].append((node_output_handle, pipeline_def))
             asset_info_by_asset_key[output_key] = asset_info
 
+            node_def = pipeline_def.get_solid(node_output_handle.node_handle).definition
+            if isinstance(node_def, OpDefinition):
+                op_version_by_asset_key[output_key] = node_def.version
+
             for upstream_key in upstream_asset_keys:
                 deps[output_key][upstream_key] = ExternalAssetDependency(
                     upstream_asset_key=upstream_key
@@ -1007,11 +1012,10 @@ def external_asset_graph_from_defs(
                     downstream_asset_key=output_key
                 )
 
+        # for assets_def in pipeline_def.asset_layer.assets_defs_by_key.values():
         for assets_def in pipeline_def.asset_layer.assets_defs_by_key.values():
             metadata_by_asset_key.update(assets_def.metadata_by_key)
             freshness_policy_by_asset_key.update(assets_def.freshness_policies_by_key)
-            for key in assets_def.asset_keys:
-                op_version_by_asset_key[key] = assets_def.op.version
         group_name_by_asset_key.update(pipeline_def.asset_layer.group_names_by_assets())
 
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
@@ -1085,6 +1089,9 @@ def external_asset_graph_from_defs(
         while node_handle.parent:
             node_handle = node_handle.parent
             graph_name = node_handle.name
+
+        print(op_version_by_asset_key)
+        print(op_names_by_asset_key)
 
         asset_nodes.append(
             ExternalAssetNode(
