@@ -294,6 +294,19 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
         pass
 
+    def supports_add_asset_event_tags(self) -> bool:
+        return False
+
+    @abstractmethod
+    def add_asset_event_tags(
+        self,
+        event_id: int,
+        event_timestamp: float,
+        asset_key: AssetKey,
+        new_tags: Mapping[str, str],
+    ) -> None:
+        pass
+
     @abstractmethod
     def get_event_tags_for_asset(
         self,

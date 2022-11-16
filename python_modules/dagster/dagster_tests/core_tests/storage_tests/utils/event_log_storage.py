@@ -2432,7 +2432,10 @@ class TestEventLogStorage:
                 {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"}
             ]
 
-    def test_add_materialization_tags(self, storage, instance):
+    def test_add_asset_event_tags(self, storage, instance):
+        if not storage.supports_add_asset_event_tags():
+            pytest.skip("storage does not support adding asset event tags")
+
         key = AssetKey("hello")
 
         @op
@@ -2503,7 +2506,9 @@ class TestEventLogStorage:
                 }
             ]
 
-    def test_add_materialization_tags_initially_empty(self, storage, instance):
+    def test_add_asset_event_tags_initially_empty(self, storage, instance):
+        if not storage.supports_add_asset_event_tags():
+            pytest.skip("storage does not support adding asset event tags")
         key = AssetKey("hello")
 
         @op
