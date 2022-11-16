@@ -28,19 +28,23 @@ def build_example_packages_steps() -> List[BuildkiteStep]:
     )
 
 
-def build_library_packages_steps() -> List[BuildkiteStep]:
+def build_library_packages_steps(is_core_only: bool) -> List[BuildkiteStep]:
     custom_library_pkg_roots = [pkg.directory for pkg in LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG]
     library_packages_with_standard_config = [
         *[
             PackageSpec(pkg, upload_coverage=False)
             for pkg in _get_uncustomized_pkg_roots("python_modules", custom_library_pkg_roots)
         ],
-        *[
-            PackageSpec(pkg)
-            for pkg in _get_uncustomized_pkg_roots(
-                "python_modules/libraries", custom_library_pkg_roots
-            )
-        ],
+        *(
+            []
+            if is_core_only
+            else [
+                PackageSpec(pkg)
+                for pkg in _get_uncustomized_pkg_roots(
+                    "python_modules/libraries", custom_library_pkg_roots
+                )
+            ]
+        ),
     ]
 
     return _build_steps_from_package_specs(

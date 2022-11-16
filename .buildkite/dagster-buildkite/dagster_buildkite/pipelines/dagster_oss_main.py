@@ -10,7 +10,13 @@ from dagster_buildkite.steps.dagster import build_dagster_steps, build_repo_wide
 from dagster_buildkite.steps.docs import build_docs_steps
 from dagster_buildkite.steps.trigger import build_trigger_step
 from dagster_buildkite.steps.wait import build_wait_step
-from dagster_buildkite.utils import BuildkiteStep, is_release_branch, safe_getenv
+from dagster_buildkite.utils import (
+    BuildkiteStep,
+    is_release_branch,
+    safe_getenv,
+    GroupStep,
+    CommandStep,
+)
 
 
 def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
@@ -53,11 +59,33 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
     steps += build_repo_wide_steps()
     steps += build_docs_steps()
     steps += build_dagit_ui_steps()
-    steps += build_dagster_steps()
+    steps += build_dagster_steps(is_core_only=False)
+    # steps += build_dagster_steps(is_core_only=_is_core_only_build())
 
     if do_coverage:
         steps.append(build_wait_step())
         steps.append(build_coverage_step())
+
+    if _is_core_only_build():
+        import logging
+
+        core_steps = []
+        modules_to_include = {"isort", "black", "docs", "dagster", "dagster-graphql"}
+        for step in steps:
+            if isinstance(step, dict):
+                logging.info(
+                    f"Checking Step: Key: {step.get('key')} Group: {step.get('group')}",
+                )
+                logging.info("******************************")
+                logging.info(f"All keys: {list(step.keys())}")
+                logging.info("******************************")
+                if step.get("key") == "dagster":
+                    logging.info("********* FULL DAGSTER STEP **********")
+                    logging.info(f"{step}")
+                    logging.info("********* END DAGSTER STEP *********")
+                if step.get("key") in modules_to_include:
+                    core_steps.append(step)
+        return core_steps
 
     return steps
 
@@ -88,3 +116,16 @@ def _get_internal_branch_specifier() -> Optional[str]:
     else:
         m = re.search(r"\[INTERNAL_BRANCH=(\S+)\]", commit_message)
         return m.group(1) if m else None
+
+
+def is_master_or_release_branch():
+    branch_name = safe_getenv("BUILDKITE_BRANCH")
+    return branch_name == "master" or is_release_branch(branch_name)
+
+
+def _is_core_only_build() -> bool:
+    if is_master_or_release_branch():
+        return False
+
+    commit_message = safe_getenv("BUILDKITE_MESSAGE")
+    return "[core-only]" in commit_message

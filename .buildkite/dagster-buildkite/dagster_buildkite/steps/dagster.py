@@ -32,13 +32,13 @@ def build_repo_wide_steps() -> List[BuildkiteStep]:
     ]
 
 
-def build_dagster_steps() -> List[BuildkiteStep]:
+def build_dagster_steps(is_core_only: bool) -> List[BuildkiteStep]:
     steps: List[BuildkiteStep] = []
 
     # "Package" used loosely here to mean roughly "a directory with some python modules". For
     # instances, a directory of unrelated scripts counts as a package. All packages must have a
     # toxfile that defines the tests for that package.
-    steps += build_library_packages_steps()
+    steps += build_library_packages_steps(is_core_only=is_core_only)
 
     steps += build_helm_steps()
     steps += build_sql_schema_check_steps()
