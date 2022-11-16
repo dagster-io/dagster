@@ -188,26 +188,20 @@ user_code_launcher:
   propertyName="config.service_discovery_namespace_id"
   >
   The name of a <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-servicediscovery-privatednsnamespace.html" target="_blank">private DNS namespace</a>.
-
-   <p>
+  <br></br><br></br>
     The ECS agent launches each code location as its own ECS service. The agent communicates with these services via <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-discovery.html" target="_blank">AWS CloudMap service discovery</a>.
-   </p>
   </ReferenceTableItem>
   <ReferenceTableItem
   propertyName="config.execution_role_arn">
   The ARN of the <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html" target="_blank">Amazon ECS task execution IAM role</a>. This role allows ECS to interact with AWS resources on your behalf, such as getting an image from ECR or pushing logs to CloudWatch.
-
-   <p>
+   <br></br><br></br>
     <strong>Note:</strong> This role must include a trust relationship that allows ECS to use it.
-   </p>
   </ReferenceTableItem>
   <ReferenceTableItem
   propertyName="config.task_role_arn">
   The ARN of the <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html" target="_blank">Amazon ECS task IAM role</a>. This role allows the containers running in the ECS task to interact with AWS.
-
-   <p>
+  <br></br><br></br>
     <strong>Note:</strong> This role must include a trust relationship that allows ECS to use it.
-   </p>
   </ReferenceTableItem>
   <ReferenceTableItem
   propertyName="config.log_group">
@@ -221,5 +215,3 @@ user_code_launcher:
   </ul>
   </ReferenceTableItem>
 </ReferenceTable>
-
----
