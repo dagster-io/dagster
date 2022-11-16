@@ -101,7 +101,7 @@ const FinalRedirectOrLoadingRoot = () => {
         description={
           repoWithNoJob
             ? 'Your definitions are loaded, but no jobs were found.'
-            : 'Add a definition to get started.'
+            : 'Add a job to get started.'
         }
         action={
           <ExternalAnchorButton href="https://docs.dagster.io/getting-started">
