@@ -22,11 +22,11 @@ import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {pluginForMetadata} from '../plugins';
+import {Version} from '../versions/Version';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {LiveDataForNode, displayNameForAssetKey} from './Utils';
 import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetQuery';
-import {Version} from '../versions/Version';
 
 export const SidebarAssetInfo: React.FC<{
   assetKey: AssetKey;

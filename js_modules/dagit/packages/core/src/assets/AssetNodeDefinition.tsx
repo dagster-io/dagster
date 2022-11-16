@@ -14,6 +14,7 @@ import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {Version} from '../versions/Version';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -28,7 +29,6 @@ import {
 import {AssetNodeList} from './AssetNodeList';
 import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
-import {Version} from '../versions/Version';
 
 export const AssetNodeDefinition: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
