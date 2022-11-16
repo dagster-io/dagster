@@ -279,7 +279,7 @@ To integrate the notebook, you can follow the same steps in the guide and add th
 
 ## Conclusion
 
-Some conclusion here
+Now we have successfully created an asset from a Jupyter notebook and integrated it with our Dagster project! To learn about additional dagstermill features, the the remainder of this page.
 
 # Additional dagstermill features
 
@@ -290,7 +290,7 @@ Dagstermill also supports running Jupyter notebooks as [ops](/concepts/ops-jobs-
 ```python file=/integrations/dagstermill/iris_notebook_op.py startafter=start
 from dagstermill import define_dagstermill_op, local_output_notebook_io_manager
 
-from dagster import job, file_relative_path
+from dagster import file_relative_path, job
 
 k_means_iris = define_dagstermill_op(
     name="k_means_iris",
@@ -327,7 +327,6 @@ from dagstermill import define_dagstermill_asset
 
 from dagster import AssetIn, Field, Int, file_relative_path
 
-
 iris_kmeans_jupyter_notebook = define_dagstermill_asset(
     name="iris_kmeans_jupyter",
     notebook_path=file_relative_path(__file__, "../notebooks/iris-kmeans.ipynb"),
@@ -340,8 +339,6 @@ iris_kmeans_jupyter_notebook = define_dagstermill_asset(
         description="The number of clusters to find",
     ),
 )
-
-# end
 ```
 
 You can also provide `config_schema` to `define_dagstermill_op` in the same way demonstrated in this code snippet.
@@ -364,9 +361,22 @@ estimator = sklearn.cluster.KMeans(n_clusters=context.op_config)
 
 ## Results and custom materializations
 
-If you'd like to yield a result to be consumed downstream of a dagstermill notebook, you can call `dagstermill.yield_result` with the value of the result and its name. In interactive execution, this is a no-op, so you don't need to change anything when moving from interactive exploration and development to production.
+If you are using `define_dagstermill_op`, and you'd like to yield a result to be consumed downstream of a dagstermill notebook, you can call `dagstermill.yield_result` with the value of the result and its name. In interactive execution, this is a no-op, so you don't need to change anything when moving from interactive exploration and development to production.
+
+```python file=/integrations/dagstermill/notebook_outputs.py startafter=start_notebook endbefore=end_notebook
+# my_notebook.ipynb
+import dagstermill
+
+dagstermill.yield_result(3, output_name="my_output")
+```
+
+```python file=/integrations/dagstermill/notebook_outputs.py startafter=start_py_file endbefore=end_py_file
+No match for endBefore value "end_py_file"
+```
 
 You can also yield custom <PyObject module="dagster" object="AssetMaterialization" /> objects (for instance, to tell Dagit where you've saved a plot) by calling `dagstermill.yield_event`.
+
+Creating multiple assets within a Jupyter notebook is not currently supported. If you'd like to see this feature prioritized, upvote this [GitHub issue](https://github.com/dagster-io/dagster/issues/10557).
 
 ## References
 
