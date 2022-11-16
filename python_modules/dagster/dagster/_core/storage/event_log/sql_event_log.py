@@ -217,9 +217,15 @@ class SqlEventLogStorage(EventLogStorage):
         return self.has_table(AssetEventTagsTable.name)
 
     def add_asset_event_tags(
-        self, event_record: EventLogRecord, new_tags: Mapping[str, str]
+        self,
+        event_id: int,
+        event_timestamp: float,
+        asset_key: AssetKey,
+        new_tags: Mapping[str, str],
     ) -> None:
-        check.inst_param(event_record, "event_record", EventLogRecord)
+        check.int_param(event_id, "event_id")
+        check.float_param(event_timestamp, "event_timestamp")
+        check.inst_param(asset_key, "asset_key", AssetKey)
         check.mapping_param(new_tags, "new_tags", key_type=str, value_type=str)
 
         if not self.has_asset_event_tags_table:
@@ -228,67 +234,51 @@ class SqlEventLogStorage(EventLogStorage):
                 "create the AssetEventTags table."
             )
 
-        if (
-            event_record.asset_key
-            and event_record.storage_id
-            and event_record.event_log_entry.dagster_event
-            and event_record.event_log_entry.dagster_event.asset_key
-            and event_record.event_log_entry.dagster_event.is_step_materialization
-            and isinstance(
-                event_record.event_log_entry.dagster_event.step_materialization_data.materialization,
-                AssetMaterialization,
-            )
-        ):
+        current_tags_list = self.get_event_tags_for_asset(asset_key, filter_event_id=event_id)
 
-            asset_key = event_record.asset_key
-            event_id = event_record.storage_id
-            current_tags_list = self.get_event_tags_for_asset(asset_key, filter_event_id=event_id)
+        asset_key_str = asset_key.to_string()
 
-            asset_key_str = asset_key.to_string()
+        if len(current_tags_list) == 0:
+            current_tags: Mapping[str, str] = {}
+        else:
+            current_tags = current_tags_list[0]
 
-            if len(current_tags_list) == 0:
-                current_tags: Mapping[str, str] = {}
-            else:
-                current_tags = current_tags_list[0]
+        with self.index_connection() as conn:
+            current_tags_set = set(current_tags.keys())
+            new_tags_set = set(new_tags.keys())
 
-            with self.index_connection() as conn:
-                current_tags_set = set(current_tags.keys())
-                new_tags_set = set(new_tags.keys())
+            existing_tags = current_tags_set & new_tags_set
+            added_tags = new_tags_set.difference(existing_tags)
 
-                existing_tags = current_tags_set & new_tags_set
-                added_tags = new_tags_set.difference(existing_tags)
-
-                for tag in existing_tags:
-                    conn.execute(
-                        AssetEventTagsTable.update()  # pylint: disable=no-value-for-parameter
-                        .where(
-                            db.and_(
-                                AssetEventTagsTable.c.event_id == event_record.storage_id,
-                                AssetEventTagsTable.c.asset_key == asset_key_str,
-                                AssetEventTagsTable.c.key == tag,
-                            )
+            for tag in existing_tags:
+                conn.execute(
+                    AssetEventTagsTable.update()  # pylint: disable=no-value-for-parameter
+                    .where(
+                        db.and_(
+                            AssetEventTagsTable.c.event_id == event_id,
+                            AssetEventTagsTable.c.asset_key == asset_key_str,
+                            AssetEventTagsTable.c.key == tag,
                         )
-                        .values(value=new_tags[tag])
                     )
+                    .values(value=new_tags[tag])
+                )
 
-                if added_tags:
-                    conn.execute(
-                        AssetEventTagsTable.insert(),  # pylint: disable=no-value-for-parameter
-                        [
-                            dict(
-                                event_id=event_record.storage_id,
-                                asset_key=asset_key_str,
-                                key=tag,
-                                value=new_tags[tag],
-                                # Postgres requires a datetime that is in UTC but has no timezone info
-                                # set in order to be stored correctly
-                                event_timestamp=datetime.utcfromtimestamp(
-                                    event_record.event_log_entry.timestamp
-                                ),
-                            )
-                            for tag in added_tags
-                        ],
-                    )
+            if added_tags:
+                conn.execute(
+                    AssetEventTagsTable.insert(),  # pylint: disable=no-value-for-parameter
+                    [
+                        dict(
+                            event_id=event_id,
+                            asset_key=asset_key_str,
+                            key=tag,
+                            value=new_tags[tag],
+                            # Postgres requires a datetime that is in UTC but has no timezone info
+                            # set in order to be stored correctly
+                            event_timestamp=datetime.utcfromtimestamp(event_timestamp),
+                        )
+                        for tag in added_tags
+                    ],
+                )
 
     def store_asset_event_tags(self, event: EventLogEntry, event_id: int) -> None:
         check.inst_param(event, "event", EventLogEntry)
