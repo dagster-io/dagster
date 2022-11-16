@@ -22,6 +22,7 @@ import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {pluginForMetadata} from '../plugins';
+import {Version} from '../versions/Version';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {LiveDataForNode, displayNameForAssetKey} from './Utils';
@@ -84,6 +85,14 @@ export const SidebarAssetInfo: React.FC<{
           {asset.op && OpMetadataPlugin?.SidebarComponent && (
             <OpMetadataPlugin.SidebarComponent definition={asset.op} repoAddress={repoAddress} />
           )}
+        </SidebarSection>
+      )}
+
+      {asset.opVersion && (
+        <SidebarSection title="Code Version">
+          <Box padding={{vertical: 16, horizontal: 24}}>
+            <Version>{asset.opVersion}</Version>
+          </Box>
         </SidebarSection>
       )}
 
@@ -187,6 +196,7 @@ export const SIDEBAR_ASSET_FRAGMENT = gql`
         value
       }
     }
+    opVersion
     repository {
       id
       name
