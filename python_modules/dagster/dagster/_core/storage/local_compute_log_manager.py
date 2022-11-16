@@ -1,5 +1,6 @@
 import hashlib
 import os
+import shutil
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
@@ -119,21 +120,31 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
             stderr_download_url=self.get_captured_log_download_url(log_key, ComputeIOType.STDERR),
         )
 
-    def delete_logs(self, log_key: Sequence[str]):
-        paths = [
-            self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]),
-            self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR]),
-            self.get_captured_local_path(
-                log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT], partial=True
-            ),
-            self.get_captured_local_path(
-                log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR], partial=True
-            ),
-            self.get_captured_local_path(log_key, "complete"),
-        ]
-        for path in paths:
-            if os.path.exists(path) and os.path.isfile(path):
-                os.remove(path)
+    def delete_logs(
+        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+    ):
+        if log_key:
+            paths = [
+                self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]),
+                self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR]),
+                self.get_captured_local_path(
+                    log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT], partial=True
+                ),
+                self.get_captured_local_path(
+                    log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR], partial=True
+                ),
+                self.get_captured_local_path(log_key, "complete"),
+            ]
+            for path in paths:
+                if os.path.exists(path) and os.path.isfile(path):
+                    os.remove(path)
+        elif prefix:
+            dir_to_delete = os.path.join(self._base_dir, *prefix)
+            if os.path.exists(dir_to_delete) and os.path.isdir(dir_to_delete):
+                # recursively delete all files in dir
+                shutil.rmtree(dir_to_delete)
+        else:
+            check.failed("Must pass in either `log_key` or `prefix` argument to delete_logs")
 
     def _read_bytes(
         self,

@@ -95,6 +95,11 @@ class FakeBlobContainerClient:
             if k.startswith(prefix):
                 del self._container[k]
 
+    def delete_blobs(self, *keys):
+        for key in keys:
+            if key in self._container:
+                del self._container[key]
+
 
 class FakeBlobClient:
     """Stateful mock of an Blob blob client for testing."""
