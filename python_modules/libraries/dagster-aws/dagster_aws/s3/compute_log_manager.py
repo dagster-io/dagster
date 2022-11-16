@@ -149,6 +149,8 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             s3_prefix = "/".join([self._s3_prefix, "storage", *prefix, ""])
             matching = self._s3_session.list_objects(Bucket=self._s3_bucket, Prefix=s3_prefix)
             s3_keys_to_remove = [obj["Key"] for obj in matching.get("Contents", [])]
+        else:
+            check.failed("Must pass in either `log_key` or `prefix` argument to delete_logs")
 
         if s3_keys_to_remove:
             to_delete = [{"Key": key} for key in s3_keys_to_remove]

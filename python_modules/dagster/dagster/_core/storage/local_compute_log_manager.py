@@ -143,6 +143,8 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
             if os.path.exists(dir_to_delete) and os.path.isdir(dir_to_delete):
                 # recursively delete all files in dir
                 shutil.rmtree(dir_to_delete)
+        else:
+            check.failed("Must pass in either `log_key` or `prefix` argument to delete_logs")
 
     def _read_bytes(
         self,

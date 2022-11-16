@@ -153,6 +153,8 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             to_remove = [key for key in known_keys if key in blob_list]
         elif prefix:
             to_remove = list(blob_list)
+        else:
+            check.failed("Must pass in either `log_key` or `prefix` argument to delete_logs")
 
         if to_remove:
             self._container_client.delete_blobs(*to_remove)

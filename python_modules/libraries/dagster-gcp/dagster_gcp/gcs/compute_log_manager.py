@@ -140,6 +140,8 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             delete_prefix = "/".join([self._prefix, "storage", *prefix, ""])
             to_delete = self._bucket.list_blobs(prefix=delete_prefix)
             self._bucket.delete_blobs(list(to_delete))
+        else:
+            check.failed("Must pass in either `log_key` or `prefix` argument to delete_logs")
 
     def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
         if not self.is_capture_complete(log_key):
