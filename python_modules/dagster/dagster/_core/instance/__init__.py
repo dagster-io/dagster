@@ -2173,41 +2173,6 @@ class DagsterInstance:
         for k, v in new_env.items():
             os.environ[k] = v
 
-    def get_current_logical_version(
-        self,
-        key: AssetKey,
-        is_source: bool,
-        *,
-        event: Optional[EventLogRecord] = None,
-        instance: Optional["DagsterInstance"] = None,
-    ) -> LogicalVersion:
-
-        event = event or self.get_latest_logical_version_record(key, is_source)
-        if event is None and is_source:
-            return DEFAULT_LOGICAL_VERSION
-        elif event is None:
-            raise DagsterUndefinedLogicalVersionError(
-                f"No logical version defined for asset {key}; no materialization events found.",
-            )
-        else:
-            logical_version = extract_logical_version_from_entry(event.event_log_entry)
-            return logical_version or DEFAULT_LOGICAL_VERSION
-
-    def get_current_logical_version_provenance(
-        self,
-        key: AssetKey,
-        *,
-        event: Optional[EventLogRecord] = None,
-    ) -> Optional[LogicalVersionProvenance]:
-
-        event = event or self.get_latest_logical_version_record(key, is_source=False)
-        if event is None:
-            raise DagsterUndefinedLogicalVersionError(
-                f"No logical version defined for asset {key}; no materialization events found.",
-            )
-        else:
-            return extract_logical_version_provenance_from_entry(event.event_log_entry)
-
     def get_latest_logical_version_record(
         self,
         key: AssetKey,

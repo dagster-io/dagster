@@ -41,7 +41,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.errors import DagsterInvariantViolationError, DagsterUndefinedLogicalVersionError
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.step import ExecutionStep
@@ -807,7 +807,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._input_asset_records
 
     def fetch_input_asset_records(self) -> None:
-
+        # pylint: disable=protected-access
         output_keys: List[AssetKey] = []
         for step_output in self.step.step_outputs:
             asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
@@ -821,7 +821,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         for output_key in output_keys:
             if (
                 output_key not in self.pipeline_def.asset_layer._asset_deps
-            ):  # pylint: disable=protected-access
+            ):  
                 continue
             dep_keys = self.pipeline_def.asset_layer.upstream_assets_for_asset(output_key)
             for key in dep_keys:
@@ -831,7 +831,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._input_asset_records = {}
         for key in all_dep_keys:
             event = self.instance.get_latest_logical_version_record(key)
-            is_source = self.pipeline_def.asset_layer.is_source_for_asset(key)
             self._input_asset_records[key] = event
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:

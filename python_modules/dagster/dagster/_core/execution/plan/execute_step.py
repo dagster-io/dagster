@@ -35,8 +35,6 @@ from dagster._core.definitions.logical_version import (
     LogicalVersion,
     compute_logical_version,
     extract_logical_version_from_entry,
-    get_current_logical_version,
-    get_current_logical_version_from_latest_event,
     get_input_event_pointer_tag_key,
     get_input_logical_version_tag_key,
 )
@@ -56,7 +54,6 @@ from dagster._core.errors import (
     DagsterTypeCheckDidNotPass,
     DagsterTypeCheckError,
     DagsterTypeMaterializationError,
-    DagsterUndefinedLogicalVersionError,
     user_code_error_boundary,
 )
 from dagster._core.events import DagsterEvent
