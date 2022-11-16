@@ -151,20 +151,6 @@ export const AssetNodeStatusRow: React.FC<{
         background={Colors.Red50}
       >
         <Caption color={Colors.Red700}>Failed</Caption>
-        {lastMaterialization && (
-          <AssetNodeShowOnHover>
-            <AssetRunLink
-              color={Colors.Red700}
-              runId={lastMaterialization.runId}
-              event={{stepKey, timestamp: lastMaterialization.timestamp}}
-            >
-              <TimestampDisplay
-                timestamp={Number(lastMaterialization.timestamp) / 1000}
-                timeFormat={{showSeconds: false, showTimezone: false}}
-              />
-            </AssetRunLink>
-          </AssetNodeShowOnHover>
-        )}
       </Box>
     );
   }

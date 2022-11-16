@@ -25,7 +25,9 @@ export const CurrentMinutesLateTag: React.FC<{
       <Tooltip
         content={<div style={{maxWidth: 400}}>{`${STALE_UNMATERIALIZED_MSG} ${description}`}</div>}
       >
-        <Tag intent="danger">Late</Tag>
+        <Tag intent="danger" icon="warning">
+          Late
+        </Tag>
       </Tooltip>
     );
   }
@@ -33,16 +35,20 @@ export const CurrentMinutesLateTag: React.FC<{
   if (freshnessInfo.currentMinutesLate === 0) {
     return description ? (
       <Tooltip content={freshnessPolicyDescription(freshnessPolicy)}>
-        <Tag intent="success">Fresh</Tag>
+        <Tag intent="success" icon="check_circle">
+          On time
+        </Tag>
       </Tooltip>
     ) : (
-      <Tag intent="success">Fresh</Tag>
+      <Tag intent="success" icon="check_circle">
+        On time
+      </Tag>
     );
   }
 
   return (
     <Tooltip content={<div style={{maxWidth: 400}}>{`${STALE_OVERDUE_MSG} ${description}`}</div>}>
-      <Tag intent="danger">
+      <Tag intent="danger" icon="warning">
         {moment
           .duration(freshnessInfo.currentMinutesLate, 'minute')
           .humanize(false, {m: 120, h: 48})}
