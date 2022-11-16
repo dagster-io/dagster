@@ -339,6 +339,10 @@ from dagster._core.definitions.time_window_partitions import (
     monthly_partitioned_config as monthly_partitioned_config,
     weekly_partitioned_config as weekly_partitioned_config,
 )
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionsDefinition as MultiPartitionsDefinition,
+    MultiPartitionKey as MultiPartitionKey,
+)
 from dagster._core.definitions.unresolved_asset_job_definition import (
     define_asset_job as define_asset_job,
 )
