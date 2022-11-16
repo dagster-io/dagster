@@ -85,7 +85,8 @@ def create_execution_params(graphene_info, graphql_execution_params):
             )
 
         external_pipeline = get_full_external_pipeline_or_raise(
-            graphene_info, selector,
+            graphene_info,
+            selector,
         )
 
         if not external_pipeline.has_preset(preset_name):
@@ -104,7 +105,6 @@ def create_execution_params(graphene_info, graphql_execution_params):
             ),
             step_keys=graphql_execution_params.get("stepKeys"),
         )
-
 
     return execution_params_from_graphql(graphql_execution_params)
 
