@@ -1,13 +1,4 @@
-import {
-  BaseTag,
-  Body,
-  Box,
-  Colors,
-  Icon,
-  IconWrapper,
-  NonIdealState,
-  StyledTag,
-} from '@dagster-io/ui';
+import {BaseTag, Box, Colors, Icon, IconWrapper, StyledTag} from '@dagster-io/ui';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components/macro';
