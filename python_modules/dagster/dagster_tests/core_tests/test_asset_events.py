@@ -60,6 +60,8 @@ def test_non_assets_job_no_register_event():
 
         assert intent_to_materialize_events == []
 
+    assert False
+
 
 def test_multi_asset_asset_materialization_planned_events():
     @multi_asset(
