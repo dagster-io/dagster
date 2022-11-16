@@ -381,7 +381,7 @@ const UpstreamUnavailableWarning: React.FC<{
     <Box margin={{top: 16}}>
       <Alert
         intent="warning"
-        title="Upstream Data Missing"
+        title="Upstream data missing"
         description={
           <>
             {upstreamUnavailableSpans
@@ -390,7 +390,9 @@ const UpstreamUnavailableWarning: React.FC<{
             {
               ' cannot be materialized because upstream materializations are missing. Consider materializing upstream assets or '
             }
-            <a onClick={onRemoveUpstreamUnavailable}>remove these partitions</a>
+            <ButtonLink underline="always" onClick={onRemoveUpstreamUnavailable}>
+              remove these partitions
+            </ButtonLink>
             {` to avoid failures.`}
           </>
         }

@@ -43,7 +43,7 @@ export const AssetEventsV2: React.FC<Props> = ({
     loadedPartitionKeys,
     refetch,
     loading,
-  } = useRecentAssetEvents(assetKey, false, params);
+  } = useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions: false});
 
   React.useEffect(() => {
     if (params.asOf) {
