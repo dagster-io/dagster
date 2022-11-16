@@ -1,6 +1,6 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 
-import {AssetComputeStatus, RunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 
 import {
   AssetGraphLiveQuery_assetsLatestInfo_latestRun,
@@ -126,7 +126,6 @@ export interface LiveDataForNode {
   lastObservation: AssetGraphLiveQuery_assetNodes_assetObservations | null;
   currentLogicalVersion: string | null;
   projectedLogicalVersion: string | null;
-  computeStatus: AssetComputeStatus;
 }
 
 export const MISSING_LIVE_DATA: LiveDataForNode = {
@@ -140,7 +139,6 @@ export const MISSING_LIVE_DATA: LiveDataForNode = {
   lastObservation: null,
   currentLogicalVersion: null,
   projectedLogicalVersion: null,
-  computeStatus: AssetComputeStatus.NONE,
   stepKey: '',
 };
 
@@ -203,7 +201,6 @@ export const buildLiveDataForNode = (
     freshnessPolicy: assetNode.freshnessPolicy,
     inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
     unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
-    computeStatus: assetLatestInfo?.computeStatus || AssetComputeStatus.NONE,
     runWhichFailedToMaterialize,
   };
 };

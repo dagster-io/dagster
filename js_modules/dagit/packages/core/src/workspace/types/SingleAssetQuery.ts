@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { AssetKeyInput, AssetComputeStatus, RunStatus } from "./../../types/globalTypes";
+import { AssetKeyInput, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SingleAssetQuery
@@ -111,7 +111,6 @@ export interface SingleAssetQuery_assetsLatestInfo_latestRun {
 export interface SingleAssetQuery_assetsLatestInfo {
   __typename: "AssetLatestInfo";
   assetKey: SingleAssetQuery_assetsLatestInfo_assetKey;
-  computeStatus: AssetComputeStatus;
   unstartedRunIds: string[];
   inProgressRunIds: string[];
   latestRun: SingleAssetQuery_assetsLatestInfo_latestRun | null;
