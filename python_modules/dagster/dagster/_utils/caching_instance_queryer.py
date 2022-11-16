@@ -271,6 +271,9 @@ class CachingInstanceQueryer:
 
             # find the upstream times of each of the parents of this asset
             for parent_key in asset_graph.get_parents(asset_key):
+                if parent_key in asset_graph.source_asset_keys:
+                    continue
+
                 # the set of required keys which are upstream of this parent
                 upstream_required_keys = set()
                 if parent_key in unknown_required_keys:
@@ -322,7 +325,7 @@ class CachingInstanceQueryer:
                 "Can only calculate data times for records with an `asset_key`."
             )
         if upstream_keys is None:
-            upstream_keys = asset_graph.get_roots(record.asset_key)
+            upstream_keys = asset_graph.get_non_source_roots(record.asset_key)
 
         data = self.calculate_used_data(
             asset_graph=asset_graph,
