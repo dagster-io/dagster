@@ -41,7 +41,7 @@ class FreshnessPolicy(
     Args:
         maximum_lag_minutes (float): An upper bound for how old the data contained within this
             asset may be, relative to the current time.
-        cron_schedule (Optional[str]): A cron schedule string (e.g. "0 1 * * *") specifying a
+        cron_schedule (Optional[str]): A cron schedule string (e.g. "0 1 \* \* \*") specifying a
             series of times by which the `maximum_lag_minutes` constraint must be satisfied. If
             no cron schedule is provided, then this constraint must be satisfied at all times.
 
