@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
 
 import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -176,7 +176,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene.NonNull(graphene.List(GrapheneMaterializationEvent)),
         partitions=graphene.List(graphene.String),
     )
-    partitionMaterializationCounts = graphene.Field(GraphenePartitionMaterializationCounts)
+    partitionMaterializationCounts = graphene.NonNull(GraphenePartitionMaterializationCounts)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
     op = graphene.Field(GrapheneSolidDefinition)
     opName = graphene.String()
@@ -587,11 +587,8 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_partitionMaterializationCounts(
         self, graphene_info
-    ) -> Optional[GraphenePartitionMaterializationCounts]:
+    ) -> GraphenePartitionMaterializationCounts:
         asset_key = self._external_asset_node.asset_key
-
-        if not self._external_asset_node.partitions_def_data:
-            return None
 
         if not self.is_multipartitioned():
             partition_keys = self.get_partition_keys()
@@ -607,7 +604,10 @@ class GrapheneAssetNode(graphene.ObjectType):
                 materializationCountsGrouped=get_materialization_cts_grouped_by_dimension(
                     graphene_info,
                     asset_key,
-                    self._external_asset_node.partitions_def_data.external_partition_dimension_definitions,
+                    cast(
+                        ExternalMultiPartitionsDefinitionData,
+                        self._external_asset_node.partitions_def_data,
+                    ).external_partition_dimension_definitions,
                 )
             )
 

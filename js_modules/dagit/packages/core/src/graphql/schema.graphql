@@ -670,7 +670,7 @@ type AssetNode {
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
-  partitionMaterializationCounts: PartitionMaterializationCounts
+  partitionMaterializationCounts: PartitionMaterializationCounts!
   metadataEntries: [MetadataEntry!]!
   op: SolidDefinition
   opName: String
