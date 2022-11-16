@@ -6,6 +6,15 @@ from .resources import FivetranResource, fivetran_resource
 from .types import FivetranOutput
 from .version import __version__
 
+try:
+    import dagster_managed_elements
+
+    from .managed import FivetranConnector, FivetranDestination, FivetranManagedElementReconciler
+
+except ImportError:
+    raise
+
+
 check_dagster_package_version("dagster-fivetran", __version__)
 
 __all__ = [

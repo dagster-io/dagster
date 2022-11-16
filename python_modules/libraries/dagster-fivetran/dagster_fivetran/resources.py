@@ -89,6 +89,7 @@ class FivetranResource:
                     auth=self._auth,
                     data=data,
                 )
+                # print(response.text)
                 response.raise_for_status()
                 resp_dict = response.json()
                 return resp_dict["data"] if "data" in resp_dict else resp_dict
