@@ -136,13 +136,16 @@ export const AssetNodeStatusRow: React.FC<{
     projectedLogicalVersion,
     lastMaterialization,
     runWhichFailedToMaterialize,
+    freshnessInfo,
   } = liveData || MISSING_LIVE_DATA;
 
   if (definition.isSource) {
     return <span />;
   }
 
-  if (runWhichFailedToMaterialize) {
+  const late = freshnessInfo && (freshnessInfo.currentMinutesLate || 0) > 0;
+
+  if (runWhichFailedToMaterialize || late) {
     return (
       <Box
         padding={{horizontal: 8}}
@@ -150,10 +153,13 @@ export const AssetNodeStatusRow: React.FC<{
         flex={{justifyContent: 'space-between', alignItems: 'center'}}
         background={Colors.Red50}
       >
-        <Caption color={Colors.Red700}>Failed</Caption>
+        <Caption color={Colors.Red700}>
+          {runWhichFailedToMaterialize && late ? `Failed (Late)` : late ? 'Late' : 'Failed'}
+        </Caption>
       </Box>
     );
   }
+
   if (!lastMaterialization) {
     return (
       <Box
@@ -179,6 +185,7 @@ export const AssetNodeStatusRow: React.FC<{
       </Box>
     );
   }
+
   return (
     <Box
       padding={{horizontal: 8}}
