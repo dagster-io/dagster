@@ -10,7 +10,7 @@ const formatOptions = memoize((language: string) => {
   return {use24HourTimeFormat};
 });
 
-export const humanCronString = (cronSchedule: string, longTimezone?: string) => {
+const convertSingleCronString = (cronSchedule: string, longTimezone?: string) => {
   let human = convertString(cronSchedule);
 
   if (longTimezone) {
@@ -35,6 +35,31 @@ export const humanCronString = (cronSchedule: string, longTimezone?: string) => 
   }
 
   return human;
+};
+
+export const humanCronString = (cronSchedule: string, longTimezone?: string) => {
+  const cronArray = cronScheduleToArray(cronSchedule);
+  return cronArray
+    .map((singleCron) => convertSingleCronString(singleCron, longTimezone))
+    .join('; ');
+};
+
+const cronScheduleToArray = (cronSchedule: string) => {
+  // The supplied string, if a cron union, will use single quotes for the array
+  // elements. This is not valid JSON, so try to make it valid.
+  const swapQuotes = cronSchedule.replace(/'/g, '"');
+
+  try {
+    const parsed = JSON.parse(swapQuotes);
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+  } catch {
+    // Fall through.
+  }
+
+  // It's just a string, or otherwise invalid. Wrap and return it.
+  return [cronSchedule];
 };
 
 const convertString = (cronSchedule: string) => {

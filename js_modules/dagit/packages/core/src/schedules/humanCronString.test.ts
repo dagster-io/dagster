@@ -98,6 +98,7 @@ describe('humanCronString', () => {
 
     afterAll(() => {
       jest.clearAllMocks();
+      jest.restoreAllMocks();
     });
 
     it('shows 24h format if locale uses it, and shows timezone if provided, if cron specifies a time', () => {
@@ -124,6 +125,38 @@ describe('humanCronString', () => {
       );
       expect(humanCronString('12-50 0-10 22 * * * 2022', timezone)).toBe(
         'Seconds 12 through 50 past the minute, minutes 0 through 10 past the hour, at 22:00 +07, only in 2022',
+      );
+    });
+  });
+
+  describe('Cron union', () => {
+    it('handles a single-item union of cron strings, with timezone', () => {
+      const timezone = 'America/Phoenix';
+      expect(humanCronString("['2,4-5 1 * * *']", timezone)).toBe(
+        'At 2 and 4 through 5 minutes past the hour, at 01:00 AM MST',
+      );
+    });
+
+    it('handles a union of cron strings', () => {
+      expect(humanCronString("['0 2 * * FRI-SAT', '0 2,8 * * MON,FRI', '*/30 9 * * SUN']")).toBe(
+        'At 02:00 AM, Friday through Saturday; At 02:00 AM and 08:00 AM, only on Monday and Friday; Every 30 minutes, between 09:00 AM and 09:59 AM, only on Sunday',
+      );
+      expect(humanCronString("['* * * 6-8 *', '* * * * MON-FRI']")).toBe(
+        'Every minute, June through August; Every minute, Monday through Friday',
+      );
+    });
+
+    it('handles a union of special cron strings', () => {
+      expect(humanCronString("['@daily', '@weekly']")).toBe(
+        'At 12:00 AM; At 12:00 AM, only on Sunday',
+      );
+      expect(humanCronString("['@daily', '0 23 * * *']")).toBe('At 12:00 AM; At 11:00 PM');
+    });
+
+    it('handles a union of cron strings, with timezone', () => {
+      const timezone = 'America/Phoenix';
+      expect(humanCronString("['0 5 0/1 * * ?', '0 23 ? * MON-FRI']", timezone)).toBe(
+        'At 5 minutes past the hour; At 11:00 PM MST, Monday through Friday',
       );
     });
   });
