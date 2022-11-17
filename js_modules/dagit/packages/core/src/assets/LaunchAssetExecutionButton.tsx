@@ -88,7 +88,7 @@ export const LaunchAssetExecutionButton: React.FC<{
     if (staleAssetKeys) {
       options.push({
         assetKeys: staleAssetKeys,
-        label: `Stale and missing${countOrBlank(staleAssetKeys)}`,
+        label: `Materialize stale and missing${countOrBlank(staleAssetKeys)}`,
       });
     }
   }

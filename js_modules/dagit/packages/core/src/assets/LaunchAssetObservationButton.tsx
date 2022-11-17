@@ -43,7 +43,7 @@ export const LaunchAssetObservationButton: React.FC<{
   const client = useApolloClient();
 
   const count = assetKeys.length > 1 ? ` (${assetKeys.length})` : '';
-  const label = `Observe source ${count}`;
+  const label = `Observe sources ${count}`;
 
   if (!assetKeys.length) {
     return <span />;
