@@ -34,6 +34,12 @@ export interface AssetNodeLiveFragment_freshnessInfo {
   currentMinutesLate: number | null;
 }
 
+export interface AssetNodeLiveFragment_assetObservations {
+  __typename: "ObservationEvent";
+  timestamp: string;
+  runId: string;
+}
+
 export interface AssetNodeLiveFragment {
   __typename: "AssetNode";
   id: string;
@@ -43,4 +49,7 @@ export interface AssetNodeLiveFragment {
   assetMaterializations: AssetNodeLiveFragment_assetMaterializations[];
   freshnessPolicy: AssetNodeLiveFragment_freshnessPolicy | null;
   freshnessInfo: AssetNodeLiveFragment_freshnessInfo | null;
+  assetObservations: AssetNodeLiveFragment_assetObservations[];
+  currentLogicalVersion: string | null;
+  projectedLogicalVersion: string | null;
 }

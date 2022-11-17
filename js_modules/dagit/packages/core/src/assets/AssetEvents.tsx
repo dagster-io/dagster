@@ -1,12 +1,12 @@
-import {Box, ButtonGroup, Colors, NonIdealState, Spinner, Subheading} from '@dagster-io/ui';
+import {Box, ButtonGroup, Colors, Spinner, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {RepositorySelector} from '../types/globalTypes';
 
-import {AssetEventsTable} from './AssetEventsTable';
-import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
+import {AssetEventDetail, AssetEventDetailEmpty} from './AssetEventDetail';
+import {AssetEventList} from './AssetEventList';
+import {AssetPartitionDetail, AssetPartitionDetailEmpty} from './AssetPartitionDetail';
 import {AssetViewParams} from './AssetView';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunsSinceMaterializationBanner} from './FailedRunsSinceMaterializationBanner';
@@ -24,10 +24,8 @@ interface Props {
   // This timestamp is a "hint", when it changes this component will refetch
   // to retrieve new data. Just don't want to poll the entire table query.
   assetLastMaterializedAt: string | undefined;
-
-  // This is passed in because we need to know whether to default to partition
-  // grouping /before/ loading all the data.
   assetHasDefinedPartitions: boolean;
+
   repository?: RepositorySelector;
   opName?: string | null;
 }
@@ -40,15 +38,14 @@ export const AssetEvents: React.FC<Props> = ({
   setParams,
   liveData,
 }) => {
-  const {flagNewAssetDetails} = useFeatureFlags();
   const {
     xAxis,
     materializations,
     observations,
     loadedPartitionKeys,
-    loading,
     refetch,
-  } = useRecentAssetEvents(assetKey, assetHasDefinedPartitions, params);
+    loading,
+  } = useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions: false});
 
   React.useEffect(() => {
     if (params.asOf) {
@@ -58,7 +55,6 @@ export const AssetEvents: React.FC<Props> = ({
   }, [params.asOf, assetLastMaterializedAt, refetch]);
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
-  const activeItems = React.useMemo(() => new Set([xAxis]), [xAxis]);
 
   const onSetFocused = (group: AssetEventGroup | undefined) => {
     const updates: Partial<AssetViewParams> =
@@ -68,99 +64,117 @@ export const AssetEvents: React.FC<Props> = ({
     setParams({...params, ...updates});
   };
 
-  let focused: AssetEventGroup | undefined = grouped.find((b) =>
-    params.time
-      ? Number(b.timestamp) <= Number(params.time)
-      : params.partition
-      ? b.partition === params.partition
-      : false,
-  );
+  const focused: AssetEventGroup | undefined =
+    grouped.find((b) =>
+      params.time
+        ? Number(b.timestamp) <= Number(params.time)
+        : params.partition
+        ? b.partition === params.partition
+        : false,
+    ) || grouped[0];
 
-  if (params.time === undefined && params.partition === undefined) {
-    // default to expanding the first row in the table so users know how much
-    // detail exists within each item.
-    focused = grouped[0];
-  }
+  // Note: This page still has a LOT of logic for displaying events by partition but it's only enabled
+  // in one case -- when the asset is an old-school, non-software-defined asset with partition keys
+  // on it's materializations but no defined partition set.
+  //
+  const assetHasUndefinedPartitions =
+    !assetHasDefinedPartitions && grouped.some((g) => g.partition);
+  const assetHasLineage = materializations.some((m) => m.assetLineage.length > 0);
 
-  const header = (
-    <Box
-      flex={{justifyContent: 'space-between', alignItems: 'center'}}
-      padding={{vertical: 16, horizontal: 24}}
-      style={{marginBottom: -1}}
-    >
-      <Subheading>Asset Events</Subheading>
-      {assetHasDefinedPartitions ? (
-        <div style={{margin: '-6px 0 '}}>
-          <ButtonGroup
-            activeItems={activeItems}
-            buttons={[
-              {id: 'partition', label: 'By partition'},
-              {id: 'time', label: 'By timestamp'},
-            ]}
-            onClick={(id: string) =>
-              setParams(
-                id === 'time'
-                  ? {...params, partition: undefined, time: focused?.timestamp || ''}
-                  : {...params, partition: focused?.partition || '', time: undefined},
-              )
-            }
-          />
-        </div>
-      ) : null}
-    </Box>
-  );
-
-  if (loading) {
-    return (
-      <Box>
-        {header}
-        <Box padding={{vertical: 48}} border={{side: 'top', color: Colors.KeylineGray, width: 1}}>
-          <Spinner purpose="page" />
-        </Box>
-      </Box>
-    );
-  }
+  const onKeyDown = (e: React.KeyboardEvent<any>) => {
+    const shift = {ArrowDown: 1, ArrowUp: -1}[e.key];
+    if (!shift || !focused || e.isDefaultPrevented()) {
+      return;
+    }
+    const next = grouped[grouped.indexOf(focused) + shift];
+    if (next) {
+      e.preventDefault();
+      onSetFocused(next);
+    }
+  };
 
   return (
-    <Box style={{display: 'flex', flex: 1}}>
-      <Box style={{flex: 1}}>
-        {header}
-        <FailedRunsSinceMaterializationBanner
-          liveData={liveData}
+    <>
+      {assetHasUndefinedPartitions && (
+        <Box
+          flex={{justifyContent: 'space-between', alignItems: 'center'}}
           border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        />
-        <CurrentRunsBanner
-          liveData={liveData}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        />
-        {grouped.length > 0 ? (
-          <AssetEventsTable
-            hasPartitions={assetHasDefinedPartitions}
-            hasLineage={materializations.some((m) => m.assetLineage.length > 0)}
-            groups={grouped}
-            focused={focused}
-            setFocused={onSetFocused}
-          />
-        ) : (
-          <Box padding={{vertical: 20}} border={{side: 'top', color: Colors.KeylineGray, width: 1}}>
-            <NonIdealState
-              icon="materialization"
-              title="No materializations"
-              description="No materializations were found for this asset."
+          padding={{vertical: 16, horizontal: 24}}
+          style={{marginBottom: -1}}
+        >
+          <Subheading>Asset Events</Subheading>
+          <div style={{margin: '-6px 0 '}}>
+            <ButtonGroup
+              activeItems={new Set([xAxis])}
+              buttons={[
+                {id: 'partition', label: 'By partition'},
+                {id: 'time', label: 'By timestamp'},
+              ]}
+              onClick={(id: string) =>
+                setParams(
+                  id === 'time'
+                    ? {...params, partition: undefined, time: focused?.timestamp || ''}
+                    : {...params, partition: focused?.partition || '', time: undefined},
+                )
+              }
             />
-          </Box>
-        )}
-        {loadedPartitionKeys && (
-          <Box padding={{vertical: 16, horizontal: 24}} style={{color: Colors.Gray400}}>
-            Showing materializations for the last {loadedPartitionKeys.length} partitions.
-          </Box>
-        )}
-      </Box>
-      {!flagNewAssetDetails && (
-        <Box style={{width: '40%'}} border={{side: 'left', color: Colors.KeylineGray, width: 1}}>
-          <AssetMaterializationGraphs xAxis={xAxis} groups={grouped} columnCount={1} />
+          </div>
         </Box>
       )}
-    </Box>
+
+      <FailedRunsSinceMaterializationBanner
+        liveData={liveData}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      />
+
+      <CurrentRunsBanner
+        liveData={liveData}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      />
+
+      <Box
+        style={{flex: 1, minHeight: 0, outline: 'none'}}
+        flex={{direction: 'row'}}
+        onKeyDown={onKeyDown}
+        tabIndex={-1}
+      >
+        <Box
+          style={{display: 'flex', flex: 1}}
+          flex={{direction: 'column'}}
+          background={Colors.Gray50}
+        >
+          {loading ? (
+            <Box flex={{alignItems: 'center', justifyContent: 'center'}} style={{flex: 1}}>
+              <Spinner purpose="section" />
+            </Box>
+          ) : (
+            <AssetEventList
+              xAxis={xAxis}
+              groups={grouped}
+              focused={focused}
+              setFocused={onSetFocused}
+            />
+          )}
+        </Box>
+
+        <Box
+          style={{flex: 3}}
+          flex={{direction: 'column'}}
+          border={{side: 'left', color: Colors.KeylineGray, width: 1}}
+        >
+          {xAxis === 'partition' ? (
+            focused ? (
+              <AssetPartitionDetail group={focused} hasLineage={assetHasLineage} />
+            ) : (
+              <AssetPartitionDetailEmpty />
+            )
+          ) : focused?.latest ? (
+            <AssetEventDetail event={focused.latest} />
+          ) : (
+            <AssetEventDetailEmpty />
+          )}
+        </Box>
+      </Box>
+    </>
   );
 };

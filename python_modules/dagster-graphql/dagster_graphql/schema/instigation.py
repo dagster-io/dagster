@@ -306,7 +306,7 @@ class GrapheneInstigationState(graphene.ObjectType):
             id=instigator_state.instigator_origin_id,
             selectorId=instigator_state.selector_id,
             name=instigator_state.name,
-            instigationType=instigator_state.instigator_type,
+            instigationType=instigator_state.instigator_type.value,
             status=(
                 GrapheneInstigationStatus.RUNNING
                 if instigator_state.is_running

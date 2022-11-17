@@ -1733,7 +1733,7 @@ def untyped_asset(typed_asset):
     return typed_asset
 
 
-@asset
+@asset(non_argument_deps={AssetKey("diamond_source")})
 def fresh_diamond_top():
     return 1
 
@@ -1869,6 +1869,7 @@ def define_asset_jobs():
             AssetSelection.assets(multipartitions_1, multipartitions_2),
             partitions_def=multipartitions_def,
         ),
+        SourceAsset("diamond_source"),
         fresh_diamond_top,
         fresh_diamond_left,
         fresh_diamond_right,

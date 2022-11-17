@@ -42,7 +42,7 @@ export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
     [history],
   );
 
-  const onNavigateToForeignNode = React.useCallback(
+  const onNavigateToSourceAssetNode = React.useCallback(
     (node: AssetLocation) => {
       history.push(assetDetailsPathForKey(node.assetKey, {view: 'definition'}));
     },
@@ -79,7 +79,7 @@ export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
         options={{preferAssetRendering: true, explodeComposites: true}}
         explorerPath={explorerPathFromString(__GLOBAL__ + path || '/')}
         onChangeExplorerPath={onChangeExplorerPath}
-        onNavigateToForeignNode={onNavigateToForeignNode}
+        onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
       />
     </Page>
   );

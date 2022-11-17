@@ -44,7 +44,7 @@ export const PipelineExplorerSnapshotRoot = () => {
       onChangeExplorerPath={(path, mode) => {
         history[mode](`/instance/snapshots/${explorerPathToString(path)}`);
       }}
-      onNavigateToForeignNode={({assetKey}) => {
+      onNavigateToSourceAssetNode={({assetKey}) => {
         history.push(assetDetailsPathForKey(assetKey));
       }}
     />
@@ -54,14 +54,14 @@ export const PipelineExplorerSnapshotRoot = () => {
 export const PipelineExplorerContainer: React.FC<{
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-  onNavigateToForeignNode: (node: AssetLocation) => void;
+  onNavigateToSourceAssetNode: (node: AssetLocation) => void;
   repoAddress?: RepoAddress;
   isGraph?: boolean;
 }> = ({
   explorerPath,
   repoAddress,
   onChangeExplorerPath,
-  onNavigateToForeignNode,
+  onNavigateToSourceAssetNode,
   isGraph = false,
 }) => {
   const [options, setOptions] = React.useState<GraphExplorerOptions>({
@@ -106,7 +106,7 @@ export const PipelineExplorerContainer: React.FC<{
               fetchOptions={{pipelineSelector}}
               explorerPath={explorerPath}
               onChangeExplorerPath={onChangeExplorerPath}
-              onNavigateToForeignNode={onNavigateToForeignNode}
+              onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
             />
           );
         }

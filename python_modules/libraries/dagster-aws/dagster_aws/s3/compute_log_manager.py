@@ -1,5 +1,5 @@
 import os
-from contextlib import contextmanager
+from typing import Optional, Sequence
 
 import boto3
 from botocore.errorfactory import ClientError
@@ -7,12 +7,12 @@ from botocore.errorfactory import ClientError
 import dagster._seven as seven
 from dagster import Field, StringSource
 from dagster import _check as check
-from dagster._core.storage.compute_log_manager import (
-    MAX_BYTES_FILE_READ,
-    ComputeIOType,
-    ComputeLogFileData,
-    ComputeLogManager,
+from dagster._config.config_type import Noneable
+from dagster._core.storage.cloud_storage_compute_log_manager import (
+    CloudStorageComputeLogManager,
+    PollingComputeLogSubscriptionManager,
 )
+from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
     LocalComputeLogManager,
@@ -20,8 +20,10 @@ from dagster._core.storage.local_compute_log_manager import (
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import ensure_dir, ensure_file
 
+POLLING_INTERVAL = 5
 
-class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
+
+class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
     """Logs compute function stdout and stderr to S3.
 
     Users should not instantiate this class directly. Instead, use a YAML block in ``dagster.yaml``
@@ -41,6 +43,7 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
             verify_cert_path: "/path/to/cert/bundle.pem"
             endpoint_url: "http://alternate-s3-host.io"
             skip_empty_files: true
+            upload_interval: 30
 
     Args:
         bucket (str): The name of the s3 bucket to which to log.
@@ -53,6 +56,7 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
             `verify` set to False.
         endpoint_url (Optional[str]): Override for the S3 endpoint url.
         skip_empty_files: (Optional[bool]): Skip upload of empty log files.
+        upload_interval: (Optional[int]): Interval in seconds to upload partial log files to S3. By default, will only upload when the capture is complete.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.
     """
@@ -68,6 +72,7 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
         verify_cert_path=None,
         endpoint_url=None,
         skip_empty_files=False,
+        upload_interval=None,
     ):
         _verify = False if not verify else verify_cert_path
         self._s3_session = boto3.resource(
@@ -80,17 +85,11 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
         if not local_dir:
             local_dir = seven.get_system_temp_directory()
 
-        self.local_manager = LocalComputeLogManager(local_dir)
+        self._local_manager = LocalComputeLogManager(local_dir)
+        self._subscription_manager = PollingComputeLogSubscriptionManager(self)
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self._skip_empty_files = check.bool_param(skip_empty_files, "skip_empty_files")
-
-    @contextmanager
-    def _watch_logs(self, pipeline_run, step_key=None):
-        # proxy watching to the local compute log manager, interacting with the filesystem
-        with self.local_manager._watch_logs(  # pylint: disable=protected-access
-            pipeline_run, step_key
-        ):
-            yield
+        self._upload_interval = check.opt_int_param(upload_interval, "upload_interval")
 
     @property
     def inst_data(self):
@@ -107,109 +106,111 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
             "verify_cert_path": Field(StringSource, is_required=False),
             "endpoint_url": Field(StringSource, is_required=False),
             "skip_empty_files": Field(bool, is_required=False, default_value=False),
+            "upload_interval": Field(Noneable(int), is_required=False, default_value=None),
         }
 
     @staticmethod
     def from_config_value(inst_data, config_value):
         return S3ComputeLogManager(inst_data=inst_data, **config_value)
 
-    def get_local_path(self, run_id, key, io_type):
-        return self.local_manager.get_local_path(run_id, key, io_type)
+    @property
+    def local_manager(self) -> LocalComputeLogManager:
+        return self._local_manager
 
-    def on_watch_start(self, pipeline_run, step_key):
-        self.local_manager.on_watch_start(pipeline_run, step_key)
+    @property
+    def upload_interval(self) -> Optional[int]:
+        return self._upload_interval if self._upload_interval else None
 
-    def on_watch_finish(self, pipeline_run, step_key):
-        self.local_manager.on_watch_finish(pipeline_run, step_key)
-        key = self.local_manager.get_key(pipeline_run, step_key)
-        self._upload_from_local(pipeline_run.run_id, key, ComputeIOType.STDOUT)
-        self._upload_from_local(pipeline_run.run_id, key, ComputeIOType.STDERR)
-
-    def is_watch_completed(self, run_id, key):
-        return self.local_manager.is_watch_completed(run_id, key)
-
-    def download_url(self, run_id, key, io_type):
-        if not self.is_watch_completed(run_id, key):
-            return self.local_manager.download_url(run_id, key, io_type)
-        key = self._bucket_key(run_id, key, io_type)
-
-        url = self._s3_session.generate_presigned_url(
-            ClientMethod="get_object", Params={"Bucket": self._s3_bucket, "Key": key}
-        )
-
-        return url
-
-    def read_logs_file(self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
-        if self._should_download(run_id, key, io_type):
-            self._download_to_local(run_id, key, io_type)
-        data = self.local_manager.read_logs_file(run_id, key, io_type, cursor, max_bytes)
-        return self._from_local_file_data(run_id, key, io_type, data)
-
-    def on_subscribe(self, subscription):
-        self.local_manager.on_subscribe(subscription)
-
-    def on_unsubscribe(self, subscription):
-        self.local_manager.on_unsubscribe(subscription)
-
-    def _should_download(self, run_id, key, io_type):
-        local_path = self.get_local_path(run_id, key, io_type)
-        if os.path.exists(local_path):
-            return False
-
-        try:  # https://stackoverflow.com/a/38376288/14656695
-            self._s3_session.head_object(
-                Bucket=self._s3_bucket, Key=self._bucket_key(run_id, key, io_type)
-            )
-        except ClientError:
-            return False
-
-        return True
-
-    def _from_local_file_data(self, run_id, key, io_type, local_file_data):
-        is_complete = self.is_watch_completed(run_id, key)
-        path = (
-            "s3://{}/{}".format(self._s3_bucket, self._bucket_key(run_id, key, io_type))
-            if is_complete
-            else local_file_data.path
-        )
-
-        return ComputeLogFileData(
-            path,
-            local_file_data.data,
-            local_file_data.cursor,
-            local_file_data.size,
-            self.download_url(run_id, key, io_type),
-        )
-
-    def _upload_from_local(self, run_id, key, io_type):
-        path = self.get_local_path(run_id, key, io_type)
-        ensure_file(path)
-        if self._skip_empty_files and os.stat(path).st_size == 0:
-            return
-
-        key = self._bucket_key(run_id, key, io_type)
-        with open(path, "rb") as data:
-            self._s3_session.upload_fileobj(data, self._s3_bucket, key)
-
-    def _download_to_local(self, run_id, key, io_type):
-        path = self.get_local_path(run_id, key, io_type)
-        ensure_dir(os.path.dirname(path))
-        with open(path, "wb") as fileobj:
-            self._s3_session.download_fileobj(
-                self._s3_bucket, self._bucket_key(run_id, key, io_type), fileobj
-            )
-
-    def _bucket_key(self, run_id, key, io_type):
+    def _s3_key(self, log_key, io_type, partial=False):
         check.inst_param(io_type, "io_type", ComputeIOType)
         extension = IO_TYPE_EXTENSION[io_type]
-        paths = [
-            self._s3_prefix,
-            "storage",
-            run_id,
-            "compute_logs",
-            "{}.{}".format(key, extension),
-        ]
+        [*namespace, filebase] = log_key
+        filename = f"{filebase}.{extension}"
+        if partial:
+            filename = f"{filename}.partial"
+        paths = [self._s3_prefix, "storage", *namespace, filename]
         return "/".join(paths)  # s3 path delimiter
 
+    def delete_logs(
+        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+    ):
+        self.local_manager.delete_logs(log_key=log_key, prefix=prefix)
+
+        s3_keys_to_remove = None
+        if log_key:
+            s3_keys_to_remove = [
+                self._s3_key(log_key, ComputeIOType.STDOUT),
+                self._s3_key(log_key, ComputeIOType.STDERR),
+                self._s3_key(log_key, ComputeIOType.STDOUT, partial=True),
+                self._s3_key(log_key, ComputeIOType.STDERR, partial=True),
+            ]
+        elif prefix:
+            # add the trailing '' to make sure that ['a'] does not match ['apple']
+            s3_prefix = "/".join([self._s3_prefix, "storage", *prefix, ""])
+            matching = self._s3_session.list_objects(Bucket=self._s3_bucket, Prefix=s3_prefix)
+            s3_keys_to_remove = [obj["Key"] for obj in matching.get("Contents", [])]
+        else:
+            check.failed("Must pass in either `log_key` or `prefix` argument to delete_logs")
+
+        if s3_keys_to_remove:
+            to_delete = [{"Key": key} for key in s3_keys_to_remove]
+            self._s3_session.delete_objects(Bucket=self._s3_bucket, Delete={"Objects": to_delete})
+
+    def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
+        if not self.is_capture_complete(log_key):
+            return None
+
+        s3_key = self._s3_key(log_key, io_type)
+        return self._s3_session.generate_presigned_url(
+            ClientMethod="get_object", Params={"Bucket": self._s3_bucket, "Key": s3_key}
+        )
+
+    def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
+        if not self.is_capture_complete(log_key):
+            return None
+        s3_key = self._s3_key(log_key, io_type)
+        return f"s3://{self._s3_bucket}/{s3_key}"
+
+    def cloud_storage_has_logs(
+        self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False
+    ) -> bool:
+        s3_key = self._s3_key(log_key, io_type, partial=partial)
+        try:  # https://stackoverflow.com/a/38376288/14656695
+            self._s3_session.head_object(Bucket=self._s3_bucket, Key=s3_key)
+        except ClientError:
+            return False
+        return True
+
+    def upload_to_cloud_storage(
+        self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
+    ):
+        path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
+        ensure_file(path)
+
+        if (self._skip_empty_files or partial) and os.stat(path).st_size == 0:
+            return
+
+        s3_key = self._s3_key(log_key, io_type, partial=partial)
+        with open(path, "rb") as data:
+            self._s3_session.upload_fileobj(data, self._s3_bucket, s3_key)
+
+    def download_from_cloud_storage(
+        self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
+    ):
+        path = self._local_manager.get_captured_local_path(
+            log_key, IO_TYPE_EXTENSION[io_type], partial=partial
+        )
+        ensure_dir(os.path.dirname(path))
+        s3_key = self._s3_key(log_key, io_type, partial=partial)
+        with open(path, "wb") as fileobj:
+            self._s3_session.download_fileobj(self._s3_bucket, s3_key, fileobj)
+
+    def on_subscribe(self, subscription):
+        self._subscription_manager.add_subscription(subscription)
+
+    def on_unsubscribe(self, subscription):
+        self._subscription_manager.remove_subscription(subscription)
+
     def dispose(self):
-        self.local_manager.dispose()
+        self._subscription_manager.dispose()
+        self._local_manager.dispose()

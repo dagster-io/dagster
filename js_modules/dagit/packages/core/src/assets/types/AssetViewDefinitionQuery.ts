@@ -28,6 +28,11 @@ export interface AssetViewDefinitionQuery_assetOrError_Asset_definition_partitio
   description: string;
 }
 
+export interface AssetViewDefinitionQuery_assetOrError_Asset_definition_partitionKeysByDimension {
+  __typename: "DimensionPartitionKeys";
+  name: string;
+}
+
 export interface AssetViewDefinitionQuery_assetOrError_Asset_definition_repository_location {
   __typename: "RepositoryLocation";
   id: string;
@@ -3173,15 +3178,19 @@ export interface AssetViewDefinitionQuery_assetOrError_Asset_definition {
   id: string;
   groupName: string | null;
   partitionDefinition: AssetViewDefinitionQuery_assetOrError_Asset_definition_partitionDefinition | null;
+  partitionKeysByDimension: AssetViewDefinitionQuery_assetOrError_Asset_definition_partitionKeysByDimension[];
   repository: AssetViewDefinitionQuery_assetOrError_Asset_definition_repository;
   jobs: AssetViewDefinitionQuery_assetOrError_Asset_definition_jobs[];
   configField: AssetViewDefinitionQuery_assetOrError_Asset_definition_configField | null;
   description: string | null;
   graphName: string | null;
   opNames: string[];
+  opVersion: string | null;
   jobNames: string[];
   computeKind: string | null;
+  isSource: boolean;
   assetKey: AssetViewDefinitionQuery_assetOrError_Asset_definition_assetKey;
+  isObservable: boolean;
   metadataEntries: AssetViewDefinitionQuery_assetOrError_Asset_definition_metadataEntries[];
   type: AssetViewDefinitionQuery_assetOrError_Asset_definition_type | null;
 }

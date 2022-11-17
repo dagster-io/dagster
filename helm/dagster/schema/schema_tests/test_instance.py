@@ -467,6 +467,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
     secret_key = "secret_key"
     local_dir = "/dir"
     prefix = "prefix"
+    upload_interval = 30
     helm_values = DagsterHelmValues.construct(
         computeLogManager=ComputeLogManager.construct(
             type=ComputeLogManagerType.AZURE,
@@ -477,6 +478,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
                     secretKey=secret_key,
                     localDir=local_dir,
                     prefix=prefix,
+                    uploadInterval=upload_interval,
                 )
             ),
         )
@@ -494,6 +496,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
         "secret_key": secret_key,
         "local_dir": local_dir,
         "prefix": prefix,
+        "upload_interval": upload_interval,
     }
 
     # Test all config fields in configurable class
@@ -505,6 +508,7 @@ def test_gcs_compute_log_manager(template: HelmTemplate):
     local_dir = "/dir"
     prefix = "prefix"
     json_credentials_envvar = "ENV_VAR"
+    upload_interval = 30
     helm_values = DagsterHelmValues.construct(
         computeLogManager=ComputeLogManager.construct(
             type=ComputeLogManagerType.GCS,
@@ -514,6 +518,7 @@ def test_gcs_compute_log_manager(template: HelmTemplate):
                     localDir=local_dir,
                     prefix=prefix,
                     jsonCredentialsEnvvar=json_credentials_envvar,
+                    uploadInterval=upload_interval,
                 )
             ),
         )
@@ -530,6 +535,7 @@ def test_gcs_compute_log_manager(template: HelmTemplate):
         "local_dir": local_dir,
         "prefix": prefix,
         "json_credentials_envvar": json_credentials_envvar,
+        "upload_interval": upload_interval,
     }
 
     # Test all config fields in configurable class
@@ -545,6 +551,7 @@ def test_s3_compute_log_manager(template: HelmTemplate):
     verify_cert_path = "/path"
     endpoint_url = "endpoint.com"
     skip_empty_files = True
+    upload_interval = 30
     helm_values = DagsterHelmValues.construct(
         computeLogManager=ComputeLogManager.construct(
             type=ComputeLogManagerType.S3,
@@ -558,6 +565,7 @@ def test_s3_compute_log_manager(template: HelmTemplate):
                     verifyCertPath=verify_cert_path,
                     endpointUrl=endpoint_url,
                     skipEmptyFiles=skip_empty_files,
+                    uploadInterval=upload_interval,
                 )
             ),
         )
@@ -578,6 +586,7 @@ def test_s3_compute_log_manager(template: HelmTemplate):
         "verify_cert_path": verify_cert_path,
         "endpoint_url": endpoint_url,
         "skip_empty_files": skip_empty_files,
+        "upload_interval": upload_interval,
     }
 
     # Test all config fields in configurable class

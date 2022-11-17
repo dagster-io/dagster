@@ -1020,7 +1020,7 @@ def open_server_process(
     fixed_server_id: Optional[str] = None,
     startup_timeout: int = 20,
     cwd: Optional[str] = None,
-    log_level: str = "WARNING",
+    log_level: str = "INFO",
     env: Optional[Dict[str, str]] = None,
 ):
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
@@ -1047,6 +1047,7 @@ def open_server_process(
         + (["--log-level", log_level])
         # only use the Python environment if it has been explicitly set in the workspace
         + (["--use-python-environment-entry-point"] if executable_path else [])
+        + (["--inject-env-vars-from-instance"])
         + (["--instance-ref", serialize_dagster_namedtuple(instance_ref)])
         + (["--location-name", location_name] if location_name else [])
     )
@@ -1085,7 +1086,7 @@ def _open_server_process_on_dynamic_port(
     fixed_server_id: Optional[str] = None,
     startup_timeout: int = 20,
     cwd: Optional[str] = None,
-    log_level: str = "WARNING",
+    log_level: str = "INFO",
     env: Optional[Dict[str, str]] = None,
 ):
     server_process = None
@@ -1130,7 +1131,7 @@ class GrpcServerProcess:
         fixed_server_id: Optional[str] = None,
         startup_timeout: int = 20,
         cwd: Optional[str] = None,
-        log_level: str = "WARNING",
+        log_level: str = "INFO",
         env: Optional[Dict[str, str]] = None,
     ):
         self.port = None

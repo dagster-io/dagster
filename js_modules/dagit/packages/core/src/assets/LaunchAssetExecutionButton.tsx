@@ -8,7 +8,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {usePermissions} from '../app/Permissions';
-import {displayNameForAssetKey, isSourceAsset} from '../asset-graph/Utils';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {DagsterTag} from '../runs/RunTag';
@@ -68,7 +68,7 @@ export const LaunchAssetExecutionButton: React.FC<{
 
   const count = assetKeys.length > 1 ? ` (${assetKeys.length})` : '';
   const label = `Materialize${
-    context === 'all' ? ` all${count}` : context === 'selected' ? ` selected${count}` : count
+    context === 'all' ? ` stale${count}` : context === 'selected' ? ` selected${count}` : count
   }`;
 
   const {onClick, loading, launchpadElement} = useMaterializationAction(
@@ -218,7 +218,7 @@ async function stateForLaunchingAssets(
   forceLaunchpad: boolean,
   preferredJobName?: string,
 ): Promise<LaunchAssetsState> {
-  if (assets.some(isSourceAsset)) {
+  if (assets.some((x) => x.isSource)) {
     return {
       type: 'error',
       error: 'One or more source assets are selected and cannot be materialized.',
@@ -329,7 +329,10 @@ async function stateForLaunchingAssets(
   };
 }
 
-function getCommonJob(assets: LaunchAssetExecutionAssetNodeFragment[], preferredJobName?: string) {
+export function getCommonJob(
+  assets: LaunchAssetExecutionAssetNodeFragment[],
+  preferredJobName?: string,
+) {
   const everyAssetHasJob = (jobName: string) => assets.every((a) => a.jobNames.includes(jobName));
   const jobsInCommon = assets[0] ? assets[0].jobNames.filter(everyAssetHasJob) : [];
   return jobsInCommon.find((name) => name === preferredJobName) || jobsInCommon[0] || null;
@@ -360,7 +363,7 @@ async function upstreamAssetsWithNoMaterializations(
   });
 
   return result.data.assetNodes
-    .filter((a) => !isSourceAsset(a) && a.assetMaterializations.length === 0)
+    .filter((a) => !a.isSource && a.assetMaterializations.length === 0)
     .map((a) => a.assetKey);
 }
 
@@ -393,7 +396,7 @@ export function executionParamsForAssetJob(
   };
 }
 
-function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
+export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
   return {
     title: MULTIPLE_DEFINITIONS_WARNING,
     body: (
@@ -428,6 +431,11 @@ export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     partitionDefinition {
       description
     }
+    partitionKeysByDimension {
+      name
+    }
+    isObservable
+    isSource
     assetKey {
       path
     }
@@ -450,7 +458,7 @@ export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
   ${ASSET_NODE_CONFIG_FRAGMENT}
 `;
 
-const LAUNCH_ASSET_LOADER_QUERY = gql`
+export const LAUNCH_ASSET_LOADER_QUERY = gql`
   query LaunchAssetLoaderQuery($assetKeys: [AssetKeyInput!]!) {
     assetNodes(assetKeys: $assetKeys) {
       id
@@ -548,6 +556,7 @@ const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
       assetKey {
         path
       }
+      isSource
       opNames
       graphName
       assetMaterializations(limit: 1) {

@@ -28,6 +28,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.test_utils import assert_namedtuple_lists_equal
 
 
 def test_filter_mapping_partitions_dep():
@@ -158,12 +159,17 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="2")
-    assert result.asset_materializations_for_node("upstream_asset") == [
-        AssetMaterialization(AssetKey(["upstream_asset"]), partition="2")
-    ]
-    assert result.asset_materializations_for_node("downstream_asset") == [
-        AssetMaterialization(AssetKey(["downstream_asset"]), partition="2")
-    ]
+
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("upstream_asset"),
+        [AssetMaterialization(AssetKey(["upstream_asset"]), partition="2")],
+        exclude_fields=["tags"],
+    )
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("downstream_asset"),
+        [AssetMaterialization(AssetKey(["downstream_asset"]), partition="2")],
+        exclude_fields=["tags"],
+    )
 
 
 def test_asset_partitions_time_window_non_identity_partition_mapping():
@@ -299,16 +305,24 @@ def test_multi_asset_non_identity_partition_mapping():
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="2")
-    assert result.asset_materializations_for_node("upstream_asset") == [
-        AssetMaterialization(AssetKey(["upstream_asset_1"]), partition="2"),
-        AssetMaterialization(AssetKey(["upstream_asset_2"]), partition="2"),
-    ]
-    assert result.asset_materializations_for_node("downstream_asset_1") == [
-        AssetMaterialization(AssetKey(["downstream_asset_1"]), partition="2")
-    ]
-    assert result.asset_materializations_for_node("downstream_asset_2") == [
-        AssetMaterialization(AssetKey(["downstream_asset_2"]), partition="2")
-    ]
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("upstream_asset"),
+        [
+            AssetMaterialization(AssetKey(["upstream_asset_1"]), partition="2"),
+            AssetMaterialization(AssetKey(["upstream_asset_2"]), partition="2"),
+        ],
+        exclude_fields=["tags"],
+    )
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("downstream_asset_1"),
+        [AssetMaterialization(AssetKey(["downstream_asset_1"]), partition="2")],
+        exclude_fields=["tags"],
+    )
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("downstream_asset_2"),
+        [AssetMaterialization(AssetKey(["downstream_asset_2"]), partition="2")],
+        exclude_fields=["tags"],
+    )
 
 
 def test_from_graph():
@@ -414,12 +428,16 @@ def test_non_partitioned_depends_on_last_partition():
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="b")
-    assert result.asset_materializations_for_node("upstream") == [
-        AssetMaterialization(AssetKey(["upstream"]), partition="b")
-    ]
-    assert result.asset_materializations_for_node("downstream") == [
-        AssetMaterialization(AssetKey(["downstream"]))
-    ]
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("upstream"),
+        [AssetMaterialization(AssetKey(["upstream"]), partition="b")],
+        exclude_fields=["tags"],
+    )
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("downstream"),
+        [AssetMaterialization(AssetKey(["downstream"]))],
+        exclude_fields=["tags"],
+    )
 
 
 def test_non_partitioned_depends_on_all_partitions():
@@ -449,12 +467,16 @@ def test_non_partitioned_depends_on_all_partitions():
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="b")
-    assert result.asset_materializations_for_node("upstream") == [
-        AssetMaterialization(AssetKey(["upstream"]), partition="b")
-    ]
-    assert result.asset_materializations_for_node("downstream") == [
-        AssetMaterialization(AssetKey(["downstream"]))
-    ]
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("upstream"),
+        [AssetMaterialization(AssetKey(["upstream"]), partition="b")],
+        exclude_fields=["tags"],
+    )
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("downstream"),
+        [AssetMaterialization(AssetKey(["downstream"]))],
+        exclude_fields=["tags"],
+    )
 
 
 def test_partition_keys_in_range():

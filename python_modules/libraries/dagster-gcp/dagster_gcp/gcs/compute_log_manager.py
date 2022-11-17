@@ -1,18 +1,18 @@
 import json
 import os
-from contextlib import contextmanager
+from typing import Optional, Sequence
 
 from google.cloud import storage  # type: ignore
 
 import dagster._seven as seven
 from dagster import Field, StringSource
 from dagster import _check as check
-from dagster._core.storage.compute_log_manager import (
-    MAX_BYTES_FILE_READ,
-    ComputeIOType,
-    ComputeLogFileData,
-    ComputeLogManager,
+from dagster._config.config_type import Noneable
+from dagster._core.storage.cloud_storage_compute_log_manager import (
+    CloudStorageComputeLogManager,
+    PollingComputeLogSubscriptionManager,
 )
+from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
     LocalComputeLogManager,
@@ -21,7 +21,7 @@ from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import ensure_dir, ensure_file
 
 
-class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
+class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
     """Logs op compute function stdout and stderr to GCS.
 
     Users should not instantiate this class directly. Instead, use a YAML block in ``dagster.yaml``
@@ -36,6 +36,7 @@ class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
             bucket: "mycorp-dagster-compute-logs"
             local_dir: "/tmp/cool"
             prefix: "dagster-test-"
+            upload_interval: 30
 
     Args:
         bucket (str): The name of the gcs bucket to which to log.
@@ -45,6 +46,7 @@ class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
         json_credentials_envvar (Optional[str]): Env variable that contain the JSON with a private key
             and other credentials information. If this is set GOOGLE_APPLICATION_CREDENTIALS will be ignored.
             Can be used when the private key cannot be used as a file.
+        upload_interval: (Optional[int]): Interval in seconds to upload partial log files to S3. By default, will only upload when the capture is complete.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.
     """
@@ -56,6 +58,7 @@ class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
         inst_data=None,
         prefix="dagster",
         json_credentials_envvar=None,
+        upload_interval=None,
     ):
         self._bucket_name = check.str_param(bucket, "bucket")
         self._prefix = check.str_param(prefix, "prefix")
@@ -78,16 +81,10 @@ class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
         if not local_dir:
             local_dir = seven.get_system_temp_directory()
 
-        self.local_manager = LocalComputeLogManager(local_dir)
+        self._upload_interval = check.opt_int_param(upload_interval, "upload_interval")
+        self._local_manager = LocalComputeLogManager(local_dir)
+        self._subscription_manager = PollingComputeLogSubscriptionManager(self)
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
-
-    @contextmanager
-    def _watch_logs(self, pipeline_run, step_key=None):
-        # proxy watching to the local compute log manager, interacting with the filesystem
-        with self.local_manager._watch_logs(  # pylint: disable=protected-access
-            pipeline_run, step_key
-        ):
-            yield
 
     @property
     def inst_data(self):
@@ -100,95 +97,104 @@ class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
             "local_dir": Field(StringSource, is_required=False),
             "prefix": Field(StringSource, is_required=False, default_value="dagster"),
             "json_credentials_envvar": Field(StringSource, is_required=False),
+            "upload_interval": Field(Noneable(int), is_required=False, default_value=None),
         }
 
     @staticmethod
     def from_config_value(inst_data, config_value):
         return GCSComputeLogManager(inst_data=inst_data, **config_value)
 
-    def get_local_path(self, run_id, key, io_type):
-        return self.local_manager.get_local_path(run_id, key, io_type)
+    @property
+    def local_manager(self) -> LocalComputeLogManager:
+        return self._local_manager
 
-    def on_watch_start(self, pipeline_run, step_key):
-        self.local_manager.on_watch_start(pipeline_run, step_key)
+    @property
+    def upload_interval(self) -> Optional[int]:
+        return self._upload_interval if self._upload_interval else None
 
-    def on_watch_finish(self, pipeline_run, step_key):
-        self.local_manager.on_watch_finish(pipeline_run, step_key)
-        key = self.local_manager.get_key(pipeline_run, step_key)
-        self._upload_from_local(pipeline_run.run_id, key, ComputeIOType.STDOUT)
-        self._upload_from_local(pipeline_run.run_id, key, ComputeIOType.STDERR)
+    def _gcs_key(self, log_key, io_type, partial=False):
+        check.inst_param(io_type, "io_type", ComputeIOType)
+        extension = IO_TYPE_EXTENSION[io_type]
+        [*namespace, filebase] = log_key
+        filename = f"{filebase}.{extension}"
+        if partial:
+            filename = f"{filename}.partial"
+        paths = [self._prefix, "storage", *namespace, filename]
+        return "/".join(paths)
 
-    def is_watch_completed(self, run_id, key):
-        return self.local_manager.is_watch_completed(run_id, key)
+    def delete_logs(
+        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+    ):
+        self._local_manager.delete_logs(log_key, prefix)
+        if log_key:
+            gcs_keys_to_remove = [
+                self._gcs_key(log_key, ComputeIOType.STDOUT),
+                self._gcs_key(log_key, ComputeIOType.STDERR),
+                self._gcs_key(log_key, ComputeIOType.STDOUT, partial=True),
+                self._gcs_key(log_key, ComputeIOType.STDERR, partial=True),
+            ]
+            # if the blob doesn't exist, do nothing instead of raising a not found exception
+            self._bucket.delete_blobs(gcs_keys_to_remove, on_error=lambda _: None)
+        elif prefix:
+            # add the trailing '/' to make sure that ['a'] does not match ['apple']
+            delete_prefix = "/".join([self._prefix, "storage", *prefix, ""])
+            to_delete = self._bucket.list_blobs(prefix=delete_prefix)
+            self._bucket.delete_blobs(list(to_delete))
+        else:
+            check.failed("Must pass in either `log_key` or `prefix` argument to delete_logs")
 
-    def download_url(self, run_id, key, io_type):
-        if not self.is_watch_completed(run_id, key):
-            return self.local_manager.download_url(run_id, key, io_type)
+    def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
+        if not self.is_capture_complete(log_key):
+            return None
 
-        url = self._bucket.blob(self._bucket_key(run_id, key, io_type)).generate_signed_url(
+        gcs_key = self._gcs_key(log_key, io_type)
+        return self._bucket.blob(gcs_key).generate_signed_url(
             expiration=3600  # match S3 default expiration
         )
 
-        return url
+    def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
+        if not self.is_capture_complete(log_key):
+            return self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
+        gcs_key = self._gcs_key(log_key, io_type)
+        return f"gs://{self._bucket_name}/{gcs_key}"
 
-    def read_logs_file(self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
-        if self._should_download(run_id, key, io_type):
-            self._download_to_local(run_id, key, io_type)
-        data = self.local_manager.read_logs_file(run_id, key, io_type, cursor, max_bytes)
-        return self._from_local_file_data(run_id, key, io_type, data)
+    def cloud_storage_has_logs(
+        self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False
+    ) -> bool:
+        gcs_key = self._gcs_key(log_key, io_type, partial)
+        return self._bucket.blob(gcs_key).exists()
+
+    def upload_to_cloud_storage(
+        self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
+    ):
+        path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
+        ensure_file(path)
+
+        if partial and os.stat(path).st_size == 0:
+            return
+
+        gcs_key = self._gcs_key(log_key, io_type, partial=partial)
+        with open(path, "rb") as data:
+            self._bucket.blob(gcs_key).upload_from_file(data)
+
+    def download_from_cloud_storage(
+        self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
+    ):
+        path = self.local_manager.get_captured_local_path(
+            log_key, IO_TYPE_EXTENSION[io_type], partial=partial
+        )
+        ensure_dir(os.path.dirname(path))
+
+        gcs_key = self._gcs_key(log_key, io_type, partial=partial)
+        with open(path, "wb") as fileobj:
+            self._bucket.blob(gcs_key).download_to_file(fileobj)
 
     def on_subscribe(self, subscription):
-        self.local_manager.on_subscribe(subscription)
+        self._subscription_manager.add_subscription(subscription)
 
     def on_unsubscribe(self, subscription):
-        self.local_manager.on_unsubscribe(subscription)
-
-    def _should_download(self, run_id, key, io_type):
-        local_path = self.get_local_path(run_id, key, io_type)
-        if os.path.exists(local_path):
-            return False
-        return self._bucket.blob(self._bucket_key(run_id, key, io_type)).exists()
-
-    def _from_local_file_data(self, run_id, key, io_type, local_file_data):
-        is_complete = self.is_watch_completed(run_id, key)
-        path = (
-            "gs://{}/{}".format(self._bucket_name, self._bucket_key(run_id, key, io_type))
-            if is_complete
-            else local_file_data.path
-        )
-
-        return ComputeLogFileData(
-            path,
-            local_file_data.data,
-            local_file_data.cursor,
-            local_file_data.size,
-            self.download_url(run_id, key, io_type),
-        )
-
-    def _upload_from_local(self, run_id, key, io_type):
-        path = self.get_local_path(run_id, key, io_type)
-        ensure_file(path)
-        with open(path, "rb") as data:
-            self._bucket.blob(self._bucket_key(run_id, key, io_type)).upload_from_file(data)
-
-    def _download_to_local(self, run_id, key, io_type):
-        path = self.get_local_path(run_id, key, io_type)
-        ensure_dir(os.path.dirname(path))
-        with open(path, "wb") as fileobj:
-            self._bucket.blob(self._bucket_key(run_id, key, io_type)).download_to_file(fileobj)
-
-    def _bucket_key(self, run_id, key, io_type):
-        check.inst_param(io_type, "io_type", ComputeIOType)
-        extension = IO_TYPE_EXTENSION[io_type]
-        paths = [
-            self._prefix,
-            "storage",
-            run_id,
-            "compute_logs",
-            "{}.{}".format(key, extension),
-        ]
-
-        return "/".join(paths)  # path delimiter
+        self._subscription_manager.remove_subscription(subscription)
 
     def dispose(self):
-        self.local_manager.dispose()
+        self._subscription_manager.dispose()
+        self._local_manager.dispose()
