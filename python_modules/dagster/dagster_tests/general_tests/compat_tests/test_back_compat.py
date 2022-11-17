@@ -1039,3 +1039,16 @@ def test_add_asset_event_tags_table():
 
             assert not "asset_event_tags" in get_sqlite3_tables(db_path)
             assert get_sqlite3_indexes(db_path, "asset_event_tags") == []
+
+
+def test_1_0_17_add_cached_status_data_column():
+    src_dir = file_relative_path(
+        __file__, "snapshot_1_0_17_pre_add_cached_status_data_column/sqlite"
+    )
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs", "index.db")
+        assert get_current_alembic_version(db_path) == "958a9495162d"
+        assert "cached_status_data" not in set(get_sqlite3_columns(db_path, "asset_keys"))
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
+            assert "cached_status_data" in set(get_sqlite3_columns(db_path, "asset_keys"))
