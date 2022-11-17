@@ -56,7 +56,7 @@ def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
 
 class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     """
-    Defines how to translate between slices of Snowflake tables and Pandas DataFrames.
+    Plugin for the Snowflake I/O Manager that can store and load Pandas DataFrames as Snowflake tables.
 
     Examples:
 
