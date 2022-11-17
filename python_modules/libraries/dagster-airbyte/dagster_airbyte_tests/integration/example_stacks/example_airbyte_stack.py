@@ -41,7 +41,7 @@ local_json_conn = AirbyteConnection(
     source=local_json_source,
     destination=local_json_destination,
     stream_config={
-        "my_data_stream": AirbyteSyncMode.FULL_REFRESH_APPEND,
+        "my_data_stream": AirbyteSyncMode.full_refresh_append(),
     },
     normalize_data=False,
 )
@@ -74,7 +74,7 @@ alt_source_local_json_conn = AirbyteConnection(
     source=alternate_local_json_source,
     destination=local_json_destination,
     stream_config={
-        "my_data_stream": AirbyteSyncMode.FULL_REFRESH_APPEND,
+        "my_data_stream": AirbyteSyncMode.full_refresh_append(),
     },
     normalize_data=False,
 )
@@ -102,7 +102,7 @@ alt_dest_local_json_conn = AirbyteConnection(
     source=local_json_source,
     destination=alternate_local_json_destination,
     stream_config={
-        "my_data_stream": AirbyteSyncMode.FULL_REFRESH_APPEND,
+        "my_data_stream": AirbyteSyncMode.full_refresh_append(),
     },
     normalize_data=False,
 )
@@ -123,7 +123,7 @@ dest_default_local_json_conn = AirbyteConnection(
     source=local_json_source,
     destination=local_json_destination,
     stream_config={
-        "my_data_stream": AirbyteSyncMode.FULL_REFRESH_APPEND,
+        "my_data_stream": AirbyteSyncMode.full_refresh_append(),
     },
     normalize_data=False,
     destination_namespace=AirbyteDestinationNamespace.DESTINATION_DEFAULT,
@@ -145,7 +145,7 @@ custom_namespace_local_json_conn = AirbyteConnection(
     source=local_json_source,
     destination=local_json_destination,
     stream_config={
-        "my_data_stream": AirbyteSyncMode.FULL_REFRESH_APPEND,
+        "my_data_stream": AirbyteSyncMode.full_refresh_append(),
     },
     normalize_data=False,
     destination_namespace="my-cool-namespace",
@@ -156,6 +156,28 @@ reconciler_custom_namespace = AirbyteManagedElementReconciler(
     airbyte=airbyte_instance,
     connections=[
         custom_namespace_local_json_conn,
+    ],
+    delete_unmentioned_resources=True,
+)
+
+
+# Version with different sync mode
+
+
+alt_sync_mode_local_json_conn = AirbyteConnection(
+    name="local-json-conn",
+    source=local_json_source,
+    destination=local_json_destination,
+    stream_config={
+        "my_data_stream": AirbyteSyncMode.incremental_append(cursor_field="foo"),
+    },
+    normalize_data=False,
+)
+
+reconciler_alt_sync_mode = AirbyteManagedElementReconciler(
+    airbyte=airbyte_instance,
+    connections=[
+        alt_sync_mode_local_json_conn,
     ],
     delete_unmentioned_resources=True,
 )
