@@ -64,6 +64,7 @@ def dagster_instance_config(
             ),
         )
 
+        schema: Mapping[str, Field]
         if hasattr(custom_instance_class, 'config_schema'):
             schema = merge_dicts(
                     dagster_instance_config_schema(),
