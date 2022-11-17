@@ -323,7 +323,10 @@ class DagsterInstance:
         self._compute_log_manager = check.inst_param(
             compute_log_manager, "compute_log_manager", ComputeLogManager
         )
-        if not isinstance(self._compute_log_manager, CapturedLogManager):
+        if (
+            not isinstance(self._compute_log_manager, CapturedLogManager)
+            and self._compute_log_manager.__class__.__name__ != "CloudComputeLogManager"
+        ):
             deprecation_warning(
                 "ComputeLogManager", "1.2.0", "Implement the CapturedLogManager interface instead."
             )
