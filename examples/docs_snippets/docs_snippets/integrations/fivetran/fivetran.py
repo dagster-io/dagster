@@ -97,3 +97,41 @@ def scope_schedule_assets():
         ]
 
     # end_schedule_assets
+
+
+def scope_add_downstream_assets():
+    from dagster_fivetran import fivetran_resource
+
+    fivetran_instance = fivetran_resource.configured(
+        {
+            "api_key": {"env": "FIVETRAN_API_KEY"},
+            "api_secret": {"env": "FIVETRAN_API_SECRET"},
+        }
+    )
+    snowflake_io_manager = ...
+
+    # start_add_downstream_assets
+    import json
+    from dagster import asset, repository, with_resources, AssetIn, AssetKey
+    from dagster_fivetran import load_assets_from_fivetran_instance
+
+    fivetran_assets = load_assets_from_fivetran_instance(
+        fivetran_instance,
+        io_manager_key="snowflake_io_manager",
+    )
+
+    @asset(ins={"survey_responses": AssetIn(key=AssetKey("public", "survey_responses"))})
+    def survey_responses_file(survey_responses):
+        with open("survey_responses.json", "w", encoding="utf8") as f:
+            f.write(json.dumps(survey_responses, indent=2))
+
+    @repository
+    def my_repo():
+        return [
+            with_resources(
+                [fivetran_assets, survey_responses_file],
+                {"snowflake_io_manager": snowflake_io_manager},
+            )
+        ]
+
+    # end_add_downstream_assets

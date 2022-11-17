@@ -150,7 +150,45 @@ fivetran_assets = with_resources(
 
 ---
 
-## Step 3: Scheduling Fivetran syncs
+## Step 3: Adding downstream assets
+
+<Note>
+  Looking to orchestrate Fivetran with dbt? Check out our{" "}
+  <a href="/integrations/dbt">dbt integration docs</a>.
+</Note>
+
+Once you have loaded your Fivetran assets into Dagster, you can create assets which depend on them. These can be other assets pulled in from external sources such as [dbt](/integrations/dbt) or assets defined in Python code.
+
+In this case, we have a Fivetran connector which is storing data in the `public.survey_responses` table in our Snowflake warehouse. The corresponding asset key is `public/survey_responses`. We specify the output [IO manager](/concepts/io-management/io-managers) to tell downstream assets how to retreive the data.
+
+```python startafter=start_add_downstream_assets endbefore=end_add_downstream_assets file=/integrations/fivetran/fivetran.py dedent=4
+import json
+from dagster import asset, repository, with_resources, AssetIn, AssetKey
+from dagster_fivetran import load_assets_from_fivetran_instance
+
+fivetran_assets = load_assets_from_fivetran_instance(
+    fivetran_instance,
+    io_manager_key="snowflake_io_manager",
+)
+
+@asset(ins={"survey_responses": AssetIn(key=AssetKey("public", "survey_responses"))})
+def survey_responses_file(survey_responses):
+    with open("survey_responses.json", "w", encoding="utf8") as f:
+        f.write(json.dumps(survey_responses, indent=2))
+
+@repository
+def my_repo():
+    return [
+        with_resources(
+            [fivetran_assets, survey_responses_file],
+            {"snowflake_io_manager": snowflake_io_manager},
+        )
+    ]
+```
+
+---
+
+## Step 4: Scheduling Fivetran syncs
 
 Once you have Fivetran assets, you can define a job that runs some or all of these assets on a schedule, triggering the underlying Fivetran sync.
 
