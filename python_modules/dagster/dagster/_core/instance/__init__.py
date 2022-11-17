@@ -28,6 +28,8 @@ from typing import (
     Union,
     cast,
 )
+from dagster._config.field import Field
+from dagster._utils.log import get_dagster_logger
 
 import yaml
 
@@ -90,6 +92,7 @@ if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent, DagsterEventType
     from dagster._core.events.log import EventLogEntry
     from dagster._core.execution.backfill import PartitionBackfill
+    from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.host_representation import (
@@ -109,7 +112,6 @@ if TYPE_CHECKING:
         TickStatus,
     )
     from dagster._core.secrets import SecretsLoader
-    from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
     from dagster._core.storage.captured_log_manager import CapturedLogManager
     from dagster._core.storage.compute_log_manager import ComputeLogManager
@@ -383,6 +385,11 @@ class DagsterInstance:
             )
 
     # ctors
+
+    @classmethod
+    def config_schema(cls) -> Mapping[str, Field]:
+        from .config import dagster_instance_config_schema
+        return dagster_instance_config_schema()
 
     @public
     @staticmethod
@@ -836,17 +843,17 @@ class DagsterInstance:
     def create_run_for_pipeline(
         self,
         pipeline_def: PipelineDefinition,
-        execution_plan: Optional["ExecutionPlan"]=None,
-        run_id: Optional[str]=None,
-        run_config: Optional[Mapping[str, object]]=None,
-        mode: Optional[str]=None,
-        solids_to_execute: Optional[AbstractSet[str]]=None,
-        status: Optional[str]=None,
-        tags: Optional[Mapping[str, str]]=None,
-        root_run_id: Optional[str]=None,
-        parent_run_id: Optional[str]=None,
-        solid_selection: Optional[Sequence[str]]=None,
-        asset_selection: Optional[FrozenSet[AssetKey]]=None,
+        execution_plan: Optional["ExecutionPlan"] = None,
+        run_id: Optional[str] = None,
+        run_config: Optional[Mapping[str, object]] = None,
+        mode: Optional[str] = None,
+        solids_to_execute: Optional[AbstractSet[str]] = None,
+        status: Optional[str] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        root_run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        solid_selection: Optional[Sequence[str]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
         repository_load_data=None,

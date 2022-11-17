@@ -358,9 +358,7 @@ def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
         raise click.UsageError("Cannot specify both -c / --config and --config-json")
 
     elif config:
-        config_file_list = list(
-            check.opt_tuple_param(config, "config", of_type=str)
-        )
+        config_file_list = list(check.opt_tuple_param(config, "config", of_type=str))
         return get_run_config_from_file_list(config_file_list)
 
     elif config_json:

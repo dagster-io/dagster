@@ -179,7 +179,9 @@ def create_field_substitution_collision_error(
     )
 
 
-def create_fields_not_defined_error(context: ContextData, undefined_fields: Sequence[str]) -> EvaluationError:
+def create_fields_not_defined_error(
+    context: ContextData, undefined_fields: Sequence[str]
+) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
     check_config_type_in_context_has_fields(context, "context")
     check.list_param(undefined_fields, "undefined_fields", of_type=str)

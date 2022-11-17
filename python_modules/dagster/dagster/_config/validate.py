@@ -139,7 +139,9 @@ def _validate_scalar_union_config(
         )
 
 
-def _validate_empty_selector_config(context: ValidationContext) -> EvaluateValueResult[Mapping[str, object]]:
+def _validate_empty_selector_config(
+    context: ValidationContext,
+) -> EvaluateValueResult[Mapping[str, object]]:
     fields = check.not_none(context.config_type_snap.fields)
     if len(fields) > 1:
         return EvaluateValueResult.for_error(

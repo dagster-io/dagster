@@ -412,6 +412,7 @@ def execute_solid(
     )
     return result.result_for_handle(solid_def.name)
 
+
 @contextmanager
 def copy_directory(src):
     with tempfile.TemporaryDirectory() as temp_dir:

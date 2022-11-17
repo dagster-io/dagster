@@ -1,4 +1,5 @@
 from typing import Any
+
 from dagster._core.definitions.events import Failure, TypeCheck
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
@@ -49,9 +50,9 @@ def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:
     execution_plan = create_execution_plan(pipeline)
     pipeline_run = instance.create_run_for_pipeline(pipeline_def)
     with scoped_pipeline_context(execution_plan, pipeline, {}, pipeline_run, instance) as context:
-        context = context.for_type(dagster_type)
+        type_check_context = context.for_type(dagster_type)
         try:
-            type_check = dagster_type.type_check(context, value)
+            type_check = dagster_type.type_check(type_check_context, value)
         except Failure as failure:
             return TypeCheck(success=False, description=failure.description)
 

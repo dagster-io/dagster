@@ -3,16 +3,18 @@ from typing import Dict, Mapping, TypeVar, Union, cast
 
 import dagster._check as check
 
-K, V = TypeVar("K"), TypeVar("V")
-K2, V2 = TypeVar("K2"), TypeVar("V2")
+K = TypeVar("K")
+V = TypeVar("V")
+K2 = TypeVar("K2")
+V2 = TypeVar("V2")
 
 
 def _deep_merge_dicts(
     onto_dict: Dict[K, V], from_dict: Mapping[K2, V2]
-) -> Dict[Union[K, K2], Union[V, V2]]:
+) -> Dict[Union[K, K2], Union[V, V2, Dict[object, object]]]:
     check.mapping_param(from_dict, "from_dict")
     check.dict_param(onto_dict, "onto_dict")
-    _onto_dict = cast(Dict[Union[K, K2], Union[V, V2]], onto_dict)
+    _onto_dict = cast(Dict[Union[K, K2], Union[V, V2, Dict[object, object]]], onto_dict)
 
     for from_key, from_value in from_dict.items():
         if from_key not in onto_dict:
@@ -30,7 +32,7 @@ def _deep_merge_dicts(
 
 def deep_merge_dicts(
     onto_dict: Mapping[K, V], from_dict: Mapping[K2, V2]
-) -> Dict[Union[K, K2], Union[V, V2]]:
+) -> Dict[Union[K, K2], Union[V, V2, Dict[object, object]]]:
     """
     Returns a recursive union of two input dictionaries:
     * The returned dictionary has an entry for any key that's in either of the inputs.
@@ -41,7 +43,7 @@ def deep_merge_dicts(
     dictionaries, the returned dictionary contains the value from from_dict.
     """
     onto_dict = copy.deepcopy(onto_dict if isinstance(onto_dict, dict) else dict(onto_dict))
-    return _deep_merge_dicts(onto_dict, from_dict)
+    return _deep_merge_dicts(onto_dict, from_dict)  # type: ignore
 
 
 def merge_dicts(*args: Mapping[K, V]) -> Dict[K, V]:

@@ -1,6 +1,6 @@
 import os
 import warnings
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Tuple, Type, cast
 
 from dagster import Array, Bool
 from dagster import _check as check
@@ -12,8 +12,8 @@ from dagster._utils import merge_dicts
 from dagster._utils.yaml_utils import load_yaml_from_globs
 
 if TYPE_CHECKING:
-    from dagster._core.instance import DagsterInstance
     from dagster._core.definitions.run_request import InstigatorType
+    from dagster._core.instance import DagsterInstance
     from dagster._core.scheduler.instigation import TickStatus
 
 DAGSTER_CONFIG_YAML_FILENAME = "dagster.yaml"
@@ -27,10 +27,10 @@ def dagster_instance_config(
     base_dir: str,
     config_filename: str = DAGSTER_CONFIG_YAML_FILENAME,
     overrides: Optional[Mapping[str, object]] = None,
-) -> Tuple[Mapping[str, object], Type["DagsterInstance"]]:
+) -> Tuple[Mapping[str, object], Optional[Type["DagsterInstance"]]]:
     check.str_param(base_dir, "base_dir")
     check.invariant(os.path.isdir(base_dir), "base_dir should be a directory")
-    overrides = check.opt_dict_param(overrides, "overrides")
+    overrides = check.opt_mapping_param(overrides, "overrides")
 
     config_yaml_path = os.path.join(base_dir, config_filename)
 
@@ -57,13 +57,20 @@ def dagster_instance_config(
                 custom_instance_class_data,
             )
 
-        custom_instance_class = class_from_code_pointer(
-            custom_instance_class_data["module"], custom_instance_class_data["class"]
+        custom_instance_class = cast(
+            Type[DagsterInstance],
+            class_from_code_pointer(
+                custom_instance_class_data["module"], custom_instance_class_data["class"]
+            ),
         )
 
-        schema = merge_dicts(
-            dagster_instance_config_schema(), custom_instance_class.config_schema()
-        )
+        if hasattr(custom_instance_class, 'config_schema'):
+            schema = merge_dicts(
+                    dagster_instance_config_schema(),
+                    custom_instance_class.config_schema()  # type: ignore
+            )
+        else:
+            schema = dagster_instance_config_schema()
     else:
         custom_instance_class = None
         schema = dagster_instance_config_schema()
@@ -100,7 +107,7 @@ def dagster_instance_config(
             dagster_config_dict,
         )
 
-    return (dagster_config.value, custom_instance_class)
+    return (check.not_none(dagster_config.value), custom_instance_class)
 
 
 def config_field_for_configurable_class() -> Field:
