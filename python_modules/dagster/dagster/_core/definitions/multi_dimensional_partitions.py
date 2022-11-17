@@ -213,6 +213,9 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         )
         return partition_str
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(dimensions={[str(dim) for dim in self.partitions_defs]}"
+
 
 def get_tags_from_multi_partition_key(multi_partition_key: MultiPartitionKey) -> Mapping[str, str]:
     check.inst_param(multi_partition_key, "multi_partition_key", MultiPartitionKey)

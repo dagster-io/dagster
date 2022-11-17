@@ -320,18 +320,22 @@ def get_materialization_cts_grouped_by_dimension(
     )
     materialization_counts_grouped_by_dimension: List[List[int]] = []
 
-    primary_dimension = partition_dimensions[0]
-    secondary_dimension = partition_dimensions[1]
+    primary_dim_keys = (
+        partition_dimensions[0]
+        .external_partitions_def_data.get_partitions_definition()
+        .get_partition_keys()
+    )
+    secondary_dim_keys = (
+        partition_dimensions[1]
+        .external_partitions_def_data.get_partitions_definition()
+        .get_partition_keys()
+    )
 
-    for (
-        primary_dim_key
-    ) in (
-        primary_dimension.external_partitions_def_data.get_partitions_definition().get_partition_keys()
-    ):
+    for primary_dim_key in primary_dim_keys:
         materialization_counts_grouped_by_dimension.append(
             [
                 db_materialization_counts.get(primary_dim_key, {}).get(secondary_dim_key, 0)
-                for secondary_dim_key in secondary_dimension.external_partitions_def_data.get_partitions_definition().get_partition_keys()
+                for secondary_dim_key in secondary_dim_keys
             ]
         )
     return materialization_counts_grouped_by_dimension
