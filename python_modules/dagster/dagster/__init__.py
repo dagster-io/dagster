@@ -210,6 +210,9 @@ from dagster._core.definitions.logger_definition import (
     build_init_logger_context as build_init_logger_context,
     logger as logger,
 )
+from dagster._core.definitions.logical_version import (
+    LogicalVersion as LogicalVersion,
+)
 from dagster._core.definitions.materialize import (
     materialize as materialize,
     materialize_to_memory as materialize_to_memory,

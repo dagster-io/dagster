@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Union
 from typing_extensions import Final
 
 from dagster import _check as check
+from dagster._annotations import experimental
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import (
@@ -25,13 +26,14 @@ class UnknownValue:
 UNKNOWN_VALUE: Final[UnknownValue] = UnknownValue()
 
 
+@experimental
 class LogicalVersion(
     NamedTuple(
         "_LogicalVersion",
         [("value", str)],
     )
 ):
-    """Class that represents a logical version for an asset.
+    """Represents a logical version for an asset.
 
     Args:
         value (str): An arbitrary string representing a logical version.
