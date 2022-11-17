@@ -46,7 +46,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         json_credentials_envvar (Optional[str]): Env variable that contain the JSON with a private key
             and other credentials information. If this is set GOOGLE_APPLICATION_CREDENTIALS will be ignored.
             Can be used when the private key cannot be used as a file.
-        upload_interval: (Optional[int]): Interval in seconds to upload partial log files to S3. By default, will only upload when the capture is complete.
+        upload_interval: (Optional[int]): Interval in seconds to upload partial log files to GCS. By default, will only upload when the capture is complete.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.
     """
