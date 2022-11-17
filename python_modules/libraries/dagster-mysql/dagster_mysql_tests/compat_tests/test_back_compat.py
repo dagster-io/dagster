@@ -267,3 +267,29 @@ def test_add_asset_event_tags_table(hostname, conn_string):
             indexes = get_indexes(instance, "asset_event_tags")
             assert "idx_asset_event_tags" in indexes
             assert "idx_asset_event_tags_event_id" in indexes
+
+
+def test_add_cached_status_data_column(hostname, conn_string):
+    new_columns = {"cached_status_data"}
+
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        # use an old snapshot, it has the bulk actions table but not the new columns
+        file_relative_path(__file__, "snapshot_1_0_17_add_cached_status_data_column.sql"),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+
+            assert get_columns(instance, "asset_keys") & new_columns == set()
+
+            instance.upgrade()
+            assert new_columns <= get_columns(instance, "asset_keys")
