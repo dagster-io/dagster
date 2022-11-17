@@ -596,8 +596,12 @@ class GrapheneDagitQuery(graphene.ObjectType):
             repos = []
             used = set()
             for node in results:
-                if not node.external_repository.name in used:
-                    used.add(node.external_repository.name)
+                repo_id = (
+                    node.external_repository.handle.location_name,
+                    node.external_repository.name,
+                )
+                if not repo_id in used:
+                    used.add(repo_id)
                     repos.append(node.external_repository)
 
         projected_logical_version_loader = ProjectedLogicalVersionLoader(

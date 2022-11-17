@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, Mapping, Optional, Union
 
 import dagster._check as check
 
@@ -105,6 +105,15 @@ class InitializedAirbyteDestination:
         )
 
 
+class AirbyteDestinationNamespace(Enum):
+    """
+    Represents the sync mode for a given Airbyte stream.
+    """
+
+    SAME_AS_SOURCE = "source"
+    DESTINATION_DEFAULT = "destination"
+
+
 class AirbyteConnection:
     """
     User-defined Airbyte connection.
@@ -117,6 +126,9 @@ class AirbyteConnection:
         destination: AirbyteDestination,
         stream_config: Mapping[str, AirbyteSyncMode],
         normalize_data: Optional[bool] = None,
+        destination_namespace: Optional[
+            Union[AirbyteDestinationNamespace, str]
+        ] = AirbyteDestinationNamespace.SAME_AS_SOURCE,
     ):
         self.name = check.str_param(name, "name")
         self.source = check.inst_param(source, "source", AirbyteSource)
@@ -125,6 +137,9 @@ class AirbyteConnection:
             stream_config, "stream_config", key_type=str, value_type=AirbyteSyncMode
         )
         self.normalize_data = check.opt_bool_param(normalize_data, "normalize_data")
+        self.destination_namespace = check.opt_inst_param(
+            destination_namespace, "destination_namespace", (str, AirbyteDestinationNamespace)
+        )
 
     def must_be_recreated(self, other: Optional["AirbyteConnection"]) -> bool:
         return (
@@ -193,6 +208,9 @@ class InitializedAirbyteConnection:
                 destination=dest,
                 stream_config=streams,
                 normalize_data=len(api_dict["operationIds"]) > 0,
+                destination_namespace=api_dict["namespaceFormat"]
+                if api_dict["namespaceDefinition"] == "customformat"
+                else AirbyteDestinationNamespace(api_dict["namespaceDefinition"]),
             ),
             api_dict["connectionId"],
         )
