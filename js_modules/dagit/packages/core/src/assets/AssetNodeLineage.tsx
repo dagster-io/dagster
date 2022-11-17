@@ -67,11 +67,10 @@ export const AssetNodeLineage: React.FC<{
         <div style={{flex: 1}} />
         {Object.values(assetGraphData.nodes).length > 1 ? (
           <LaunchAssetExecutionButton
-            assetKeys={Object.values(assetGraphData.nodes)
-              .filter((n) => n.definition.isSource)
+            allAssetKeys={Object.values(assetGraphData.nodes)
+              .filter((n) => !n.definition.isSource)
               .map((n) => n.assetKey)}
             intent="none"
-            context="all"
           />
         ) : (
           <Button icon={<Icon name="materialization" />} disabled>

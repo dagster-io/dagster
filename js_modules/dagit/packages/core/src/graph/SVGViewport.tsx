@@ -96,7 +96,6 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
     };
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
-    event.stopPropagation();
   },
 
   onWheel(viewport: SVGViewport, event: WheelEvent) {

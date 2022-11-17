@@ -21,7 +21,7 @@ export const AssetActionMenu: React.FC<Props> = (props) => {
   const {canWipeAssets, canLaunchPipelineExecution} = usePermissions();
   const {path} = asset.key;
 
-  const {onClick, loading, launchpadElement} = useMaterializationAction([asset.key]);
+  const {onClick, loading, launchpadElement} = useMaterializationAction();
 
   return (
     <>
@@ -34,7 +34,7 @@ export const AssetActionMenu: React.FC<Props> = (props) => {
                 text="Materialize"
                 icon={loading ? <Spinner purpose="body-text" /> : 'materialization'}
                 disabled={!canLaunchPipelineExecution || loading}
-                onClick={onClick}
+                onClick={(e) => onClick([asset.key], e)}
               />
             </Tooltip>
             <MenuLink
