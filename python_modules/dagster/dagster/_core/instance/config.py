@@ -58,17 +58,17 @@ def dagster_instance_config(
             )
 
         custom_instance_class = cast(
-            Type[DagsterInstance],
+            Type["DagsterInstance"],
             class_from_code_pointer(
                 custom_instance_class_data["module"], custom_instance_class_data["class"]
             ),
         )
 
         schema: Mapping[str, Field]
-        if hasattr(custom_instance_class, 'config_schema'):
+        if hasattr(custom_instance_class, "config_schema"):
             schema = merge_dicts(
-                    dagster_instance_config_schema(),
-                    custom_instance_class.config_schema()  # type: ignore
+                dagster_instance_config_schema(),
+                custom_instance_class.config_schema(),  # type: ignore
             )
         else:
             schema = dagster_instance_config_schema()

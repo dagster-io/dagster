@@ -13,9 +13,11 @@ from enum import Enum
 from tempfile import TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
+    FrozenSet,
     Generic,
     Iterable,
     List,
@@ -28,13 +30,12 @@ from typing import (
     Union,
     cast,
 )
-from dagster._config.field import Field
-from dagster._utils.log import get_dagster_logger
 
 import yaml
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._config.field import Field
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import (
@@ -68,6 +69,7 @@ from dagster._seven import get_current_datetime_in_utc
 from dagster._utils import merge_dicts, traced
 from dagster._utils.backcompat import deprecation_warning, experimental_functionality_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.log import get_dagster_logger
 
 from .config import (
     DAGSTER_CONFIG_YAML_FILENAME,
@@ -385,11 +387,6 @@ class DagsterInstance:
             )
 
     # ctors
-
-    @classmethod
-    def config_schema(cls) -> Mapping[str, Field]:
-        from .config import dagster_instance_config_schema
-        return dagster_instance_config_schema()
 
     @public
     @staticmethod

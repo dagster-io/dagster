@@ -538,7 +538,7 @@ def execute_job(
     check.opt_sequence_param(asset_selection, "asset_selection", of_type=AssetKey)
 
     # get the repository load data here because we call job.get_definition() later in this fn
-    job, _ = _pipeline_with_repository_load_data(job)
+    job_def, _ = _pipeline_with_repository_load_data(job)
 
     if reexecution_options is not None and op_selection is not None:
         raise DagsterInvariantViolationError(
@@ -550,7 +550,7 @@ def execute_job(
             run = check.not_none(instance.get_run_by_id(reexecution_options.parent_run_id))
             run_config = run.run_config
         result = reexecute_pipeline(
-            pipeline=job,
+            pipeline=job_def,
             parent_run_id=reexecution_options.parent_run_id,
             run_config=run_config,
             step_selection=list(reexecution_options.step_selection),
@@ -562,7 +562,7 @@ def execute_job(
         )
     else:
         result = _logged_execute_pipeline(
-            pipeline=job,
+            pipeline=job_def,
             instance=instance,
             run_config=run_config,
             mode=None,
@@ -575,7 +575,7 @@ def execute_job(
 
     # We use PipelineExecutionResult to construct the JobExecutionResult.
     return ExecuteJobResult(
-        job_def=cast(ReconstructableJob, job).get_definition(),
+        job_def=cast(ReconstructableJob, job_def).get_definition(),
         reconstruct_context=result.reconstruct_context(),
         event_list=result.event_list,
         dagster_run=instance.get_run_by_id(result.run_id),
@@ -1212,7 +1212,7 @@ def _check_execute_pipeline_args(
     IPipeline,
     Optional[Mapping],
     Optional[str],
-    Mapping[str, object],
+    Mapping[str, str],
     Optional[FrozenSet[str]],
     Optional[Sequence[str]],
 ]:
