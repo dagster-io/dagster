@@ -114,6 +114,11 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     2020-01-02|b
     ...
 
+    Args:
+        partitions_defs (Mapping[str, PartitionsDefinition]):
+            A mapping of dimension name to partitions definition. The total set of partitions will
+            be the cross-product of the partitions from each PartitionsDefinition.
+
     Attributes:
         partitions_defs (Sequence[PartitionDimensionDefinition]):
             A sequence of PartitionDimensionDefinition objects, each of which contains a dimension
@@ -212,6 +217,9 @@ class MultiPartitionsDefinition(PartitionsDefinition):
             f"{dimension_2.name.capitalize()}: {str(dimension_2.partitions_def)}"
         )
         return partition_str
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(dimensions={[str(dim) for dim in self.partitions_defs]}"
 
 
 def get_tags_from_multi_partition_key(multi_partition_key: MultiPartitionKey) -> Mapping[str, str]:

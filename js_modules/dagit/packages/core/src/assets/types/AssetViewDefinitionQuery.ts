@@ -3185,8 +3185,8 @@ export interface AssetViewDefinitionQuery_assetOrError_Asset_definition {
   description: string | null;
   graphName: string | null;
   opNames: string[];
-  jobNames: string[];
   opVersion: string | null;
+  jobNames: string[];
   computeKind: string | null;
   isSource: boolean;
   assetKey: AssetViewDefinitionQuery_assetOrError_Asset_definition_assetKey;
