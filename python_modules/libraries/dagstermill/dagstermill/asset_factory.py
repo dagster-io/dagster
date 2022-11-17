@@ -11,7 +11,15 @@ from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
 
 import dagster._check as check
-from dagster import AssetIn, AssetKey, Output, PartitionsDefinition, ResourceDefinition, asset, RetryPolicy
+from dagster import (
+    AssetIn,
+    AssetKey,
+    Output,
+    PartitionsDefinition,
+    ResourceDefinition,
+    RetryPolicy,
+    asset,
+)
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.execution.context.compute import SolidExecutionContext
