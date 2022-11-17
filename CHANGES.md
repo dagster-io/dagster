@@ -1,5 +1,82 @@
 # Changelog
 
+# 1.1.0 (core) / 0.17.0 (libraries)
+
+## Major Changes since 1.0.0 (core) / 0.16.0 (libraries)
+
+### Core
+
+- You can now create **multi-dimensional partitions definitions** for software-defined assets, through the `MultiPartitionsDefinition` API. In Dagit, you can filter and materialize certain partitions by providing ranges per-dimension, and view your materializations by dimension.
+- The new **asset reconciliation sensor** automatically materializes assets that have never been materialized or whose upstream assets have changed since the last time they were materialized. It works with partitioned assets too. You can construct it using `build_asset_reconciliation_sensor`.
+- You can now add a `FreshnessPolicy` to any of your software-defined assets, to specify how up-to-date you expect that asset to be. You can view the freshness status of each asset in Dagit, alert when assets are missing their targets using the `@freshness_policy_sensor`, and use the `build_asset_reconciliation_sensor` to make a sensor that automatically kick off runs to materialize assets based on their freshness policies.
+- You can now **version your asset ops and source assets** to help you track which of your assets are stale. You can do this by assigning `op_version` s to software-defined assets or `observation_fn` s to `SourceAsset`s. When a set of assets is versioned in this way, their “Upstream Changed” status will be based on whether upstream versions have changed, rather than on whether upstream assets have been re-materialized. You can launch runs that materialize only stale assets.
+- The new `@multi_asset_sensor` decorator enables defining custom sensors that trigger based on the materializations of multiple assets. The context object supplied to the decorated function has methods to fetch latest materializations by asset key, as well as built-in cursor management to mark specific materializations as “consumed”, so that they won’t be returned in future ticks. It can also fetch materializations by partition and mark individual partitions as consumed.
+- `RepositoryDefinition` now exposes a `load_asset_value` method, which accepts an asset key and invokes the asset’s I/O manager’s `load_input` function to load the asset as a Python object. This can be used in notebooks to do exploratory data analysis on assets.
+- With the new `asset_selection` parameter on `@sensor` and `SensorDefinition`, you can now define a sensor that directly targets a selection of assets, instead of targeting a job.
+- When running `dagit` or `dagster-daemon` locally, **environment variables included in a `.env` file** in the form  `KEY=value` in the same folder as the command will be automatically included in the environment of any Dagster code that runs, allowing you to easily use environment variables during local development.
+
+### Dagit
+
+- The Asset Graph has been redesigned to make better use of color to communicate asset health. New status indicators make it easy to spot missing and stale assets (even on large graphs!) and the UI updates in real-time as displayed assets are materialized.
+- The Asset Details page has been redesigned and features a new side-by-side UI that makes it easier to inspect event metadata. A color-coded timeline on the partitions view  allows you to drag-select a time range and inspect the metadata and status quickly. The new view also supports assets that have been partitioned across multiple dimensions.
+- The new Workspace page helps you quickly find and navigate between all your Dagster definitions. It’s also been re-architected to load significantly faster when you have thousands of definitions.
+- The Overview page is the new home for the live run timeline and helps you understand the status of all the jobs, schedules, sensors, and backfills across your entire deployment. The timeline is now grouped by repository and shows a run status rollup for each group.
+
+### Integrations
+
+- `dagster-dbt` now supports generating software-defined assets from your dbt Cloud jobs.
+- `dagster-airbyte` and `dagster-fivetran` now support automatically generating assets from your ETL connections using `load_assets_from_airbyte_instance` and `load_assets_from_fivetran_instance`.
+- New `dagster-duckdb` integration: `build_duckdb_io_manager` allows you to build an I/O manager that stores and loads Pandas and PySpark DataFrames in DuckDB.
+
+### Database migration
+
+- Optional database schema migration, which can be run via `dagster instance migrate`:
+    - Improves Dagit performance by adding database indexes which should speed up the run view as well as a range of asset-based queries.
+    - Enables multi-dimensional asset partitions and asset versioning.
+
+### Breaking Changes and Deprecations
+
+- `define_dagstermill_solid`, a legacy API, has been removed from `dagstermill`. Use `define_dagstermill_op` or `define_dagstermill_asset` instead to create an `op` or `asset` from a Jupyter notebook, respectively.
+- The internal `ComputeLogManager` API is marked as deprecated in favor of an updated interface: `CapturedLogManager`. It will be removed in `1.2.0`. This should only affect dagster instances that have implemented a custom compute log manager.
+
+### Dependency Changes
+
+- `dagster-graphql` and `dagit` now use version 3 of `graphene`
+
+## Since 1.0.17
+
+### New
+
+- `build_asset_reconciliation_sensor` now works with support partitioned assets.
+- `build_asset_reconciliation_sensor` now launches runs to keep assets in line with their defined FreshnessPolicies.
+- The `FreshnessPolicy` object is now exported from the top level dagster package.
+- For assets with a `FreshnessPolicy` defined, their current freshness status will be rendered in the asset graph and asset details pages.
+- The AWS, GCS, and Azure compute log managers now take an additional config argument `upload_interval` which specifies in seconds, the interval in which partial logs will be uploaded to the respective cloud storage.  This can be used to display compute logs for long-running compute steps.
+- When running `dagit` or `dagster-daemon` locally, environment variables included in a `.env` file in the form  `KEY=value` in the same folder as the command will be automatically included in the environment of any Dagster code that runs, allowing you to easily test environment variables during local development.
+- `observable_source_asset` decorator creates a `SourceAsset` with an associated `observation_fn` that should return a `LogicalVersion`, a new class that wraps a string expressing a version of an asset’s data value.
+- [dagit] The asset graph now shows branded compute_kind tags for dbt, Airbyte, Fivetran, Python and more.
+- [dagit] The asset details page now features a redesigned event viewer, and separate tabs for Partitions, Events, and Plots. This UI was previously behind a feature flag and is now generally available.
+- [dagit] The asset graph UI has been revamped and makes better use of color to communicate asset status, especially in the zoomed-out view.
+- [dagit] The asset catalog now shows freshness policies in the “Latest Run” column when they are defined on your assets.
+- [dagit] The UI for launching backfills in Dagit has been simplified. Rather than selecting detailed ranges, the new UI allows you to select a large “range of interest” and materialize only the partitions of certain statuses within that range.
+- [dagit] The partitions page of asset jobs has been updated to show per-asset status rather than per-op status, so that it shares the same terminology and color coding as other asset health views.
+- [dagster-k8s] Added an `execute_k8s_job` function that can be called within any op to run an image within a Kubernetes job. The implementation is similar to the build-in `k8s_job_op` , but allows additional customization - for example, you can incorporate the output of a previous op into the launched Kubernetes job by passing it into `execute_k8s_job`.  See the [dagster-k8s API docs](https://docs.dagster.io/_apidocs/libraries/dagster-k8s#ops) for more information.
+- [dagster-databricks] Environment variables used by dagster cloud are now automatically set when submitting databricks jobs if they exist, thank you @zyd14!
+- [dagstermill] `define_dagstermill_asset` now supports `RetryPolicy` . Thanks @**[nickvazz](https://github.com/dagster-io/dagster/commits?author=nickvazz)!**
+- [dagster-airbyte] When loading assets from an Airbyte instance using `load_assets_from_airbyte_instance`, users can now optionally customize asset names using `connector_to_asset_key_fn`.
+- [dagster-fivetran] When loading assets from a Fivetran instance using `load_assets_from_fivetran_instance`, users can now alter the IO manager using `io_manager_key` or `connector_to_io_manager_key_fn`, and customize asset names using `connector_to_asset_key_fn`.
+
+### Bugfixes
+
+- Fixed a bug where terminating runs from a backfill would fail without notice.
+- Executing a subset of ops within a job that specifies its config value directly on the job, it no longer attempts to use that config value as the default. The default is still presented in the editable interface in dagit.
+- [dagit] The partition step run matrix now reflects historical step status instead of just the last run’s step status for a particular partition.
+
+### Documentation
+
+- Updated [Environment variables and secrets docs](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets) with info/instructions for using local `.env` files
+- Added [a new example test to the Testing docs](https://docs.dagster.io/concepts/testing#testing-loading-repository-definitions). This test verifies if Dagster code loads correctly by loading a Dagster repository and its definitions.
+
 # 1.0.17 (core) / 0.16.17 (libraries)
 
 ### New
