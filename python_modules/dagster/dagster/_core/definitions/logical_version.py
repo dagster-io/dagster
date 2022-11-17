@@ -31,7 +31,7 @@ class LogicalVersion(
         [("value", str)],
     )
 ):
-    """Class that represents a logical version for an asset.
+    """Represents a logical version for an asset.
 
     Args:
         value (str): An arbitrary string representing a logical version.
