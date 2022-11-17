@@ -123,7 +123,7 @@ dest_default_local_json_conn = AirbyteConnection(
     source=local_json_source,
     destination=local_json_destination,
     stream_config={
-        "my_data_stream": AirbyteSyncMode.FULL_REFRESH_APPEND,
+        "my_data_stream": AirbyteSyncMode.full_refresh_append(),
     },
     normalize_data=False,
     destination_namespace=AirbyteDestinationNamespace.DESTINATION_DEFAULT,
@@ -145,7 +145,7 @@ custom_namespace_local_json_conn = AirbyteConnection(
     source=local_json_source,
     destination=local_json_destination,
     stream_config={
-        "my_data_stream": AirbyteSyncMode.FULL_REFRESH_APPEND,
+        "my_data_stream": AirbyteSyncMode.full_refresh_append(),
     },
     normalize_data=False,
     destination_namespace="my-cool-namespace",
