@@ -2,7 +2,10 @@ import datetime
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple
 
-from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader
+from dagster_graphql.implementation.loader import (
+    CrossRepoAssetDependedByLoader,
+    ProjectedLogicalVersionLoader,
+)
 
 import dagster._seven as seven
 from dagster import AssetKey, DagsterEventType, EventRecordsFilter
@@ -127,6 +130,12 @@ def get_asset_nodes_by_asset_key(graphene_info) -> Mapping[AssetKey, "GrapheneAs
 
     depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
+    projected_logical_version_loader = ProjectedLogicalVersionLoader(
+        instance=graphene_info.context.instance,
+        key_to_node_map={node.asset_key: node for _, _, node in asset_node_iter(graphene_info)},
+        repositories=unique_repos(repo for _, repo, _ in asset_node_iter(graphene_info)),
+    )
+
     asset_nodes_by_asset_key: Dict[AssetKey, GrapheneAssetNode] = {}
     for repo_loc, repo, external_asset_node in asset_node_iter(graphene_info):
         preexisting_node = asset_nodes_by_asset_key.get(external_asset_node.asset_key)
@@ -136,6 +145,7 @@ def get_asset_nodes_by_asset_key(graphene_info) -> Mapping[AssetKey, "GrapheneAs
                 repo,
                 external_asset_node,
                 depended_by_loader=depended_by_loader,
+                projected_logical_version_loader=projected_logical_version_loader,
             )
 
     return asset_nodes_by_asset_key
@@ -405,3 +415,18 @@ def get_freshness_info(
         currentMinutesLate=current_minutes_late,
         latestMaterializationMinutesLate=latest_materialization_minutes_late,
     )
+
+
+def unique_repos(external_repositories):
+    repos = []
+    used = set()
+    for external_repository in external_repositories:
+        repo_id = (
+            external_repository.handle.location_name,
+            external_repository.name,
+        )
+        if not repo_id in used:
+            used.add(repo_id)
+            repos.append(external_repository)
+
+    return repos
