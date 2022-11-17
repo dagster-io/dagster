@@ -525,6 +525,10 @@ custom_io_mgr_key_asset = dagstermill.define_dagstermill_asset(
     io_manager_key="my_custom_io_manager",
 )
 
+yield_event_asset = dagstermill.define_dagstermill_asset(
+    name="yield_event_asset", notebook_path=nb_test_path("yield_event")
+)
+
 
 # this is hacky. We need a ReconstructablePipeline to run dagstermill, and
 # ReconstructablePipeline.for_module() find the jobs defined in this file. So we need to resolve all
@@ -540,6 +544,7 @@ assets = with_resources(
         b,
         add_two_number_asset,
         hello_world_resource_asset,
+        yield_event_asset,
     ],
     resource_defs={
         "list": ResourceDefinition(lambda _: []),
@@ -563,6 +568,7 @@ goodbye_config_asset_job = make_resolved_job(goodbye_config_asset)
 hello_logging_asset_job = make_resolved_job(hello_logging_asset)
 add_two_number_asset_job = make_resolved_job(add_two_number_asset)
 hello_world_resource_asset_job = make_resolved_job(hello_world_resource_asset)
+yield_event_asset_job = make_resolved_job(yield_event_asset)
 
 
 @repository

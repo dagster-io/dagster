@@ -1,4 +1,5 @@
 import os
+import pickle
 import sys
 import tempfile
 import uuid
@@ -11,7 +12,16 @@ from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
 
 import dagster._check as check
-from dagster import AssetIn, AssetKey, Output, PartitionsDefinition, ResourceDefinition, asset
+from dagster import (
+    AssetIn,
+    AssetKey,
+    Failure,
+    Output,
+    PartitionsDefinition,
+    ResourceDefinition,
+    RetryRequested,
+    asset,
+)
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.execution.context.compute import SolidExecutionContext
@@ -20,6 +30,7 @@ from dagster._utils import safe_tempfile_path
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .engine import DagstermillEngine
+from .errors import DagstermillError
 
 
 def _dm_compute(
@@ -93,7 +104,25 @@ def _dm_compute(
                 f"Notebook execution complete for {name} at {executed_notebook_path}."
             )
             with open(executed_notebook_path, "rb") as fd:
-                return Output(fd.read())
+                yield Output(fd.read())
+
+            # deferred import for perf
+            import scrapbook
+
+            output_nb = scrapbook.read_notebook(executed_notebook_path)
+
+            for key, value in output_nb.scraps.items():
+                if key.startswith("event-"):
+                    with open(value.data, "rb") as fd:
+                        event = pickle.loads(fd.read())
+                        if isinstance(event, (Failure, RetryRequested)):
+                            raise event
+                        else:
+                            yield event
+                else:
+                    raise DagstermillError(
+                        "dagstermill.define_dagstermill_asset does not currently support dagstermill.yield_result"
+                    )
 
     return _t_fn
 
