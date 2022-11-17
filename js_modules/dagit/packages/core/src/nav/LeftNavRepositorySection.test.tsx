@@ -113,7 +113,7 @@ describe('Repository options', () => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocksWithOne]}}
-            routerProps={{initialEntries: ['/instance/runs']}}
+            routerProps={{initialEntries: ['/runs']}}
           >
             <LeftNavRepositorySection />
           </TestProvider>,
@@ -135,7 +135,7 @@ describe('Repository options', () => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocksWithOne]}}
-            routerProps={{initialEntries: ['/instance/runs']}}
+            routerProps={{initialEntries: ['/runs']}}
           >
             <LeftNavRepositorySection />
           </TestProvider>,
@@ -156,7 +156,7 @@ describe('Repository options', () => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocksWithTwo]}}
-            routerProps={{initialEntries: ['/instance/runs']}}
+            routerProps={{initialEntries: ['/runs']}}
           >
             <LeftNavRepositorySection />
           </TestProvider>,
@@ -183,7 +183,7 @@ describe('Repository options', () => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocksWithTwo]}}
-            routerProps={{initialEntries: ['/instance/runs']}}
+            routerProps={{initialEntries: ['/runs']}}
           >
             <LeftNavRepositorySection />
           </TestProvider>,
@@ -205,7 +205,7 @@ describe('Repository options', () => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocksWithTwo]}}
-            routerProps={{initialEntries: ['/instance/runs']}}
+            routerProps={{initialEntries: ['/runs']}}
           >
             <LeftNavRepositorySection />
           </TestProvider>,
@@ -232,7 +232,7 @@ describe('Repository options', () => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocksWithTwo]}}
-            routerProps={{initialEntries: ['/instance/runs']}}
+            routerProps={{initialEntries: ['/runs']}}
           >
             <LeftNavRepositorySection />
           </TestProvider>,
@@ -261,7 +261,7 @@ describe('Repository options', () => {
         const result = render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, initialMocks]}}
-            routerProps={{initialEntries: ['/instance/runs']}}
+            routerProps={{initialEntries: ['/runs']}}
           >
             <LeftNavRepositorySection />
           </TestProvider>,
@@ -276,7 +276,7 @@ describe('Repository options', () => {
         rerender(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocksWithTwo]}}
-            routerProps={{initialEntries: ['/instance/runs']}}
+            routerProps={{initialEntries: ['/runs']}}
           >
             <LeftNavRepositorySection />
           </TestProvider>,
@@ -310,7 +310,7 @@ describe('Repository options', () => {
         const result = render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocksWithOne]}}
-            routerProps={{initialEntries: ['/instance/runs']}}
+            routerProps={{initialEntries: ['/runs']}}
           >
             <LeftNavRepositorySection />
           </TestProvider>,
@@ -329,7 +329,7 @@ describe('Repository options', () => {
         rerender(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocksAfterRemoval]}}
-            routerProps={{initialEntries: ['/instance/runs']}}
+            routerProps={{initialEntries: ['/runs']}}
           >
             <LeftNavRepositorySection />
           </TestProvider>,

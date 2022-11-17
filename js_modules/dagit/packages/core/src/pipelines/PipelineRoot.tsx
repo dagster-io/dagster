@@ -64,7 +64,7 @@ export const PipelineRoot: React.FC<Props> = (props) => {
             '/workspace/:repoPath/jobs/:pipelinePath/runs/:runId',
           ]}
           render={(props: RouteComponentProps<{runId: string}>) => (
-            <Redirect to={`/instance/runs/${props.match.params.runId}`} />
+            <Redirect to={`/runs/${props.match.params.runId}`} />
           )}
         />
         <Route

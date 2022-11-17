@@ -51,11 +51,11 @@ export const AppTopNav: React.FC<Props> = ({
         title: 'runs',
         element: (
           <ShortcutHandler
-            onShortcut={() => history.push('/instance/runs')}
+            onShortcut={() => history.push('/runs')}
             shortcutLabel="⌥2"
             shortcutFilter={(e) => e.altKey && e.code === 'Digit2'}
           >
-            <TopNavLink to="/instance/runs" data-cy="AppTopNav_RunsLink">
+            <TopNavLink to="/runs" data-cy="AppTopNav_RunsLink">
               Runs
             </TopNavLink>
           </ShortcutHandler>
@@ -65,11 +65,11 @@ export const AppTopNav: React.FC<Props> = ({
         title: 'assets',
         element: (
           <ShortcutHandler
-            onShortcut={() => history.push('/instance/assets')}
+            onShortcut={() => history.push('/assets')}
             shortcutLabel="⌥3"
             shortcutFilter={(e) => e.altKey && e.code === 'Digit3'}
           >
-            <TopNavLink to="/instance/assets" data-cy="AppTopNav_AssetsLink" exact={false}>
+            <TopNavLink to="/assets" data-cy="AppTopNav_AssetsLink" exact={false}>
               Assets
             </TopNavLink>
           </ShortcutHandler>
@@ -95,19 +95,19 @@ export const AppTopNav: React.FC<Props> = ({
         element: (
           <ShortcutHandler
             key="deployment"
-            onShortcut={() => history.push('/instance')}
+            onShortcut={() => history.push('/code-locations')}
             shortcutLabel="⌥5"
             shortcutFilter={(e) => e.altKey && e.code === 'Digit5'}
           >
             <TopNavLink
-              to="/instance"
+              to="/code-locations"
               data-cy="AppTopNav_StatusLink"
               isActive={(_, location) => {
                 const {pathname} = location;
                 return (
-                  pathname.startsWith('/instance') &&
-                  !pathname.startsWith('/instance/runs') &&
-                  !pathname.startsWith('/instance/assets')
+                  pathname.startsWith('/code-locations') ||
+                  pathname.startsWith('/health') ||
+                  pathname.startsWith('/config')
                 );
               }}
             >

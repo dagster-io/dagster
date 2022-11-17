@@ -41,17 +41,17 @@ export const RunListTabs: React.FC<Props> = React.memo(({queuedCount, inProgress
         id="in-progress"
       />
       <TabLink title="Done" to={urlForStatus(Array.from(doneStatuses))} id="done" />
-      <TabLink title="Scheduled" to="/instance/runs/scheduled" id="scheduled" />
+      <TabLink title="Scheduled" to="/runs/scheduled" id="scheduled" />
     </Tabs>
   );
 });
 
 export const useSelectedRunsTab = (filterTokens: TokenizingFieldValue[]) => {
   const {pathname} = useLocation();
-  if (pathname === '/instance/runs/timeline') {
+  if (pathname === '/runs/timeline') {
     return 'timeline';
   }
-  if (pathname === '/instance/runs/scheduled') {
+  if (pathname === '/runs/scheduled') {
     return 'scheduled';
   }
   if (pathname === '/overview/backfills') {

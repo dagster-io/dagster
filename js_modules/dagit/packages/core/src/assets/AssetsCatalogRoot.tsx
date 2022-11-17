@@ -71,6 +71,10 @@ export const AssetsCatalogRoot = () => {
   );
 };
 
+// Imported via React.lazy, which requires a default export.
+// eslint-disable-next-line import/no-default-export
+export default AssetsCatalogRoot;
+
 const ASSETS_CATALOG_ROOT_QUERY = gql`
   query AssetsCatalogRootQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {

@@ -42,7 +42,7 @@ export const PipelineExplorerSnapshotRoot = () => {
     <PipelineExplorerContainer
       explorerPath={explorerPath}
       onChangeExplorerPath={(path, mode) => {
-        history[mode](`/instance/snapshots/${explorerPathToString(path)}`);
+        history[mode](`/snapshots/${explorerPathToString(path)}`);
       }}
       onNavigateToSourceAssetNode={({assetKey}) => {
         history.push(assetDetailsPathForKey(assetKey));

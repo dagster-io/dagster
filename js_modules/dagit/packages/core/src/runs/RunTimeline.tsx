@@ -607,7 +607,7 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
             Launch a run
           </AnchorButton>
           <span>or</span>
-          <AnchorButton icon={<Icon name="materialization" />} to="/instance/asset-groups">
+          <AnchorButton icon={<Icon name="materialization" />} to="/asset-groups">
             Materialize an asset
           </AnchorButton>
         </Box>
@@ -735,7 +735,7 @@ const RunHoverContent = (props: RunHoverContentProps) => {
               {run.status === 'SCHEDULED' ? (
                 'Scheduled'
               ) : (
-                <Link to={`/instance/runs/${run.id}`}>
+                <Link to={`/runs/${run.id}`}>
                   <Mono>{run.id.slice(0, 8)}</Mono>
                 </Link>
               )}
