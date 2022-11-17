@@ -34,6 +34,8 @@ from dagster import (
     repository,
     run_failure_sensor,
 )
+from dagster._core.definitions.instigation_logger import get_instigation_log_records
+from dagster._core.log_manager import DAGSTER_META_KEY
 
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
@@ -491,6 +493,12 @@ def instance_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
 
 
+@sensor(job=the_job)
+def logging_sensor(context):
+    context.log.info("hello hello")
+    return SkipReason()
+
+
 @repository
 def the_repo():
     return [
@@ -537,6 +545,7 @@ def the_repo():
         partitioned_asset_selection_sensor,
         asset_selection_sensor,
         targets_asset_selection_sensor,
+        logging_sensor,
     ]
 
 
@@ -2658,3 +2667,34 @@ def test_settings():
     settings = {"use_threads": True, "num_workers": 4}
     with instance_for_test(overrides={"sensors": settings}) as thread_inst:
         assert thread_inst.get_settings("sensors") == settings
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_sensor_logging(executor, instance, workspace_context, external_repo):
+    external_sensor = external_repo.get_external_sensor("logging_sensor")
+    instance.add_instigator_state(
+        InstigatorState(
+            external_sensor.get_external_origin(),
+            InstigatorType.SENSOR,
+            InstigatorStatus.RUNNING,
+        )
+    )
+    assert instance.get_runs_count() == 0
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+    assert len(ticks) == 0
+
+    evaluate_sensors(workspace_context, executor)
+
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+    assert len(ticks) == 1
+    tick = ticks[0]
+    assert tick.log_key
+    records = get_instigation_log_records(instance, tick.log_key)
+    assert len(records) == 1
+    record = records[0]
+    assert record[DAGSTER_META_KEY]["orig_message"] == "hello hello"
+    instance.compute_log_manager.delete_logs(log_key=tick.log_key)
