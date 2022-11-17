@@ -162,7 +162,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               <Tab
                 id="events"
                 title="Events"
-                onClick={() => setParams({...params, view: 'events'})}
+                onClick={() => setParams({...params, view: 'events', partition: undefined})}
               />
               <Tab id="plots" title="Plots" onClick={() => setParams({...params, view: 'plots'})} />
               <Tab
