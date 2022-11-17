@@ -114,6 +114,11 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     2020-01-02|b
     ...
 
+    Args:
+        partitions_defs (Mapping[str, PartitionsDefinition]):
+            A mapping of dimension name to partitions definition. The total set of partitions will
+            be the cross-product of the partitions from each PartitionsDefinition.
+
     Attributes:
         partitions_defs (Sequence[PartitionDimensionDefinition]):
             A sequence of PartitionDimensionDefinition objects, each of which contains a dimension
