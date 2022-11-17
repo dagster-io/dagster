@@ -30,7 +30,6 @@ from dagster._utils import safe_tempfile_path
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .engine import DagstermillEngine
-from .errors import DagstermillError
 
 
 def _dm_compute(
@@ -119,10 +118,6 @@ def _dm_compute(
                             raise event
                         else:
                             yield event
-                else:
-                    raise DagstermillError(
-                        "dagstermill.define_dagstermill_asset does not currently support dagstermill.yield_result"
-                    )
 
     return _t_fn
 

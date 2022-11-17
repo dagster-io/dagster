@@ -2,7 +2,7 @@ import os
 from contextlib import contextmanager
 
 import pytest
-from dagstermill import DagstermillError
+from dagstermill.compat import ExecutionError
 from dagstermill.examples.repository import custom_io_mgr_key_asset
 
 from dagster import AssetKey, DagsterEventType
@@ -66,9 +66,11 @@ def test_hello_world_with_custom_tags_and_description_asset():
 
 @pytest.mark.notebook_test
 def test_yield_results_fails():
-    with pytest.raises(DagstermillError):
+    with pytest.raises(ExecutionError):
         with exec_for_test(
-            "hello_world_config_asset_job", {"execution": {"config": {"in_process": {}}}}
+            "hello_world_config_asset_job",
+            {"execution": {"config": {"in_process": {}}}},
+            raise_on_error=True,
         ):
             pass
 
