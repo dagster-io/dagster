@@ -34,7 +34,7 @@ export const PartitionHealthSummary: React.FC<{
     return <div />;
   }
 
-  const keys = timeDimension.partitionKeys;
+  const keys = assetData.dimensions[0].partitionKeys;
   const spans = assembleIntoSpans(keys, (key) => assetData.stateForPartialKey([key]));
 
   const selectedKeys = selected?.map((s) => s.partitionKey);

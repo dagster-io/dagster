@@ -1,4 +1,3 @@
-import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {IPluginSidebarProps} from '../plugins';
@@ -10,12 +9,10 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
   const repoLocName = props.repoAddress?.location;
 
   return (
-    <Box padding={16}>
-      <NotebookButton
-        path={notebookPath?.value}
-        repoLocation={repoLocName || ''}
-        label="View Source Notebook"
-      />
-    </Box>
+    <NotebookButton
+      path={notebookPath?.value}
+      repoLocation={repoLocName || ''}
+      label="View Source Notebook"
+    />
   );
 };

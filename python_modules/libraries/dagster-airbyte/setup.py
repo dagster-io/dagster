@@ -36,4 +36,9 @@ setup(
         "requests",
     ],
     zip_safe=False,
+    entry_points={
+        "console_scripts": [
+            "dagster-airbyte = dagster_airbyte.cli:main",
+        ]
+    },
 )

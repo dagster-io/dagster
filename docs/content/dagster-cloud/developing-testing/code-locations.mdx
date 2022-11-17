@@ -68,7 +68,7 @@ Additionally, note that:
 
 1. Sign in to your Dagster Cloud account.
 
-2. Click **Workspace**.
+2. Click **Deployment**.
 
 3. Click **+ Add code location**. This will open a YAML editor with a schema describing the acceptable fields:
 
@@ -182,7 +182,7 @@ You can also use the `dagster-cloud workspace` CLI commands to:
 - [Delete code locations](#deleting-code-locations-1)
 - [Sync the workspace and remote](#syncing-the-workspace)
 
-These commands perform the same underlying operations as editing your code locations in the **Workspace** tab in Dagster Cloud. Refer to the [dagster-cloud CLI guide](/dagster-cloud/developing-testing/dagster-cloud-cli) for more info and installation instructions.
+These commands perform the same underlying operations as editing your code locations in the **Deployment** tab in Dagster Cloud. Refer to the [dagster-cloud CLI guide](/dagster-cloud/developing-testing/dagster-cloud-cli) for more info and installation instructions.
 
 ### Adding and updating code locations
 
@@ -216,7 +216,7 @@ dagster-cloud workspace add-location \
     --image dagster/dagster-cloud-examples:1d9c5d
 ```
 
-The arguments to the `add-location` and `update-location` commands are similar to the [keys in the YAML config editor in the **Workspace** tab](#adding-code-locations). To see all available options, run:
+The arguments to the `add-location` and `update-location` commands are similar to the [keys in the YAML config editor in the **Deployment** tab](#adding-code-locations). To see all available options, run:
 
 ```shell
 dagster-cloud workspace add-location --help

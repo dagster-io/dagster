@@ -3135,6 +3135,7 @@ export interface SidebarAssetFragment {
   partitionDefinition: SidebarAssetFragment_partitionDefinition | null;
   assetKey: SidebarAssetFragment_assetKey;
   op: SidebarAssetFragment_op | null;
+  opVersion: string | null;
   repository: SidebarAssetFragment_repository;
   type: SidebarAssetFragment_type | null;
 }

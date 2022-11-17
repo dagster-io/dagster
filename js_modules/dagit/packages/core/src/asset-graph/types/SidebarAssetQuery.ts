@@ -3141,6 +3141,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode {
   partitionDefinition: SidebarAssetQuery_assetNodeOrError_AssetNode_partitionDefinition | null;
   assetKey: SidebarAssetQuery_assetNodeOrError_AssetNode_assetKey;
   op: SidebarAssetQuery_assetNodeOrError_AssetNode_op | null;
+  opVersion: string | null;
   repository: SidebarAssetQuery_assetNodeOrError_AssetNode_repository;
   type: SidebarAssetQuery_assetNodeOrError_AssetNode_type | null;
 }
