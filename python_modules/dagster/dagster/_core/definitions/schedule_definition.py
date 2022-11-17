@@ -251,10 +251,34 @@ def build_schedule_context(
 
 
 @whitelist_for_serdes
-class ScheduleExecutionData(NamedTuple):
-    run_requests: Optional[Sequence[RunRequest]]
-    skip_message: Optional[str]
-    captured_log_key: Optional[Sequence[str]]
+class ScheduleExecutionData(
+    NamedTuple(
+        "_ScheduleExecutionData",
+        [
+            ("run_requests", Optional[Sequence[RunRequest]]),
+            ("skip_message", Optional[str]),
+            ("captured_log_key", Optional[Sequence[str]]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        run_requests: Optional[Sequence[RunRequest]] = None,
+        skip_message: Optional[str] = None,
+        captured_log_key: Optional[Sequence[str]] = None,
+    ):
+        check.opt_sequence_param(run_requests, "run_requests", RunRequest)
+        check.opt_str_param(skip_message, "skip_message")
+        check.opt_list_param(captured_log_key, "captured_log_key", str)
+        check.invariant(
+            not (run_requests and skip_message), "Found both skip data and run request data"
+        )
+        return super(ScheduleExecutionData, cls).__new__(
+            cls,
+            run_requests=run_requests,
+            skip_message=skip_message,
+            captured_log_key=captured_log_key,
+        )
 
 
 class ScheduleDefinition:
