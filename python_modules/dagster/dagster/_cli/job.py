@@ -390,7 +390,7 @@ def do_execute_command(
     instance: DagsterInstance,
     config: Optional[Sequence[str]],
     mode: Optional[str] = None,
-    tags: Optional[Mapping[str, object]] = None,
+    tags: Optional[Mapping[str, str]] = None,
     solid_selection: Optional[Sequence[str]] = None,
     preset: Optional[str] = None,
 ):
@@ -488,7 +488,7 @@ def _create_external_pipeline_run(
     run_config: Mapping[str, object],
     mode: Optional[str],
     preset: Optional[str],
-    tags: Optional[Mapping[str, object]],
+    tags: Optional[Mapping[str, str]],
     solid_selection: Optional[Sequence[str]],
     run_id: Optional[str],
 ):
@@ -560,7 +560,7 @@ def _check_execute_external_pipeline_args(
     run_config: Mapping[str, object],
     mode: Optional[str],
     preset: Optional[str],
-    tags: Optional[Mapping[str, object]],
+    tags: Optional[Mapping[str, str]],
     solid_selection: Optional[Sequence[str]],
 ) -> Tuple[Mapping[str, object], str, Mapping[str, object], Optional[Sequence[str]]]:
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)

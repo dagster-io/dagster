@@ -303,7 +303,7 @@ def execute_pipeline_iterator(
     run_config: Optional[Mapping[str, object]] = None,
     mode: Optional[str] = None,
     preset: Optional[str] = None,
-    tags: Optional[Mapping[str, object]] = None,
+    tags: Optional[Mapping[str, str]] = None,
     solid_selection: Optional[Sequence[str]] = None,
     instance: Optional[DagsterInstance] = None,
 ) -> Iterator[DagsterEvent]:
@@ -587,7 +587,7 @@ def execute_pipeline(
     run_config: Optional[Mapping[str, object]] = None,
     mode: Optional[str] = None,
     preset: Optional[str] = None,
-    tags: Optional[Mapping[str, object]] = None,
+    tags: Optional[Mapping[str, str]] = None,
     solid_selection: Optional[Sequence[str]] = None,
     instance: Optional[DagsterInstance] = None,
     raise_on_error: bool = True,
@@ -647,7 +647,7 @@ def _logged_execute_pipeline(
     run_config: Optional[Mapping[str, object]] = None,
     mode: Optional[str] = None,
     preset: Optional[str] = None,
-    tags: Optional[Mapping[str, object]] = None,
+    tags: Optional[Mapping[str, str]] = None,
     solid_selection: Optional[Sequence[str]] = None,
     raise_on_error: bool = True,
     asset_selection: Optional[Sequence[AssetKey]] = None,
@@ -703,7 +703,7 @@ def reexecute_pipeline(
     step_selection: Optional[Sequence[str]] = None,
     mode: Optional[str] = None,
     preset: Optional[str] = None,
-    tags: Optional[Mapping[str, object]] = None,
+    tags: Optional[Mapping[str, str]] = None,
     instance: Optional[DagsterInstance] = None,
     raise_on_error: bool = True,
 ) -> PipelineExecutionResult:
@@ -820,7 +820,7 @@ def reexecute_pipeline_iterator(
     step_selection: Optional[Sequence[str]] = None,
     mode: Optional[str] = None,
     preset: Optional[str] = None,
-    tags: Optional[Mapping[str, object]] = None,
+    tags: Optional[Mapping[str, str]] = None,
     instance: Optional[DagsterInstance] = None,
 ) -> Iterator[DagsterEvent]:
     """Reexecute a pipeline iteratively.
@@ -1206,7 +1206,7 @@ def _check_execute_pipeline_args(
     run_config: Optional[Mapping[str, object]],
     mode: Optional[str],
     preset: Optional[str],
-    tags: Optional[Mapping[str, object]],
+    tags: Optional[Mapping[str, str]],
     solid_selection: Optional[Sequence[str]] = None,
 ) -> Tuple[
     IPipeline,
