@@ -1,17 +1,16 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, FontFamily, Box, CaptionMono, Caption} from '@dagster-io/ui';
+import {Colors, Icon, FontFamily, Box, CaptionMono, Caption, Spinner} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
-import {NodeHighlightColors} from '../graph/OpNode';
 import {OpTags} from '../graph/OpTags';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 import {AssetLatestRunSpinner, AssetLatestRunWithNotices, AssetRunLink} from './AssetRunLinking';
-import {LiveDataForNode, MISSING_LIVE_DATA} from './Utils';
+import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_ANNOTATIONS_MAX_WIDTH, ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
 
@@ -131,18 +130,33 @@ export const AssetNodeStatusRow: React.FC<{
   liveData: LiveDataForNode | undefined;
   stepKey: string;
 }> = ({definition, liveData, stepKey}) => {
+  if (definition.isSource) {
+    return <span />;
+  }
+
+  if (!liveData) {
+    return (
+      <Box
+        padding={{horizontal: 8}}
+        style={{borderBottomLeftRadius: 4, borderBottomRightRadius: 4, height: 24}}
+        flex={{justifyContent: 'space-between', alignItems: 'center'}}
+        background={Colors.Gray100}
+      >
+        <Spinner purpose="caption-text" />
+      </Box>
+    );
+  }
+
   const {
     currentLogicalVersion,
     projectedLogicalVersion,
     lastMaterialization,
     runWhichFailedToMaterialize,
-  } = liveData || MISSING_LIVE_DATA;
+    freshnessInfo,
+  } = liveData;
+  const late = freshnessInfo && (freshnessInfo.currentMinutesLate || 0) > 0;
 
-  if (definition.isSource) {
-    return <span />;
-  }
-
-  if (runWhichFailedToMaterialize) {
+  if (runWhichFailedToMaterialize || late) {
     return (
       <Box
         padding={{horizontal: 8}}
@@ -150,10 +164,13 @@ export const AssetNodeStatusRow: React.FC<{
         flex={{justifyContent: 'space-between', alignItems: 'center'}}
         background={Colors.Red50}
       >
-        <Caption color={Colors.Red700}>Failed</Caption>
+        <Caption color={Colors.Red700}>
+          {runWhichFailedToMaterialize && late ? `Failed (Late)` : late ? 'Late' : 'Failed'}
+        </Caption>
       </Box>
     );
   }
+
   if (!lastMaterialization) {
     return (
       <Box
@@ -179,6 +196,7 @@ export const AssetNodeStatusRow: React.FC<{
       </Box>
     );
   }
+
   return (
     <Box
       padding={{horizontal: 8}}
@@ -316,8 +334,13 @@ const AssetNodeShowOnHover = styled.span`
 export const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
   ${(p) =>
     p.$isSource
-      ? `border: 2px dashed ${p.$selected ? Colors.Gray500 : Colors.Gray300};`
-      : `border: 2px solid ${p.$selected ? Colors.Blue500 : Colors.Blue200};`}
+      ? `border: 2px dashed ${p.$selected ? Colors.Gray600 : Colors.Gray300}`
+      : `border: 2px solid ${p.$selected ? Colors.Blue500 : Colors.Blue200}`};
+
+  ${(p) =>
+    p.$isSource
+      ? `outline: 3px solid ${p.$selected ? Colors.Gray300 : 'transparent'}`
+      : `outline: 3px solid ${p.$selected ? Colors.Blue200 : 'transparent'}`};
 
   background: ${Colors.White};
   border-radius: 5px;
@@ -342,10 +365,6 @@ const Name = styled.div<{$isSource: boolean}>`
 `;
 
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
-  outline: ${(p) => (p.$selected ? `2px dashed ${NodeHighlightColors.Border}` : 'none')};
-  border-radius: 12px;
-  outline-offset: 2px;
-  outline-width: 4px;
   height: 100%;
 `;
 
@@ -358,8 +377,14 @@ const MinimalAssetNodeBox = styled.div<{
   background: ${(p) => p.$background};
   ${(p) =>
     p.$isSource
-      ? `border: 4px dashed ${p.$selected ? Colors.Gray500 : p.$border};`
-      : `border: 4px solid ${p.$selected ? Colors.Blue500 : p.$border};`}
+      ? `border: 4px dashed ${p.$selected ? Colors.Gray500 : p.$border}`
+      : `border: 4px solid ${p.$selected ? Colors.Blue500 : p.$border}`};
+
+  ${(p) =>
+    p.$isSource
+      ? `outline: 8px solid ${p.$selected ? Colors.Gray300 : 'transparent'}`
+      : `outline: 8px solid ${p.$selected ? Colors.Blue200 : 'transparent'}`};
+
   border-radius: 10px;
   position: relative;
   padding: 4px;

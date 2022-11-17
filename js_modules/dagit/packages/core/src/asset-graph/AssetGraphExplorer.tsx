@@ -278,7 +278,6 @@ export const AssetGraphExplorerWithData: React.FC<
 
   const allowExperimentalZoom =
     flags.flagAssetGraphExperimentalZoom && layout && Object.keys(layout.groups).length;
-  const selectionContext = selectedGraphNodes.length ? 'selected' : 'all';
 
   return (
     <SplitPanelContainer
@@ -424,7 +423,8 @@ export const AssetGraphExplorerWithData: React.FC<
                 dataDescription="materializations"
               />
               <LaunchAssetObservationButton
-                context={selectionContext}
+                intent="none"
+                context={selectedGraphNodes.length > 0 ? 'selected' : 'all'}
                 assetKeys={(selectedGraphNodes.length
                   ? selectedGraphNodes.filter((a) => a.definition.isObservable)
                   : Object.values(assetGraphData.nodes).filter((a) => a.definition.isObservable)
@@ -432,15 +432,21 @@ export const AssetGraphExplorerWithData: React.FC<
                 preferredJobName={explorerPath.pipelineName}
               />
               <LaunchAssetExecutionButton
-                context={selectionContext}
-                assetKeys={(selectedGraphNodes.length
-                  ? selectedGraphNodes.filter((a) => !a.definition.isSource)
-                  : Object.values(assetGraphData.nodes).filter(
-                      (a) =>
-                        !a.definition.isSource && includeInMaterializeAll(liveDataByNode[a.id]),
-                    )
-                ).map((n) => n.assetKey)}
                 preferredJobName={explorerPath.pipelineName}
+                selectedAssetKeys={selectedGraphNodes
+                  .filter((a) => !a.definition.isSource)
+                  .map((n) => n.assetKey)}
+                allAssetKeys={Object.values(assetGraphData.nodes)
+                  .filter((a) => !a.definition.isSource)
+                  .map((n) => n.assetKey)}
+                staleAssetKeys={(selectedGraphNodes.length
+                  ? selectedGraphNodes
+                  : Object.values(assetGraphData.nodes)
+                )
+                  .filter(
+                    (a) => !a.definition.isSource && includeInMaterializeAll(liveDataByNode[a.id]),
+                  )
+                  .map((n) => n.assetKey)}
               />
             </Box>
           </Box>

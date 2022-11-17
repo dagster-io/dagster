@@ -83,7 +83,9 @@ export const SidebarAssetInfo: React.FC<{
             <Description description={asset.description || 'No description provided.'} />
           </Box>
           {asset.op && OpMetadataPlugin?.SidebarComponent && (
-            <OpMetadataPlugin.SidebarComponent definition={asset.op} repoAddress={repoAddress} />
+            <Box padding={{bottom: 16, horizontal: 24}}>
+              <OpMetadataPlugin.SidebarComponent definition={asset.op} repoAddress={repoAddress} />
+            </Box>
           )}
         </SidebarSection>
       )}
