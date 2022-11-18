@@ -223,7 +223,6 @@ def test_backcompat_deployed_job_subset(graphql_client):
 
 
 def test_backcompat_ping_dagit(graphql_client):
-    dagit_host = os.environ.get("BACKCOMPAT_TESTS_DAGIT_HOST", "localhost")
     assert_runs_and_exists(
         graphql_client,
         "test_graphql",
