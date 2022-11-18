@@ -1,20 +1,108 @@
 import json
+from abc import ABC
 from enum import Enum
-from typing import Any, Dict, Mapping, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 import dagster._check as check
 
 
-class AirbyteSyncMode(Enum):
+class AirbyteSyncMode(ABC):
     """
-    Represents the sync mode for a given Airbyte stream.
+    Represents the sync mode for a given Airbyte stream, which governs how Airbyte reads
+    from a source and writes to a destination.
+
+    For more information, see https://docs.airbyte.com/understanding-airbyte/connections/.
     """
 
-    FULL_REFRESH_APPEND = ("full_refresh", "append")
-    FULL_REFRESH_OVERWRITE = ("full_refresh", "overwrite")
-    INCREMENTAL_APPEND = ("incremental", "append")
-    INCREMENTAL_OVERWRITE = ("incremental", "overwrite")
-    INCREMENTAL_APPEND_DEDUP = ("incremental", "append_dedup")
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, AirbyteSyncMode) and self.to_json() == other.to_json()
+
+    def __init__(self, json_repr: Dict[str, Any]):
+        self.json_repr = json_repr
+
+    def to_json(self) -> Dict[str, Any]:
+        return self.json_repr
+
+    @classmethod
+    def from_json(cls, json_repr: Dict[str, Any]) -> "AirbyteSyncMode":
+        return cls(
+            {
+                k: v
+                for k, v in json_repr.items()
+                if k in ("syncMode", "destinationSyncMode", "cursorField", "primaryKey")
+            }
+        )
+
+    @classmethod
+    def full_refresh_append(cls) -> "AirbyteSyncMode":
+        """
+        Syncs the entire data stream from the source, appending to the destination.
+
+        https://docs.airbyte.com/understanding-airbyte/connections/full-refresh-append/
+        """
+        return cls({"syncMode": "full_refresh", "destinationSyncMode": "append"})
+
+    @classmethod
+    def full_refresh_overwrite(cls) -> "AirbyteSyncMode":
+        """
+        Syncs the entire data stream from the source, replaces data in the destination by
+        overwriting it.
+
+        https://docs.airbyte.com/understanding-airbyte/connections/full-refresh-overwrite
+        """
+        return cls({"syncMode": "full_refresh", "destinationSyncMode": "overwrite"})
+
+    @classmethod
+    def incremental_append(
+        cls,
+        cursor_field: Optional[str] = None,
+    ) -> "AirbyteSyncMode":
+        """
+        Syncs only new records from the source, appending to the destination.
+        May optionally specify the cursor field used to determine which records
+        are new.
+
+        https://docs.airbyte.com/understanding-airbyte/connections/incremental-append/
+        """
+        cursor_field = check.opt_str_param(cursor_field, "cursor_field")
+
+        return cls(
+            {
+                "syncMode": "incremental",
+                "destinationSyncMode": "append",
+                **({"cursorField": [cursor_field]} if cursor_field else {}),
+            }
+        )
+
+    @classmethod
+    def incremental_append_dedup(
+        cls,
+        cursor_field: Optional[str] = None,
+        primary_key: Optional[Union[str, List[str]]] = None,
+    ) -> "AirbyteSyncMode":
+        """
+        Syncs new records from the source, appending to an append-only history
+        table in the destination. Also generates a deduplicated view mirroring the
+        source table. May optionally specify the cursor field used to determine
+        which records are new, and the primary key used to determine which records
+        are duplicates.
+
+        https://docs.airbyte.com/understanding-airbyte/connections/incremental-append-dedup/
+        """
+
+        cursor_field = check.opt_str_param(cursor_field, "cursor_field")
+        if isinstance(primary_key, str):
+            primary_key = [primary_key]
+        primary_key = check.opt_list_param(primary_key, "primary_key", of_type=str)
+
+        return cls(
+            {
+                "syncMode": "incremental",
+                "destinationSyncMode": "append_dedup",
+                **({"cursorField": [cursor_field]} if cursor_field else {}),
+                **({"primaryKey": [[x] for x in primary_key]} if primary_key else {}),
+            }
+        )
 
 
 class AirbyteSource:
@@ -193,12 +281,7 @@ class InitializedAirbyteConnection:
         )
 
         streams = {
-            stream["stream"]["name"]: AirbyteSyncMode(
-                (
-                    stream["config"]["syncMode"],
-                    stream["config"]["destinationSyncMode"],
-                )
-            )
+            stream["stream"]["name"]: AirbyteSyncMode.from_json(stream["config"])
             for stream in api_dict["syncCatalog"]["streams"]
         }
         return cls(

@@ -527,6 +527,8 @@ class SqlEventLogStorage(EventLogStorage):
     def delete_events(self, run_id):
         with self.run_connection(run_id) as conn:
             self.delete_events_for_run(conn, run_id)
+        with self.index_connection() as conn:
+            self.delete_events_for_run(conn, run_id)
 
     def delete_events_for_run(self, conn, run_id):
         check.str_param(run_id, "run_id")

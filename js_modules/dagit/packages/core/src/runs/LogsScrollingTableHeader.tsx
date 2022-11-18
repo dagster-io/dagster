@@ -59,7 +59,7 @@ interface HeaderState {
   screenX: number;
 }
 
-class Header extends React.Component<HeaderProps, HeaderState> {
+export class Header extends React.Component<HeaderProps, HeaderState> {
   state = {
     isDragging: false,
     width: 0,
@@ -143,7 +143,7 @@ export const Headers = () => {
   );
 };
 
-const HeadersContainer = styled.div`
+export const HeadersContainer = styled.div`
   display: flex;
   color: ${Colors.Gray400};
   text-transform: uppercase;
@@ -152,7 +152,7 @@ const HeadersContainer = styled.div`
   z-index: 2;
 `;
 
-const HeaderContainer = styled.div`
+export const HeaderContainer = styled.div`
   flex-shrink: 0;
   position: relative;
   user-select: none;

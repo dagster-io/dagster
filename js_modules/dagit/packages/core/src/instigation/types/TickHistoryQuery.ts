@@ -49,6 +49,7 @@ export interface TickHistoryQuery_instigationStateOrError_InstigationState_ticks
   runs: TickHistoryQuery_instigationStateOrError_InstigationState_ticks_runs[];
   originRunIds: string[];
   error: TickHistoryQuery_instigationStateOrError_InstigationState_ticks_error | null;
+  logKey: string[] | null;
   runKeys: string[];
 }
 

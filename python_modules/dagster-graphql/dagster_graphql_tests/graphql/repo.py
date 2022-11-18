@@ -1319,6 +1319,11 @@ def define_sensors():
             tags={"test": "1234"},
         )
 
+    @sensor(job_name="no_config_pipeline")
+    def logging_sensor(context):
+        context.log.info("hello hello")
+        return SkipReason()
+
     return [
         always_no_config_sensor,
         once_no_config_sensor,
@@ -1326,6 +1331,7 @@ def define_sensors():
         multi_no_config_sensor,
         custom_interval_sensor,
         running_in_code_sensor,
+        logging_sensor,
     ]
 
 
