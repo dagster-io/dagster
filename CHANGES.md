@@ -47,6 +47,8 @@
 
 ### New
 
+- The new `UPathIOManager` base class is now a top-level Dagster export. This enables you to write a custom I/O manager that plugs stores data in any filesystem supported by `universal-pathlib` and uses different serialization format than `pickle` (Thanks Daniel Gafni!).
+- The default `fs_io_manager` now inherits from the `UPathIOManager`, which means that its `base_dir` can be a path on any filesystem supported by `universal-pathlib` (Thanks Daniel Gafni!).
 - `build_asset_reconciliation_sensor` now works with support partitioned assets.
 - `build_asset_reconciliation_sensor` now launches runs to keep assets in line with their defined FreshnessPolicies.
 - The `FreshnessPolicy` object is now exported from the top level dagster package.
