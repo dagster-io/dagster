@@ -95,6 +95,9 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
             "schema": Field(
                 StringSource, description="Name of the schema to use", is_required=False
             ),
+            "role": Field(
+                StringSource, description="Name of the role to use", is_required=False
+            ),
         }
     )
     def snowflake_io_manager():
