@@ -125,6 +125,7 @@ class OutputContext:
         asset_info: Optional[AssetOutputInfo] = None,
         warn_on_step_context_use: bool = False,
         partition_key: Optional[str] = None,
+        partition_key_range: Optional[PartitionKeyRange] = None,
     ):
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
@@ -148,6 +149,8 @@ class OutputContext:
             self._partition_key: Optional[str] = self._step_context.partition_key
         else:
             self._partition_key = partition_key
+
+        self._partition_key_range = partition_key_range
 
         if isinstance(resources, Resources):
             self._resources_cm = None
@@ -366,6 +369,20 @@ class OutputContext:
             )
 
         return self._partition_key is not None
+
+    @public  # type: ignore
+    @property
+    def partition_key_range(self) -> PartitionKeyRange:
+        """The partition key range for the current run.
+
+        Raises an error if the current run is not a partitions range run.
+        """
+        if self._partition_key_range is None:
+            check.failed(
+                "Tried to access partition_key_range on a non partitions range run.",
+            )
+
+        return self._partition_key_range
 
     @public  # type: ignore
     @property
@@ -805,6 +822,7 @@ def build_output_context(
     op_def: Optional["OpDefinition"] = None,
     asset_key: Optional[Union[AssetKey, str]] = None,
     partition_key: Optional[str] = None,
+    partition_key_range: Optional[PartitionKeyRange] = None,
 ) -> "OutputContext":
     """Builds output context from provided parameters.
 
@@ -831,6 +849,7 @@ def build_output_context(
         asset_key: Optional[Union[AssetKey, Sequence[str], str]]: The asset key corresponding to the
             output.
         partition_key: Optional[str]: String value representing partition key to execute with.
+        partition_key_range: Optional[PartitionKeyRange]
 
     Examples:
 
@@ -876,4 +895,5 @@ def build_output_context(
         op_def=op_def,
         asset_info=AssetOutputInfo(key=asset_key) if asset_key else None,
         partition_key=partition_key,
+        partition_key_range=partition_key_range,
     )
