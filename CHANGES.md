@@ -2,7 +2,7 @@
 
 # 1.1.0 (core) / 0.17.0 (libraries)
 
-## Major Changes since 1.0.0 (core) / 0.16.0 (libraries)
+## Major Changes since 1.0.0 (core) / 0.17.0 (libraries)
 
 ### Core
 
