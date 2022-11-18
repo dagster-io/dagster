@@ -771,6 +771,7 @@ class ExternalAssetDependency(
             ("upstream_asset_key", AssetKey),
             ("input_name", Optional[str]),
             ("output_name", Optional[str]),
+            ("partition_mapping", Optional[PartitionMapping]),
         ],
     )
 ):
@@ -785,12 +786,14 @@ class ExternalAssetDependency(
         upstream_asset_key: AssetKey,
         input_name: Optional[str] = None,
         output_name: Optional[str] = None,
+        partition_mapping: Optional[PartitionMapping] = None,
     ):
         return super(ExternalAssetDependency, cls).__new__(
             cls,
             upstream_asset_key=upstream_asset_key,
             input_name=input_name,
             output_name=output_name,
+            partition_mapping=partition_mapping,
         )
 
 
