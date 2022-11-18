@@ -1266,8 +1266,7 @@ def test_tuple_param():
 
 def test_opt_tuple_param():
     assert check.opt_tuple_param((1, 2), "something")
-    assert check.opt_tuple_param(None, "something") is None
-    assert check.opt_tuple_param(None, "something", (2,)) == (2,)
+    assert check.opt_tuple_param(None, "something") == tuple()
 
     with pytest.raises(CheckError):
         check.opt_tuple_param(1, "something")

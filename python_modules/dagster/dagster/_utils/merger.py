@@ -1,5 +1,5 @@
 import copy
-from typing import Dict, Mapping, TypeVar, Union, cast
+from typing import Any, Dict, Mapping, TypeVar, Union, cast
 
 import dagster._check as check
 
@@ -46,7 +46,7 @@ def deep_merge_dicts(
     return _deep_merge_dicts(onto_dict, from_dict)  # type: ignore
 
 
-def merge_dicts(*args: Mapping[K, V]) -> Dict[K, V]:
+def merge_dicts(*args: Mapping[Any, Any]) -> Dict[Any, Any]:
     """
     Returns a dictionary with with all the keys in all of the input dictionaries.
 
@@ -57,7 +57,7 @@ def merge_dicts(*args: Mapping[K, V]) -> Dict[K, V]:
     if len(args) < 2:
         check.failed(f"Expected 2 or more args to merge_dicts, found {len(args)}")
 
-    result: Dict[K, V] = {}
+    result: Dict[object, object] = {}
     for arg in args:
         result.update(arg)
     return result
