@@ -80,6 +80,7 @@ def dagster_most_recent_release():
         pytest.param(value, marks=getattr(pytest.mark, key), id=key)
         for key, value in MARK_TO_VERSIONS_MAP.items()
     ],
+    scope="session",
 )
 def release_test_map(request, dagster_most_recent_release):
     dagit_version = request.param[0]
@@ -178,7 +179,7 @@ def docker_service_up(docker_compose_file, build_args=None):
         subprocess.check_output(["docker-compose", "-f", docker_compose_file, "rm", "-f"])
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def graphql_client(release_test_map, retrying_requests):
     dagit_host = os.environ.get("BACKCOMPAT_TESTS_DAGIT_HOST", "localhost")
 
