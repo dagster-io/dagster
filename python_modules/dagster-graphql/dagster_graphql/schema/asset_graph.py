@@ -326,7 +326,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self.graphName is not None
 
     def is_source_asset(self) -> bool:
-        return len(self._external_asset_node.job_names) == 0
+        return self._external_asset_node.is_source
 
     def resolve_assetMaterializations(
         self, graphene_info, **kwargs
