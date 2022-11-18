@@ -95,6 +95,8 @@ The ability to express data dependencies between heterogeneous units of computat
 We'll illustrate this process by adding a non-notebook op to our job, which will take care of downloading the Iris data from the UCI repository. This is a somewhat contrived example; in practice, your notebook ops are more likely to rely on upstream jobs whose outputs might be handles to tables in the data warehouse or to files on S3, and your notebook will likely handle the task of fetching the data.
 
 ```python file=/legacy/data_science/iris_classify_2.py startafter=start
+from dagster._utils import script_relative_path
+
 import dagstermill as dm
 
 from dagster import In, job
