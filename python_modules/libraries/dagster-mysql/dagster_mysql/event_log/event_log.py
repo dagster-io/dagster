@@ -17,6 +17,7 @@ from dagster._core.storage.sql import (
     stamp_alembic_rev,
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._utils.cached_method import cached_method
 
 from ..utils import (
     create_mysql_connection,
@@ -156,6 +157,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def index_connection(self):
         return self._connect()
 
+    @cached_method
     def has_table(self, table_name: str) -> bool:
         return bool(self._engine.dialect.has_table(self._engine.connect(), table_name))
 

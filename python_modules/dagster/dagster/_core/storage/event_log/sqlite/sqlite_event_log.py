@@ -36,6 +36,7 @@ from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
 )
 from dagster._utils import mkdir_p
+from dagster._utils.cached_method import cached_method
 
 from ..schema import SqlEventLogStorageMetadata, SqlEventLogStorageTable
 from ..sql_event_log import RunShardedEventsCursor, SqlEventLogStorage
@@ -132,6 +133,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             if os.path.splitext(os.path.basename(filename))[0] != INDEX_SHARD_NAME
         ]
 
+    @cached_method
     def has_table(self, table_name: str) -> bool:
         conn_string = self.conn_string_for_shard(INDEX_SHARD_NAME)
         engine = create_engine(conn_string, poolclass=NullPool)

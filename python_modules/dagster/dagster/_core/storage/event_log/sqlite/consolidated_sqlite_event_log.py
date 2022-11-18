@@ -21,6 +21,7 @@ from dagster._core.storage.sql import (
 from dagster._core.storage.sqlite import create_db_conn_string
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import mkdir_p
+from dagster._utils.cached_method import cached_method
 
 from ..schema import SqlEventLogStorageMetadata
 from ..sql_event_log import SqlEventLogStorage
@@ -108,6 +109,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def index_connection(self):
         return self._connect()
 
+    @cached_method
     def has_table(self, table_name: str) -> bool:
         engine = create_engine(self._conn_string, poolclass=NullPool)
         return bool(engine.dialect.has_table(engine.connect(), table_name))

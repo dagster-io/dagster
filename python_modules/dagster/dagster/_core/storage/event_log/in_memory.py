@@ -9,6 +9,7 @@ from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.sql import create_engine, get_alembic_config, stamp_alembic_rev
 from dagster._core.storage.sqlite import create_in_memory_conn_string
 from dagster._serdes import ConfigurableClass
+from dagster._utils.cached_method import cached_method
 
 from .schema import SqlEventLogStorageMetadata
 from .sql_event_log import SqlEventLogStorage
@@ -53,6 +54,7 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def index_connection(self):
         yield self._conn
 
+    @cached_method
     def has_table(self, table_name: str) -> bool:
         return bool(self._engine.dialect.has_table(self._conn, table_name))
 
