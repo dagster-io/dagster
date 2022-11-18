@@ -9,7 +9,8 @@ RUN pip install \
     -r pins.txt \
     dagster=="${USER_CODE_BACKCOMPAT_VERSION}" \
     dagster-postgres=="${USER_CODE_BACKCOMPAT_LIBRARY_VERSION}" \
-    dagster-docker=="${USER_CODE_BACKCOMPAT_LIBRARY_VERSION}"
+    dagster-docker=="${USER_CODE_BACKCOMPAT_LIBRARY_VERSION}" \
+    dagster-graphql=="${USER_CODE_BACKCOMPAT_LIBRARY_VERSION}"
 
 WORKDIR /opt/dagster/app
 
