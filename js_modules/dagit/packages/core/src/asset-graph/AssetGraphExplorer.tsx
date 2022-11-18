@@ -69,7 +69,9 @@ export const MINIMAL_SCALE = 0.5;
 export const EXPERIMENTAL_SCALE = 0.1;
 
 const includeInMaterializeAll = (liveData?: LiveDataForNode) =>
-  liveData && liveData.currentLogicalVersion !== liveData.projectedLogicalVersion;
+  liveData &&
+  liveData?.currentLogicalVersion !== 'INITIAL' &&
+  liveData.currentLogicalVersion !== liveData.projectedLogicalVersion;
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {

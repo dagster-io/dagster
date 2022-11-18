@@ -184,7 +184,7 @@ export const AssetNodeStatusRow: React.FC<{
     );
   }
 
-  if (currentLogicalVersion !== projectedLogicalVersion) {
+  if (currentLogicalVersion !== 'INITIAL' && currentLogicalVersion !== projectedLogicalVersion) {
     return (
       <Box
         padding={{horizontal: 8}}
@@ -240,7 +240,8 @@ export const AssetNodeMinimal: React.FC<{
               ? Colors.Red50
               : !liveData?.lastMaterialization
               ? Colors.Gray100
-              : liveData?.currentLogicalVersion !== liveData?.projectedLogicalVersion
+              : liveData?.currentLogicalVersion !== 'INITIAL' &&
+                liveData?.currentLogicalVersion !== liveData?.projectedLogicalVersion
               ? Colors.Yellow50
               : Colors.Green50
           }

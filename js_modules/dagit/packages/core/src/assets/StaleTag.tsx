@@ -7,6 +7,7 @@ export const StaleTag: React.FC<{liveData?: LiveDataForNode; onClick?: () => voi
   liveData,
   onClick,
 }) =>
+  liveData?.currentLogicalVersion !== 'INITIAL' &&
   liveData?.currentLogicalVersion !== liveData?.projectedLogicalVersion ? (
     <Box onClick={onClick}>
       <BaseTag
