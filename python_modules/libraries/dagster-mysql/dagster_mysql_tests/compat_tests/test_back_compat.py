@@ -11,7 +11,6 @@ from dagster import AssetKey, AssetMaterialization, AssetObservation, Output, jo
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster._legacy import execute_pipeline, pipeline, solid
 from dagster._utils import file_relative_path
 
 
