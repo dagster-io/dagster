@@ -35,7 +35,7 @@ def basic():
 
 
 @solid
-def ping_dagit(context):
+def ping_dagit():
     client = DagsterGraphQLClient(
         "dagit",
         port_number=3000,
