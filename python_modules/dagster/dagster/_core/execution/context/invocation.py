@@ -261,7 +261,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
             user_events=self._user_events,
             output_metadata=self._output_metadata,
             mapping_key=self._mapping_key,
-            partition_key=self._partition_key
+            partition_key=self._partition_key,
         )
 
     def get_events(self) -> Sequence[UserEvent]:
@@ -387,7 +387,7 @@ class BoundOpExecutionContext(OpExecutionContext):
         user_events: List[UserEvent],
         output_metadata: Dict[str, Any],
         mapping_key: Optional[str],
-        partition_key: Optional[str]
+        partition_key: Optional[str],
     ):
         self._op_def = op_def
         self._op_config = op_config
@@ -402,9 +402,8 @@ class BoundOpExecutionContext(OpExecutionContext):
         self._user_events = user_events
         self._seen_outputs = {}
         self._output_metadata = output_metadata
-        self._mapping_key = mapping_key,
+        self._mapping_key = mapping_key
         self._partition_key = partition_key
-        
 
     @property
     def solid_config(self) -> Any:
@@ -537,7 +536,7 @@ class BoundOpExecutionContext(OpExecutionContext):
                 output_name in self._seen_outputs and mapping_key in self._seen_outputs[output_name]
             )
         return output_name in self._seen_outputs
-    
+
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
         if self._partition_key is not None:
             return self._partition_key

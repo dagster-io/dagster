@@ -14,11 +14,11 @@ from dagster import (
     Output,
     SourceAsset,
     StaticPartitionsDefinition,
+    build_op_context,
     daily_partitioned_config,
     define_asset_job,
     hourly_partitioned_config,
     materialize,
-    build_op_context
 )
 from dagster._check import CheckError
 from dagster._core.definitions import asset, build_assets_job, multi_asset
@@ -141,6 +141,7 @@ def test_assets_job_with_different_partitions_defs():
 
         build_assets_job("my_job", assets=[upstream, downstream])
 
+
 def test_access_partition_keys_from_context_direct_invocation():
     partitions_def = StaticPartitionsDefinition(["a"])
 
@@ -150,6 +151,7 @@ def test_access_partition_keys_from_context_direct_invocation():
 
     context = build_op_context(partition_key="a")
     partitioned_asset(context)
+
 
 def test_access_partition_keys_from_context_only_one_asset_partitioned():
     upstream_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
