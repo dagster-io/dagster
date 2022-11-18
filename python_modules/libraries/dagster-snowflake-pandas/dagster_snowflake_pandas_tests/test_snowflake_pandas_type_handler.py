@@ -17,8 +17,8 @@ from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
 from pandas import DataFrame
 
 from dagster import (
-    MetadataValue,
     IOManagerDefinition,
+    MetadataValue,
     Out,
     TableColumn,
     TableSchema,

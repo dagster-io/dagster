@@ -4,11 +4,11 @@ from pandas import DataFrame
 
 from dagster import (
     SourceAsset,
-    load_assets_from_current_module,
     TableSchema,
+    asset,
+    load_assets_from_current_module,
     repository,
     with_resources,
-    asset,
 )
 from dagster._utils import file_relative_path
 
