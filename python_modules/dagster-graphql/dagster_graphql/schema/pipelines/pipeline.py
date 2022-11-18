@@ -801,6 +801,18 @@ class GrapheneJob(GraphenePipeline):
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
         name = "Job"
 
+    # doesn't inherit from base class
+    def __init__(self, external_pipeline, batch_loader=None):
+        super().__init__()
+        self._external_pipeline = check.inst_param(
+            external_pipeline, "external_pipeline", ExternalPipeline
+        )
+        # optional run loader, provided by a parent GrapheneRepository object that instantiates
+        # multiple pipelines
+        self._batch_loader = check.opt_inst_param(
+            batch_loader, "batch_loader", RepositoryScopedBatchLoader
+        )
+
 
 class GrapheneGraph(graphene.ObjectType):
     class Meta:
