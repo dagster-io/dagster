@@ -509,7 +509,7 @@ def b():
 
 add_two_number_asset = dagstermill.define_dagstermill_asset(
     name="add_two_numbers_asset",
-    notebook_path=nb_test_path("add_two_numbers"),
+    notebook_path=nb_test_path("add_two_numbers_no_yield"),
     ins={"a": AssetIn("a"), "b": AssetIn("b")},
 )
 
