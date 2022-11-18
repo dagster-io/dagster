@@ -1,6 +1,6 @@
 import enum
 from abc import ABC, abstractmethod
-from typing import Any, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
+from typing import Any, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
 
 import click
 

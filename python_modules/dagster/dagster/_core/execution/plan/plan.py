@@ -1065,13 +1065,13 @@ class ExecutionPlan(
             return UnresolvedMappedStepInput(
                 step_input_snap.name,
                 step_input_snap.dagster_type_key,
-                step_input_snap.source,
+                step_input_source,
             )
         elif isinstance(step_input_source, FromDynamicCollect):
             return UnresolvedCollectStepInput(
                 step_input_snap.name,
                 step_input_snap.dagster_type_key,
-                step_input_snap.source,
+                step_input_source,
             )
         else:
             check.inst_param(step_input_source, "step_input_source", StepInputSource)
@@ -1513,4 +1513,4 @@ def _compute_step_maps(
             known_state.dynamic_mappings,
         )
 
-    return (executable_map, resolvable_map)
+    return (executable_map, dict(resolvable_map))

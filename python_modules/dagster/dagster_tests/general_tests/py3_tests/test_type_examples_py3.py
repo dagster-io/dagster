@@ -1,6 +1,6 @@
-# See: https://github.com/dagster-io/dagster/issues/4209
 # mypy: disable-error-code=valid-type
-# mypy: disable-error-code=attr-defined
+
+# See: https://github.com/dagster-io/dagster/issues/4209
 
 import os
 import pickle
@@ -68,7 +68,7 @@ def concat(_, x: String, y: str) -> str:
 @solid
 def wait(_) -> Nothing:
     time.sleep(0.2)
-    return
+    return None
 
 
 @solid(input_defs=[InputDefinition("ready", dagster_type=Nothing)])

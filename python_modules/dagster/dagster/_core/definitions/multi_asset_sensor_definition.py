@@ -798,9 +798,14 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
 
 class MultiAssetSensorCursorAdvances:
+
+    _advanced_record_ids_by_key: Dict[AssetKey, Set[int]]
+    _partition_key_by_record_id: Dict[int, Optional[str]]
+    advance_all_cursors_called: bool
+
     def __init__(self):
-        self._advanced_record_ids_by_key: Dict[AssetKey, Set[int]] = defaultdict(set)
-        self._partition_key_by_record_id: Dict[int, Optional[str]] = {}
+        self._advanced_record_ids_by_key = defaultdict(set)
+        self._partition_key_by_record_id = {}
         self.advance_all_cursors_called = False
 
     def add_advanced_records(

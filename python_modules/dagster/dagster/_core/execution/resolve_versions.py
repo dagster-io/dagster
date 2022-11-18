@@ -1,5 +1,5 @@
 import re
-from typing import TYPE_CHECKING, Mapping, Optional
+from typing import TYPE_CHECKING, Dict, Mapping, Optional
 
 import dagster._check as check
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
@@ -79,7 +79,7 @@ def resolve_step_versions(pipeline_def: PipelineDefinition, execution_plan: "Exe
     resource_versions = {}
     resource_defs = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs
 
-    step_versions = {}  # step_key (str) -> version (str)
+    step_versions: Dict[str, Optional[str]] = {}  # step_key (str) -> version (str)
 
     for step in execution_plan.get_all_steps_in_topo_order():
         # do not compute versions for steps that are not executable
@@ -136,11 +136,11 @@ def resolve_step_versions(pipeline_def: PipelineDefinition, execution_plan: "Exe
                 if resource_def.version is not None:
                     resource_def_version = resource_def.version
                 else:
-                    version_context = ResourceVersionContext(
+                    resource_version_context = ResourceVersionContext(
                         resource_def=resource_def, resource_config=resource_config
                     )
-                    resource_def_version = pipeline_def.version_strategy.get_resource_version(
-                        version_context
+                    resource_def_version = check.not_none(pipeline_def.version_strategy).get_resource_version(
+                        resource_version_context
                     )
 
                 if resource_def_version is not None:
