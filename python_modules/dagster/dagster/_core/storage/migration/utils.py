@@ -407,3 +407,13 @@ def drop_id_based_event_indices():
                 "event_logs",
                 postgresql_concurrently=True,
             )
+
+
+def add_cached_status_data_column():
+    if not has_table("asset_keys"):
+        return
+
+    if has_column("asset_keys", "cached_status_data"):
+        return
+
+    op.add_column("asset_keys", db.Column("cached_status_data", db.Text))

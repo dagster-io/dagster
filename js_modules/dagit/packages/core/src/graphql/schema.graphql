@@ -2180,8 +2180,8 @@ input ExecutionParams {
           subset.
   """
   selector: JobOrPipelineSelector!
-  runConfigData: RunConfigData = null
-  mode: String = null
+  runConfigData: RunConfigData
+  mode: String
 
   """
   Defines run tags and parent / root relationships.
@@ -2191,15 +2191,15 @@ input ExecutionParams {
           'dagster/is_resume_retry' tag. Dagster's automatic step key selection will
           override any stepKeys provided.
   """
-  executionMetadata: ExecutionMetadata = null
+  executionMetadata: ExecutionMetadata
 
   """
   Defines step keys to execute within the execution plan defined
           by the pipeline `selector`. To execute the entire execution plan, you can omit
           this parameter, provide an empty array, or provide every step name.
   """
-  stepKeys: [String!] = null
-  preset: String = null
+  stepKeys: [String!]
+  preset: String
 }
 
 """
@@ -2242,7 +2242,7 @@ input LaunchBackfillParams {
   selector: PartitionSetSelector!
   partitionNames: [String!]
   reexecutionSteps: [String!]
-  assetSelection: [AssetKeyInput!] = null
+  assetSelection: [AssetKeyInput!]
   fromFailure: Boolean
   allPartitions: Boolean
   tags: [ExecutionTag!]
@@ -2263,13 +2263,13 @@ This type represents a filter on Dagster runs.
 """
 input RunsFilter {
   runIds: [String]
-  pipelineName: String = null
+  pipelineName: String
   tags: [ExecutionTag!]
   statuses: [RunStatus!]
-  snapshotId: String = null
-  updatedAfter: Float = null
-  createdBefore: Float = null
-  mode: String = null
+  snapshotId: String
+  updatedAfter: Float
+  createdBefore: Float
+  mode: String
 }
 
 """
@@ -2436,6 +2436,20 @@ type InstigationTick {
   cursor: String
   runs: [Run!]!
   originRunIds: [String!]!
+  logKey: [String!]
+  logEvents: InstigationEventConnection!
+}
+
+type InstigationEventConnection {
+  events: [InstigationEvent!]!
+  cursor: String!
+  hasMore: Boolean!
+}
+
+type InstigationEvent {
+  message: String!
+  timestamp: String!
+  level: LogLevel!
 }
 
 type ScheduleData {

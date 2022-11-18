@@ -31,7 +31,7 @@ local_json_conn = AirbyteConnection(
         destination_path="/local/destination_file.json",
     ),
     stream_config={
-        "my_data_stream": AirbyteSyncMode.FULL_REFRESH_APPEND,
+        "my_data_stream": AirbyteSyncMode.full_refresh_append(),
     },
     normalize_data=False,
 )

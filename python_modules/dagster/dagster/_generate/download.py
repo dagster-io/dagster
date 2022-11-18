@@ -20,6 +20,7 @@ AVAILABLE_EXAMPLES = [
     "assets_pandas_pyspark",
     "assets_pandas_type_metadata",
     "assets_smoke_test",
+    "quickstart_etl",
     "tutorial_dbt_dagster",
     "tutorial_notebook_assets",
     "deploy_docker",

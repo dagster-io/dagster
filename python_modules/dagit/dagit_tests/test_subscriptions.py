@@ -103,7 +103,7 @@ def test_event_log_subscription():
 
 
 @pytest.mark.skipif(
-    sys.version_info <= (3, 7),
+    sys.version_info < (3, 8),
     reason="Inconsistent GC on the async_generator in 3.7",
 )
 def test_event_log_subscription_chunked():

@@ -19,6 +19,7 @@ from dagster import (
     Output,
     PartitionsDefinition,
     ResourceDefinition,
+    RetryPolicy,
     RetryRequested,
     asset,
 )
@@ -137,6 +138,7 @@ def define_dagstermill_asset(
     op_tags: Optional[Mapping[str, Any]] = None,
     group_name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
+    retry_policy: Optional[RetryPolicy] = None,
 ):
     """Creates a Dagster asset for a Jupyter notebook.
 
@@ -171,6 +173,7 @@ def define_dagstermill_asset(
             context within the notebook.
         io_manager_key (Optional[str]): A string key for the IO manager used to store the output notebook.
             If not provided, the default key output_notebook_io_manager will be used.
+        retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
 
     Examples:
 
@@ -247,6 +250,7 @@ def define_dagstermill_asset(
         group_name=group_name,
         output_required=False,
         io_manager_key=io_mgr_key,
+        retry_policy=retry_policy,
     )(
         _dm_compute(
             name=name,

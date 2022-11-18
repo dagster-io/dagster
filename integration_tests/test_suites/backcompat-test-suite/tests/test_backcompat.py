@@ -63,7 +63,11 @@ def dagster_most_recent_release():
     res = requests.get("https://pypi.org/pypi/dagster/json")
     module_json = res.json()
     releases = module_json["releases"]
-    release_versions = [parse_package_version(release) for release in releases.keys()]
+    release_versions = [
+        parse_package_version(version)
+        for version, files in releases.items()
+        if not any(file.get("yanked") for file in files)
+    ]
     for release_version in reversed(sorted(release_versions)):
         if not release_version.is_prerelease:
             return str(release_version)

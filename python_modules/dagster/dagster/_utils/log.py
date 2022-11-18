@@ -279,3 +279,17 @@ def configure_loggers(handler="default", log_level="INFO"):
     if handler == "default":
         for name in ["dagster", "dagit"]:
             logging.getLogger(name).handlers[0].formatter.formatTime = _mockable_formatTime
+
+
+def create_console_logger(name, level):
+    klass = logging.getLoggerClass()
+    handler = klass(name, level=level)
+    coloredlogs.install(
+        logger=handler,
+        level=level,
+        fmt=default_format_string(),
+        datefmt=default_date_format_string(),
+        field_styles={"levelname": {"color": "blue"}, "asctime": {"color": "green"}},
+        level_styles={"debug": {}, "error": {"color": "red"}},
+    )
+    return handler
