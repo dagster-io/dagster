@@ -1,6 +1,6 @@
 # Changelog
 
-# 1.1.0 (core) / 0.17.0 (libraries)
+# 1.1.1 (core) / 0.17.1 (libraries)
 
 ## Major Changes since 1.0.0 (core) / 0.17.0 (libraries)
 
@@ -30,10 +30,9 @@
 
 ### Database migration
 
-- This release requires a database schema migration, which can be run via `dagster instance migrate`. The schema migration does the following:
-  - Improves Dagit performance by adding database indexes which speed up the run view as well as a range of asset-based queries.
-  - Enables multi-dimensional asset partitions,
-  - Enables accurately marking assets as stale / fresh, when using versioning and in some situations where they were incorrectly not marked "Upstream Changed" in the past.
+- Optional database schema migration, which can be run via `dagster instance migrate`:
+    - Improves Dagit performance by adding database indexes which should speed up the run view as well as a range of asset-based queries.
+    - Enables multi-dimensional asset partitions and asset versioning.
 
 ### Breaking Changes and Deprecations
 
@@ -42,7 +41,7 @@
 
 ### Dependency Changes
 
-- `dagster-graphql` and `dagit` now use version 3 of `graphene`.
+- `dagster-graphql` and `dagit` now use version 3 of `graphene`
 
 ## Since 1.0.17
 
