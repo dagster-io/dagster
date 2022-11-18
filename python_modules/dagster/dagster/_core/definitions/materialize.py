@@ -85,6 +85,7 @@ def materialize_to_memory(
     resources: Optional[Mapping[str, object]] = None,
     partition_key: Optional[str] = None,
     raise_on_error: bool = True,
+    asset_selection: Optional[Sequence[AssetKey]] = None,
 ) -> "ExecuteInProcessResult":
     """
     Executes a single-threaded, in-process run which materializes provided assets in memory.
@@ -148,6 +149,7 @@ def materialize_to_memory(
             instance=instance,
             partition_key=partition_key,
             raise_on_error=raise_on_error,
+            asset_selection=asset_selection,
         )
 
 

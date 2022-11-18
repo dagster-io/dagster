@@ -573,6 +573,7 @@ def load_assets_from_dbt_manifest(
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
     display_raw_sql: Optional[bool] = None,
+    versions=False,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models, described in a manifest.json, into Dagster assets.

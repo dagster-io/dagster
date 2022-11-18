@@ -1,9 +1,11 @@
 # pylint: disable=unused-argument
 
-from typing import Iterable, List, Sequence, Tuple, Union, cast
+from typing import Iterable, List, Mapping, Sequence, Tuple, Union, cast
 
 from dagster import (
+    AssetKey,
     AssetMaterialization,
+    AssetOut,
     AssetsDefinition,
     DagsterInstance,
     IOManager,
@@ -11,6 +13,7 @@ from dagster import (
     asset,
     io_manager,
     materialize,
+    multi_asset,
 )
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 
@@ -218,3 +221,51 @@ def test_unversioned_after_versioned():
     asset2_mat2 = materialize_asset(all_assets, asset2, instance)
 
     assert_different_versions(asset2_mat1, asset2_mat2)
+
+
+def test_multi_asset_with_internal_asset_deps():
+    """
+    x -> a ----> b
+    y -------/
+    """
+
+    def asset_graph_with_versions(versions: Mapping[str, str]) -> Sequence[AssetsDefinition]:
+        @asset(op_version=versions["x"])
+        def x():
+            ...
+
+        @asset(op_version=versions["y"])
+        def y():
+            ...
+
+        @multi_asset(
+            outs={
+                "a": AssetOut(code_version=versions["a"]),
+                "b": AssetOut(code_version=versions["b"]),
+            },
+            internal_asset_deps={"a": {AssetKey("x")}, "b": {AssetKey("y"), AssetKey("a")}},
+            non_argument_deps={"x", "y"},
+            can_subset=True,
+        )
+        def foo():
+            ...
+
+        return [x, y, foo]
+
+    instance = DagsterInstance.ephemeral()
+    materializations1 = materialize_assets(
+        asset_graph_with_versions({"x": "1", "y": "1", "a": "1", "b": "1"}), instance
+    )
+
+    # if x's op version changes, a's and b's logical versions should both change
+    materializations2 = materialize_assets(
+        asset_graph_with_versions({"x": "2", "y": "1", "a": "1", "b": "1"}), instance
+    )
+    # if y's op version changes, b's logical version should change but a's should not
+    materializations3 = materialize_assets(
+        asset_graph_with_versions({"x": "2", "y": "2", "a": "1", "b": "1"}), instance
+    )
+    # if a's code version changes, b's logical version should change
+    materializations4 = materialize_assets(
+        asset_graph_with_versions({"x": "2", "y": "2", "a": "2", "b": "1"}), instance
+    )
