@@ -43,7 +43,6 @@ from .schema import (
     AssetEventTagsTable,
     AssetKeyTable,
     SecondaryIndexMigrationTable,
-    SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
 
@@ -80,6 +79,10 @@ class SqlEventLogStorage(EventLogStorage):
         """This method should perform any schema migrations necessary to bring an
         out-of-date instance of the storage up to date.
         """
+
+    @abstractmethod
+    def has_table(self, table_name: str) -> bool:
+        """This method checks if a table exists in the database."""
 
     def prepare_insert_event(self, event):
         """Helper method for preparing the event log SQL insertion statement.  Abstracted away to
@@ -225,10 +228,10 @@ class SqlEventLogStorage(EventLogStorage):
         ):
 
             if not self.has_table(AssetEventTagsTable.name):
-                raise DagsterInvalidInvocationError(
-                    "In order to store multi-dimensional partition information, you must run "
-                    "`dagster instance migrate` to create the AssetEventTags table."
-                )
+                # If tags table does not exist, silently exit. This is to support OSS
+                # users who have not yet run the migration to create the table.
+                # On read, we will throw an error if the table does not exist.
+                return
 
             check.inst_param(event.dagster_event.asset_key, "asset_key", AssetKey)
             asset_key_str = event.dagster_event.asset_key.to_string()
@@ -646,10 +649,6 @@ class SqlEventLogStorage(EventLogStorage):
                     .where(SecondaryIndexMigrationTable.c.name == name)
                     .values(migration_completed=datetime.now())
                 )
-
-    def has_table(self, table_name: str) -> bool:
-        """This method checks if a table exists in the database."""
-        return SqlEventLogStorageMetadata.tables and table_name in SqlEventLogStorageMetadata.tables
 
     def _apply_filter_to_query(
         self,
