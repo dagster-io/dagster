@@ -1,14 +1,14 @@
 from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
-from dagster_snowflake_pandas import build_snowflake_pandas_io_manager
+from dagster_snowflake_pandas import snowflake_pandas_io_manager
 from pandas import DataFrame
 
 from dagster import (
     SourceAsset,
-    TableSchema,
-    asset,
     load_assets_from_current_module,
+    TableSchema,
     repository,
     with_resources,
+    asset,
 )
 from dagster._utils import file_relative_path
 
@@ -48,7 +48,7 @@ def repo():
     return with_resources(
         load_assets_from_current_module(),
         resource_defs={
-            "io_manager": build_snowflake_pandas_io_manager().configured(
+            "io_manager": snowflake_pandas_io_manager.configured(
                 {
                     "account": {"env": "SNOWFLAKE_ACCOUNT"},
                     "user": {"env": "SNOWFLAKE_USER"},

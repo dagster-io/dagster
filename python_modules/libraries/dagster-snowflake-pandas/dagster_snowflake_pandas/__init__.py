@@ -2,7 +2,7 @@ from dagster._core.utils import check_dagster_package_version
 
 from .snowflake_pandas_type_handler import (
     SnowflakePandasTypeHandler,
-    build_snowflake_pandas_io_manager,
+    snowflake_pandas_io_manager,
 )
 from .version import __version__
 

@@ -123,9 +123,19 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         return [pd.DataFrame]
 
 
-def build_snowflake_pandas_io_manager() -> IOManagerDefinition:
+# Helper function used as a decorator below
+# The only purpose in doing this is so that
+# we have a symbol to hang the snowflake_pandas_io_manager
+# docblock off of. Otherwise we would just invoke build_snowflake_io_manager
+# directly and assign to module-scoped variable
+def wrap_io_manager(fn) -> IOManagerDefinition:
+    return fn()
+
+
+@wrap_io_manager
+def snowflake_pandas_io_manager():
     """
-    Builds an IO manager definition that reads inputs from and writes outputs to Snowflake.
+    An IO manager definition that reads inputs from and writes pandas dataframes to Snowflake.
 
     Returns:
         IOManagerDefinition
