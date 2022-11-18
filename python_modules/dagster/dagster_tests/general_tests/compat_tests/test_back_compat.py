@@ -17,6 +17,7 @@ from dagster import _check as check
 from dagster import file_relative_path, job
 from dagster._cli.debug import DebugRunPayload
 from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEvent
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -1018,6 +1019,15 @@ def test_add_kvs_table():
 
 
 def test_add_asset_event_tags_table():
+    @solid
+    def asset_solid(_):
+        yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={"dagster/foo": "bar"})
+        yield Output(1)
+
+    @pipeline
+    def asset_pipeline():
+        asset_solid()
+
     src_dir = file_relative_path(__file__, "snapshot_1_0_12_pre_add_asset_event_tags_table/sqlite")
 
     with copy_directory(src_dir) as test_dir:
@@ -1025,11 +1035,23 @@ def test_add_asset_event_tags_table():
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             assert not "asset_event_tags" in get_sqlite3_tables(db_path)
+
+            execute_pipeline(asset_pipeline, instance=instance)
+            with pytest.raises(
+                DagsterInvalidInvocationError, match="In order to search for asset event tags"
+            ):
+                instance._event_storage.get_event_tags_for_asset(asset_key=AssetKey(["a"]))
+
             assert get_sqlite3_indexes(db_path, "asset_event_tags") == []
 
             instance.upgrade()
 
             assert "asset_event_tags" in get_sqlite3_tables(db_path)
+
+            execute_pipeline(asset_pipeline, instance=instance)
+            assert instance._event_storage.get_event_tags_for_asset(asset_key=AssetKey(["a"])) == [
+                {"dagster/foo": "bar"}
+            ]
 
             indexes = get_sqlite3_indexes(db_path, "asset_event_tags")
             assert "idx_asset_event_tags_event_id" in indexes
