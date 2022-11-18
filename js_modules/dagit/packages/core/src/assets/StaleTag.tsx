@@ -3,9 +3,13 @@ import React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
 
+export const isAssetMissing = (liveData?: LiveDataForNode) =>
+  liveData && liveData.currentLogicalVersion === null;
+
 export const isAssetStale = (liveData?: LiveDataForNode) =>
   liveData &&
-  liveData?.currentLogicalVersion !== 'INITIAL' &&
+  liveData.currentLogicalVersion !== null &&
+  liveData.currentLogicalVersion !== 'INITIAL' &&
   liveData.currentLogicalVersion !== liveData.projectedLogicalVersion;
 
 export const StaleTag: React.FC<{liveData?: LiveDataForNode; onClick?: () => void}> = ({

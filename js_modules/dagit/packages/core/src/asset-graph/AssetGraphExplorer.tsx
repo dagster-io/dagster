@@ -10,7 +10,7 @@ import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
-import {isAssetStale} from '../assets/StaleTag';
+import {isAssetMissing, isAssetStale} from '../assets/StaleTag';
 import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
@@ -434,7 +434,11 @@ export const AssetGraphExplorerWithData: React.FC<
                   ? selectedGraphNodes
                   : Object.values(assetGraphData.nodes)
                 )
-                  .filter((a) => !a.definition.isSource && isAssetStale(liveDataByNode[a.id]))
+                  .filter(
+                    (a) =>
+                      !a.definition.isSource &&
+                      (isAssetMissing(liveDataByNode[a.id]) || isAssetStale(liveDataByNode[a.id])),
+                  )
                   .map((n) => n.assetKey)}
               />
             </Box>
