@@ -18,6 +18,7 @@ from dagster import (
     op,
     reconstructable,
 )
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.pipeline_run import RunsFilter
@@ -651,6 +652,14 @@ def test_add_kvs_table(hostname, conn_string):
 
 
 def test_add_asset_event_tags_table(hostname, conn_string):
+    @op
+    def yields_materialization_w_tags(_):
+        yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={"dagster/foo": "bar"})
+        yield Output(1)
+
+    @job
+    def asset_job():
+        yields_materialization_w_tags()
 
     _reconstruct_from_file(
         hostname,
@@ -663,7 +672,6 @@ def test_add_asset_event_tags_table(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
@@ -674,8 +682,18 @@ def test_add_asset_event_tags_table(hostname, conn_string):
         with DagsterInstance.from_config(tempdir) as instance:
             assert "asset_event_tags" not in get_tables(instance)
 
+            asset_job.execute_in_process(instance=instance)
+            with pytest.raises(
+                DagsterInvalidInvocationError, match="In order to search for asset event tags"
+            ):
+                instance._event_storage.get_event_tags_for_asset(asset_key=AssetKey(["a"]))
+
             instance.upgrade()
             assert "asset_event_tags" in get_tables(instance)
+            asset_job.execute_in_process(instance=instance)
+            assert instance._event_storage.get_event_tags_for_asset(asset_key=AssetKey(["a"])) == [
+                {"dagster/foo": "bar"}
+            ]
 
             indexes = get_indexes(instance, "asset_event_tags")
             assert "idx_asset_event_tags" in indexes

@@ -132,6 +132,11 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             if os.path.splitext(os.path.basename(filename))[0] != INDEX_SHARD_NAME
         ]
 
+    def has_table(self, table_name: str) -> bool:
+        conn_string = self.conn_string_for_shard(INDEX_SHARD_NAME)
+        engine = create_engine(conn_string, poolclass=NullPool)
+        return bool(engine.dialect.has_table(engine.connect(), table_name))
+
     def path_for_shard(self, run_id):
         return os.path.join(self._base_dir, "{run_id}.db".format(run_id=run_id))
 
