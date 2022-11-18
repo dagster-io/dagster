@@ -1,8 +1,11 @@
 from collections import defaultdict
 
+import pytest
+
 from dagster import (
     AssetKey,
     AssetSelection,
+    DagsterInstance,
     FreshnessPolicy,
     asset,
     build_sensor_context,
@@ -11,6 +14,7 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.freshness_policy_sensor_definition import FreshnessPolicySensorCursor
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.test_utils import instance_for_test
 
 
@@ -81,3 +85,33 @@ def test_repeated_evaluation():
         assert deserialized_cursor.minutes_late_by_key[AssetKey("c")] > 0
         # unless this test takes > 30 minutes, this will always be up to date
         assert deserialized_cursor.minutes_late_by_key[AssetKey("d")] == 0
+
+
+def test_fail_on_return():
+    @freshness_policy_sensor(asset_selection=AssetSelection.all())
+    def all_sensor(_context):
+        return 1
+
+    context = build_sensor_context(
+        cursor=FreshnessPolicySensorCursor({}).to_json(),
+        repository_name="my_repo",
+        repository_def=my_repo,
+        instance=DagsterInstance.ephemeral(),
+    )
+    with pytest.raises(DagsterInvalidDefinitionError):
+        all_sensor.evaluate_tick(context)
+
+
+def test_fail_on_yield():
+    @freshness_policy_sensor(asset_selection=AssetSelection.all())
+    def all_sensor(_context):
+        yield 1
+
+    context = build_sensor_context(
+        cursor=FreshnessPolicySensorCursor({}).to_json(),
+        repository_name="my_repo",
+        repository_def=my_repo,
+        instance=DagsterInstance.ephemeral(),
+    )
+    with pytest.raises(DagsterInvalidDefinitionError):
+        all_sensor.evaluate_tick(context)
