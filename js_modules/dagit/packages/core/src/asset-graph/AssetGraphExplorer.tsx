@@ -10,6 +10,7 @@ import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
+import {isAssetStale} from '../assets/StaleTag';
 import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
@@ -37,14 +38,7 @@ import {AssetGroupNode} from './AssetGroupNode';
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import {AssetNodeLink} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
-import {
-  GraphData,
-  graphHasCycles,
-  LiveData,
-  GraphNode,
-  tokenForAssetKey,
-  LiveDataForNode,
-} from './Utils';
+import {GraphData, graphHasCycles, LiveData, GraphNode, tokenForAssetKey} from './Utils';
 import {AssetGraphLayout} from './layout';
 import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
 import {AssetGraphFetchScope, useAssetGraphData} from './useAssetGraphData';
@@ -67,11 +61,6 @@ interface Props {
 
 export const MINIMAL_SCALE = 0.5;
 export const EXPERIMENTAL_SCALE = 0.1;
-
-const includeInMaterializeAll = (liveData?: LiveDataForNode) =>
-  liveData &&
-  liveData?.currentLogicalVersion !== 'INITIAL' &&
-  liveData.currentLogicalVersion !== liveData.projectedLogicalVersion;
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {
@@ -445,9 +434,7 @@ export const AssetGraphExplorerWithData: React.FC<
                   ? selectedGraphNodes
                   : Object.values(assetGraphData.nodes)
                 )
-                  .filter(
-                    (a) => !a.definition.isSource && includeInMaterializeAll(liveDataByNode[a.id]),
-                  )
+                  .filter((a) => !a.definition.isSource && isAssetStale(liveDataByNode[a.id]))
                   .map((n) => n.assetKey)}
               />
             </Box>

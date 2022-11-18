@@ -3,12 +3,16 @@ import React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
 
+export const isAssetStale = (liveData?: LiveDataForNode) =>
+  liveData &&
+  liveData?.currentLogicalVersion !== 'INITIAL' &&
+  liveData.currentLogicalVersion !== liveData.projectedLogicalVersion;
+
 export const StaleTag: React.FC<{liveData?: LiveDataForNode; onClick?: () => void}> = ({
   liveData,
   onClick,
 }) =>
-  liveData?.currentLogicalVersion !== 'INITIAL' &&
-  liveData?.currentLogicalVersion !== liveData?.projectedLogicalVersion ? (
+  isAssetStale(liveData) ? (
     <Box onClick={onClick}>
       <BaseTag
         fillColor={Colors.Yellow50}
