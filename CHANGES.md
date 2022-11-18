@@ -1,5 +1,13 @@
 # Changelog
 
+# 1.1.2 (core) / 0.17.2 (libraries)
+
+### Bugfixes
+
+- In Dagit, assets that had been materialized prior to upgrading to 1.1.1 were showing as "Stale". This is now fixed.
+- Schedules that were constructed with a list of cron strings previously rendered with an error in Dagit. This is now fixed.
+- For users running dagit version >= 1.0.17 (or dagster-cloud) with dagster version < 1.0.17, errors could occur when hitting "Materialize All" and some other asset-related interactions. This has been fixed.
+
 # 1.1.1 (core) / 0.17.1 (libraries)
 
 ## Major Changes since 1.0.0 (core) / 0.17.0 (libraries)
