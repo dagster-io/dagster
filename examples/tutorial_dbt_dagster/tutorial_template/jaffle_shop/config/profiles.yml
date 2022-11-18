@@ -1,10 +1,10 @@
 ## Refer to Using dbt with Dagster, part one for info about this file:
-## https://docs.dagster.io/integrations/dbt/using-dbt-with-dagster/part-one
+## https://docs.dagster.io/integrations/dbt/using-dbt-with-dagster/part-one#step-2-create-a-duckdb-profile
 
-version: 2
-
-sources:
-  - name: jaffle_shop
-    tables:
-      - name: orders_raw
-      - name: customers_raw
+jaffle_shop:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: tutorial.duckdb
+      schema: jaffle_shop
