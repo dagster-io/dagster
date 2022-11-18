@@ -1,5 +1,4 @@
 from dagster_graphql import DagsterGraphQLClient
-from gql.transport.requests import RequestsHTTPTransport
 
 from dagster import graph, job, op, repository
 
@@ -16,13 +15,9 @@ def ingest(x):
 
 @op
 def ping_dagit(context):
-    hostname = context.op_config["hostname"]
-    url = f"http://{hostname}:3000/graphql"
     client = DagsterGraphQLClient(
-        url,
-        transport=RequestsHTTPTransport(
-            url=url,
-        ),
+        "dagit",
+        port_number=3000,
     )
     return client._execute("{__typename}")  # pylint: disable=protected-access
 

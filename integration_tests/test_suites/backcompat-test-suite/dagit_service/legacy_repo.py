@@ -1,4 +1,6 @@
 # pylint: skip-file
+from dagster_graphql import DagsterGraphQLClient
+
 from dagster import graph, op, pipeline, repository, solid
 
 
@@ -32,9 +34,23 @@ def basic():
     ingest(my_op())
 
 
+@solid
+def ping_dagit(context):
+    client = DagsterGraphQLClient(
+        "dagit",
+        port_number=3000,
+    )
+    return client._execute("{__typename}")  # pylint: disable=protected-access
+
+
+@pipeline
+def test_graphql():
+    ping_dagit()
+
+
 the_job = basic.to_job(name="the_job")
 
 
 @repository
 def basic_repo():
-    return [the_job, the_pipeline]
+    return [the_job, the_pipeline, test_graphql]

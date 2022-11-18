@@ -227,21 +227,14 @@ def test_backcompat_ping_dagit(graphql_client):
     assert_runs_and_exists(
         graphql_client,
         "test_graphql",
-        run_config={
-            "ops": {
-                "ping_dagit": {"config": {"hostname": dagit_host}},
-            }
-        },
     )
 
 
-def assert_runs_and_exists(
-    client: DagsterGraphQLClient, name, subset_selection=None, run_config=None
-):
+def assert_runs_and_exists(client: DagsterGraphQLClient, name, subset_selection=None):
     run_id = client.submit_pipeline_execution(
         pipeline_name=name,
         mode="default",
-        run_config=run_config,
+        run_config={},
         solid_selection=subset_selection,
     )
     assert_run_success(client, run_id)
