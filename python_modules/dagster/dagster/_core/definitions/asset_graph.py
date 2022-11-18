@@ -1,5 +1,5 @@
 import warnings
-from collections import deque
+from collections import defaultdict, deque
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -16,7 +16,7 @@ from typing import (
 import toposort
 
 import dagster._check as check
-from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.selector.subset_selector import DependencyGraph, generate_asset_dep_graph
 
 from .assets import AssetsDefinition
@@ -41,7 +41,7 @@ class AssetGraph(
             ("partitions_defs_by_key", Mapping[AssetKey, Optional[PartitionsDefinition]]),
             (
                 "partition_mappings_by_key",
-                Optional[Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]]],
+                Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
             ),
             ("group_names_by_key", Mapping[AssetKey, Optional[str]]),
             ("freshness_policies_by_key", Mapping[AssetKey, Optional[FreshnessPolicy]]),
@@ -53,9 +53,7 @@ class AssetGraph(
         asset_dep_graph: DependencyGraph,
         source_asset_keys: AbstractSet[AssetKey],
         partitions_defs_by_key: Mapping[AssetKey, Optional[PartitionsDefinition]],
-        partition_mappings_by_key: Optional[
-            Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]]
-        ],
+        partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
         group_names_by_key: Mapping[AssetKey, Optional[str]],
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
     ):
@@ -111,6 +109,9 @@ class AssetGraph(
         downstream = {}
         source_asset_keys = set()
         partitions_defs_by_key = {}
+        partition_mappings_by_key: Dict[AssetKey, Dict[AssetKey, PartitionMapping]] = defaultdict(
+            defaultdict
+        )
         group_names_by_key = {}
         freshness_policies_by_key = {}
 
@@ -119,6 +120,11 @@ class AssetGraph(
                 source_asset_keys.add(node.asset_key)
             upstream[node.asset_key] = {dep.upstream_asset_key for dep in node.dependencies}
             downstream[node.asset_key] = {dep.downstream_asset_key for dep in node.depended_by}
+            for dep in node.dependencies:
+                if dep.partition_mapping is not None:
+                    partition_mappings_by_key[node.asset_key][
+                        dep.upstream_asset_key
+                    ] = dep.partition_mapping
             partitions_defs_by_key[node.asset_key] = (
                 node.partitions_def_data.get_partitions_definition()
                 if node.partitions_def_data
@@ -131,7 +137,7 @@ class AssetGraph(
             asset_dep_graph={"upstream": upstream, "downstream": downstream},
             source_asset_keys=source_asset_keys,
             partitions_defs_by_key=partitions_defs_by_key,
-            partition_mappings_by_key=None,
+            partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
         )
@@ -146,10 +152,6 @@ class AssetGraph(
     def get_partition_mapping(
         self, asset_key: AssetKey, in_asset_key: AssetKey
     ) -> PartitionMapping:
-        if self.partition_mappings_by_key is None:
-            raise DagsterInvariantViolationError(
-                "Partition mapping information not set when creating this AssetGraph"
-            )
         partitions_def = self.get_partitions_def(asset_key)
         partition_mappings = self.partition_mappings_by_key.get(asset_key) or {}
         return infer_partition_mapping(partition_mappings.get(in_asset_key), partitions_def)

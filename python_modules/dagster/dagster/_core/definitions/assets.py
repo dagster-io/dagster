@@ -35,7 +35,11 @@ from .events import AssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
 from .partition import PartitionsDefinition
-from .partition_mapping import PartitionMapping, infer_partition_mapping
+from .partition_mapping import (
+    PartitionMapping,
+    get_builtin_partition_mapping_types,
+    infer_partition_mapping,
+)
 from .resource_definition import ResourceDefinition
 from .resource_requirement import (
     ResourceAddable,
@@ -119,6 +123,20 @@ class AssetsDefinition(ResourceAddable):
 
         self._partitions_def = partitions_def
         self._partition_mappings = partition_mappings or {}
+        builtin_partition_mappings = get_builtin_partition_mapping_types()
+        for partition_mapping in self._partition_mappings.values():
+            if not isinstance(partition_mapping, builtin_partition_mappings):
+                warnings.warn(
+                    f"Non-built-in PartitionMappings, such as {type(partition_mapping).__name__} "
+                    "are deprecated and will not work with asset reconciliation. The built-in "
+                    "partition mappings are "
+                    + ", ".join(
+                        builtin_partition_mapping.__name__
+                        for builtin_partition_mapping in builtin_partition_mappings
+                    )
+                    + ".",
+                    category=DeprecationWarning,
+                )
 
         # if not specified assume all output assets depend on all input assets
         all_asset_keys = set(keys_by_output_name.values())
@@ -546,7 +564,10 @@ class AssetsDefinition(ResourceAddable):
         return self._code_versions_by_key
 
     @public
-    def get_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
+    def get_partition_mapping(self, in_asset_key: AssetKey) -> Optional[PartitionMapping]:
+        return self._partition_mappings.get(in_asset_key)
+
+    def infer_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
