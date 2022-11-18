@@ -887,7 +887,7 @@ class ExternalAssetNode(
         if is_source is None:
             # prior to this field being added, all non-source assets must be part of at least one
             # job, and no source assets could be part of any job
-            is_source = len(job_names) == 0
+            is_source = len(job_names or []) == 0
 
         return super(ExternalAssetNode, cls).__new__(
             cls,
