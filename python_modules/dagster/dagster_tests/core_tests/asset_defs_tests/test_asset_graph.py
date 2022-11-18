@@ -9,7 +9,6 @@ from dagster import (
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKeyPartitionKey
-
 from dagster._core.host_representation.external_data import external_asset_graph_from_defs
 
 

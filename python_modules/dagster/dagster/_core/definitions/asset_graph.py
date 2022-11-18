@@ -1,5 +1,5 @@
 import warnings
-from collections import deque, defaultdict
+from collections import defaultdict, deque
 from typing import (
     TYPE_CHECKING,
     AbstractSet,

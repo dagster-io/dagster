@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, NamedTuple
+from typing import NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import experimental, public

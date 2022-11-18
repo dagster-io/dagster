@@ -15,6 +15,7 @@ from dagster import _check as check
 from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 from dagster._core.telemetry import DAEMON_ALIVE, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._daemon.asset_reconciliation import execute_asset_reconciliation_iteration
 from dagster._daemon.backfill import execute_backfill_iteration
 from dagster._daemon.monitoring import execute_monitoring_iteration
 from dagster._daemon.sensor import execute_sensor_iteration_loop
@@ -276,3 +277,15 @@ class MonitoringDaemon(IntervalDaemon):
         workspace_process_context: IWorkspaceProcessContext,
     ) -> TDaemonGenerator:
         yield from execute_monitoring_iteration(workspace_process_context, self._logger)
+
+
+class AssetReconciliationDaemon(IntervalDaemon):
+    @classmethod
+    def daemon_type(cls):
+        return "ASSET_RECONCILIATION"
+
+    def run_iteration(
+        self,
+        workspace_process_context: IWorkspaceProcessContext,
+    ) -> TDaemonGenerator:
+        yield from execute_asset_reconciliation_iteration(workspace_process_context, self._logger)

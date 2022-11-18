@@ -1,4 +1,4 @@
-from typing import Optional, cast, NamedTuple
+from typing import NamedTuple, Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions.partition import PartitionsDefinition
