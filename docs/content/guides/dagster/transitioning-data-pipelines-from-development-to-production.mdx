@@ -101,20 +101,17 @@ Now we can add these assets to our repository and materialize them via Dagit as 
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v1.py startafter=start endbefore=end
 # repository.py
-from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+from dagster_snowflake_pandas import snowflake_pandas_io_manager
 from development_to_production.assets import comments, items, stories
 
 from dagster import repository, with_resources
-
-snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
 
 
 # Note that storing passwords in configuration is bad practice. It will be resolved later in the guide.
 @repository
 def repo():
     resource_defs = {
-        "snowflake_io_manager": snowflake_io_manager.configured(
+        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
             {
                 "account": "abc1234.us-east-1",
                 "user": "me@company.com",
@@ -176,7 +173,7 @@ Instead, we can set up the repository to determine the configuration for resourc
 def repo():
     resource_defs = {
         "local": {
-            "snowflake_io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_pandas_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
                     "user": "me@company.com",
@@ -188,7 +185,7 @@ def repo():
             ),
         },
         "production": {
-            "snowflake_io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_pandas_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
                     "user": "dev@company.com",
@@ -228,7 +225,7 @@ We can easily solve these problems because the Snowflake I/O manager accepts con
 def repo():
     resource_defs = {
         "local": {
-            "snowflake_io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_pandas_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
                     "user": {"env": "DEV_SNOWFLAKE_USER"},
@@ -239,7 +236,7 @@ def repo():
             ),
         },
         "production": {
-            "snowflake_io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_pandas_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
                     "user": "system@company.com",

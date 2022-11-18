@@ -1,14 +1,10 @@
 import os
 
-from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake_pandas import snowflake_pandas_io_manager
 from development_to_production.assets import comments, items, stories
 from development_to_production.resources import hn_api_client
 
 from dagster import repository, with_resources
-
-# the snowflake io manager can be initialized to handle different data types
-# here we use the pandas type handler so we can store pandas DataFrames
 
 
 @repository
