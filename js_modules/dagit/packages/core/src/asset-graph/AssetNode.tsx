@@ -5,6 +5,7 @@ import React from 'react';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
+import {isAssetStale} from '../assets/StaleTag';
 import {OpTags} from '../graph/OpTags';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
@@ -147,13 +148,7 @@ export const AssetNodeStatusRow: React.FC<{
     );
   }
 
-  const {
-    currentLogicalVersion,
-    projectedLogicalVersion,
-    lastMaterialization,
-    runWhichFailedToMaterialize,
-    freshnessInfo,
-  } = liveData;
+  const {lastMaterialization, runWhichFailedToMaterialize, freshnessInfo} = liveData;
   const late = freshnessInfo && (freshnessInfo.currentMinutesLate || 0) > 0;
 
   if (runWhichFailedToMaterialize || late) {
@@ -184,7 +179,7 @@ export const AssetNodeStatusRow: React.FC<{
     );
   }
 
-  if (currentLogicalVersion !== projectedLogicalVersion) {
+  if (isAssetStale(liveData)) {
     return (
       <Box
         padding={{horizontal: 8}}
@@ -240,7 +235,7 @@ export const AssetNodeMinimal: React.FC<{
               ? Colors.Red50
               : !liveData?.lastMaterialization
               ? Colors.Gray100
-              : liveData?.currentLogicalVersion !== liveData?.projectedLogicalVersion
+              : isAssetStale(liveData)
               ? Colors.Yellow50
               : Colors.Green50
           }
@@ -249,7 +244,7 @@ export const AssetNodeMinimal: React.FC<{
               ? Colors.Red500
               : !liveData?.lastMaterialization
               ? Colors.Gray500
-              : liveData?.currentLogicalVersion !== liveData?.projectedLogicalVersion
+              : isAssetStale(liveData)
               ? Colors.Yellow500
               : Colors.Green500
           }
