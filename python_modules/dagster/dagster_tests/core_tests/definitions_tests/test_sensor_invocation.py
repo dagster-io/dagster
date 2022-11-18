@@ -26,6 +26,7 @@ from dagster import (
     asset,
     build_multi_asset_sensor_context,
     build_run_status_sensor_context,
+    build_freshness_policy_sensor_context,
     build_sensor_context,
     define_asset_job,
     job,
@@ -36,6 +37,8 @@ from dagster import (
     repository,
     run_failure_sensor,
     run_status_sensor,
+    freshness_policy_sensor,
+    FreshnessPolicy,
     sensor,
 )
 from dagster._check import CheckError
@@ -276,6 +279,43 @@ def test_run_failure_w_run_request():
         return RunRequest(run_key=None, run_config={}, tags={})
 
     assert basic_sensor_w_arg(context).run_config == {}
+
+
+def test_freshness_policy_sensor():
+    @freshness_policy_sensor(asset_selection=AssetSelection.all())
+    def freshness_sensor(context):
+        assert context.minutes_late == 10
+        assert context.previous_minutes_late == None
+
+    context = build_freshness_policy_sensor_context(
+        sensor_name="status_sensor",
+        asset_key=AssetKey("a"),
+        freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
+        minutes_late=10,
+    )
+
+    freshness_sensor(context)
+
+
+def test_freshness_policy_sensor_params_out_of_order():
+    @freshness_policy_sensor(
+        name="some_name",
+        asset_selection=AssetSelection.all(),
+        minimum_interval_seconds=10,
+        description="foo",
+    )
+    def freshness_sensor(context):
+        assert context.minutes_late == 10
+        assert context.previous_minutes_late == None
+
+    context = build_freshness_policy_sensor_context(
+        sensor_name="some_name",
+        asset_key=AssetKey("a"),
+        freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
+        minutes_late=10,
+    )
+
+    freshness_sensor(context)
 
 
 def test_multi_asset_sensor():
