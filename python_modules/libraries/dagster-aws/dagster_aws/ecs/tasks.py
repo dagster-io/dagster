@@ -258,10 +258,12 @@ def current_ecs_container_name():
     return requests.get(_container_metadata_uri()).json()["Name"]
 
 
-def get_current_ecs_task(ecs, task_arn, cluster):
+def get_current_ecs_task(ecs, task_arn, cluster, include=None):
     def describe_task_or_raise(task_arn, cluster):
         try:
-            return ecs.describe_tasks(tasks=[task_arn], cluster=cluster)["tasks"][0]
+            return ecs.describe_tasks(tasks=[task_arn], cluster=cluster, include=include)["tasks"][
+                0
+            ]
         except IndexError:
             raise EcsNoTasksFound
 
