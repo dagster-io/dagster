@@ -1,5 +1,3 @@
-from typing import Union
-
 from dagster import (
     AssetKey,
     AssetsDefinition,

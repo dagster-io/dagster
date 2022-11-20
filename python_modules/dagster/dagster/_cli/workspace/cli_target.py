@@ -6,7 +6,6 @@ from typing import (
     Generator,
     Iterable,
     List,
-    Literal,
     Mapping,
     Optional,
     Tuple,
@@ -103,10 +102,10 @@ class PyProjectFile:
         return self._data.get("tool", {}).get("dagster", {})
 
 
-def get_dagster_tool_pyproject_block(path: str) -> Union[Literal[False], dict]:
+def get_dagster_tool_pyproject_block(path: str) -> Optional[dict]:
     project_file = PyProjectFile.from_path(path)
     if not project_file.has_dagster_tool_block():
-        return False
+        return None
 
     return project_file.get_dagster_tool_block()
 
