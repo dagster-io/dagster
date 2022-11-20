@@ -49,7 +49,9 @@ if TYPE_CHECKING:
 
 def get_ephemeral_repository_name(pipeline_name: str) -> str:
     check.str_param(pipeline_name, "pipeline_name")
-    return "__repository__{pipeline_name}".format(pipeline_name=pipeline_name)
+    from .repository_definition import SINGLETON_REPOSITORY_NAME
+
+    return f"{SINGLETON_REPOSITORY_NAME}{pipeline_name}"
 
 
 @whitelist_for_serdes
@@ -703,6 +705,7 @@ def repository_def_from_target_def(
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
     from .repository_definition import (
+        SINGLETON_REPOSITORY_NAME,
         CachingRepositoryData,
         PendingRepositoryDefinition,
         RepositoryDefinition,
@@ -712,12 +715,13 @@ def repository_def_from_target_def(
     if isinstance(target, (PipelineDefinition, GraphDefinition)):
         # consider including pipeline name in generated repo name
         return RepositoryDefinition(
-            name=get_ephemeral_repository_name(target.name),
+            name=SINGLETON_REPOSITORY_NAME,
             repository_data=CachingRepositoryData.from_list([target]),
         )
     elif isinstance(target, AssetGroup):
         return RepositoryDefinition(
-            name="__repository__", repository_data=CachingRepositoryData.from_list([target])
+            name=SINGLETON_REPOSITORY_NAME,
+            repository_data=CachingRepositoryData.from_list([target]),
         )
     elif isinstance(target, RepositoryDefinition):
         return target
