@@ -50,6 +50,9 @@ if TYPE_CHECKING:
     from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
+
+SINGLETON_REPOSITORY_NAME = "__repository__"
+
 VALID_REPOSITORY_DATA_DICT_KEYS = {
     "pipelines",
     "partition_sets",

@@ -11,6 +11,7 @@ from dagster import (
 from dagster._core.code_pointer import load_python_file, load_python_module
 from dagster._core.definitions import AssetGroup
 from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._legacy import PipelineDefinition
 
 LOAD_ALL_ASSETS = "<<LOAD_ALL_ASSETS>>"
@@ -53,6 +54,14 @@ def loadable_targets_from_python_package(
 
 
 def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
+
+    loadable_defs = _loadable_targets_of_type(module, Definitions)
+
+    if loadable_defs:
+        if len(loadable_defs) > 1:
+            raise Exception("Cannot have more than one Definitions object")
+
+        return loadable_defs
 
     loadable_repos = _loadable_targets_of_type(
         module, (RepositoryDefinition, PendingRepositoryDefinition)
