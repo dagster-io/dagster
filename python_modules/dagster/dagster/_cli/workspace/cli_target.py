@@ -1,17 +1,7 @@
 import os
 import sys
 from contextlib import contextmanager
-from typing import (
-    TYPE_CHECKING,
-    Generator,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Generator, Iterable, List, Mapping, Optional, Tuple, Union, cast
 
 import click
 from click import UsageError
