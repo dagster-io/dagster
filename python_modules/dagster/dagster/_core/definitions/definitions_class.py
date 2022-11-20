@@ -40,72 +40,78 @@ def get_module_name_of_definitions_caller() -> str:
 
 
 # will refactor to class
+#  -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
 @experimental
-def Definitions(
-    assets: Optional[
-        Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
-    ] = None,
-    schedules: Optional[Iterable[ScheduleDefinition]] = None,
-    sensors: Optional[Iterable[SensorDefinition]] = None,
-    jobs: Optional[Iterable[JobDefinition]] = None,
-    resources: Optional[Mapping[str, Any]] = None,
-) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
-    """
-    Example usage:
+class Definitions:
+    def __init__(
+        self,
+        assets: Optional[
+            Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
+        ] = None,
+        schedules: Optional[Iterable[ScheduleDefinition]] = None,
+        sensors: Optional[Iterable[SensorDefinition]] = None,
+        jobs: Optional[Iterable[JobDefinition]] = None,
+        resources: Optional[Mapping[str, Any]] = None,
+    ):
+        """
+        Example usage:
 
-    defs = Definitions(
-        assets=[asset_one, asset_two],
-        schedules=[a_schedule],
-        sensors=[a_sensor],
-        jobs=[a_job],
-        resources={
-            "a_resource": some_resource,
-        }
-    )
+        defs = Definitions(
+            assets=[asset_one, asset_two],
+            schedules=[a_schedule],
+            sensors=[a_sensor],
+            jobs=[a_job],
+            resources={
+                "a_resource": some_resource,
+            }
+        )
 
-    Create a set of definitions explicitly available and loadable by dagster tools.
+        Create a set of definitions explicitly available and loadable by dagster tools.
 
-    Dagster separates user-defined code from system tools such the web server and
-    the daemon. Rather than loading code directly into process, a tool such as the
-    webserver interacts with user-defined code over a serialization boundary.
+        Dagster separates user-defined code from system tools such the web server and
+        the daemon. Rather than loading code directly into process, a tool such as the
+        webserver interacts with user-defined code over a serialization boundary.
 
-    These tools must be able to locate and load this code when they start. Via CLI
-    arguments or config, they specify a python module to inspect.
+        These tools must be able to locate and load this code when they start. Via CLI
+        arguments or config, they specify a python module to inspect.
 
-    A python module is loadable by dagster tools if:
+        A python module is loadable by dagster tools if:
 
-    (1) Has one or more dagster definitions as module-level attributes (e.g. a function
-    declared at the top-level of a module decorated with @asset).
+        (1) Has one or more dagster definitions as module-level attributes (e.g. a function
+        declared at the top-level of a module decorated with @asset).
 
-    or
+        or
 
-    (2) Has a `Definitions` object defined at module-scope
+        (2) Has a `Definitions` object defined at module-scope
 
-    For anything beyond lightweight testing and exploration, the use of `Definitions`
-    is strongly recommended.
+        For anything beyond lightweight testing and exploration, the use of `Definitions`
+        is strongly recommended.
 
-    This function provides a few conveniences for the user that do not apply to
-    vanilla dagster definitions:
+        This function provides a few conveniences for the user that do not apply to
+        vanilla dagster definitions:
 
-    (1) It takes a dictionary of top-level resources which are automatically bound
-    (via with_resources) to any asset passed to it. If you need to apply different
-    resources to different assets, use legacy @repository and use with_resources as before.
+        (1) It takes a dictionary of top-level resources which are automatically bound
+        (via with_resources) to any asset passed to it. If you need to apply different
+        resources to different assets, use legacy @repository and use with_resources as before.
 
-    (2) The resources dictionary takes raw python objects, not just resource definitions.
-    """
+        (2) The resources dictionary takes raw python objects, not just resource definitions.
+        """
 
-    resource_defs = coerce_resources_to_defs(resources or {})
+        resource_defs = coerce_resources_to_defs(resources or {})
 
-    @repository(name=SINGLETON_REPOSITORY_NAME)
-    def created_repo():
-        return [
-            *with_resources(assets or [], resource_defs),
-            *(schedules or []),
-            *(sensors or []),
-            *(jobs or []),
-        ]
+        @repository(name=SINGLETON_REPOSITORY_NAME)
+        def created_repo():
+            return [
+                *with_resources(assets or [], resource_defs),
+                *(schedules or []),
+                *(sensors or []),
+                *(jobs or []),
+            ]
 
-    return created_repo
+        self._created_repo = created_repo
+
+    def get_inner_repository(self):
+        return self._created_repo
 
 
 def coerce_resources_to_defs(resources: Mapping[str, Any]) -> Dict[str, ResourceDefinition]:

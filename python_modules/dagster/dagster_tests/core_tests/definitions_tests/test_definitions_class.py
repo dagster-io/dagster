@@ -23,15 +23,15 @@ from dagster._core.definitions.repository_definition import (
 )
 
 
-def get_all_assets_from_repo(repo):
+def get_all_assets_from_defs(defs: Definitions):
     # could not find public method on repository to do this
+    repo = resolve_pending_repo_if_required(defs)
     return list(repo._assets_defs_by_key.values())  # pylint: disable=protected-access
 
 
 # TODO: introduce common interface to avoid this coercion
-def resolve_pending_repo_if_required(
-    repo_or_caching_repo: Union[RepositoryDefinition, PendingRepositoryDefinition]
-) -> RepositoryDefinition:
+def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefinition:
+    repo_or_caching_repo = definitions.get_inner_repository()
     return (
         repo_or_caching_repo.compute_repository_definition()
         if isinstance(repo_or_caching_repo, PendingRepositoryDefinition)
@@ -46,16 +46,11 @@ def test_basic_asset():
     def an_asset():
         pass
 
-    repo = Definitions(assets=[an_asset])
+    defs = Definitions(assets=[an_asset])
 
-    all_assets = get_all_assets_from_repo(repo)
+    all_assets = get_all_assets_from_defs(defs)
     assert len(all_assets) == 1
     assert all_assets[0].key.to_user_string() == "an_asset"
-
-
-def test_automatic_module_name():
-    repo = resolve_pending_repo_if_required(Definitions())
-    assert repo.name == "test_definitions_class"
 
 
 def test_basic_schedule_definition():
@@ -176,7 +171,6 @@ def test_pending_repo():
     # now actually test definitions
 
     defs = Definitions(assets=[MyCacheableAssetsDefinition("foobar")])
-    repo = resolve_pending_repo_if_required(defs)
-    all_assets = get_all_assets_from_repo(repo)
+    all_assets = get_all_assets_from_defs(defs)
     assert len(all_assets) == 1
     assert all_assets[0].key.to_user_string() == "foobar"
