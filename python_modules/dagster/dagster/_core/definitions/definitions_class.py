@@ -9,11 +9,7 @@ from .assets import AssetsDefinition, SourceAsset
 from .cacheable_assets import CacheableAssetsDefinition
 from .decorators import repository
 from .job_definition import JobDefinition
-from .repository_definition import (
-    SINGLETON_REPOSITORY_NAME,
-    PendingRepositoryDefinition,
-    RepositoryDefinition,
-)
+from .repository_definition import SINGLETON_REPOSITORY_NAME
 from .resource_definition import ResourceDefinition
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
