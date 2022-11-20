@@ -1,7 +1,5 @@
-import inspect
 from typing import Any, Dict, Iterable, Mapping, Optional, Union
 
-from dagster import _check as check
 from dagster._annotations import experimental
 from dagster._core.execution.with_resources import with_resources
 
@@ -31,7 +29,7 @@ class Definitions:
         Example usage:
 
         def dagster_defs():
-            defs = Definitions(
+            return Definitions(
                 assets=[asset_one, asset_two],
                 schedules=[a_schedule],
                 sensors=[a_sensor],
@@ -53,7 +51,7 @@ class Definitions:
         A python module is loadable by dagster tools if it has a top-level function
         called `dagster_defs` that returns an instance of `Definitions`
 
-        Definitios provides a few conveniences for the user that do not apply to
+        Definitions provides a few conveniences for the user that do not apply to
         vanilla dagster definitions:
 
         (1) It takes a dictionary of top-level resources which are automatically bound
