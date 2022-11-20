@@ -1,4 +1,5 @@
 # some change
+# another change
 # Makefile oddities:
 # - Commands must start with literal tab characters (\t), not spaces.
 # - Multi-command rules (like `black` below) by default terminate as soon as a command has a non-0
