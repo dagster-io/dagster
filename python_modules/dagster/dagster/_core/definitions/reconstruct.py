@@ -704,16 +704,15 @@ def repository_def_from_target_def(
 ) -> Optional["RepositoryDefinition"]:
     from dagster._core.definitions import AssetGroup
 
+    from .definitions_class import Definitions
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
     from .repository_definition import (
+        SINGLETON_REPOSITORY_NAME,
         CachingRepositoryData,
         PendingRepositoryDefinition,
         RepositoryDefinition,
-        SINGLETON_REPOSITORY_NAME,
     )
-
-    from .definitions_class import Definitions
 
     # special case - we can wrap a single pipeline in a repository
     if isinstance(target, Definitions):
