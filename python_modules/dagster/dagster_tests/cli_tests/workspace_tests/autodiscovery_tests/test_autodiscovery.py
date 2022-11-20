@@ -5,6 +5,7 @@ import pytest
 
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import repository_def_from_pointer
 from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 from dagster._core.errors import DagsterImportError
@@ -192,6 +193,29 @@ def test_single_repository_in_package():
     ).load_target()
     isinstance(repo_def, RepositoryDefinition)
     assert repo_def.name == "single_repository"
+
+
+def _load_dagster_defs_from_file(relative_path):
+    dagster_defs_path = file_relative_path(__file__, relative_path)
+    loadable_targets = loadable_targets_from_python_file(dagster_defs_path)
+
+    assert len(loadable_targets) == 1
+    symbol = loadable_targets[0].attribute
+    assert symbol == "dagster_defs"
+
+    return repository_def_from_pointer(
+        CodePointer.from_python_file(dagster_defs_path, symbol, None)
+    )
+
+
+def test_dagster_defs_in_file():
+    defs = _load_dagster_defs_from_file("single_dagster_defs.py")
+    assert isinstance(defs, RepositoryDefinition)
+
+
+def test_dagster_defs_returns_wrong_thing():
+    with pytest.raises(DagsterInvariantViolationError, match="wrong thing"):
+        _load_dagster_defs_from_file("dagster_defs_returns_wrong_thing.py")
 
 
 def _current_test_directory_paths():
