@@ -49,9 +49,7 @@ if TYPE_CHECKING:
 
 def get_ephemeral_repository_name(pipeline_name: str) -> str:
     check.str_param(pipeline_name, "pipeline_name")
-    from .repository_definition import SINGLETON_REPOSITORY_NAME
-
-    return f"{SINGLETON_REPOSITORY_NAME}{pipeline_name}"
+    return "__repository__{pipeline_name}".format(pipeline_name=pipeline_name)
 
 
 @whitelist_for_serdes
