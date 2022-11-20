@@ -1,7 +1,18 @@
 import os
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Generator, Iterable, List, Mapping, Optional, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Generator,
+    Iterable,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
 import click
 from click import UsageError
@@ -73,15 +84,53 @@ WORKSPACE_CLI_ARGS = (
     "grpc_socket",
 )
 
+import tomli
+
+
+class PyProjectFile:
+    def __init__(self, data: dict):
+        self._data = data
+
+    @staticmethod
+    def from_path(path: str) -> "PyProjectFile":
+        with open(path, "rb") as f:
+            return PyProjectFile(tomli.load(f))
+
+    def has_dagster_tool_block(self) -> bool:
+        return bool("dagster" in self._data.get("tool", {}))
+
+    def get_dagster_tool_block(self) -> dict:
+        return self._data.get("tool", {}).get("dagster", {})
+
+
+def get_dagster_tool_pyproject_block(path: str) -> Union[Literal[False], dict]:
+    project_file = PyProjectFile.from_path(path)
+    if not project_file.has_dagster_tool_block():
+        return False
+
+    return project_file.get_dagster_tool_block()
+
 
 def get_workspace_load_target(kwargs: Mapping[str, str]):
     check.mapping_param(kwargs, "kwargs")
     if are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
         if kwargs.get("empty_workspace"):
             return EmptyWorkspaceTarget()
+        if os.path.exists("pyproject.toml"):
+            dagster_tool_block = get_dagster_tool_pyproject_block("pyproject.toml")
+            if dagster_tool_block and "python_package" in dagster_tool_block:
+                return PackageTarget(
+                    package_name=dagster_tool_block["python_package"],
+                    attribute=None,
+                    working_directory=os.getcwd(),
+                    location_name=None,
+                )
+
         if os.path.exists("workspace.yaml"):
             return WorkspaceFileTarget(paths=["workspace.yaml"])
-        raise click.UsageError("No arguments given and workspace.yaml not found.")
+        raise click.UsageError(
+            "No arguments given and no [tools.dagster] block in pyproject.toml found."
+        )
 
     if kwargs.get("workspace"):
         _check_cli_arguments_none(
