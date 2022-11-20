@@ -78,6 +78,7 @@ setup(
         "requests",
         "setuptools",
         "tabulate",
+        "tomli",
         "tqdm",
         "typing_compat",
         "typing_extensions>=4.0.1",
