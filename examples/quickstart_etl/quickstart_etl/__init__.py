@@ -7,7 +7,6 @@ from dagster import (
 
 from . import assets
 
-
 defs = Definitions(
     assets=load_assets_from_package_module(assets),
     schedules=[
