@@ -207,9 +207,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
       type: 'warning',
       content: (
         <div style={{whiteSpace: 'nowrap'}}>{`${repoErrors.length} ${
-          repoErrors.length === 1
-            ? 'repository location failed to load'
-            : 'repository locations failed to load'
+          repoErrors.length === 1 ? 'code location failed to load' : 'code locations failed to load'
         }`}</div>
       ),
     };
