@@ -14,6 +14,8 @@ defs = Definitions(
     ],
 )
 
+# an alternative is to have a function with a special name
+# serve as the entry point
 # def dagster_defs():
 #     return Definitions(
 #         assets=load_assets_from_package_module(assets),
