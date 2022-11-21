@@ -160,12 +160,18 @@ If you change any `.rst` files, be sure to run the following command in the `doc
 make apidoc-build
 ```
 
-The majority of our code snippets are pulled from real python files. This allows us to test our code snippets and ensure they remain up-to-date. In `.mdx` files you'll see a code snippet with `python file=/path/to/file.py startafter=start_marker endbefore=end_marker` at the beginning of the block. You can find the corresponding python file at `dagster/examples/docs_snippets/docs/snippets/path/to/file.py`. The code included in each snippet is the code in the file between the `# start_marker` and `# end_marker` comments. If you change a code snippet, run:
+The majority of our code snippets are pulled from real Python files. This allows us to test our code snippets and ensure they remain up-to-date. 
+
+In `.mdx` files, you'll see a code snippet with `python file=/path/to/file.py startafter=start_marker endbefore=end_marker` at the beginning of the block. For example:
+
+[add example here]
+
+You can find the corresponding Python file at `dagster/examples/docs_snippets/docs/snippets/path/to/file.py`. The code included in each snippet is the code in the file between the `# start_marker` and `# end_marker` comments. 
+
+If you change a code snippet, run the following from the `docs` directory:
 
 ```bash
 make mdx-format
-```
-from the `docs` directory.
 
 You can find more information about developing documentation in `docs/README.md`.
 
