@@ -7,7 +7,11 @@ from .assets import AssetsDefinition, SourceAsset
 from .cacheable_assets import CacheableAssetsDefinition
 from .decorators import repository
 from .job_definition import JobDefinition
-from .repository_definition import SINGLETON_REPOSITORY_NAME
+from .repository_definition import (
+    SINGLETON_REPOSITORY_NAME,
+    PendingRepositoryDefinition,
+    RepositoryDefinition,
+)
 from .resource_definition import ResourceDefinition
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
@@ -74,7 +78,7 @@ class Definitions:
 
         self._created_repo = created_repo
 
-    def get_inner_repository(self):
+    def get_inner_repository(self) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
         return self._created_repo
 
 
