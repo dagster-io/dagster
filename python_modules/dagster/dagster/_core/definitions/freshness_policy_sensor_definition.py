@@ -3,7 +3,7 @@ from typing import Callable, Dict, Mapping, NamedTuple, Optional, cast
 import pendulum
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -126,6 +126,7 @@ class FreshnessPolicySensorContext(
         )
 
 
+@experimental
 def build_freshness_policy_sensor_context(
     sensor_name: str,
     asset_key: AssetKey,
@@ -318,6 +319,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
             )
 
 
+@experimental
 def freshness_policy_sensor(
     asset_selection: AssetSelection,
     *,
