@@ -169,6 +169,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     groupName = graphene.String()
     id = graphene.NonNull(graphene.ID)
     isObservable = graphene.NonNull(graphene.Boolean)
+    isPartitioned = graphene.NonNull(graphene.Boolean)
     isSource = graphene.NonNull(graphene.Boolean)
     jobNames = non_null_list(graphene.String)
     jobs = non_null_list(GraphenePipeline)
@@ -546,6 +547,9 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_isSource(self, _graphene_info) -> bool:
         return self.is_source_asset()
+
+    def resolve_isPartitioned(self, _graphene_info) -> bool:
+        return self._external_asset_node.partitions_def_data is not None
 
     def resolve_isObservable(self, _graphene_info) -> bool:
         return self._external_asset_node.is_observable

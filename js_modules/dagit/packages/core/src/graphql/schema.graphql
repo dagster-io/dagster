@@ -666,6 +666,7 @@ type AssetNode {
   groupName: String
   id: ID!
   isObservable: Boolean!
+  isPartitioned: Boolean!
   isSource: Boolean!
   jobNames: [String!]!
   jobs: [Pipeline!]!

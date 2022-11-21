@@ -74,6 +74,7 @@ export interface SingleAssetQuery_assetOrError_Asset_definition {
   __typename: "AssetNode";
   id: string;
   groupName: string | null;
+  isSource: boolean;
   partitionDefinition: SingleAssetQuery_assetOrError_Asset_definition_partitionDefinition | null;
   description: string | null;
   repository: SingleAssetQuery_assetOrError_Asset_definition_repository;
