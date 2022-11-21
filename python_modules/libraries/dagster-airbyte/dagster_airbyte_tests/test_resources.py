@@ -328,16 +328,22 @@ def test_assets(forward_logs):
 
 @responses.activate
 @pytest.mark.parametrize(
-    "forward_logs",
-    [True, False],
+    "forward_logs,cancel_airbyte_sync_on_abnormal_termination",
+    [
+        (True, True),
+        (True, False),
+        (False, True),
+        (False, False),
+    ],
 )
-def test_sync_and_poll_timeout(forward_logs):
+def test_sync_and_poll_timeout(forward_logs, cancel_airbyte_sync_on_abnormal_termination):
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
                 "host": "some_host",
                 "port": "8000",
                 "forward_logs": forward_logs,
+                "cancel_airbyte_sync_on_abnormal_termination": cancel_airbyte_sync_on_abnormal_termination,
             }
         )
     )
@@ -396,3 +402,7 @@ def test_sync_and_poll_timeout(forward_logs):
     timeout = 1
     with pytest.raises(Failure, match="Timeout: Airbyte job"):
         ab_resource.sync_and_poll("some_connection", poll_wait_second, timeout)
+        if cancel_airbyte_sync_on_abnormal_termination:
+            assert responses.assert_call_count(f"{ab_resource.api_base_url}/jobs/cancel", 1) is True
+        else:
+            assert responses.assert_call_count(f"{ab_resource.api_base_url}/jobs/cancel", 0) is True
