@@ -1,7 +1,5 @@
-import inspect
 from typing import Any, Dict, Iterable, Mapping, Optional, Union
 
-from dagster import _check as check
 from dagster._annotations import experimental
 from dagster._core.execution.with_resources import with_resources
 
@@ -9,34 +7,16 @@ from .assets import AssetsDefinition, SourceAsset
 from .cacheable_assets import CacheableAssetsDefinition
 from .decorators import repository
 from .job_definition import JobDefinition
-from .repository_definition import SINGLETON_REPOSITORY_NAME
+from .repository_definition import (
+    SINGLETON_REPOSITORY_NAME,
+    PendingRepositoryDefinition,
+    RepositoryDefinition,
+)
 from .resource_definition import ResourceDefinition
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
 
-NO_STACK_FRAME_ERROR_MSG = "Python interpreter must support Python stack frames. Python interpreters that are not CPython do not necessarily implement the necessary APIs."
 
-# invoke this function to get the module name the function
-# that called regsiter_definitions
-def get_module_name_of_definitions_caller() -> str:
-    # based on https://stackoverflow.com/questions/2000861/retrieve-module-object-from-stack-frame
-    # three f_backs to get past registered_definitions and @experimental frame
-    # Need to do None checking because of:
-    # https://docs.python.org/3/library/inspect.html#inspect.currentframe
-    # Relevant comment is:
-    # CPython implementation detail: This function relies on Python stack frame
-    # support in the interpreter, which isn’t guaranteed to exist in all
-    # implementations of Python. If running in an implementation without
-    # Python stack frame support this function returns None.
-    frame = check.not_none(inspect.currentframe(), NO_STACK_FRAME_ERROR_MSG)
-    register_definitions_frame = check.not_none(frame.f_back, NO_STACK_FRAME_ERROR_MSG)
-    experimental_frame = check.not_none(register_definitions_frame.f_back, NO_STACK_FRAME_ERROR_MSG)
-    caller_frame = check.not_none(experimental_frame.f_back, NO_STACK_FRAME_ERROR_MSG)
-    return caller_frame.f_globals["__name__"]
-
-
-# will refactor to class
-#  -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
 @experimental
 class Definitions:
     def __init__(
@@ -52,15 +32,16 @@ class Definitions:
         """
         Example usage:
 
-        defs = Definitions(
-            assets=[asset_one, asset_two],
-            schedules=[a_schedule],
-            sensors=[a_sensor],
-            jobs=[a_job],
-            resources={
-                "a_resource": some_resource,
-            }
-        )
+        def dagster_defs():
+            return Definitions(
+                assets=[asset_one, asset_two],
+                schedules=[a_schedule],
+                sensors=[a_sensor],
+                jobs=[a_job],
+                resources={
+                    "a_resource": some_resource,
+                }
+            )
 
         Create a set of definitions explicitly available and loadable by dagster tools.
 
@@ -71,19 +52,10 @@ class Definitions:
         These tools must be able to locate and load this code when they start. Via CLI
         arguments or config, they specify a python module to inspect.
 
-        A python module is loadable by dagster tools if:
+        A python module is loadable by dagster tools if it has a top-level function
+        called `dagster_defs` that returns an instance of `Definitions`
 
-        (1) Has one or more dagster definitions as module-level attributes (e.g. a function
-        declared at the top-level of a module decorated with @asset).
-
-        or
-
-        (2) Has a `Definitions` object defined at module-scope
-
-        For anything beyond lightweight testing and exploration, the use of `Definitions`
-        is strongly recommended.
-
-        This function provides a few conveniences for the user that do not apply to
+        Definitions provides a few conveniences for the user that do not apply to
         vanilla dagster definitions:
 
         (1) It takes a dictionary of top-level resources which are automatically bound
@@ -106,7 +78,7 @@ class Definitions:
 
         self._created_repo = created_repo
 
-    def get_inner_repository(self):
+    def get_inner_repository(self) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
         return self._created_repo
 
 
