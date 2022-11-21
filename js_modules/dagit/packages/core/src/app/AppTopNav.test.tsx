@@ -88,7 +88,6 @@ describe('AppTopNav', () => {
         );
       });
 
-      expect(screen.getByText(/workspace/i)).toBeVisible();
       expect(
         screen.queryByRole('img', {
           name: /warning/i,
@@ -113,7 +112,6 @@ describe('AppTopNav', () => {
         );
       });
 
-      expect(screen.getByText(/workspace/i)).toBeVisible();
       expect(
         screen.getByRole('img', {
           name: /warning/i,
@@ -163,7 +161,6 @@ describe('AppTopNav', () => {
         );
       });
 
-      expect(screen.getByText(/workspace/i)).toBeVisible();
       const link = screen.getByRole('link', {name: /deployment/i});
       expect(within(link).queryByText(/warning/i)).toBeNull();
     });
@@ -201,7 +198,6 @@ describe('AppTopNav', () => {
         );
       });
 
-      expect(screen.getByText(/workspace/i)).toBeVisible();
       const link = screen.getByRole('link', {name: /deployment/i});
       expect(within(link).queryByText(/warning/i)).toBeNull();
     });
