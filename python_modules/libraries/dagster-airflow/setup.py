@@ -33,7 +33,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_airflow_tests*"]),
     install_requires=[
-        "dagster==1.1.2",
+        "dagster==1.1.3",
         "docker",
         "python-dateutil>=2.8.0",
         "lazy_object_proxy",

@@ -32,9 +32,9 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_celery_docker_tests*"]),
     install_requires=[
-        "dagster==1.1.2",
-        "dagster-celery==0.17.2",
-        "dagster-graphql==1.1.2",
+        "dagster==1.1.3",
+        "dagster-celery==0.17.3",
+        "dagster-graphql==1.1.3",
         "docker",
     ],
     zip_safe=False,
