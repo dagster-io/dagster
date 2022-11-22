@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Mapping
 
 import sqlalchemy as db
 from packaging.version import parse
@@ -22,7 +22,6 @@ from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_
 from dagster._utils import utc_datetime_from_timestamp
 
 from ..utils import (
-    MYSQL_POOL_RECYCLE,
     create_mysql_connection,
     mysql_alembic_config,
     mysql_url_from_config,
@@ -85,14 +84,14 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
                 RunStorageSqlMetadata.create_all(conn)
                 stamp_alembic_rev(mysql_alembic_config(__file__), conn)
 
-    def optimize_for_dagit(self, statement_timeout):
+    def optimize_for_dagit(self, statement_timeout, pool_recycle):
         # When running in dagit, hold 1 open connection
         # https://github.com/dagster-io/dagster/issues/3719
         self._engine = create_engine(
             self.mysql_url,
             isolation_level="AUTOCOMMIT",
             pool_size=1,
-            pool_recycle=MYSQL_POOL_RECYCLE,
+            pool_recycle=pool_recycle,
         )
 
     @property
@@ -174,8 +173,8 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
                 )
             )
 
-    def kvs_set(self, pairs: Dict[str, str]) -> None:
-        check.dict_param(pairs, "pairs", key_type=str, value_type=str)
+    def kvs_set(self, pairs: Mapping[str, str]) -> None:
+        check.mapping_param(pairs, "pairs", key_type=str, value_type=str)
         db_values = [{"key": k, "value": v} for k, v in pairs.items()]
 
         with self.connect() as conn:

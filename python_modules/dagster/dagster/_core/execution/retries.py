@@ -1,6 +1,6 @@
 from collections import defaultdict
 from enum import Enum
-from typing import Dict, Optional
+from typing import Mapping, Optional
 
 from dagster import Field, Selector
 from dagster import _check as check
@@ -24,7 +24,7 @@ class RetryMode(Enum):
     DEFERRED = "deferred"
 
     @staticmethod
-    def from_config(config_value: Dict[str, Dict]) -> Optional["RetryMode"]:
+    def from_config(config_value: Mapping[str, Mapping]) -> Optional["RetryMode"]:
         for selector, _ in config_value.items():
             return RetryMode(selector)
         return None
@@ -51,9 +51,9 @@ class RetryMode(Enum):
 
 
 class RetryState:
-    def __init__(self, previous_attempts: Optional[Dict[str, int]] = None):
+    def __init__(self, previous_attempts: Optional[Mapping[str, int]] = None):
         self._attempts = defaultdict(int)
-        for key, val in check.opt_dict_param(
+        for key, val in check.opt_mapping_param(
             previous_attempts, "previous_attempts", key_type=str, value_type=int
         ).items():
             self._attempts[key] = val
@@ -64,5 +64,5 @@ class RetryState:
     def mark_attempt(self, key: str) -> None:
         self._attempts[key] += 1
 
-    def snapshot_attempts(self) -> Dict[str, int]:
+    def snapshot_attempts(self) -> Mapping[str, int]:
         return dict(self._attempts)

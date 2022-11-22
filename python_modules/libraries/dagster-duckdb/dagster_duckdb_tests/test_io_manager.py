@@ -38,7 +38,7 @@ def test_get_select_statement_partitioned():
         )
     ) == (
         "SELECT apple, banana FROM schema1.table1\n"
-        "WHERE my_timestamp_col BETWEEN '2020-01-02 00:00:00' AND '2020-02-03 00:00:00'"
+        "WHERE my_timestamp_col >= '2020-01-02 00:00:00' AND my_timestamp_col < '2020-02-03 00:00:00'"
     )
 
 
@@ -61,5 +61,5 @@ def test_get_cleanup_statement_partitioned():
         )
     ) == (
         "DELETE FROM schema1.table1\n"
-        "WHERE my_timestamp_col BETWEEN '2020-01-02 00:00:00' AND '2020-02-03 00:00:00'"
+        "WHERE my_timestamp_col >= '2020-01-02 00:00:00' AND my_timestamp_col < '2020-02-03 00:00:00'"
     )

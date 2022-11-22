@@ -49,6 +49,10 @@ export const InstanceHealthPage = () => {
   );
 };
 
+// Imported via React.lazy, which requires a default export.
+// eslint-disable-next-line import/no-default-export
+export default InstanceHealthPage;
+
 const INSTANCE_HEALTH_QUERY = gql`
   query InstanceHealthQuery {
     instance {

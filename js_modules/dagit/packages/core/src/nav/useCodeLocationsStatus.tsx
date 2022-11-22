@@ -55,10 +55,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
             <div>Workspace loaded with errors</div>
-            <ViewButton
-              onClick={() => history.push('/instance/code-locations')}
-              color={Colors.White}
-            >
+            <ViewButton onClick={() => history.push('/code-locations')} color={Colors.White}>
               View
             </ViewButton>
           </Box>
@@ -173,7 +170,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
             ) : (
               <span>Updating {currentlyLoading.length} code locations</span>
             )}
-            <ViewButton onClick={() => history.push('/workspace')} color={Colors.White}>
+            <ViewButton onClick={() => history.push('/code-locations')} color={Colors.White}>
               View
             </ViewButton>
           </Box>
@@ -210,9 +207,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
       type: 'warning',
       content: (
         <div style={{whiteSpace: 'nowrap'}}>{`${repoErrors.length} ${
-          repoErrors.length === 1
-            ? 'repository location failed to load'
-            : 'repository locations failed to load'
+          repoErrors.length === 1 ? 'code location failed to load' : 'code locations failed to load'
         }`}</div>
       ),
     };

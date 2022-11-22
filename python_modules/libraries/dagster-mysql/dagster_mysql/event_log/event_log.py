@@ -19,7 +19,6 @@ from dagster._core.storage.sql import (
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from ..utils import (
-    MYSQL_POOL_RECYCLE,
     create_mysql_connection,
     mysql_alembic_config,
     mysql_url_from_config,
@@ -79,14 +78,14 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 SqlEventLogStorageMetadata.create_all(conn)
                 stamp_alembic_rev(mysql_alembic_config(__file__), conn)
 
-    def optimize_for_dagit(self, statement_timeout):
+    def optimize_for_dagit(self, statement_timeout, pool_recycle):
         # When running in dagit, hold an open connection
         # https://github.com/dagster-io/dagster/issues/3719
         self._engine = create_engine(
             self.mysql_url,
             isolation_level="AUTOCOMMIT",
             pool_size=1,
-            pool_recycle=MYSQL_POOL_RECYCLE,
+            pool_recycle=pool_recycle,
         )
 
     def upgrade(self):
@@ -156,6 +155,9 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def index_connection(self):
         return self._connect()
+
+    def has_table(self, table_name: str) -> bool:
+        return bool(self._engine.dialect.has_table(self._engine.connect(), table_name))
 
     def has_secondary_index(self, name):
         if name not in self._secondary_index_cache:

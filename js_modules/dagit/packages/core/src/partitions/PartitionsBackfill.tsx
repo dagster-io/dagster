@@ -24,6 +24,7 @@ import {SharedToaster} from '../app/DomUtils';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
@@ -342,8 +343,9 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
           </Box>
           <PartitionRangeInput
             value={selected}
-            partitionNames={partitionNames}
+            partitionKeys={partitionNames}
             onChange={setSelected}
+            isTimeseries={isTimeseriesPartition(partitionNames[0])}
           />
         </Box>
         <Box flex={{direction: 'row', gap: 24}} margin={{top: 16}}>
@@ -796,7 +798,7 @@ export function showBackfillSuccessToast(history: History<unknown>, backfillId: 
     ),
     action: {
       text: 'View',
-      onClick: () => history.push(`/instance/backfills`),
+      onClick: () => history.push('/overview/backfills'),
     },
   });
 }

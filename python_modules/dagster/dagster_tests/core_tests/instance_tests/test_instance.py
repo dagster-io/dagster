@@ -18,12 +18,18 @@ from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
+from dagster._core.secrets.env_file import EnvFileLoader
 from dagster._core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
     snapshot_from_execution_plan,
 )
-from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
+from dagster._core.test_utils import (
+    TestSecretsLoader,
+    create_run_for_test,
+    environ,
+    instance_for_test,
+)
 from dagster._legacy import PipelineDefinition
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
@@ -83,6 +89,31 @@ def test_unified_storage(tmpdir):
         }
     ) as _instance:
         pass
+
+
+def test_custom_secrets_manager():
+    with instance_for_test() as instance:
+        assert isinstance(
+            instance._secrets_loader, EnvFileLoader  # pylint:disable=protected-access
+        )
+
+    with instance_for_test(
+        overrides={
+            "secrets": {
+                "custom": {
+                    "module": "dagster._core.test_utils",
+                    "class": "TestSecretsLoader",
+                    "config": {"env_vars": {"FOO": "BAR"}},
+                }
+            }
+        }
+    ) as instance:
+        assert isinstance(
+            instance._secrets_loader, TestSecretsLoader  # pylint:disable=protected-access
+        )
+        assert instance._secrets_loader.env_vars == {  # pylint:disable=protected-access
+            "FOO": "BAR"
+        }
 
 
 def test_in_memory_persist_one_run():

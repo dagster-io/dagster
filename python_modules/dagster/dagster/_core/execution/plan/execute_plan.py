@@ -1,7 +1,6 @@
-import os
 import sys
 from contextlib import ExitStack
-from typing import Iterator, List, cast
+from typing import Iterator, Sequence, cast
 
 import dagster._check as check
 from dagster._core.definitions import Failure, HookExecutionResult, RetryRequested
@@ -14,6 +13,7 @@ from dagster._core.errors import (
     user_code_error_boundary,
 )
 from dagster._core.events import DagsterEvent, EngineEventData
+from dagster._core.execution.compute_logs import create_compute_log_file_key
 from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster._core.execution.plan.execute_step import core_dagster_event_sequence_for_step
 from dagster._core.execution.plan.objects import (
@@ -42,8 +42,8 @@ def inner_plan_execution_iterator(
 
         # begin capturing logs for the whole process if this is a captured log manager
         if isinstance(compute_log_manager, CapturedLogManager):
-            pid = str(os.getpid())
-            log_key = compute_log_manager.build_log_key_for_run(pipeline_context.run_id, pid)
+            file_key = create_compute_log_file_key()
+            log_key = compute_log_manager.build_log_key_for_run(pipeline_context.run_id, file_key)
             log_context = plan_stack.enter_context(compute_log_manager.capture_logs(log_key))
             yield DagsterEvent.capture_logs(pipeline_context, step_keys, log_key, log_context)
 
@@ -138,7 +138,7 @@ def inner_plan_execution_iterator(
 
 
 def _trigger_hook(
-    step_context: StepExecutionContext, step_event_list: List[DagsterEvent]
+    step_context: StepExecutionContext, step_event_list: Sequence[DagsterEvent]
 ) -> Iterator[DagsterEvent]:
     """Trigger hooks and record hook's operatonal events"""
     hook_defs = step_context.pipeline_def.get_all_hooks_for_handle(step_context.solid_handle)

@@ -695,6 +695,11 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_Ta
 
 export type SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries = SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_PathMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_NotebookMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_JsonMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_UrlMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_TextMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_MarkdownMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_FloatMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_IntMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_BoolMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_PipelineRunMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_AssetMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_TableMetadataEntry | SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries_TableSchemaMetadataEntry;
 
+export interface SidebarAssetQuery_assetNodeOrError_AssetNode_partitionDefinition {
+  __typename: "PartitionDefinition";
+  description: string;
+}
+
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_assetKey {
   __typename: "AssetKey";
   path: string[];
@@ -3097,7 +3102,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_type_innerTypes_ou
 export type SidebarAssetQuery_assetNodeOrError_AssetNode_type_innerTypes_outputSchemaType = SidebarAssetQuery_assetNodeOrError_AssetNode_type_innerTypes_outputSchemaType_ArrayConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_type_innerTypes_outputSchemaType_EnumConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_type_innerTypes_outputSchemaType_RegularConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_type_innerTypes_outputSchemaType_CompositeConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_type_innerTypes_outputSchemaType_ScalarUnionConfigType | SidebarAssetQuery_assetNodeOrError_AssetNode_type_innerTypes_outputSchemaType_MapConfigType;
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_type_innerTypes {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   key: string;
   name: string | null;
   displayName: string;
@@ -3112,7 +3117,7 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode_type_innerTypes {
 }
 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   key: string;
   name: string | null;
   displayName: string;
@@ -3133,9 +3138,10 @@ export interface SidebarAssetQuery_assetNodeOrError_AssetNode {
   description: string | null;
   configField: SidebarAssetQuery_assetNodeOrError_AssetNode_configField | null;
   metadataEntries: SidebarAssetQuery_assetNodeOrError_AssetNode_metadataEntries[];
-  partitionDefinition: string | null;
+  partitionDefinition: SidebarAssetQuery_assetNodeOrError_AssetNode_partitionDefinition | null;
   assetKey: SidebarAssetQuery_assetNodeOrError_AssetNode_assetKey;
   op: SidebarAssetQuery_assetNodeOrError_AssetNode_op | null;
+  opVersion: string | null;
   repository: SidebarAssetQuery_assetNodeOrError_AssetNode_repository;
   type: SidebarAssetQuery_assetNodeOrError_AssetNode_type | null;
 }

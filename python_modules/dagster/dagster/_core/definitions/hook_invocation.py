@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
 
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 def hook_invocation_result(
     hook_def: "HookDefinition",
     hook_context: Optional[UnboundHookContext],
-    event_list: Optional[List["DagsterEvent"]] = None,
+    event_list: Optional[Sequence["DagsterEvent"]] = None,
 ):
     if not hook_context:
         hook_context = UnboundHookContext(

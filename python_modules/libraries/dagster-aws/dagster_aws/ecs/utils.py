@@ -1,5 +1,5 @@
 import re
-from typing import Any, Dict
+from typing import Any, Mapping
 
 from .tasks import DagsterEcsTaskDefinitionConfig
 
@@ -11,7 +11,7 @@ def sanitize_family(family):
 
 def task_definitions_match(
     desired_task_definition_config: DagsterEcsTaskDefinitionConfig,
-    existing_task_definition: Dict[str, Any],
+    existing_task_definition: Mapping[str, Any],
     container_name: str,
 ) -> bool:
     if not any(

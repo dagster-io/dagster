@@ -1,3 +1,5 @@
+# pylint: disable=protected-access
+
 import os
 import sys
 import tempfile
@@ -5,6 +7,7 @@ import tempfile
 import pytest
 from botocore.exceptions import ClientError
 from dagster_aws.s3 import S3ComputeLogManager
+from dagster_tests.core_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
 
 from dagster import DagsterEventType, job, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
@@ -12,6 +15,7 @@ from dagster._core.launcher import DefaultRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.event_log import SqliteEventLogStorage
+from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import environ
@@ -54,40 +58,45 @@ def test_compute_log_manager(mock_s3_bucket):
                 ref=InstanceRef.from_dir(temp_dir),
             )
             result = simple.execute_in_process(instance=instance)
-            compute_steps = [
-                event.step_key
-                for event in result.all_node_events
-                if event.event_type == DagsterEventType.STEP_START
+            capture_events = [
+                event
+                for event in result.all_events
+                if event.event_type == DagsterEventType.LOGS_CAPTURED
             ]
-            assert len(compute_steps) == 1
-            step_key = compute_steps[0]
+            assert len(capture_events) == 1
+            event = capture_events[0]
+            file_key = event.logs_captured_data.file_key
+            log_key = manager.build_log_key_for_run(result.run_id, file_key)
+            log_data = manager.get_log_data(log_key)
+            stdout = log_data.stdout.decode("utf-8")
+            assert stdout == HELLO_WORLD + SEPARATOR
 
-            stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
+            stderr = log_data.stderr.decode("utf-8")
             for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
+                assert expected in stderr
 
             # Check S3 directly
-            s3_object = mock_s3_bucket.Object(
-                key=f"my_prefix/storage/{result.run_id}/compute_logs/easy.err"
-            )
+            s3_object = mock_s3_bucket.Object(key=manager._s3_key(log_key, ComputeIOType.STDERR))
             stderr_s3 = s3_object.get()["Body"].read().decode("utf-8")
             for expected in EXPECTED_LOGS:
                 assert expected in stderr_s3
 
             # Check download behavior by deleting locally cached logs
-            compute_logs_dir = os.path.join(temp_dir, result.run_id, "compute_logs")
-            for filename in os.listdir(compute_logs_dir):
-                os.unlink(os.path.join(compute_logs_dir, filename))
+            local_dir = os.path.dirname(
+                manager._local_manager.get_captured_local_path(
+                    log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
+                )
+            )
+            for filename in os.listdir(local_dir):
+                os.unlink(os.path.join(local_dir, filename))
 
-            stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
+            log_data = manager.get_log_data(log_key)
+            stdout = log_data.stdout.decode("utf-8")
+            assert stdout == HELLO_WORLD + SEPARATOR
 
-            stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
+            stderr = log_data.stderr.decode("utf-8")
             for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
+                assert expected in stderr
 
 
 def test_compute_log_manager_from_config(mock_s3_bucket):
@@ -145,17 +154,23 @@ def test_compute_log_manager_skip_empty_upload(mock_s3_bucket):
                 ref=InstanceRef.from_dir(temp_dir),
             )
             result = simple.execute_in_process(instance=instance)
-
+            capture_events = [
+                event
+                for event in result.all_events
+                if event.event_type == DagsterEventType.LOGS_CAPTURED
+            ]
+            assert len(capture_events) == 1
+            event = capture_events[0]
+            file_key = event.logs_captured_data.file_key
+            log_key = manager.build_log_key_for_run(result.run_id, file_key)
             stderr_object = mock_s3_bucket.Object(
-                key=f"{PREFIX}/storage/{result.run_id}/compute_logs/easy.err"
-            ).get()
+                key=manager._s3_key(log_key, ComputeIOType.STDERR)
+            )
             assert stderr_object
 
             with pytest.raises(ClientError):
                 # stdout is not uploaded because we do not print anything to stdout
-                mock_s3_bucket.Object(
-                    key=f"{PREFIX}/storage/{result.run_id}/compute_logs/easy.out"
-                ).get()
+                mock_s3_bucket.Object(key=manager._s3_key(log_key, ComputeIOType.STDOUT)).get()
 
 
 def test_blank_compute_logs(mock_s3_bucket):
@@ -170,3 +185,50 @@ def test_blank_compute_logs(mock_s3_bucket):
 
         assert not stdout.data
         assert not stderr.data
+
+
+def test_prefix_filter(mock_s3_bucket):
+    s3_prefix = "foo/bar/"  # note the trailing slash
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        manager = S3ComputeLogManager(
+            bucket=mock_s3_bucket.name, prefix=s3_prefix, local_dir=temp_dir
+        )
+        log_key = ["arbitrary", "log", "key"]
+        with manager.open_log_stream(log_key, ComputeIOType.STDERR) as write_stream:
+            write_stream.write("hello hello")
+
+        s3_object = mock_s3_bucket.Object(key="foo/bar/storage/arbitrary/log/key.err")
+        logs = s3_object.get()["Body"].read().decode("utf-8")
+        assert logs == "hello hello"
+
+
+class TestS3ComputeLogManager(TestCapturedLogManager):
+    __test__ = True
+
+    @pytest.fixture(name="captured_log_manager")
+    def captured_log_manager(self, mock_s3_bucket):  # pylint: disable=arguments-differ
+        with tempfile.TemporaryDirectory() as temp_dir:
+            yield S3ComputeLogManager(
+                bucket=mock_s3_bucket.name, prefix="my_prefix", local_dir=temp_dir
+            )
+
+    # for streaming tests
+    @pytest.fixture(name="write_manager")
+    def write_manager(self, mock_s3_bucket):  # pylint: disable=arguments-differ
+        # should be a different local directory as the read manager
+        with tempfile.TemporaryDirectory() as temp_dir:
+            yield S3ComputeLogManager(
+                bucket=mock_s3_bucket.name,
+                prefix="my_prefix",
+                local_dir=temp_dir,
+                upload_interval=1,
+            )
+
+    @pytest.fixture(name="read_manager")
+    def read_manager(self, mock_s3_bucket):  # pylint: disable=arguments-differ
+        # should be a different local directory as the write manager
+        with tempfile.TemporaryDirectory() as temp_dir:
+            yield S3ComputeLogManager(
+                bucket=mock_s3_bucket.name, prefix="my_prefix", local_dir=temp_dir
+            )

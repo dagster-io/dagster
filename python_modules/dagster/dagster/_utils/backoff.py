@@ -1,5 +1,5 @@
 import time
-from typing import Callable, Dict, Generator, List, Optional, Tuple, TypeVar
+from typing import Callable, Generator, Mapping, Optional, Sequence, Tuple, TypeVar
 
 T = TypeVar("T")
 
@@ -19,8 +19,8 @@ BACKOFF_MAX_RETRIES = 4
 def backoff(
     fn: Callable[..., T],
     retry_on: Tuple[object, ...],
-    args: Optional[List[object]] = None,
-    kwargs: Optional[Dict[str, object]] = None,
+    args: Optional[Sequence[object]] = None,
+    kwargs: Optional[Mapping[str, object]] = None,
     max_retries: int = BACKOFF_MAX_RETRIES,
     delay_generator: Generator = backoff_delay_generator(),
 ) -> T:
@@ -41,8 +41,8 @@ def backoff(
     """
     check.callable_param(fn, "fn")
     retry_on = check.tuple_param(retry_on, "retry_on")
-    args = check.opt_list_param(args, "args")
-    kwargs = check.opt_dict_param(kwargs, "kwargs", key_type=str)
+    args = check.opt_sequence_param(args, "args")
+    kwargs = check.opt_mapping_param(kwargs, "kwargs", key_type=str)
     check.int_param(max_retries, "max_retries")
     check.generator_param(delay_generator, "delay_generator")
 

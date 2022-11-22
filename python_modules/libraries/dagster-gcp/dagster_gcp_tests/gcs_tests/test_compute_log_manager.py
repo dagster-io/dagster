@@ -2,7 +2,10 @@ import os
 import sys
 import tempfile
 
+import pendulum
+import pytest
 from dagster_gcp.gcs import GCSComputeLogManager
+from dagster_tests.core_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
 from google.cloud import storage  # type: ignore
 
 from dagster import DagsterEventType, job, op
@@ -53,18 +56,29 @@ def test_compute_log_manager(gcs_bucket):
                 ref=InstanceRef.from_dir(temp_dir),
             )
             result = simple.execute_in_process(instance=instance)
-            compute_steps = [
-                event.step_key
-                for event in result.all_node_events
-                if event.event_type == DagsterEventType.STEP_START
+            capture_events = [
+                event
+                for event in result.all_events
+                if event.event_type == DagsterEventType.LOGS_CAPTURED
             ]
-            assert len(compute_steps) == 1
-            step_key = compute_steps[0]
+            assert len(capture_events) == 1
+            event = capture_events[0]
+            file_key = event.logs_captured_data.file_key
+            log_key = manager.build_log_key_for_run(result.run_id, file_key)
 
-            stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
+            # Capture API
+            log_data = manager.get_log_data(log_key)
+            stdout = log_data.stdout.decode("utf-8")
+            assert stdout == HELLO_WORLD + SEPARATOR
+            stderr = log_data.stderr.decode("utf-8")
+            for expected in EXPECTED_LOGS:
+                assert expected in stderr
+
+            # Legacy API
+            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
             assert stdout.data == HELLO_WORLD + SEPARATOR
 
-            stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
+            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
             for expected in EXPECTED_LOGS:
                 assert expected in stderr.data
 
@@ -72,7 +86,7 @@ def test_compute_log_manager(gcs_bucket):
             stderr_gcs = (
                 storage.Client()
                 .bucket(gcs_bucket)
-                .blob(f"my_prefix/storage/{result.run_id}/compute_logs/easy.err")
+                .blob(f"my_prefix/storage/{result.run_id}/compute_logs/{file_key}.err")
                 .download_as_bytes()
                 .decode("utf-8")
             )
@@ -85,10 +99,19 @@ def test_compute_log_manager(gcs_bucket):
             for filename in os.listdir(compute_logs_dir):
                 os.unlink(os.path.join(compute_logs_dir, filename))
 
-            stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
+            # Capture API
+            log_data = manager.get_log_data(log_key)
+            stdout = log_data.stdout.decode("utf-8")
+            assert stdout == HELLO_WORLD + SEPARATOR
+            stderr = log_data.stderr.decode("utf-8")
+            for expected in EXPECTED_LOGS:
+                assert expected in stderr
+
+            # Legacy API
+            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
             assert stdout.data == HELLO_WORLD + SEPARATOR
 
-            stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
+            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
             for expected in EXPECTED_LOGS:
                 assert expected in stderr.data
 
@@ -126,18 +149,26 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                     ref=InstanceRef.from_dir(temp_dir),
                 )
                 result = simple.execute_in_process(instance=instance)
-                compute_steps = [
-                    event.step_key
-                    for event in result.all_node_events
-                    if event.event_type == DagsterEventType.STEP_START
+                capture_events = [
+                    event
+                    for event in result.all_events
+                    if event.event_type == DagsterEventType.LOGS_CAPTURED
                 ]
-                assert len(compute_steps) == 1
-                step_key = compute_steps[0]
+                assert len(capture_events) == 1
+                event = capture_events[0]
+                file_key = event.logs_captured_data.file_key
+                log_key = manager.build_log_key_for_run(result.run_id, file_key)
 
-                stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
+                # capture API
+                log_data = manager.get_log_data(log_key)
+                stdout = log_data.stdout.decode("utf-8")
+                assert stdout == HELLO_WORLD + SEPARATOR
+
+                # legacy API
+                stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
                 assert stdout.data == HELLO_WORLD + SEPARATOR
 
-                stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
+                stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
                 for expected in EXPECTED_LOGS:
                     assert expected in stderr.data
 
@@ -145,7 +176,7 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                 stderr_gcs = (
                     storage.Client()
                     .bucket(gcs_bucket)
-                    .blob(f"my_prefix/storage/{result.run_id}/compute_logs/easy.err")
+                    .blob(f"my_prefix/storage/{result.run_id}/compute_logs/{file_key}.err")
                     .download_as_bytes()
                     .decode("utf-8")
                 )
@@ -158,16 +189,22 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                 for filename in os.listdir(compute_logs_dir):
                     os.unlink(os.path.join(compute_logs_dir, filename))
 
-                stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
+                # capture API
+                log_data = manager.get_log_data(log_key)
+                stdout = log_data.stdout.decode("utf-8")
+                assert stdout == HELLO_WORLD + SEPARATOR
+
+                # legacy API
+                stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
                 assert stdout.data == HELLO_WORLD + SEPARATOR
 
-                stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
+                stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
                 for expected in EXPECTED_LOGS:
                     assert expected in stderr.data
 
 
 def test_compute_log_manager_from_config(gcs_bucket):
-    s3_prefix = "foobar"
+    gcs_prefix = "foobar"
 
     dagster_yaml = """
 compute_logs:
@@ -178,7 +215,7 @@ compute_logs:
     local_dir: "/tmp/cool"
     prefix: "{prefix}"
 """.format(
-        bucket=gcs_bucket, prefix=s3_prefix
+        bucket=gcs_bucket, prefix=gcs_prefix
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
@@ -188,3 +225,50 @@ compute_logs:
         instance = DagsterInstance.from_config(tempdir)
 
     assert isinstance(instance.compute_log_manager, GCSComputeLogManager)
+
+
+def test_prefix_filter(gcs_bucket):
+    gcs_prefix = "foo/bar/"  # note the trailing slash
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        manager = GCSComputeLogManager(bucket=gcs_bucket, prefix=gcs_prefix, local_dir=temp_dir)
+        time_str = pendulum.now("UTC").strftime("%Y_%m_%d__%H_%M_%S")
+        log_key = ["arbitrary", "log", "key", time_str]
+        with manager.open_log_stream(log_key, ComputeIOType.STDERR) as write_stream:
+            write_stream.write("hello hello")
+
+        logs = (
+            storage.Client()
+            .bucket(gcs_bucket)
+            .blob(f"foo/bar/storage/arbitrary/log/key/{time_str}.err")
+            .download_as_bytes()
+            .decode("utf-8")
+        )
+        assert logs == "hello hello"
+
+
+class TestGCSComputeLogManager(TestCapturedLogManager):
+    __test__ = True
+
+    @pytest.fixture(name="captured_log_manager")
+    def captured_log_manager(self, gcs_bucket):  # pylint: disable=arguments-differ
+        with tempfile.TemporaryDirectory() as temp_dir:
+            yield GCSComputeLogManager(bucket=gcs_bucket, prefix="my_prefix", local_dir=temp_dir)
+
+    # for streaming tests
+    @pytest.fixture(name="write_manager")
+    def write_manager(self, gcs_bucket):  # pylint: disable=arguments-differ
+        # should be a different local directory as the read manager
+        with tempfile.TemporaryDirectory() as temp_dir:
+            yield GCSComputeLogManager(
+                bucket=gcs_bucket,
+                prefix="my_prefix",
+                local_dir=temp_dir,
+                upload_interval=1,
+            )
+
+    @pytest.fixture(name="read_manager")
+    def read_manager(self, gcs_bucket):  # pylint: disable=arguments-differ
+        # should be a different local directory as the write manager
+        with tempfile.TemporaryDirectory() as temp_dir:
+            yield GCSComputeLogManager(bucket=gcs_bucket, prefix="my_prefix", local_dir=temp_dir)

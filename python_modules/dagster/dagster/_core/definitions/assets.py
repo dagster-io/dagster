@@ -35,7 +35,7 @@ from .events import AssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
 from .partition import PartitionsDefinition
-from .partition_mapping import AllPartitionMapping, PartitionMapping
+from .partition_mapping import PartitionMapping, infer_partition_mapping
 from .resource_definition import ResourceDefinition
 from .resource_requirement import (
     ResourceAddable,
@@ -102,13 +102,13 @@ class AssetsDefinition(ResourceAddable):
             _validate_graph_def(node_def)
 
         self._node_def = node_def
-        self._keys_by_input_name = check.dict_param(
+        self._keys_by_input_name = check.mapping_param(
             keys_by_input_name,
             "keys_by_input_name",
             key_type=str,
             value_type=AssetKey,
         )
-        self._keys_by_output_name = check.dict_param(
+        self._keys_by_output_name = check.mapping_param(
             keys_by_output_name,
             "keys_by_output_name",
             key_type=str,
@@ -149,14 +149,23 @@ class AssetsDefinition(ResourceAddable):
             self._selected_asset_keys = all_asset_keys
         self._can_subset = can_subset
 
-        self._metadata_by_key = check.opt_dict_param(
-            metadata_by_key, "metadata_by_key", key_type=AssetKey, value_type=dict
+        self._metadata_by_key = dict(
+            check.opt_mapping_param(
+                metadata_by_key, "metadata_by_key", key_type=AssetKey, value_type=dict
+            )
         )
         for output_name, asset_key in keys_by_output_name.items():
             self._metadata_by_key[asset_key] = merge_dicts(
                 node_def.resolve_output_to_origin(output_name, None)[0].metadata,
                 self._metadata_by_key.get(asset_key, {}),
             )
+        for key, freshness_policy in (freshness_policies_by_key or {}).items():
+            check.param_invariant(
+                not (freshness_policy and self._partitions_def),
+                "freshness_policies_by_key",
+                "FreshnessPolicies are currently unsupported for partitioned assets.",
+            )
+
         self._freshness_policies_by_key = check.opt_dict_param(
             freshness_policies_by_key,
             "freshness_policies_by_key",
@@ -343,17 +352,17 @@ class AssetsDefinition(ResourceAddable):
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         keys_by_input_name = _infer_keys_by_input_names(
             node_def,
-            check.opt_dict_param(
+            check.opt_mapping_param(
                 keys_by_input_name, "keys_by_input_name", key_type=str, value_type=AssetKey
             ),
         )
-        keys_by_output_name = check.opt_dict_param(
+        keys_by_output_name = check.opt_mapping_param(
             keys_by_output_name,
             "keys_by_output_name",
             key_type=str,
             value_type=AssetKey,
         )
-        internal_asset_deps = check.opt_dict_param(
+        internal_asset_deps = check.opt_mapping_param(
             internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
         )
         resource_defs = check.opt_mapping_param(
@@ -468,7 +477,7 @@ class AssetsDefinition(ResourceAddable):
 
     @public  # type: ignore
     @property
-    def resource_defs(self) -> Dict[str, ResourceDefinition]:
+    def resource_defs(self) -> Mapping[str, ResourceDefinition]:
         return dict(self._resource_defs)
 
     @public  # type: ignore
@@ -523,7 +532,6 @@ class AssetsDefinition(ResourceAddable):
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         return self._partitions_def
 
-    @public  # type: ignore
     @property
     def is_versioned(self) -> bool:
         return self.op.version is not None
@@ -537,12 +545,8 @@ class AssetsDefinition(ResourceAddable):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-            return self._partition_mappings.get(
-                in_asset_key,
-                self._partitions_def.get_default_partition_mapping()
-                if self._partitions_def
-                else AllPartitionMapping(),
-            )
+            partition_mapping = self._partition_mappings.get(in_asset_key)
+            return infer_partition_mapping(partition_mapping, self._partitions_def)
 
     def get_output_name_for_asset_key(self, key: AssetKey) -> str:
         for output_name, asset_key in self.keys_by_output_name.items():
@@ -567,19 +571,19 @@ class AssetsDefinition(ResourceAddable):
     ) -> "AssetsDefinition":
         from dagster import DagsterInvalidDefinitionError
 
-        output_asset_key_replacements = check.opt_dict_param(
+        output_asset_key_replacements = check.opt_mapping_param(
             output_asset_key_replacements,
             "output_asset_key_replacements",
             key_type=AssetKey,
             value_type=AssetKey,
         )
-        input_asset_key_replacements = check.opt_dict_param(
+        input_asset_key_replacements = check.opt_mapping_param(
             input_asset_key_replacements,
             "input_asset_key_replacements",
             key_type=AssetKey,
             value_type=AssetKey,
         )
-        group_names_by_key = check.opt_dict_param(
+        group_names_by_key = check.opt_mapping_param(
             group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
         )
 
@@ -955,12 +959,12 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
     """Ensure that all leaf nodes are mapped to graph outputs."""
     from dagster._core.definitions.graph_definition import GraphDefinition, _create_adjacency_lists
 
-    prefix = check.opt_list_param(prefix, "prefix")
+    prefix = check.opt_sequence_param(prefix, "prefix")
 
     # recursively validate any sub-graphs
     for inner_node_def in graph_def.node_defs:
         if isinstance(inner_node_def, GraphDefinition):
-            _validate_graph_def(inner_node_def, prefix=prefix + [graph_def.name])
+            _validate_graph_def(inner_node_def, prefix=[*prefix, graph_def.name])
 
     # leaf nodes have no downstream nodes
     forward_edges, _ = _create_adjacency_lists(graph_def.solids, graph_def.dependency_structure)
@@ -974,7 +978,7 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
     }
 
     # leaf nodes which do not have an associated mapped output
-    unmapped_leaf_nodes = {".".join(prefix + [node]) for node in leaf_nodes - mapped_output_nodes}
+    unmapped_leaf_nodes = {".".join([*prefix, node]) for node in leaf_nodes - mapped_output_nodes}
 
     check.invariant(
         not unmapped_leaf_nodes,

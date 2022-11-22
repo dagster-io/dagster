@@ -53,11 +53,16 @@ def test_merge(
         "SHARED_KEY": "SHARED_VAL",
     }
 
+    assert secrets_container_context.container_name == "foo"
+
     assert other_secrets_container_context.secrets == [
         {"name": "GOODBYE", "valueFrom": other_configured_secret.arn + "/goodbye"},
     ]
 
     assert other_secrets_container_context.secrets_tags == ["other_secret_tag"]
+
+    assert other_secrets_container_context.container_name == "bar"
+
     with pytest.raises(
         Exception, match="Tried to load environment variable OTHER_FOO_ENV_VAR, but it was not set"
     ):
@@ -69,14 +74,16 @@ def test_merge(
             "SHARED_OTHER_KEY": "SHARED_OTHER_VAL",
         }
 
-    merged = other_secrets_container_context.merge(secrets_container_context)
+    merged = secrets_container_context.merge(other_secrets_container_context)
 
     assert merged.secrets == [
-        {"name": "HELLO", "valueFrom": configured_secret.arn + "/hello"},
         {"name": "GOODBYE", "valueFrom": other_configured_secret.arn + "/goodbye"},
+        {"name": "HELLO", "valueFrom": configured_secret.arn + "/hello"},
     ]
 
-    assert merged.secrets_tags == ["dagster", "other_secret_tag"]
+    assert merged.secrets_tags == ["other_secret_tag", "dagster"]
+
+    assert merged.container_name == "bar"
 
     with pytest.raises(
         Exception, match="Tried to load environment variable OTHER_FOO_ENV_VAR, but it was not set"

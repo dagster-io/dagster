@@ -25,7 +25,7 @@ export interface OpNodeDefinitionFragment_SolidDefinition_assetNodes {
 }
 
 export interface OpNodeDefinitionFragment_SolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -36,7 +36,7 @@ export interface OpNodeDefinitionFragment_SolidDefinition_inputDefinitions {
 }
 
 export interface OpNodeDefinitionFragment_SolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -48,7 +48,7 @@ export interface OpNodeDefinitionFragment_SolidDefinition_outputDefinitions {
 }
 
 export interface OpNodeDefinitionFragment_SolidDefinition_configField_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
+  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
   description: string | null;
 }
@@ -87,7 +87,7 @@ export interface OpNodeDefinitionFragment_CompositeSolidDefinition_assetNodes {
 }
 
 export interface OpNodeDefinitionFragment_CompositeSolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -98,7 +98,7 @@ export interface OpNodeDefinitionFragment_CompositeSolidDefinition_inputDefiniti
 }
 
 export interface OpNodeDefinitionFragment_CompositeSolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 

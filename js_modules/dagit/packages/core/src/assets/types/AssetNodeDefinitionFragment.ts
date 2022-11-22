@@ -524,6 +524,11 @@ export interface AssetNodeDefinitionFragment_configField {
   configType: AssetNodeDefinitionFragment_configField_configType;
 }
 
+export interface AssetNodeDefinitionFragment_partitionDefinition {
+  __typename: "PartitionDefinition";
+  description: string;
+}
+
 export interface AssetNodeDefinitionFragment_repository_location {
   __typename: "RepositoryLocation";
   id: string;
@@ -3078,7 +3083,7 @@ export interface AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_Ma
 export type AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType = AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ArrayConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_EnumConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_RegularConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_CompositeConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType | AssetNodeDefinitionFragment_type_innerTypes_outputSchemaType_MapConfigType;
 
 export interface AssetNodeDefinitionFragment_type_innerTypes {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   key: string;
   name: string | null;
   displayName: string;
@@ -3093,7 +3098,7 @@ export interface AssetNodeDefinitionFragment_type_innerTypes {
 }
 
 export interface AssetNodeDefinitionFragment_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   key: string;
   name: string | null;
   displayName: string;
@@ -3115,10 +3120,14 @@ export interface AssetNodeDefinitionFragment {
   description: string | null;
   graphName: string | null;
   opNames: string[];
+  opVersion: string | null;
   jobNames: string[];
-  partitionDefinition: string | null;
+  partitionDefinition: AssetNodeDefinitionFragment_partitionDefinition | null;
   repository: AssetNodeDefinitionFragment_repository;
   computeKind: string | null;
+  isPartitioned: boolean;
+  isObservable: boolean;
+  isSource: boolean;
   assetKey: AssetNodeDefinitionFragment_assetKey;
   metadataEntries: AssetNodeDefinitionFragment_metadataEntries[];
   type: AssetNodeDefinitionFragment_type | null;

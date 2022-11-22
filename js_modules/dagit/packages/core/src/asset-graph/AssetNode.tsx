@@ -1,30 +1,20 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, Tooltip, FontFamily, Box, CaptionMono, Spinner} from '@dagster-io/ui';
+import {Colors, Icon, FontFamily, Box, CaptionMono, Caption, Spinner} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
-import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
-import {NodeHighlightColors} from '../graph/OpNode';
+import {isAssetLate} from '../assets/CurrentMinutesLateTag';
+import {isAssetStale} from '../assets/StaleTag';
 import {OpTags} from '../graph/OpTags';
-import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {AssetComputeStatus} from '../types/globalTypes';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
+import {AssetLatestRunSpinner, AssetLatestRunWithNotices, AssetRunLink} from './AssetRunLinking';
 import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_ANNOTATIONS_MAX_WIDTH, ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
-
-const MISSING_LIVE_DATA = {
-  unstartedRunIds: [],
-  inProgressRunIds: [],
-  runWhichFailedToMaterialize: null,
-  lastMaterialization: null,
-  computeStatus: AssetComputeStatus.NONE,
-  stepKey: '',
-};
 
 export const AssetNode: React.FC<{
   definition: AssetNodeFragment;
@@ -40,26 +30,25 @@ export const AssetNode: React.FC<{
   const stepKey = firstOp || '';
 
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1];
-
-  const {lastMaterialization, computeStatus} = liveData || MISSING_LIVE_DATA;
+  const isSource = definition.isSource;
 
   return (
     <AssetInsetForHoverEffect>
       <AssetNodeContainer $selected={selected}>
-        <AssetNodeBox $selected={selected}>
-          <Name>
+        <AssetNodeBox $selected={selected} $isSource={isSource}>
+          <Name $isSource={isSource}>
             <span style={{marginTop: 1}}>
-              <Icon name="asset" />
+              <Icon name={isSource ? 'source_asset' : 'asset'} />
             </span>
-            <div style={{overflow: 'hidden', textOverflow: 'ellipsis', marginTop: -1}}>
+            <div style={{overflow: 'hidden', textOverflow: 'ellipsis'}}>
               {withMiddleTruncation(displayName, {
                 maxLength: ASSET_NODE_NAME_MAX_LENGTH,
               })}
             </div>
             <div style={{flex: 1}} />
-            <div style={{maxWidth: ASSET_NODE_ANNOTATIONS_MAX_WIDTH}}>
-              <ComputeStatusNotice computeStatus={computeStatus} />
-            </div>
+            <Box flex={{alignItems: 'center'}} style={{maxWidth: ASSET_NODE_ANNOTATIONS_MAX_WIDTH}}>
+              <AssetLatestRunSpinner liveData={liveData} />
+            </Box>
           </Name>
           {definition.description && !inAssetCatalog && (
             <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
@@ -78,37 +67,44 @@ export const AssetNode: React.FC<{
             </Description>
           )}
 
-          <Stats>
-            {lastMaterialization ? (
-              <StatsRow>
-                <span>Materialized</span>
-                <CaptionMono style={{textAlign: 'right'}}>
-                  <AssetRunLink
-                    runId={lastMaterialization.runId}
-                    event={{stepKey, timestamp: lastMaterialization.timestamp}}
-                  >
-                    <TimestampDisplay
-                      timestamp={Number(lastMaterialization.timestamp) / 1000}
-                      timeFormat={{showSeconds: false, showTimezone: false}}
-                    />
-                  </AssetRunLink>
-                </CaptionMono>
-              </StatsRow>
-            ) : (
-              <>
+          {isSource && !definition.isObservable ? null : (
+            <Stats>
+              {isSource ? (
                 <StatsRow>
-                  <span>Materialized</span>
-                  <span>–</span>
+                  <span>Observed</span>
+                  {liveData?.lastObservation ? (
+                    <CaptionMono style={{textAlign: 'right'}}>
+                      <AssetRunLink
+                        runId={liveData.lastObservation.runId}
+                        event={{stepKey, timestamp: liveData.lastObservation.timestamp}}
+                      >
+                        <TimestampDisplay
+                          timestamp={Number(liveData.lastObservation.timestamp) / 1000}
+                          timeFormat={{showSeconds: false, showTimezone: false}}
+                        />
+                      </AssetRunLink>
+                    </CaptionMono>
+                  ) : (
+                    <span>–</span>
+                  )}
                 </StatsRow>
-              </>
-            )}
-            <StatsRow>
-              <span>Latest&nbsp;Run</span>
-              <CaptionMono style={{textAlign: 'right'}}>
-                <AssetLatestRunWithNotices liveData={liveData} />
-              </CaptionMono>
-            </StatsRow>
-          </Stats>
+              ) : (
+                <>
+                  <StatsRow>
+                    <span>Latest&nbsp;Run</span>
+                    <Caption style={{textAlign: 'right'}}>
+                      <AssetLatestRunWithNotices
+                        liveData={liveData}
+                        includeFreshness={false}
+                        includeRunStatus={false}
+                      />
+                    </Caption>
+                  </StatsRow>
+                </>
+              )}
+            </Stats>
+          )}
+          <AssetNodeStatusRow definition={definition} liveData={liveData} stepKey={stepKey} />
           {definition.computeKind && (
             <OpTags
               minified={false}
@@ -131,17 +127,134 @@ export const AssetNode: React.FC<{
   );
 }, isEqual);
 
+export const AssetNodeStatusRow: React.FC<{
+  definition: AssetNodeFragment;
+  liveData: LiveDataForNode | undefined;
+  stepKey: string;
+}> = ({definition, liveData, stepKey}) => {
+  if (definition.isSource) {
+    return <span />;
+  }
+
+  if (!liveData) {
+    return (
+      <Box
+        padding={{horizontal: 8}}
+        style={{borderBottomLeftRadius: 4, borderBottomRightRadius: 4, height: 24}}
+        flex={{justifyContent: 'space-between', alignItems: 'center'}}
+        background={Colors.Gray100}
+      >
+        <Spinner purpose="caption-text" />
+      </Box>
+    );
+  }
+
+  const {lastMaterialization, runWhichFailedToMaterialize} = liveData;
+  const late = isAssetLate(liveData);
+
+  if (runWhichFailedToMaterialize || late) {
+    return (
+      <Box
+        padding={{horizontal: 8}}
+        style={{borderBottomLeftRadius: 4, borderBottomRightRadius: 4, height: 24}}
+        flex={{justifyContent: 'space-between', alignItems: 'center'}}
+        background={Colors.Red50}
+      >
+        <Caption color={Colors.Red700}>
+          {runWhichFailedToMaterialize && late ? `Failed (Late)` : late ? 'Late' : 'Failed'}
+        </Caption>
+      </Box>
+    );
+  }
+
+  if (!lastMaterialization) {
+    return (
+      <Box
+        padding={{horizontal: 8}}
+        style={{borderBottomLeftRadius: 4, borderBottomRightRadius: 4, height: 24}}
+        flex={{justifyContent: 'space-between', alignItems: 'center'}}
+        background={Colors.Gray100}
+      >
+        <Caption color={Colors.Gray700}>Never materialized</Caption>
+      </Box>
+    );
+  }
+
+  if (isAssetStale(liveData)) {
+    return (
+      <Box
+        padding={{horizontal: 8}}
+        style={{borderBottomLeftRadius: 4, borderBottomRightRadius: 4, height: 24}}
+        flex={{justifyContent: 'space-between', alignItems: 'center'}}
+        background={Colors.Yellow50}
+      >
+        <Caption color={Colors.Yellow700}>Stale</Caption>
+      </Box>
+    );
+  }
+
+  return (
+    <Box
+      padding={{horizontal: 8}}
+      style={{borderBottomLeftRadius: 7, borderBottomRightRadius: 7, height: 24}}
+      flex={{justifyContent: 'space-between', alignItems: 'center'}}
+      background={Colors.Green50}
+    >
+      <Caption color={Colors.Green700}>Materialized</Caption>
+      <AssetNodeShowOnHover>
+        <AssetRunLink
+          color={Colors.Green700}
+          runId={lastMaterialization.runId}
+          event={{stepKey, timestamp: lastMaterialization.timestamp}}
+        >
+          <TimestampDisplay
+            timestamp={Number(lastMaterialization.timestamp) / 1000}
+            timeFormat={{showSeconds: false, showTimezone: false}}
+          />
+        </AssetRunLink>
+      </AssetNodeShowOnHover>
+    </Box>
+  );
+};
+
 export const AssetNodeMinimal: React.FC<{
   selected: boolean;
+  liveData?: LiveDataForNode;
   definition: AssetNodeFragment;
-}> = ({selected, definition}) => {
-  const displayName = definition.assetKey.path[definition.assetKey.path.length - 1];
+}> = ({selected, definition, liveData}) => {
+  const {isSource, assetKey} = definition;
+  const displayName = assetKey.path[assetKey.path.length - 1];
 
   return (
     <AssetInsetForHoverEffect>
       <MinimalAssetNodeContainer $selected={selected}>
-        <MinimalAssetNodeBox $selected={selected}>
-          <MinimalName style={{fontSize: 28}}>
+        <MinimalAssetNodeBox
+          $selected={selected}
+          $isSource={isSource}
+          $background={
+            liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
+              ? Colors.Red50
+              : !liveData?.lastMaterialization
+              ? Colors.Gray100
+              : isAssetStale(liveData)
+              ? Colors.Yellow50
+              : Colors.Green50
+          }
+          $border={
+            liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
+              ? Colors.Red500
+              : !liveData?.lastMaterialization
+              ? Colors.Gray500
+              : isAssetStale(liveData)
+              ? Colors.Yellow500
+              : Colors.Green500
+          }
+        >
+          <div style={{position: 'absolute', right: 5, top: 5}}>
+            <AssetLatestRunSpinner liveData={liveData} purpose="body-text" />
+          </div>
+
+          <MinimalName style={{fontSize: 30}} $isSource={isSource}>
             {withMiddleTruncation(displayName, {maxLength: 17})}
           </MinimalName>
         </MinimalAssetNodeBox>
@@ -149,19 +262,6 @@ export const AssetNodeMinimal: React.FC<{
     </AssetInsetForHoverEffect>
   );
 };
-
-export const AssetRunLink: React.FC<{
-  runId: string;
-  event?: Parameters<typeof linkToRunEvent>[1];
-}> = ({runId, children, event}) => (
-  <Link
-    to={event ? linkToRunEvent({runId}, event) : `/instance/runs/${runId}`}
-    target="_blank"
-    rel="noreferrer"
-  >
-    {children || titleForRun({runId})}
-  </Link>
-);
 
 export const ASSET_NODE_LIVE_FRAGMENT = gql`
   fragment AssetNodeLiveFragment on AssetNode {
@@ -177,6 +277,19 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
       timestamp
       runId
     }
+    freshnessPolicy {
+      maximumLagMinutes
+      cronSchedule
+    }
+    freshnessInfo {
+      currentMinutesLate
+    }
+    assetObservations(limit: 1) {
+      timestamp
+      runId
+    }
+    currentLogicalVersion
+    projectedLogicalVersion
   }
 `;
 
@@ -190,69 +303,93 @@ export const ASSET_NODE_FRAGMENT = gql`
     graphName
     jobNames
     opNames
+    opVersion
     description
     computeKind
+    isPartitioned
+    isObservable
+    isSource
     assetKey {
       path
     }
   }
 `;
 
-const BoxColors = {
-  Divider: 'rgba(219, 219, 244, 1)',
-  Description: 'rgba(245, 245, 250, 1)',
-  Stats: 'rgba(236, 236, 248, 1)',
-};
-
 const AssetInsetForHoverEffect = styled.div`
   padding: 10px 4px 2px 4px;
   height: 100%;
 `;
 
-const AssetNodeContainer = styled.div<{$selected: boolean}>`
-  outline: ${(p) => (p.$selected ? `2px dashed ${NodeHighlightColors.Border}` : 'none')};
-  border-radius: 6px;
-  outline-offset: -1px;
-  background: ${(p) => (p.$selected ? NodeHighlightColors.Background : 'white')};
+export const AssetNodeContainer = styled.div<{$selected: boolean}>`
   padding: 4px;
 `;
 
-const AssetNodeBox = styled.div<{$selected: boolean}>`
-  border: 2px solid ${(p) => (p.$selected ? Colors.Blue500 : Colors.Blue200)};
-  background: ${BoxColors.Stats};
-  border-radius: 5px;
-  position: relative;
-  &:hover {
-    box-shadow: ${Colors.Blue200} inset 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
-  }
+const AssetNodeShowOnHover = styled.span`
+  display: none;
 `;
 
-const Name = styled.div`
+export const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
+  ${(p) =>
+    p.$isSource
+      ? `border: 2px dashed ${p.$selected ? Colors.Gray600 : Colors.Gray300}`
+      : `border: 2px solid ${p.$selected ? Colors.Blue500 : Colors.Blue200}`};
+
+  ${(p) =>
+    p.$isSource
+      ? `outline: 3px solid ${p.$selected ? Colors.Gray300 : 'transparent'}`
+      : `outline: 3px solid ${p.$selected ? Colors.Blue200 : 'transparent'}`};
+
+  background: ${Colors.White};
+  border-radius: 8px;
+  position: relative;
+  &:hover {
+    box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
+    ${AssetNodeShowOnHover} {
+      display: initial;
+    }
+  }
+`;
+const Name = styled.div<{$isSource: boolean}>`
   /** Keep in sync with DISPLAY_NAME_PX_PER_CHAR */
   display: flex;
-  padding: 4px 6px;
-  background: ${Colors.White};
+  padding: 3px 6px;
+  background: ${(p) => (p.$isSource ? Colors.Gray100 : Colors.Blue50)};
   font-family: ${FontFamily.monospace};
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;
+  border-top-left-radius: 7px;
+  border-top-right-radius: 7px;
   font-weight: 600;
   gap: 4px;
 `;
 
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
-  border-radius: 12px;
-  outline-offset: 2px;
-  outline-width: 4px;
   height: 100%;
 `;
 
-const MinimalAssetNodeBox = styled(AssetNodeBox)`
-  background: ${Colors.White};
-  border: 4px solid ${Colors.Blue200};
+const MinimalAssetNodeBox = styled.div<{
+  $isSource: boolean;
+  $selected: boolean;
+  $background: string;
+  $border: string;
+}>`
+  background: ${(p) => p.$background};
+  ${(p) =>
+    p.$isSource
+      ? `border: 4px dashed ${p.$selected ? Colors.Gray500 : p.$border}`
+      : `border: 4px solid ${p.$selected ? Colors.Blue500 : p.$border}`};
+
+  ${(p) =>
+    p.$isSource
+      ? `outline: 8px solid ${p.$selected ? Colors.Gray300 : 'transparent'}`
+      : `outline: 8px solid ${p.$selected ? Colors.Blue200 : 'transparent'}`};
+
   border-radius: 10px;
   position: relative;
   padding: 4px;
   height: 100%;
+  min-height: 46px;
+  &:hover {
+    box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
+  }
 `;
 
 const MinimalName = styled(Name)`
@@ -266,19 +403,20 @@ const MinimalName = styled(Name)`
 `;
 
 const Description = styled.div`
-  background: ${BoxColors.Description};
   padding: 4px 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-top: 1px solid ${BoxColors.Divider};
+  color: ${Colors.Gray700};
+  border-top: 1px solid ${Colors.Blue50};
+  background: ${Colors.White};
   font-size: 12px;
 `;
 
 const Stats = styled.div`
-  background: ${BoxColors.Stats};
   padding: 4px 8px;
-  border-top: 1px solid ${BoxColors.Divider};
+  border-top: 1px solid ${Colors.Blue50};
+  background: ${Colors.White};
   font-size: 12px;
   line-height: 20px;
 `;
@@ -288,76 +426,6 @@ const StatsRow = styled.div`
   justify-content: space-between;
   min-height: 18px;
   & > span {
-    color: ${Colors.Gray600};
+    color: ${Colors.Gray700};
   }
 `;
-
-const UpstreamNotice = styled.div`
-  background: ${Colors.Yellow200};
-  color: ${Colors.Yellow700};
-  line-height: 10px;
-  font-size: 11px;
-  text-align: right;
-  margin-top: -4px;
-  margin-bottom: -4px;
-  padding: 2.5px 5px;
-  margin-right: -6px;
-  border-top-right-radius: 3px;
-`;
-
-export const ComputeStatusNotice: React.FC<{computeStatus: AssetComputeStatus}> = ({
-  computeStatus,
-}) =>
-  computeStatus === AssetComputeStatus.OUT_OF_DATE ? (
-    <UpstreamNotice>
-      upstream
-      <br />
-      changed
-    </UpstreamNotice>
-  ) : null;
-
-export const AssetLatestRunWithNotices: React.FC<{
-  liveData?: LiveDataForNode;
-}> = ({liveData}) => {
-  const {
-    lastMaterialization,
-    unstartedRunIds,
-    inProgressRunIds,
-    runWhichFailedToMaterialize,
-    stepKey,
-  } = liveData || MISSING_LIVE_DATA;
-
-  return inProgressRunIds?.length > 0 ? (
-    <Box flex={{gap: 4, alignItems: 'center'}}>
-      <Tooltip content="A run is currently rematerializing this asset.">
-        <Spinner purpose="body-text" />
-      </Tooltip>
-      <AssetRunLink runId={inProgressRunIds[0]} />
-    </Box>
-  ) : unstartedRunIds?.length > 0 ? (
-    <Box flex={{gap: 4, alignItems: 'center'}}>
-      <Tooltip content="A run has started that will rematerialize this asset soon.">
-        <Spinner purpose="body-text" stopped />
-      </Tooltip>
-      <AssetRunLink runId={unstartedRunIds[0]} />
-    </Box>
-  ) : runWhichFailedToMaterialize?.__typename === 'Run' ? (
-    <Box flex={{gap: 4, alignItems: 'center'}}>
-      <Tooltip
-        content={`Run ${titleForRun({
-          runId: runWhichFailedToMaterialize.id,
-        })} failed to materialize this asset`}
-      >
-        <Icon name="warning" color={Colors.Red500} />
-      </Tooltip>
-      <AssetRunLink runId={runWhichFailedToMaterialize.id} />
-    </Box>
-  ) : lastMaterialization ? (
-    <AssetRunLink
-      runId={lastMaterialization.runId}
-      event={{stepKey, timestamp: lastMaterialization.timestamp}}
-    />
-  ) : (
-    <span>–</span>
-  );
-};

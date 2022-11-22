@@ -62,7 +62,9 @@ def workspace_process_context_fixture(instance):
         executable_path=sys.executable,
         python_file=file_relative_path(__file__, "test_custom_repository_data.py"),
     )
-    server_process = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
+    server_process = GrpcServerProcess(
+        instance_ref=instance.get_ref(), loadable_target_origin=loadable_target_origin
+    )
     try:
         with server_process.create_ephemeral_client():  # shuts down when leaves this context
             with WorkspaceProcessContext(

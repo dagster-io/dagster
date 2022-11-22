@@ -152,7 +152,7 @@ class AssetSelection(ABC):
             asset_graph = all_assets
         else:
             check.sequence_param(all_assets, "all_assets", (AssetsDefinition, SourceAsset))
-            asset_graph = AssetGraph(all_assets)
+            asset_graph = AssetGraph.from_assets(all_assets)
 
         return self.resolve_inner(asset_graph)
 
@@ -241,8 +241,7 @@ class GroupsAssetSelection(AssetSelection):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         return {
             asset_key
-            for assets_def in asset_graph.assets_defs
-            for asset_key, group in assets_def.group_names_by_key.items()
+            for asset_key, group in asset_graph.group_names_by_key.items()
             if group in self._groups
         }
 
@@ -253,7 +252,7 @@ class KeysAssetSelection(AssetSelection):
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         specified_keys = set(self._keys)
-        invalid_keys = specified_keys - set(asset_graph.all_asset_keys)
+        invalid_keys = {key for key in specified_keys if key not in asset_graph.all_asset_keys}
         selected_source_asset_keys = specified_keys & asset_graph.source_asset_keys
         if selected_source_asset_keys:
             raise DagsterInvalidSubsetError(

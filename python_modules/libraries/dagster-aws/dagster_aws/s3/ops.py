@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Mapping
 
 from dagster import (
     AssetMaterialization,
@@ -17,9 +17,9 @@ from dagster._core.types.dagster_type import PythonObjectDagsterType
 from .file_manager import S3FileHandle
 
 
-def dict_with_fields(name: str, fields: Dict[str, object]):
+def dict_with_fields(name: str, fields: Mapping[str, object]):
     check.str_param(name, "name")
-    check.dict_param(fields, "fields", key_type=str)
+    check.mapping_param(fields, "fields", key_type=str)
     field_names = set(fields.keys())
 
     @dagster_type_loader(fields)

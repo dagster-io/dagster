@@ -29,6 +29,10 @@ config:
   {{- if $azureBlobComputeLogManagerConfig.prefix }}
   prefix: {{ include "stringSource" $azureBlobComputeLogManagerConfig.prefix }}
   {{- end }}
+
+  {{- if $azureBlobComputeLogManagerConfig.uploadInterval }}
+  upload_interval: {{ $azureBlobComputeLogManagerConfig.uploadInterval }}
+  {{- end }}
 {{- end }}
 
 {{- define "dagsterYaml.computeLogManager.gcs" }}
@@ -48,6 +52,10 @@ config:
 
   {{- if $gcsComputeLogManagerConfig.jsonCredentialsEnvvar }}
   json_credentials_envvar: {{ include "stringSource" $gcsComputeLogManagerConfig.jsonCredentialsEnvvar }}
+  {{- end }}
+
+  {{- if $gcsComputeLogManagerConfig.uploadInterval }}
+  upload_interval: {{ $gcsComputeLogManagerConfig.uploadInterval }}
   {{- end }}
 {{- end }}
 
@@ -84,6 +92,10 @@ config:
 
   {{- if $s3ComputeLogManagerConfig.skipEmptyFiles }}
   skip_empty_files: {{ $s3ComputeLogManagerConfig.skipEmptyFiles }}
+  {{- end }}
+
+  {{- if $s3ComputeLogManagerConfig.uploadInterval }}
+  upload_interval: {{ $s3ComputeLogManagerConfig.uploadInterval }}
   {{- end }}
 {{- end }}
 

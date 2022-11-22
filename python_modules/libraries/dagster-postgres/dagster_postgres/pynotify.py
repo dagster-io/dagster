@@ -31,7 +31,7 @@ import select
 import signal
 import sys
 from threading import Event
-from typing import Iterator, List, Optional
+from typing import Iterator, Optional, Sequence
 
 from psycopg2.extensions import Notify
 
@@ -76,7 +76,7 @@ def construct_signals(arg):
 
 def await_pg_notifications(
     conn_string: str,
-    channels: Optional[List[str]] = None,
+    channels: Optional[Sequence[str]] = None,
     timeout: float = 5.0,
     yield_on_timeout: bool = False,
     exit_event: Optional[Event] = None,
@@ -100,7 +100,7 @@ def await_pg_notifications(
     """
 
     check.str_param(conn_string, "conn_string")
-    channels = None if channels is None else check.list_param(channels, "channels", of_type=str)
+    channels = None if channels is None else check.sequence_param(channels, "channels", of_type=str)
     check.float_param(timeout, "timeout")
     check.bool_param(yield_on_timeout, "yield_on_timeout")
 

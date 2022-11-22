@@ -27,7 +27,7 @@ class GrapheneComputeLogFile(graphene.ObjectType):
     download_url = graphene.Field(graphene.String)
 
 
-def from_compute_log_file(_graphene_info, file):
+def from_compute_log_file(file: ComputeLogFileData):
     check.opt_inst_param(file, "file", ComputeLogFileData)
     if not file:
         return None
@@ -61,12 +61,7 @@ class GrapheneComputeLogs(graphene.ObjectType):
         return self._resolve_compute_log(graphene_info, ComputeIOType.STDERR)
 
 
-def from_captured_log_data(_graphene_info, log_data):
-    check.opt_inst_param(log_data, "log_data", CapturedLogData)
-
-    if not log_data:
-        return None
-
+def from_captured_log_data(log_data: CapturedLogData):
     return GrapheneCapturedLogs(
         logKey=log_data.log_key,
         stdout=log_data.stdout.decode("utf-8") if log_data.stdout else None,

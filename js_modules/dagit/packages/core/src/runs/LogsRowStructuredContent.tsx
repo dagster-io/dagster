@@ -440,6 +440,7 @@ const AssetMetadataContent: React.FC<{
     <DefaultContent message={message} eventType={eventType}>
       <>
         <LogRowStructuredContentTable
+          styles={metadataEntries?.length ? {paddingBottom: 0} : {}}
           rows={[
             {
               label: 'asset_key',
@@ -451,7 +452,6 @@ const AssetMetadataContent: React.FC<{
               ),
             },
           ]}
-          styles={{paddingBottom: 0}}
         />
         <MetadataEntries entries={metadataEntries} />
       </>

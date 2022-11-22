@@ -21,6 +21,7 @@ class AzureBlobComputeLogManager(BaseModel):
     secretKey: StringSource
     localDir: Optional[StringSource]
     prefix: Optional[StringSource]
+    uploadInterval: Optional[int]
 
 
 class GCSComputeLogManager(BaseModel):
@@ -28,6 +29,7 @@ class GCSComputeLogManager(BaseModel):
     localDir: Optional[StringSource]
     prefix: Optional[StringSource]
     jsonCredentialsEnvvar: Optional[StringSource]
+    uploadInterval: Optional[int]
 
 
 class S3ComputeLogManager(BaseModel):
@@ -39,6 +41,7 @@ class S3ComputeLogManager(BaseModel):
     verifyCertPath: Optional[StringSource]
     endpointUrl: Optional[StringSource]
     skipEmptyFiles: Optional[bool]
+    uploadInterval: Optional[int]
 
 
 class ComputeLogManagerConfig(BaseModel):

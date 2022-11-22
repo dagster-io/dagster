@@ -14,7 +14,7 @@ export interface SidebarGraphOpQuery_graphOrError_GraphNotFoundError {
 }
 
 export interface SidebarGraphOpQuery_graphOrError_Graph_solidHandle_solid_inputs_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -51,7 +51,7 @@ export interface SidebarGraphOpQuery_graphOrError_Graph_solidHandle_solid_inputs
 }
 
 export interface SidebarGraphOpQuery_graphOrError_Graph_solidHandle_solid_outputs_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -88,7 +88,7 @@ export interface SidebarGraphOpQuery_graphOrError_Graph_solidHandle_solid_output
 }
 
 export interface SidebarGraphOpQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -103,7 +103,7 @@ export interface SidebarGraphOpQuery_graphOrError_Graph_solidHandle_solid_defini
 }
 
 export interface SidebarGraphOpQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -666,7 +666,7 @@ export interface SidebarGraphOpQuery_graphOrError_Graph_solidHandle_solid_defini
 }
 
 export interface SidebarGraphOpQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -681,7 +681,7 @@ export interface SidebarGraphOpQuery_graphOrError_Graph_solidHandle_solid_defini
 }
 
 export interface SidebarGraphOpQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;

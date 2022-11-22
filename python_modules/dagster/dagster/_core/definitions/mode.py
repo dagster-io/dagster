@@ -64,7 +64,7 @@ class ModeDefinition(
 
         from .partition import PartitionedConfig
 
-        resource_defs = check.opt_dict_param(
+        resource_defs = check.opt_mapping_param(
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
 

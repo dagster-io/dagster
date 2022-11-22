@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import IO, Generator, List, NamedTuple, Optional
+from typing import IO, Callable, Generator, NamedTuple, Optional, Sequence
 
 from dagster._core.storage.compute_log_manager import ComputeIOType
 
@@ -13,7 +13,7 @@ class CapturedLogContext(
     NamedTuple(
         "_CapturedLogContext",
         [
-            ("log_key", List[str]),
+            ("log_key", Sequence[str]),
             ("external_url", Optional[str]),
         ],
     )
@@ -24,7 +24,7 @@ class CapturedLogContext(
     Dagster-managed location.
     """
 
-    def __new__(cls, log_key: List[str], external_url: Optional[str] = None):
+    def __new__(cls, log_key: Sequence[str], external_url: Optional[str] = None):
         return super(CapturedLogContext, cls).__new__(cls, log_key, external_url=external_url)
 
 
@@ -32,7 +32,7 @@ class CapturedLogData(
     NamedTuple(
         "_CapturedLogData",
         [
-            ("log_key", List[str]),
+            ("log_key", Sequence[str]),
             ("stdout", Optional[bytes]),
             ("stderr", Optional[bytes]),
             ("cursor", Optional[str]),
@@ -46,7 +46,7 @@ class CapturedLogData(
 
     def __new__(
         cls,
-        log_key: List[str],
+        log_key: Sequence[str],
         stdout: Optional[bytes] = None,
         stderr: Optional[bytes] = None,
         cursor: Optional[str] = None,
@@ -87,13 +87,14 @@ class CapturedLogMetadata(
 
 
 class CapturedLogSubscription:
-    def __init__(self, manager, log_key, cursor):
+    def __init__(self, manager: "CapturedLogManager", log_key, cursor):
         self._manager = manager
         self._log_key = log_key
         self._cursor = cursor
-        self._observer = None
+        self._observer: Optional[Callable[[CapturedLogData], None]] = None
+        self.is_complete = False
 
-    def __call__(self, observer):
+    def __call__(self, observer: Optional[Callable[[CapturedLogData], None]]):
         self._observer = observer
         self.fetch()
         if self._manager.is_capture_complete(self._log_key):
@@ -105,11 +106,8 @@ class CapturedLogSubscription:
         return self._log_key
 
     def dispose(self):
-        # called when the connection gets closed, allowing the observer to get GC'ed
-        if self._observer and callable(getattr(self._observer, "dispose", None)):
-            self._observer.dispose()
         self._observer = None
-        self._manager.on_unsubscribe(self)
+        self._manager.unsubscribe(self)
 
     def fetch(self):
         if not self._observer:
@@ -123,14 +121,12 @@ class CapturedLogSubscription:
                 max_bytes=MAX_BYTES_CHUNK_READ,
             )
             if not self._cursor or log_data.cursor != self._cursor:
-                self._observer.on_next(log_data)
+                self._observer(log_data)
                 self._cursor = log_data.cursor
             should_fetch = _has_max_data(log_data.stdout) or _has_max_data(log_data.stderr)
 
     def complete(self):
-        if not self._observer:
-            return
-        self._observer.on_completed()
+        self.is_complete = True
 
 
 def _has_max_data(chunk):
@@ -143,7 +139,7 @@ class CapturedLogManager(ABC):
 
     @abstractmethod
     @contextmanager
-    def capture_logs(self, log_key: List[str]) -> Generator[CapturedLogContext, None, None]:
+    def capture_logs(self, log_key: Sequence[str]) -> Generator[CapturedLogContext, None, None]:
         """
         Context manager for capturing the stdout/stderr within the current process, and persisting
         it under the given log key.
@@ -155,7 +151,7 @@ class CapturedLogManager(ABC):
     @abstractmethod
     @contextmanager
     def open_log_stream(
-        self, log_key: List[str], io_type: ComputeIOType
+        self, log_key: Sequence[str], io_type: ComputeIOType
     ) -> Generator[Optional[IO], None, None]:
         """
         Context manager for providing an IO stream that enables the caller to write to a log stream
@@ -166,7 +162,7 @@ class CapturedLogManager(ABC):
         """
 
     @abstractmethod
-    def is_capture_complete(self, log_key: List[str]) -> bool:
+    def is_capture_complete(self, log_key: Sequence[str]) -> bool:
         """Flag indicating when the log capture for a given log key has completed.
 
         Args:
@@ -179,7 +175,7 @@ class CapturedLogManager(ABC):
     @abstractmethod
     def get_log_data(
         self,
-        log_key: List[str],
+        log_key: Sequence[str],
         cursor: Optional[str] = None,
         max_bytes: Optional[int] = None,
     ) -> CapturedLogData:
@@ -195,7 +191,7 @@ class CapturedLogManager(ABC):
         """
 
     @abstractmethod
-    def get_log_metadata(self, log_key: List[str]) -> CapturedLogMetadata:
+    def get_log_metadata(self, log_key: Sequence[str]) -> CapturedLogMetadata:
         """Returns the metadata of the captured logs for a given log key, including
         displayable information on where the logs are persisted.
 
@@ -207,16 +203,19 @@ class CapturedLogManager(ABC):
         """
 
     @abstractmethod
-    def delete_logs(self, log_key: List[str]):
+    def delete_logs(
+        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+    ):
         """Deletes the captured logs for a given log key.
 
         Args:
-            log_key (List[String]): The log key identifying the captured logs
+            log_key(Optional[List[String]]): The log key of the logs to delete
+            prefix(Optional[List[String]]): The prefix of the log keys to delete
         """
 
     @abstractmethod
     def subscribe(
-        self, log_key: List[str], cursor: Optional[str] = None
+        self, log_key: Sequence[str], cursor: Optional[str] = None
     ) -> CapturedLogSubscription:
         """Registers an observable object for log data
 

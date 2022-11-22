@@ -31,7 +31,7 @@ def _find_assets_in_module(
 
 def assets_and_source_assets_from_modules(
     modules: Iterable[ModuleType], extra_source_assets: Optional[Sequence[SourceAsset]] = None
-) -> Tuple[List[AssetsDefinition], List[SourceAsset]]:
+) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset]]:
     """
     Constructs two lists, a list of assets and a list of source assets, from the given modules.
 
@@ -81,7 +81,7 @@ def load_assets_from_modules(
     modules: Iterable[ModuleType],
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-) -> List[Union[AssetsDefinition, SourceAsset]]:
+) -> Sequence[Union[AssetsDefinition, SourceAsset]]:
     """
     Constructs a list of assets and source assets from the given modules.
 
@@ -119,7 +119,7 @@ def load_assets_from_modules(
 def load_assets_from_current_module(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-) -> List[Union[AssetsDefinition, SourceAsset]]:
+) -> Sequence[Union[AssetsDefinition, SourceAsset]]:
     """
     Constructs a list of assets and source assets from the module where this function is called.
 
@@ -150,7 +150,7 @@ def load_assets_from_current_module(
 def assets_and_source_assets_from_package_module(
     package_module: ModuleType,
     extra_source_assets: Optional[Sequence[SourceAsset]] = None,
-) -> Tuple[List[AssetsDefinition], List[SourceAsset]]:
+) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset]]:
     """
     Constructs two lists, a list of assets and a list of source assets, from the given package module.
 
@@ -172,7 +172,7 @@ def load_assets_from_package_module(
     package_module: ModuleType,
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-) -> List[Union[AssetsDefinition, SourceAsset]]:
+) -> Sequence[Union[AssetsDefinition, SourceAsset]]:
     """
     Constructs a list of assets and source assets that includes all asset
     definitions and source assets in all sub-modules of the given package module.
@@ -209,7 +209,7 @@ def load_assets_from_package_name(
     package_name: str,
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-) -> List[Union[AssetsDefinition, SourceAsset]]:
+) -> Sequence[Union[AssetsDefinition, SourceAsset]]:
     """
     Constructs a list of assets and source assets that include all asset
     definitions and source assets in all sub-modules of the given package.
@@ -253,7 +253,7 @@ def _find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]
 
 def prefix_assets(
     assets_defs: Sequence[AssetsDefinition], key_prefix: CoercibleToAssetKeyPrefix
-) -> List[AssetsDefinition]:
+) -> Sequence[AssetsDefinition]:
     """
     Given a list of assets, prefix the input and output asset keys with key_prefix.
     The prefix is not added to source assets.
@@ -299,13 +299,13 @@ def prefix_assets(
     result_assets: List[AssetsDefinition] = []
     for assets_def in assets_defs:
         output_asset_key_replacements = {
-            asset_key: AssetKey(key_prefix + asset_key.path) for asset_key in assets_def.keys
+            asset_key: AssetKey([*key_prefix, *asset_key.path]) for asset_key in assets_def.keys
         }
         input_asset_key_replacements = {}
         for dep_asset_key in assets_def.dependency_keys:
             if dep_asset_key in asset_keys:
                 input_asset_key_replacements[dep_asset_key] = AssetKey(
-                    key_prefix + dep_asset_key.path
+                    [*key_prefix, *dep_asset_key.path]
                 )
 
         result_assets.append(

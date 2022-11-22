@@ -1,6 +1,6 @@
 import traceback
 from types import TracebackType
-from typing import Any, List, NamedTuple, Optional, Tuple, Type, Union
+from typing import Any, NamedTuple, Optional, Sequence, Tuple, Type, Union
 
 from dagster._serdes import whitelist_for_serdes
 
@@ -10,7 +10,7 @@ from dagster._serdes import whitelist_for_serdes
 class SerializableErrorInfo(
     NamedTuple(
         "SerializableErrorInfo",
-        [("message", str), ("stack", List[str]), ("cls_name", str), ("cause", Any)],
+        [("message", str), ("stack", Sequence[str]), ("cls_name", str), ("cause", Any)],
     )
 ):
     # serdes log
@@ -19,7 +19,7 @@ class SerializableErrorInfo(
     def __new__(
         cls,
         message: str,
-        stack: List[str],
+        stack: Sequence[str],
         cls_name: str,
         cause: Optional["SerializableErrorInfo"] = None,
     ):

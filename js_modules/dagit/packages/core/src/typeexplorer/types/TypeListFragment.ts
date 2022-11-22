@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface TypeListFragment {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   isBuiltin: boolean;
   displayName: string;

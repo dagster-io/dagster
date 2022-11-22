@@ -15,6 +15,7 @@ from dagster import (
     DagsterRunStatus,
     DailyPartitionsDefinition,
     EventRecordsFilter,
+    FreshnessPolicy,
     Output,
     PartitionKeyRange,
     PartitionMapping,
@@ -24,10 +25,12 @@ from dagster import (
     SkipReason,
     StaticPartitionsDefinition,
     asset,
+    build_freshness_policy_sensor_context,
     build_multi_asset_sensor_context,
     build_run_status_sensor_context,
     build_sensor_context,
     define_asset_job,
+    freshness_policy_sensor,
     job,
     materialize,
     multi_asset,
@@ -278,6 +281,43 @@ def test_run_failure_w_run_request():
     assert basic_sensor_w_arg(context).run_config == {}
 
 
+def test_freshness_policy_sensor():
+    @freshness_policy_sensor(asset_selection=AssetSelection.all())
+    def freshness_sensor(context):
+        assert context.minutes_late == 10
+        assert context.previous_minutes_late == None
+
+    context = build_freshness_policy_sensor_context(
+        sensor_name="status_sensor",
+        asset_key=AssetKey("a"),
+        freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
+        minutes_late=10,
+    )
+
+    freshness_sensor(context)
+
+
+def test_freshness_policy_sensor_params_out_of_order():
+    @freshness_policy_sensor(
+        name="some_name",
+        asset_selection=AssetSelection.all(),
+        minimum_interval_seconds=10,
+        description="foo",
+    )
+    def freshness_sensor(context):
+        assert context.minutes_late == 10
+        assert context.previous_minutes_late == None
+
+    context = build_freshness_policy_sensor_context(
+        sensor_name="some_name",
+        asset_key=AssetKey("a"),
+        freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
+        minutes_late=10,
+    )
+
+    freshness_sensor(context)
+
+
 def test_multi_asset_sensor():
     @op
     def an_op():
@@ -355,7 +395,7 @@ def test_multi_asset_sensor_has_assets():
     def my_repo():
         return [two_assets, passing_sensor]
 
-    assert passing_sensor.asset_keys == [AssetKey("asset_a"), AssetKey("asset_b")]
+    assert passing_sensor.monitored_asset_keys == [AssetKey("asset_a"), AssetKey("asset_b")]
     with instance_for_test() as instance:
         ctx = build_multi_asset_sensor_context(
             asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],

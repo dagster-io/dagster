@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface DagsterTypeWithTooltipFragment {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;

@@ -414,6 +414,17 @@
                         }
                     ]
                 },
+                "dbPoolRecycle": {
+                    "title": "Dbpoolrecycle",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
                 "logLevel": {
                     "title": "Loglevel",
                     "anyOf": [
@@ -1208,6 +1219,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "uploadInterval": {
+                    "title": "Uploadinterval",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -1267,6 +1289,17 @@
                         },
                         {
                             "$ref": "#/definitions/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "uploadInterval": {
+                    "title": "Uploadinterval",
+                    "anyOf": [
+                        {
+                            "type": "integer"
                         },
                         {
                             "type": "null"
@@ -1376,6 +1409,17 @@
                     "anyOf": [
                         {
                             "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "uploadInterval": {
+                    "title": "Uploadinterval",
+                    "anyOf": [
+                        {
+                            "type": "integer"
                         },
                         {
                             "type": "null"

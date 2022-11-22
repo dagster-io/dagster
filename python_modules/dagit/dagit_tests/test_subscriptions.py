@@ -1,8 +1,10 @@
 import gc
+import sys
 from contextlib import contextmanager
 from unittest import mock
 
 import objgraph
+import pytest
 from dagit.graphql import GraphQLWS
 from dagit.webserver import DagitWebserver
 from starlette.testclient import TestClient
@@ -60,7 +62,9 @@ def start_subscription(ws, query, variables=None):
     send_subscription_message(ws, GraphQLWS.CONNECTION_INIT)
     ws.receive_json()
     send_subscription_message(ws, GraphQLWS.START, start_payload)
-    ws.receive_json()
+    rx = ws.receive_json()
+    assert rx["type"] != GraphQLWS.ERROR, rx
+    return rx
 
 
 def end_subscription(ws):
@@ -91,10 +95,17 @@ def test_event_log_subscription():
 
                 start_subscription(ws, EVENT_LOG_SUBSCRIPTION, {"runId": run.run_id})
                 gc.collect()
-                assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 1
+                assert len(objgraph.by_type("async_generator")) == 1
                 end_subscription(ws)
 
+            gc.collect()
+            assert len(objgraph.by_type("async_generator")) == 0
 
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 8),
+    reason="Inconsistent GC on the async_generator in 3.7",
+)
 def test_event_log_subscription_chunked():
     with instance_for_test() as instance, environ({"DAGIT_EVENT_LOAD_CHUNK_SIZE": "2"}):
         run = execute_pipeline(example_pipeline, instance=instance)
@@ -107,9 +118,12 @@ def test_event_log_subscription_chunked():
 
                 start_subscription(ws, EVENT_LOG_SUBSCRIPTION, {"runId": run.run_id})
                 gc.collect()
-                assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 1
+                assert len(objgraph.by_type("async_generator")) == 1
 
                 end_subscription(ws)
+
+        gc.collect()
+        assert len(objgraph.by_type("async_generator")) == 0
 
 
 @mock.patch(

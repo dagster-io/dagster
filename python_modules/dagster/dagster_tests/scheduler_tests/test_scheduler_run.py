@@ -9,9 +9,12 @@ import pytest
 
 from dagster import (
     Any,
+    AssetKey,
     DefaultScheduleStatus,
     Field,
     ScheduleDefinition,
+    asset,
+    define_asset_job,
     job,
     op,
     repository,
@@ -445,6 +448,21 @@ default_config_schedule = ScheduleDefinition(
 )
 
 
+@asset
+def asset1():
+    ...
+
+
+@asset
+def asset2():
+    ...
+
+
+@schedule(job=define_asset_job("asset_job"), cron_schedule="@daily")
+def asset_selection_schedule():
+    return RunRequest(asset_selection=[asset1.key])
+
+
 @repository
 def the_repo():
     return [
@@ -476,6 +494,8 @@ def the_repo():
         two_step_pipeline,
         default_config_schedule,
         empty_schedule,
+        [asset1, asset2],
+        asset_selection_schedule,
     ]
 
 
@@ -1943,8 +1963,9 @@ def test_large_schedule(instance, workspace_context, external_repo, executor):
 
 
 @contextmanager
-def _grpc_server_external_repo(port):
+def _grpc_server_external_repo(port, instance):
     server_process = open_server_process(
+        instance.get_ref(),
         port=port,
         socket=None,
         loadable_target_origin=loadable_target_origin(),
@@ -2010,7 +2031,7 @@ def test_grpc_server_down(instance, executor):
 
     initial_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)
     stack = ExitStack()
-    external_repo = stack.enter_context(_grpc_server_external_repo(port))
+    external_repo = stack.enter_context(_grpc_server_external_repo(port, instance))
     workspace_context = stack.enter_context(
         create_test_daemon_workspace_context(
             GrpcServerTarget(
@@ -2046,7 +2067,7 @@ def test_grpc_server_down(instance, executor):
             )
 
         # Server starts back up, tick now succeeds
-        with _grpc_server_external_repo(port) as external_repo:
+        with _grpc_server_external_repo(port, instance) as external_repo:
             evaluate_schedules(server_up_ctx, executor, pendulum.now("UTC"))
             assert instance.get_runs_count() == 1
             ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -2389,6 +2410,49 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
             ticks = instance.get_ticks(other_origin.get_id(), other_schedule.selector_id)
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS
+
+
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_asset_selection(instance, workspace_context, external_repo, executor):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+    external_schedule = external_repo.get_external_schedule("asset_selection_schedule")
+    schedule_origin = external_schedule.get_external_origin()
+
+    with pendulum.test(freeze_datetime):
+        instance.start_schedule(external_schedule)
+
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+
+        # launch_scheduled_runs does nothing before the first tick
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+        instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+
+    freeze_datetime = freeze_datetime.add(seconds=2)
+    with pendulum.test(freeze_datetime):
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+        assert instance.get_runs_count() == 1
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 1
+
+        expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
+
+        validate_tick(
+            ticks[0],
+            external_schedule,
+            expected_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id for run in instance.get_runs()],
+        )
+
+        wait_for_all_runs_to_start(instance)
+        run = instance.get_runs()[0]
+        assert run.asset_selection == {AssetKey("asset1")}
+
+        validate_run_started(instance, run, execution_time=create_pendulum_time(2019, 2, 28))
 
 
 def test_settings():

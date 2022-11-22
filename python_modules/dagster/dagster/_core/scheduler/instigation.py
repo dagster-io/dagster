@@ -343,6 +343,9 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     def with_origin_run(self, origin_run_id):
         return self._replace(tick_data=self.tick_data.with_origin_run(origin_run_id))
 
+    def with_log_key(self, log_key):
+        return self._replace(tick_data=self.tick_data.with_log_key(log_key))
+
     @property
     def instigator_origin_id(self):
         return self.tick_data.instigator_origin_id
@@ -394,6 +397,10 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     @property
     def failure_count(self) -> int:
         return self.tick_data.failure_count
+
+    @property
+    def log_key(self) -> Optional[List[str]]:
+        return self.tick_data.log_key
 
 
 register_serdes_tuple_fallbacks({"JobTick": InstigatorTick})
@@ -460,14 +467,15 @@ class TickData(
             ("instigator_type", InstigatorType),
             ("status", TickStatus),
             ("timestamp", float),
-            ("run_ids", List[str]),
-            ("run_keys", List[str]),
+            ("run_ids", Sequence[str]),
+            ("run_keys", Sequence[str]),
             ("error", Optional[SerializableErrorInfo]),
             ("skip_reason", Optional[str]),
             ("cursor", Optional[str]),
-            ("origin_run_ids", List[str]),
+            ("origin_run_ids", Sequence[str]),
             ("failure_count", int),
             ("selector_id", Optional[str]),
+            ("log_key", Optional[List[str]]),
         ],
     )
 ):
@@ -498,16 +506,18 @@ class TickData(
         instigator_type: InstigatorType,
         status: TickStatus,
         timestamp: float,
-        run_ids: Optional[List[str]] = None,
-        run_keys: Optional[List[str]] = None,
+        run_ids: Optional[Sequence[str]] = None,
+        run_keys: Optional[Sequence[str]] = None,
         error: Optional[SerializableErrorInfo] = None,
         skip_reason: Optional[str] = None,
         cursor: Optional[str] = None,
-        origin_run_ids: Optional[List[str]] = None,
+        origin_run_ids: Optional[Sequence[str]] = None,
         failure_count: Optional[int] = None,
         selector_id: Optional[str] = None,
+        log_key: Optional[List[str]] = None,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
+        check.opt_list_param(log_key, "log_key", of_type=str)
         return super(TickData, cls).__new__(
             cls,
             check.str_param(instigator_origin_id, "instigator_origin_id"),
@@ -515,14 +525,15 @@ class TickData(
             check.inst_param(instigator_type, "instigator_type", InstigatorType),
             check.inst_param(status, "status", TickStatus),
             check.float_param(timestamp, "timestamp"),
-            check.opt_list_param(run_ids, "run_ids", of_type=str),
-            check.opt_list_param(run_keys, "run_keys", of_type=str),
+            check.opt_sequence_param(run_ids, "run_ids", of_type=str),
+            check.opt_sequence_param(run_keys, "run_keys", of_type=str),
             error,  # validated in _validate_tick_args
             skip_reason,  # validated in _validate_tick_args
             cursor=check.opt_str_param(cursor, "cursor"),
-            origin_run_ids=check.opt_list_param(origin_run_ids, "origin_run_ids", of_type=str),
+            origin_run_ids=check.opt_sequence_param(origin_run_ids, "origin_run_ids", of_type=str),
             failure_count=check.opt_int_param(failure_count, "failure_count", 0),
             selector_id=check.opt_str_param(selector_id, "selector_id"),
+            log_key=log_key,
         )
 
     def with_status(self, status, error=None, timestamp=None, failure_count=None):
@@ -589,6 +600,14 @@ class TickData(
             **merge_dicts(
                 self._asdict(),
                 {"origin_run_ids": [*self.origin_run_ids, origin_run_id]},
+            )
+        )
+
+    def with_log_key(self, log_key):
+        return TickData(
+            **merge_dicts(
+                self._asdict(),
+                {"log_key": check.list_param(log_key, "log_key", of_type=str)},
             )
         )
 

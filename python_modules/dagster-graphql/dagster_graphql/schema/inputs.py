@@ -25,13 +25,13 @@ class GrapheneExecutionTag(graphene.InputObjectType):
 
 class GrapheneRunsFilter(graphene.InputObjectType):
     runIds = graphene.List(graphene.String)
-    pipelineName = graphene.Field(graphene.String)
+    pipelineName = graphene.InputField(graphene.String)
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
     statuses = graphene.List(graphene.NonNull(GrapheneRunStatus))
-    snapshotId = graphene.Field(graphene.String)
-    updatedAfter = graphene.Field(graphene.Float)
-    createdBefore = graphene.Field(graphene.Float)
-    mode = graphene.Field(graphene.String)
+    snapshotId = graphene.InputField(graphene.String)
+    updatedAfter = graphene.InputField(graphene.Float)
+    createdBefore = graphene.InputField(graphene.Float)
+    mode = graphene.InputField(graphene.String)
 
     class Meta:
         description = """This type represents a filter on Dagster runs."""
@@ -46,7 +46,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
 
         if self.statuses:
             statuses = [
-                PipelineRunStatus[status]  # type: ignore
+                PipelineRunStatus[status.value]  # type: ignore
                 for status in self.statuses  # pylint: disable=not-an-iterable
             ]
         else:
@@ -145,7 +145,7 @@ class GrapheneLaunchBackfillParams(graphene.InputObjectType):
     selector = graphene.NonNull(GraphenePartitionSetSelector)
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
-    assetSelection = graphene.Field(graphene.List(graphene.NonNull(GrapheneAssetKeyInput)))
+    assetSelection = graphene.InputField(graphene.List(graphene.NonNull(GrapheneAssetKeyInput)))
     fromFailure = graphene.Boolean()
     allPartitions = graphene.Boolean()
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
@@ -201,22 +201,22 @@ class GrapheneExecutionParams(graphene.InputObjectType):
         re-execution) are scoped to the original run's selector and solid
         subset.""",
     )
-    runConfigData = graphene.Field(GrapheneRunConfigData)
-    mode = graphene.Field(graphene.String)
-    executionMetadata = graphene.Field(
+    runConfigData = graphene.InputField(GrapheneRunConfigData)
+    mode = graphene.InputField(graphene.String)
+    executionMetadata = graphene.InputField(
         GrapheneExecutionMetadata,
         description="""Defines run tags and parent / root relationships.\n\nNote: To
         'restart from failure', provide a `parentRunId` and pass the
         'dagster/is_resume_retry' tag. Dagster's automatic step key selection will
         override any stepKeys provided.""",
     )
-    stepKeys = graphene.Field(
+    stepKeys = graphene.InputField(
         graphene.List(graphene.NonNull(graphene.String)),
         description="""Defines step keys to execute within the execution plan defined
         by the pipeline `selector`. To execute the entire execution plan, you can omit
         this parameter, provide an empty array, or provide every step name.""",
     )
-    preset = graphene.Field(graphene.String)
+    preset = graphene.InputField(graphene.String)
 
     class Meta:
         name = "ExecutionParams"
@@ -275,6 +275,14 @@ class GrapheneInstigationSelector(graphene.InputObjectType):
     name = graphene.NonNull(graphene.String)
 
 
+class GrapheneInputTag(graphene.InputObjectType):
+    name = graphene.NonNull(graphene.String)
+    value = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "InputTag"
+
+
 types = [
     GrapheneAssetKeyInput,
     GrapheneExecutionMetadata,
@@ -292,4 +300,5 @@ types = [
     GrapheneSensorSelector,
     GrapheneStepExecution,
     GrapheneStepOutputHandle,
+    GrapheneInputTag,
 ]

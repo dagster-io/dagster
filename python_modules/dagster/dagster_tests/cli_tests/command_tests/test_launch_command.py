@@ -10,7 +10,6 @@ from dagster._utils import file_relative_path
 
 from .test_cli_commands import (
     default_cli_test_instance,
-    grpc_server_bar_cli_args,
     launch_command_contexts,
     memoizable_job,
     non_existant_python_origin_target_args,
@@ -65,7 +64,7 @@ def test_launch_job_cli(job_cli_args):
 
 @pytest.mark.parametrize(
     "gen_pipeline_args",
-    [python_bar_cli_args("qux"), grpc_server_bar_cli_args("qux")],
+    [python_bar_cli_args("qux")],
 )
 def test_launch_with_run_id(gen_pipeline_args):
     runner = CliRunner()
@@ -100,7 +99,7 @@ def test_launch_with_run_id(gen_pipeline_args):
 
 @pytest.mark.parametrize(
     "gen_job_args",
-    [python_bar_cli_args("qux"), grpc_server_bar_cli_args("qux")],
+    [python_bar_cli_args("qux")],
 )
 def test_job_launch_with_run_id(gen_job_args):
     runner = CliRunner()
@@ -135,7 +134,7 @@ def test_job_launch_with_run_id(gen_job_args):
 
 @pytest.mark.parametrize(
     "gen_pipeline_args",
-    [python_bar_cli_args("qux"), grpc_server_bar_cli_args("qux")],
+    [python_bar_cli_args("qux")],
 )
 def test_launch_queued(gen_pipeline_args):
     runner = CliRunner()
@@ -167,7 +166,7 @@ def test_launch_queued(gen_pipeline_args):
 
 @pytest.mark.parametrize(
     "gen_pipeline_args",
-    [python_bar_cli_args("qux"), grpc_server_bar_cli_args("qux")],
+    [python_bar_cli_args("qux")],
 )
 def test_job_launch_queued(gen_pipeline_args):
     runner = CliRunner()

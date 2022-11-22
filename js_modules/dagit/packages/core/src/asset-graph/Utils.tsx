@@ -1,13 +1,16 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 
-import {AssetComputeStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 
 import {
   AssetGraphLiveQuery_assetsLatestInfo_latestRun,
   AssetGraphLiveQuery_assetNodes_assetMaterializations,
+  AssetGraphLiveQuery_assetNodes_assetObservations,
   AssetGraphLiveQuery,
   AssetGraphLiveQuery_assetsLatestInfo,
   AssetGraphLiveQuery_assetNodes,
+  AssetGraphLiveQuery_assetNodes_freshnessPolicy,
+  AssetGraphLiveQuery_assetNodes_freshnessInfo,
 } from './types/AssetGraphLiveQuery';
 import {
   AssetGraphQuery_assetNodes,
@@ -45,9 +48,6 @@ export interface GraphData {
   downstream: {[assetId: GraphId]: {[childAssetId: GraphId]: boolean}};
   upstream: {[assetId: GraphId]: {[parentAssetId: GraphId]: boolean}};
 }
-export const isSourceAsset = (node: {graphName: string | null; opNames: string[]}) => {
-  return !node.graphName && !node.opNames.length;
-};
 
 export const buildGraphData = (assetNodes: AssetNode[]) => {
   const data: GraphData = {
@@ -120,8 +120,28 @@ export interface LiveDataForNode {
   inProgressRunIds: string[]; // run in progress and step in progress
   runWhichFailedToMaterialize: AssetGraphLiveQuery_assetsLatestInfo_latestRun | null;
   lastMaterialization: AssetGraphLiveQuery_assetNodes_assetMaterializations | null;
-  computeStatus: AssetComputeStatus;
+  lastMaterializationRunStatus: RunStatus | null; // only available if runWhichFailedToMaterialize is null
+  freshnessPolicy: AssetGraphLiveQuery_assetNodes_freshnessPolicy | null;
+  freshnessInfo: AssetGraphLiveQuery_assetNodes_freshnessInfo | null;
+  lastObservation: AssetGraphLiveQuery_assetNodes_assetObservations | null;
+  currentLogicalVersion: string | null;
+  projectedLogicalVersion: string | null;
 }
+
+export const MISSING_LIVE_DATA: LiveDataForNode = {
+  unstartedRunIds: [],
+  inProgressRunIds: [],
+  runWhichFailedToMaterialize: null,
+  freshnessInfo: null,
+  freshnessPolicy: null,
+  lastMaterialization: null,
+  lastMaterializationRunStatus: null,
+  lastObservation: null,
+  currentLogicalVersion: null,
+  projectedLogicalVersion: null,
+  stepKey: '',
+};
+
 export interface LiveData {
   [assetId: GraphId]: LiveDataForNode;
 }
@@ -156,6 +176,9 @@ export const buildLiveDataForNode = (
   assetLatestInfo?: AssetLatestInfo,
 ): LiveDataForNode => {
   const lastMaterialization = assetNode.assetMaterializations[0] || null;
+  const lastObservation = assetNode.assetObservations[0] || null;
+  const currentLogicalVersion = assetNode.currentLogicalVersion;
+  const projectedLogicalVersion = assetNode.projectedLogicalVersion;
   const latestRunForAsset = assetLatestInfo?.latestRun ? assetLatestInfo.latestRun : null;
 
   const runWhichFailedToMaterialize =
@@ -166,10 +189,18 @@ export const buildLiveDataForNode = (
 
   return {
     lastMaterialization,
+    lastMaterializationRunStatus:
+      latestRunForAsset && lastMaterialization?.runId === latestRunForAsset?.id
+        ? latestRunForAsset.status
+        : null,
+    lastObservation,
+    currentLogicalVersion,
+    projectedLogicalVersion,
     stepKey: assetNode.opNames[0],
+    freshnessInfo: assetNode.freshnessInfo,
+    freshnessPolicy: assetNode.freshnessPolicy,
     inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
     unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
-    computeStatus: assetLatestInfo?.computeStatus || AssetComputeStatus.NONE,
     runWhichFailedToMaterialize,
   };
 };

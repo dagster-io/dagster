@@ -3,7 +3,7 @@ import logging
 import sys
 import traceback
 from contextlib import contextmanager
-from typing import Dict, NamedTuple, Optional
+from typing import Mapping, NamedTuple, Optional
 
 import coloredlogs
 import pendulum
@@ -14,7 +14,7 @@ from dagster._config import Enum, EnumValue
 from dagster._core.definitions.logger_definition import logger
 from dagster._core.utils import PYTHON_LOGGING_LEVELS_MAPPING, coerce_valid_log_level
 
-LogLevelEnum = Enum("log_level", list(map(EnumValue, PYTHON_LOGGING_LEVELS_MAPPING.keys())))
+LogLevelEnum = Enum("log_level", list(map(EnumValue, PYTHON_LOGGING_LEVELS_MAPPING.keys())))  # type: ignore
 
 
 class JsonFileHandler(logging.Handler):
@@ -57,7 +57,7 @@ class StructuredLoggerMessage(
             ("name", str),
             ("message", str),
             ("level", int),
-            ("meta", Dict[object, object]),
+            ("meta", Mapping[object, object]),
             ("record", logging.LogRecord),
         ],
     )
@@ -67,7 +67,7 @@ class StructuredLoggerMessage(
         name: str,
         message: str,
         level: int,
-        meta: Dict[object, object],
+        meta: Mapping[object, object],
         record: logging.LogRecord,
     ):
         return super(StructuredLoggerMessage, cls).__new__(
@@ -75,7 +75,7 @@ class StructuredLoggerMessage(
             check.str_param(name, "name"),
             check.str_param(message, "message"),
             coerce_valid_log_level(level),
-            check.dict_param(meta, "meta"),
+            check.mapping_param(meta, "meta"),
             check.inst_param(record, "record", logging.LogRecord),
         )
 
@@ -279,3 +279,17 @@ def configure_loggers(handler="default", log_level="INFO"):
     if handler == "default":
         for name in ["dagster", "dagit"]:
             logging.getLogger(name).handlers[0].formatter.formatTime = _mockable_formatTime
+
+
+def create_console_logger(name, level):
+    klass = logging.getLoggerClass()
+    handler = klass(name, level=level)
+    coloredlogs.install(
+        logger=handler,
+        level=level,
+        fmt=default_format_string(),
+        datefmt=default_date_format_string(),
+        field_styles={"levelname": {"color": "blue"}, "asctime": {"color": "green"}},
+        level_styles={"debug": {}, "error": {"color": "red"}},
+    )
+    return handler

@@ -2,9 +2,8 @@ from abc import abstractmethod
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
-    Dict,
     FrozenSet,
-    List,
+    Mapping,
     NamedTuple,
     Optional,
     Sequence,
@@ -79,7 +78,7 @@ class IExecutionStep:
 
     @property
     @abstractmethod
-    def tags(self) -> Optional[Dict[str, str]]:
+    def tags(self) -> Optional[Mapping[str, str]]:
         pass
 
     @property
@@ -111,10 +110,10 @@ class ExecutionStep(
         [
             ("handle", Union[StepHandle, ResolvedFromDynamicStepHandle]),
             ("pipeline_name", str),
-            ("step_input_dict", Dict[str, StepInput]),
-            ("step_output_dict", Dict[str, StepOutput]),
-            ("tags", Dict[str, str]),
-            ("logging_tags", Dict[str, str]),
+            ("step_input_dict", Mapping[str, StepInput]),
+            ("step_output_dict", Mapping[str, StepOutput]),
+            ("tags", Mapping[str, str]),
+            ("logging_tags", Mapping[str, str]),
             ("key", str),
         ],
     ),
@@ -128,10 +127,10 @@ class ExecutionStep(
         cls,
         handle: Union[StepHandle, ResolvedFromDynamicStepHandle],
         pipeline_name: str,
-        step_inputs: List[StepInput],
-        step_outputs: List[StepOutput],
-        tags: Optional[Dict[str, str]],
-        logging_tags: Optional[Dict[str, str]] = None,
+        step_inputs: Sequence[StepInput],
+        step_outputs: Sequence[StepOutput],
+        tags: Optional[Mapping[str, str]],
+        logging_tags: Optional[Mapping[str, str]] = None,
         key: Optional[str] = None,
     ):
         return super(ExecutionStep, cls).__new__(
@@ -140,20 +139,20 @@ class ExecutionStep(
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             step_input_dict={
                 si.name: si
-                for si in check.list_param(step_inputs, "step_inputs", of_type=StepInput)
+                for si in check.sequence_param(step_inputs, "step_inputs", of_type=StepInput)
             },
             step_output_dict={
                 so.name: so
-                for so in check.list_param(step_outputs, "step_outputs", of_type=StepOutput)
+                for so in check.sequence_param(step_outputs, "step_outputs", of_type=StepOutput)
             },
-            tags=validate_tags(check.opt_dict_param(tags, "tags", key_type=str)),
+            tags=validate_tags(check.opt_mapping_param(tags, "tags", key_type=str)),
             logging_tags=merge_dicts(
                 {
                     "step_key": handle.to_key(),
                     "pipeline_name": pipeline_name,
                     "solid_name": handle.solid_handle.name,
                 },
-                check.opt_dict_param(logging_tags, "logging_tags"),
+                check.opt_mapping_param(logging_tags, "logging_tags"),
             ),
             # mypy can't tell that if default is set, this is guaranteed to be a str
             key=cast(str, check.opt_str_param(key, "key", default=handle.to_key())),
@@ -172,11 +171,11 @@ class ExecutionStep(
         return StepKind.COMPUTE
 
     @property
-    def step_outputs(self) -> List[StepOutput]:
+    def step_outputs(self) -> Sequence[StepOutput]:
         return list(self.step_output_dict.values())
 
     @property
-    def step_inputs(self) -> List[StepInput]:
+    def step_inputs(self) -> Sequence[StepInput]:
         return list(self.step_input_dict.values())
 
     def has_step_output(self, name: str) -> bool:
@@ -214,9 +213,9 @@ class UnresolvedMappedExecutionStep(
         [
             ("handle", UnresolvedStepHandle),
             ("pipeline_name", str),
-            ("step_input_dict", Dict[str, Union[StepInput, UnresolvedMappedStepInput]]),
-            ("step_output_dict", Dict[str, StepOutput]),
-            ("tags", Dict[str, str]),
+            ("step_input_dict", Mapping[str, Union[StepInput, UnresolvedMappedStepInput]]),
+            ("step_output_dict", Mapping[str, StepOutput]),
+            ("tags", Mapping[str, str]),
         ],
     ),
     IExecutionStep,
@@ -229,9 +228,9 @@ class UnresolvedMappedExecutionStep(
         cls,
         handle: UnresolvedStepHandle,
         pipeline_name: str,
-        step_inputs: List[Union[StepInput, UnresolvedMappedStepInput]],
-        step_outputs: List[StepOutput],
-        tags: Optional[Dict[str, str]],
+        step_inputs: Sequence[Union[StepInput, UnresolvedMappedStepInput]],
+        step_outputs: Sequence[StepOutput],
+        tags: Optional[Mapping[str, str]],
     ):
         return super(UnresolvedMappedExecutionStep, cls).__new__(
             cls,
@@ -239,15 +238,15 @@ class UnresolvedMappedExecutionStep(
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             step_input_dict={
                 si.name: si
-                for si in check.list_param(
+                for si in check.sequence_param(
                     step_inputs, "step_inputs", of_type=(StepInput, UnresolvedMappedStepInput)
                 )
             },
             step_output_dict={
                 so.name: so
-                for so in check.list_param(step_outputs, "step_outputs", of_type=StepOutput)
+                for so in check.sequence_param(step_outputs, "step_outputs", of_type=StepOutput)
             },
-            tags=check.opt_dict_param(tags, "tags", key_type=str),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str),
         )
 
     @property
@@ -263,11 +262,11 @@ class UnresolvedMappedExecutionStep(
         return StepKind.UNRESOLVED_MAPPED
 
     @property
-    def step_outputs(self) -> List[StepOutput]:
+    def step_outputs(self) -> Sequence[StepOutput]:
         return list(self.step_output_dict.values())
 
     @property
-    def step_inputs(self) -> List[Union[StepInput, UnresolvedMappedStepInput]]:
+    def step_inputs(self) -> Sequence[Union[StepInput, UnresolvedMappedStepInput]]:
         return list(self.step_input_dict.values())
 
     def step_input_named(self, name: str) -> Union[StepInput, UnresolvedMappedStepInput]:
@@ -327,7 +326,9 @@ class UnresolvedMappedExecutionStep(
 
         return frozenset(keys)
 
-    def resolve(self, mappings: Dict[str, Dict[str, List[str]]]) -> List[ExecutionStep]:
+    def resolve(
+        self, mappings: Mapping[str, Mapping[str, Sequence[str]]]
+    ) -> Sequence[ExecutionStep]:
         check.invariant(
             all(key in mappings for key in self.resolved_by_step_keys),
             "resolving with mappings that do not contain all required step keys",
@@ -366,9 +367,9 @@ class UnresolvedCollectExecutionStep(
         [
             ("handle", StepHandle),
             ("pipeline_name", str),
-            ("step_input_dict", Dict[str, Union[StepInput, UnresolvedCollectStepInput]]),
-            ("step_output_dict", Dict[str, StepOutput]),
-            ("tags", Dict[str, str]),
+            ("step_input_dict", Mapping[str, Union[StepInput, UnresolvedCollectStepInput]]),
+            ("step_output_dict", Mapping[str, StepOutput]),
+            ("tags", Mapping[str, str]),
         ],
     ),
     IExecutionStep,
@@ -381,9 +382,9 @@ class UnresolvedCollectExecutionStep(
         cls,
         handle: StepHandle,
         pipeline_name: str,
-        step_inputs: List[Union[StepInput, UnresolvedCollectStepInput]],
-        step_outputs: List[StepOutput],
-        tags: Optional[Dict[str, str]],
+        step_inputs: Sequence[Union[StepInput, UnresolvedCollectStepInput]],
+        step_outputs: Sequence[StepOutput],
+        tags: Optional[Mapping[str, str]],
     ):
         return super(UnresolvedCollectExecutionStep, cls).__new__(
             cls,
@@ -391,15 +392,15 @@ class UnresolvedCollectExecutionStep(
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             step_input_dict={
                 si.name: si
-                for si in check.list_param(
+                for si in check.sequence_param(
                     step_inputs, "step_inputs", of_type=(StepInput, UnresolvedCollectStepInput)
                 )
             },
             step_output_dict={
                 so.name: so
-                for so in check.list_param(step_outputs, "step_outputs", of_type=StepOutput)
+                for so in check.sequence_param(step_outputs, "step_outputs", of_type=StepOutput)
             },
-            tags=check.opt_dict_param(tags, "tags", key_type=str),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str),
         )
 
     @property
@@ -415,11 +416,11 @@ class UnresolvedCollectExecutionStep(
         return StepKind.UNRESOLVED_COLLECT
 
     @property
-    def step_inputs(self) -> List[Union[StepInput, UnresolvedCollectStepInput]]:
+    def step_inputs(self) -> Sequence[Union[StepInput, UnresolvedCollectStepInput]]:
         return list(self.step_input_dict.values())
 
     @property
-    def step_outputs(self) -> List[StepOutput]:
+    def step_outputs(self) -> Sequence[StepOutput]:
         return list(self.step_output_dict.values())
 
     def step_input_named(self, name: str) -> Union[StepInput, UnresolvedCollectStepInput]:
@@ -458,7 +459,7 @@ class UnresolvedCollectExecutionStep(
 
         return frozenset(keys)
 
-    def resolve(self, mappings: Dict[str, Dict[str, List[str]]]) -> ExecutionStep:
+    def resolve(self, mappings: Mapping[str, Mapping[str, Sequence[str]]]) -> ExecutionStep:
         check.invariant(
             all(key in mappings for key in self.resolved_by_step_keys),
             "resolving with mappings that do not contain all required step keys",

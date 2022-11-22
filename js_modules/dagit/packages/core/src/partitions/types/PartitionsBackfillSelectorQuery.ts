@@ -62,7 +62,7 @@ export interface PartitionsBackfillSelectorQuery_partitionSetOrError_PythonError
 export type PartitionsBackfillSelectorQuery_partitionSetOrError = PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet | PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSetNotFoundError | PartitionsBackfillSelectorQuery_partitionSetOrError_PythonError;
 
 export interface PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition {
-  __typename: "SolidDefinition" | "CompositeSolidDefinition";
+  __typename: "CompositeSolidDefinition" | "SolidDefinition";
   name: string;
 }
 

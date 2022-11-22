@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Sequence
+from typing import Mapping, Optional, Sequence
 
 import boto3
 
@@ -24,7 +24,7 @@ def construct_secretsmanager_client(
     return secrets_manager
 
 
-def get_tagged_secrets(secrets_manager, secrets_tags: Sequence[str]) -> Dict[str, str]:
+def get_tagged_secrets(secrets_manager, secrets_tags: Sequence[str]) -> Mapping[str, str]:
     """
     Return a dictionary of AWS Secrets Manager names to arns
     for any secret tagged with `secrets_tag`.
@@ -47,7 +47,7 @@ def get_tagged_secrets(secrets_manager, secrets_tags: Sequence[str]) -> Dict[str
     return secrets
 
 
-def get_secrets_from_arns(secrets_manager, secret_arns: List[str]) -> Dict[str, str]:
+def get_secrets_from_arns(secrets_manager, secret_arns: Sequence[str]) -> Mapping[str, str]:
     """
     Return a dictionary of AWS Secrets Manager names to arns.
     """

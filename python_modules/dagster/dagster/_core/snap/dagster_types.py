@@ -1,4 +1,4 @@
-from typing import Dict, List, NamedTuple, Optional, Set
+from typing import Mapping, NamedTuple, Optional, Sequence, Set
 
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataEntry
@@ -36,13 +36,13 @@ def build_dagster_type_snap(dagster_type: DagsterType) -> "DagsterTypeSnap":
 class DagsterTypeNamespaceSnapshot(
     NamedTuple(
         "_DagsterTypeNamespaceSnapshot",
-        [("all_dagster_type_snaps_by_key", Dict[str, "DagsterTypeSnap"])],
+        [("all_dagster_type_snaps_by_key", Mapping[str, "DagsterTypeSnap"])],
     )
 ):
-    def __new__(cls, all_dagster_type_snaps_by_key: Dict[str, "DagsterTypeSnap"]):
+    def __new__(cls, all_dagster_type_snaps_by_key: Mapping[str, "DagsterTypeSnap"]):
         return super(DagsterTypeNamespaceSnapshot, cls).__new__(
             cls,
-            all_dagster_type_snaps_by_key=check.dict_param(
+            all_dagster_type_snaps_by_key=check.mapping_param(
                 all_dagster_type_snaps_by_key,
                 "all_dagster_type_snaps_by_key",
                 key_type=str,
@@ -72,10 +72,10 @@ class DagsterTypeSnap(
             ("description", Optional[str]),
             ("display_name", str),
             ("is_builtin", bool),
-            ("type_param_keys", List[str]),
+            ("type_param_keys", Sequence[str]),
             ("loader_schema_key", Optional[str]),
             ("materializer_schema_key", Optional[str]),
-            ("metadata_entries", List[MetadataEntry]),
+            ("metadata_entries", Sequence[MetadataEntry]),
         ],
     )
 ):

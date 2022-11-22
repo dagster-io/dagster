@@ -2,6 +2,7 @@ import os
 from contextlib import contextmanager
 
 import pytest
+from dagstermill.examples.repository import custom_io_mgr_key_asset
 
 from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
@@ -89,3 +90,9 @@ def test_add_two_number_asset():
 def test_hello_world_resource_asset():
     with exec_for_test("hello_world_resource_asset_job") as result:
         assert result.success
+
+
+@pytest.mark.notebook_test
+def test_custom_io_manager_key():
+    assert "my_custom_io_manager" in custom_io_mgr_key_asset.required_resource_keys
+    assert "output_notebook_io_manager" not in custom_io_mgr_key_asset.required_resource_keys

@@ -6,7 +6,6 @@ from typing import (
     Dict,
     Iterable,
     Iterator,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -91,9 +90,9 @@ def _check_node_defs_arg(
 
 
 def _create_adjacency_lists(
-    solids: List[Node],
+    solids: Sequence[Node],
     dep_structure: DependencyStructure,
-) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]]]:
+) -> Tuple[Mapping[str, Set[str]], Mapping[str, Set[str]]]:
     visit_dict = {s.name: False for s in solids}
     forward_edges: Dict[str, Set[str]] = {s.name: set() for s in solids}
     backward_edges: Dict[str, Set[str]] = {s.name: set() for s in solids}
@@ -204,7 +203,7 @@ class GraphDefinition(NodeDefinition):
         )
 
         # Sequence[InputMapping]
-        self._input_mappings = check.opt_list_param(input_mappings, "input_mappings")
+        self._input_mappings = check.opt_sequence_param(input_mappings, "input_mappings")
         input_defs = _validate_in_mappings(
             self._input_mappings,
             self._node_dict,
@@ -215,7 +214,7 @@ class GraphDefinition(NodeDefinition):
 
         # Sequence[OutputMapping]
         self._output_mappings, output_defs = _validate_out_mappings(
-            check.opt_list_param(output_mappings, "output_mappings"),
+            check.opt_sequence_param(output_mappings, "output_mappings"),
             self._node_dict,
             name,
             class_name=type(self).__name__,
@@ -237,7 +236,7 @@ class GraphDefinition(NodeDefinition):
         self._solids_in_topological_order = self._get_solids_in_topological_order()
         self._dagster_type_dict = construct_dagster_type_dictionary([self])
 
-    def _get_solids_in_topological_order(self) -> List[Node]:
+    def _get_solids_in_topological_order(self) -> Sequence[Node]:
 
         _forward_edges, backward_edges = _create_adjacency_lists(
             self.solids, self.dependency_structure
@@ -252,7 +251,7 @@ class GraphDefinition(NodeDefinition):
 
     def get_inputs_must_be_resolved_top_level(
         self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
-    ) -> List[InputDefinition]:
+    ) -> Sequence[InputDefinition]:
         unresolveable_input_defs = []
         for node in self.node_dict.values():
             cur_handle = NodeHandle(node.name, handle)
@@ -284,7 +283,7 @@ class GraphDefinition(NodeDefinition):
         return True
 
     @property
-    def solids(self) -> List[Node]:
+    def solids(self) -> Sequence[Node]:
         return list(set(self._node_dict.values()))
 
     @property
@@ -527,7 +526,7 @@ class GraphDefinition(NodeDefinition):
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
-        op_selection: Optional[List[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         asset_layer: Optional["AssetLayer"] = None,
         input_values: Optional[Mapping[str, object]] = None,
@@ -632,7 +631,7 @@ class GraphDefinition(NodeDefinition):
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Mapping[str, object]] = None,
         raise_on_error: bool = True,
-        op_selection: Optional[List[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
         run_id: Optional[str] = None,
         input_values: Optional[Mapping[str, object]] = None,
     ) -> "ExecuteInProcessResult":
@@ -665,14 +664,13 @@ class GraphDefinition(NodeDefinition):
             :py:class:`~dagster.ExecuteInProcessResult`
         """
         from dagster._core.execution.build_resources import wrap_resources_for_execution
-        from dagster._core.execution.execute_in_process import core_execute_in_process
         from dagster._core.instance import DagsterInstance
 
         from .executor_definition import execute_in_process_executor
         from .job_definition import JobDefinition
 
         instance = check.opt_inst_param(instance, "instance", DagsterInstance)
-        resources = check.opt_dict_param(resources, "resources", key_type=str)
+        resources = check.opt_mapping_param(resources, "resources", key_type=str)
         input_values = check.opt_mapping_param(input_values, "input_values")
 
         resource_defs = wrap_resources_for_execution(resources)
@@ -686,13 +684,11 @@ class GraphDefinition(NodeDefinition):
         ).get_job_def_for_subset_selection(op_selection)
 
         run_config = run_config if run_config is not None else {}
-        op_selection = check.opt_list_param(op_selection, "op_selection", str)
+        op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
 
-        return core_execute_in_process(
-            ephemeral_pipeline=ephemeral_job,
+        return ephemeral_job.execute_in_process(
             run_config=run_config,
             instance=instance,
-            output_capturing_enabled=True,
             raise_on_error=raise_on_error,
             run_id=run_id,
         )
@@ -729,7 +725,7 @@ class GraphDefinition(NodeDefinition):
         return super(GraphDefinition, self).alias(name)
 
     @public
-    def tag(self, tags: Optional[Dict[str, str]]) -> "PendingNodeInvocation":
+    def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
         return super(GraphDefinition, self).tag(tags)
 
     @public
@@ -790,7 +786,7 @@ class SubselectedGraphDefinition(GraphDefinition):
     def parent_graph_def(self) -> GraphDefinition:
         return self._parent_graph_def
 
-    def get_top_level_omitted_nodes(self) -> List[Node]:
+    def get_top_level_omitted_nodes(self) -> Sequence[Node]:
         return [
             solid for solid in self.parent_graph_def.solids if not self.has_solid_named(solid.name)
         ]

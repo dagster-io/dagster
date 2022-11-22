@@ -530,6 +530,10 @@ class RunStatusSensorExecutionError(DagsterUserCodeExecutionError):
     """Error raised during the execution of a user-defined run status sensor."""
 
 
+class FreshnessPolicySensorExecutionError(DagsterUserCodeExecutionError):
+    """Error raised during the execution of a user-defined freshness policy sensor."""
+
+
 class DagsterImportError(DagsterError):
     """Import error raised while importing user-code."""
 
@@ -561,4 +565,10 @@ class DagsterHomeNotSetError(DagsterError):
 class DagsterUnknownPartitionError(DagsterError):
     """
     The user has tried to access run config for a partition name that does not exist.
+    """
+
+
+class DagsterUndefinedLogicalVersionError(DagsterError):
+    """
+    The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined.
     """

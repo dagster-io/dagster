@@ -174,6 +174,7 @@ class JobDefinition(PipelineDefinition):
         presets = []
         config_mapping = None
         partitioned_config = None
+        self._explicit_config = False
 
         if partitions_def:
             partitioned_config = PartitionedConfig.from_flexible_config(config, partitions_def)
@@ -201,6 +202,7 @@ class JobDefinition(PipelineDefinition):
                     config,
                     name,
                 )
+                self._explicit_config = True
             elif config is not None:
                 check.failed(
                     f"config param must be a ConfigMapping, a PartitionedConfig, or a dictionary, but "
@@ -287,6 +289,7 @@ class JobDefinition(PipelineDefinition):
         asset_selection: Optional[Sequence[AssetKey]] = None,
         run_id: Optional[str] = None,
         input_values: Optional[Mapping[str, object]] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute the Job in-process, gathering results in-memory.
@@ -363,7 +366,7 @@ class JobDefinition(PipelineDefinition):
             op_selection, frozenset(asset_selection) if asset_selection else None
         )
 
-        tags = None
+        merged_tags = merge_dicts(self.tags, tags or {})
         if partition_key:
             if not self.partitioned_config:
                 check.failed(
@@ -379,7 +382,7 @@ class JobDefinition(PipelineDefinition):
             run_config = (
                 run_config if run_config else partition_set.run_config_for_partition(partition)
             )
-            tags = partition_set.tags_for_partition(partition)
+            merged_tags.update(partition_set.tags_for_partition(partition))
 
         return core_execute_in_process(
             ephemeral_pipeline=ephemeral_job,
@@ -387,7 +390,7 @@ class JobDefinition(PipelineDefinition):
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
-            run_tags=tags,
+            run_tags=merged_tags,
             run_id=run_id,
             asset_selection=frozenset(asset_selection),
         )
@@ -436,20 +439,22 @@ class JobDefinition(PipelineDefinition):
     ) -> "JobDefinition":
         asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
 
-        for asset in asset_selection:
-            nonexistent_assets = [
-                asset for asset in asset_selection if asset not in self.asset_layer.asset_keys
-            ]
-            nonexistent_asset_strings = [
-                asset_str
-                for asset_str in (asset.to_string() for asset in nonexistent_assets)
-                if asset_str
-            ]
-            if nonexistent_assets:
-                raise DagsterInvalidSubsetError(
-                    "Assets provided in asset_selection argument "
-                    f"{', '.join(nonexistent_asset_strings)} do not exist in parent asset group or job."
-                )
+        nonexistent_assets = [
+            asset
+            for asset in asset_selection
+            if asset not in self.asset_layer.asset_keys
+            and asset not in self.asset_layer.source_assets_by_key
+        ]
+        nonexistent_asset_strings = [
+            asset_str
+            for asset_str in (asset.to_string() for asset in nonexistent_assets)
+            if asset_str
+        ]
+        if nonexistent_assets:
+            raise DagsterInvalidSubsetError(
+                "Assets provided in asset_selection argument "
+                f"{', '.join(nonexistent_asset_strings)} do not exist in parent asset group or job."
+            )
         asset_selection_data = AssetSelectionData(
             asset_selection=asset_selection,
             parent_job_def=self,
@@ -481,12 +486,19 @@ class JobDefinition(PipelineDefinition):
         if not op_selection:
             return self
 
-        op_selection = check.opt_list_param(op_selection, "op_selection", str)
+        op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
 
         resolved_op_selection_dict = parse_op_selection(self, op_selection)
 
         try:
             sub_graph = get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
+
+            # if explicit config was passed the config_mapping that resolves the defaults implicitly is
+            # very unlikely to work. The preset will still present the default config in dagit.
+            if self._explicit_config:
+                config_arg = None
+            else:
+                config_arg = self.config_mapping or self.partitioned_config
 
             return JobDefinition(
                 name=self.name,
@@ -494,7 +506,7 @@ class JobDefinition(PipelineDefinition):
                 resource_defs=dict(self.resource_defs),
                 logger_defs=dict(self.loggers),
                 executor_def=self.executor_def,
-                config=self.config_mapping or self.partitioned_config,
+                config=config_arg,
                 tags=self.tags,
                 hook_defs=self.hook_defs,
                 op_retry_policy=self._solid_retry_policy,
@@ -903,7 +915,7 @@ def default_job_io_manager_with_fs_io_manager_schema(init_context: "InitResource
 
 def _config_mapping_with_default_value(
     inner_schema: ConfigType,
-    default_config: Dict[str, Any],
+    default_config: Mapping[str, Any],
     job_name: str,
 ) -> ConfigMapping:
     if not isinstance(inner_schema, Shape):

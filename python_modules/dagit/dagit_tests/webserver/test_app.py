@@ -226,11 +226,11 @@ def test_graphql_ws_success(instance, test_client: TestClient):
         assert response["type"] == GraphQLWS.DATA
 
         gc.collect()
-        assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 1
+        assert len(objgraph.by_type("async_generator")) == 1
 
     # after exiting the context manager and closing the connection
     gc.collect()
-    assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 0
+    assert len(objgraph.by_type("async_generator")) == 0
 
 
 def test_download_debug_file(instance, test_client: TestClient):

@@ -66,7 +66,7 @@ def composite_descent(pipeline_def, solids_config, resource_defs):
     produce config for child solids of composites.
 
     Args:
-        pipeline_def (PipelineDefintion): PipelineDefinition
+        pipeline_def (PipelineDefinition): PipelineDefinition
         solids_config (dict): Configuration for the solids in the pipeline. The "solids" entry
             of the run_config. Assumed to have already been validated.
 

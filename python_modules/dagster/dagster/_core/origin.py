@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
@@ -20,8 +20,8 @@ class RepositoryPythonOrigin(
             ("executable_path", str),
             ("code_pointer", CodePointer),
             ("container_image", Optional[str]),
-            ("entry_point", Optional[List[str]]),
-            ("container_context", Optional[Dict[str, Any]]),
+            ("entry_point", Optional[Sequence[str]]),
+            ("container_context", Optional[Mapping[str, Any]]),
         ],
     ),
 ):

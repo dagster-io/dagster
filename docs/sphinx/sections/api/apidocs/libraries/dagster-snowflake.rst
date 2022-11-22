@@ -8,17 +8,24 @@ To use this library, you should first ensure that you have an appropriate `Snowf
 <https://docs.snowflake.net/manuals/user-guide/admin-user-management.html>`_ configured to access
 your data warehouse.
 
-
 .. currentmodule:: dagster_snowflake
+
+I/O Manager
+===========
+.. autoconfigurable:: build_snowflake_io_manager
+  :annotation: IOManagerDefinition
+
+
+Resource
+========
 
 .. autoconfigurable:: snowflake_resource
   :annotation: ResourceDefinition
 
-.. autoconfigurable:: build_snowflake_io_manager
-  :annotation: IOManagerDefinition
-
-.. autofunction:: snowflake_op_for_query
-
 .. autoclass:: SnowflakeConnection
   :members:
   :undoc-members:
+
+Ops
+===
+.. autofunction:: snowflake_op_for_query

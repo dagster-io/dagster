@@ -1,8 +1,11 @@
 import datetime
+from typing import Any, Dict
 
+import pytest
 from pytest import fixture
 
 from dagster import DailyPartitionsDefinition, HourlyPartitionsDefinition, asset, materialize
+from dagster._check import CheckError
 
 
 @fixture
@@ -26,7 +29,7 @@ def test_partitioned_io_manager(hourly, daily):
         return 42
 
     @asset(partitions_def=daily)
-    def daily_asset(hourly_asset):
+    def daily_asset(hourly_asset: Dict[str, Any]):
         return hourly_asset
 
     # Build hourly materializations
@@ -52,7 +55,7 @@ def test_partitioned_io_manager_preserves_single_partition_dependency(daily):
         return 42
 
     @asset(partitions_def=daily)
-    def daily_asset(upstream_asset):
+    def daily_asset(upstream_asset: int):
         return upstream_asset
 
     result = materialize(
@@ -60,3 +63,24 @@ def test_partitioned_io_manager_preserves_single_partition_dependency(daily):
         partition_key="2022-01-01",
     )
     assert result.output_for_node("daily_asset") == 42
+
+
+def test_partitioned_io_manager_single_partition_dependency_errors_with_wrong_typing(daily):
+    @asset(partitions_def=daily)
+    def upstream_asset():
+        return 42
+
+    @asset(partitions_def=daily)
+    def daily_asset(upstream_asset: Dict[str, Any]):
+        return upstream_asset
+
+    with pytest.raises(
+        CheckError,
+        match=r".*If you are loading a single partition, "
+        r"the upstream asset type annotation "
+        r"should not be a typing.Dict, but a single partition type.",
+    ):
+        materialize(
+            [upstream_asset, daily_asset],
+            partition_key="2022-01-01",
+        )

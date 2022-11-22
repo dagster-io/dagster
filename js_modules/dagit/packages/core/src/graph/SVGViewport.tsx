@@ -17,8 +17,8 @@ export interface SVGViewportInteractor {
 interface SVGViewportProps {
   graphWidth: number;
   graphHeight: number;
+  graphHasNoMinimumZoom?: boolean;
   interactor: SVGViewportInteractor;
-  minZoom?: number;
   maxZoom: number;
   maxAutocenterZoom: number;
   onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
@@ -50,7 +50,6 @@ const DEFAULT_ZOOM = 0.75;
 const DEFAULT_MAX_AUTOCENTER_ZOOM = 1;
 const DEFAULT_MIN_ZOOM = 0.17;
 
-const MIN_AUTOCENTER_ZOOM = 0.17;
 const BUTTON_INCREMENT = 0.05;
 
 const PanAndZoomInteractor: SVGViewportInteractor = {
@@ -96,7 +95,6 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
     };
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
-    event.stopPropagation();
   },
 
   onWheel(viewport: SVGViewport, event: WheelEvent) {
@@ -109,10 +107,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
       viewport.shiftXY(-event.deltaX, -event.deltaY);
     } else {
       const targetScale = viewport.state.scale * (1 - event.deltaY * 0.0025);
-      const scale = Math.max(
-        viewport.props.minZoom || DEFAULT_MIN_ZOOM,
-        Math.min(viewport.getMaxZoom(), targetScale),
-      );
+      const scale = Math.max(viewport.getMinZoom(), Math.min(viewport.getMaxZoom(), targetScale));
       viewport.adjustZoomRelativeToScreenPoint(scale, cursorPosition);
     }
   },
@@ -138,7 +133,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
         </Box>
         <Slider
           vertical
-          min={viewport.props.minZoom || DEFAULT_MIN_ZOOM}
+          min={viewport.getMinZoom()}
           max={viewport.getMaxZoom()}
           stepSize={0.001}
           value={viewport.state.scale}
@@ -155,7 +150,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
               const x = viewport.element.current!.clientWidth / 2;
               const y = viewport.element.current!.clientHeight / 2;
               const scale = Math.max(
-                viewport.props.minZoom || DEFAULT_MIN_ZOOM,
+                viewport.getMinZoom(),
                 viewport.state.scale - BUTTON_INCREMENT,
               );
               viewport.adjustZoomRelativeToScreenPoint(scale, {x, y});
@@ -292,7 +287,10 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
   }
 
   scaleForSVGBounds(svgRegionWidth: number, svgRegionHeight: number) {
-    const el = this.element.current!;
+    const el = this.element.current;
+    if (!el) {
+      return 1;
+    }
     const ownerRect = {width: el.clientWidth, height: el.clientHeight};
 
     const dw = ownerRect.width / svgRegionWidth;
@@ -304,13 +302,14 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     const el = this.element.current!;
     const ownerRect = {width: el.clientWidth, height: el.clientHeight};
     const desiredScale = this.scaleForSVGBounds(this.props.graphWidth, this.props.graphHeight);
+    const minScale = this.getMinZoom();
     const boundedScale =
-      scale || Math.max(Math.min(desiredScale, this.props.maxAutocenterZoom), MIN_AUTOCENTER_ZOOM);
+      scale || Math.max(Math.min(desiredScale, this.props.maxAutocenterZoom), minScale);
 
     if (
       this.state.scale < boundedScale &&
       desiredScale !== boundedScale &&
-      boundedScale === MIN_AUTOCENTER_ZOOM
+      boundedScale === minScale
     ) {
       // If the user is zoomed out past where they're going to land, AND where they're going to land
       // is not a view of the entire DAG but instead a view of some zoomed section, autocentering is
@@ -368,10 +367,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
 
   public zoomToSVGCoords(x: number, y: number, animate: boolean, scale = this.state.scale) {
     const el = this.element.current!;
-    const boundedScale = Math.max(
-      Math.min(this.getMaxZoom(), scale),
-      this.props.minZoom || DEFAULT_MIN_ZOOM,
-    );
+    const boundedScale = Math.max(Math.min(this.getMaxZoom(), scale), this.getMinZoom());
 
     const ownerRect = el.getBoundingClientRect();
     x = -x * boundedScale + ownerRect.width / 2;
@@ -404,6 +400,16 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
         this._animation = null;
       },
     });
+  }
+
+  public getMinZoom() {
+    if (this.props.graphHasNoMinimumZoom) {
+      return Math.min(
+        DEFAULT_MIN_ZOOM,
+        this.scaleForSVGBounds(this.props.graphWidth, this.props.graphHeight),
+      );
+    }
+    return DEFAULT_MIN_ZOOM;
   }
 
   public getMaxZoom() {
@@ -500,7 +506,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
   render() {
     const {children, onClick, interactor} = this.props;
     const {x, y, scale} = this.state;
-    const dotsize = Math.max(14, 30 * scale);
+    const dotsize = Math.max(7, 30 * scale);
 
     return (
       <div

@@ -4,7 +4,7 @@ import json
 import random
 import string
 from collections import namedtuple
-from typing import Any, Dict, List, Optional
+from typing import Any, Mapping, Optional, Sequence
 
 import kubernetes
 
@@ -497,7 +497,7 @@ class DagsterK8sJobConfig(
         )
 
     @property
-    def env(self) -> List[Dict[str, Optional[str]]]:
+    def env(self) -> Sequence[Mapping[str, Optional[str]]]:
         parsed_env_vars = [parse_env_var(key) for key in (self.env_vars or [])]
         return [
             {"name": parsed_env_var[0], "value": parsed_env_var[1]}
@@ -505,7 +505,7 @@ class DagsterK8sJobConfig(
         ]
 
     @property
-    def env_from_sources(self) -> List[Dict[str, Any]]:
+    def env_from_sources(self) -> Sequence[Mapping[str, Any]]:
         """This constructs a list of env_from sources. Along with a default base environment
         config map which we always load, the ConfigMaps and Secrets specified via
         env_config_maps and env_secrets will be pulled into the job construction here.

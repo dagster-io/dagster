@@ -2,7 +2,7 @@ import os
 import sys
 import tempfile
 import uuid
-from typing import Any, Dict, Mapping, Optional, Set, Union
+from typing import Any, Mapping, Optional, Set, Union
 
 import papermill
 from dagstermill.compat import ExecutionError
@@ -11,7 +11,15 @@ from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
 
 import dagster._check as check
-from dagster import AssetIn, AssetKey, Output, PartitionsDefinition, ResourceDefinition, asset
+from dagster import (
+    AssetIn,
+    AssetKey,
+    Output,
+    PartitionsDefinition,
+    ResourceDefinition,
+    RetryPolicy,
+    asset,
+)
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.execution.context.compute import SolidExecutionContext
@@ -105,13 +113,15 @@ def define_dagstermill_asset(
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
-    config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
+    config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
     required_resource_keys: Optional[Set[str]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-    op_tags: Optional[Dict[str, Any]] = None,
+    op_tags: Optional[Mapping[str, Any]] = None,
     group_name: Optional[str] = None,
+    io_manager_key: Optional[str] = None,
+    retry_policy: Optional[RetryPolicy] = None,
 ):
     """Creates a Dagster asset for a Jupyter notebook.
 
@@ -144,6 +154,9 @@ def define_dagstermill_asset(
             (Experimental) A mapping of resource keys to resource definitions. These resources
             will be initialized during execution, and can be accessed from the
             context within the notebook.
+        io_manager_key (Optional[str]): A string key for the IO manager used to store the output notebook.
+            If not provided, the default key output_notebook_io_manager will be used.
+        retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
 
     Examples:
 
@@ -189,6 +202,10 @@ def define_dagstermill_asset(
     default_description = f"This asset is backed by the notebook at {notebook_path}"
     description = check.opt_str_param(description, "description", default=default_description)
 
+    io_mgr_key = check.opt_str_param(
+        io_manager_key, "io_manager_key", default="output_notebook_io_manager"
+    )
+
     user_tags = validate_tags(op_tags)
     if op_tags is not None:
         check.invariant(
@@ -215,7 +232,8 @@ def define_dagstermill_asset(
         op_tags={**user_tags, **default_tags},
         group_name=group_name,
         output_required=False,
-        io_manager_key="output_notebook_io_manager",
+        io_manager_key=io_mgr_key,
+        retry_policy=retry_policy,
     )(
         _dm_compute(
             name=name,

@@ -18,13 +18,13 @@ export const FailedRunsSinceMaterializationBanner: React.FC<{
         <Alert
           intent="warning"
           title={
-            <span>
+            <div style={{fontWeight: 400}}>
               Run{' '}
-              <Link to={`/instance/runs/${runWhichFailedToMaterialize.id}`}>
+              <Link to={`/runs/${runWhichFailedToMaterialize.id}`}>
                 {titleForRun({runId: runWhichFailedToMaterialize.id})}
               </Link>{' '}
               failed to materialize this asset.
-            </span>
+            </div>
           }
         />
       </Box>

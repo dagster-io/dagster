@@ -7,7 +7,7 @@ import time
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
-from typing import Dict, Generator, List, NamedTuple, Optional, Sequence, Union
+from typing import Dict, Generator, List, Mapping, NamedTuple, Optional, Sequence, Union
 
 import pendulum
 
@@ -121,6 +121,9 @@ class SensorLaunchContext:
 
     def add_run_info(self, run_id=None, run_key=None):
         self._tick = self._tick.with_run_info(run_id, run_key)
+
+    def add_log_info(self, log_key):
+        self._tick = self._tick.with_log_key(log_key)
 
     def set_should_update_cursor_on_failure(self, should_update_cursor_on_failure: bool):
         self._should_update_cursor_on_failure = should_update_cursor_on_failure
@@ -446,8 +449,10 @@ def _process_tick_generator(
         # timestamp on the sensor state, but clobbering it with an older timestamp which might open
         # us up to a new evaluation being delegated within the minimum interval
         now = pendulum.now("UTC")
-        sensor_state = instance.get_instigator_state(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        sensor_state = check.not_none(
+            instance.get_instigator_state(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
         )
         if _is_under_min_interval(sensor_state, external_sensor):
             # check the since we might have been queued before processing
@@ -492,9 +497,10 @@ def _process_tick_generator(
 
 def _sensor_instigator_data(state: InstigatorState) -> Optional[SensorInstigatorData]:
     instigator_data = state.instigator_data
-    if instigator_data and not isinstance(instigator_data, SensorInstigatorData):
+    if instigator_data is None or isinstance(instigator_data, SensorInstigatorData):
+        return instigator_data
+    else:
         check.failed(f"Expected SensorInstigatorData, got {instigator_data}")
-    return instigator_data
 
 
 def _mark_sensor_state_for_tick(
@@ -547,6 +553,9 @@ def _evaluate_sensor(
     )
 
     yield
+
+    if sensor_runtime_data.captured_log_key:
+        context.add_log_info(sensor_runtime_data.captured_log_key)
 
     assert isinstance(sensor_runtime_data, SensorExecutionData)
     if not sensor_runtime_data.run_requests:
@@ -724,7 +733,8 @@ def _fetch_existing_runs(
             valid_runs.append(run)
         # otherwise prevent the same named sensor across repos from effecting each other
         elif (
-            run.external_pipeline_origin.external_repository_origin.get_selector_id()
+            run.external_pipeline_origin is not None
+            and run.external_pipeline_origin.external_repository_origin.get_selector_id()
             == external_sensor.get_external_origin().external_repository_origin.get_selector_id()
             and run.tags.get(SENSOR_NAME_TAG) == external_sensor.name
         ):
@@ -747,7 +757,7 @@ def _get_or_create_sensor_run(
     external_pipeline: ExternalPipeline,
     run_request: RunRequest,
     target_data: ExternalTargetData,
-    existing_runs_by_key: Dict[str, PipelineRun],
+    existing_runs_by_key: Mapping[str, PipelineRun],
 ):
 
     if not run_request.run_key:

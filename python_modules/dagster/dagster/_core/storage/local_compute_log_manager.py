@@ -1,9 +1,10 @@
 import hashlib
 import os
+import shutil
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import IO, Generator, List, Optional, Tuple, Union
+from typing import IO, Generator, Optional, Sequence, Tuple, Union
 
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver
@@ -69,7 +70,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
         return LocalComputeLogManager(inst_data=inst_data, **config_value)
 
     @contextmanager
-    def capture_logs(self, log_key: List[str]) -> Generator[CapturedLogContext, None, None]:
+    def capture_logs(self, log_key: Sequence[str]) -> Generator[CapturedLogContext, None, None]:
         outpath = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT])
         errpath = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR])
         with mirror_stream_to_file(sys.stdout, outpath), mirror_stream_to_file(sys.stderr, errpath):
@@ -80,18 +81,18 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
 
     @contextmanager
     def open_log_stream(
-        self, log_key: List[str], io_type: ComputeIOType
+        self, log_key: Sequence[str], io_type: ComputeIOType
     ) -> Generator[Optional[IO], None, None]:
         path = self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
         ensure_file(path)
         with open(path, "+a", encoding="utf-8") as f:
             yield f
 
-    def is_capture_complete(self, log_key: List[str]):
+    def is_capture_complete(self, log_key: Sequence[str]):
         return os.path.exists(self.complete_artifact_path(log_key))
 
     def get_log_data(
-        self, log_key: List[str], cursor: Optional[str] = None, max_bytes: Optional[int] = None
+        self, log_key: Sequence[str], cursor: Optional[str] = None, max_bytes: Optional[int] = None
     ) -> CapturedLogData:
         stdout_cursor, stderr_cursor = self.parse_cursor(cursor)
         stdout, stdout_offset = self._read_bytes(
@@ -107,7 +108,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
             cursor=self.build_cursor(stdout_offset, stderr_offset),
         )
 
-    def get_log_metadata(self, log_key: List[str]) -> CapturedLogMetadata:
+    def get_log_metadata(self, log_key: Sequence[str]) -> CapturedLogMetadata:
         return CapturedLogMetadata(
             stdout_location=self.get_captured_local_path(
                 log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
@@ -115,29 +116,39 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
             stderr_location=self.get_captured_local_path(
                 log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR]
             ),
-            stdout_download_url=self._captured_log_download_url(log_key, ComputeIOType.STDOUT),
-            stderr_download_url=self._captured_log_download_url(log_key, ComputeIOType.STDERR),
+            stdout_download_url=self.get_captured_log_download_url(log_key, ComputeIOType.STDOUT),
+            stderr_download_url=self.get_captured_log_download_url(log_key, ComputeIOType.STDERR),
         )
 
-    def delete_logs(self, log_key: List[str]):
-        paths = [
-            self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]),
-            self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR]),
-            self.get_captured_local_path(
-                log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT], partial=True
-            ),
-            self.get_captured_local_path(
-                log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR], partial=True
-            ),
-            self.get_captured_local_path(log_key, "complete"),
-        ]
-        for path in paths:
-            if os.path.exists(path) and os.path.isfile(path):
-                os.remove(path)
+    def delete_logs(
+        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+    ):
+        if log_key:
+            paths = [
+                self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]),
+                self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR]),
+                self.get_captured_local_path(
+                    log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT], partial=True
+                ),
+                self.get_captured_local_path(
+                    log_key, IO_TYPE_EXTENSION[ComputeIOType.STDERR], partial=True
+                ),
+                self.get_captured_local_path(log_key, "complete"),
+            ]
+            for path in paths:
+                if os.path.exists(path) and os.path.isfile(path):
+                    os.remove(path)
+        elif prefix:
+            dir_to_delete = os.path.join(self._base_dir, *prefix)
+            if os.path.exists(dir_to_delete) and os.path.isdir(dir_to_delete):
+                # recursively delete all files in dir
+                shutil.rmtree(dir_to_delete)
+        else:
+            check.failed("Must pass in either `log_key` or `prefix` argument to delete_logs")
 
     def _read_bytes(
         self,
-        log_key: List[str],
+        log_key: Sequence[str],
         io_type: ComputeIOType,
         offset: Optional[int] = 0,
         max_bytes: Optional[int] = None,
@@ -181,7 +192,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
             new_offset = f.tell()
         return data, new_offset
 
-    def _captured_log_download_url(self, log_key, io_type):
+    def get_captured_log_download_url(self, log_key, io_type):
         check.inst_param(io_type, "io_type", ComputeIOType)
         url = "/logs"
         for part in log_key:
@@ -189,7 +200,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
 
         return f"{url}/{IO_TYPE_EXTENSION[io_type]}"
 
-    def get_captured_local_path(self, log_key: List[str], extension: str, partial=False):
+    def get_captured_local_path(self, log_key: Sequence[str], extension: str, partial=False):
         [*namespace, filebase] = log_key
         filename = f"{filebase}.{extension}"
         if partial:
@@ -199,7 +210,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
         return os.path.join(self._base_dir, *namespace, filename)
 
     def subscribe(
-        self, log_key: List[str], cursor: Optional[str] = None
+        self, log_key: Sequence[str], cursor: Optional[str] = None
     ) -> CapturedLogSubscription:
         subscription = CapturedLogSubscription(self, log_key, cursor)
         self.on_subscribe(subscription)
@@ -339,7 +350,7 @@ class LocalComputeLogSubscriptionManager:
             return self._manager.build_log_key_for_run(subscription.run_id, subscription.key)
         return subscription.log_key
 
-    def _watch_key(self, log_key: List[str]) -> str:
+    def _watch_key(self, log_key: Sequence[str]) -> str:
         return json.dumps(log_key)
 
     def remove_all_subscriptions(self, log_key):

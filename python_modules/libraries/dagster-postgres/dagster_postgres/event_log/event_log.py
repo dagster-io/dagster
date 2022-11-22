@@ -101,13 +101,14 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 SqlEventLogStorageMetadata.create_all(conn)
                 stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
-    def optimize_for_dagit(self, statement_timeout):
+    def optimize_for_dagit(self, statement_timeout, pool_recycle):
         # When running in dagit, hold an open connection and set statement_timeout
         self._engine = create_engine(
             self.postgres_url,
             isolation_level="AUTOCOMMIT",
             pool_size=1,
             connect_args={"options": pg_statement_timeout(statement_timeout)},
+            pool_recycle=pool_recycle,
         )
 
     def upgrade(self):
@@ -235,6 +236,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def index_connection(self):
         return self._connect()
+
+    def has_table(self, table_name: str) -> bool:
+        return bool(self._engine.dialect.has_table(self._engine.connect(), table_name))
 
     def has_secondary_index(self, name):
         if name not in self._secondary_index_cache:
