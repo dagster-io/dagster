@@ -1,6 +1,6 @@
-from dagster._utils import file_relative_path
 from dagster._cli.workspace.cli_target import get_target_from_toml
 from dagster._core.workspace.load_target import PackageTarget
+from dagster._utils import file_relative_path
 
 
 def test_load_python_package_from_toml():
