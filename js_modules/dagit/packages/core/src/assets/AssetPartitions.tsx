@@ -41,7 +41,7 @@ export const AssetPartitions: React.FC<Props> = ({
   liveData,
 }) => {
   const [assetHealth] = usePartitionHealthData([assetKey]);
-  const [ranges, setRanges] = usePartitionDimensionRanges(assetHealth, assetPartitionNames, 'view');
+  const [ranges, setRanges] = usePartitionDimensionRanges(assetHealth, assetPartitionNames);
 
   const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
     PartitionState.MISSING,
