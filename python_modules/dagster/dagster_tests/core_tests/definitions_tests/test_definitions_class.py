@@ -27,7 +27,6 @@ def get_all_assets_from_defs(defs: Definitions):
     return list(repo._assets_defs_by_key.values())  # pylint: disable=protected-access
 
 
-# TODO: introduce common interface to avoid this coercion
 def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefinition:
     repo_or_caching_repo = definitions.get_inner_repository()
     return (
