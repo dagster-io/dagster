@@ -36,11 +36,12 @@ interface Props {
 export const AssetPartitions: React.FC<Props> = ({
   assetKey,
   assetPartitionNames,
+  assetLastMaterializedAt,
   params,
   setParams,
   liveData,
 }) => {
-  const [assetHealth] = usePartitionHealthData([assetKey]);
+  const [assetHealth] = usePartitionHealthData([assetKey], assetLastMaterializedAt);
   const [ranges, setRanges] = usePartitionDimensionRanges(assetHealth, assetPartitionNames);
 
   const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
