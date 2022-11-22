@@ -54,7 +54,7 @@ export const useSelectedRunsTab = (filterTokens: TokenizingFieldValue[]) => {
   if (pathname === '/instance/runs/scheduled') {
     return 'scheduled';
   }
-  if (pathname === '/instance/backfills') {
+  if (pathname === '/overview/backfills') {
     return 'backfills';
   }
 

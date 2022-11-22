@@ -37,6 +37,7 @@ export interface AssetCatalogGroupTableQuery_assetNodes {
   id: string;
   assetKey: AssetCatalogGroupTableQuery_assetNodes_assetKey;
   groupName: string | null;
+  isSource: boolean;
   partitionDefinition: AssetCatalogGroupTableQuery_assetNodes_partitionDefinition | null;
   description: string | null;
   repository: AssetCatalogGroupTableQuery_assetNodes_repository;

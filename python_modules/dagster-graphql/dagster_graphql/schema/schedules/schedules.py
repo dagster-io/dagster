@@ -57,7 +57,9 @@ class GrapheneSchedule(graphene.ObjectType):
 
         super().__init__(
             name=external_schedule.name,
-            cron_schedule=external_schedule.cron_schedule,
+            cron_schedule=str(
+                external_schedule.cron_schedule
+            ),  # can be sequence, coercing to str for now
             pipeline_name=external_schedule.pipeline_name,
             solid_selection=external_schedule.solid_selection,
             mode=external_schedule.mode,

@@ -18,7 +18,6 @@ import toposort
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.selector.subset_selector import DependencyGraph, generate_asset_dep_graph
-from dagster._utils import make_readonly_value
 
 from .assets import AssetsDefinition
 from .events import AssetKey, AssetKeyPartitionKey
@@ -62,12 +61,12 @@ class AssetGraph(
     ):
         return super(AssetGraph, cls).__new__(
             cls,
-            asset_dep_graph=make_readonly_value(asset_dep_graph),
-            source_asset_keys=make_readonly_value(source_asset_keys),
-            partitions_defs_by_key=make_readonly_value(partitions_defs_by_key),
-            partition_mappings_by_key=make_readonly_value(partition_mappings_by_key),
-            group_names_by_key=make_readonly_value(group_names_by_key),
-            freshness_policies_by_key=make_readonly_value(freshness_policies_by_key),
+            asset_dep_graph=asset_dep_graph,
+            source_asset_keys=source_asset_keys,
+            partitions_defs_by_key=partitions_defs_by_key,
+            partition_mappings_by_key=partition_mappings_by_key,
+            group_names_by_key=group_names_by_key,
+            freshness_policies_by_key=freshness_policies_by_key,
         )
 
     @staticmethod
@@ -349,3 +348,9 @@ class AssetGraph(
         return [
             {key for key in level} for level in toposort.toposort(self.asset_dep_graph["upstream"])
         ]
+
+    def __hash__(self):
+        return id(self)
+
+    def __eq__(self, other):
+        return self is other
