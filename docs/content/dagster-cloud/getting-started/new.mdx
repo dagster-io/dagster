@@ -162,54 +162,68 @@ Click the tab for your deployment type - **Serverless** or **Hybrid** - to view 
   </TabItem>
 	<TabItem name="Serverless">
 
+### Serverless
+
 For **Serverless deployments**, there are two ways to deploy your code to Dagster Cloud:
 
-- **Adding a GitHub repository** - If you're a GitHub user, this is the easiest way to deploy your code.
-- **Using the dagster-cloud CLI** - If you use a non-GitHub git provider or are developing locally, you can use our CLI to get started.
+- **Start from a template** - Use one of our quickstart templates to get up and running. The template will be cloned to a GitHub repository.
+- **Import an existing project** - Import an existing Dagster project using our GitHub app or the [dagster-cloud CLI](/dagster-cloud/developing-testing/dagster-cloud-cli)
 
 <TabGroup>
-  <TabItem name="Add a GitHub repository">
+<TabItem name="Use a template">
 
-1. Click **Connect to GitHub**.
-2. Click **Choose account or organization** and sign into your GitHub account.
-3. Select the account or organization where Dagster should be installed.
-4. After the installation and authorization is complete, you'll be redirected back to Dagster Cloud.
-5. After Dagster Cloud is connected, you'll be prompted to either:
+#### Using a template
 
-   - **Clone the Dagster Cloud starter project** - This option clones the [dagster-cloud-template](https://github.com/dagster-io/dagster-cloud-template) repo, which already has Serverless Deployment and [Branch Deployments](/dagster-cloud/developing-testing/branch-deployments) configured.
+1. Click **Select** to select a template.
+2. Sign in to your GitHub account, if prompted.
+   - **Git scope** - Select the organization or account to create the new repository in.
+   - **Repository Name** - Enter a name for the new repository.
+   - Check the **Make git repository private** box to make the repository private.
+4. When finished, click **Clone and deploy**.
 
-     1. Enter a **Repository name**.
+</TabItem>
+<TabItem name="Import an existing project">
+
+
      2. Select a **Repository visibility**.
-     3. Click **Clone and deploy.**
+To import an existing project, you can use Dagster's GitHub app or the dagster-cloud CLI.
 
-   - **Use an existing repo** - This option uses an existing repository in your GitHub account.
      1. Select a **repository**.
-     2. Click **Deploy**.
+**Using the GitHub app**
+
+1. Click the **Import an existing project** tab.
+2. Sign in to your GitHub account, if prompted.
+3. In Dagster Cloud, define the following:
+   - **Git scope** - Select the organization or account to create the new repository in.
+   - **Repository Name** - Enter a name for the new repository.
+   - Check the **Make git repository private** box to make the repository private.
+4. Click **Deploy**.
 
 When finished, [continue to the next step](#step-4-set-up-cicd).
 
-  </TabItem>
-  <TabItem name="Use the CLI">
+**Using the dagster-cloud CLI**
+
 <Note>
-  Using the <code>dagster-cloud</code> CLI requires a recent version of Python 3
-  and Docker.
+  Using the dagster-cloud CLI requires a recent version of Python 3 and Docker.
 </Note>
 
-To complete this step using the CLI, you can use your own Dagster code or the [`dagster-cloud-examples` code](https://github.com/dagster-io/dagster-cloud/tree/main/dagster-cloud-examples). Our examples use the `dagster-cloud-examples` package.
+To complete this step using the CLI, you can use your own Dagster code or the [Dagster Cloud Serverless Quickstart](https://github.com/dagster-io/dagster-cloud-serverless-quickstart). The quickstart is a template with everything you need to get started using Serverless in Dagster Cloud.
 
-1. To install the `dagster-cloud` CLI and the `dagster-cloud-examples` package, run:
+1. If using the template, click [**Use this template** in the repository](https://github.com/dagster-io/dagster-cloud-serverless-quickstart). Finish setting up the repository on GitHub and clone it to your local environment.
+
+2. To install the dagster-cloud CLI, run:
 
    ```shell
-   pip install dagster-cloud dagster-cloud-examples
+   pip install dagster-cloud
    ```
 
-2. Complete the setup:
+3. Complete the CLI setup:
 
    1. Complete the authentication step, including [creating a user token](/dagster-cloud/account/managing-user-agent-tokens#managing-user-tokens).
 
-   2. **If using your own Dagster code**, add `dagster-cloud` as a dependency in `setup.py`. [Click here for an example](https://github.com/dagster-io/dagster-cloud/blob/main/dagster-cloud-examples/setup.py).
+   2. **If using your own Dagster code**, make sure to add `dagster-cloud` as a dependency in `setup.py`. [Click here for an example](https://github.com/dagster-io/dagster-cloud/blob/main/dagster-cloud-examples/setup.py). This is already done for you if using the Serverless quickstart template.
 
-3. Run the following to deploy your code to Dagster Cloud:
+4. Run the following to deploy your code to Dagster Cloud:
 
    ```shell
    dagster-cloud serverless deploy \
