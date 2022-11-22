@@ -128,8 +128,8 @@ export const RepositoryLocationsList = () => {
       <Box padding={{vertical: 32}}>
         <NonIdealState
           icon="folder"
-          title="No repository locations"
-          description="When you add a repository location to this workspace, it will appear here."
+          title="No code locations"
+          description="When you add a code location to this workspace, it will appear here."
         />
       </Box>
     );
@@ -139,7 +139,7 @@ export const RepositoryLocationsList = () => {
     <Table>
       <thead>
         <tr>
-          <th>Repository location</th>
+          <th>Code location</th>
           <th>Status</th>
           <th colSpan={2}>Updated</th>
         </tr>
