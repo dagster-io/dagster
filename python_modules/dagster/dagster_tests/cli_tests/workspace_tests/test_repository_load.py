@@ -39,6 +39,7 @@ def successfully_load_repository_via_cli(cli_args, repo_assert_fn=None):
 
     result = load_repository_via_cli_runner(cli_args, wrapped_repo_assert)
     assert result.exit_code == 0
+    return result
 
 
 PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE = file_relative_path(
@@ -166,21 +167,6 @@ def test_pending_repo():
         assert external_repository.name == "pending_repo"
 
     successfully_load_repository_via_cli(["-w", pending_location, "-r", "pending_repo"], the_assert)
-
-
-def test_dagster_definitions():
-    cli_args = ["-f", file_relative_path(__file__, "dagster_defs_file.py")]
-
-    executed = {}
-
-    def the_assert(external_repo: ExternalRepository):
-        assert external_repo.name == "__repository__"
-        assert len(external_repo.get_external_asset_nodes()) == 1
-        executed["yes"] = True
-
-    successfully_load_repository_via_cli(cli_args, the_assert)
-
-    assert executed["yes"]
 
 
 def test_local_directory_module():

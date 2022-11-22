@@ -79,7 +79,7 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             "s3", use_ssl=use_ssl, verify=_verify, endpoint_url=endpoint_url
         ).meta.client
         self._s3_bucket = check.str_param(bucket, "bucket")
-        self._s3_prefix = check.str_param(prefix, "prefix")
+        self._s3_prefix = self._clean_prefix(check.str_param(prefix, "prefix"))
 
         # proxy calls to local compute log manager (for subscriptions, etc)
         if not local_dir:
@@ -120,6 +120,10 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
     @property
     def upload_interval(self) -> Optional[int]:
         return self._upload_interval if self._upload_interval else None
+
+    def _clean_prefix(self, prefix):
+        parts = prefix.split("/")
+        return "/".join([part for part in parts if part])
 
     def _s3_key(self, log_key, io_type, partial=False):
         check.inst_param(io_type, "io_type", ComputeIOType)

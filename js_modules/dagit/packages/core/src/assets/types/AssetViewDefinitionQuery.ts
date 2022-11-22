@@ -3188,9 +3188,10 @@ export interface AssetViewDefinitionQuery_assetOrError_Asset_definition {
   opVersion: string | null;
   jobNames: string[];
   computeKind: string | null;
+  isPartitioned: boolean;
+  isObservable: boolean;
   isSource: boolean;
   assetKey: AssetViewDefinitionQuery_assetOrError_Asset_definition_assetKey;
-  isObservable: boolean;
   metadataEntries: AssetViewDefinitionQuery_assetOrError_Asset_definition_metadataEntries[];
   type: AssetViewDefinitionQuery_assetOrError_Asset_definition_type | null;
 }

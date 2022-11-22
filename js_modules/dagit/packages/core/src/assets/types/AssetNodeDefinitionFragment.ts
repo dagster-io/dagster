@@ -3125,9 +3125,10 @@ export interface AssetNodeDefinitionFragment {
   partitionDefinition: AssetNodeDefinitionFragment_partitionDefinition | null;
   repository: AssetNodeDefinitionFragment_repository;
   computeKind: string | null;
+  isPartitioned: boolean;
+  isObservable: boolean;
   isSource: boolean;
   assetKey: AssetNodeDefinitionFragment_assetKey;
-  isObservable: boolean;
   metadataEntries: AssetNodeDefinitionFragment_metadataEntries[];
   type: AssetNodeDefinitionFragment_type | null;
 }
