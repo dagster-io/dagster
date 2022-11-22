@@ -35,7 +35,13 @@ export const AssetGraphJobSidebar: React.FC<{
     <Loading queryResult={queryResult}>
       {({pipelineSnapshotOrError}) => {
         if (pipelineSnapshotOrError.__typename !== 'PipelineSnapshot') {
-          return <NonIdealPipelineQueryResult isGraph result={pipelineSnapshotOrError} />;
+          return (
+            <NonIdealPipelineQueryResult
+              isGraph
+              result={pipelineSnapshotOrError}
+              repoAddress={repoAddress}
+            />
+          );
         }
         return (
           <SidebarContainerOverview container={pipelineSnapshotOrError} repoAddress={repoAddress} />

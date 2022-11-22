@@ -7,6 +7,7 @@ import {usePermissions} from '../app/Permissions';
 import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
 import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
 
 import {
   buildAssetCollisionsAlert,
@@ -133,6 +134,7 @@ async function stateForObservingAssets(
     assets[0]?.repository.name || '',
     assets[0]?.repository.location.name || '',
   );
+  const repoName = repoAddressAsString(repoAddress);
 
   if (
     !assets.every(
@@ -143,7 +145,7 @@ async function stateForObservingAssets(
   ) {
     return {
       type: 'error',
-      error: 'Assets must be in the same repository to be materialized together.',
+      error: `Assets must be in ${repoName} to be materialized together.`,
     };
   }
 

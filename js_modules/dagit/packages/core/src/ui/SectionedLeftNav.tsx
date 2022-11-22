@@ -83,34 +83,25 @@ export const SectionedLeftNav = () => {
   }
 
   return (
-    <>
-      <Box
-        flex={{direction: 'row', alignItems: 'center', gap: 8}}
-        padding={{horizontal: 24, bottom: 12}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
-        <span style={{fontSize: '16px', fontWeight: 500}}>Workspace</span>
-      </Box>
-      <Container>
-        {sortedRepos.map((repo) => {
-          const repoName = repo.repository.name;
-          const repoAddress = buildRepoAddress(repoName, repo.repositoryLocation.name);
-          const addressAsString = repoAddressAsString(repoAddress);
-          return (
-            <Section
-              key={addressAsString}
-              onToggle={onToggle}
-              option={repo}
-              repoAddress={repoAddress}
-              expanded={sortedRepos.length === 1 || expandedKeys.includes(addressAsString)}
-              collapsible={sortedRepos.length > 1}
-              showRepoLocation={duplicateRepoNames.has(repoName)}
-              match={match?.repoAddress === repoAddress ? match : null}
-            />
-          );
-        })}
-      </Container>
-    </>
+    <Container>
+      {sortedRepos.map((repo) => {
+        const repoName = repo.repository.name;
+        const repoAddress = buildRepoAddress(repoName, repo.repositoryLocation.name);
+        const addressAsString = repoAddressAsString(repoAddress);
+        return (
+          <Section
+            key={addressAsString}
+            onToggle={onToggle}
+            option={repo}
+            repoAddress={repoAddress}
+            expanded={sortedRepos.length === 1 || expandedKeys.includes(addressAsString)}
+            collapsible={sortedRepos.length > 1}
+            showRepoLocation={duplicateRepoNames.has(repoName)}
+            match={match?.repoAddress === repoAddress ? match : null}
+          />
+        );
+      })}
+    </Container>
   );
 };
 

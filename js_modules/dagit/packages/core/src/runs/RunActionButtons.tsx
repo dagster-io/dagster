@@ -5,7 +5,8 @@ import {SharedToaster} from '../app/DomUtils';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {usePermissions} from '../app/Permissions';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
-import {buildRepoPath} from '../workspace/buildRepoAddress';
+import {buildRepoAddress, buildRepoPath} from '../workspace/buildRepoAddress';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
 import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
@@ -290,18 +291,25 @@ function usePipelineAvailabilityErrorForRun(
 
     if (matchType === 'snapshot-only') {
       // Only the snapshot ID matched, but not the repo.
+      const originRepoName = run.repositoryOrigin
+        ? repoAddressAsString(
+            buildRepoAddress(
+              run.repositoryOrigin.repositoryName,
+              run.repositoryOrigin.repositoryLocationName,
+            ),
+          )
+        : null;
+
       return {
         icon: 'warning',
         tooltip: (
           <Group direction="column" spacing={4}>
-            <div>{`The original run loaded "${run.pipelineName}" from a different repository.`}</div>
-            {run.repositoryOrigin ? (
+            <div>{`The original run loaded "${run.pipelineName}" from ${
+              originRepoName || 'a different code location'
+            }.`}</div>
+            {originRepoName ? (
               <div>
-                Original repository:{' '}
-                <strong>
-                  {run.repositoryOrigin.repositoryName}@
-                  {run.repositoryOrigin.repositoryLocationName}
-                </strong>
+                Original definition in: <strong>{originRepoName}</strong>
               </div>
             ) : null}
           </Group>
@@ -327,7 +335,7 @@ function usePipelineAvailabilityErrorForRun(
     <Group direction="column" spacing={8}>
       <div>{`"${run.pipelineName}" is not available in the current workspace.`}</div>
       {repoForRun && repoLocationForRun ? (
-        <div>{`Load repository ${buildRepoPath(
+        <div>{`Load definitions for ${buildRepoPath(
           repoForRun,
           repoLocationForRun,
         )} and try again.`}</div>

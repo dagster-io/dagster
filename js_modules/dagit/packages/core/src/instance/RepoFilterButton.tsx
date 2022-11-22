@@ -16,7 +16,7 @@ export const RepoFilterButton: React.FC = () => {
         style={{width: 'auto'}}
         onClose={() => setOpen(false)}
       >
-        <DialogHeader icon="repo" label="Repositories" />
+        <DialogHeader icon="repo" label="Filter code locations" />
         <RepoSelector
           options={allRepos}
           onBrowse={() => setOpen(false)}
@@ -38,7 +38,7 @@ export const RepoFilterButton: React.FC = () => {
         rightIcon={<Icon name="expand_more" />}
         onClick={() => setOpen(true)}
       >
-        {`${visibleRepos.length} of ${allRepos.length} Repositories`}
+        {`${visibleRepos.length} of ${allRepos.length}`}
       </Button>
     </>
   );
