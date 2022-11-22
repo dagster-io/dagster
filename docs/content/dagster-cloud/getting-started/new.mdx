@@ -149,12 +149,12 @@ A code location specifies a single Python package or file that defines your Dags
 The steps for defining a code location vary depending on the **deployment type** you selected in the previous step:
 
 <TabGroup>
-  <TabItem name="Select deployment type">
+<TabItem name="Select deployment type">
 
 Click the tab for your deployment type - **Serverless** or **Hybrid** - to view what's next.
 
-  </TabItem>
-	<TabItem name="Serverless">
+</TabItem>
+<TabItem name="Serverless">
 
 ### Serverless
 
@@ -232,7 +232,9 @@ When finished, [continue to the next step](#step-4-set-up-cicd).
 </TabItem>
 <TabItem name="Hybrid">
 
-To set up a Hybrid deployment and deploy your code, you need to:
+### Hybrid
+
+To set up Hybrid deployment and deploy your code, you'll need to:
 
 1. Set up an agent
 2. Add the code location in Dagster Cloud
@@ -247,28 +249,25 @@ To set up a Hybrid deployment and deploy your code, you need to:
    - [Kubernetes](/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent)
    - [Local](/dagster-cloud/deployment/agents/local)
 
+Once Dagster Cloud receives an agent heartbeat, click **Continue** to move on to the next step.
+
 **Step 3.2: Add a Dagster Cloud code location**
 
-1. In Dagster Cloud, click **Workspace**.
+For most Hybrid deployments - with the exception of those using a local agent - you'll need to create a Docker image containing your Dagster code and then add a code location to Dagster Cloud that references the image.
 
-2. Click the **Add sample code location** button:
+1. Click **Configure a Code Location**.
 
-   <Image
-   alt="Dagit Workspace Screen"
-   src="/images/dagster-cloud/getting-started/adding_code_location.png"
-   width={1118}
-   height={451}
-   />
+2. In the **Code Locations** tab that displays, click **+ Add**.
 
 3. A pre-filled YAML editor with configuration will display.
 
-4. Verify that the configuration is correct, then click **Add code location** to save the config.
+4. Verify that the configuration is correct, then click **Add code location** to save.
 
-The agent will attempt to load the your code. After the code is loaded, the new code location will show a **Loaded** status and a sample Dagster job will display in Dagster Cloud.
+The agent will attempt to load your code. After the code is loaded, the new code location will show a **Loaded** status and a sample Dagster job will display in Dagster Cloud.
 
 When finished, [continue to the next step](#step-4-set-up-cicd).
 
-  </TabItem>
+</TabItem>
 </TabGroup>
 
 ---
@@ -281,21 +280,60 @@ When finished, [continue to the next step](#step-4-set-up-cicd).
   CI/CD comes pre-configured in our starter projects.
 </Note>
 
-Branch Deployments allow you to quickly and collaboratively develop your Dagster jobs. When a branch is created or updated in your Dagster repository, Branch Deployments will create a testing environment in the current Dagster Cloud deployment. For example, `prod`.
+In this step, you'll set up Continuous Integration (CI) and Continuous Deployment (CD). Completing this step will enable [Branch Deployments](/dagster-cloud/developing-testing/branch-deployments) and continuous code location deployments for your Dagster project.
 
-Check out the [Branch Deployment docs](/dagster-cloud/developing-testing/branch-deployments) for more info. If you skip this step now, you can always set it up later.
+<TabGroup>
+<TabItem name="GitHub Actions">
+
+For continunous integration using GitHub actions:
+
+1. Copy the workflow files (`.github/workflows`) from the quickstart repository for your deployment type:
+
+   - [Serverless](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/tree/main/.github/workflows)
+   - [Hybrid](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/tree/main/.github/workflows)
+
+2. **For Hybrid deployments**: In both workflow files, uncomment the step that is relevant to your Docker container registry. For example, if using DockerHub, you'd uncomment the `DockerHub` step in these files.
+
+3. Set the necessary GitHub action secrets, including your Dagster Cloud API Token and Organization ID. Refer to the [GitHub docs](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository) for more info about GitHub Action secrets.
+
+</TabItem>
+<TabItem name="Other CI/CD provider">
+
+<Note>This is applicable only to Hybrid deployments.</Note>
+
+For continuous integration using a CI/CD provider other than GitHub, your system should:
+
+1. Build a Docker image containing your Dagster code.
+2. Push the image to a registry your agent can access.
+3. Deploy the update to Dagster Cloud using the `dagster-cloud` CLI. For example:
+
+   ```shell
+   dagster-cloud workspace add-location YOUR_LOCATION_NAME \
+       --image LOCATION_IMAGE \
+       --package-name PACKAGE_NAME \
+   ```
+
+   Refer to the [Adding a code location guide](/dagster-cloud/developing-testing/code-locations#managing-code-locations-using-the-dagster-cloud-cli) for more info.
+
+</TabItem>
+<TabItem name="Manual deployment">
+
+To manually deploy a code location, follow the steps for **Adding a code location** in the [Code location guide](/dagster-cloud/developing-testing/code-locations#adding-code-locations).
+
+</TabItem>
+</TabGroup>
 
 ---
 
 ## Step 5: Set up environment variables and secrets
 
-Set up environment variables and secrets.
+Congrats! At this point, your Dagster Cloud deployment should be up and running. To ensure the external services you use in your Dagster project work correctly, start setting up your [environment variables](/dagster-cloud/developing-testing/environment-variables-and-secrets). Using environment variables, you can securely pass in sensitive info like passwords, API tokens, etc.
 
 ---
 
 ## Next steps
 
-Congrats - your Dagster Cloud deployment is all set up! From here, you can:
+From here, you can:
 
 - [Invite your team](/dagster-cloud/account/managing-users)
 - [Configure authentication for your account](/dagster-cloud/account/authentication)
