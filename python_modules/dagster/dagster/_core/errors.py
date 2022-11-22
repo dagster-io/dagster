@@ -530,6 +530,10 @@ class RunStatusSensorExecutionError(DagsterUserCodeExecutionError):
     """Error raised during the execution of a user-defined run status sensor."""
 
 
+class FreshnessPolicySensorExecutionError(DagsterUserCodeExecutionError):
+    """Error raised during the execution of a user-defined freshness policy sensor."""
+
+
 class DagsterImportError(DagsterError):
     """Import error raised while importing user-code."""
 

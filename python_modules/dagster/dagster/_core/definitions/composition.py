@@ -656,7 +656,6 @@ class PendingNodeInvocation:
             )
 
         from dagster._core.execution.build_resources import wrap_resources_for_execution
-        from dagster._core.execution.execute_in_process import core_execute_in_process
 
         from .executor_definition import execute_in_process_executor
         from .job_definition import JobDefinition
@@ -674,11 +673,9 @@ class PendingNodeInvocation:
             input_values=input_values,
         )
 
-        return core_execute_in_process(
-            ephemeral_pipeline=ephemeral_job,
-            run_config=run_config if run_config is not None else {},
+        return ephemeral_job.execute_in_process(
+            run_config=run_config,
             instance=instance,
-            output_capturing_enabled=True,
             raise_on_error=raise_on_error,
             run_id=run_id,
         )

@@ -1,8 +1,16 @@
 # Changelog
 
-# 1.1.0 (core) / 0.17.0 (libraries)
+# 1.1.2 (core) / 0.17.2 (libraries)
 
-## Major Changes since 1.0.0 (core) / 0.17.0 (libraries)
+### Bugfixes
+
+- In Dagit, assets that had been materialized prior to upgrading to 1.1.1 were showing as "Stale". This is now fixed.
+- Schedules that were constructed with a list of cron strings previously rendered with an error in Dagit. This is now fixed.
+- For users running dagit version >= 1.0.17 (or dagster-cloud) with dagster version < 1.0.17, errors could occur when hitting "Materialize All" and some other asset-related interactions. This has been fixed.
+
+# 1.1.1 (core) / 0.17.1 (libraries)
+
+## Major Changes since 1.0.0 (core) / 0.16.0 (libraries)
 
 ### Core
 
@@ -30,10 +38,9 @@
 
 ### Database migration
 
-- This release requires a database schema migration, which can be run via `dagster instance migrate`. The schema migration does the following:
-  - Improves Dagit performance by adding database indexes which speed up the run view as well as a range of asset-based queries.
-  - Enables multi-dimensional asset partitions,
-  - Enables accurately marking assets as stale / fresh, when using versioning and in some situations where they were incorrectly not marked "Upstream Changed" in the past.
+- Optional database schema migration, which can be run via `dagster instance migrate`:
+    - Improves Dagit performance by adding database indexes which should speed up the run view as well as a range of asset-based queries.
+    - Enables multi-dimensional asset partitions and asset versioning.
 
 ### Breaking Changes and Deprecations
 
@@ -42,12 +49,14 @@
 
 ### Dependency Changes
 
-- `dagster-graphql` and `dagit` now use version 3 of `graphene`.
+- `dagster-graphql` and `dagit` now use version 3 of `graphene`
 
 ## Since 1.0.17
 
 ### New
 
+- The new `UPathIOManager` base class is now a top-level Dagster export. This enables you to write a custom I/O manager that plugs stores data in any filesystem supported by `universal-pathlib` and uses different serialization format than `pickle` (Thanks Daniel Gafni!).
+- The default `fs_io_manager` now inherits from the `UPathIOManager`, which means that its `base_dir` can be a path on any filesystem supported by `universal-pathlib` (Thanks Daniel Gafni!).
 - `build_asset_reconciliation_sensor` now works with support partitioned assets.
 - `build_asset_reconciliation_sensor` now launches runs to keep assets in line with their defined FreshnessPolicies.
 - The `FreshnessPolicy` object is now exported from the top level dagster package.
