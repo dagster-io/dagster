@@ -1,5 +1,15 @@
 # Changelog
 
+# 1.1.3 (core) / 0.17.3 (libraries)
+
+### Bugfixes
+
+- Fixed a bug with the asset reconciliation sensor that caused duplicate runs to be submitted in situations where an asset has a different partitioning than its parents
+- Fixed a bug with the asset reconciliation sensor that caused it to error on time-partitioned assets
+- Fixed a bug where staleness was incorrectly calculated for multi_assets and assets derived from dbt.
+- [dagster-snowflake] Fixed a bug when materializing partitions with the Snowflake I/O manager where sql `BETWEEN` was used to determine the section of the table to replace. `BETWEEN` included values from the next partition causing the I/O manager to erroneously delete those entries.
+- [dagster-duckdb] Fixed a bug when materializing partitions with the DuckDB I/O manager where sql `BETWEEN` was used to determine the section of the table to replace. `BETWEEN` included values from the next partition causing the I/O manager to erroneously delete those entries.
+
 # 1.1.2 (core) / 0.17.2 (libraries)
 
 ### Bugfixes
