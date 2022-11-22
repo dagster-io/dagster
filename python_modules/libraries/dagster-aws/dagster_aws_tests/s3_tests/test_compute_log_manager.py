@@ -187,6 +187,22 @@ def test_blank_compute_logs(mock_s3_bucket):
         assert not stderr.data
 
 
+def test_prefix_filter(mock_s3_bucket):
+    s3_prefix = "foo/bar/"  # note the trailing slash
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        manager = S3ComputeLogManager(
+            bucket=mock_s3_bucket.name, prefix=s3_prefix, local_dir=temp_dir
+        )
+        log_key = ["arbitrary", "log", "key"]
+        with manager.open_log_stream(log_key, ComputeIOType.STDERR) as write_stream:
+            write_stream.write("hello hello")
+
+        s3_object = mock_s3_bucket.Object(key="foo/bar/storage/arbitrary/log/key.err")
+        logs = s3_object.get()["Body"].read().decode("utf-8")
+        assert logs == "hello hello"
+
+
 class TestS3ComputeLogManager(TestCapturedLogManager):
     __test__ = True
 

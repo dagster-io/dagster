@@ -1,5 +1,8 @@
 from dagster import Definitions
 
 
-def dagster_defs():
+def _make_defs():
     return Definitions()
+
+
+wrong_name = _make_defs()
