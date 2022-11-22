@@ -479,6 +479,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
 
         self._input_asset_records: Dict[AssetKey, Optional["EventLogRecord"]] = {}
+        self._is_external_input_asset_records_loaded = False
 
     @property
     def step(self) -> ExecutionStep:
@@ -806,6 +807,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def input_asset_records(self) -> Optional[Mapping[AssetKey, Optional["EventLogRecord"]]]:
         return self._input_asset_records
 
+    @property
+    def is_external_input_asset_records_loaded(self) -> bool:
+        return self._is_external_input_asset_records_loaded
+
     def get_input_asset_record(self, key: AssetKey) -> Optional["EventLogRecord"]:
         if not key in self._input_asset_records:
             self._fetch_input_asset_record(key)
@@ -819,7 +824,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
                 self.solid_handle, step_output.name
             )
-            if asset_info is None:
+            if asset_info is None or not asset_info.is_required:
                 continue
             output_keys.append(asset_info.key)
 
@@ -835,10 +840,19 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._input_asset_records = {}
         for key in all_dep_keys:
             self._fetch_input_asset_record(key)
+        self._is_external_input_asset_records_loaded = True
 
     def _fetch_input_asset_record(self, key: AssetKey) -> None:
         event = self.instance.get_latest_logical_version_record(key)
         self._input_asset_records[key] = event
+
+    # Call this to clear the cache for an input asset record. This is necessary when an old
+    # materialization for an asset was loaded during `fetch_external_input_asset_records` because an
+    # intrastep asset is not required, but then that asset is materialized during the step. If we
+    # don't clear the cache for this asset, then we won't use the most up-to-date asset record.
+    def wipe_input_asset_record(self, key: AssetKey) -> None:
+        if key in self._input_asset_records:
+            del self._input_asset_records[key]
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.pipeline_def.asset_layer
