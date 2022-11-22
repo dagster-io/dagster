@@ -18,7 +18,6 @@ from dagster import (
     PartitionKeyRange,
     PartitionMapping,
     PartitionsDefinition,
-    ResourceDefinition,
     RunRequest,
     SourceAsset,
     StaticPartitionsDefinition,
@@ -27,7 +26,6 @@ from dagster import (
     build_sensor_context,
     materialize_to_memory,
     repository,
-    with_resources,
 )
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
@@ -35,6 +33,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._seven.compat.pendulum import create_pendulum_time
 
 
 class RunSpec(NamedTuple):
@@ -48,68 +47,67 @@ class AssetReconciliationScenario(NamedTuple):
     assets: Sequence[Union[SourceAsset, AssetsDefinition]]
     evaluation_delta: Optional[datetime.timedelta] = None
     cursor_from: Optional["AssetReconciliationScenario"] = None  # type: ignore
+    current_time: Optional[datetime.datetime] = None
 
     expected_run_requests: Optional[Sequence[RunRequest]] = None
 
     def do_scenario(self, instance):
-        @repository
-        def repo():
-            return with_resources(
-                self.assets,
-                resource_defs={
-                    "lock": ResourceDefinition.none_resource(),
-                    "assets_to_wait_at": ResourceDefinition.none_resource(),
-                },
-            )
+        with pendulum.test(self.current_time) if self.current_time else contextlib.nullcontext():
 
-        if self.cursor_from is not None:
-            run_requests, cursor = self.cursor_from.do_scenario(instance)
-            for run_request in run_requests:
-                instance.create_run_for_pipeline(
-                    repo.get_base_job_for_assets(run_request.asset_selection),
-                    asset_selection=set(run_request.asset_selection),
-                    tags=run_request.tags,
+            @repository
+            def repo():
+                return self.assets
+
+            if self.cursor_from is not None:
+                run_requests, cursor = self.cursor_from.do_scenario(instance)
+                for run_request in run_requests:
+                    instance.create_run_for_pipeline(
+                        repo.get_base_job_for_assets(run_request.asset_selection),
+                        asset_selection=set(run_request.asset_selection),
+                        tags=run_request.tags,
+                    )
+            else:
+                cursor = AssetReconciliationCursor.empty()
+
+            for run in self.unevaluated_runs:
+                assets_in_run = [
+                    asset
+                    if asset.key in run.asset_keys
+                    else (
+                        asset.to_source_assets()[0] if not isinstance(asset, SourceAsset) else asset
+                    )
+                    for asset in self.assets
+                ]
+                materialize_to_memory(
+                    instance=instance,
+                    partition_key=run.partition_key,
+                    assets=assets_in_run,
+                    run_config={
+                        "ops": {
+                            failed_asset_key.path[-1]: {"config": {"fail": True}}
+                            for failed_asset_key in (run.failed_asset_keys or [])
+                        }
+                    },
+                    raise_on_error=False,
                 )
-        else:
-            cursor = AssetReconciliationCursor.empty()
 
-        for run in self.unevaluated_runs:
-            assets_in_run = [
-                asset
-                if asset.key in run.asset_keys
-                else (asset.to_source_assets()[0] if not isinstance(asset, SourceAsset) else asset)
-                for asset in self.assets
-            ]
-            materialize_to_memory(
-                instance=instance,
-                partition_key=run.partition_key,
-                assets=assets_in_run,
-                run_config={
-                    "ops": {
-                        failed_asset_key.path[-1]: {"config": {"fail": True}}
-                        for failed_asset_key in (run.failed_asset_keys or [])
-                    }
-                },
-                raise_on_error=False,
-            )
+            with pendulum.test(
+                pendulum.now() + self.evaluation_delta
+            ) if self.evaluation_delta else contextlib.nullcontext():
 
-        with pendulum.test(
-            pendulum.now() + self.evaluation_delta
-        ) if self.evaluation_delta else contextlib.nullcontext():
+                run_requests, cursor = reconcile(
+                    repository_def=repo,
+                    instance=instance,
+                    asset_selection=AssetSelection.all(),
+                    run_tags={},
+                    cursor=cursor,
+                )
 
-            run_requests, cursor = reconcile(
-                repository_def=repo,
-                instance=instance,
-                asset_selection=AssetSelection.all(),
-                run_tags={},
-                cursor=cursor,
-            )
+            for run_request in run_requests:
+                base_job = repo.get_base_job_for_assets(run_request.asset_selection)
+                assert base_job is not None
 
-        for run_request in run_requests:
-            base_job = repo.get_base_job_for_assets(run_request.asset_selection)
-            assert base_job is not None
-
-        return run_requests, cursor
+            return run_requests, cursor
 
 
 def single_asset_run(asset_key: str, partition_key: Optional[str] = None) -> RunSpec:
@@ -228,7 +226,7 @@ class FanOutPartitionMapping(PartitionMapping):
         return PartitionKeyRange(f"{upstream_partition_key}_1", f"{upstream_partition_key}_3")
 
 
-daily_partitions_def = DailyPartitionsDefinition("2022-10-31")
+daily_partitions_def = DailyPartitionsDefinition("2013-01-05")
 one_partition_partitions_def = StaticPartitionsDefinition(["a"])
 two_partitions_partitions_def = StaticPartitionsDefinition(["a", "b"])
 fanned_out_partitions_def = StaticPartitionsDefinition(["a_1", "a_2", "a_3"])
@@ -310,6 +308,7 @@ two_assets_in_sequence_fan_out_partitions = [
         "asset2", {"asset1": FanOutPartitionMapping()}, partitions_def=fanned_out_partitions_def
     ),
 ]
+one_asset_daily_partitions = [asset_def("asset1", partitions_def=daily_partitions_def)]
 
 
 scenarios = {
@@ -374,6 +373,11 @@ scenarios = {
             unevaluated_runs=[run(["parent1", "parent2", "child"])],
         ),
         expected_run_requests=[run_request(asset_keys=["child"])],
+    ),
+    "diamond_never_materialized": AssetReconciliationScenario(
+        assets=diamond,
+        unevaluated_runs=[],
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
     ),
     "diamond_only_root_materialized": AssetReconciliationScenario(
         assets=diamond,
@@ -492,6 +496,15 @@ scenarios = {
             assets=two_assets_in_sequence, unevaluated_runs=[run(["asset1", "asset2"])]
         ),
         expected_run_requests=[run_request(asset_keys=["asset2"])],
+    ),
+    "one_asset_daily_partitions_never_materialized": AssetReconciliationScenario(
+        assets=one_asset_daily_partitions,
+        unevaluated_runs=[],
+        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        expected_run_requests=[
+            run_request(asset_keys=["asset1"], partition_key="2013-01-05"),
+            run_request(asset_keys=["asset1"], partition_key="2013-01-06"),
+        ],
     ),
     ################################################################################################
     # Exotic partition-mappings
@@ -701,17 +714,30 @@ def test_reconciliation(scenario):
         assert run_request.partition_key == expected_run_request.partition_key
 
 
-def test_sensor():
+@pytest.mark.parametrize(
+    "scenario",
+    [
+        scenarios["diamond_never_materialized"],
+        scenarios["one_asset_daily_partitions_never_materialized"],
+    ],
+)
+def test_sensor(scenario):
+    assert scenario.cursor_from is None
+
     @repository
     def repo():
-        return diamond
+        return scenario.assets
 
     reconciliation_sensor = build_asset_reconciliation_sensor(AssetSelection.all())
     instance = DagsterInstance.ephemeral()
-    context = build_sensor_context(instance=instance, repository_def=repo)
-    result = reconciliation_sensor(context)
-    assert len(list(result)) == 1
 
-    context2 = build_sensor_context(cursor=context.cursor, instance=instance, repository_def=repo)
-    result2 = reconciliation_sensor(context2)
-    assert len(list(result2)) == 0
+    with pendulum.test(scenario.current_time):
+        context = build_sensor_context(instance=instance, repository_def=repo)
+        result = reconciliation_sensor(context)
+        assert len(list(result)) == len(scenario.expected_run_requests)
+
+        context2 = build_sensor_context(
+            cursor=context.cursor, instance=instance, repository_def=repo
+        )
+        result2 = reconciliation_sensor(context2)
+        assert len(list(result2)) == 0
