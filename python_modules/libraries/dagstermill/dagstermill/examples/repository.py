@@ -509,7 +509,7 @@ def b():
 
 add_two_number_asset = dagstermill.define_dagstermill_asset(
     name="add_two_numbers_asset",
-    notebook_path=nb_test_path("add_two_numbers"),
+    notebook_path=nb_test_path("add_two_numbers_no_yield"),
     ins={"a": AssetIn("a"), "b": AssetIn("b")},
 )
 
@@ -523,6 +523,10 @@ custom_io_mgr_key_asset = dagstermill.define_dagstermill_asset(
     name="custom_io_mgr_key",
     notebook_path=nb_test_path("hello_world"),
     io_manager_key="my_custom_io_manager",
+)
+
+yield_event_asset = dagstermill.define_dagstermill_asset(
+    name="yield_event_asset", notebook_path=nb_test_path("yield_event")
 )
 
 
@@ -540,6 +544,7 @@ assets = with_resources(
         b,
         add_two_number_asset,
         hello_world_resource_asset,
+        yield_event_asset,
     ],
     resource_defs={
         "list": ResourceDefinition(lambda _: []),
@@ -563,6 +568,7 @@ goodbye_config_asset_job = make_resolved_job(goodbye_config_asset)
 hello_logging_asset_job = make_resolved_job(hello_logging_asset)
 add_two_number_asset_job = make_resolved_job(add_two_number_asset)
 hello_world_resource_asset_job = make_resolved_job(hello_world_resource_asset)
+yield_event_asset_job = make_resolved_job(yield_event_asset)
 
 
 @repository

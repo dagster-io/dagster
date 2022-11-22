@@ -2,8 +2,10 @@ import os
 from contextlib import contextmanager
 
 import pytest
+from dagstermill.compat import ExecutionError
 from dagstermill.examples.repository import custom_io_mgr_key_asset
 
+from dagster import AssetKey, DagsterEventType
 from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.test_utils import instance_for_test
@@ -26,7 +28,7 @@ def cleanup_result_notebook(result):
     ]
     for materialization_event in materialization_events:
         result_path = get_path(materialization_event)
-        if os.path.exists(result_path):
+        if result_path and os.path.exists(result_path):
             os.unlink(result_path)
 
 
@@ -63,9 +65,26 @@ def test_hello_world_with_custom_tags_and_description_asset():
 
 
 @pytest.mark.notebook_test
-def test_hello_world_config_asset():
-    with exec_for_test("hello_world_config_asset_job") as result:
+def test_yield_results_fails():
+    with pytest.raises(ExecutionError):
+        with exec_for_test(
+            "hello_world_config_asset_job",
+            {"execution": {"config": {"in_process": {}}}},
+            raise_on_error=True,
+        ):
+            pass
+
+
+@pytest.mark.notebook_test
+def test_yield_event():
+    with exec_for_test("yield_event_asset_job") as result:
         assert result.success
+        event_found = False
+        for event in result.event_list:
+            if event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
+                if event.asset_key == AssetKey("my_asset"):
+                    event_found = True
+        assert event_found
 
 
 @pytest.mark.notebook_test
