@@ -41,7 +41,6 @@ from ..implementation.fetch_assets import (
     get_materialization_cts_by_partition,
     get_materialization_cts_grouped_by_dimension,
 )
-from ..implementation.fetch_runs import AssetComputeStatus
 from ..implementation.loader import (
     BatchMaterializationLoader,
     CrossRepoAssetDependedByLoader,
@@ -114,7 +113,6 @@ class GrapheneAssetDependency(graphene.ObjectType):
 class GrapheneAssetLatestInfo(graphene.ObjectType):
     assetKey = graphene.NonNull(GrapheneAssetKey)
     latestMaterialization = graphene.Field(GrapheneMaterializationEvent)
-    computeStatus = graphene.NonNull(graphene.Enum.from_enum(AssetComputeStatus))
     unstartedRunIds = non_null_list(graphene.String)
     inProgressRunIds = non_null_list(graphene.String)
     latestRun = graphene.Field(GrapheneRun)
