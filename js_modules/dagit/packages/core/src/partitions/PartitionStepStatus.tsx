@@ -16,7 +16,7 @@ import styled from 'styled-components/macro';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {tokenForAssetKey} from '../asset-graph/Utils';
-import {PartitionHealthData} from '../assets/usePartitionHealthData';
+import {PartitionHealthData, PartitionHealthDimension} from '../assets/usePartitionHealthData';
 import {GanttChartMode} from '../gantt/Constants';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
@@ -86,37 +86,39 @@ const timeboundsOfPartitions = (partitionColumns: {steps: {unix: number}[]}[]) =
 };
 
 export const PartitionPerAssetStatus: React.FC<
-  PartitionStepStatusBaseProps & {
+  Omit<PartitionStepStatusBaseProps, 'partitionNames'> & {
     assetHealth: PartitionHealthData[];
     assetQueryItems: GraphQueryItem[];
+    rangeDimensionIdx: number;
+    rangeDimension: PartitionHealthDimension;
   }
-> = ({assetHealth, partitionNames, assetQueryItems, ...rest}) => {
+> = ({assetHealth, rangeDimension, rangeDimensionIdx, assetQueryItems, ...rest}) => {
   const healthByAssetKey = keyBy(assetHealth, (a) => tokenForAssetKey(a.assetKey));
 
-  const timeDimensionIdx = 0;
   const layout = buildLayout({nodes: assetQueryItems, mode: GanttChartMode.FLAT});
-  const layoutBoxesWithPartitions = layout.boxes.filter(
-    (b) => !!healthByAssetKey[b.node.name].dimensions[timeDimensionIdx],
+  const layoutBoxesWithRangeDimension = layout.boxes.filter(
+    (b) =>
+      healthByAssetKey[b.node.name]?.dimensions[rangeDimensionIdx]?.name === rangeDimension.name,
   );
 
   const data: MatrixData = {
-    stepRows: layoutBoxesWithPartitions.map((box) => ({
+    stepRows: layoutBoxesWithRangeDimension.map((box) => ({
       x: box.x,
       name: box.node.name,
       totalFailurePercent: 0,
       finalFailurePercent: 0,
     })),
     partitions: [],
-    partitionColumns: partitionNames.map((partitionName, idx) => ({
+    partitionColumns: rangeDimension.partitionKeys.map((partitionKey, idx) => ({
       idx,
-      name: partitionName,
+      name: partitionKey,
       runsLoaded: true,
       runs: [],
-      steps: layoutBoxesWithPartitions.map((a) => ({
-        name: a.node.name,
+      steps: layoutBoxesWithRangeDimension.map((box) => ({
+        name: box.node.name,
         unix: 0,
         color: partitionStateToStatusSquareColor(
-          healthByAssetKey[a.node.name].stateForSingleDimension(timeDimensionIdx, partitionName),
+          healthByAssetKey[box.node.name].stateForSingleDimension(rangeDimensionIdx, partitionKey),
         ),
       })),
     })),
@@ -125,7 +127,7 @@ export const PartitionPerAssetStatus: React.FC<
   return (
     <PartitionStepStatus
       {...rest}
-      partitionNames={partitionNames}
+      partitionNames={rangeDimension.partitionKeys}
       data={data}
       showLatestRun={false}
     />
