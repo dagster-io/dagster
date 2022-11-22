@@ -1,7 +1,7 @@
 from dagster import Definitions, asset
 
 
-def dagster_defs():
+def _make_defs():
     @asset
     def an_asset():
         pass
@@ -9,4 +9,4 @@ def dagster_defs():
     return Definitions(assets=[an_asset])
 
 
-# defs = dagster_defs()
+defs = _make_defs()

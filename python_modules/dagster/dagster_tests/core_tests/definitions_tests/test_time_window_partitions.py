@@ -395,6 +395,7 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
         )
         == expected_keys_not_in_subset
     )
+    assert partitions_def.deserialize_subset(subset.serialize()).key_ranges == subset.key_ranges
 
     expected_range_count = case_str.count("-+") + (1 if case_str[0] == "+" else 0)
     assert len(subset.key_ranges) == expected_range_count, case_str

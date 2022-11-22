@@ -54,27 +54,19 @@ def loadable_targets_from_python_package(
 
 
 def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
-    for name, value in inspect.getmembers(module):
-        # First do a pass for the special function "dagster_defs", which must
-        # return Definitions.
-
-        # Note that there is current a separate code path def_from_pointer in reconstruct.py
-        # That invokes a function to resolve a definition in the more general case, where
-        # it can be any returned definition, not just Definitions.
-        if name == "dagster_defs":
-            maybe_defs = value()
-            if not isinstance(maybe_defs, Definitions):
-                raise DagsterInvariantViolationError(
-                    f"If you have defined a dagster_defs function, it must return an instance of Definitions. Got {repr(maybe_defs)} instead."
-                )
-            return [LoadableTarget("dagster_defs", maybe_defs)]
-
     loadable_defs = _loadable_targets_of_type(module, Definitions)
 
     if loadable_defs:
         if len(loadable_defs) > 1:
             raise DagsterInvariantViolationError(
                 "Cannot have more than one Definitions object defined at module scope"
+            )
+
+        # currently this is super strict and requires that it be named defs
+        symbol = loadable_defs[0].attribute
+        if symbol != "defs":
+            raise DagsterInvariantViolationError(
+                f"Found Definitions object at {symbol}. Must at set to 'defs'."
             )
 
         return loadable_defs
