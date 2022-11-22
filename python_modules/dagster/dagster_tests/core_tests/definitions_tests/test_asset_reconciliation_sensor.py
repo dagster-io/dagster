@@ -573,6 +573,28 @@ scenarios = {
             run_request(asset_keys=["asset2"], partition_key="a_3"),
         ],
     ),
+    "fan_out_partitions_upstream_materialized_next_tick": AssetReconciliationScenario(
+        assets=two_assets_in_sequence_fan_out_partitions,
+        unevaluated_runs=[],
+        expected_run_requests=[],
+        cursor_from=AssetReconciliationScenario(
+            assets=two_assets_in_sequence_fan_out_partitions,
+            unevaluated_runs=[single_asset_run(asset_key="asset1", partition_key="a")],
+        ),
+    ),
+    "fan_out_partitions_upstream_materialize_two_more_ticks": AssetReconciliationScenario(
+        assets=two_assets_in_sequence_fan_out_partitions,
+        unevaluated_runs=[],
+        expected_run_requests=[],
+        cursor_from=AssetReconciliationScenario(
+            assets=two_assets_in_sequence_fan_out_partitions,
+            unevaluated_runs=[],
+            cursor_from=AssetReconciliationScenario(
+                assets=two_assets_in_sequence_fan_out_partitions,
+                unevaluated_runs=[single_asset_run(asset_key="asset1", partition_key="a")],
+            ),
+        ),
+    ),
     ################################################################################################
     # Freshness policies
     ################################################################################################
