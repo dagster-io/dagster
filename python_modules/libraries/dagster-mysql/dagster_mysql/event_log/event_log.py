@@ -156,6 +156,9 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def index_connection(self):
         return self._connect()
 
+    def has_table(self, table_name: str) -> bool:
+        return bool(self._engine.dialect.has_table(self._engine.connect(), table_name))
+
     def has_secondary_index(self, name):
         if name not in self._secondary_index_cache:
             self._secondary_index_cache[name] = super(

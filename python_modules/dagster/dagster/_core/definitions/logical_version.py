@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import warnings
 from hashlib import sha256
 from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Union
 
 from typing_extensions import Final
 
 from dagster import _check as check
+from dagster._annotations import experimental
+from dagster._utils.backcompat import ExperimentalWarning
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import (
@@ -25,13 +28,14 @@ class UnknownValue:
 UNKNOWN_VALUE: Final[UnknownValue] = UnknownValue()
 
 
+@experimental
 class LogicalVersion(
     NamedTuple(
         "_LogicalVersion",
         [("value", str)],
     )
 ):
-    """Class that represents a logical version for an asset.
+    """Represents a logical version for an asset.
 
     Args:
         value (str): An arbitrary string representing a logical version.
@@ -47,8 +51,10 @@ class LogicalVersion(
         )
 
 
-UNKNOWN_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("UNKNOWN")
-DEFAULT_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("INITIAL")
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=ExperimentalWarning)
+    UNKNOWN_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("UNKNOWN")
+    DEFAULT_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("INITIAL")
 
 
 class LogicalVersionProvenance(

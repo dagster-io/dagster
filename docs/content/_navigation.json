@@ -478,6 +478,10 @@
               {
                 "title": "Multiple agents",
                 "path": "/dagster-cloud/deployment/agents/running-multiple-agents"
+              },
+              {
+                "title": "Setting environment variables",
+                "path": "/dagster-cloud/developing-testing/setting-environment-variables-dagster-cloud-agents"
               }
             ]
           },
@@ -487,7 +491,16 @@
             "children": [
               {
                 "title": "Environment variables and secrets",
-                "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets"
+                "children": [
+                  {
+                    "title": "Overview and setup",
+                    "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets"
+                  },
+                  {
+                    "title": "Setup for Hybrid agents",
+                    "path": "/dagster-cloud/developing-testing/setting-environment-variables-dagster-cloud-agents"
+                  }
+                ]
               },
               {
                 "title": "dagster-cloud CLI",

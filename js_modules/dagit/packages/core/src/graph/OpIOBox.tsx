@@ -87,10 +87,14 @@ export const OpIOBox: React.FC<OpIOBoxProps> = ({
 const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
   display: inline-flex;
   align-items: center;
-  border-top-right-radius: 6px;
-  border-bottom-right-radius: 6px;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
   background: ${(p) => (p.$highlighted ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.75)')};
   font-size: 12px;
+
+  &:last-child {
+    border-bottom-left-radius: 8px;
+  }
 
   .circle {
     width: 14px;

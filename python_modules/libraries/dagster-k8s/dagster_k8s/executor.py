@@ -80,6 +80,9 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
 
     Configuration set on the Kubernetes Jobs and Pods created by the `K8sRunLauncher` will also be
     set on Kubernetes Jobs and Pods created by the `k8s_job_executor`.
+
+    Configuration set using `tags` on a `@job` will only apply to the `run` level. For configuration
+    to apply at each `step` it must be set using `tags` for each `@op`.
     """
 
     run_launcher = init_context.instance.run_launcher

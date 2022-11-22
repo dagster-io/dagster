@@ -50,9 +50,10 @@ export interface AssetGraphQuery_assetNodes {
   opVersion: string | null;
   description: string | null;
   computeKind: string | null;
+  isPartitioned: boolean;
+  isObservable: boolean;
   isSource: boolean;
   assetKey: AssetGraphQuery_assetNodes_assetKey;
-  isObservable: boolean;
 }
 
 export interface AssetGraphQuery {

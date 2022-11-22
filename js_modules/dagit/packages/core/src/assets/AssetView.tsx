@@ -162,7 +162,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               <Tab
                 id="events"
                 title="Events"
-                onClick={() => setParams({...params, view: 'events'})}
+                onClick={() => setParams({...params, view: 'events', partition: undefined})}
               />
               <Tab id="plots" title="Plots" onClick={() => setParams({...params, view: 'plots'})} />
               <Tab
@@ -188,7 +188,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         right={
           <Box style={{margin: '-4px 0'}}>
             {definition && definition.jobNames.length > 0 && upstream && (
-              <LaunchAssetExecutionButton assetKeys={[definition.assetKey]} />
+              <LaunchAssetExecutionButton scope={{all: [definition]}} />
             )}
           </Box>
         }
@@ -347,6 +347,7 @@ const ASSET_VIEW_DEFINITION_QUERY = gql`
           id
           groupName
           partitionDefinition {
+            __typename
             description
           }
           partitionKeysByDimension {
