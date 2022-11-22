@@ -104,7 +104,7 @@ export const LatestRunTag: React.FC<{pipelineName: string; repoAddress: RepoAddr
               </StyledTable>
             }
           >
-            <Link to={`/instance/runs/${run.id}`}>
+            <Link to={`/runs/${run.id}`}>
               <RunTime run={run} />
             </Link>
           </Tooltip>

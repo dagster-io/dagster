@@ -5,6 +5,7 @@ import React from 'react';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
+import {isAssetLate} from '../assets/CurrentMinutesLateTag';
 import {isAssetStale} from '../assets/StaleTag';
 import {OpTags} from '../graph/OpTags';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -148,8 +149,8 @@ export const AssetNodeStatusRow: React.FC<{
     );
   }
 
-  const {lastMaterialization, runWhichFailedToMaterialize, freshnessInfo} = liveData;
-  const late = freshnessInfo && (freshnessInfo.currentMinutesLate || 0) > 0;
+  const {lastMaterialization, runWhichFailedToMaterialize} = liveData;
+  const late = isAssetLate(liveData);
 
   if (runWhichFailedToMaterialize || late) {
     return (
@@ -231,7 +232,7 @@ export const AssetNodeMinimal: React.FC<{
           $selected={selected}
           $isSource={isSource}
           $background={
-            liveData?.runWhichFailedToMaterialize
+            liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
               ? Colors.Red50
               : !liveData?.lastMaterialization
               ? Colors.Gray100
@@ -240,7 +241,7 @@ export const AssetNodeMinimal: React.FC<{
               : Colors.Green50
           }
           $border={
-            liveData?.runWhichFailedToMaterialize
+            liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
               ? Colors.Red500
               : !liveData?.lastMaterialization
               ? Colors.Gray500

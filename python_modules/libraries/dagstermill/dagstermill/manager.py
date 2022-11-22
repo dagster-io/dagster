@@ -335,6 +335,13 @@ class Manager:
         # pass output value cross process boundary using io manager
         step_context = self.context._step_context  # pylint: disable=protected-access
         # Note: yield_result currently does not support DynamicOutput
+
+        # dagstermill assets do not support yielding additional results within the notebook:
+        if len(step_context.job_def.asset_layer.asset_keys) > 0:
+            raise DagstermillError(
+                "dagstermill assets do not currently support dagstermill.yield_result"
+            )
+
         step_output_handle = StepOutputHandle(
             step_key=step_context.step.key, output_name=output_name
         )

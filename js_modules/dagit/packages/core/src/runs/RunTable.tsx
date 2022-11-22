@@ -236,7 +236,7 @@ const RunRow: React.FC<{
         <RunStatusTagWithStats status={run.status} runId={run.runId} />
       </td>
       <td>
-        <Link to={`/instance/runs/${run.runId}`}>
+        <Link to={`/runs/${run.runId}`}>
           <Mono>{titleForRun(run)}</Mono>
         </Link>
       </td>

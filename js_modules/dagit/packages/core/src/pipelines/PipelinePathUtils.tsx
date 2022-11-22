@@ -70,7 +70,7 @@ export const PipelineSnapshotLink: React.FC<{
   snapshotId: string;
   size: 'small' | 'normal';
 }> = (props) => {
-  const snapshotLink = `/instance/snapshots/${explorerPathToString({
+  const snapshotLink = `/snapshots/${explorerPathToString({
     pipelineName: props.pipelineName,
     snapshotId: props.snapshotId,
     opsQuery: '',

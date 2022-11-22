@@ -1,5 +1,6 @@
 from typing import Any, Dict, Iterable, Mapping, Optional, Union
 
+import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.execution.with_resources import with_resources
 
@@ -63,6 +64,23 @@ class Definitions:
 
         (2) The resources dictionary takes raw python objects, not just resource definitions.
         """
+
+        if assets:
+            check.iterable_param(
+                assets, "assets", (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
+            )
+
+        if schedules:
+            check.iterable_param(schedules, "schedules", ScheduleDefinition)
+
+        if sensors:
+            check.iterable_param(sensors, "sensors", SensorDefinition)
+
+        if jobs:
+            check.iterable_param(jobs, "jobs", JobDefinition)
+
+        if resources:
+            check.mapping_param(resources, "resources", key_type=str, value_type=Any)
 
         resource_defs = coerce_resources_to_defs(resources or {})
 
