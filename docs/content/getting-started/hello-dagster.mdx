@@ -1,0 +1,99 @@
+---
+title: Hello Dagster | Dagster
+description: Run dagster for the first time
+---
+
+# `hello dagster`
+
+This guide helps you build a simple data pipeline in dagster that downloads the top 20 HackerNews stories.
+
+1. Start by creating a file called `hello-dagster.py` and copying the following:
+
+    ```python file=/getting-started/hello-dagster/hello-dagster.py
+    # copy to a file called hello-dagster.py
+    from dagster import repository, asset, MetadataValue
+    import requests
+    import pandas as pd
+
+    # dagster helps you think about datasets, models, 
+    # and other objects that you want to exist as assets
+    # instead of worrying about tasks
+
+    @asset
+    def hackernews_topstory_ids():
+        """
+        Get up to 500 top stories from the HackerNews topstories endpoint.
+        API Docs: https://github.com/HackerNews/API#new-top-and-best-stories
+        """
+        newstories_url = "https://hacker-news.firebaseio.com/v0/topstories.json"
+        top_500_newstories = requests.get(newstories_url).json()
+        return top_500_newstories
+
+    # dependencies between assets can be expressed as function arguments
+    @asset 
+    def hackernews_topstories(context, hackernews_topstory_ids):
+        """
+        Get items based on story ids from the HackerNews items endpoint
+        """
+
+        results = []
+        for item_id in hackernews_topstory_ids:
+            item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
+            results.append(item)
+            if len(results) > 10:
+                break
+
+        df = pd.DataFrame(results)
+
+        # dagster tracks rich metadata about our assets
+        context.add_output_metadata(
+            {
+                "num_records": len(df),
+                "preview": MetadataValue.md(df.to_markdown()),
+            }
+        )
+        return df
+
+    @repository
+    def hello_dagster():
+        return [hackernews_topstory_ids, hackernews_topstories]
+    ```
+
+2. Now install the Python packages we'll need to run `hello-dagster.py` in your favorite Python environment. Unsure? Follow our [installation guide](/getting-started/install).
+
+    ```bash
+    # run in a terminal in your favorite python environment
+    pip install dagster dagit pandas
+    ```
+
+3. We'll use `dagit`, the dagster user interface, to run `hello-dagster.py`:
+
+    ```bash
+    # run in a terminal in your favorite python environment
+    dagit -f hello-dagster.py
+    ```
+
+Navigate your browser to `http://localhost:3000/. Clicking `Materialize All` will run our pipeline and create our assets.
+
+<Image
+alt="HackerNews asset graph"
+src="/images/getting-started/hello-dagster/hello-dagster.png"
+width={1331}
+height={874}
+/>
+
+## Next Steps
+
+This example uses [assets](/tutorial#assets). Most new Dagster projects use assets because they let us:
+
+- think in the same terms as our stakeholders
+- answer questions about data quality and lineage 
+- integrate deeply with the modern data stack (dbt, Airbyte/Fivetran, Spark)
+- create declarative freshness policies instead of task-driven cron schedules
+
+While Dagster also offers [ops and jobs](tutorial#ops-and-jobs), we recommend starting with assets.
+
+Our `hello-dagster` example used a single file, but most Dagster projects are organized as Python packages. Check out our [getting started guide](/getting-started/create-new-project/) to begin with a scaffolded blank project or start from an official example such as this [dagster + dbt project](integrations/dbt/using-dbt-with-dagster).
+
+Or continue adding capabilities to our [HackerNews example](https://github.com/dagster-io/quickstart-etl) such as [running our pipeline on a schedule]() or [persisting our assets in a database]().
+
