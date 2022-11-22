@@ -305,11 +305,12 @@ export const ASSET_NODE_FRAGMENT = gql`
     opVersion
     description
     computeKind
+    isPartitioned
+    isObservable
     isSource
     assetKey {
       path
     }
-    isObservable
   }
 `;
 

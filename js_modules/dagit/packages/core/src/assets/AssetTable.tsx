@@ -107,7 +107,9 @@ export const AssetTable = ({
               </Button>
             </Tooltip>
           ) : (
-            <LaunchAssetExecutionButton selectedAssetKeys={checkedAssets.map((c) => c.key)} />
+            <LaunchAssetExecutionButton
+              scope={{selected: checkedAssets.map((a) => ({...a.definition!, assetKey: a.key}))}}
+            />
           )}
           <MoreActionsDropdown selected={checkedAssets} clearSelection={() => onToggleAll(false)} />
         </Box>
@@ -348,6 +350,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
   fragment AssetTableDefinitionFragment on AssetNode {
     id
     groupName
+    isSource
     partitionDefinition {
       description
     }
