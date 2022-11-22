@@ -603,7 +603,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             upstream_output = artificial_output_context
 
         return InputContext(
-            pipeline_name=self.pipeline_def.name,
+            job_name=self.pipeline_def.name,
             name=name,
             solid_def=self.solid_def,
             config=config,
