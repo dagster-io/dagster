@@ -37,14 +37,7 @@ import {AssetGroupNode} from './AssetGroupNode';
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import {AssetNodeLink} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
-import {
-  GraphData,
-  graphHasCycles,
-  LiveData,
-  GraphNode,
-  tokenForAssetKey,
-  LiveDataForNode,
-} from './Utils';
+import {GraphData, graphHasCycles, LiveData, GraphNode, tokenForAssetKey} from './Utils';
 import {AssetGraphLayout} from './layout';
 import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
 import {AssetGraphFetchScope, useAssetGraphData} from './useAssetGraphData';
@@ -67,9 +60,6 @@ interface Props {
 
 export const MINIMAL_SCALE = 0.5;
 export const EXPERIMENTAL_SCALE = 0.1;
-
-const includeInMaterializeAll = (liveData?: LiveDataForNode) =>
-  liveData && liveData.currentLogicalVersion !== liveData.projectedLogicalVersion;
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {
@@ -423,30 +413,22 @@ export const AssetGraphExplorerWithData: React.FC<
                 dataDescription="materializations"
               />
               <LaunchAssetObservationButton
-                intent="none"
-                context={selectedGraphNodes.length > 0 ? 'selected' : 'all'}
+                preferredJobName={explorerPath.pipelineName}
                 assetKeys={(selectedGraphNodes.length
-                  ? selectedGraphNodes.filter((a) => a.definition.isObservable)
-                  : Object.values(assetGraphData.nodes).filter((a) => a.definition.isObservable)
-                ).map((n) => n.assetKey)}
-                preferredJobName={explorerPath.pipelineName}
-              />
-              <LaunchAssetExecutionButton
-                preferredJobName={explorerPath.pipelineName}
-                selectedAssetKeys={selectedGraphNodes
-                  .filter((a) => !a.definition.isSource)
-                  .map((n) => n.assetKey)}
-                allAssetKeys={Object.values(assetGraphData.nodes)
-                  .filter((a) => !a.definition.isSource)
-                  .map((n) => n.assetKey)}
-                staleAssetKeys={(selectedGraphNodes.length
                   ? selectedGraphNodes
                   : Object.values(assetGraphData.nodes)
                 )
-                  .filter(
-                    (a) => !a.definition.isSource && includeInMaterializeAll(liveDataByNode[a.id]),
-                  )
+                  .filter((a) => a.definition.isObservable)
                   .map((n) => n.assetKey)}
+              />
+              <LaunchAssetExecutionButton
+                preferredJobName={explorerPath.pipelineName}
+                liveDataForStale={liveDataByNode}
+                scope={
+                  selectedGraphNodes.length
+                    ? {selected: selectedGraphNodes.map((a) => a.definition)}
+                    : {all: Object.values(assetGraphData.nodes).map((a) => a.definition)}
+                }
               />
             </Box>
           </Box>

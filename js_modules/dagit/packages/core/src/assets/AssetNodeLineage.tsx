@@ -67,10 +67,9 @@ export const AssetNodeLineage: React.FC<{
         <div style={{flex: 1}} />
         {Object.values(assetGraphData.nodes).length > 1 ? (
           <LaunchAssetExecutionButton
-            allAssetKeys={Object.values(assetGraphData.nodes)
-              .filter((n) => !n.definition.isSource)
-              .map((n) => n.assetKey)}
             intent="none"
+            liveDataForStale={liveDataByNode}
+            scope={{all: Object.values(assetGraphData.nodes).map((n) => n.definition)}}
           />
         ) : (
           <Button icon={<Icon name="materialization" />} disabled>

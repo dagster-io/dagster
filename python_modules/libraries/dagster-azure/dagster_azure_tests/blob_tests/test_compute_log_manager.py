@@ -154,6 +154,32 @@ compute_logs:
     assert instance.compute_log_manager._blob_prefix == prefix  # pylint: disable=protected-access
 
 
+@mock.patch("dagster_azure.blob.compute_log_manager.create_blob_client")
+def test_prefix_filter(mock_create_blob_client, storage_account, container, credential):
+    blob_prefix = "foo/bar/"  # note the trailing slash
+
+    fake_client = FakeBlobServiceClient(storage_account)
+    mock_create_blob_client.return_value = fake_client
+    with tempfile.TemporaryDirectory() as temp_dir:
+        manager = AzureBlobComputeLogManager(
+            storage_account=storage_account,
+            container=container,
+            prefix=blob_prefix,
+            local_dir=temp_dir,
+            secret_key=credential,
+        )
+        log_key = ["arbitrary", "log", "key"]
+        with manager.open_log_stream(log_key, ComputeIOType.STDERR) as write_stream:
+            write_stream.write("hello hello")
+
+        adls2_object = fake_client.get_blob_client(
+            container=container,
+            blob=f"foo/bar/storage/arbitrary/log/key.err",
+        )
+        logs = adls2_object.download_blob().readall().decode("utf-8")
+        assert logs == "hello hello"
+
+
 class TestAzureComputeLogManager(TestCapturedLogManager):
     __test__ = True
 
