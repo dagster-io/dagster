@@ -25,9 +25,9 @@ def test_single_repository():
     symbol = loadable_targets[0].attribute
     assert symbol == "single_repository"
 
-    repo_def = repository_def_from_pointer(
-        CodePointer.from_python_file(single_repo_path, symbol, None)
-    )
+    repo_def = CodePointer.from_python_file(single_repo_path, symbol, None).load_target()
+    assert isinstance(repo_def, RepositoryDefinition)
+
     assert repo_def.name == "single_repository"
 
 
