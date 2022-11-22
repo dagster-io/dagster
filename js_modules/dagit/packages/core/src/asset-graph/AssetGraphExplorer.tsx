@@ -288,7 +288,7 @@ export const AssetGraphExplorerWithData: React.FC<
               interactor={SVGViewport.Interactors.PanAndZoom}
               graphWidth={layout.width}
               graphHeight={layout.height}
-              graphHasNoMinimumZoom={allowGroupsOnlyZoomLevel ? true : false}
+              graphHasNoMinimumZoom={allowGroupsOnlyZoomLevel}
               onClick={onClickBackground}
               onArrowKeyDown={onArrowKeyDown}
               onDoubleClick={(e) => {
