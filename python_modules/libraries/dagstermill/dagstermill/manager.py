@@ -349,7 +349,6 @@ class Manager:
         io_manager = step_context.get_io_manager(step_output_handle)
 
         # Note that we assume io manager is symmetric, i.e handle_input(handle_output(X)) == X
-        # use list() in case handle_output is a generator
         io_manager.handle_output(output_context, value)
 
         # record that the output has been yielded
