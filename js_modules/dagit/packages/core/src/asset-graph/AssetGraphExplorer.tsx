@@ -264,7 +264,7 @@ export const AssetGraphExplorerWithData: React.FC<
     }
   };
 
-  const allowGroupsOnlyZoomLevel = layout && Object.keys(layout.groups).length;
+  const allowGroupsOnlyZoomLevel = !!(layout && Object.keys(layout.groups).length);
 
   return (
     <SplitPanelContainer
