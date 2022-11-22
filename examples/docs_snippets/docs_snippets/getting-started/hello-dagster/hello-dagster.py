@@ -28,7 +28,7 @@ def hackernews_topstories(context, hackernews_topstory_ids):
     for item_id in hackernews_topstory_ids:
         item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
         results.append(item)
-        if len(results) > 10:
+        if len(results) >= 10:
             break
 
     df = pd.DataFrame(results)

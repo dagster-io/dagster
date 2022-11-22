@@ -5,7 +5,7 @@ description: Run dagster for the first time
 
 # `hello dagster`
 
-This guide helps you build a simple data pipeline in dagster that downloads the top 20 HackerNews stories.
+This guide helps you build a simple data pipeline in dagster that downloads the top 10 HackerNews stories.
 
 1. Start by creating a file called `hello-dagster.py` and copying the following:
 
@@ -40,7 +40,7 @@ This guide helps you build a simple data pipeline in dagster that downloads the 
         for item_id in hackernews_topstory_ids:
             item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
             results.append(item)
-            if len(results) > 10:
+            if len(results) >= 10:
                 break
 
         df = pd.DataFrame(results)
