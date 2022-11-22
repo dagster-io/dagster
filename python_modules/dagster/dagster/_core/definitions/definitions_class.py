@@ -32,16 +32,15 @@ class Definitions:
         """
         Example usage:
 
-        def dagster_defs():
-            return Definitions(
-                assets=[asset_one, asset_two],
-                schedules=[a_schedule],
-                sensors=[a_sensor],
-                jobs=[a_job],
-                resources={
-                    "a_resource": some_resource,
-                }
-            )
+        defs = Definitions(
+            assets=[asset_one, asset_two],
+            schedules=[a_schedule],
+            sensors=[a_sensor],
+            jobs=[a_job],
+            resources={
+                "a_resource": some_resource,
+            }
+        )
 
         Create a set of definitions explicitly available and loadable by dagster tools.
 
@@ -52,10 +51,10 @@ class Definitions:
         These tools must be able to locate and load this code when they start. Via CLI
         arguments or config, they specify a python module to inspect.
 
-        A python module is loadable by dagster tools if it has a top-level function
-        called `dagster_defs` that returns an instance of `Definitions`
+        A python module is loadable by dagster tools if it there is a top level variable
+        named `defs` that is an instance of Definitions.
 
-        Definitions provides a few conveniences for the user that do not apply to
+        Definitions provides a few conveniences for dealing with resources that do not apply to
         vanilla dagster definitions:
 
         (1) It takes a dictionary of top-level resources which are automatically bound

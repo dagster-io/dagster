@@ -148,17 +148,6 @@ export class OpNode extends React.Component<IOpNodeProps> {
           />
         ))}
 
-        {definition.outputDefinitions.map((item, idx) => (
-          <OpIOBox
-            {...this.props}
-            {...metadataForIO(item, invocation)}
-            key={idx}
-            item={item}
-            layoutInfo={layout.outputs[item.name]}
-            colorKey="output"
-          />
-        ))}
-
         <div className="node-box" style={{...position(layout.op)}}>
           <div className="name">
             {!minified && <Icon name="op" size={16} />}
@@ -185,6 +174,17 @@ export class OpNode extends React.Component<IOpNodeProps> {
             tags={tags}
           />
         )}
+
+        {definition.outputDefinitions.map((item, idx) => (
+          <OpIOBox
+            {...this.props}
+            {...metadataForIO(item, invocation)}
+            key={idx}
+            item={item}
+            layoutInfo={layout.outputs[item.name]}
+            colorKey="output"
+          />
+        ))}
       </NodeContainer>
     );
   }
@@ -326,7 +326,7 @@ const NodeContainer = styled.div<{
   pointer-events: auto;
 
   .highlight-box {
-    border-radius: 6px;
+    border-radius: 13px;
     background: ${(p) => (p.$selected ? NodeHighlightColors.Background : 'transparent')};
   }
   .node-box {
@@ -338,7 +338,7 @@ const NodeContainer = styled.div<{
         : '2px solid #dcd5ca'};
 
     border-width: ${(p) => (p.$minified ? '3px' : '2px')};
-    border-radius: 5px;
+    border-radius: 8px;
     background: ${(p) => (p.$minified ? Colors.Gray50 : Colors.White)};
   }
   .composite-marker {
@@ -366,8 +366,8 @@ const NodeContainer = styled.div<{
     padding: 4px ${(p) => (p.$minified ? '8px' : '3px')};
     font-size: ${(p) => (p.$minified ? '32px' : '14px')};
     font-family: ${FontFamily.monospace};
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
     align-items: center;
     font-weight: 600;
     .label {
@@ -398,8 +398,8 @@ const NodeContainer = styled.div<{
     text-overflow: ellipsis;
     background: #f5f3ef;
     border-top: 1px solid #e6e1d8;
-    border-bottom-left-radius: 5px;
-    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
     font-size: 12px;
   }
 `;

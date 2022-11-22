@@ -186,6 +186,12 @@ from dagster._core.definitions.executor_definition import (
 from dagster._core.definitions.freshness_policy import (
     FreshnessPolicy as FreshnessPolicy,
 )
+from dagster._core.definitions.freshness_policy_sensor_definition import (
+    FreshnessPolicySensorContext as FreshnessPolicySensorContext,
+    FreshnessPolicySensorDefinition as FreshnessPolicySensorDefinition,
+    build_freshness_policy_sensor_context as build_freshness_policy_sensor_context,
+    freshness_policy_sensor as freshness_policy_sensor,
+)
 from dagster._core.definitions.graph_definition import (
     GraphDefinition as GraphDefinition,
 )

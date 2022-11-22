@@ -25,64 +25,72 @@ export const AssetEventMetadataEntriesTable: React.FC<{
   const {metadataEntries, timestamp} = event;
 
   return (
-    <DetailsTable>
-      <tbody>
-        {metadataEntries.map((entry) => (
-          <tr key={`metadata-${entry.label}`}>
-            <td>
-              <Mono>{entry.label}</Mono>
-            </td>
-            <td>
-              <Mono>
-                <MetadataEntry entry={entry} expandSmallValues={true} />
-              </Mono>
-            </td>
-            <td style={{opacity: 0.7}}>{entry.description}</td>
-          </tr>
-        ))}
+    <AssetEventMetadataScrollContainer>
+      <AssetEventMetadataTable>
+        <tbody>
+          {metadataEntries.map((entry) => (
+            <tr key={`metadata-${entry.label}`}>
+              <td>
+                <Mono>{entry.label}</Mono>
+              </td>
+              <td>
+                <Mono>
+                  <MetadataEntry entry={entry} expandSmallValues={true} />
+                </Mono>
+              </td>
+              <td style={{opacity: 0.7}}>{entry.description}</td>
+            </tr>
+          ))}
 
-        {(observations || []).map((obs) => (
-          <React.Fragment key={obs.timestamp}>
-            {obs.metadataEntries.map((entry) => (
-              <tr key={`metadata-${obs.timestamp}-${entry.label}`}>
-                <td>
-                  <Mono>{entry.label}</Mono>
-                </td>
-                <td>
-                  <Mono>
-                    <MetadataEntry entry={entry} expandSmallValues={true} />
-                  </Mono>
-                </td>
-                <td style={{opacity: 0.7}}>
-                  <Box flex={{gap: 8}}>
-                    <Icon name="observation" size={16} style={{marginTop: 2}} />
-                    <span>
-                      {`${obs.stepKey} in `}
-                      <Link to={`/instance/runs/${obs.runId}?timestamp=${obs.timestamp}`}>
-                        <Mono>{titleForRun({runId: obs.runId})}</Mono>
-                      </Link>
-                    </span>
-                  </Box>
-                  <Caption style={{marginLeft: 24}}>
-                    {` (${moment(Number(obs.timestamp)).from(Number(timestamp), true)} later)`}
-                  </Caption>
-                  {entry.description}
-                </td>
-              </tr>
-            ))}
-          </React.Fragment>
-        ))}
-      </tbody>
-    </DetailsTable>
+          {(observations || []).map((obs) => (
+            <React.Fragment key={obs.timestamp}>
+              {obs.metadataEntries.map((entry) => (
+                <tr key={`metadata-${obs.timestamp}-${entry.label}`}>
+                  <td>
+                    <Mono>{entry.label}</Mono>
+                  </td>
+                  <td>
+                    <Mono>
+                      <MetadataEntry entry={entry} expandSmallValues={true} />
+                    </Mono>
+                  </td>
+                  <td style={{opacity: 0.7}}>
+                    <Box flex={{gap: 8}}>
+                      <Icon name="observation" size={16} style={{marginTop: 2}} />
+                      <span>
+                        {`${obs.stepKey} in `}
+                        <Link to={`/instance/runs/${obs.runId}?timestamp=${obs.timestamp}`}>
+                          <Mono>{titleForRun({runId: obs.runId})}</Mono>
+                        </Link>
+                      </span>
+                    </Box>
+                    <Caption style={{marginLeft: 24}}>
+                      {` (${moment(Number(obs.timestamp)).from(Number(timestamp), true)} later)`}
+                    </Caption>
+                    {entry.description}
+                  </td>
+                </tr>
+              ))}
+            </React.Fragment>
+          ))}
+        </tbody>
+      </AssetEventMetadataTable>
+    </AssetEventMetadataScrollContainer>
   );
 };
 
-const DetailsTable = styled.table`
+const AssetEventMetadataScrollContainer = styled.div`
+  width: 100%;
+  overflow-x: auto;
+`;
+
+const AssetEventMetadataTable = styled.table`
   width: 100%;
   border-spacing: 0;
   border-collapse: collapse;
   tr td:first-child {
     max-width: 300px;
+    word-wrap: break-word;
     width: 25%;
   }
   tr td {

@@ -61,7 +61,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         upload_interval=None,
     ):
         self._bucket_name = check.str_param(bucket, "bucket")
-        self._prefix = check.str_param(prefix, "prefix")
+        self._prefix = self._clean_prefix(check.str_param(prefix, "prefix"))
 
         if json_credentials_envvar:
             json_info_str = os.environ.get(json_credentials_envvar)
@@ -111,6 +111,10 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
     @property
     def upload_interval(self) -> Optional[int]:
         return self._upload_interval if self._upload_interval else None
+
+    def _clean_prefix(self, prefix):
+        parts = prefix.split("/")
+        return "/".join([part for part in parts if part])
 
     def _gcs_key(self, log_key, io_type, partial=False):
         check.inst_param(io_type, "io_type", ComputeIOType)

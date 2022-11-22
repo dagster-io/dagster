@@ -2,6 +2,7 @@ import os
 import sys
 import tempfile
 
+import pendulum
 import pytest
 from dagster_gcp.gcs import GCSComputeLogManager
 from dagster_tests.core_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
@@ -203,7 +204,7 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
 
 
 def test_compute_log_manager_from_config(gcs_bucket):
-    s3_prefix = "foobar"
+    gcs_prefix = "foobar"
 
     dagster_yaml = """
 compute_logs:
@@ -214,7 +215,7 @@ compute_logs:
     local_dir: "/tmp/cool"
     prefix: "{prefix}"
 """.format(
-        bucket=gcs_bucket, prefix=s3_prefix
+        bucket=gcs_bucket, prefix=gcs_prefix
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
@@ -224,6 +225,26 @@ compute_logs:
         instance = DagsterInstance.from_config(tempdir)
 
     assert isinstance(instance.compute_log_manager, GCSComputeLogManager)
+
+
+def test_prefix_filter(gcs_bucket):
+    gcs_prefix = "foo/bar/"  # note the trailing slash
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        manager = GCSComputeLogManager(bucket=gcs_bucket, prefix=gcs_prefix, local_dir=temp_dir)
+        time_str = pendulum.now("UTC").strftime("%Y_%m_%d__%H_%M_%S")
+        log_key = ["arbitrary", "log", "key", time_str]
+        with manager.open_log_stream(log_key, ComputeIOType.STDERR) as write_stream:
+            write_stream.write("hello hello")
+
+        logs = (
+            storage.Client()
+            .bucket(gcs_bucket)
+            .blob(f"foo/bar/storage/arbitrary/log/key/{time_str}.err")
+            .download_as_bytes()
+            .decode("utf-8")
+        )
+        assert logs == "hello hello"
 
 
 class TestGCSComputeLogManager(TestCapturedLogManager):

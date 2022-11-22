@@ -10,7 +10,6 @@ import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
-import {isAssetMissing, isAssetStale} from '../assets/StaleTag';
 import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
@@ -414,32 +413,22 @@ export const AssetGraphExplorerWithData: React.FC<
                 dataDescription="materializations"
               />
               <LaunchAssetObservationButton
-                intent="none"
-                context={selectedGraphNodes.length > 0 ? 'selected' : 'all'}
+                preferredJobName={explorerPath.pipelineName}
                 assetKeys={(selectedGraphNodes.length
-                  ? selectedGraphNodes.filter((a) => a.definition.isObservable)
-                  : Object.values(assetGraphData.nodes).filter((a) => a.definition.isObservable)
-                ).map((n) => n.assetKey)}
-                preferredJobName={explorerPath.pipelineName}
-              />
-              <LaunchAssetExecutionButton
-                preferredJobName={explorerPath.pipelineName}
-                selectedAssetKeys={selectedGraphNodes
-                  .filter((a) => !a.definition.isSource)
-                  .map((n) => n.assetKey)}
-                allAssetKeys={Object.values(assetGraphData.nodes)
-                  .filter((a) => !a.definition.isSource)
-                  .map((n) => n.assetKey)}
-                staleAssetKeys={(selectedGraphNodes.length
                   ? selectedGraphNodes
                   : Object.values(assetGraphData.nodes)
                 )
-                  .filter(
-                    (a) =>
-                      !a.definition.isSource &&
-                      (isAssetMissing(liveDataByNode[a.id]) || isAssetStale(liveDataByNode[a.id])),
-                  )
+                  .filter((a) => a.definition.isObservable)
                   .map((n) => n.assetKey)}
+              />
+              <LaunchAssetExecutionButton
+                preferredJobName={explorerPath.pipelineName}
+                liveDataForStale={liveDataByNode}
+                scope={
+                  selectedGraphNodes.length
+                    ? {selected: selectedGraphNodes.map((a) => a.definition)}
+                    : {all: Object.values(assetGraphData.nodes).map((a) => a.definition)}
+                }
               />
             </Box>
           </Box>
