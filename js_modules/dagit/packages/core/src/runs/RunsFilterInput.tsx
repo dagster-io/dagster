@@ -80,10 +80,7 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
 }
 
 export function runsPathWithFilters(filterTokens: RunFilterToken[]) {
-  return `/instance/runs?${qs.stringify(
-    {q: tokensAsStringArray(filterTokens)},
-    {arrayFormat: 'brackets'},
-  )}`;
+  return `/runs?${qs.stringify({q: tokensAsStringArray(filterTokens)}, {arrayFormat: 'brackets'})}`;
 }
 
 export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {

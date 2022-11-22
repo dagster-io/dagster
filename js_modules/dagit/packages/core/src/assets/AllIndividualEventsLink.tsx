@@ -129,7 +129,7 @@ const MetadataEntriesRow: React.FC<{
                           <Icon name="observation" size={16} />
                           <span>
                             {`${obs.stepKey} in `}
-                            <Link to={`/instance/runs/${obs.runId}?timestamp=${obs.timestamp}`}>
+                            <Link to={`/runs/${obs.runId}?timestamp=${obs.timestamp}`}>
                               <Mono>{titleForRun({runId: obs.runId})}</Mono>
                             </Link>
                             {` (${moment(Number(obs.timestamp)).from(
@@ -251,7 +251,7 @@ const EventGroupRow: React.FC<{
       <td>
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <RunStatusWithStats runId={run.runId} status={run.status} />
-          <Link to={`/instance/runs/${run.runId}?timestamp=${timestamp}`}>
+          <Link to={`/runs/${run.runId}?timestamp=${timestamp}`}>
             <Mono>{titleForRun(run)}</Mono>
           </Link>
         </Box>

@@ -93,6 +93,10 @@ export const InstanceConfig = React.memo(() => {
   );
 });
 
+// Imported via React.lazy, which requires a default export.
+// eslint-disable-next-line import/no-default-export
+export default InstanceConfig;
+
 export const INSTANCE_CONFIG_QUERY = gql`
   query InstanceConfigQuery {
     version

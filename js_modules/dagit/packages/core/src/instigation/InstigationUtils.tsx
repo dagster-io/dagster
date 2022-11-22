@@ -25,7 +25,7 @@ export const InstigatedRunStatus: React.FC<{
 export const RunStatusLink: React.FC<{run: RunStatusFragment}> = ({run}) => (
   <Group direction="row" spacing={4} alignItems="center">
     <RunStatusIndicator status={run.status} />
-    <Link to={`/instance/runs/${run.runId}`} target="_blank" rel="noreferrer">
+    <Link to={`/runs/${run.runId}`} target="_blank" rel="noreferrer">
       <Mono>{titleForRun({runId: run.runId})}</Mono>
     </Link>
   </Group>

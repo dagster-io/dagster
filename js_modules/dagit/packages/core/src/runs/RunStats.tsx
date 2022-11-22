@@ -32,7 +32,7 @@ export const RunStats = ({runId}: {runId: string}) => {
     return <PythonErrorInfo error={result.stats} />;
   }
 
-  const runPath = `/instance/runs/${runId}`;
+  const runPath = `/runs/${runId}`;
   return (
     <RunStatsDetailsContainer>
       <Link
