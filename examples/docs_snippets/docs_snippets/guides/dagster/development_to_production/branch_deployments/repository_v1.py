@@ -1,15 +1,12 @@
 import os
 
-from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
 # start_repository
 # repository.py
 from dagster import repository, with_resources
 
 from ..assets import comments, items, stories
-
-snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
 
 
 @repository
@@ -22,7 +19,7 @@ def repo():
     }
     resource_defs = {
         "branch": {
-            "snowflake_io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_pandas_io_manager.configured(
                 {
                     **snowflake_config,
                     "database": f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
@@ -30,7 +27,7 @@ def repo():
             ),
         },
         "production": {
-            "snowflake_io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_pandas_io_manager.configured(
                 {
                     **snowflake_config,
                     "database": "PRODUCTION",

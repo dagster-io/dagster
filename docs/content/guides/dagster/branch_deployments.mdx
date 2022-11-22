@@ -133,8 +133,6 @@ from dagster import repository, with_resources
 
 from ..assets import comments, items, stories
 
-snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
-
 
 @repository
 def repo():
@@ -146,7 +144,7 @@ def repo():
     }
     resource_defs = {
         "branch": {
-            "snowflake_io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_pandas_io_manager.configured(
                 {
                     **snowflake_config,
                     "database": f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
@@ -154,7 +152,7 @@ def repo():
             ),
         },
         "production": {
-            "snowflake_io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_pandas_io_manager.configured(
                 {
                     **snowflake_config,
                     "database": "PRODUCTION",
@@ -212,7 +210,7 @@ We can then add the `clone_prod` job to our repository, configuring it with the 
 ```python file=/guides/dagster/development_to_production/branch_deployments/repository_v2.py startafter=start_resources endbefore=end_resources
 resource_defs = {
     "branch": {
-        "snowflake_io_manager": snowflake_io_manager.configured(
+        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
             {
                 **snowflake_config,
                 "database": f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
@@ -226,7 +224,7 @@ resource_defs = {
         ),
     },
     "production": {
-        "snowflake_io_manager": snowflake_io_manager.configured(
+        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
             {
                 **snowflake_config,
                 "database": "PRODUCTION",
