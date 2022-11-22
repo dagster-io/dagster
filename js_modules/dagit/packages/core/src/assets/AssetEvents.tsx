@@ -139,7 +139,7 @@ export const AssetEvents: React.FC<Props> = ({
         tabIndex={-1}
       >
         <Box
-          style={{display: 'flex', flex: 1}}
+          style={{display: 'flex', flex: 1, minWidth: 200}}
           flex={{direction: 'column'}}
           background={Colors.Gray50}
         >
@@ -158,7 +158,7 @@ export const AssetEvents: React.FC<Props> = ({
         </Box>
 
         <Box
-          style={{flex: 3}}
+          style={{flex: 3, minWidth: 0}}
           flex={{direction: 'column'}}
           border={{side: 'left', color: Colors.KeylineGray, width: 1}}
         >

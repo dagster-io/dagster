@@ -66,7 +66,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
     ):
         self._storage_account = check.str_param(storage_account, "storage_account")
         self._container = check.str_param(container, "container")
-        self._blob_prefix = check.str_param(prefix, "prefix")
+        self._blob_prefix = self._clean_prefix(check.str_param(prefix, "prefix"))
         check.str_param(secret_key, "secret_key")
 
         self._blob_client = create_blob_client(storage_account, secret_key)
@@ -116,6 +116,10 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
     @property
     def upload_interval(self) -> Optional[int]:
         return self._upload_interval if self._upload_interval else None
+
+    def _clean_prefix(self, prefix):
+        parts = prefix.split("/")
+        return "/".join([part for part in parts if part])
 
     def _blob_key(self, log_key, io_type, partial=False):
         check.inst_param(io_type, "io_type", ComputeIOType)
