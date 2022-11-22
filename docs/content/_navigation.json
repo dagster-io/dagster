@@ -334,17 +334,8 @@
         "path": "/dagster-cloud",
         "children": [
           {
-            "path": "/dagster-cloud/getting-started",
-            "children": [
-              {
-                "title": "Guide",
-                "path": "/dagster-cloud/getting-started"
-              },
-              {
-                "title": "Environment variables and secrets",
-                "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets"
-              }
-            ]
+            "title": "Getting started",
+            "path": "/dagster-cloud/getting-started"
           },
           {
             "title": "Deployment types",
