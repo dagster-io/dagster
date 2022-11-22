@@ -45,7 +45,7 @@ class AirbyteResource:
         request_additional_params: Optional[Mapping[str, Any]] = None,
         log: logging.Logger = get_dagster_logger(),
         forward_logs: bool = True,
-        cancel_airbyte_sync_on_abnormal_termination: bool = True,
+        cancel_sync_on_run_termination: bool = True,
         username: Optional[str] = None,
         password: Optional[str] = None,
     ):
@@ -67,9 +67,7 @@ class AirbyteResource:
         self._username = username
         self._password = password
 
-        self._cancel_airbyte_sync_on_abnormal_termination = (
-            cancel_airbyte_sync_on_abnormal_termination
-        )
+        self._cancel_sync_on_run_termination = cancel_sync_on_run_termination
 
     @property
     def api_base_url(self) -> str:
@@ -341,7 +339,7 @@ class AirbyteResource:
             # the python process
             if (
                 state not in (AirbyteState.SUCCEEDED, AirbyteState.ERROR, AirbyteState.CANCELLED)
-                and self._cancel_airbyte_sync_on_abnormal_termination
+                and self._cancel_sync_on_run_termination
             ):
                 self.cancel_job(job_id)
 
@@ -400,10 +398,14 @@ class AirbyteResource:
             default_value=True,
             description="Whether to forward Airbyte logs to the compute log, can be expensive for long-running syncs.",
         ),
-        "cancel_airbyte_sync_on_abnormal_termination": Field(
+        "cancel_sync_on_run_termination": Field(
             bool,
             default_value=True,
-            description="Whether to cancel a sync in Airbyte if the Dagster runner experiences an abnormal termination. This may be useful to disable if using airbyte sources that cannot be cancelled and resumed easily, or if your Dagster deployment may experience runner interruptions that do not impact your Airbyte deployment.",
+            description=(
+                "Whether to cancel a sync in Airbyte if the Dagster runner is terminated. "
+                "This may be useful to disable if using Airbyte sources that cannot be cancelled and resumed easily, "
+                "or if your Dagster deployment may experience runner interruptions that do not impact your Airbyte deployment."
+            ),
         ),
     },
     description="This resource helps manage Airbyte connectors",
@@ -452,9 +454,7 @@ def airbyte_resource(context) -> AirbyteResource:
         request_additional_params=context.resource_config["request_additional_params"],
         log=context.log,
         forward_logs=context.resource_config["forward_logs"],
-        cancel_airbyte_sync_on_abnormal_termination=context.resource_config[
-            "cancel_airbyte_sync_on_abnormal_termination"
-        ],
+        cancel_sync_on_run_termination=context.resource_config["cancel_sync_on_run_termination"],
         username=context.resource_config.get("username"),
         password=context.resource_config.get("password"),
     )
