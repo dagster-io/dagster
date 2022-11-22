@@ -386,7 +386,7 @@
           {
             "title": "Authentication",
             "path": "/dagster-cloud/account/authentication",
-            "children":[
+            "children": [
               {
                 "title": "Azure Active Directory",
                 "path": "/dagster-cloud/account/authentication/setting-up-azure-ad-saml-sso"
@@ -548,10 +548,10 @@
     "icon": "Integrations",
     "path": "/integrations",
     "children": [
-        {
-          "title": "Airbyte",
-          "path": "/integrations/airbyte"
-        },
+      {
+        "title": "Airbyte",
+        "path": "/integrations/airbyte"
+      },
       {
         "title": "Airflow",
         "path": "/integrations/airflow"
@@ -956,7 +956,7 @@
       },
       {
         "title": "Slack",
-        "path": "https://dagster-slackin.herokuapp.com/",
+        "path": "https://dagster.io/slack",
         "isExternalLink": true
       },
       {
