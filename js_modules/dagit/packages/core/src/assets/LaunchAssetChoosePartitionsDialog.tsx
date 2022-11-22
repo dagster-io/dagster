@@ -110,7 +110,6 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const [ranges, setRanges] = usePartitionDimensionRanges(
     mergedHealth,
     partitionedAssets[0].partitionKeysByDimension.map((d) => d.name),
-    'launch',
   );
 
   const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([

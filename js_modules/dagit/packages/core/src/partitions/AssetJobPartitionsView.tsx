@@ -3,7 +3,11 @@ import React from 'react';
 
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
-import {mergedAssetHealth, explodePartitionKeysInRanges} from '../assets/MultipartitioningSupport';
+import {
+  mergedAssetHealth,
+  explodePartitionKeysInRanges,
+  isTimeseriesPartition,
+} from '../assets/MultipartitioningSupport';
 import {usePartitionHealthData} from '../assets/usePartitionHealthData';
 import {useViewport} from '../gantt/useViewport';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -59,7 +63,10 @@ export const AssetJobPartitionsView: React.FC<{
     }
   }, [viewport.width, showAssets, setPageSize]);
 
-  const rangeDimension = merged.dimensions[0];
+  const rangeDimensionIdx = merged.dimensions.findIndex((d) =>
+    isTimeseriesPartition(d.partitionKeys[0]),
+  );
+  const rangeDimension = merged.dimensions[rangeDimensionIdx];
   const rangePartitionKeys = rangeDimension?.partitionKeys || [];
 
   const selectedPartitions = showAssets
@@ -82,7 +89,7 @@ export const AssetJobPartitionsView: React.FC<{
             {showAssets ? 'Hide per-asset status' : 'Show per-asset status'}
           </Button>
           <LaunchAssetExecutionButton
-            allAssetKeys={assetGraph.graphAssetKeys}
+            scope={{all: assetGraph.graphQueryItems.map((g) => g.node), skipAllTerm: true}}
             preferredJobName={pipelineName}
           />
         </Box>
@@ -99,7 +106,7 @@ export const AssetJobPartitionsView: React.FC<{
         <div {...containerProps}>
           <PartitionStatus
             partitionNames={rangePartitionKeys}
-            partitionStateForKey={(key) => merged.stateForSingleDimension(0, key)}
+            partitionStateForKey={(key) => merged.stateForSingleDimension(rangeDimensionIdx, key)}
             selected={showAssets ? selectedPartitions : undefined}
             selectionWindowSize={pageSize}
             onClick={(partitionName) => {
@@ -117,10 +124,11 @@ export const AssetJobPartitionsView: React.FC<{
             tooltipMessage="Click to view per-asset status"
           />
         </div>
-        {showAssets && (
+        {showAssets && rangeDimension && (
           <Box margin={{top: 16}}>
             <PartitionPerAssetStatus
-              partitionNames={rangePartitionKeys}
+              rangeDimensionIdx={rangeDimensionIdx}
+              rangeDimension={rangeDimension}
               assetHealth={assetHealth}
               assetQueryItems={assetGraph.graphQueryItems}
               pipelineName={pipelineName}

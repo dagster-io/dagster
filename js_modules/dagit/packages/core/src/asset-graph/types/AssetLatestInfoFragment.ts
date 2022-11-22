@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { AssetComputeStatus, RunStatus } from "./../../types/globalTypes";
+import { RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: AssetLatestInfoFragment
@@ -23,7 +23,6 @@ export interface AssetLatestInfoFragment_latestRun {
 export interface AssetLatestInfoFragment {
   __typename: "AssetLatestInfo";
   assetKey: AssetLatestInfoFragment_assetKey;
-  computeStatus: AssetComputeStatus;
   unstartedRunIds: string[];
   inProgressRunIds: string[];
   latestRun: AssetLatestInfoFragment_latestRun | null;

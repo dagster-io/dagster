@@ -32,10 +32,9 @@ type ObserveAssetsState =
 
 export const LaunchAssetObservationButton: React.FC<{
   assetKeys: AssetKey[]; // Memoization not required
-  context?: 'all' | 'selected';
   intent?: 'primary' | 'none';
   preferredJobName?: string;
-}> = ({assetKeys, preferredJobName, intent = 'primary'}) => {
+}> = ({assetKeys, preferredJobName, intent = 'none'}) => {
   const {canLaunchPipelineExecution} = usePermissions();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
@@ -112,9 +111,9 @@ export const LaunchAssetObservationButton: React.FC<{
 };
 
 async function stateForObservingAssets(
-  client: ApolloClient<any>,
+  _client: ApolloClient<any>,
   assets: LaunchAssetExecutionAssetNodeFragment[],
-  forceLaunchpad: boolean,
+  _forceLaunchpad: boolean,
   preferredJobName?: string,
 ): Promise<ObserveAssetsState> {
   if (assets.some((x) => !x.isSource)) {

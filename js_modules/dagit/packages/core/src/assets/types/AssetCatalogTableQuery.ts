@@ -34,6 +34,7 @@ export interface AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes_defi
   __typename: "AssetNode";
   id: string;
   groupName: string | null;
+  isSource: boolean;
   partitionDefinition: AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes_definition_partitionDefinition | null;
   description: string | null;
   repository: AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes_definition_repository;
