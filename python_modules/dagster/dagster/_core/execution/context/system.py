@@ -478,7 +478,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._output_metadata: Dict[str, Any] = {}
         self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
 
-        self._input_asset_records: Optional[Dict[AssetKey, Optional["EventLogRecord"]]] = None
+        self._input_asset_records: Dict[AssetKey, Optional["EventLogRecord"]] = {}
 
     @property
     def step(self) -> ExecutionStep:
@@ -806,7 +806,13 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def input_asset_records(self) -> Optional[Mapping[AssetKey, Optional["EventLogRecord"]]]:
         return self._input_asset_records
 
-    def fetch_input_asset_records(self) -> None:
+    def get_input_asset_record(self, key: AssetKey) -> Optional["EventLogRecord"]:
+        if not key in self._input_asset_records:
+            self._fetch_input_asset_record(key)
+        return self._input_asset_records[key]
+
+    # "external" refers to records for inputs generated outside of this step
+    def fetch_external_input_asset_records(self) -> None:
         # pylint: disable=protected-access
         output_keys: List[AssetKey] = []
         for step_output in self.step.step_outputs:
@@ -828,8 +834,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         self._input_asset_records = {}
         for key in all_dep_keys:
-            event = self.instance.get_latest_logical_version_record(key)
-            self._input_asset_records[key] = event
+            self._fetch_input_asset_record(key)
+
+    def _fetch_input_asset_record(self, key: AssetKey) -> None:
+        event = self.instance.get_latest_logical_version_record(key)
+        self._input_asset_records[key] = event
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.pipeline_def.asset_layer
