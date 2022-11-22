@@ -122,8 +122,14 @@ class AssetReconciliationCursor(NamedTuple):
             | requested_non_partitioned_root_assets
         )
 
+        if latest_storage_id and self.latest_storage_id:
+            check.invariant(
+                latest_storage_id >= self.latest_storage_id,
+                "Latest storage ID should be >= previous latest storage ID",
+            )
+
         return AssetReconciliationCursor(
-            latest_storage_id=latest_storage_id,
+            latest_storage_id=latest_storage_id or self.latest_storage_id,
             materialized_or_requested_root_asset_keys=result_materialized_or_requested_root_asset_keys,
             materialized_or_requested_root_partitions_by_asset_key=result_materialized_or_requested_root_partitions_by_asset_key,
         )
@@ -746,8 +752,11 @@ def build_asset_reconciliation_sensor(
     - This sensor has never tried to materialize it and it has never been materialized.
     - Any of its parents have been materialized more recently than it has.
     - Any of its parents are unreconciled.
+    - It is not currently up to date with respect to its FreshnessPolicy
 
-    The sensor won't try to reconcile any assets before their parents are reconciled.
+    The sensor won't try to reconcile any assets before their parents are reconciled. When multiple
+    FreshnessPolicies require data from the same upstream assets, this sensor will attempt to
+    launch a minimal number of runs of that asset to satisfy all constraints.
 
     Args:
         asset_selection (AssetSelection): The group of assets you want to keep up-to-date
@@ -762,7 +771,7 @@ def build_asset_reconciliation_sensor(
         SensorDefinition
 
     Example:
-        If you have the following asset graph:
+        If you have the following asset graph, with no freshness policies:
 
         .. code-block:: python
 
@@ -790,6 +799,43 @@ def build_asset_reconciliation_sensor(
               materialize ``d``, ``e``, and ``f``, because they're downstream of ``a`` and ``b``.
               Even though ``c`` hasn't been materialized, the downstream assets can still be
               updated, because ``c`` is still considered "reconciled".
+
+    Example:
+        If you have the following asset graph, with the following freshness policies:
+            * ``c: FreshnessPolicy(maximum_lag_minutes=120, cron_schedule="0 2 \* \* \*")``, meaning
+              that by 2AM, c needs to be materialized with data from a and b that is no more than 120
+              minutes old (i.e. all of yesterday's data).
+
+        .. code-block:: python
+
+            a       b
+             \     /
+                c
+
+        and create the sensor:
+
+        .. code-block:: python
+
+            build_asset_reconciliation_sensor(
+                AssetSelection.all(),
+                name="my_reconciliation_sensor",
+            )
+
+        Assume that ``c`` currently has incorporated all source data up to ``2022-01-01 23:00``.
+
+        You will observe the following behavior:
+            * At any time between ``2022-01-02 00:00`` and ``2022-01-02 02:00``, the sensor will see that
+              ``c`` will soon require data from ``2022-01-02 00:00``. In order to satisfy this
+              requirement, there must be a materialization for both ``a`` and ``b`` with time >=
+              ``2022-01-02 00:00``. If such a materialization does not exist for one of those assets,
+              the missing asset(s) will be executed on this tick, to help satisfy the constraint imposed
+              by ``c``. Materializing ``c`` in the same run as those assets will satisfy its
+              required data constraint, and so the sensor will kick off a run for ``c`` alongside
+              whichever upstream assets did not have up-to-date data.
+            * On the next tick, the sensor will see that a run is currently planned which will satisfy that constraint, so no
+              runs will be kicked off.
+
+
     """
     check_valid_name(name)
     check.opt_dict_param(run_tags, "run_tags", key_type=str, value_type=str)

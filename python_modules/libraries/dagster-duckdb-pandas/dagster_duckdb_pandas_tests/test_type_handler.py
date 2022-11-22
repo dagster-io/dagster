@@ -3,8 +3,7 @@ import os
 import duckdb
 import pandas as pd
 import pytest
-from dagster_duckdb.io_manager import build_duckdb_io_manager
-from dagster_duckdb_pandas import DuckDBPandasTypeHandler
+from dagster_duckdb_pandas import duckdb_pandas_io_manager
 
 from dagster import AssetIn, DailyPartitionsDefinition, Out, asset, graph, materialize, op
 from dagster._check import CheckError
@@ -26,9 +25,8 @@ def add_one_to_dataframe():
 
 
 def test_duckdb_io_manager_with_ops(tmp_path):
-    duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
     resource_defs = {
-        "io_manager": duckdb_io_manager.configured(
+        "io_manager": duckdb_pandas_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
@@ -62,9 +60,8 @@ def b_plus_one(b_df: pd.DataFrame):
 
 
 def test_duckdb_io_manager_with_assets(tmp_path):
-    duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
     resource_defs = {
-        "io_manager": duckdb_io_manager.configured(
+        "io_manager": duckdb_pandas_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
@@ -91,9 +88,8 @@ def b_plus_one_columns(b_df: pd.DataFrame):
 
 
 def test_loading_columns(tmp_path):
-    duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
     resource_defs = {
-        "io_manager": duckdb_io_manager.configured(
+        "io_manager": duckdb_pandas_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
@@ -127,9 +123,8 @@ def not_supported():
 
 
 def test_not_supported_type(tmp_path):
-    duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
     resource_defs = {
-        "io_manager": duckdb_io_manager.configured(
+        "io_manager": duckdb_pandas_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
@@ -162,7 +157,7 @@ def daily_partitioned(context):
 
 
 def test_partitioned_asset(tmp_path):
-    duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()]).configured(
+    duckdb_io_manager = duckdb_pandas_io_manager.configured(
         {"database": os.path.join(tmp_path, "unit_test.duckdb")}
     )
     resource_defs = {"io_manager": duckdb_io_manager}

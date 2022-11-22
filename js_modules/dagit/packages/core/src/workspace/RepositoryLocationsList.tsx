@@ -139,7 +139,7 @@ export const RepositoryLocationsList = () => {
     <Table>
       <thead>
         <tr>
-          <th>Repository location</th>
+          <th>Code location</th>
           <th>Status</th>
           <th colSpan={2}>Updated</th>
         </tr>

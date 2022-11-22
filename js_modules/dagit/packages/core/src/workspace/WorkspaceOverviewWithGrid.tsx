@@ -14,6 +14,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {InstanceTabs} from '../instance/InstanceTabs';
 
 import {DagsterRepoOption, useRepositoryOptions} from './WorkspaceContext';
 import {buildRepoAddress} from './buildRepoAddress';
@@ -74,7 +75,7 @@ export const WorkspaceOverviewWithGrid = () => {
 
   return (
     <Page>
-      <PageHeader title={<Heading>Workspace</Heading>} />
+      <PageHeader title={<Heading>Deployment</Heading>} tabs={<InstanceTabs tab="workspace" />} />
       {content()}
     </Page>
   );

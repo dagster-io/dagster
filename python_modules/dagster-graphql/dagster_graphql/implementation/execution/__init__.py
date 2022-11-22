@@ -171,6 +171,12 @@ async def gen_events_for_run(
     record = records[0]
     run = record.pipeline_run
 
+    dont_send_past_records = False
+    # special sigil cursor that signals to start watching for updates only after the current point in time
+    if after_cursor == "HEAD":
+        dont_send_past_records = True
+        after_cursor = None
+
     chunk_size = get_chunk_size()
     # load the existing events in chunks
     has_more = True
@@ -182,15 +188,16 @@ async def gen_events_for_run(
             cursor=after_cursor,
             limit=chunk_size,
         )
-        yield GraphenePipelineRunLogsSubscriptionSuccess(
-            run=GrapheneRun(record),
-            messages=[
-                from_event_record(record.event_log_entry, run.pipeline_name)
-                for record in connection.records
-            ],
-            hasMorePastEvents=connection.has_more,
-            cursor=connection.cursor,
-        )
+        if not dont_send_past_records:
+            yield GraphenePipelineRunLogsSubscriptionSuccess(
+                run=GrapheneRun(record),
+                messages=[
+                    from_event_record(record.event_log_entry, run.pipeline_name)
+                    for record in connection.records
+                ],
+                hasMorePastEvents=connection.has_more,
+                cursor=connection.cursor,
+            )
         has_more = connection.has_more
         after_cursor = connection.cursor
 

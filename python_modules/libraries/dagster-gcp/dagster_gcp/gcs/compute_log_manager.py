@@ -46,7 +46,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         json_credentials_envvar (Optional[str]): Env variable that contain the JSON with a private key
             and other credentials information. If this is set GOOGLE_APPLICATION_CREDENTIALS will be ignored.
             Can be used when the private key cannot be used as a file.
-        upload_interval: (Optional[int]): Interval in seconds to upload partial log files to S3. By default, will only upload when the capture is complete.
+        upload_interval: (Optional[int]): Interval in seconds to upload partial log files to GCS. By default, will only upload when the capture is complete.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.
     """
@@ -61,7 +61,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         upload_interval=None,
     ):
         self._bucket_name = check.str_param(bucket, "bucket")
-        self._prefix = check.str_param(prefix, "prefix")
+        self._prefix = self._clean_prefix(check.str_param(prefix, "prefix"))
 
         if json_credentials_envvar:
             json_info_str = os.environ.get(json_credentials_envvar)
@@ -111,6 +111,10 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
     @property
     def upload_interval(self) -> Optional[int]:
         return self._upload_interval if self._upload_interval else None
+
+    def _clean_prefix(self, prefix):
+        parts = prefix.split("/")
+        return "/".join([part for part in parts if part])
 
     def _gcs_key(self, log_key, io_type, partial=False):
         check.inst_param(io_type, "io_type", ComputeIOType)

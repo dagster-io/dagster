@@ -13,6 +13,7 @@ from dagster import (
     daily_partitioned_config,
     graph,
     job,
+    mem_io_manager,
     op,
     resource,
 )
@@ -380,3 +381,21 @@ def test_retries_exceeded():
             0
         ].event_specific_data.error_display_string
     )
+
+
+def test_execute_in_process_defaults_override():
+    # pylint: disable=comparison-with-callable
+    @op
+    def some_op(context):
+        assert context.job_def.resource_defs["io_manager"] == mem_io_manager
+
+    @graph
+    def some_graph():
+        some_op()
+
+    # Ensure that from every execute_in_process entrypoint, the default io manager is overridden with mem_io_manager
+    some_graph.execute_in_process()
+
+    some_graph.to_job().execute_in_process()
+
+    some_graph.alias("hello").execute_in_process()

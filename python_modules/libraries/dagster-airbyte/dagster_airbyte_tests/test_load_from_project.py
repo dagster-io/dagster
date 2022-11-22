@@ -14,10 +14,10 @@ from .utils import get_project_connection_json, get_project_job_json
 @pytest.mark.parametrize("connection_to_group_fn", [None, lambda x: f"{x[0]}_group"])
 @pytest.mark.parametrize("filter_connection", [None, "filter_fn", "dirs"])
 @pytest.mark.parametrize(
-    "connection_to_asset_key", [None, lambda conn, name: AssetKey([f"{conn.name[0]}_{name}"])]
+    "connection_to_asset_key_fn", [None, lambda conn, name: AssetKey([f"{conn.name[0]}_{name}"])]
 )
 def test_load_from_project(
-    use_normalization_tables, connection_to_group_fn, filter_connection, connection_to_asset_key
+    use_normalization_tables, connection_to_group_fn, filter_connection, connection_to_asset_key_fn
 ):
 
     ab_resource = airbyte_resource(
@@ -38,7 +38,7 @@ def test_load_from_project(
             connection_directories=["github_snowflake_ben"]
             if filter_connection == "dirs"
             else None,
-            connection_to_asset_key=connection_to_asset_key,
+            connection_to_asset_key_fn=connection_to_asset_key_fn,
         )
     else:
         ab_cacheable_assets = load_assets_from_airbyte_project(
@@ -48,7 +48,7 @@ def test_load_from_project(
             connection_directories=["github_snowflake_ben"]
             if filter_connection == "dirs"
             else None,
-            connection_to_asset_key=connection_to_asset_key,
+            connection_to_asset_key_fn=connection_to_asset_key_fn,
         )
     ab_assets = ab_cacheable_assets.build_definitions(ab_cacheable_assets.compute_cacheable_data())
 
@@ -62,9 +62,9 @@ def test_load_from_project(
         else set()
     )
 
-    if connection_to_asset_key:
+    if connection_to_asset_key_fn:
         tables = {
-            connection_to_asset_key(
+            connection_to_asset_key_fn(
                 AirbyteConnectionMetadata(
                     "Github <> snowflake-ben", "", use_normalization_tables, []
                 ),

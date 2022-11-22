@@ -22,6 +22,7 @@ from ...implementation.fetch_assets import (
     get_asset_node_definition_collisions,
     get_asset_nodes,
     get_assets,
+    unique_repos,
 )
 from ...implementation.fetch_backfills import get_backfill, get_backfills
 from ...implementation.fetch_instigators import (
@@ -593,12 +594,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         if repo is not None:
             repos = [repo]
         else:
-            repos = []
-            used = set()
-            for node in results:
-                if not node.external_repository.name in used:
-                    used.add(node.external_repository.name)
-                    repos.append(node.external_repository)
+            repos = unique_repos(result.external_repository for result in results)
 
         projected_logical_version_loader = ProjectedLogicalVersionLoader(
             instance=graphene_info.context.instance,

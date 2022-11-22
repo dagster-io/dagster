@@ -23,8 +23,8 @@ scaffold_repository_command_help_text = (
 
 scaffold_command_help_text = (
     "Create a folder structure with a single Dagster repository and other files such as "
-    "workspace.yaml, in the current directory. This CLI enables you to quickly start building "
-    "a new Dagster project with everything set up."
+    "workspace.yaml, in the target directory set by the --name option. This CLI enables "
+    "you to quickly start building a new Dagster project with everything set up."
 )
 
 from_example_command_help_text = (

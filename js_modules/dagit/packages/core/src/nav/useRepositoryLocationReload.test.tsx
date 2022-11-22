@@ -220,7 +220,7 @@ describe('useRepositoryReloadLocation', () => {
       }),
     };
 
-    // Set an error on the repository location and use the `LOADED` state from the
+    // Set an error on the code location and use the `LOADED` state from the
     // default mocks to end polling.
     rerender(
       <TestProvider apolloProps={{mocks: [defaultMocks, mocksWithError]}}>

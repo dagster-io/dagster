@@ -134,7 +134,7 @@ const RelatedAssetsTag: React.FC<{relatedAssets: string[]}> = ({relatedAssets}) 
     const key = relatedAssets[0];
     return (
       <Tag icon="asset">
-        Asset: <Link to={`/instance/assets/${key}`}>{key}</Link>
+        Asset: <Link to={`/assets/${key}`}>{key}</Link>
       </Tag>
     );
   }
@@ -161,11 +161,7 @@ const RelatedAssetsTag: React.FC<{relatedAssets: string[]}> = ({relatedAssets}) 
               {relatedAssets.map((key) => (
                 <tr key={key}>
                   <td>
-                    <Link
-                      key={key}
-                      to={`/instance/assets/${key}`}
-                      style={{wordBreak: 'break-word'}}
-                    >
+                    <Link key={key} to={`/assets/${key}`} style={{wordBreak: 'break-word'}}>
                       {key}
                     </Link>
                   </td>

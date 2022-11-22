@@ -14,6 +14,7 @@ import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {Version} from '../versions/Version';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -74,6 +75,19 @@ export const AssetNodeDefinition: React.FC<{
               maxHeight={260}
             />
           </Box>
+          {assetNode.opVersion && (
+            <>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+              >
+                <Subheading>Code version</Subheading>
+              </Box>
+              <Box padding={{vertical: 16, horizontal: 24}} flex={{gap: 12, alignItems: 'center'}}>
+                <Version>{assetNode.opVersion}</Version>
+              </Box>
+            </>
+          )}
           {liveDataForNode?.freshnessPolicy && (
             <>
               <Box
@@ -257,6 +271,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     description
     graphName
     opNames
+    opVersion
     jobNames
     partitionDefinition {
       description

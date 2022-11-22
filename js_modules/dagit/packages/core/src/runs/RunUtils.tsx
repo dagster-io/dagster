@@ -37,7 +37,7 @@ export function linkToRunEvent(
   run: {runId: string},
   event: {timestamp?: string; stepKey: string | null},
 ) {
-  return `/instance/runs/${run.runId}?${qs.stringify({
+  return `/runs/${run.runId}?${qs.stringify({
     focusedTime: event.timestamp ? Number(event.timestamp) : undefined,
     selection: event.stepKey,
     logs: `step:${event.stepKey}`,
@@ -74,7 +74,7 @@ export function handleLaunchResult(
   }
 
   if (result.__typename === 'LaunchRunSuccess') {
-    const pathname = `/instance/runs/${result.run.runId}`;
+    const pathname = `/runs/${result.run.runId}`;
     const search = options.preserveQuerystring ? history.location.search : '';
     const openInNewTab = () => window.open(history.createHref({pathname, search}), '_blank');
     const openInSameTab = () => history.push({pathname, search});

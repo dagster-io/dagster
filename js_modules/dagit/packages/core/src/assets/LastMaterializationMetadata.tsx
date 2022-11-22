@@ -50,9 +50,7 @@ export const LatestMaterializationMetadata: React.FC<{
               <div>
                 <Box>
                   {'Run '}
-                  <Link
-                    to={`/instance/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}
-                  >
+                  <Link to={`/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}>
                     <Mono>{titleForRun({runId: latestEvent.runId})}</Mono>
                   </Link>
                 </Box>

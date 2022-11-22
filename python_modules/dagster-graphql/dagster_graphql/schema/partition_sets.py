@@ -308,9 +308,19 @@ class GraphenePartitionDefinitionType(graphene.Enum):
             )
 
 
+class GrapheneDimensionDefinitionType(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    description = graphene.NonNull(graphene.String)
+    type = graphene.NonNull(GraphenePartitionDefinitionType)
+
+    class Meta:
+        name = "DimensionDefinitionType"
+
+
 class GraphenePartitionDefinition(graphene.ObjectType):
     description = graphene.NonNull(graphene.String)
     type = graphene.NonNull(GraphenePartitionDefinitionType)
+    dimensionTypes = non_null_list(GrapheneDimensionDefinitionType)
 
     class Meta:
         name = "PartitionDefinition"
@@ -319,6 +329,18 @@ class GraphenePartitionDefinition(graphene.ObjectType):
         super().__init__(
             description=str(partition_def_data.get_partitions_definition()),
             type=GraphenePartitionDefinitionType.from_partition_def_data(partition_def_data),
+            dimensionTypes=[
+                GrapheneDimensionDefinitionType(
+                    name=dim.name,
+                    description=str(dim.external_partitions_def_data.get_partitions_definition()),
+                    type=GraphenePartitionDefinitionType.from_partition_def_data(
+                        dim.external_partitions_def_data
+                    ),
+                )
+                for dim in partition_def_data.external_partition_dimension_definitions
+            ]
+            if isinstance(partition_def_data, ExternalMultiPartitionsDefinitionData)
+            else [],
         )
 
 

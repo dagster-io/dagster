@@ -1,6 +1,10 @@
+from dagster_graphql.schema.logs.log_level import GrapheneLogLevel
+
 import dagster._check as check
+from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.host_representation import InstigatorSelector
+from dagster._core.log_manager import DAGSTER_META_KEY
 from dagster._core.scheduler.instigation import InstigatorStatus
 
 from .utils import capture_error
@@ -63,3 +67,24 @@ def get_instigator_state_or_error(graphene_info, selector):
         return GrapheneInstigationStateNotFoundError(selector.name)
 
     return GrapheneInstigationState(current_state)
+
+
+def get_tick_log_events(graphene_info, tick):
+    from ..schema.instigation import GrapheneInstigationEvent, GrapheneInstigationEventConnection
+
+    if not tick.log_key:
+        return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)
+
+    records = get_instigation_log_records(graphene_info.context.instance, tick.log_key)
+    return GrapheneInstigationEventConnection(
+        events=[
+            GrapheneInstigationEvent(
+                message=record_dict[DAGSTER_META_KEY]["orig_message"],
+                level=GrapheneLogLevel.from_level(record_dict["levelno"]),
+                timestamp=int(record_dict["created"] * 1000),
+            )
+            for record_dict in records
+        ],
+        cursor=None,
+        hasMore=False,
+    )

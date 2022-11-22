@@ -1,17 +1,18 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, FontFamily, Box, CaptionMono, Caption} from '@dagster-io/ui';
+import {Colors, Icon, FontFamily, Box, CaptionMono, Caption, Spinner} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
-import {NodeHighlightColors} from '../graph/OpNode';
+import {isAssetLate} from '../assets/CurrentMinutesLateTag';
+import {isAssetStale} from '../assets/StaleTag';
 import {OpTags} from '../graph/OpTags';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 import {AssetLatestRunSpinner, AssetLatestRunWithNotices, AssetRunLink} from './AssetRunLinking';
-import {LiveDataForNode, MISSING_LIVE_DATA} from './Utils';
+import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_ANNOTATIONS_MAX_WIDTH, ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
 
@@ -131,18 +132,27 @@ export const AssetNodeStatusRow: React.FC<{
   liveData: LiveDataForNode | undefined;
   stepKey: string;
 }> = ({definition, liveData, stepKey}) => {
-  const {
-    currentLogicalVersion,
-    projectedLogicalVersion,
-    lastMaterialization,
-    runWhichFailedToMaterialize,
-  } = liveData || MISSING_LIVE_DATA;
-
   if (definition.isSource) {
     return <span />;
   }
 
-  if (runWhichFailedToMaterialize) {
+  if (!liveData) {
+    return (
+      <Box
+        padding={{horizontal: 8}}
+        style={{borderBottomLeftRadius: 4, borderBottomRightRadius: 4, height: 24}}
+        flex={{justifyContent: 'space-between', alignItems: 'center'}}
+        background={Colors.Gray100}
+      >
+        <Spinner purpose="caption-text" />
+      </Box>
+    );
+  }
+
+  const {lastMaterialization, runWhichFailedToMaterialize} = liveData;
+  const late = isAssetLate(liveData);
+
+  if (runWhichFailedToMaterialize || late) {
     return (
       <Box
         padding={{horizontal: 8}}
@@ -150,10 +160,13 @@ export const AssetNodeStatusRow: React.FC<{
         flex={{justifyContent: 'space-between', alignItems: 'center'}}
         background={Colors.Red50}
       >
-        <Caption color={Colors.Red700}>Failed</Caption>
+        <Caption color={Colors.Red700}>
+          {runWhichFailedToMaterialize && late ? `Failed (Late)` : late ? 'Late' : 'Failed'}
+        </Caption>
       </Box>
     );
   }
+
   if (!lastMaterialization) {
     return (
       <Box
@@ -167,7 +180,7 @@ export const AssetNodeStatusRow: React.FC<{
     );
   }
 
-  if (currentLogicalVersion !== projectedLogicalVersion) {
+  if (isAssetStale(liveData)) {
     return (
       <Box
         padding={{horizontal: 8}}
@@ -179,10 +192,11 @@ export const AssetNodeStatusRow: React.FC<{
       </Box>
     );
   }
+
   return (
     <Box
       padding={{horizontal: 8}}
-      style={{borderBottomLeftRadius: 4, borderBottomRightRadius: 4, height: 24}}
+      style={{borderBottomLeftRadius: 7, borderBottomRightRadius: 7, height: 24}}
       flex={{justifyContent: 'space-between', alignItems: 'center'}}
       background={Colors.Green50}
     >
@@ -218,20 +232,20 @@ export const AssetNodeMinimal: React.FC<{
           $selected={selected}
           $isSource={isSource}
           $background={
-            liveData?.runWhichFailedToMaterialize
+            liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
               ? Colors.Red50
               : !liveData?.lastMaterialization
               ? Colors.Gray100
-              : liveData?.currentLogicalVersion !== liveData?.projectedLogicalVersion
+              : isAssetStale(liveData)
               ? Colors.Yellow50
               : Colors.Green50
           }
           $border={
-            liveData?.runWhichFailedToMaterialize
+            liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
               ? Colors.Red500
               : !liveData?.lastMaterialization
               ? Colors.Gray500
-              : liveData?.currentLogicalVersion !== liveData?.projectedLogicalVersion
+              : isAssetStale(liveData)
               ? Colors.Yellow500
               : Colors.Green500
           }
@@ -292,11 +306,12 @@ export const ASSET_NODE_FRAGMENT = gql`
     opVersion
     description
     computeKind
+    isPartitioned
+    isObservable
     isSource
     assetKey {
       path
     }
-    isObservable
   }
 `;
 
@@ -316,11 +331,16 @@ const AssetNodeShowOnHover = styled.span`
 export const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
   ${(p) =>
     p.$isSource
-      ? `border: 2px dashed ${p.$selected ? Colors.Gray500 : Colors.Gray300};`
-      : `border: 2px solid ${p.$selected ? Colors.Blue500 : Colors.Blue200};`}
+      ? `border: 2px dashed ${p.$selected ? Colors.Gray600 : Colors.Gray300}`
+      : `border: 2px solid ${p.$selected ? Colors.Blue500 : Colors.Blue200}`};
+
+  ${(p) =>
+    p.$isSource
+      ? `outline: 3px solid ${p.$selected ? Colors.Gray300 : 'transparent'}`
+      : `outline: 3px solid ${p.$selected ? Colors.Blue200 : 'transparent'}`};
 
   background: ${Colors.White};
-  border-radius: 5px;
+  border-radius: 8px;
   position: relative;
   &:hover {
     box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
@@ -335,17 +355,13 @@ const Name = styled.div<{$isSource: boolean}>`
   padding: 3px 6px;
   background: ${(p) => (p.$isSource ? Colors.Gray100 : Colors.Blue50)};
   font-family: ${FontFamily.monospace};
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;
+  border-top-left-radius: 7px;
+  border-top-right-radius: 7px;
   font-weight: 600;
   gap: 4px;
 `;
 
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
-  outline: ${(p) => (p.$selected ? `2px dashed ${NodeHighlightColors.Border}` : 'none')};
-  border-radius: 12px;
-  outline-offset: 2px;
-  outline-width: 4px;
   height: 100%;
 `;
 
@@ -358,8 +374,14 @@ const MinimalAssetNodeBox = styled.div<{
   background: ${(p) => p.$background};
   ${(p) =>
     p.$isSource
-      ? `border: 4px dashed ${p.$selected ? Colors.Gray500 : p.$border};`
-      : `border: 4px solid ${p.$selected ? Colors.Blue500 : p.$border};`}
+      ? `border: 4px dashed ${p.$selected ? Colors.Gray500 : p.$border}`
+      : `border: 4px solid ${p.$selected ? Colors.Blue500 : p.$border}`};
+
+  ${(p) =>
+    p.$isSource
+      ? `outline: 8px solid ${p.$selected ? Colors.Gray300 : 'transparent'}`
+      : `outline: 8px solid ${p.$selected ? Colors.Blue200 : 'transparent'}`};
+
   border-radius: 10px;
   position: relative;
   padding: 4px;
@@ -387,12 +409,14 @@ const Description = styled.div`
   text-overflow: ellipsis;
   color: ${Colors.Gray700};
   border-top: 1px solid ${Colors.Blue50};
+  background: ${Colors.White};
   font-size: 12px;
 `;
 
 const Stats = styled.div`
   padding: 4px 8px;
   border-top: 1px solid ${Colors.Blue50};
+  background: ${Colors.White};
   font-size: 12px;
   line-height: 20px;
 `;

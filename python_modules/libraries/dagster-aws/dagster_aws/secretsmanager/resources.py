@@ -1,5 +1,7 @@
 from contextlib import contextmanager
 
+from dagster_aws.utils import BOTO3_SESSION_CONFIG
+
 from dagster import Array, Field, Noneable
 from dagster import _check as check
 from dagster import resource
@@ -8,28 +10,8 @@ from dagster._utils.merger import merge_dicts
 
 from .secrets import construct_secretsmanager_client, get_secrets_from_arns, get_tagged_secrets
 
-SECRETSMANAGER_SESSION_CONFIG = {
-    "region_name": Field(
-        str,
-        description="Specifies a custom region for the SecretsManager session",
-        is_required=False,
-    ),
-    "max_attempts": Field(
-        int,
-        description="This provides Boto3's retry handler with a value of maximum retry attempts, "
-        "where the initial call counts toward the max_attempts value that you provide",
-        is_required=False,
-        default_value=5,
-    ),
-    "profile_name": Field(
-        str,
-        description="Specifies a profile to connect that session",
-        is_required=False,
-    ),
-}
 
-
-@resource(SECRETSMANAGER_SESSION_CONFIG)
+@resource(BOTO3_SESSION_CONFIG)
 def secretsmanager_resource(context):
     """Resource that gives access to AWS SecretsManager.
 
@@ -94,7 +76,7 @@ def secretsmanager_resource(context):
 
 @resource(
     merge_dicts(
-        SECRETSMANAGER_SESSION_CONFIG,
+        BOTO3_SESSION_CONFIG,
         {
             "secrets": Field(
                 Array(str),

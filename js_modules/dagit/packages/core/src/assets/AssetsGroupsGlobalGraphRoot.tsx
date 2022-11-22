@@ -33,7 +33,7 @@ export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
   const onChangeExplorerPath = React.useCallback(
     (path: ExplorerPath, mode: 'push' | 'replace') => {
       history[mode](
-        `/instance/asset-groups${explorerPathToString({...path, pipelineName: __GLOBAL__}).replace(
+        `/asset-groups${explorerPathToString({...path, pipelineName: __GLOBAL__}).replace(
           __GLOBAL__,
           '',
         )}`,
@@ -84,3 +84,7 @@ export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
     </Page>
   );
 };
+
+// Imported via React.lazy, which requires a default export.
+// eslint-disable-next-line import/no-default-export
+export default AssetsGroupsGlobalGraphRoot;

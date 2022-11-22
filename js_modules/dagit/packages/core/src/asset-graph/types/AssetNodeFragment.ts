@@ -21,7 +21,8 @@ export interface AssetNodeFragment {
   opVersion: string | null;
   description: string | null;
   computeKind: string | null;
+  isPartitioned: boolean;
+  isObservable: boolean;
   isSource: boolean;
   assetKey: AssetNodeFragment_assetKey;
-  isObservable: boolean;
 }

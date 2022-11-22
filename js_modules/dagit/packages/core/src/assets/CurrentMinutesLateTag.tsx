@@ -9,6 +9,9 @@ import {humanCronString} from '../schedules/humanCronString';
 const STALE_OVERDUE_MSG = `A materialization incorporating more recent upstream data is overdue.`;
 const STALE_UNMATERIALIZED_MSG = `This asset has never been materialized.`;
 
+export const isAssetLate = (liveData?: LiveDataForNode) =>
+  liveData?.freshnessInfo && (liveData?.freshnessInfo.currentMinutesLate || 0) > 0;
+
 export const CurrentMinutesLateTag: React.FC<{
   liveData: LiveDataForNode;
   policyOnHover?: boolean;

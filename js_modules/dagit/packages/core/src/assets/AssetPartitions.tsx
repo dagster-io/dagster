@@ -36,12 +36,13 @@ interface Props {
 export const AssetPartitions: React.FC<Props> = ({
   assetKey,
   assetPartitionNames,
+  assetLastMaterializedAt,
   params,
   setParams,
   liveData,
 }) => {
-  const [assetHealth] = usePartitionHealthData([assetKey]);
-  const [ranges, setRanges] = usePartitionDimensionRanges(assetHealth, assetPartitionNames, 'view');
+  const [assetHealth] = usePartitionHealthData([assetKey], assetLastMaterializedAt);
+  const [ranges, setRanges] = usePartitionDimensionRanges(assetHealth, assetPartitionNames);
 
   const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
     PartitionState.MISSING,
@@ -134,7 +135,7 @@ export const AssetPartitions: React.FC<Props> = ({
         {ranges.map((range, idx) => (
           <Box
             key={range.dimension.name}
-            style={{display: 'flex', flex: 1, paddingRight: 1}}
+            style={{display: 'flex', flex: 1, paddingRight: 1, minWidth: 200}}
             flex={{direction: 'column'}}
             border={{side: 'right', color: Colors.KeylineGray, width: 1}}
             background={Colors.Gray50}
@@ -179,7 +180,7 @@ export const AssetPartitions: React.FC<Props> = ({
           </Box>
         ))}
 
-        <Box style={{flex: 3}} flex={{direction: 'column'}}>
+        <Box style={{flex: 3, minWidth: 0}} flex={{direction: 'column'}}>
           {params.partition && focusedDimensionKeys.length === ranges.length ? (
             <AssetPartitionDetailLoader assetKey={assetKey} partitionKey={params.partition} />
           ) : (
