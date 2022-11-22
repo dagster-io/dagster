@@ -76,28 +76,23 @@ WORKSPACE_CLI_ARGS = (
 import tomli
 
 
-class PyProjectFile:
-    def __init__(self, data: dict):
-        self._data = data
+def get_target_from_toml(path) -> Optional[PackageTarget]:
+    with open(path, "rb") as f:
+        data = tomli.load(f)
+        if not isinstance(data, dict):
+            return None
 
-    @staticmethod
-    def from_path(path: str) -> "PyProjectFile":
-        with open(path, "rb") as f:
-            return PyProjectFile(tomli.load(f))
-
-    def has_dagster_tool_block(self) -> bool:
-        return bool("dagster" in self._data.get("tool", {}))
-
-    def get_dagster_tool_block(self) -> dict:
-        return self._data.get("tool", {}).get("dagster", {})
-
-
-def get_dagster_tool_pyproject_block(path: str) -> Optional[dict]:
-    project_file = PyProjectFile.from_path(path)
-    if not project_file.has_dagster_tool_block():
-        return None
-
-    return project_file.get_dagster_tool_block()
+        dagster_block = data.get("tool", {}).get("dagster", {})
+        return (
+            PackageTarget(
+                package_name=dagster_block["python_package"],
+                attribute=None,
+                working_directory=os.getcwd(),
+                location_name=None,
+            )
+            if "python_package" in dagster_block
+            else None
+        )
 
 
 def get_workspace_load_target(kwargs: Mapping[str, str]):
@@ -106,14 +101,9 @@ def get_workspace_load_target(kwargs: Mapping[str, str]):
         if kwargs.get("empty_workspace"):
             return EmptyWorkspaceTarget()
         if os.path.exists("pyproject.toml"):
-            dagster_tool_block = get_dagster_tool_pyproject_block("pyproject.toml")
-            if dagster_tool_block and "python_package" in dagster_tool_block:
-                return PackageTarget(
-                    package_name=dagster_tool_block["python_package"],
-                    attribute=None,
-                    working_directory=os.getcwd(),
-                    location_name=None,
-                )
+            target = get_target_from_toml("pyproject.toml")
+            if target:
+                return target
 
         if os.path.exists("workspace.yaml"):
             return WorkspaceFileTarget(paths=["workspace.yaml"])
