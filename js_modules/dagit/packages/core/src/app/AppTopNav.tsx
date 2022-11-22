@@ -51,6 +51,7 @@ export const AppTopNav: React.FC<Props> = ({
         title: 'runs',
         element: (
           <ShortcutHandler
+            key="runs"
             onShortcut={() => history.push('/runs')}
             shortcutLabel="⌥2"
             shortcutFilter={(e) => e.altKey && e.code === 'Digit2'}
@@ -65,6 +66,7 @@ export const AppTopNav: React.FC<Props> = ({
         title: 'assets',
         element: (
           <ShortcutHandler
+            key="assets"
             onShortcut={() => history.push('/assets')}
             shortcutLabel="⌥3"
             shortcutFilter={(e) => e.altKey && e.code === 'Digit3'}
@@ -76,28 +78,13 @@ export const AppTopNav: React.FC<Props> = ({
         ),
       },
       {
-        title: 'workspace',
-        element: (
-          <ShortcutHandler
-            key="workspace"
-            onShortcut={() => history.push('/workspace')}
-            shortcutLabel="⌥4"
-            shortcutFilter={(e) => e.altKey && e.code === 'Digit4'}
-          >
-            <TopNavLink to="/workspace" data-cy="AppTopNav_WorkspaceLink">
-              Workspace
-            </TopNavLink>
-          </ShortcutHandler>
-        ),
-      },
-      {
         title: 'deployment',
         element: (
           <ShortcutHandler
             key="deployment"
             onShortcut={() => history.push('/code-locations')}
-            shortcutLabel="⌥5"
-            shortcutFilter={(e) => e.altKey && e.code === 'Digit5'}
+            shortcutLabel="⌥4"
+            shortcutFilter={(e) => e.altKey && e.code === 'Digit4'}
           >
             <TopNavLink
               to="/code-locations"
@@ -106,6 +93,7 @@ export const AppTopNav: React.FC<Props> = ({
                 const {pathname} = location;
                 return (
                   pathname.startsWith('/code-locations') ||
+                  pathname.startsWith('/workspace') ||
                   pathname.startsWith('/health') ||
                   pathname.startsWith('/config')
                 );
@@ -126,10 +114,8 @@ export const AppTopNav: React.FC<Props> = ({
     <AppTopNavContainer>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
         <AppTopNavLogo />
-        <Box margin={{left: 8}}>
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
-            {getNavLinks ? getNavLinks(navLinks()) : navLinks().map((link) => link.element)}
-          </Box>
+        <Box margin={{left: 8}} flex={{direction: 'row', alignItems: 'center', gap: 16}}>
+          {getNavLinks ? getNavLinks(navLinks()) : navLinks().map((link) => link.element)}
         </Box>
         {rightOfSearchBar}
       </Box>
