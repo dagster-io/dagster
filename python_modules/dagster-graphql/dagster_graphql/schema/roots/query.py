@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, Sequence
 
 import graphene
 from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata

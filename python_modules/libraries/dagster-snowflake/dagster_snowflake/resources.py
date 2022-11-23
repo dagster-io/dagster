@@ -203,7 +203,7 @@ class SnowflakeConnection:
 
         """
         check.sequence_param(sql_queries, "sql_queries", of_type=str)
-        check.opt_dict_param(parameters, "parameters")
+        check.inst_param(parameters, "parameters", (list, dict))
         check.bool_param(fetch_results, "fetch_results")
 
         if use_pandas_result:

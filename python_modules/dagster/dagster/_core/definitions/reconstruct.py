@@ -9,7 +9,6 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
-    FrozenSet,
     List,
     Mapping,
     NamedTuple,
