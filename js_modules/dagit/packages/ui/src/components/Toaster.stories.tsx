@@ -23,7 +23,7 @@ export const Sizes = () => {
         onClick={() =>
           SharedToaster.show({
             intent: Intent.NONE,
-            message: 'Repository location reloaded',
+            message: 'Code location reloaded',
             timeout: 300000,
             icon: 'done',
           })

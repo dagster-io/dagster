@@ -41,12 +41,12 @@ def simple(_):
     mode_defs=[
         ModeDefinition(
             name="default",
-            executor_defs=default_executors + [dask_executor],
+            executor_defs=[*default_executors, dask_executor],
         ),
         ModeDefinition(
             name="filesystem",
             resource_defs={"io_manager": fs_io_manager},
-            executor_defs=default_executors + [dask_executor],
+            executor_defs=[*default_executors, dask_executor],
         ),
     ]
 )
@@ -76,7 +76,7 @@ def dask_composite_pipeline():
         mode_defs=[
             ModeDefinition(
                 resource_defs={"io_manager": fs_io_manager},
-                executor_defs=default_executors + [dask_executor],
+                executor_defs=[*default_executors, dask_executor],
             )
         ],
     )
@@ -103,7 +103,7 @@ def pandas_solid(_, df):  # pylint: disable=unused-argument
     mode_defs=[
         ModeDefinition(
             resource_defs={"io_manager": fs_io_manager},
-            executor_defs=default_executors + [dask_executor],
+            executor_defs=[*default_executors, dask_executor],
         )
     ]
 )
@@ -142,7 +142,7 @@ def dask_solid(_, df):  # pylint: disable=unused-argument
     mode_defs=[
         ModeDefinition(
             resource_defs={"io_manager": fs_io_manager},
-            executor_defs=default_executors + [dask_executor],
+            executor_defs=[*default_executors, dask_executor],
         )
     ]
 )
@@ -201,7 +201,7 @@ def sleepy_dask_solid(_, df):  # pylint: disable=unused-argument
     mode_defs=[
         ModeDefinition(
             resource_defs={"io_manager": fs_io_manager},
-            executor_defs=default_executors + [dask_executor],
+            executor_defs=[*default_executors, dask_executor],
         )
     ]
 )
@@ -290,7 +290,7 @@ class BasicVersionStrategy(VersionStrategy):
     mode_defs=[
         ModeDefinition(
             resource_defs={"io_manager": fs_io_manager},
-            executor_defs=default_executors + [dask_executor],
+            executor_defs=[*default_executors, dask_executor],
         )
     ],
     version_strategy=BasicVersionStrategy(),

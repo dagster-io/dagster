@@ -75,12 +75,12 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
     {
       text: 'Definition',
       pathComponent: '',
-      href: `/instance/snapshots/${explorerPathString}`,
+      href: `/snapshots/${explorerPathString}`,
     },
     {
       text: 'Runs',
       pathComponent: 'runs',
-      href: `/instance/snapshots/${explorerPathString}runs`,
+      href: `/snapshots/${explorerPathString}runs`,
     },
   ];
 

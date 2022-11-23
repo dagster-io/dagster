@@ -637,7 +637,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
 
     @property
     def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
-        return cast(Dict[str, CodePointer], self._repository_code_pointer_dict)
+        return cast(Mapping[str, CodePointer], self._repository_code_pointer_dict)
 
     @property
     def executable_path(self) -> Optional[str]:

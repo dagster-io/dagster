@@ -57,13 +57,13 @@ export const StepSummaryForRun = (props: Props) => {
         : '';
       return (
         <Caption color={Colors.Gray500}>
-          Failed at <Link to={`/instance/runs/${runId}${query}`}>{step.stepKey}</Link>
+          Failed at <Link to={`/runs/${runId}${query}`}>{step.stepKey}</Link>
         </Caption>
       );
     }
     return (
       <Caption color={Colors.Gray500}>
-        Failed at <Link to={`/instance/runs/${runId}`}>{stepCount} steps</Link>
+        Failed at <Link to={`/runs/${runId}`}>{stepCount} steps</Link>
       </Caption>
     );
   }
@@ -76,13 +76,13 @@ export const StepSummaryForRun = (props: Props) => {
         : '';
       return (
         <Caption color={Colors.Gray500}>
-          In progress at <Link to={`/instance/runs/${runId}${query}`}>{step.stepKey}</Link>
+          In progress at <Link to={`/runs/${runId}${query}`}>{step.stepKey}</Link>
         </Caption>
       );
     }
     return (
       <Caption color={Colors.Gray500}>
-        In progress at <Link to={`/instance/runs/${runId}`}>{stepCount} steps</Link>
+        In progress at <Link to={`/runs/${runId}`}>{stepCount} steps</Link>
       </Caption>
     );
   }

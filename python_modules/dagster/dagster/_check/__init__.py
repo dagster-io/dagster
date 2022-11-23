@@ -1380,38 +1380,13 @@ def tuple_param(
     return _check_tuple_items(obj, of_type, of_shape)
 
 
-@overload
 def opt_tuple_param(
     obj: object,
     param_name: str,
-    default: Tuple,
-    of_type: Optional[TypeOrTupleOfTypes] = ...,
-    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
-    additional_message: Optional[str] = ...,
-) -> Tuple:
-    ...
-
-
-@overload
-def opt_tuple_param(
-    obj: object,
-    param_name: str,
-    default: None = ...,
-    of_type: TypeOrTupleOfTypes = ...,
-    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
-    additional_message: Optional[str] = None,
-) -> Optional[Tuple]:
-    ...
-
-
-def opt_tuple_param(
-    obj: object,
-    param_name: str,
-    default: Optional[Tuple] = None,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
     additional_message: Optional[str] = None,
-) -> Optional[Tuple]:
+) -> Tuple[Any, ...]:
     """Ensure optional param is a tuple and is of a specified type. `default` is returned if `obj`
     is None. `of_type` defines a variadic tuple type-- `obj` may be of any length, but each element
     must match the `of_type` argmument. `of_shape` defines a fixed-length tuple type-- each element
@@ -1421,8 +1396,8 @@ def opt_tuple_param(
     if obj is not None and not isinstance(obj, tuple):
         raise _param_type_mismatch_exception(obj, tuple, param_name, additional_message)
 
-    if obj is None:
-        return default
+    if not obj:
+        return tuple()
 
     if of_type is None and of_shape is None:
         return obj

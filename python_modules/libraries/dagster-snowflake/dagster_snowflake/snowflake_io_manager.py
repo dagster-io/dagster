@@ -95,6 +95,7 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
             "schema": Field(
                 StringSource, description="Name of the schema to use", is_required=False
             ),
+            "role": Field(StringSource, description="Name of the role to use", is_required=False),
         }
     )
     def snowflake_io_manager():
@@ -154,4 +155,6 @@ def _time_window_where_clause(table_partition: TablePartition) -> str:
     start_dt, end_dt = table_partition.time_window
     start_dt_str = start_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
-    return f"""WHERE {table_partition.partition_expr} BETWEEN '{start_dt_str}' AND '{end_dt_str}'"""
+    # Snowflake BETWEEN is inclusive; start <= partition expr <= end. We don't want to remove the next partition so we instead
+    # write this as start <= partition expr < end.
+    return f"""WHERE {table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""

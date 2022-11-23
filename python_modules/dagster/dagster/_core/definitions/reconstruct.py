@@ -6,11 +6,13 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Callable,
     FrozenSet,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
+    Tuple,
     Union,
     overload,
 )
@@ -353,7 +355,7 @@ class ReconstructablePipeline(
 ReconstructableJob = ReconstructablePipeline
 
 
-def reconstructable(target):
+def reconstructable(target: Callable[..., "PipelineDefinition"]) -> ReconstructablePipeline:
     """
     Create a :py:class:`~dagster._core.definitions.reconstructable.ReconstructablePipeline` from a
     function that returns a :py:class:`~dagster.PipelineDefinition`/:py:class:`~dagster.JobDefinition`,
@@ -449,7 +451,7 @@ def reconstructable(target):
         if (
             hasattr(target, "__module__")
             and hasattr(target, "__name__")
-            and inspect.getmodule(target).__name__ != "__main__"
+            and check.not_none(inspect.getmodule(target)).__name__ != "__main__"
         ):
             return ReconstructablePipeline.for_module(target.__module__, target.__name__)
     except:
@@ -472,12 +474,12 @@ def reconstructable(target):
 
 @experimental
 def build_reconstructable_job(
-    reconstructor_module_name,
-    reconstructor_function_name,
-    reconstructable_args=None,
-    reconstructable_kwargs=None,
-    reconstructor_working_directory=None,
-):
+    reconstructor_module_name: str,
+    reconstructor_function_name: str,
+    reconstructable_args: Optional[Tuple[object]] = None,
+    reconstructable_kwargs: Optional[Mapping[str, object]] = None,
+    reconstructor_working_directory: Optional[str] = None,
+) -> ReconstructablePipeline:
     """
     Create a :py:class:`dagster._core.definitions.reconstructable.ReconstructablePipeline`.
 
@@ -546,11 +548,13 @@ def build_reconstructable_job(
         reconstructor_working_directory, "reconstructor_working_directory", os.getcwd()
     )
 
-    reconstructable_args = list(check.opt_tuple_param(reconstructable_args, "reconstructable_args"))
-    reconstructable_kwargs = list(
+    _reconstructable_args = list(
+        check.opt_tuple_param(reconstructable_args, "reconstructable_args")
+    )
+    _reconstructable_kwargs = list(
         (
             [key, value]
-            for key, value in check.opt_dict_param(
+            for key, value in check.opt_mapping_param(
                 reconstructable_kwargs, "reconstructable_kwargs", key_type=str
             ).items()
         )
@@ -562,7 +566,7 @@ def build_reconstructable_job(
         working_directory=reconstructor_working_directory,
     )
 
-    pointer = CustomPointer(reconstructor_pointer, reconstructable_args, reconstructable_kwargs)
+    pointer = CustomPointer(reconstructor_pointer, _reconstructable_args, _reconstructable_kwargs)
 
     pipeline_def = pipeline_def_from_pointer(pointer)
 
@@ -712,11 +716,11 @@ def repository_def_from_target_def(
         RepositoryDefinition,
     )
 
-    # special case - we can wrap a single pipeline in a repository
     if isinstance(target, Definitions):
         # reassign to handle both repository and pending repo case
         target = target.get_inner_repository()
 
+    # special case - we can wrap a single pipeline in a repository
     if isinstance(target, (PipelineDefinition, GraphDefinition)):
         # consider including pipeline name in generated repo name
         return RepositoryDefinition(
