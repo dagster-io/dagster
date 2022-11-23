@@ -21,7 +21,6 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
-from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._utils.backcompat import ExperimentalWarning
 
@@ -51,6 +50,7 @@ class AssetOutputInfo(
             ("partitions_fn", Callable[["OutputContext"], Optional[AbstractSet[str]]]),
             ("partitions_def", Optional["PartitionsDefinition"]),
             ("is_required", bool),
+            ("code_version", Optional[str]),
         ],
     )
 ):
@@ -63,6 +63,7 @@ class AssetOutputInfo(
             for this asset.
         partitions_def (PartitionsDefinition, optional): Defines the set of valid partitions
             for this asset.
+        code_version (Optional[str], optional): The version of the code that generates this asset.
     """
 
     def __new__(
@@ -71,6 +72,7 @@ class AssetOutputInfo(
         partitions_fn: Optional[Callable[["OutputContext"], Optional[AbstractSet[str]]]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         is_required: bool = True,
+        code_version: Optional[str] = None,
     ):
         return super().__new__(
             cls,
@@ -78,6 +80,7 @@ class AssetOutputInfo(
             partitions_fn=check.opt_callable_param(partitions_fn, "partitions_fn", lambda _: None),
             partitions_def=partitions_def,
             is_required=is_required,
+            code_version=code_version,
         )
 
 
@@ -423,6 +426,7 @@ def _asset_mappings_for_node(
                     key=output_key,
                     partitions_fn=output_def.get_asset_partitions,
                     partitions_def=output_def.asset_partitions_def,
+                    code_version=output_def.code_version,
                 )
                 # assume output depends on all inputs
                 asset_deps[output_key] = input_asset_keys
@@ -723,10 +727,11 @@ class AssetLayer:
         assets_def = self.assets_defs_by_key.get(asset_key)
         return False if assets_def is None else isinstance(assets_def.node_def, GraphDefinition)
 
-    def op_version_for_asset(self, asset_key: AssetKey) -> Optional[str]:
+    def code_version_for_asset(self, asset_key: AssetKey) -> Optional[str]:
         assets_def = self.assets_defs_by_key.get(asset_key)
-        if assets_def is not None and isinstance(assets_def.node_def, OpDefinition):
-            return assets_def.node_def.version
+        if assets_def is not None:
+            output_name = assets_def.get_output_name_for_asset_key(asset_key)
+            return assets_def.node_def.output_def_named(output_name).code_version
         else:
             return None
 

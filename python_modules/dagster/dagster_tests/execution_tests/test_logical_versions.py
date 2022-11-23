@@ -16,12 +16,18 @@ from dagster import (
 )
 from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
+
 from dagster._core.definitions.events import AssetKey, Output
 from dagster._core.definitions.logical_version import (
     CODE_VERSION_TAG_KEY,
     INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX,
     LOGICAL_VERSION_TAG_KEY,
+    CODE_VERSION_TAG_KEY,
+    LOGICAL_VERSION_TAG_KEY,
+    LogicalVersion,
+    compute_logical_version,
 )
+
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 
 # ########################
@@ -70,6 +76,16 @@ def get_upstream_version_from_mat_provenance(
 def get_version_from_mat(mat: AssetMaterialization) -> str:
     assert mat.tags
     return mat.tags[LOGICAL_VERSION_TAG_KEY]
+
+
+def assert_logical_version(mat: AssetMaterialization, version: LogicalVersion) -> None:
+    assert mat.tags
+    assert mat.tags[LOGICAL_VERSION_TAG_KEY] == version.value
+
+
+def assert_code_version(mat: AssetMaterialization, version: str) -> None:
+    assert mat.tags
+    assert mat.tags[CODE_VERSION_TAG_KEY] == version
 
 
 def assert_same_versions(
@@ -333,3 +349,21 @@ def test_multi_asset():
     mat_b_2 = mats_2[AssetKey("b")]
     assert_provenance_match(mat_b_2, mat_a_2)
     assert_provenance_no_match(mat_b_2, mat_a_1)
+
+def test_multiple_code_versions():
+    @multi_asset(
+        outs={
+            "alpha": AssetOut(code_version="a"),
+            "beta": AssetOut(code_version="b"),
+        }
+    )
+    def alpha_beta():
+        yield Output(1, "alpha")
+        yield Output(2, "beta")
+
+    alpha_mat, beta_mat = materialize_assets([alpha_beta], DagsterInstance.ephemeral())
+
+    assert_logical_version(alpha_mat, compute_logical_version("a", {}))
+    assert_code_version(alpha_mat, "a")
+    assert_logical_version(beta_mat, compute_logical_version("b", {}))
+    assert_code_version(beta_mat, "b")
