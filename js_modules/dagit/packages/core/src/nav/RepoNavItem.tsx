@@ -37,7 +37,7 @@ export const RepoNavItem: React.FC<Props> = (props) => {
 
   const summary = () => {
     if (allRepos.length === 0) {
-      return <span style={{color: Colors.Gray700}}>No repositories</span>;
+      return <span style={{color: Colors.Gray700}}>No definitions</span>;
     }
     if (allRepos.length === 1) {
       return <SingleRepoSummary repo={allRepos[0]} onlyRepo />;
@@ -69,7 +69,7 @@ export const RepoNavItem: React.FC<Props> = (props) => {
               style={{width: 'auto'}}
               onClose={() => setOpen(false)}
             >
-              <DialogHeader icon="repo" label="Repositories" />
+              <DialogHeader icon="repo" label="Definitions" />
               <RepoSelector
                 options={allRepos}
                 onBrowse={() => setOpen(false)}

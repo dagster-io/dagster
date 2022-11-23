@@ -284,7 +284,7 @@ function usePipelineAvailabilityErrorForRun(
       // Only the repo is a match.
       return {
         icon: 'warning',
-        tooltip: `The workspace version of "${run.pipelineName}" may be different than the one used for the original run.`,
+        tooltip: `The loaded version of "${run.pipelineName}" may be different than the one used for the original run.`,
         disabled: false,
       };
     }
@@ -333,7 +333,7 @@ function usePipelineAvailabilityErrorForRun(
 
   const tooltip = (
     <Group direction="column" spacing={8}>
-      <div>{`"${run.pipelineName}" is not available in the current workspace.`}</div>
+      <div>{`"${run.pipelineName}" is not available in the your definitions.`}</div>
       {repoForRun && repoLocationForRun ? (
         <div>{`Load definitions for ${buildRepoPath(
           repoForRun,

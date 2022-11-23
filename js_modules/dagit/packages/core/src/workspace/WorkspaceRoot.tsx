@@ -57,7 +57,7 @@ const RepoRouteContainer = () => {
       repo.repositoryLocation.name === addressForPath.location,
   );
 
-  // If we don't have any active repositories, or if our active repo does not match
+  // If we don't have any active code locations, or if our active repo does not match
   // the repo path in the URL, it means we aren't able to load this repo.
   if (!matchingRepo) {
     return (
