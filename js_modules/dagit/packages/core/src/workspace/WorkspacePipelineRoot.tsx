@@ -17,7 +17,7 @@ export const WorkspacePipelineRoot = () => {
   const params = useParams<{pipelinePath: string}>();
   const {pipelinePath} = params;
 
-  const entireMatch = useRouteMatch(['/workspace/pipelines/(/?.*)', '/workspace/jobs/(/?.*)']);
+  const entireMatch = useRouteMatch(['/locations/pipelines/(/?.*)', '/locations/jobs/(/?.*)']);
   const location = useLocation();
 
   const toAppend = entireMatch!.params[0];
