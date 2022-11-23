@@ -38,6 +38,24 @@ def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry
 
 # end_asset_sensor_marker
 
+# start_freshness_policy_sensor_marker
+
+from dagster import freshness_policy_sensor, FreshnessPolicySensorEvaluationContext
+
+
+@freshness_policy_sensor(asset_selection=AssetSelection.all())
+def my_freshness_alerting_sensor(context: FreshnessPolicySensorEvaluationContext):
+    if context.current_minutes_late is None or context.previous_minutes_late is None:
+        return
+
+    if context.current_minutes_late >= 10 and context.previous_minutes_late < 10:
+        send_alert(f"Asset with key {context.asset_key} is now more than 10 minutes late.")
+    elif context.current_minutes_late == 0 and context.previous_minutes_late != 0:
+        send_alert(f"Asset with key {context.asset_key} is now on time.")
+
+
+# end_freshness_policy_sensor_marker
+
 
 # start_multi_asset_sensor_marker
 
@@ -173,9 +191,7 @@ def trigger_daily_asset_if_both_upstream_partitions_materialized(context):
         materializations_by_asset,
     ) in context.latest_materialization_records_by_partition_and_asset().items():
         if set(materializations_by_asset.keys()) == set(context.asset_keys):
-            run_requests.append(
-                downstream_daily_job.run_request_for_partition(partition)
-            )
+            run_requests.append(downstream_daily_job.run_request_for_partition(partition))
             for asset_key, materialization in materializations_by_asset.items():
                 context.advance_cursor({asset_key: materialization})
     return run_requests
@@ -201,9 +217,7 @@ def trigger_daily_asset_when_any_upstream_partitions_have_new_materializations(c
                 for asset_key in context.asset_keys
             ]
         ):
-            run_requests.append(
-                downstream_daily_job.run_request_for_partition(partition)
-            )
+            run_requests.append(downstream_daily_job.run_request_for_partition(partition))
             for asset_key, materialization in materializations_by_asset.items():
                 if asset_key in context.asset_keys:
                     context.advance_cursor({asset_key: materialization})
