@@ -533,10 +533,6 @@ class AssetsDefinition(ResourceAddable):
         return self._partitions_def
 
     @property
-    def is_versioned(self) -> bool:
-        return self.op.version is not None
-
-    @property
     def metadata_by_key(self):
         return self._metadata_by_key
 

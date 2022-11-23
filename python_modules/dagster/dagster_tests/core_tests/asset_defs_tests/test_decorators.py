@@ -266,13 +266,13 @@ def test_asset_with_dagster_type():
     assert my_asset.op.output_defs[0].dagster_type.display_name == "String"
 
 
-def test_asset_with_op_version():
-    @asset(op_version="foo")
+def test_asset_with_code_version():
+    @asset(code_version="foo")
     def my_asset(arg1):
         return arg1
 
-    assert my_asset.is_versioned
     assert my_asset.op.version == "foo"
+    assert my_asset.op.output_def_named("result").code_version == "foo"
 
 
 def test_asset_with_key_prefix():
