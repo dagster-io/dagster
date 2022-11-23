@@ -595,6 +595,7 @@ def bootstrap_standalone_recon_pipeline(pointer):
 def _check_is_loadable(definition):
     from dagster._core.definitions import AssetGroup
 
+    from .definitions_class import Definitions
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
     from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
@@ -607,6 +608,7 @@ def _check_is_loadable(definition):
             PendingRepositoryDefinition,
             GraphDefinition,
             AssetGroup,
+            Definitions,
         ),
     ):
         raise DagsterInvariantViolationError(
@@ -704,13 +706,19 @@ def repository_def_from_target_def(
 ) -> Optional["RepositoryDefinition"]:
     from dagster._core.definitions import AssetGroup
 
+    from .definitions_class import Definitions
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
     from .repository_definition import (
+        SINGLETON_REPOSITORY_NAME,
         CachingRepositoryData,
         PendingRepositoryDefinition,
         RepositoryDefinition,
     )
+
+    if isinstance(target, Definitions):
+        # reassign to handle both repository and pending repo case
+        target = target.get_inner_repository()
 
     # special case - we can wrap a single pipeline in a repository
     if isinstance(target, (PipelineDefinition, GraphDefinition)):
@@ -721,7 +729,8 @@ def repository_def_from_target_def(
         )
     elif isinstance(target, AssetGroup):
         return RepositoryDefinition(
-            name="__repository__", repository_data=CachingRepositoryData.from_list([target])
+            name=SINGLETON_REPOSITORY_NAME,
+            repository_data=CachingRepositoryData.from_list([target]),
         )
     elif isinstance(target, RepositoryDefinition):
         return target
