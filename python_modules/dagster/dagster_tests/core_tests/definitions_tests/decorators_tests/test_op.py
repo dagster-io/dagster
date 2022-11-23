@@ -369,7 +369,7 @@ def test_op_multiout_incorrect_annotation():
 
         @op(out={"a": Out(), "b": Out()})
         def _incorrect_annotation_op() -> int:
-            pass
+            return 1
 
 
 def test_op_typing_annotations():
@@ -413,7 +413,7 @@ def test_op_multiout_size_mismatch():
 
         @op(out={"a": Out(), "b": Out()})
         def _basic_multiout_wrong_annotation() -> Tuple[int, int, int]:
-            pass
+            return (5, 5, 5)
 
 
 # Document what happens when someone tries to use type annotations with Output
@@ -737,7 +737,7 @@ def test_generic_output_op():
 
     @op
     def the_op_bad_type_match() -> Output[int]:
-        return Output("foo")
+        return Output("foo")  # type: ignore
 
     with pytest.raises(
         DagsterTypeCheckDidNotPass,
@@ -807,7 +807,7 @@ def test_generic_output_tuple_op():
 
     @op(out={"out1": Out(), "out2": Out()})
     def the_op_bad_type_match() -> Tuple[Output[str], Output[int]]:
-        return (Output("foo"), Output("foo"))
+        return (Output("foo"), Output("foo"))  # type: ignore
 
     with pytest.raises(
         DagsterTypeCheckDidNotPass,
@@ -844,7 +844,7 @@ def test_generic_output_tuple_complex_types():
 def test_generic_output_name_mismatch():
     @op(out={"out1": Out(), "out2": Out()})
     def the_op() -> Tuple[Output[int], Output[str]]:
-        return (Output("foo", output_name="out2"), Output(42, output_name="out1"))
+        return Output(42, output_name="out2"), Output("foo", output_name="out1")
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -885,7 +885,7 @@ def test_generic_dynamic_output_type_mismatch():
     def basic() -> List[DynamicOutput[int]]:
         return [
             DynamicOutput(mapping_key="1", value=1),
-            DynamicOutput(mapping_key="2", value="2"),
+            DynamicOutput(mapping_key="2", value="2"),  # type: ignore
         ]
 
     with pytest.raises(
@@ -936,7 +936,7 @@ def test_generic_dynamic_output_mix_with_regular_type_mismatch():
             Output(5),
             [
                 DynamicOutput(mapping_key="1", value="foo"),
-                DynamicOutput(mapping_key="2", value=5),
+                DynamicOutput(mapping_key="2", value=5),  # type: ignore
             ],
         )
 
@@ -1019,7 +1019,7 @@ def test_generic_dynamic_output_bare():
     ):
 
         @op
-        def basic() -> DynamicOutput:
+        def basic() -> DynamicOutput:  # type: ignore
             pass
 
     with pytest.raises(
@@ -1030,7 +1030,7 @@ def test_generic_dynamic_output_bare():
     ):
 
         @op
-        def another_basic() -> DynamicOutput[int]:
+        def another_basic() -> DynamicOutput[int]:  # type: ignore
             pass
 
 
@@ -1166,7 +1166,7 @@ def test_required_io_manager_op_access():
 def test_dynamic_output_bad_list_entry():
     @op
     def basic() -> List[DynamicOutput[int]]:
-        return ["foo"]
+        return ["foo"]  # type: ignore
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -1182,7 +1182,7 @@ def test_dynamic_output_bad_list_entry():
 
     @op(out={"out1": Out(), "out2": DynamicOut()})
     def basic_multi_output() -> Tuple[Output[int], List[DynamicOutput[str]]]:
-        return (5, ["foo"])
+        return (5, ["foo"])  # type: ignore
 
     with pytest.raises(
         DagsterInvariantViolationError,
