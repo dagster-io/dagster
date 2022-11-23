@@ -5,6 +5,7 @@ import * as React from 'react';
 import {usePermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useViewport} from '../gantt/useViewport';
+import {DagsterTag} from '../runs/RunTag';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -21,6 +22,7 @@ import {
   PartitionsStatusQuery,
   PartitionsStatusQueryVariables,
 } from './types/PartitionsStatusQuery';
+import {PartitionRuns} from './useMatrixData';
 import {usePartitionStepQuery} from './usePartitionStepQuery';
 
 type PartitionStatus = PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses_results;
@@ -59,6 +61,30 @@ export const OpJobPartitionsView: React.FC<{
   );
 };
 
+export function usePartitionDurations(partitions: PartitionRuns[]) {
+  const stepDurationData: {[name: string]: {[key: string]: (number | undefined)[]}} = {};
+  const runDurationData: {[name: string]: number | undefined} = {};
+
+  partitions.forEach((p) => {
+    if (!p.runsLoaded || p.runs.length === 0) {
+      return;
+    }
+    const sortedRuns = p.runs.sort((a, b) => a.startTime || 0 - (b.startTime || 0));
+    const lastRun = sortedRuns[sortedRuns.length - 1];
+    stepDurationData[p.name] = {};
+    runDurationData[p.name] =
+      lastRun?.endTime && lastRun?.startTime ? lastRun.endTime - lastRun.startTime : undefined;
+
+    lastRun.stepStats.forEach((s) => {
+      stepDurationData[p.name][s.stepKey] = [
+        s.endTime && s.startTime ? s.endTime - s.startTime : undefined,
+      ];
+    });
+  });
+
+  return {runDurationData, stepDurationData};
+}
+
 const OpJobPartitionsViewContent: React.FC<{
   partitionNames: string[];
   partitionSet: PartitionsStatusQuery_partitionSetOrError_PartitionSet;
@@ -77,6 +103,7 @@ const OpJobPartitionsViewContent: React.FC<{
 
   const partitions = usePartitionStepQuery(
     partitionSet.name,
+    DagsterTag.Partition,
     partitionNames,
     pageSize,
     [],
@@ -103,20 +130,12 @@ const OpJobPartitionsViewContent: React.FC<{
     : partitionNames;
 
   const runDurationData: {[name: string]: number | undefined} = {};
+  const stepDurationData = usePartitionDurations(partitions).stepDurationData;
 
-  const stepDurationData: {[name: string]: {[key: string]: (number | undefined)[]}} = {};
-  partitions.forEach((p) => {
-    if (!p.runsLoaded || p.runs.length === 0) {
-      return;
-    }
-    const lastRun = p.runs[p.runs.length - 1];
-    stepDurationData[p.name] = {};
-    lastRun.stepStats.forEach((s) => {
-      stepDurationData[p.name][s.stepKey] = [
-        s.endTime && s.startTime ? s.endTime - s.startTime : undefined,
-      ];
-    });
-  });
+  // Note: This view reads "run duration" from the `partitionStatusesOrError` GraphQL API,
+  // rather than looking at the duration of the most recent run returned in `partitions` above
+  // so that the latter can be loaded when you click "Show per-step status" only.
+
   const statusData: {[name: string]: PartitionState} = {};
   (partitionSet.partitionStatusesOrError.__typename === 'PartitionStatuses'
     ? partitionSet.partitionStatusesOrError.results
