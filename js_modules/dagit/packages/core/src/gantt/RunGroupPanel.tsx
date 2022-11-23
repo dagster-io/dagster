@@ -99,11 +99,7 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
       <>
         {runs.map((g, idx) =>
           g ? (
-            <RunGroupRun
-              key={g.runId}
-              to={`/instance/runs/${g.runId}`}
-              selected={g.runId === runId}
-            >
+            <RunGroupRun key={g.runId} to={`/runs/${g.runId}`} selected={g.runId === runId}>
               {idx < runs.length - 1 && <ThinLine style={{height: 36}} />}
               <Box padding={{top: 4}}>
                 <RunStatusIndicator status={g.status} />

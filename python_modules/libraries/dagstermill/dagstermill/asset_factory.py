@@ -1,4 +1,5 @@
 import os
+import pickle
 import sys
 import tempfile
 import uuid
@@ -14,10 +15,12 @@ import dagster._check as check
 from dagster import (
     AssetIn,
     AssetKey,
+    Failure,
     Output,
     PartitionsDefinition,
     ResourceDefinition,
     RetryPolicy,
+    RetryRequested,
     asset,
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
@@ -101,7 +104,21 @@ def _dm_compute(
                 f"Notebook execution complete for {name} at {executed_notebook_path}."
             )
             with open(executed_notebook_path, "rb") as fd:
-                return Output(fd.read())
+                yield Output(fd.read())
+
+            # deferred import for perf
+            import scrapbook
+
+            output_nb = scrapbook.read_notebook(executed_notebook_path)
+
+            for key, value in output_nb.scraps.items():
+                if key.startswith("event-"):
+                    with open(value.data, "rb") as fd:
+                        event = pickle.loads(fd.read())
+                        if isinstance(event, (Failure, RetryRequested)):
+                            raise event
+                        else:
+                            yield event
 
     return _t_fn
 

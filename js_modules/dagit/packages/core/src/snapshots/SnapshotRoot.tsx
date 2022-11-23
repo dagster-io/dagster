@@ -26,13 +26,17 @@ export const SnapshotRoot = () => {
     >
       <SnapshotNav activeTab={tab} explorerPath={explorerPath} />
       <Switch>
-        <Route path="/instance/snapshots/:pipelinePath/runs">
+        <Route path="/snapshots/:pipelinePath/runs">
           <PipelineRunsRoot />
         </Route>
-        <Route path="/instance/snapshots/(/?.*)">
+        <Route path="/snapshots/(/?.*)">
           <PipelineExplorerSnapshotRoot />
         </Route>
       </Switch>
     </div>
   );
 };
+
+// Imported via React.lazy, which requires a default export.
+// eslint-disable-next-line import/no-default-export
+export default SnapshotRoot;

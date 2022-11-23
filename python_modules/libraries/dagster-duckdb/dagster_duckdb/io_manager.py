@@ -148,4 +148,4 @@ def _time_window_where_clause(table_partition: TablePartition) -> str:
     start_dt, end_dt = table_partition.time_window
     start_dt_str = start_dt.strftime(DUCKDB_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(DUCKDB_DATETIME_FORMAT)
-    return f"""WHERE {table_partition.partition_expr} BETWEEN '{start_dt_str}' AND '{end_dt_str}'"""
+    return f"""WHERE {table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""

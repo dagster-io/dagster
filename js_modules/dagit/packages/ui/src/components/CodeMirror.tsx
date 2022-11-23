@@ -1,14 +1,16 @@
 import 'codemirror/lib/codemirror.css';
 
-import './configeditor/codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
-
 import * as React from 'react';
 import {Controlled, UnControlled as Uncontrolled} from 'react-codemirror2';
 import {createGlobalStyle} from 'styled-components/macro';
 
 import {Colors} from './Colors';
 import {Icons} from './Icon';
+import {registerYaml} from './configeditor/codemirror-yaml/mode';
 import {FontFamily} from './styles';
+
+// Explicitly register YAML to ensure that the YAML import is bundled correctly.
+registerYaml();
 
 export const DagitCodeMirrorStyle = createGlobalStyle`
   .react-codemirror2 .CodeMirror {

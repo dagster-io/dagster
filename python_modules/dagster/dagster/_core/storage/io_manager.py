@@ -74,7 +74,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         )
 
     @property
-    def input_config_schema(self) -> Optional[IDefinitionConfigSchema]:
+    def input_config_schema(self) -> IDefinitionConfigSchema:
         return self._input_config_schema
 
     @property

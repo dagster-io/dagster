@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 def sync_get_streaming_external_notebook_data_grpc(
     api_client: "DagsterGrpcClient", notebook_path: str
-) -> object:
+) -> bytes:
     from dagster._grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)

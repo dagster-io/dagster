@@ -1,5 +1,5 @@
 import os
-from typing import Mapping, NamedTuple, Optional, Sequence
+from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
 import yaml
 
@@ -9,23 +9,23 @@ from dagster._serdes import ConfigurableClassData, class_from_code_pointer, whit
 from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
 
 
-def compute_logs_directory(base):
+def compute_logs_directory(base: str) -> str:
     return os.path.join(base, "storage")
 
 
-def _runs_directory(base):
+def _runs_directory(base: str) -> str:
     return os.path.join(base, "history", "")
 
 
-def _event_logs_directory(base):
+def _event_logs_directory(base: str) -> str:
     return os.path.join(base, "history", "runs", "")
 
 
-def _schedule_directory(base):
+def _schedule_directory(base: str) -> str:
     return os.path.join(base, "schedules")
 
 
-def configurable_class_data(config_field):
+def configurable_class_data(config_field: Mapping[str, Any]) -> ConfigurableClassData:
     return ConfigurableClassData(
         check.str_elem(config_field, "module"),
         check.str_elem(config_field, "class"),
@@ -33,7 +33,9 @@ def configurable_class_data(config_field):
     )
 
 
-def configurable_class_data_or_default(config_value, field_name, default):
+def configurable_class_data_or_default(
+    config_value: Mapping[str, Any], field_name: str, default: Optional[ConfigurableClassData]
+) -> Optional[ConfigurableClassData]:
     return (
         configurable_class_data(config_value[field_name])
         if config_value.get(field_name)
@@ -41,7 +43,9 @@ def configurable_class_data_or_default(config_value, field_name, default):
     )
 
 
-def configurable_secrets_loader_data(config_field, default) -> Optional[ConfigurableClassData]:
+def configurable_secrets_loader_data(
+    config_field: Mapping[str, Any], default: Optional[ConfigurableClassData]
+) -> Optional[ConfigurableClassData]:
     if not config_field:
         return default
     elif "custom" in config_field:
@@ -50,12 +54,14 @@ def configurable_secrets_loader_data(config_field, default) -> Optional[Configur
         return None
 
 
-def configurable_storage_data(config_field, defaults) -> Sequence[ConfigurableClassData]:
+def configurable_storage_data(
+    config_field: Mapping[str, Any], defaults: Mapping[str, Optional[ConfigurableClassData]]
+) -> Sequence[ConfigurableClassData]:
     if not config_field:
-        storage_data = defaults.get("storage")
-        run_storage_data = defaults.get("run_storage")
-        event_storage_data = defaults.get("event_log_storage")
-        schedule_storage_data = defaults.get("schedule_storage")
+        storage_data = check.not_none(defaults.get("storage"))
+        run_storage_data = check.not_none(defaults.get("run_storage"))
+        event_storage_data = check.not_none(defaults.get("event_log_storage"))
+        schedule_storage_data = check.not_none(defaults.get("schedule_storage"))
     elif "postgres" in config_field:
         config_yaml = yaml.dump(config_field["postgres"], default_flow_style=False)
         storage_data = ConfigurableClassData(
@@ -233,7 +239,7 @@ class InstanceRef(
         )
 
     @staticmethod
-    def config_defaults(base_dir):
+    def config_defaults(base_dir: str) -> Mapping[str, Optional[ConfigurableClassData]]:
         default_run_storage_data = ConfigurableClassData(
             "dagster._core.storage.runs",
             "SqliteRunStorage",
@@ -491,10 +497,10 @@ class InstanceRef(
         )
 
     @property
-    def custom_instance_class_config(self):
+    def custom_instance_class_config(self) -> Mapping[str, Any]:
         return (
             self.custom_instance_class_data.config_dict if self.custom_instance_class_data else {}
         )
 
-    def to_dict(self):
+    def to_dict(self) -> Mapping[str, Any]:
         return self._asdict()

@@ -89,4 +89,4 @@ class DagsterSetApi:
         return create_typed_runtime_set(inner_type)
 
 
-Set = DagsterSetApi()
+Set: DagsterSetApi = DagsterSetApi()

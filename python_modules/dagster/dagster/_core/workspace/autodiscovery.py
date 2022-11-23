@@ -66,7 +66,7 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
         symbol = loadable_defs[0].attribute
         if symbol != "defs":
             raise DagsterInvariantViolationError(
-                f"Found Definitions object at {symbol}. Must at set to 'defs'."
+                f"Found Definitions object at {symbol}. This object must be at a top-level variable named 'defs'."
             )
 
         return loadable_defs

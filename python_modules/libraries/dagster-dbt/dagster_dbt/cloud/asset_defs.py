@@ -309,7 +309,11 @@ def load_assets_from_dbt_cloud_job(
     job_id: int,
 ) -> CacheableAssetsDefinition:
     """
-    Loads a set of assets from a dbt Cloud job.
+    Loads a set of dbt models, managed by a dbt Cloud job, into Dagster assets. In order to
+    determine the set of dbt models, the project is compiled to generate the necessary artifacts
+    that define the dbt models and their dependencies.
+
+    One Dagster asset is created for each dbt model.
 
     Args:
         dbt_cloud (ResourceDefinition): The dbt Cloud resource to use to connect to the dbt Cloud API.
@@ -317,6 +321,31 @@ def load_assets_from_dbt_cloud_job(
 
     Returns:
         CacheableAssetsDefinition: A definition for the loaded assets.
+
+    Examples:
+
+    .. code-block:: python
+
+        from dagster import repository
+        from dagster_dbt import dbt_cloud_resource, load_assets_from_dbt_cloud_job
+
+        DBT_CLOUD_JOB_ID = 1234
+
+        dbt_cloud = dbt_cloud_resource.configured(
+            {
+                "auth_token": {"env": "DBT_CLOUD_API_TOKEN"},
+                "account_id": {"env": "DBT_CLOUD_ACCOUNT_ID"},
+            }
+        )
+
+        dbt_cloud_assets = load_assets_from_dbt_cloud_job(
+            dbt_cloud=dbt_cloud, job_id=DBT_CLOUD_JOB_ID
+        )
+
+
+        @repository
+        def dbt_cloud_sandbox():
+            return [dbt_cloud_assets]
     """
 
     return DbtCloudCacheableAssetsDefinition(

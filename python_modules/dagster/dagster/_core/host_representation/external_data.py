@@ -712,7 +712,7 @@ class ExternalPartitionConfigData(
 class ExternalPartitionTagsData(
     NamedTuple("_ExternalPartitionTagsData", [("name", str), ("tags", Mapping[str, object])])
 ):
-    def __new__(cls, name: str, tags: Optional[Mapping[str, object]] = None):
+    def __new__(cls, name: str, tags: Optional[Mapping[str, str]] = None):
         return super(ExternalPartitionTagsData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -727,7 +727,7 @@ class ExternalPartitionExecutionParamData(
         [("name", str), ("tags", Mapping[str, object]), ("run_config", Mapping[str, object])],
     )
 ):
-    def __new__(cls, name: str, tags: Mapping[str, object], run_config: Mapping[str, object]):
+    def __new__(cls, name: str, tags: Mapping[str, str], run_config: Mapping[str, object]):
         return super(ExternalPartitionExecutionParamData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),

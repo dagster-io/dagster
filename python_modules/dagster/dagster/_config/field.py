@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union, overload
+from typing import Any, Optional, Union, cast, overload
 
 import dagster._check as check
 from dagster._annotations import public
@@ -14,11 +14,11 @@ from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
 from .field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, all_optional_type
 
 
-def _is_config_type_class(obj):
+def _is_config_type_class(obj) -> bool:
     return isinstance(obj, type) and is_subclass(obj, ConfigType)
 
 
-def helpful_list_error_string():
+def helpful_list_error_string() -> str:
     return "Please use a python list (e.g. [int]) or dagster.Array (e.g. Array(int)) instead."
 
 
@@ -382,7 +382,7 @@ class Field:
         check.invariant(self.default_provided, "Asking for default value when none was provided")
         return serialize_value(self.default_value)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return ("Field({config_type}, default={default}, is_required={is_required})").format(
             config_type=self.config_type,
             default="@"
@@ -392,5 +392,5 @@ class Field:
         )
 
 
-def check_opt_field_param(obj, param_name):
-    return check.opt_inst_param(obj, param_name, Field)
+def check_opt_field_param(obj: object, param_name: str) -> Optional[Field]:
+    return check.opt_inst_param(cast(Optional[Field], obj), param_name, Field)

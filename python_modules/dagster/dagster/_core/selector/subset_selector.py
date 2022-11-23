@@ -346,7 +346,7 @@ class LeafNodeSelection:
 
 def convert_dot_seperated_string_to_dict(
     tree: Dict[str, Any], splits: Sequence[str]
-) -> Mapping[str, Any]:
+) -> Dict[str, Any]:
     # For example:
     # "subgraph.subsubgraph.return_one" => {"subgraph": {"subsubgraph": {"return_one": None}}}
     key = splits[0]

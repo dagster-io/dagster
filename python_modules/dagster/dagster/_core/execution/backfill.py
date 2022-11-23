@@ -70,7 +70,7 @@ class PartitionBackfill(
         status: BulkActionStatus,
         partition_names: Sequence[str],
         from_failure: bool,
-        reexecution_steps: Sequence[str],
+        reexecution_steps: Optional[Sequence[str]],
         tags: Mapping[str, str],
         backfill_timestamp: float,
         last_submitted_partition_name: Optional[str] = None,
