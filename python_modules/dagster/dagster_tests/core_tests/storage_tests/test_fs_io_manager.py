@@ -28,23 +28,22 @@ from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
 
 
 def define_pipeline(io_manager):
-    @solid
-    def solid_a(_context):
+    @op
+    def op_a(_context):
         return [1, 2, 3]
 
-    @solid
-    def solid_b(_context, _df):
+    @op
+    def op_b(_context, _df):
         return 1
 
-    @pipeline(mode_defs=[ModeDefinition("local", resource_defs={"io_manager": io_manager})])
-    def asset_pipeline():
-        solid_b(solid_a())
+    @job(resource_defs={"io_manager": io_manager})
+    def asset_job():
+        op_b(op_a())
 
-    return asset_pipeline
+    return asset_job
 
 
 def test_fs_io_manager():
@@ -52,13 +51,13 @@ def test_fs_io_manager():
         io_manager = fs_io_manager.configured({"base_dir": tmpdir_path})
         pipeline_def = define_pipeline(io_manager)
 
-        result = execute_pipeline(pipeline_def)
+        result = pipeline_def.execute_in_process()
         assert result.success
 
-        handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.event_list))
+        handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_events))
         assert len(handled_output_events) == 2
 
-        filepath_a = os.path.join(tmpdir_path, result.run_id, "solid_a", "result")
+        filepath_a = os.path.join(tmpdir_path, result.run_id, "op_a", "result")
         result_metadata_entry_a = handled_output_events[0].event_specific_data.metadata_entries[0]
         assert result_metadata_entry_a.label == "path"
         assert result_metadata_entry_a.value == MetadataValue.path(filepath_a)
@@ -66,14 +65,14 @@ def test_fs_io_manager():
         with open(filepath_a, "rb") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]
 
-        loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.event_list))
+        loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.all_events))
         input_metadata_entry_a = loaded_input_events[0].event_specific_data.metadata_entries[0]
         assert input_metadata_entry_a.label == "path"
         assert input_metadata_entry_a.value == MetadataValue.path(filepath_a)
         assert len(loaded_input_events) == 1
-        assert "solid_a" == loaded_input_events[0].event_specific_data.upstream_step_key
+        assert "op_a" == loaded_input_events[0].event_specific_data.upstream_step_key
 
-        filepath_b = os.path.join(tmpdir_path, result.run_id, "solid_b", "result")
+        filepath_b = os.path.join(tmpdir_path, result.run_id, "op_b", "result")
         result_metadata_entry_b = handled_output_events[1].event_specific_data.metadata_entries[0]
         assert result_metadata_entry_b.label == "path"
         assert result_metadata_entry_b.value == MetadataValue.path(filepath_b)
@@ -88,12 +87,12 @@ def test_fs_io_manager_base_dir():
         io_manager = fs_io_manager
         pipeline_def = define_pipeline(io_manager)
 
-        result = execute_pipeline(pipeline_def, instance=instance)
+        result = pipeline_def.execute_in_process(instance=instance)
         assert result.success
-        assert result.result_for_solid("solid_a").output_value() == [1, 2, 3]
+        assert result.output_for_node("op_a") == [1, 2, 3]
 
         with open(
-            os.path.join(instance.storage_directory(), result.run_id, "solid_a", "result"),
+            os.path.join(instance.storage_directory(), result.run_id, "op_a", "result"),
             "rb",
         ) as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]

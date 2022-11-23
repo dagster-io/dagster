@@ -2,11 +2,10 @@ import os
 import tempfile
 from contextlib import contextmanager
 
-from dagster import LocalFileHandle
+from dagster import LocalFileHandle, job, op
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.file_manager import LocalFileManager, local_file_manager
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
 from dagster._utils.temp_file import get_temp_file_handle_with_data
 
 
@@ -35,7 +34,7 @@ def test_basic_file_manager_copy_handle_to_local_temp():
 def test_basic_file_manager_execute():
     called = {}
 
-    @solid(required_resource_keys={"file_manager"})
+    @op(required_resource_keys={"file_manager"})
     def file_handle(context):
         foo_bytes = b"foo"
         file_handle = context.resources.file_manager.write_data(foo_bytes)
@@ -58,14 +57,13 @@ def test_basic_file_manager_execute():
 
         called["yup"] = True
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"file_manager": local_file_manager})])
-    def pipe():
-        return file_handle()
+    @job(resource_defs={"file_manager": local_file_manager})
+    def the_job():
+        file_handle()
 
     with tempfile.TemporaryDirectory() as temp_dir:
 
-        result = execute_pipeline(
-            pipe,
+        result = the_job.execute_in_process(
             run_config={"resources": {"file_manager": {"config": {"base_dir": temp_dir}}}},
         )
         assert result.success
@@ -75,18 +73,18 @@ def test_basic_file_manager_execute():
 def test_basic_file_manager_base_dir():
     called = {}
 
-    @solid(required_resource_keys={"file_manager"})
+    @op(required_resource_keys={"file_manager"})
     def file_handle(context):
         assert context.resources.file_manager.base_dir == os.path.join(
             context.instance.storage_directory(), "file_manager"
         )
         called["yup"] = True
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"file_manager": local_file_manager})])
+    @job(resource_defs={"file_manager": local_file_manager})
     def pipe():
-        return file_handle()
+        file_handle()
 
     with instance_for_test() as instance:
-        result = execute_pipeline(pipe, instance=instance)
+        result = pipe.execute_in_process(instance=instance)
         assert result.success
         assert called["yup"]
