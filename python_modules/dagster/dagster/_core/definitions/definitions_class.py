@@ -80,7 +80,7 @@ class Definitions:
             check.iterable_param(jobs, "jobs", JobDefinition)
 
         if resources:
-            check.mapping_param(resources, "resources", key_type=str, value_type=Any)
+            check.mapping_param(resources, "resources", key_type=str)
 
         resource_defs = coerce_resources_to_defs(resources or {})
 
