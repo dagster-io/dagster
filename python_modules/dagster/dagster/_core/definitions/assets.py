@@ -194,7 +194,7 @@ class AssetsDefinition(ResourceAddable):
             context_param_name = get_function_params(solid_def.compute_fn.decorated_fn)[0].name
             if context_param_name in kwargs:
                 provided_context = _build_invocation_context_with_included_resources(
-                    self, cast(OpExecutionContext, [context_param_name])
+                    self, cast(OpExecutionContext, kwargs[context_param_name])
                 )
                 new_kwargs = dict(kwargs)
                 new_kwargs[context_param_name] = provided_context
