@@ -639,6 +639,7 @@ class AssetLayer:
                     partitions_fn=partitions_fn if assets_def.partitions_def else None,
                     partitions_def=assets_def.partitions_def,
                     is_required=asset_key in assets_def.keys,
+                    code_version=inner_output_def.code_version,
                 )
                 io_manager_by_asset[asset_key] = inner_output_def.io_manager_key
 
