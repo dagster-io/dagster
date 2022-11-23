@@ -96,3 +96,33 @@ def test_hello_world_resource_asset():
 def test_custom_io_manager_key():
     assert "my_custom_io_manager" in custom_io_mgr_key_asset.required_resource_keys
     assert "output_notebook_io_manager" not in custom_io_mgr_key_asset.required_resource_keys
+
+
+@pytest.mark.notebook_test
+def test_error_notebook_saved_asset():
+    result = None
+    recon_pipeline = ReconstructablePipeline.for_module(
+        "dagstermill.examples.repository", "error_notebook_asset_job"
+    )
+
+    with instance_for_test() as instance:
+        try:
+            result = execute_pipeline(
+                recon_pipeline,
+                {},
+                instance=instance,
+                raise_on_error=False,
+            )
+
+            storage_dir = instance.storage_directory()
+            files = os.listdir(storage_dir)
+            notebook_found = (False,)
+            for f in files:
+                if "-out.ipynb" in f:
+                    notebook_found = True
+
+            assert notebook_found
+
+        finally:
+            if result:
+                cleanup_result_notebook(result)
