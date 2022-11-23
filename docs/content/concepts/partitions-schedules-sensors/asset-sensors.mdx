@@ -62,23 +62,18 @@ Currently, freshness policy sensors do not support returning or yielding values 
 Here is an example of a sensor that will send a single alert once an asset is 10 minutes later than its configured policy allows, and a single alert once that asset is on time again.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_freshness_policy_sensor_marker endbefore=end_freshness_policy_sensor_marker
-from dagster import freshness_policy_sensor, FreshnessPolicySensorEvaluationContext
+from dagster import FreshnessPolicySensorEvaluationContext, freshness_policy_sensor
 
 
 @freshness_policy_sensor(asset_selection=AssetSelection.all())
-def my_asset_sensor(context: FreshnessPolicySensorEvaluationContext):
+def my_freshness_alerting_sensor(context: FreshnessPolicySensorEvaluationContext):
     if context.current_minutes_late is None or context.previous_minutes_late is None:
         return
 
     if context.current_minutes_late >= 10 and context.previous_minutes_late < 10:
-        send_alert(
-            f"Asset with key {context.asset_key} is now more than 10 minutes out of date."
-        )
+        send_alert(f"Asset with key {context.asset_key} is now more than 10 minutes late.")
     elif context.current_minutes_late == 0 and context.previous_minutes_late != 0:
-        send_alert(
-            f"Asset with key {context.asset_key} is now on time.
-        )
-
+        send_alert(f"Asset with key {context.asset_key} is now on time.")
 ```
 
 ## Multi-asset sensors (Experimental)
@@ -90,14 +85,14 @@ Multi-asset sensors, which can trigger job executions based on multiple asset ma
 In the body of the sensor, you have access to the materialization event records for each asset via the <PyObject object="MultiAssetSensorEvaluationContext" /> context object. Methods within the context object will search for events after the [cursor](/concepts/partitions-schedules-sensors/sensors#sensor-optimizations-using-cursors).
 
 - <PyObject
-    object="MultiAssetSensorEvaluationContext"
-    method="latest_materialization_records_by_key"
+  object="MultiAssetSensorEvaluationContext"
+  method="latest_materialization_records_by_key"
   /> returns a dictionary mapping the asset key for each monitored asset to the most
   recent materialization record. If there is no materialization event, the mapped
   value will be none.
 - <PyObject
-    object="MultiAssetSensorEvaluationContext"
-    method="materialization_records_for_key"
+  object="MultiAssetSensorEvaluationContext"
+  method="materialization_records_for_key"
   /> returns a list of materialization event records for a specified asset key.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_multi_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
@@ -144,8 +139,8 @@ def asset_a_and_b_sensor_with_skip_reason(context):
 You can use the <PyObject object="MultiAssetSensorEvaluationContext" /> context object to fetch partitioned materializations for each monitored asset.
 
 - <PyObject
-    object="MultiAssetSensorEvaluationContext"
-    method="latest_materialization_records_by_partition"
+  object="MultiAssetSensorEvaluationContext"
+  method="latest_materialization_records_by_partition"
   /> returns an mapping of partition key to the most recent materialization event
   record for that partition. Returns records in order by event ID.
 - If all monitored assets have the same partitions definition, <PyObject
@@ -169,9 +164,7 @@ def trigger_daily_asset_if_both_upstream_partitions_materialized(context):
         materializations_by_asset,
     ) in context.latest_materialization_records_by_partition_and_asset().items():
         if set(materializations_by_asset.keys()) == set(context.asset_keys):
-            run_requests.append(
-                downstream_daily_job.run_request_for_partition(partition)
-            )
+            run_requests.append(downstream_daily_job.run_request_for_partition(partition))
             for asset_key, materialization in materializations_by_asset.items():
                 context.advance_cursor({asset_key: materialization})
     return run_requests
@@ -207,9 +200,7 @@ def trigger_daily_asset_when_any_upstream_partitions_have_new_materializations(c
                 for asset_key in context.asset_keys
             ]
         ):
-            run_requests.append(
-                downstream_daily_job.run_request_for_partition(partition)
-            )
+            run_requests.append(downstream_daily_job.run_request_for_partition(partition))
             for asset_key, materialization in materializations_by_asset.items():
                 if asset_key in context.asset_keys:
                     context.advance_cursor({asset_key: materialization})
@@ -270,8 +261,8 @@ The asset reconciliation sensor will attempt to optimize over all constraints sp
 The following code example monitors an upstream daily-partitioned asset, kicking off materializations of a downstream weekly-partitioned asset whenever a daily partition is materialized and all daily partitions in the week have existing materializations. Every time a daily partition has a new materialization, the weekly partition will materialize.
 
 <PyObject
-  object="MultiAssetSensorEvaluationContext"
-  method="all_partitions_materialized"
+object="MultiAssetSensorEvaluationContext"
+method="all_partitions_materialized"
 /> is a utility method accepts a list of partitions and checks if every provided
 partition has been materialized. This method ignores the cursor, so it searches through
 all existing materializations.
