@@ -77,6 +77,8 @@ class AssetsDefinition(ResourceAddable):
     _selected_asset_keys: AbstractSet[AssetKey]
     _can_subset: bool
     _metadata_by_key: Mapping[AssetKey, MetadataUserInput]
+    _freshness_policies_by_key: Mapping[AssetKey, FreshnessPolicy]
+    _code_versions_by_key: Mapping[AssetKey, Optional[str]]
 
     def __init__(
         self,
@@ -149,16 +151,19 @@ class AssetsDefinition(ResourceAddable):
             self._selected_asset_keys = all_asset_keys
         self._can_subset = can_subset
 
+        self._code_versions_by_key = {}
         self._metadata_by_key = dict(
             check.opt_mapping_param(
                 metadata_by_key, "metadata_by_key", key_type=AssetKey, value_type=dict
             )
         )
         for output_name, asset_key in keys_by_output_name.items():
+            output_def, _ = node_def.resolve_output_to_origin(output_name, None)
             self._metadata_by_key[asset_key] = merge_dicts(
-                node_def.resolve_output_to_origin(output_name, None)[0].metadata,
+                output_def.metadata,
                 self._metadata_by_key.get(asset_key, {}),
             )
+            self._code_versions_by_key[asset_key] = output_def.code_version
         for key, freshness_policy in (freshness_policies_by_key or {}).items():
             check.param_invariant(
                 not (freshness_policy and self._partitions_def),
@@ -535,6 +540,10 @@ class AssetsDefinition(ResourceAddable):
     @property
     def metadata_by_key(self):
         return self._metadata_by_key
+
+    @property
+    def code_versions_by_key(self):
+        return self._code_versions_by_key
 
     @public
     def get_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:

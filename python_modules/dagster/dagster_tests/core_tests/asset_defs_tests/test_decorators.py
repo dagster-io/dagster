@@ -573,6 +573,22 @@ def test_multi_asset_resource_defs():
     )
 
 
+def test_multi_asset_code_versions():
+    @multi_asset(
+        outs={
+            "key1": AssetOut(key=AssetKey("key1"), code_version="foo"),
+            "key2": AssetOut(key=AssetKey("key2"), code_version="bar"),
+        },
+    )
+    def my_asset():
+        pass
+
+    assert my_asset.code_versions_by_key == {
+        AssetKey("key1"): "foo",
+        AssetKey("key2"): "bar",
+    }
+
+
 def test_asset_io_manager_def():
     @io_manager
     def the_manager():

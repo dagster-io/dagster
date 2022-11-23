@@ -731,8 +731,7 @@ class AssetLayer:
     def code_version_for_asset(self, asset_key: AssetKey) -> Optional[str]:
         assets_def = self.assets_defs_by_key.get(asset_key)
         if assets_def is not None:
-            output_name = assets_def.get_output_name_for_asset_key(asset_key)
-            return assets_def.node_def.output_def_named(output_name).code_version
+            return assets_def.code_versions_by_key[asset_key]
         else:
             return None
 
