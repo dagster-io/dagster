@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Any, Dict, List, Sequence
 
 import graphene
 from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
@@ -110,7 +110,7 @@ from ..runs import (
 from ..schedules import GrapheneScheduleOrError, GrapheneSchedulerOrError, GrapheneSchedulesOrError
 from ..sensors import GrapheneSensorOrError, GrapheneSensorsOrError
 from ..tags import GraphenePipelineTagAndValues
-from ..util import non_null_list
+from ..util import HasContext, non_null_list
 from .assets import GrapheneAssetOrError, GrapheneAssetsOrError
 from .execution_plan import GrapheneExecutionPlanOrError
 from .pipeline import GrapheneGraphOrError, GraphenePipelineOrError
@@ -650,16 +650,17 @@ class GrapheneDagitQuery(graphene.ObjectType):
         permissions = graphene_info.context.permissions
         return [GraphenePermission(permission, value) for permission, value in permissions.items()]
 
-    def resolve_assetsLatestInfo(self, graphene_info, **kwargs):
+    def resolve_assetsLatestInfo(self, graphene_info: HasContext, **kwargs: Any):
         asset_keys = set(
-            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys")
+            AssetKey.from_graphql_input(asset_key)
+            for asset_key in check.not_none(kwargs.get("assetKeys"))  # type: ignore
         )
 
         results = get_asset_nodes(graphene_info)
 
         # Filter down to requested asset keys
         # Build mapping of asset key to the step keys required to generate the asset
-        step_keys_by_asset: Dict[AssetKey, List[str]] = {
+        step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {  # type: ignore
             node.external_asset_node.asset_key: node.external_asset_node.op_names
             for node in results
             if node.assetKey in asset_keys

@@ -70,7 +70,9 @@ def _build_airbyte_asset_defn_metadata(
         )
     )
 
-    outputs = {table: AssetKey([*asset_key_prefix, *table_to_asset_key_fn(table).path]) for table in tables}
+    outputs = {
+        table: AssetKey([*asset_key_prefix, *table_to_asset_key_fn(table).path]) for table in tables
+    }
 
     internal_deps: Dict[str, Set[AssetKey]] = {}
 

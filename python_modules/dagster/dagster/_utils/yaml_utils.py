@@ -54,7 +54,9 @@ DagsterRunConfigYamlDumper.remove_implicit_resolver(YAML_TIMESTAMP_TAG)
 DagsterRunConfigYamlDumper.add_representer(str, _octal_string_representer)
 
 
-def load_yaml_from_globs(*globs: str, loader: Type[yaml.SafeLoader]=DagsterRunConfigYamlLoader) -> Mapping[object, object]:
+def load_yaml_from_globs(
+    *globs: str, loader: Type[yaml.SafeLoader] = DagsterRunConfigYamlLoader
+) -> Mapping[object, object]:
     return load_yaml_from_glob_list(list(globs), loader=loader)
 
 

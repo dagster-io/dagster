@@ -154,7 +154,7 @@ class SnowflakeConnection:
         """
 
         check.str_param(sql, "sql")
-        check.opt_dict_param(parameters, "parameters")
+        check.opt_inst_param(parameters, "parameters", (list, dict))
         check.bool_param(fetch_results, "fetch_results")
 
         with self.get_connection() as conn:

@@ -12,6 +12,7 @@ from typing import (
     Union,
     cast,
 )
+
 from typing_extensions import TypeGuard
 
 import dagster._check as check
@@ -46,7 +47,9 @@ class StepKind(Enum):
     UNRESOLVED_COLLECT = "UNRESOLVED_COLLECT"
 
 
-def is_executable_step(step: Union["ExecutionStep", "UnresolvedMappedExecutionStep"]) -> TypeGuard["ExecutionStep"]:
+def is_executable_step(
+    step: Union["ExecutionStep", "UnresolvedMappedExecutionStep"]
+) -> TypeGuard["ExecutionStep"]:
     # This function is set up defensively to ensure new step types handled properly
     if isinstance(step, ExecutionStep):
         return True

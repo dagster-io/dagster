@@ -79,8 +79,10 @@ from .step import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
-    from dagster._core.snap.execution_plan_snapshot import ExecutionStepInputSnap
+    from dagster._core.snap.execution_plan_snapshot import (
+        ExecutionPlanSnapshot,
+        ExecutionStepInputSnap,
+    )
 
     from .active import ActiveExecution
 
@@ -622,7 +624,10 @@ class ExecutionPlan(
         [
             ("step_dict", Dict[StepHandleUnion, IExecutionStep]),
             ("executable_map", Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]]),
-            ("resolvable_map", Dict[FrozenSet[str], Sequence[Union[StepHandle, UnresolvedStepHandle]]]),
+            (
+                "resolvable_map",
+                Dict[FrozenSet[str], Sequence[Union[StepHandle, UnresolvedStepHandle]]],
+            ),
             ("step_handles_to_execute", Sequence[StepHandleUnion]),
             ("known_state", KnownExecutionState),
             ("artifacts_persisted", bool),

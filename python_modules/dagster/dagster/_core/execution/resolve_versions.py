@@ -50,7 +50,11 @@ def resolve_config_version(config_value: object):
         )
 
 
-def resolve_step_versions(pipeline_def: PipelineDefinition, execution_plan: "ExecutionPlan", resolved_run_config: ResolvedRunConfig) -> Mapping[str, Optional[str]]:
+def resolve_step_versions(
+    pipeline_def: PipelineDefinition,
+    execution_plan: "ExecutionPlan",
+    resolved_run_config: ResolvedRunConfig,
+) -> Mapping[str, Optional[str]]:
     """Resolves the version of each step in an execution plan.
 
     Execution plan provides execution steps for analysis. It returns dict[str, str] where each key
@@ -139,9 +143,9 @@ def resolve_step_versions(pipeline_def: PipelineDefinition, execution_plan: "Exe
                     resource_version_context = ResourceVersionContext(
                         resource_def=resource_def, resource_config=resource_config
                     )
-                    resource_def_version = check.not_none(pipeline_def.version_strategy).get_resource_version(
-                        resource_version_context
-                    )
+                    resource_def_version = check.not_none(
+                        pipeline_def.version_strategy
+                    ).get_resource_version(resource_version_context)
 
                 if resource_def_version is not None:
 
@@ -169,7 +173,11 @@ def resolve_step_versions(pipeline_def: PipelineDefinition, execution_plan: "Exe
     return step_versions
 
 
-def resolve_step_output_versions(pipeline_def: PipelineDefinition, execution_plan: "ExecutionPlan", resolved_run_config: ResolvedRunConfig):
+def resolve_step_output_versions(
+    pipeline_def: PipelineDefinition,
+    execution_plan: "ExecutionPlan",
+    resolved_run_config: ResolvedRunConfig,
+):
     step_versions = resolve_step_versions(pipeline_def, execution_plan, resolved_run_config)
     return {
         StepOutputHandle(step.key, output_name): join_and_hash(output_name, step_versions[step.key])
