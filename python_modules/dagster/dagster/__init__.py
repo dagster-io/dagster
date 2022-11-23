@@ -606,28 +606,17 @@ from dagster._utils.backcompat import deprecation_warning, rename_warning
 
 if TYPE_CHECKING:
     # pylint:disable=reimported
-    from dagster._core.execution.context.system import DagsterTypeMaterializerContext
-    from dagster._core.types.config_schema import DagsterTypeMaterializer, dagster_type_materializer
+    pass
 
     # pylint:enable=reimported
 
-_DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
-    "dagster_type_materializer": (
-        "dagster._core.types.config_schema",
-        "1.1.0",
-        "Instead, use an IOManager.",
-    ),
-    "DagsterTypeMaterializer": (
-        "dagster._core.types.config_schema",
-        "1.1.0",
-        "Instead, use an IOManager.",
-    ),
-    "DagsterTypeMaterializerContext": (
-        "dagster._core.execution.context.system",
-        "1.1.0",
-        "Instead, use an IOManager.",
-    ),
-}
+# Example _DEPRECATED Entry:
+# "dagster_type_materializer": (
+#     "dagster._core.types.config_schema",
+#     "1.1.0",
+#     "Instead, use an IOManager.",
+# )
+_DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {}
 
 # Example Deprecated Renamed Entry:
 #
