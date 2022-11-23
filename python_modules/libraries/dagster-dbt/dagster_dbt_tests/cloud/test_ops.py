@@ -66,7 +66,7 @@ def test_run_materializations(final_status, expected_behavior):
                 f"{SAMPLE_API_PREFIX}/runs/{SAMPLE_RUN_ID}/artifacts/run_results.json",
                 json=sample_run_results(),
             )
-        if expected_behavior == 2:
+        if expected_behavior in [2, 3]:
             # endpoint for cancelling run
             rsps.add(
                 rsps.POST,
