@@ -8,7 +8,7 @@ import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
-from typing import NamedTuple, Optional, Sequence, TypeVar
+from typing import Any, Generator, Mapping, NamedTuple, Optional, Sequence, TypeVar
 
 import pendulum
 import yaml
@@ -29,7 +29,6 @@ from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
-from dagster._daemon.controller import create_daemon_grpc_server_registry
 from dagster._legacy import ModeDefinition, pipeline, solid
 from dagster._serdes import ConfigurableClass
 from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
@@ -120,7 +119,34 @@ def environ(env):
 
 
 @contextmanager
-def instance_for_test(overrides=None, set_dagster_home=True, temp_dir=None):
+def instance_for_test(
+    overrides: Optional[Mapping[str, Any]] = None,
+    set_dagster_home: bool = True,
+    temp_dir: Optional[str] = None,
+) -> Generator[DagsterInstance, None, None]:
+    """Creates a persistent :py:class:`~dagster.DagsterInstance` available within a context manager.
+
+    When a context manager is opened, if no `temp_dir` parameter is set, a new
+    temporary directory will be created for the duration of the context
+    manager's opening. If the `set_dagster_home` parameter is set to True
+    (True by default), the `$DAGSTER_HOME` environment variable will be
+    overridden to be this directory (or the directory passed in by `temp_dir`)
+    for the duration of the context manager being open.
+
+    Args:
+        overrides (Optional[Mapping[str, Any]]):
+            Config to provide to instance (config format follows that typically found in an `instance.yaml` file).
+        set_dagster_home (Optional[bool]):
+            If set to True, the `$DAGSTER_HOME` environment variable will be
+            overridden to be the directory used by this instance for the
+            duration that the context manager is open. Upon the context
+            manager closing, the `$DAGSTER_HOME` variable will be re-set to the original value. (Defaults to True).
+        temp_dir (Optional[str]):
+            The directory to use for storing local artifacts produced by the
+            instance. If not set, a temporary directory will be created for
+            the duration of the context manager being open, and all artifacts
+            will be torn down afterward.
+    """
     with ExitStack() as stack:
         if not temp_dir:
             temp_dir = stack.enter_context(tempfile.TemporaryDirectory())
@@ -521,6 +547,8 @@ def create_test_daemon_workspace_context(
     instance: DagsterInstance,
 ):
     """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
+    from dagster._daemon.controller import create_daemon_grpc_server_registry
+
     configure_loggers()
     with create_daemon_grpc_server_registry(instance) as grpc_server_registry:
         with WorkspaceProcessContext(
@@ -548,7 +576,7 @@ def remove_none_recursively(obj):
         return obj
 
 
-default_mode_def_for_test = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
+default_mode_def_for_test = ModeDefinition(resource_defs={"io_manager": fs_io_manager})  # type: ignore[has-type]
 
 
 def strip_ansi(input_str):
