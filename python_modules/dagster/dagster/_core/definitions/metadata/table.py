@@ -25,12 +25,11 @@ class _TableRecordSerializer(DefaultNamedTupleSerializer):
 class TableRecord(
     NamedTuple("TableRecord", [("data", PublicAttr[Mapping[str, Union[str, int, float, bool]]])])
 ):
-    """Represents one record in a table. All passed keyword arguments are treated as field key/value
-    pairs in the record. Field keys are arbitrary strings-- field values must be strings, integers,
-    floats, or bools.
+    """Represents one record in a table. Field keys are arbitrary strings-- field values must be
+    strings, integers, floats, or bools.
     """
 
-    def __new__(cls, **data):
+    def __new__(cls, data):
         check.dict_param(
             data,
             "data",
