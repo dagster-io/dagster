@@ -16,7 +16,6 @@ from dagster import (
 )
 from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
-
 from dagster._core.definitions.events import AssetKey, Output
 from dagster._core.definitions.logical_version import (
     CODE_VERSION_TAG_KEY,
@@ -48,11 +47,12 @@ def mock_io_manager():
     return MockIOManager()
 
 
-def get_mat_from_result(result: ExecuteInProcessResult, node_str: str) -> AssetMaterialization:
+def get_mat_from_result(
+    result: ExecuteInProcessResult, node_str: str
+) -> Sequence[AssetMaterialization]:
     mats = result.asset_materializations_for_node(node_str)
-    assert len(mats) == 1
-    assert isinstance(mats[0], AssetMaterialization)
-    return mats[0]
+    assert all(isinstance(m, AssetMaterialization) for m in mats)
+    return cast(Sequence[AssetMaterialization], mats[0])
 
 
 def get_mats_from_result(
@@ -143,6 +143,7 @@ def materialize_asset(
     ...
 
 
+# Use only for AssetsDefinition with one asset
 def materialize_asset(
     all_assets: Sequence[Union[AssetsDefinition, SourceAsset]],
     asset_to_materialize: AssetsDefinition,
@@ -201,7 +202,7 @@ def test_single_asset():
 
 
 def test_single_versioned_asset():
-    @asset(op_version="abc")
+    @asset(code_version="abc")
     def asset1():
         ...
 
@@ -225,7 +226,7 @@ def test_source_asset_non_versioned_asset():
 def test_source_asset_versioned_asset():
     source1 = SourceAsset("source1")
 
-    @asset(op_version="abc")
+    @asset(code_version="abc")
     def asset1(source1):
         ...
 
@@ -255,7 +256,7 @@ def test_versioned_after_unversioned():
     def asset1(source1):
         ...
 
-    @asset(op_version="abc")
+    @asset(code_version="abc")
     def asset2(asset1):
         ...
 
@@ -275,11 +276,11 @@ def test_versioned_after_unversioned():
 def test_versioned_after_versioned():
     source1 = SourceAsset("source1")
 
-    @asset(op_version="abc")
+    @asset(code_version="abc")
     def asset1(source1):
         ...
 
-    @asset(op_version="xyz")
+    @asset(code_version="xyz")
     def asset2(asset1):
         ...
 
@@ -297,7 +298,7 @@ def test_versioned_after_versioned():
 def test_unversioned_after_versioned():
     source1 = SourceAsset("source1")
 
-    @asset(op_version="abc")
+    @asset(code_version="abc")
     def asset1(source1):
         ...
 
