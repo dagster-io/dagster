@@ -5,10 +5,12 @@ from typing import TYPE_CHECKING, Dict, Iterator, Mapping, Optional, Sequence, U
 
 from typing_extensions import Protocol, TypeAlias
 
+from dagster._core.storage.tags import LOGICAL_VERSION_TAG
+
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
-from dagster._core.definitions.logical_version import LOGICAL_VERSION_TAG_KEY, LogicalVersion
+from dagster._core.definitions.logical_version import LogicalVersion
 from dagster._core.definitions.metadata import (
     MetadataEntry,
     MetadataMapping,
@@ -194,7 +196,7 @@ class SourceAsset(ResourceAddable):
                     LogicalVersion,
                     "Source asset observation function must return a LogicalVersion",
                 )
-                tags = {LOGICAL_VERSION_TAG_KEY: logical_version.value}
+                tags = {LOGICAL_VERSION_TAG: logical_version.value}
                 context.log_event(
                     AssetObservation(
                         asset_key=self.key,

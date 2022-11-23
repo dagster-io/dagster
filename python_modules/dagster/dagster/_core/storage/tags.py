@@ -1,63 +1,71 @@
 from enum import Enum
+from typing import Sequence
+from typing_extensions import Final
 
 import dagster._check as check
 
-SYSTEM_TAG_PREFIX = "dagster/"
-HIDDEN_TAG_PREFIX = ".dagster/"
+SYSTEM_TAG_PREFIX: Final[str] = "dagster/"
+HIDDEN_TAG_PREFIX: Final[str] = ".dagster/"
 
-REPOSITORY_LABEL_TAG = f"{HIDDEN_TAG_PREFIX}repository"
+REPOSITORY_LABEL_TAG: Final[str] = f"{HIDDEN_TAG_PREFIX}repository"
 
-SCHEDULE_NAME_TAG = "{prefix}schedule_name".format(prefix=SYSTEM_TAG_PREFIX)
+SCHEDULE_NAME_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}schedule_name"
 
-SENSOR_NAME_TAG = "{prefix}sensor_name".format(prefix=SYSTEM_TAG_PREFIX)
+SENSOR_NAME_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}sensor_name"
 
-BACKFILL_ID_TAG = "{prefix}backfill".format(prefix=SYSTEM_TAG_PREFIX)
+BACKFILL_ID_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}backfill"
 
-PARTITION_NAME_TAG = "{prefix}partition".format(prefix=SYSTEM_TAG_PREFIX)
+PARTITION_NAME_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}partition"
 
-MULTIDIMENSIONAL_PARTITION_PREFIX = f"{PARTITION_NAME_TAG}/"
+MULTIDIMENSIONAL_PARTITION_PREFIX: Final[str] = f"{PARTITION_NAME_TAG}/"
 get_multidimensional_partition_tag = (
     lambda dimension_name: f"{MULTIDIMENSIONAL_PARTITION_PREFIX}{dimension_name}"
 )
 get_dimension_from_partition_tag = lambda tag: tag[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]
 
-ASSET_PARTITION_RANGE_START_TAG = "{prefix}asset_partition_range_start".format(
-    prefix=SYSTEM_TAG_PREFIX
-)
+ASSET_PARTITION_RANGE_START_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}asset_partition_range_start"
 
-ASSET_PARTITION_RANGE_END_TAG = "{prefix}asset_partition_range_end".format(prefix=SYSTEM_TAG_PREFIX)
+ASSET_PARTITION_RANGE_END_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}asset_partition_range_end"
 
-PARTITION_SET_TAG = "{prefix}partition_set".format(prefix=SYSTEM_TAG_PREFIX)
+CODE_VERSION_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}code_version"
 
-PARENT_RUN_ID_TAG = "{prefix}parent_run_id".format(prefix=SYSTEM_TAG_PREFIX)
+INPUT_EVENT_POINTER_TAG_PREFIX: Final[str] = f"{SYSTEM_TAG_PREFIX}input_event_pointer"
 
-ROOT_RUN_ID_TAG = "{prefix}root_run_id".format(prefix=SYSTEM_TAG_PREFIX)
+INPUT_LOGICAL_VERSION_TAG_PREFIX: Final[str] = f"{SYSTEM_TAG_PREFIX}input_logical_version"
 
-RESUME_RETRY_TAG = "{prefix}is_resume_retry".format(prefix=SYSTEM_TAG_PREFIX)
+LOGICAL_VERSION_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}logical_version"
 
-MEMOIZED_RUN_TAG = "{prefix}is_memoized_run".format(prefix=SYSTEM_TAG_PREFIX)
+PARTITION_SET_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}partition_set"
 
-STEP_SELECTION_TAG = "{prefix}step_selection".format(prefix=SYSTEM_TAG_PREFIX)
+PARENT_RUN_ID_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}parent_run_id"
 
-SOLID_SELECTION_TAG = "{prefix}solid_selection".format(prefix=SYSTEM_TAG_PREFIX)
+ROOT_RUN_ID_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}root_run_id"
 
-PRESET_NAME_TAG = "{prefix}preset_name".format(prefix=SYSTEM_TAG_PREFIX)
+RESUME_RETRY_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}is_resume_retry"
 
-GRPC_INFO_TAG = "{prefix}grpc_info".format(prefix=HIDDEN_TAG_PREFIX)
+MEMOIZED_RUN_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}is_memoized_run"
 
-SCHEDULED_EXECUTION_TIME_TAG = "{prefix}scheduled_execution_time".format(prefix=HIDDEN_TAG_PREFIX)
+STEP_SELECTION_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}step_selection"
 
-RUN_KEY_TAG = "{prefix}run_key".format(prefix=SYSTEM_TAG_PREFIX)
+SOLID_SELECTION_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}solid_selection"
 
-PRIORITY_TAG = "{prefix}priority".format(prefix=SYSTEM_TAG_PREFIX)
+PRESET_NAME_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}preset_name"
 
-DOCKER_IMAGE_TAG = "{prefix}image".format(prefix=SYSTEM_TAG_PREFIX)
+GRPC_INFO_TAG: Final[str] = f"{HIDDEN_TAG_PREFIX}grpc_info"
 
-MAX_RETRIES_TAG = "{prefix}max_retries".format(prefix=SYSTEM_TAG_PREFIX)
-RETRY_NUMBER_TAG = "{prefix}retry_number".format(prefix=SYSTEM_TAG_PREFIX)
-RETRY_STRATEGY_TAG = "{prefix}retry_strategy".format(prefix=SYSTEM_TAG_PREFIX)
+SCHEDULED_EXECUTION_TIME_TAG: Final[str] = f"{HIDDEN_TAG_PREFIX}scheduled_execution_time"
 
-USER_EDITABLE_SYSTEM_TAGS = [PRIORITY_TAG, MAX_RETRIES_TAG, RETRY_STRATEGY_TAG]
+RUN_KEY_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}run_key"
+
+PRIORITY_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}priority"
+
+DOCKER_IMAGE_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}image"
+
+MAX_RETRIES_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}max_retries"
+RETRY_NUMBER_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}retry_number"
+RETRY_STRATEGY_TAG: Final[str] = f"{SYSTEM_TAG_PREFIX}retry_strategy"
+
+USER_EDITABLE_SYSTEM_TAGS: Final[Sequence[str]] = [PRIORITY_TAG, MAX_RETRIES_TAG, RETRY_STRATEGY_TAG]
 
 
 class TagType(Enum):

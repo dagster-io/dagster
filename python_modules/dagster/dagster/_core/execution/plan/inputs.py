@@ -13,6 +13,7 @@ from typing import (
     Set,
     Union,
     cast,
+    overload,
 )
 
 import dagster._check as check
@@ -91,6 +92,14 @@ class StepInput(
 
     def get_step_output_handle_dependencies(self) -> Sequence[StepOutputHandle]:
         return self.source.step_output_handle_dependencies
+
+@overload
+def join_and_hash(*args: str) -> str:
+    ...
+
+@overload
+def join_and_hash(*args: Optional[str]) -> Optional[str]:
+    ...
 
 
 def join_and_hash(*args: Optional[str]) -> Optional[str]:

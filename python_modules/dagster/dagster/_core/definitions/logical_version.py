@@ -8,6 +8,12 @@ from typing_extensions import Final
 
 from dagster import _check as check
 from dagster._annotations import experimental
+from dagster._core.storage.tags import (
+    CODE_VERSION_TAG,
+    INPUT_EVENT_POINTER_TAG_PREFIX,
+    INPUT_LOGICAL_VERSION_TAG_PREFIX,
+    LOGICAL_VERSION_TAG,
+)
 from dagster._utils.backcompat import ExperimentalWarning
 
 if TYPE_CHECKING:
@@ -88,14 +94,14 @@ class LogicalVersionProvenance(
     def from_tags(tags: Mapping[str, str]) -> Optional[LogicalVersionProvenance]:
         from dagster._core.definitions.events import AssetKey
 
-        code_version = tags.get(CODE_VERSION_TAG_KEY)
+        code_version = tags.get(CODE_VERSION_TAG)
         if code_version is None:
             return None
-        start_index = len(INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX) + 1
+        start_index = len(INPUT_LOGICAL_VERSION_TAG_PREFIX) + 1
         input_logical_versions = {
             AssetKey.from_user_string(k[start_index:]): LogicalVersion(tags[k])
             for k, v in tags.items()
-            if k.startswith(INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX)
+            if k.startswith(INPUT_LOGICAL_VERSION_TAG_PREFIX)
         }
         return LogicalVersionProvenance(code_version, input_logical_versions)
 
@@ -104,18 +110,13 @@ class LogicalVersionProvenance(
 # ##### TAG KEYS
 # ########################
 
-LOGICAL_VERSION_TAG_KEY: Final[str] = "dagster/logical_version"
-CODE_VERSION_TAG_KEY: Final[str] = "dagster/code_version"
-INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX: Final[str] = "dagster/input_logical_version"
-INPUT_EVENT_POINTER_TAG_KEY_PREFIX: Final[str] = "dagster/input_event_pointer"
-
 
 def get_input_logical_version_tag_key(input_key: "AssetKey") -> str:
-    return f"{INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX}/{input_key.to_user_string()}"
+    return f"{INPUT_LOGICAL_VERSION_TAG_PREFIX}/{input_key.to_user_string()}"
 
 
 def get_input_event_pointer_tag_key(input_key: "AssetKey") -> str:
-    return f"{INPUT_EVENT_POINTER_TAG_KEY_PREFIX}/{input_key.to_user_string()}"
+    return f"{INPUT_EVENT_POINTER_TAG_PREFIX}/{input_key.to_user_string()}"
 
 
 # ########################
@@ -164,7 +165,7 @@ def extract_logical_version_from_entry(
 ) -> Optional[LogicalVersion]:
     event_data = _extract_event_data_from_entry(entry)
     tags = event_data.tags or {}
-    value = tags.get(LOGICAL_VERSION_TAG_KEY)
+    value = tags.get(LOGICAL_VERSION_TAG)
     return None if value is None else LogicalVersion(value)
 
 

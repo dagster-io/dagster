@@ -395,7 +395,8 @@ class PipelineDefinition:
     def is_multi_mode(self) -> bool:
         return len(self._mode_definitions) > 1
 
-    def is_using_memoization(self, run_tags: Mapping[str, str]) -> bool:
+    def is_using_memoization(self, run_tags: Optional[Mapping[str, str]] = None) -> bool:
+        run_tags = check.opt_dict_param(run_tags, "run_tags", key_type=str, value_type=str)
         tags = merge_dicts(self.tags, run_tags)
         # If someone provides a false value for memoized run tag, then they are intentionally
         # switching off memoization.

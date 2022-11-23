@@ -779,9 +779,9 @@ def step_output_version(
     resolved_run_config: "ResolvedRunConfig",
     step_output_handle: "StepOutputHandle",
 ) -> Optional[str]:
-    from dagster._core.execution.resolve_versions import resolve_step_output_versions
+    from dagster._core.execution.resolve_versions import resolve_all_step_output_versions
 
-    step_output_versions = resolve_step_output_versions(
+    step_output_versions = resolve_all_step_output_versions(
         pipeline_def, execution_plan, resolved_run_config
     )
     return (

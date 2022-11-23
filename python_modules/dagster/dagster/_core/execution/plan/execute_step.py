@@ -26,12 +26,12 @@ from dagster._core.definitions import (
     OutputDefinition,
     TypeCheck,
 )
+
 from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster._core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster._core.definitions.logical_version import (
-    CODE_VERSION_TAG_KEY,
+    CODE_VERSION_TAG,
     DEFAULT_LOGICAL_VERSION,
-    LOGICAL_VERSION_TAG_KEY,
     LogicalVersion,
     compute_logical_version,
     extract_logical_version_from_entry,
@@ -63,9 +63,9 @@ from dagster._core.execution.plan.compute import execute_core_compute
 from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
-from dagster._core.execution.resolve_versions import resolve_step_output_versions
+from dagster._core.execution.resolve_versions import resolve_all_step_output_versions
 from dagster._core.storage.io_manager import IOManager
-from dagster._core.storage.tags import MEMOIZED_RUN_TAG
+from dagster._core.storage.tags import LOGICAL_VERSION_TAG, MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import ensure_gen, iterate_with_context
 from dagster._utils.backcompat import ExperimentalWarning, experimental_functionality_warning
@@ -439,10 +439,10 @@ def _type_check_and_store_output(
         step_context.step_output_capture[step_output_handle] = output.value
 
     version = (
-        resolve_step_output_versions(
+        resolve_all_step_output_versions(
             step_context.pipeline_def, step_context.execution_plan, step_context.resolved_run_config
         ).get(step_output_handle)
-        if MEMOIZED_RUN_TAG in step_context.pipeline.get_definition().tags
+        if step_context.pipeline_def.is_using_memoization()
         else None
     )
 
@@ -587,7 +587,7 @@ def _build_logical_version_tags(
     input_asset_records = check.not_none(step_context.input_asset_records)
     input_logical_versions: Dict[AssetKey, LogicalVersion] = {}
     tags: Dict[str, str] = {}
-    tags[CODE_VERSION_TAG_KEY] = code_version
+    tags[CODE_VERSION_TAG] = code_version
     for key, event in input_asset_records.items():
         if event is not None:
             logical_version = (
@@ -600,7 +600,7 @@ def _build_logical_version_tags(
         tags[get_input_event_pointer_tag_key(key)] = str(event.storage_id) if event else "NULL"
 
     logical_version = compute_logical_version(code_version, input_logical_versions)
-    tags[LOGICAL_VERSION_TAG_KEY] = logical_version.value
+    tags[LOGICAL_VERSION_TAG] = logical_version.value
     return tags
 
 

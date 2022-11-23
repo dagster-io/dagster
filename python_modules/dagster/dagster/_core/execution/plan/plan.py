@@ -50,7 +50,7 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.utils import toposort
 
 from ..context.output import get_output_context
-from ..resolve_versions import resolve_step_output_versions
+from ..resolve_versions import resolve_all_step_output_versions
 from .compute import create_step_outputs
 from .inputs import (
     FromConfig,
@@ -912,7 +912,7 @@ class ExecutionPlan(
 
         log_manager = initialize_console_manager(None)
 
-        step_output_versions = resolve_step_output_versions(pipeline_def, self, resolved_run_config)
+        step_output_versions = resolve_all_step_output_versions(pipeline_def, self, resolved_run_config)
 
         resource_defs_to_init = {}
         io_manager_keys = {}  # Map step output handles to io manager keys

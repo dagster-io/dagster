@@ -4,10 +4,6 @@ from typing import Any, Union
 
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.definitions.logical_version import (
-    CODE_VERSION_TAG_KEY,
-    INPUT_EVENT_POINTER_TAG_KEY_PREFIX,
-    INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX,
-    LOGICAL_VERSION_TAG_KEY,
     UNKNOWN_LOGICAL_VERSION,
     UNKNOWN_VALUE,
     LogicalVersion,
@@ -23,6 +19,12 @@ from dagster._core.events import (
     StepMaterializationData,
 )
 from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.tags import (
+    CODE_VERSION_TAG,
+    INPUT_EVENT_POINTER_TAG_PREFIX,
+    INPUT_LOGICAL_VERSION_TAG_PREFIX,
+    LOGICAL_VERSION_TAG,
+)
 
 
 def _create_test_event_log_entry(event_type: DagsterEventType, data: Any) -> EventLogEntry:
@@ -53,12 +55,12 @@ def test_extract_logical_version_and_provenance_from_materialization_entry():
     materialization = AssetMaterialization(
         asset_key="foo",
         tags={
-            LOGICAL_VERSION_TAG_KEY: "1",
-            f"{INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX}/assetgroup/bar": "2",
-            f"{INPUT_EVENT_POINTER_TAG_KEY_PREFIX}/assetgroup/bar": "10",
-            f"{INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX}/baz": "3",
-            f"{INPUT_EVENT_POINTER_TAG_KEY_PREFIX}/baz": "11",
-            f"{CODE_VERSION_TAG_KEY}": "3",
+            LOGICAL_VERSION_TAG: "1",
+            f"{INPUT_LOGICAL_VERSION_TAG_PREFIX}/assetgroup/bar": "2",
+            f"{INPUT_EVENT_POINTER_TAG_PREFIX}/assetgroup/bar": "10",
+            f"{INPUT_LOGICAL_VERSION_TAG_PREFIX}/baz": "3",
+            f"{INPUT_EVENT_POINTER_TAG_PREFIX}/baz": "11",
+            f"{CODE_VERSION_TAG}": "3",
         },
     )
     entry = _create_test_event_log_entry(DagsterEventType.ASSET_MATERIALIZATION, materialization)
@@ -77,7 +79,7 @@ def test_extract_logical_version_from_observation_entry():
     observation = AssetObservation(
         asset_key="foo",
         tags={
-            LOGICAL_VERSION_TAG_KEY: "1",
+            LOGICAL_VERSION_TAG: "1",
         },
     )
     entry = _create_test_event_log_entry(

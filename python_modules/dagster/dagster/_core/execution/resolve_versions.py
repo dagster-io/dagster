@@ -6,7 +6,8 @@ from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.version_strategy import OpVersionContext, ResourceVersionContext
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.outputs import StepOutputHandle
-from dagster._core.execution.plan.step import is_executable_step
+from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.plan.step import ExecutionStep, is_executable_step
 from dagster._core.system_config.objects import ResolvedRunConfig
 
 from .plan.inputs import join_and_hash
@@ -27,7 +28,7 @@ def check_valid_version(version: str) -> None:
         )
 
 
-def resolve_config_version(config_value: object):
+def resolve_config_version(config_value: object) -> str:
     """Resolve a configuration value into a hashed version.
 
     If a None value is passed in, we return the result of an empty join_and_hash.
@@ -50,9 +51,29 @@ def resolve_config_version(config_value: object):
         )
 
 
-def resolve_step_versions(
+def resolve_all_step_output_versions(
     pipeline_def: PipelineDefinition,
-    execution_plan: "ExecutionPlan",
+    execution_plan: ExecutionPlan,
+    resolved_run_config: ResolvedRunConfig,
+) -> Mapping[StepOutputHandle, Optional[str]]:
+
+    step_output_versions: Dict[StepOutputHandle, Optional[str]] = {}
+    for step in filter(is_executable_step, execution_plan.get_all_steps_in_topo_order()):  # type: ignore
+        step_output_versions.update(_resolve_step_output_versions(step, pipeline_def, resolved_run_config))
+    return step_output_versions
+        
+
+    for output_name in step.step_output_dict.keys()
+    return {
+        StepOutputHandle(step.key, output_name): join_and_hash(output_name, step_versions[step.key])
+        for step in execution_plan.steps
+        if is_executable_step(step)  # type: ignore
+        for output_name in step.step_output_dict.keys()
+    }
+
+def _resolve_step_output_versions(
+    step: ExecutionStep,
+    pipeline_def: PipelineDefinition,
     resolved_run_config: ResolvedRunConfig,
 ) -> Mapping[str, Optional[str]]:
     """Resolves the version of each step in an execution plan.
@@ -83,28 +104,23 @@ def resolve_step_versions(
     resource_versions = {}
     resource_defs = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs
 
-    step_versions: Dict[str, Optional[str]] = {}  # step_key (str) -> version (str)
+    step_output_versions: Dict[StepOutputHandle, Optional[str]] = {}
 
-    for step in execution_plan.get_all_steps_in_topo_order():
-        # do not compute versions for steps that are not executable
-        if not is_executable_step(step):  # type: ignore
-            continue
+    solid_def = pipeline_def.get_solid(step.solid_handle).definition
 
-        solid_def = pipeline_def.get_solid(step.solid_handle).definition
-
-        input_version_dict = {
-            input_name: step_input.source.compute_version(
-                step_versions, pipeline_def, resolved_run_config
+    input_version_dict = {
+        input_name: step_input.source.compute_version(
+            step_versions, pipeline_def, resolved_run_config
+        )
+        for input_name, step_input in step.step_input_dict.items()
+    }
+    node_label = f"{solid_def.node_type_str} '{solid_def.name}'"
+    for input_name, version in input_version_dict.items():
+        if version is None:
+            raise DagsterInvariantViolationError(
+                f"Received None version for input {input_name} to {node_label}."
             )
-            for input_name, step_input in step.step_input_dict.items()
-        }
-        node_label = f"{solid_def.node_type_str} '{solid_def.name}'"
-        for input_name, version in input_version_dict.items():
-            if version is None:
-                raise DagsterInvariantViolationError(
-                    f"Received None version for input {input_name} to {node_label}."
-                )
-        input_versions = [version for version in input_version_dict.values()]
+    input_versions = [version for version in input_version_dict.values()]
 
         solid_name = str(step.solid_handle)
 
@@ -171,17 +187,3 @@ def resolve_step_versions(
         step_versions[step.key] = step_version
 
     return step_versions
-
-
-def resolve_step_output_versions(
-    pipeline_def: PipelineDefinition,
-    execution_plan: "ExecutionPlan",
-    resolved_run_config: ResolvedRunConfig,
-):
-    step_versions = resolve_step_versions(pipeline_def, execution_plan, resolved_run_config)
-    return {
-        StepOutputHandle(step.key, output_name): join_and_hash(output_name, step_versions[step.key])
-        for step in execution_plan.steps
-        if is_executable_step(step)  # type: ignore
-        for output_name in step.step_output_dict.keys()
-    }
