@@ -217,48 +217,59 @@ export const AssetNodeStatusRow: React.FC<{
   );
 };
 
-export const AssetNodeMinimal: React.FC<{
+export const miniColorsForLiveData = (liveData?: LiveDataForNode) => {
+  return liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
+    ? {border: Colors.Red500, background: Colors.Red50}
+    : !liveData?.lastMaterialization
+    ? {border: Colors.Gray500, background: Colors.Gray100}
+    : isAssetStale(liveData)
+    ? {border: Colors.Yellow500, background: Colors.Yellow50}
+    : {border: Colors.Green500, background: Colors.Green50};
+};
+
+export const AssetNodeTiny: React.FC<{
   selected: boolean;
   liveData?: LiveDataForNode;
   definition: AssetNodeFragment;
+}> = ({selected, liveData, definition}) => {
+  const {isSource, assetKey} = definition;
+  const {border} = miniColorsForLiveData(liveData);
+
+  return (
+    <MinimalAssetNodeBox
+      title={assetKey.path[assetKey.path.length - 1]}
+      $selected={selected}
+      $isSource={isSource}
+      $background={border}
+      $border={border}
+    />
+  );
+};
+
+export const AssetNodeMinimal: React.FC<{
+  selected: boolean;
+  definition: AssetNodeFragment;
+  liveData?: LiveDataForNode;
 }> = ({selected, definition, liveData}) => {
   const {isSource, assetKey} = definition;
   const displayName = assetKey.path[assetKey.path.length - 1];
-
+  const {border, background} = miniColorsForLiveData(liveData);
   return (
     <AssetInsetForHoverEffect>
-      <MinimalAssetNodeContainer $selected={selected}>
-        <MinimalAssetNodeBox
-          $selected={selected}
-          $isSource={isSource}
-          $background={
-            liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
-              ? Colors.Red50
-              : !liveData?.lastMaterialization
-              ? Colors.Gray100
-              : isAssetStale(liveData)
-              ? Colors.Yellow50
-              : Colors.Green50
-          }
-          $border={
-            liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
-              ? Colors.Red500
-              : !liveData?.lastMaterialization
-              ? Colors.Gray500
-              : isAssetStale(liveData)
-              ? Colors.Yellow500
-              : Colors.Green500
-          }
-        >
-          <div style={{position: 'absolute', right: 5, top: 5}}>
-            <AssetLatestRunSpinner liveData={liveData} purpose="body-text" />
-          </div>
+      <MinimalAssetNodeBox
+        $selected={selected}
+        $isSource={isSource}
+        $background={background}
+        $border={border}
+      >
+        <div style={{position: 'absolute', right: 5, top: 5}}>
+          <AssetLatestRunSpinner liveData={liveData} purpose="body-text" />
+        </div>
 
-          <MinimalName style={{fontSize: 30}} $isSource={isSource}>
-            {withMiddleTruncation(displayName, {maxLength: 17})}
-          </MinimalName>
-        </MinimalAssetNodeBox>
-      </MinimalAssetNodeContainer>
+        <MinimalName style={{fontSize: 30}} $isSource={isSource}>
+          {withMiddleTruncation(displayName, {maxLength: 17})}
+        </MinimalName>
+      </MinimalAssetNodeBox>
     </AssetInsetForHoverEffect>
   );
 };
@@ -359,10 +370,6 @@ const Name = styled.div<{$isSource: boolean}>`
   border-top-right-radius: 7px;
   font-weight: 600;
   gap: 4px;
-`;
-
-const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
-  height: 100%;
 `;
 
 const MinimalAssetNodeBox = styled.div<{

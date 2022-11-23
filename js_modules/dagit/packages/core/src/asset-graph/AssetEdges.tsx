@@ -8,13 +8,13 @@ export const AssetEdges: React.FC<{
   edges: AssetLayoutEdge[];
   highlighted: string | null;
   strokeWidth?: number;
-  baseColor?: string;
+  baseColor?: string | null;
 }> = ({edges, highlighted, strokeWidth = 4, baseColor = Colors.KeylineGray}) => {
   // Note: we render the highlighted edges twice, but it's so that the first item with
   // all the edges in it can remain memoized.
   return (
     <React.Fragment>
-      <AssetEdgeSet color={baseColor} edges={edges} strokeWidth={strokeWidth} />
+      {baseColor && <AssetEdgeSet color={baseColor} edges={edges} strokeWidth={strokeWidth} />}
       <AssetEdgeSet
         color={Colors.Blue500}
         edges={edges.filter(({fromId, toId}) => highlighted === fromId || highlighted === toId)}
