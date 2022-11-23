@@ -9,22 +9,63 @@ This guide helps you build a simple data pipeline in dagster that downloads the 
 
 1. Start by creating a file called `hello-dagster.py` and copying the following:
 
-    ```python file=/getting-started/hello-dagster/hello-dagster.py
-    ```
+   ```python file=/getting-started/hello-dagster/hello-dagster.py
+   import pandas as pd
+   import requests
+
+   from dagster import MetadataValue, Output, asset, repository
+
+
+   @asset
+   def hackernews_top_story_ids():
+       """
+       Get top stories from the HackerNews top stories endpoint.
+       API Docs: https://github.com/HackerNews/API#new-top-and-best-stories
+       """
+       top_story_ids = requests.get(
+           "https://hacker-news.firebaseio.com/v0/topstories.json"
+       ).json()
+       return top_story_ids[:10]
+
+
+   @asset
+   def hackernews_top_stories(hackernews_top_story_ids):
+       """Get items based on story ids from the HackerNews items endpoint"""
+
+       results = []
+       for item_id in hackernews_top_story_ids:
+           item = requests.get(
+               f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
+           ).json()
+           results.append(item)
+
+       df = pd.DataFrame(results)
+       metadata = {
+           "num_records": len(df),
+           "preview": MetadataValue.md(df.to_markdown()),
+       }
+
+       return Output(value=df, metadata=metadata)
+
+
+   @repository
+   def hello_dagster():
+       return [hackernews_top_story_ids, hackernews_top_stories]
+   ```
 
 2. Now install the Python packages we'll need to run `hello-dagster.py` in your favorite Python environment. Unsure? Follow our [installation guide](/getting-started/install).
 
-    ```bash
-    # run in a terminal in your favorite python environment
-    pip install dagster dagit pandas
-    ```
+   ```bash
+   # run in a terminal in your favorite python environment
+   pip install dagster dagit pandas
+   ```
 
 3. We'll use `dagit`, the dagster user interface, to run `hello-dagster.py`:
 
-    ```bash
-    # run in a terminal in your favorite python environment
-    dagit -f hello-dagster.py
-    ```
+   ```bash
+   # run in a terminal in your favorite python environment
+   dagit -f hello-dagster.py
+   ```
 
 Navigate your browser to `http://localhost:3000/`. Clicking `Materialize All` will run our pipeline and create our assets.
 
@@ -40,11 +81,10 @@ height={874}
 This example uses [assets](/tutorial#assets). Most new Dagster projects use assets because they let data engineers:
 
 - think in the same terms as stakeholders
-- answer questions about data quality and lineage 
+- answer questions about data quality and lineage
 - work with the modern data stack (dbt, Airbyte/Fivetran, Spark)
 - create declarative freshness policies instead of task-driven cron schedules
 
 Dagster also offers [ops and jobs](/tutorial#ops-and-jobs), but we recommend starting with assets.
 
-Our `hello-dagster` example used a single file, but most Dagster projects are organized as Python packages. Check out our [getting started guide](/getting-started/create-new-project/) to begin with a scaffolded blank project or start from an official example such as this [dagster + dbt project](/integrations/dbt/using-dbt-with-dagster).
-
+Our `hello-dagster` example used a single file, but most Dagster projects are organized as Python packages. Check out our [getting started guide](/getting-started/create-new-project) to begin with a scaffolded blank project or start from an official example such as this [dagster + dbt project](/integrations/dbt/using-dbt-with-dagster).
