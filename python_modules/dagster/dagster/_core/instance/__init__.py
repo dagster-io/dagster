@@ -13,9 +13,11 @@ from enum import Enum
 from tempfile import TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
+    FrozenSet,
     Generic,
     Iterable,
     List,
@@ -33,6 +35,7 @@ import yaml
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._config.field import Field
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import (
@@ -66,6 +69,7 @@ from dagster._seven import get_current_datetime_in_utc
 from dagster._utils import merge_dicts, traced
 from dagster._utils.backcompat import deprecation_warning, experimental_functionality_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.log import get_dagster_logger
 
 from .config import (
     DAGSTER_CONFIG_YAML_FILENAME,
@@ -90,6 +94,7 @@ if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent, DagsterEventType
     from dagster._core.events.log import EventLogEntry
     from dagster._core.execution.backfill import PartitionBackfill
+    from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.host_representation import (
@@ -98,6 +103,7 @@ if TYPE_CHECKING:
         HistoricalPipeline,
         RepositoryLocation,
     )
+    from dagster._core.host_representation.origin import ExternalPipelineOrigin
     from dagster._core.launcher import RunLauncher
     from dagster._core.run_coordinator import RunCoordinator
     from dagster._core.scheduler import Scheduler
@@ -167,7 +173,7 @@ class _EventListenerLogHandler(logging.Handler):
                 name=record.name,
                 message=record.msg,
                 level=record.levelno,
-                meta=record.dagster_meta,
+                meta=record.dagster_meta,  # type: ignore
                 record=record,
             )
         )
@@ -833,18 +839,18 @@ class DagsterInstance:
 
     def create_run_for_pipeline(
         self,
-        pipeline_def,
-        execution_plan=None,
-        run_id=None,
-        run_config=None,
-        mode=None,
-        solids_to_execute=None,
-        status=None,
-        tags=None,
-        root_run_id=None,
-        parent_run_id=None,
-        solid_selection=None,
-        asset_selection=None,
+        pipeline_def: PipelineDefinition,
+        execution_plan: Optional["ExecutionPlan"] = None,
+        run_id: Optional[str] = None,
+        run_config: Optional[Mapping[str, object]] = None,
+        mode: Optional[str] = None,
+        solids_to_execute: Optional[AbstractSet[str]] = None,
+        status: Optional[str] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        root_run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        solid_selection: Optional[Sequence[str]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
         repository_load_data=None,
@@ -1385,8 +1391,8 @@ class DagsterInstance:
     @traced
     def logs_after(
         self,
-        run_id,
-        cursor,
+        run_id: str,
+        cursor: Optional[int] = None,
         of_type: Optional["DagsterEventType"] = None,
         limit: Optional[int] = None,
     ):
@@ -1504,7 +1510,7 @@ class DagsterInstance:
 
     @public
     @traced
-    def wipe_assets(self, asset_keys):
+    def wipe_assets(self, asset_keys: Sequence[AssetKey]):
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
         for asset_key in asset_keys:
             self._event_storage.wipe_asset(asset_key)
@@ -1712,7 +1718,7 @@ class DagsterInstance:
 
     # directories
 
-    def file_manager_directory(self, run_id):
+    def file_manager_directory(self, run_id: str):
         return self._local_artifact_storage.file_manager_dir(run_id)
 
     def storage_directory(self):

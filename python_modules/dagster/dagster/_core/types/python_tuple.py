@@ -104,4 +104,4 @@ class DagsterTupleApi:
             return create_typed_tuple(tuple_types)
 
 
-Tuple = DagsterTupleApi()
+Tuple: DagsterTupleApi = DagsterTupleApi()

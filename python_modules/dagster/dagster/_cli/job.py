@@ -245,7 +245,7 @@ def job_list_versions_command(**kwargs):
 def execute_list_versions_command(instance: DagsterInstance, kwargs: Mapping[str, object]):
     check.inst_param(instance, "instance", DagsterInstance)
 
-    config = list(check.opt_tuple_param(kwargs.get("config"), "config", default=(), of_type=str))
+    config = list(check.opt_tuple_param(kwargs.get("config"), "config", of_type=str))
 
     job_origin = get_job_python_origin_from_kwargs(kwargs)
     job = recon_pipeline_from_origin(job_origin)
@@ -312,7 +312,7 @@ def execute_execute_command(
 ):
     check.inst_param(instance, "instance", DagsterInstance)
 
-    config = list(check.opt_tuple_param(kwargs.get("config"), "config", default=(), of_type=str))
+    config = list(check.opt_tuple_param(kwargs.get("config"), "config", of_type=str))
     preset = cast(Optional[str], kwargs.get("preset"))
     mode = cast(Optional[str], kwargs.get("mode"))
 
@@ -358,9 +358,7 @@ def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
         raise click.UsageError("Cannot specify both -c / --config and --config-json")
 
     elif config:
-        config_file_list = list(
-            check.opt_tuple_param(config, "config", default=tuple(), of_type=str)
-        )
+        config_file_list = list(check.opt_tuple_param(config, "config", of_type=str))
         return get_run_config_from_file_list(config_file_list)
 
     elif config_json:
@@ -392,7 +390,7 @@ def do_execute_command(
     instance: DagsterInstance,
     config: Optional[Sequence[str]],
     mode: Optional[str] = None,
-    tags: Optional[Mapping[str, object]] = None,
+    tags: Optional[Mapping[str, str]] = None,
     solid_selection: Optional[Sequence[str]] = None,
     preset: Optional[str] = None,
 ):
@@ -490,7 +488,7 @@ def _create_external_pipeline_run(
     run_config: Mapping[str, object],
     mode: Optional[str],
     preset: Optional[str],
-    tags: Optional[Mapping[str, object]],
+    tags: Optional[Mapping[str, str]],
     solid_selection: Optional[Sequence[str]],
     run_id: Optional[str],
 ):
@@ -562,7 +560,7 @@ def _check_execute_external_pipeline_args(
     run_config: Mapping[str, object],
     mode: Optional[str],
     preset: Optional[str],
-    tags: Optional[Mapping[str, object]],
+    tags: Optional[Mapping[str, str]],
     solid_selection: Optional[Sequence[str]],
 ) -> Tuple[Mapping[str, object], str, Mapping[str, object], Optional[Sequence[str]]]:
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)

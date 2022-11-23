@@ -12,7 +12,7 @@ from .stack import EvaluationStack
 from .traversal_context import TraversalContext, TraversalType
 
 
-def post_process_config(config_type: ConfigType, config_value: Any) -> EvaluateValueResult:
+def post_process_config(config_type: ConfigType, config_value: Any) -> EvaluateValueResult[Any]:
     ctx = TraversalContext.from_config_type(
         config_type=check.inst_param(config_type, "config_type", ConfigType),
         stack=EvaluationStack(entries=[]),
@@ -21,7 +21,7 @@ def post_process_config(config_type: ConfigType, config_value: Any) -> EvaluateV
     return _recursively_process_config(ctx, config_value)
 
 
-def resolve_defaults(config_type: ConfigType, config_value: Any) -> EvaluateValueResult:
+def resolve_defaults(config_type: ConfigType, config_value: Any) -> EvaluateValueResult[Any]:
     ctx = TraversalContext.from_config_type(
         config_type=check.inst_param(config_type, "config_type", ConfigType),
         stack=EvaluationStack(entries=[]),
@@ -33,7 +33,7 @@ def resolve_defaults(config_type: ConfigType, config_value: Any) -> EvaluateValu
 
 def _recursively_process_config(
     context: TraversalContext, config_value: Any
-) -> EvaluateValueResult:
+) -> EvaluateValueResult[Any]:
     evr = _recursively_resolve_defaults(context, config_value)
 
     if evr.success:
@@ -46,7 +46,7 @@ def _recursively_process_config(
 
 def _recursively_resolve_defaults(  # type: ignore # mypy missing check.failed NoReturn
     context: TraversalContext, config_value: Any
-) -> EvaluateValueResult:
+) -> EvaluateValueResult[Any]:
     kind = context.config_type.kind
 
     if kind == ConfigTypeKind.SCALAR:
@@ -74,7 +74,7 @@ def _recursively_resolve_defaults(  # type: ignore # mypy missing check.failed N
         check.failed(f"Unsupported type {context.config_type.key}")
 
 
-def _post_process(context: TraversalContext, config_value: Any) -> EvaluateValueResult:
+def _post_process(context: TraversalContext, config_value: Any) -> EvaluateValueResult[Any]:
     try:
         new_value = context.config_type.post_process(config_value)
         return EvaluateValueResult.for_value(new_value)
@@ -87,7 +87,7 @@ def _post_process(context: TraversalContext, config_value: Any) -> EvaluateValue
 
 def _recurse_in_to_scalar_union(
     context: TraversalContext, config_value: Any
-) -> EvaluateValueResult:
+) -> EvaluateValueResult[Any]:
     if isinstance(config_value, dict) or isinstance(config_value, list):
         return _recursively_process_config(
             context.for_new_config_type(context.config_type.non_scalar_type), config_value  # type: ignore
@@ -100,7 +100,7 @@ def _recurse_in_to_scalar_union(
 
 def _recurse_in_to_selector(
     context: TraversalContext, config_value: Mapping[str, Any]
-) -> EvaluateValueResult:
+) -> EvaluateValueResult[Any]:
     check.invariant(
         context.config_type.kind == ConfigTypeKind.SELECTOR,
         "Non-selector not caught in validation",
@@ -129,7 +129,7 @@ def _recurse_in_to_selector(
 
 def _recurse_in_to_shape(
     context: TraversalContext, config_value: Optional[Mapping[str, object]]
-) -> EvaluateValueResult:
+) -> EvaluateValueResult[Any]:
     check.invariant(ConfigTypeKind.is_shape(context.config_type.kind), "Unexpected non shape type")
     config_value = check.opt_mapping_param(config_value, "config_value", key_type=str)
 
@@ -172,11 +172,10 @@ def _recurse_in_to_shape(
         for extra_field in extra_fields:
             processed_fields[extra_field] = EvaluateValueResult.for_value(config_value[extra_field])
 
-    errors = []
+    errors: List[EvaluationError] = []
     for result in processed_fields.values():
         if not result.success:
-            for error in cast(List[EvaluationError], result.errors):
-                errors.append(error)
+            errors.extend(check.not_none(result.errors))
 
     if errors:
         return EvaluateValueResult.for_errors(errors)
@@ -186,7 +185,7 @@ def _recurse_in_to_shape(
     )
 
 
-def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> EvaluateValueResult:
+def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> EvaluateValueResult[Any]:
     check.invariant(context.config_type.kind == ConfigTypeKind.ARRAY, "Unexpected non array type")
 
     if not config_value:
@@ -201,10 +200,10 @@ def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> Evalua
         for idx, item in enumerate(config_value)
     ]
 
-    errors = []
+    errors: List[EvaluationError] = []
     for result in results:
         if not result.success:
-            errors += cast(List[EvaluationError], result.errors)
+            errors.extend(check.not_none(result.errors))
 
     if errors:
         return EvaluateValueResult.for_errors(errors)
@@ -212,7 +211,7 @@ def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> Evalua
     return EvaluateValueResult.for_value(frozenlist([result.value for result in results]))
 
 
-def _recurse_in_to_map(context: TraversalContext, config_value: Any) -> EvaluateValueResult:
+def _recurse_in_to_map(context: TraversalContext, config_value: Any) -> EvaluateValueResult[Any]:
     check.invariant(
         context.config_type.kind == ConfigTypeKind.MAP,
         "Unexpected non map type",
@@ -234,10 +233,10 @@ def _recurse_in_to_map(context: TraversalContext, config_value: Any) -> Evaluate
         for key, item in config_value.items()
     }
 
-    errors = []
+    errors: List[EvaluationError] = []
     for result in results.values():
         if not result.success:
-            errors += cast(List[EvaluationError], result.errors)
+            errors.extend(check.not_none(result.errors))
 
     if errors:
         return EvaluateValueResult.for_errors(errors)

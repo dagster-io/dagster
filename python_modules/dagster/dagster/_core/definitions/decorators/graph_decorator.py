@@ -18,7 +18,7 @@ class _Graph:
     output_defs: Optional[Sequence[OutputDefinition]]
     ins: Optional[Mapping[str, GraphIn]]
     out: Optional[Union[GraphOut, Mapping[str, GraphOut]]]
-    tags: Optional[Mapping[str, object]]
+    tags: Optional[Mapping[str, str]]
     config_mapping: Optional[ConfigMapping]
 
     def __init__(

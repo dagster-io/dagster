@@ -190,7 +190,7 @@ def _check_solid_def_header_args(
     input_def_snaps: Sequence[InputDefSnap],
     output_def_snaps: Sequence[OutputDefSnap],
     description: Optional[str],
-    tags: Mapping[str, object],
+    tags: Mapping[str, str],
     config_field_snap: Optional[ConfigFieldSnap],
 ):
     return dict(
@@ -228,7 +228,7 @@ class CompositeSolidDefSnap(
         input_def_snaps: Sequence[InputDefSnap],
         output_def_snaps: Sequence[OutputDefSnap],
         description: Optional[str],
-        tags: Mapping[str, object],
+        tags: Mapping[str, str],
         config_field_snap: Optional[ConfigFieldSnap],
         dep_structure_snapshot: DependencyStructureSnapshot,
         input_mapping_snaps: Sequence[InputMappingSnap],
@@ -283,7 +283,7 @@ class SolidDefSnap(
         input_def_snaps: Sequence[InputDefSnap],
         output_def_snaps: Sequence[OutputDefSnap],
         description: Optional[str],
-        tags: Mapping[str, object],
+        tags: Mapping[str, str],
         required_resource_keys: Sequence[str],
         config_field_snap: Optional[ConfigFieldSnap],
     ):
