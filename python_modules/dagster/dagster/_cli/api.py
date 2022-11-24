@@ -650,6 +650,15 @@ def grpc_command(
             "empty_working_directory",
         ]
     ):
+        # in the grpc api CLI we never load more than one module at a time
+        maybe_module = kwargs["module_name"]
+        if maybe_module:
+            check.is_tuple(maybe_module, of_type=str)
+            check.invariant(len(maybe_module) <= 1)
+            module_name = maybe_module[0]
+        else:
+            module_name = None
+
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute=kwargs["attribute"],
@@ -658,7 +667,7 @@ def grpc_command(
                 if kwargs.get("empty_working_directory")
                 else get_working_directory_from_kwargs(kwargs)
             ),
-            module_name=kwargs["module_name"],
+            module_name=module_name,
             python_file=kwargs["python_file"],
             package_name=kwargs["package_name"],
         )
