@@ -2,8 +2,8 @@ import sys
 import zlib
 from unittest import mock
 
+from dagster import job, op
 from dagster._core.storage.runs.sql_run_storage import defensively_unpack_pipeline_snapshot_query
-from dagster._legacy import pipeline, solid
 from dagster._serdes import serialize_dagster_namedtuple
 
 
@@ -76,15 +76,15 @@ def test_defensive_pipelines_cannot_parse_json():
 
 
 def test_correctly_fetch_decompress_parse_snapshot():
-    @solid
-    def noop_solid(_):
+    @op
+    def noop_op(_):
         pass
 
-    @pipeline
-    def noop_pipeline():
-        noop_solid()
+    @job
+    def noop_job():
+        noop_op()
 
-    noop_pipeline_snapshot = noop_pipeline.get_pipeline_snapshot()
+    noop_pipeline_snapshot = noop_job.get_pipeline_snapshot()
 
     mock_logger = mock.MagicMock()
     assert (

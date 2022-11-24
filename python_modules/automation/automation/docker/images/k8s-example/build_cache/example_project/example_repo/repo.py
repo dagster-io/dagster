@@ -30,11 +30,11 @@ def count_letters(_context, word):
         ModeDefinition(
             name="default",
             resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-            executor_defs=default_executors + [celery_k8s_job_executor],
+            executor_defs=[*default_executors, celery_k8s_job_executor],
         ),
         ModeDefinition(
             name="test",
-            executor_defs=default_executors + [celery_k8s_job_executor],
+            executor_defs=[*default_executors, celery_k8s_job_executor],
         ),
     ],
     preset_defs=[
