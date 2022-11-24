@@ -10,14 +10,14 @@ class HNClient(ABC):
     """
 
     def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
-        ...
+        pass
 
     def fetch_max_item_id(self) -> int:
-        ...
+        pass
 
     @property
     def item_field_names(self):
-        ...
+        pass
 
 
 class HNAPIClient(HNClient):
