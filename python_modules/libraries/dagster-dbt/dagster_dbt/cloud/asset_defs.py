@@ -86,13 +86,15 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         # A simple constraint to is that we only support jobs that run a single command,
         # as defined in the dbt Cloud job's execution settings.
         #
-        # For the moment, we'll support either `dbt run` or `dbt build`. In the future, we can
-        # adjust this to support multiple commands.
+        # TODO: For the moment, we'll support either `dbt run` or `dbt build`.
+        # In the future, we can adjust this to support multiple commands.
         #
-        # To note `dbt deps` is automatically run before the job's configured commands. And
-        # `dbt docs generate` and `dbt source freshness` can automatically run after the job's
-        # configured commands, if the settings are enabled. These commands will be supported, and
-        # do not count towards the single command constraint.
+        # As a reminder, `dbt deps` is automatically run before the job's configured commands.
+        # And if the settings are enabled, `dbt docs generate` and `dbt source freshness` can
+        # automatically run after the job's configured commands.
+        #
+        # These commands that execute before and after the job's configured commands do not count
+        # towards the single command constraint.
         commands = job["execute_steps"]
         if len(commands) != 1 or not commands[0].lower().startswith(("dbt run", "dbt build")):
             raise DagsterDbtCloudJobInvariantViolationError(
@@ -184,7 +186,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             deps=dbt_dependencies,
             node_info_to_asset_key=self._node_info_to_asset_key,
             node_info_to_group_fn=self._node_info_to_group_fn,
-            # In the future, allow the IO manager to be specified.
+            # TODO: In the future, allow the IO manager to be specified.
             io_manager_key=None,
             # We shouldn't display the raw sql. Instead, inspect if dbt docs were generated,
             # and attach metadata to link to the docs.
@@ -192,7 +194,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         )
 
         return AssetsDefinitionCacheableData(
-            # In the future, we should allow additional upstream assets to be specified.
+            # TODO: In the future, we should allow additional upstream assets to be specified.
             keys_by_input_name={
                 input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
             },
@@ -209,10 +211,10 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 output_name: self._build_dbt_cloud_assets_metadata(dbt_metadata)
                 for output_name, dbt_metadata in metadata_by_output_name.items()
             },
-            # In the future, we should allow the key prefix to be specified.
+            # TODO: In the future, we should allow the key prefix to be specified.
             key_prefix=None,
-            # In the future, we should allow these assets to be subset, but this requires ad-hoc
-            # overrides to the job's run/build step to materialize only the subset.
+            # TODO: In the future, we should allow these assets to be subset, but this requires
+            # ad-hoc overrides to the job's run/build step to materialize only the subset.
             can_subset=False,
             extra_metadata={
                 "job_id": self._job_id,
@@ -283,8 +285,8 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             # Run the dbt Cloud job to rematerialize the assets.
             dbt_cloud_output = dbt_cloud.run_job_and_poll(job_id=job_id)
 
-            # Assume the run completely fails or completely succeeds. We can relax this
-            # assumption in the future.
+            # TODO: Assume the run completely fails or completely succeeds.
+            # In the future, we can relax this assumption.
             step: Optional[int] = None
             manifest_json = dbt_cloud.get_manifest(run_id=dbt_cloud_output.run_id, step=step)
 
@@ -294,7 +296,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                     docs_url=dbt_cloud_output.docs_url,
                     node_info_to_asset_key=self._node_info_to_asset_key,
                     manifest_json=manifest_json,
-                    # In the future, allow arbitrary mappings to Dagster output metadata from
+                    # TODO: In the future, allow arbitrary mappings to Dagster output metadata from
                     # the dbt metadata.
                     extra_metadata=None,
                     generate_asset_outputs=True,
@@ -351,7 +353,8 @@ def load_assets_from_dbt_cloud_job(
     return DbtCloudCacheableAssetsDefinition(
         dbt_cloud_resource_def=dbt_cloud,
         job_id=job_id,
-        # In the future, allow arbitrary mappings to asset keys and groups from the dbt metadata.
+        # TODO: In the future, allow arbitrary mappings to asset keys and groups
+        # from the dbt metadata.
         node_info_to_asset_key=_get_node_asset_key,
         node_info_to_group_fn=_get_node_group_name,
     )

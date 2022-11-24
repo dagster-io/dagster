@@ -6,7 +6,7 @@ import pendulum
 import pytest
 
 from dagster import _seven, job, op
-from dagster._core.definitions import PipelineDefinition
+from dagster._core.definitions import GraphDefinition
 from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunNotFoundError,
@@ -206,8 +206,8 @@ class TestRunStorage:
 
     def test_fetch_by_snapshot_id(self, storage):
         assert storage
-        pipeline_def_a = PipelineDefinition(name="some_pipeline", solid_defs=[])
-        pipeline_def_b = PipelineDefinition(name="some_other_pipeline", solid_defs=[])
+        pipeline_def_a = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
+        pipeline_def_b = GraphDefinition(name="some_other_pipeline", node_defs=[]).to_job()
         pipeline_snapshot_a = pipeline_def_a.get_pipeline_snapshot()
         pipeline_snapshot_b = pipeline_def_b.get_pipeline_snapshot()
         pipeline_snapshot_a_id = create_pipeline_snapshot_id(pipeline_snapshot_a)
@@ -332,9 +332,6 @@ class TestRunStorage:
         }
 
     def test_fetch_by_filter(self, storage):
-
-        now = pendulum.now()
-
         assert storage
         one = make_new_run_id()
         two = make_new_run_id()
@@ -475,12 +472,6 @@ class TestRunStorage:
         count = storage.get_runs_count(RunsFilter())
         assert len(some_runs) == 4
         assert count == 4
-
-        old_runs = storage.get_runs(RunsFilter(created_before=now.add(days=-1)))
-        assert len(old_runs) == 0
-
-        new_runs = storage.get_runs(RunsFilter(created_before=now.add(days=1)))
-        assert len(new_runs) == 4
 
     def test_fetch_count_by_tag(self, storage):
         assert storage
@@ -798,7 +789,7 @@ class TestRunStorage:
 
     def test_write_conflicting_run_id(self, storage):
         double_run_id = "double_run_id"
-        pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
+        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
         run = DagsterRun(run_id=double_run_id, pipeline_name=pipeline_def.name)
 
@@ -807,7 +798,7 @@ class TestRunStorage:
             storage.add_run(run)
 
     def test_add_get_snapshot(self, storage):
-        pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
+        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
         pipeline_snapshot = pipeline_def.get_pipeline_snapshot()
         pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
 
@@ -825,7 +816,7 @@ class TestRunStorage:
 
     def test_single_write_read_with_snapshot(self, storage):
         run_with_snapshot_id = "lkasjdflkjasdf"
-        pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
+        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
         pipeline_snapshot = pipeline_def.get_pipeline_snapshot()
 
@@ -858,7 +849,7 @@ class TestRunStorage:
     def test_single_write_with_missing_snapshot(self, storage):
 
         run_with_snapshot_id = "lkasjdflkjasdf"
-        pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
+        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
         run_with_missing_snapshot = DagsterRun(
             run_id=run_with_snapshot_id,
@@ -873,7 +864,7 @@ class TestRunStorage:
         from dagster._core.execution.api import create_execution_plan
         from dagster._core.snap import snapshot_from_execution_plan
 
-        pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
+        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
         execution_plan = create_execution_plan(pipeline_def)
         ep_snapshot = snapshot_from_execution_plan(
             execution_plan, pipeline_def.get_pipeline_snapshot_id()
@@ -1290,7 +1281,7 @@ class TestRunStorage:
         run_to_add = TestRunStorage.build_run(pipeline_name="pipeline_name", run_id=run_id)
         storage.add_run(run_to_add)
 
-        pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
+        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
         pipeline_snapshot = pipeline_def.get_pipeline_snapshot()
         pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
