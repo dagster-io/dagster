@@ -3,8 +3,6 @@ from typing import Any, Dict, Optional
 
 import requests
 
-from dagster import resource
-
 
 class HNClient(ABC):
     """
@@ -12,14 +10,14 @@ class HNClient(ABC):
     """
 
     def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
-        pass
+        ...
 
     def fetch_max_item_id(self) -> int:
-        pass
+        ...
 
     @property
     def item_field_names(self):
-        pass
+        ...
 
 
 class HNAPIClient(HNClient):
@@ -54,11 +52,6 @@ class HNAPIClient(HNClient):
         ]
 
 
-@resource
-def hn_api_client():
-    return HNAPIClient()
-
-
 class StubHNClient(HNClient):
     """
     Hacker News Client that returns fake data
@@ -89,8 +82,3 @@ class StubHNClient(HNClient):
     @property
     def item_field_names(self):
         return ["id", "type", "title", "by"]
-
-
-@resource
-def stub_hn_client():
-    return StubHNClient()
