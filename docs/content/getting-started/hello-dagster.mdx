@@ -3,69 +3,69 @@ title: Hello Dagster | Dagster
 description: Run dagster for the first time
 ---
 
-# `hello dagster`
+# Hello Dagster
 
 This guide helps you build a simple data pipeline in dagster that downloads the top 10 HackerNews stories.
 
-1. Start by creating a file called `hello-dagster.py` and copying the following:
+Start by creating a file called `hello-dagster.py` and copying the following:
 
-   ```python file=/getting-started/hello-dagster/hello-dagster.py
-   import pandas as pd
-   import requests
+```python file=/getting-started/hello-dagster/hello-dagster.py
+import pandas as pd
+import requests
 
-   from dagster import MetadataValue, Output, asset, repository
-
-
-   @asset
-   def hackernews_top_story_ids():
-       """
-       Get top stories from the HackerNews top stories endpoint.
-       API Docs: https://github.com/HackerNews/API#new-top-and-best-stories
-       """
-       top_story_ids = requests.get(
-           "https://hacker-news.firebaseio.com/v0/topstories.json"
-       ).json()
-       return top_story_ids[:10]
+from dagster import MetadataValue, Output, asset, repository
 
 
-   @asset
-   def hackernews_top_stories(hackernews_top_story_ids):
-       """Get items based on story ids from the HackerNews items endpoint"""
-
-       results = []
-       for item_id in hackernews_top_story_ids:
-           item = requests.get(
-               f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
-           ).json()
-           results.append(item)
-
-       df = pd.DataFrame(results)
-       metadata = {
-           "num_records": len(df),
-           "preview": MetadataValue.md(df.to_markdown()),
-       }
-
-       return Output(value=df, metadata=metadata)
+@asset
+def hackernews_top_story_ids():
+    """
+    Get top stories from the HackerNews top stories endpoint.
+    API Docs: https://github.com/HackerNews/API#new-top-and-best-stories
+    """
+    top_story_ids = requests.get(
+        "https://hacker-news.firebaseio.com/v0/topstories.json"
+    ).json()
+    return top_story_ids[:10]
 
 
-   @repository
-   def hello_dagster():
-       return [hackernews_top_story_ids, hackernews_top_stories]
-   ```
+@asset
+def hackernews_top_stories(hackernews_top_story_ids):
+    """Get items based on story ids from the HackerNews items endpoint"""
 
-2. Now install the Python packages we'll need to run `hello-dagster.py` in your favorite Python environment. Unsure? Follow our [installation guide](/getting-started/install).
+    results = []
+    for item_id in hackernews_top_story_ids:
+        item = requests.get(
+            f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
+        ).json()
+        results.append(item)
 
-   ```bash
-   # run in a terminal in your favorite python environment
-   pip install dagster dagit pandas
-   ```
+    df = pd.DataFrame(results)
+    metadata = {
+        "num_records": len(df),
+        "preview": MetadataValue.md(df.to_markdown()),
+    }
 
-3. We'll use `dagit`, the dagster user interface, to run `hello-dagster.py`:
+    return Output(value=df, metadata=metadata)
 
-   ```bash
-   # run in a terminal in your favorite python environment
-   dagit -f hello-dagster.py
-   ```
+
+@repository
+def hello_dagster():
+    return [hackernews_top_story_ids, hackernews_top_stories]
+```
+
+Now install the Python packages we'll need to run `hello-dagster.py` in your favorite Python environment. Unsure? Follow our [installation guide](/getting-started/install).
+
+```bash
+# run in a terminal in your favorite python environment
+pip install dagster dagit pandas
+```
+
+We'll use `dagit`, the dagster user interface, to run `hello-dagster.py`:
+
+```bash
+# run in a terminal in your favorite python environment
+dagit -f hello-dagster.py
+```
 
 Navigate your browser to `http://localhost:3000/`. Clicking `Materialize All` will run our pipeline and create our assets.
 
