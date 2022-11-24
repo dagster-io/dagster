@@ -23,7 +23,7 @@ Using these Dagster concepts we will:
 
 - Write three assets: the full Hacker News dataset, data about comments, and data about stories.
 - Use Dagster's Snowflake I/O manager to store the datasets in [Snowflake](https://www.snowflake.com/).
-- Set up our Dagster [repository](/concepts/repositories-workspaces/repositories) so that the configuration for the Snowflake I/O manager is automatically supplied based on the environment where the code is running.
+- Set up our Dagster code so that the configuration for the Snowflake I/O manager is automatically supplied based on the environment where the code is running.
 
 ---
 
@@ -100,21 +100,17 @@ def stories(items: pd.DataFrame) -> pd.DataFrame:
 Now we can add these assets to our repository and materialize them via Dagit as part of our local development workflow. We will use the [configured API](/concepts/configuration/configured) to add configuration for the `snowflake_io_manager`.
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v1.py startafter=start endbefore=end
-# repository.py
-from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+# __init__.py
+from dagster_snowflake_pandas import snowflake_pandas_io_manager
 from development_to_production.assets import comments, items, stories
 
 from dagster import repository, with_resources
-
-snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
-
 
 # Note that storing passwords in configuration is bad practice. It will be resolved later in the guide.
 @repository
 def repo():
     resource_defs = {
-        "snowflake_io_manager": snowflake_io_manager.configured(
+        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
             {
                 "account": "abc1234.us-east-1",
                 "user": "me@company.com",
@@ -417,11 +413,6 @@ class StubHNClient:
     @property
     def item_field_names(self):
         return ["id", "type", "title", "by"]
-
-
-@resource
-def stub_hn_client():
-    return StubHNClient()
 ```
 
 <Note>
@@ -442,7 +433,7 @@ Now we can use the stub Hacker News resource to test that the `items` asset tran
 
 def test_items():
     context = build_op_context(
-        resources={"hn_client": stub_hn_client},
+        resources={"hn_client": StubHNClient()},
         op_config={"N": StubHNClient().fetch_max_item_id()},
     )
     hn_dataset = items(context)
