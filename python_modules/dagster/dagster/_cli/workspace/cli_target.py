@@ -73,15 +73,43 @@ WORKSPACE_CLI_ARGS = (
     "grpc_socket",
 )
 
+import tomli
+
+
+def get_target_from_toml(path) -> Optional[PackageTarget]:
+    with open(path, "rb") as f:
+        data = tomli.load(f)
+        if not isinstance(data, dict):
+            return None
+
+        dagster_block = data.get("tool", {}).get("dagster", {})
+        return (
+            PackageTarget(
+                package_name=dagster_block["python_package"],
+                attribute=None,
+                working_directory=os.getcwd(),
+                location_name=None,
+            )
+            if "python_package" in dagster_block
+            else None
+        )
+
 
 def get_workspace_load_target(kwargs: Mapping[str, str]):
     check.mapping_param(kwargs, "kwargs")
     if are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
         if kwargs.get("empty_workspace"):
             return EmptyWorkspaceTarget()
+        if os.path.exists("pyproject.toml"):
+            target = get_target_from_toml("pyproject.toml")
+            if target:
+                return target
+
         if os.path.exists("workspace.yaml"):
             return WorkspaceFileTarget(paths=["workspace.yaml"])
-        raise click.UsageError("No arguments given and workspace.yaml not found.")
+        raise click.UsageError(
+            "No arguments given and no [tools.dagster] block in pyproject.toml found."
+        )
 
     if kwargs.get("workspace"):
         _check_cli_arguments_none(

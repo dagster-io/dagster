@@ -1,0 +1,3 @@
+[tool.dagster]
+
+python_package = "foobar"
