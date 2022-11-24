@@ -33,4 +33,9 @@ class StubHNClient:
         return ["id", "type", "title", "by"]
 
 
+@resource
+def stub_hn_client():
+    return StubHNClient()
+
+
 # end_mock
