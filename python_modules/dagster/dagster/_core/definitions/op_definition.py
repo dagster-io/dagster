@@ -11,7 +11,7 @@ from typing import (
     cast,
 )
 
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, get_origin
 
 import dagster._check as check
 from dagster._annotations import public
@@ -19,7 +19,6 @@ from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvariantViolationError
 
-from ..._seven.typing import get_origin
 from .definition_config_schema import IDefinitionConfigSchema
 from .hook_definition import HookDefinition
 from .inference import infer_output_props
