@@ -1,7 +1,10 @@
+import base64
 import sys
 import warnings
 from contextlib import closing, contextmanager
 from typing import Any, Mapping, Optional, Sequence, Union
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 
 import dagster._check as check
 from dagster import resource
@@ -36,6 +39,7 @@ class SnowflakeConnection:
         self.connector = config.get("connector", None)
 
         if self.connector == "sqlalchemy":
+            # If a private key is provided, we do not need to check for a password.
             self.conn_args = {
                 k: config.get(k)
                 for k in (
@@ -51,6 +55,10 @@ class SnowflakeConnection:
                 )
                 if config.get(k) is not None
             }
+
+            if config.get("private_key", None) is not None:
+                # Now we can build the connect args.
+                self.conn_args.connect_args = {"private_key": self.__snowflake_private_key(config)}
 
         else:
             self.conn_args = {
@@ -76,9 +84,33 @@ class SnowflakeConnection:
                 )
                 if config.get(k) is not None
             }
+            if config.get("private_key", None) is not None:
+                self.conn_args["private_key"] = self.__snowflake_private_key(config)
 
         self.autocommit = self.conn_args.get("autocommit", False)
         self.log = log
+
+    def __snowflake_private_key(self, config) -> bytes:
+        private_key = config.get("private_key", None)
+        # If the user has defined a path to a private key, we will use that.
+        if config.get("private_key_path", None) is not None:
+            # read the file from the path.
+            with open(config.get("private_key_path"), "rb") as key:
+                private_key = key.read()
+
+        p_key = serialization.load_pem_private_key(
+            base64.b64decode(private_key),
+            password=config.get("private_key_password", None).encode(),
+            backend=default_backend(),
+        )
+
+        pkb = p_key.private_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+
+        return pkb
 
     @public
     @contextmanager
