@@ -255,7 +255,11 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
               key={range.dimension.name}
               partitionKeys={range.dimension.partitionKeys}
               partitionStateForKey={(dimensionKey) =>
-                mergedHealth.stateForSingleDimension(idx, dimensionKey)
+                mergedHealth.stateForSingleDimension(
+                  idx,
+                  dimensionKey,
+                  ranges.length === 2 ? ranges[1 - idx].selected : undefined,
+                )
               }
               selected={range.selected}
               setSelected={(selected) =>
@@ -272,36 +276,49 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             onChange={setStateFilters}
           />
         </Box>
-        <Box
-          flex={{direction: 'column', gap: 8}}
-          border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-          style={{marginTop: 16, overflowY: 'auto', overflowX: 'visible', maxHeight: '50vh'}}
-        >
-          {partitionedAssets.slice(0, previewCount).map((a) => (
-            <PartitionHealthSummary
-              assetKey={a.assetKey}
-              showAssetKey
-              key={displayNameForAssetKey(a.assetKey)}
-              data={assetHealth}
-              selected={allSelected}
-            />
-          ))}
-          {partitionedAssets.length === 1 ? (
-            <span />
-          ) : previewCount === 0 ? (
-            <Box margin={{vertical: 8}}>
-              <ButtonLink onClick={() => setPreviewCount(5)}>
-                Show per-asset partition health
-              </ButtonLink>
-            </Box>
-          ) : previewCount < partitionedAssets.length ? (
-            <Box margin={{vertical: 8}}>
-              <ButtonLink onClick={() => setPreviewCount(partitionedAssets.length)}>
-                Show {partitionedAssets.length - previewCount} more previews
-              </ButtonLink>
-            </Box>
-          ) : undefined}
-        </Box>
+
+        {previewCount > 0 && (
+          <Box
+            margin={{top: 16}}
+            flex={{direction: 'column', gap: 8}}
+            padding={{vertical: 16, horizontal: 20}}
+            border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+            background={Colors.Gray100}
+            style={{
+              marginLeft: -20,
+              marginRight: -20,
+              overflowY: 'auto',
+              overflowX: 'visible',
+              maxHeight: '35vh',
+            }}
+          >
+            {partitionedAssets.slice(0, previewCount).map((a) => (
+              <PartitionHealthSummary
+                key={displayNameForAssetKey(a.assetKey)}
+                assetKey={a.assetKey}
+                showAssetKey
+                data={assetHealth}
+                ranges={ranges}
+              />
+            ))}
+            {previewCount < partitionedAssets.length && (
+              <Box margin={{vertical: 8}}>
+                <ButtonLink onClick={() => setPreviewCount(partitionedAssets.length)}>
+                  Show {partitionedAssets.length - previewCount} more previews
+                </ButtonLink>
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {previewCount === 0 && partitionedAssets.length > 1 && (
+          <Box margin={{top: 16, bottom: 8}}>
+            <ButtonLink onClick={() => setPreviewCount(5)}>
+              Show per-asset partition health
+            </ButtonLink>
+          </Box>
+        )}
+
         <UpstreamUnavailableWarning
           upstreamAssetKeys={upstreamAssetKeys}
           ranges={ranges}

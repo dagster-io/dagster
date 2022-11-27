@@ -6,7 +6,7 @@ import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {
   mergedAssetHealth,
   explodePartitionKeysInRanges,
-  isTimeseriesPartition,
+  isTimeseriesDimension,
 } from '../assets/MultipartitioningSupport';
 import {usePartitionHealthData} from '../assets/usePartitionHealthData';
 import {useViewport} from '../gantt/useViewport';
@@ -66,7 +66,7 @@ export const AssetJobPartitionsView: React.FC<{
     }
   }, [viewport.width, setPageSize]);
 
-  let dimensionIdx = merged.dimensions.findIndex((d) => isTimeseriesPartition(d.partitionKeys[0]));
+  let dimensionIdx = merged.dimensions.findIndex(isTimeseriesDimension);
   if (dimensionIdx === -1) {
     dimensionIdx = 0; // may as well show something
   }
@@ -108,9 +108,11 @@ export const AssetJobPartitionsView: React.FC<{
         <div {...containerProps}>
           <PartitionStatus
             partitionNames={dimensionKeys}
+            splitPartitions={!isTimeseriesDimension(dimension)}
             partitionStateForKey={(key) => merged.stateForSingleDimension(dimensionIdx, key)}
             selected={selectedDimensionKeys}
             selectionWindowSize={pageSize}
+            tooltipMessage="Click to view per-asset status"
             onClick={(partitionName) => {
               const maxIdx = dimensionKeys.length - 1;
               const selectedIdx = dimensionKeys.indexOf(partitionName);
@@ -120,7 +122,6 @@ export const AssetJobPartitionsView: React.FC<{
               );
               setOffset(nextOffset);
             }}
-            tooltipMessage="Click to view per-asset status"
           />
         </div>
         {showAssets && dimension && (
