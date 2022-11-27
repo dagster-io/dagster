@@ -92,7 +92,7 @@ from ..instigation import (
     GrapheneInstigationStatesOrError,
     GrapheneInstigationType,
 )
-from ..logs.compute_logs import GrapheneCapturedLogsMetadata
+from ..logs.compute_logs import GrapheneCapturedLogsMetadata, GrapheneCapturedLogs, from_captured_log_data
 from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
 from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
@@ -366,6 +366,13 @@ class GrapheneDagitQuery(graphene.ObjectType):
         graphene.NonNull(GrapheneCapturedLogsMetadata),
         logKey=graphene.Argument(non_null_list(graphene.String)),
         description="Retrieve the captured log metadata for a given log key.",
+    )
+    capturedLogs = graphene.Field(
+        graphene.NonNull(GrapheneCapturedLogs),
+        logKey=graphene.Argument(non_null_list(graphene.String)),
+        cursor=graphene.Argument(graphene.String),
+        limit=graphene.Argument(graphene.Int),
+        description="Captured logs are the stdout/stderr logs for a given log key",
     )
 
     def resolve_repositoriesOrError(self, graphene_info, **kwargs):
@@ -672,3 +679,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_capturedLogsMetadata(self, graphene_info, logKey):
         return get_captured_log_metadata(graphene_info, logKey)
+
+    def resolve_capturedLogs(self, graphene_info, logKey, cursor=None, limit=None):
+        log_data = graphene_info.context.instance.compute_log_manager.get_log_data(logKey, cursor=cursor, max_bytes=limit)
+        return from_captured_log_data(log_data)

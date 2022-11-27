@@ -3238,6 +3238,11 @@ type DagitQuery {
   Retrieve the captured log metadata for a given log key.
   """
   capturedLogsMetadata(logKey: [String!]!): CapturedLogsMetadata!
+
+  """
+  Captured logs are the stdout/stderr logs for a given log key
+  """
+  capturedLogs(logKey: [String!]!): CapturedLogs!
 }
 
 union WorkspaceOrError = Workspace | PythonError
