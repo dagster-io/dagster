@@ -23,13 +23,9 @@ const DID_WRITE_LOCALSTORAGE = '';
 export function useStateWithStorage<T>(key: string, validate: (json: any) => T) {
   const [version, setVersion] = React.useState(0);
 
-  const validateRef = React.useRef(validate);
-  validateRef.current = validate;
-
   const listener = React.useCallback(
     (event: Event) => {
       if (event instanceof CustomEvent && event.detail === key) {
-        console.log(key);
         console.log('set via event');
         setVersion((v) => v + 1);
       }
@@ -53,8 +49,7 @@ export function useStateWithStorage<T>(key: string, validate: (json: any) => T) 
 
   const setState = React.useCallback(
     (input: React.SetStateAction<T>) => {
-      const next =
-        input instanceof Function ? input(validateRef.current(getJSONForKey(key))) : input;
+      const next = input instanceof Function ? input(validate(getJSONForKey(key))) : input;
       if (next === undefined) {
         window.localStorage.removeItem(key);
       } else {
@@ -68,7 +63,7 @@ export function useStateWithStorage<T>(key: string, validate: (json: any) => T) 
 
       return next;
     },
-    [key, listener],
+    [validate, key, listener],
   );
 
   const value = React.useMemo(() => [state, setState], [state, setState]);
