@@ -90,6 +90,9 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
             exc_info = sys.exc_info()
             traceback.print_tb(exc_info[2])
 
+    @pytest.mark.skip(
+        "Consistently flakes. See https://linear.app/elementl/issue/CORE-82/test-concurrent-sqlite-event-log-connections-consistently-flakes"
+    )
     def test_concurrent_sqlite_event_log_connections(self, storage):
         tmpdir_path = storage._base_dir  # pylint: disable=protected-access
         ctx = multiprocessing.get_context("spawn")

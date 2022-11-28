@@ -1,4 +1,4 @@
-# type: ignore[return-value]
+# mypy: disable-error-code=return-value
 from datetime import datetime
 from typing import List
 
