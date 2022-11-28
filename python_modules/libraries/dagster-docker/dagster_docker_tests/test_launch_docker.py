@@ -355,8 +355,8 @@ def test_cant_combine_network_and_networks(aws_env):
                     "config": launcher_config,
                 }
             }
-        ):
-            pass
+        ) as instance:
+            print(instance.run_launcher)  # pylint: disable=print-call
 
 
 def test_terminate(aws_env):
