@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
 import requests
 
@@ -15,14 +15,14 @@ class DagsterEcsTaskDefinitionConfig(
             ("family", str),
             ("image", str),
             ("container_name", str),
-            ("command", Optional[List[str]]),
-            ("log_configuration", Optional[Dict[str, Any]]),
-            ("secrets", List[Dict[str, str]]),
-            ("environment", List[Dict[str, str]]),
+            ("command", Optional[Sequence[str]]),
+            ("log_configuration", Optional[Mapping[str, Any]]),
+            ("secrets", Sequence[Mapping[str, str]]),
+            ("environment", Sequence[Mapping[str, str]]),
             ("execution_role_arn", Optional[str]),
             ("task_role_arn", Optional[str]),
-            ("sidecars", List[Dict[str, Any]]),
-            ("requires_compatibilities", List[str]),
+            ("sidecars", Sequence[Mapping[str, Any]]),
+            ("requires_compatibilities", Sequence[str]),
             ("cpu", str),
             ("memory", str),
         ],
@@ -52,14 +52,14 @@ class DagsterEcsTaskDefinitionConfig(
             check.str_param(family, "family"),
             check.str_param(image, "image"),
             check.str_param(container_name, "container_name"),
-            check.opt_list_param(command, "command"),
-            check.opt_dict_param(log_configuration, "log_configuration"),
-            check.opt_list_param(secrets, "secrets"),
-            check.opt_list_param(environment, "environment"),
+            check.opt_sequence_param(command, "command"),
+            check.opt_mapping_param(log_configuration, "log_configuration"),
+            check.opt_sequence_param(secrets, "secrets"),
+            check.opt_sequence_param(environment, "environment"),
             check.opt_str_param(execution_role_arn, "execution_role_arn"),
             check.opt_str_param(task_role_arn, "task_role_arn"),
-            check.opt_list_param(sidecars, "sidecars"),
-            check.opt_list_param(requires_compatibilities, "requires_compatibilities"),
+            check.opt_sequence_param(sidecars, "sidecars"),
+            check.opt_sequence_param(requires_compatibilities, "requires_compatibilities"),
             check.opt_str_param(cpu, "cpu", default="256"),
             check.opt_str_param(memory, "memory", default="512"),
         )

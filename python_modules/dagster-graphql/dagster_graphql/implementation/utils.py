@@ -166,7 +166,7 @@ class ExecutionParams(
         return super(ExecutionParams, cls).__new__(
             cls,
             selector=check.inst_param(selector, "selector", PipelineSelector),
-            run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
+            run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
             mode=check.opt_str_param(mode, "mode"),
             execution_metadata=check.inst_param(
                 execution_metadata, "execution_metadata", ExecutionMetadata
