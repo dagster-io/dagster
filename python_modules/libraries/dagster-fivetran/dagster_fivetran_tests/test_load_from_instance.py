@@ -1,23 +1,52 @@
 import pytest
 import responses
 from dagster_fivetran import fivetran_resource
-from dagster_fivetran.asset_defs import load_assets_from_fivetran_instance
+from dagster_fivetran.asset_defs import (
+    FivetranConnectionMetadata,
+    load_assets_from_fivetran_instance,
+)
 from dagster_fivetran_tests.utils import (
     DEFAULT_CONNECTOR_ID,
     get_complex_sample_connector_schema_config,
+    get_sample_connector_response,
     get_sample_connectors_response,
     get_sample_groups_response,
+    get_sample_sync_response,
+    get_sample_update_response,
 )
 
-from dagster import AssetKey, build_init_resource_context
+from dagster import AssetIn, AssetKey, IOManager, asset, build_init_resource_context, io_manager
+from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dagster._core.execution.with_resources import with_resources
 
 
 @responses.activate
 @pytest.mark.parametrize("connector_to_group_fn", [None, lambda x: f"{x[0]}_group"])
 @pytest.mark.parametrize("filter_connector", [True, False])
-def test_load_from_instance(connector_to_group_fn, filter_connector):
+@pytest.mark.parametrize(
+    "connector_to_asset_key_fn",
+    [
+        None,
+        lambda conn, name: AssetKey([*conn.name.split("."), *name.split(".")]),
+    ],
+)
+def test_load_from_instance(connector_to_group_fn, filter_connector, connector_to_asset_key_fn):
+
+    load_calls = []
+
+    @io_manager
+    def test_io_manager(_context):
+        class TestIOManager(IOManager):
+            def handle_output(self, context, obj):
+                return
+
+            def load_input(self, context):
+                load_calls.append(context.asset_key)
+                return None
+
+        return TestIOManager()
 
     ft_resource = fivetran_resource(
         build_init_resource_context(
@@ -58,30 +87,57 @@ def test_load_from_instance(connector_to_group_fn, filter_connector):
                 ft_instance,
                 connector_to_group_fn=connector_to_group_fn,
                 connector_filter=(lambda _: False) if filter_connector else None,
+                connector_to_asset_key_fn=connector_to_asset_key_fn,
+                connector_to_io_manager_key_fn=(lambda _: "test_io_manager"),
             )
         else:
             ft_cacheable_assets = load_assets_from_fivetran_instance(
                 ft_instance,
                 connector_filter=(lambda _: False) if filter_connector else None,
+                connector_to_asset_key_fn=connector_to_asset_key_fn,
+                io_manager_key="test_io_manager",
             )
         ft_assets = ft_cacheable_assets.build_definitions(
             ft_cacheable_assets.compute_cacheable_data()
         )
+        ft_assets = with_resources(ft_assets, {"test_io_manager": test_io_manager})
 
     if filter_connector:
         assert len(ft_assets) == 0
         return
 
+    # Create set of expected asset keys
     tables = {
         AssetKey(["xyz1", "abc2"]),
         AssetKey(["xyz1", "abc1"]),
         AssetKey(["abc", "xyz"]),
-        AssetKey(["qwerty", "fed"]),
-        AssetKey(["qwerty", "bar"]),
     }
+    if connector_to_asset_key_fn:
+        tables = {
+            connector_to_asset_key_fn(
+                FivetranConnectionMetadata("some_service.some_name", "", "=", []),
+                ".".join(t.path),
+            )
+            for t in tables
+        }
 
-    # # Check schema metadata is added correctly to asset def
+    # Set up a downstream asset to consume the xyz output table
+    xyz_asset_key = (
+        connector_to_asset_key_fn(
+            FivetranConnectionMetadata("some_service.some_name", "", "=", []),
+            "abc.xyz",
+        )
+        if connector_to_asset_key_fn
+        else AssetKey(["abc", "xyz"])
+    )
 
+    @asset(ins={"xyz": AssetIn(key=xyz_asset_key)})
+    def downstream_asset(xyz):  # pylint: disable=unused-argument
+        return
+
+    all_assets = [downstream_asset] + ft_assets
+
+    # Check schema metadata is added correctly to asset def
     assert any(
         out.metadata.get("table_schema")
         == MetadataValue.table_schema(
@@ -109,3 +165,41 @@ def test_load_from_instance(connector_to_group_fn, filter_connector):
         ]
     )
     assert len(ft_assets[0].op.output_defs) == len(tables)
+
+    # Kick off a run to materialize all assets
+    final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
+    api_prefix = f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}"
+    fivetran_sync_job = build_assets_job(
+        name="fivetran_assets_job",
+        assets=all_assets,
+    )
+
+    with responses.RequestsMock() as rsps:
+        rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())
+        rsps.add(rsps.POST, f"{api_prefix}/force", json=get_sample_sync_response())
+        # connector schema
+        rsps.add(
+            rsps.GET, f"{api_prefix}/schemas", json=get_complex_sample_connector_schema_config()
+        )
+        # initial state
+        rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
+        # n polls before updating
+        for _ in range(2):
+            rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
+        # final state will be updated
+        rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response(data=final_data))
+
+        result = fivetran_sync_job.execute_in_process()
+        asset_materializations = [
+            event
+            for event in result.events_for_node("fivetran_sync_some_connector")
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 3
+        asset_keys = set(
+            mat.event_specific_data.materialization.asset_key for mat in asset_materializations
+        )
+        assert asset_keys == tables
+
+        # Validate IO manager is called to retrieve the xyz asset which our downstream asset depends on
+        assert load_calls == [xyz_asset_key]

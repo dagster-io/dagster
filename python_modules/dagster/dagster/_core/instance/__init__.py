@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import logging.config
 import os
@@ -11,7 +13,6 @@ from enum import Enum
 from tempfile import TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -43,6 +44,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
     DagsterRunConflict,
+    DagsterUndefinedLogicalVersionError,
 )
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -62,7 +64,7 @@ from dagster._core.utils import str_format_list
 from dagster._serdes import ConfigurableClass
 from dagster._seven import get_current_datetime_in_utc
 from dagster._utils import merge_dicts, traced
-from dagster._utils.backcompat import experimental_functionality_warning
+from dagster._utils.backcompat import deprecation_warning, experimental_functionality_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .config import (
@@ -107,6 +109,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.secrets import SecretsLoader
     from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
+    from dagster._core.storage.captured_log_manager import CapturedLogManager
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.event_log.base import AssetRecord, EventLogRecord, EventRecordsFilter
@@ -300,6 +303,7 @@ class DagsterInstance:
         from dagster._core.run_coordinator import RunCoordinator
         from dagster._core.scheduler import Scheduler
         from dagster._core.secrets import SecretsLoader
+        from dagster._core.storage.captured_log_manager import CapturedLogManager
         from dagster._core.storage.compute_log_manager import ComputeLogManager
         from dagster._core.storage.event_log import EventLogStorage
         from dagster._core.storage.root import LocalArtifactStorage
@@ -319,6 +323,10 @@ class DagsterInstance:
         self._compute_log_manager = check.inst_param(
             compute_log_manager, "compute_log_manager", ComputeLogManager
         )
+        if not isinstance(self._compute_log_manager, CapturedLogManager):
+            deprecation_warning(
+                "ComputeLogManager", "1.2.0", "Implement the CapturedLogManager interface instead."
+            )
         self._compute_log_manager.register_instance(self)
         self._scheduler = check.opt_inst_param(scheduler, "scheduler", Scheduler)
 
@@ -1469,7 +1477,10 @@ class DagsterInstance:
 
     @traced
     def get_event_tags_for_asset(
-        self, asset_key: AssetKey, filter_tags: Optional[Mapping[str, str]] = None
+        self,
+        asset_key: AssetKey,
+        filter_tags: Optional[Mapping[str, str]] = None,
+        filter_event_id: Optional[int] = None,
     ) -> Sequence[Mapping[str, str]]:
         """
         Fetches asset event tags for the given asset key.
@@ -1479,10 +1490,12 @@ class DagsterInstance:
         partition tags with a fixed dimension value, e.g. all of the tags for events where
         "country" == "US".
 
+        If filter_event_id is provided, searches for the event with the provided event_id.
+
         Returns a list of dicts, where each dict is a mapping of tag key to tag value for a
         single event.
         """
-        return self._event_storage.get_event_tags_for_asset(asset_key, filter_tags)
+        return self._event_storage.get_event_tags_for_asset(asset_key, filter_tags, filter_event_id)
 
     @traced
     def run_ids_for_asset_key(self, asset_key):
@@ -2157,3 +2170,39 @@ class DagsterInstance:
         new_env = self._secrets_loader.get_secrets_for_environment(location_name)
         for k, v in new_env.items():
             os.environ[k] = v
+
+    def get_latest_logical_version_record(
+        self,
+        key: AssetKey,
+        is_source: Optional[bool] = None,
+    ) -> Optional[EventLogRecord]:
+        from dagster._core.event_api import EventRecordsFilter
+        from dagster._core.events import DagsterEventType
+
+        # When we cant don't know whether the requested key corresponds to a source or regular
+        # asset, we need to retrieve both the latest observation and materialization for all assets.
+        # If there is a materialization, it's a regular asset and we can ignore the observation.
+
+        observation: Optional[EventLogRecord] = None
+        if is_source or is_source is None:
+            observations = self.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_OBSERVATION,
+                    asset_key=key,
+                ),
+                limit=1,
+            )
+            observation = next(iter(observations), None)
+
+        materialization: Optional[EventLogRecord] = None
+        if not is_source:
+            materializations = self.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=key,
+                ),
+                limit=1,
+            )
+            materialization = next(iter(materializations), None)
+
+        return materialization or observation

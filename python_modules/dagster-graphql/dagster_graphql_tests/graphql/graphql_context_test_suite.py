@@ -14,13 +14,11 @@ from dagster import file_relative_path
 from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
-from dagster._core.storage.event_log import InMemoryEventLogStorage
 from dagster._core.storage.event_log.sqlite import ConsolidatedSqliteEventLogStorage
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import InMemoryRunStorage
-from dagster._core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
-from dagster._core.test_utils import ExplodingRunLauncher, instance_for_test
+from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import (
@@ -102,47 +100,6 @@ class MarkedManager:
 
 
 class InstanceManagers:
-    @staticmethod
-    def in_memory_instance():
-        @contextmanager
-        def _in_memory_instance():
-            with tempfile.TemporaryDirectory() as temp_dir:
-                yield DagsterInstance(
-                    instance_type=InstanceType.EPHEMERAL,
-                    local_artifact_storage=LocalArtifactStorage(temp_dir),
-                    run_storage=InMemoryRunStorage(),
-                    event_storage=InMemoryEventLogStorage(),
-                    compute_log_manager=LocalComputeLogManager(temp_dir),
-                    run_launcher=SyncInMemoryRunLauncher(),
-                    run_coordinator=DefaultRunCoordinator(),
-                    schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
-                    scheduler=FilesystemTestScheduler(temp_dir),
-                )
-
-        return MarkedManager(_in_memory_instance, [Marks.in_memory_instance])
-
-    @staticmethod
-    def non_launchable_in_memory_instance():
-        @contextmanager
-        def _non_launchable_in_memory_instance():
-            with tempfile.TemporaryDirectory() as temp_dir:
-                yield DagsterInstance(
-                    instance_type=InstanceType.EPHEMERAL,
-                    local_artifact_storage=LocalArtifactStorage(temp_dir),
-                    run_storage=InMemoryRunStorage(),
-                    event_storage=InMemoryEventLogStorage(),
-                    compute_log_manager=LocalComputeLogManager(temp_dir),
-                    run_launcher=ExplodingRunLauncher(),
-                    run_coordinator=DefaultRunCoordinator(),
-                    schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
-                    scheduler=FilesystemTestScheduler(temp_dir),
-                )
-
-        return MarkedManager(
-            _non_launchable_in_memory_instance,
-            [Marks.in_memory_instance, Marks.non_launchable],
-        )
-
     @staticmethod
     def non_launchable_sqlite_instance():
         @contextmanager
@@ -363,9 +320,11 @@ class EnvironmentManagers:
         @contextmanager
         def _mgr_fn(instance, read_only):
             server_process = GrpcServerProcess(
+                instance_ref=instance.get_ref(),
+                location_name=location_name,
                 loadable_target_origin=target
                 if target != None
-                else get_main_loadable_target_origin()
+                else get_main_loadable_target_origin(),
             )
             try:
                 with server_process.create_ephemeral_client() as api_client:
@@ -424,7 +383,6 @@ class EnvironmentManagers:
 
 class Marks:
     # Instance type makes
-    in_memory_instance = pytest.mark.in_memory_instance
     sqlite_instance = pytest.mark.sqlite_instance
     postgres_instance = pytest.mark.postgres_instance
 
@@ -522,18 +480,6 @@ class GraphQLContextVariant:
     @property
     def environment_mgr(self):
         return self.marked_environment_mgr.manager_fn
-
-    @staticmethod
-    def in_memory_instance_managed_grpc_env():
-        """
-        Good for tests with read-only metadata queries. Does not work
-        if you have to go through the run launcher.
-        """
-        return GraphQLContextVariant(
-            InstanceManagers.in_memory_instance(),
-            EnvironmentManagers.managed_grpc(),
-            test_id="in_memory_instance_managed_grpc_env",
-        )
 
     @staticmethod
     def sqlite_with_queued_run_coordinator_managed_grpc_env():
@@ -641,30 +587,6 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
-    def non_launchable_in_memory_instance_multi_location():
-        return GraphQLContextVariant(
-            InstanceManagers.non_launchable_in_memory_instance(),
-            EnvironmentManagers.multi_location(),
-            test_id="non_launchable_in_memory_instance_multi_location",
-        )
-
-    @staticmethod
-    def non_launchable_in_memory_instance_lazy_repository():
-        return GraphQLContextVariant(
-            InstanceManagers.non_launchable_in_memory_instance(),
-            EnvironmentManagers.lazy_repository(),
-            test_id="non_launchable_in_memory_instance_lazy_repository",
-        )
-
-    @staticmethod
-    def non_launchable_in_memory_instance_managed_grpc_env():
-        return GraphQLContextVariant(
-            InstanceManagers.non_launchable_in_memory_instance(),
-            EnvironmentManagers.managed_grpc(),
-            test_id="non_launchable_in_memory_instance_managed_grpc_env",
-        )
-
-    @staticmethod
     def consolidated_sqlite_instance_managed_grpc_env():
         return GraphQLContextVariant(
             InstanceManagers.consolidated_sqlite_instance(),
@@ -680,16 +602,12 @@ class GraphQLContextVariant:
         list in order for tests to pass.
         """
         return [
-            GraphQLContextVariant.in_memory_instance_managed_grpc_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.sqlite_read_only_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_deployed_grpc_env(),
             GraphQLContextVariant.sqlite_with_queued_run_coordinator_managed_grpc_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_deployed_grpc_env(),
-            GraphQLContextVariant.non_launchable_in_memory_instance_multi_location(),
-            GraphQLContextVariant.non_launchable_in_memory_instance_managed_grpc_env(),
-            GraphQLContextVariant.non_launchable_in_memory_instance_lazy_repository(),
             GraphQLContextVariant.non_launchable_sqlite_instance_multi_location(),
             GraphQLContextVariant.non_launchable_sqlite_instance_managed_grpc_env(),
             GraphQLContextVariant.non_launchable_sqlite_instance_deployed_grpc_env(),

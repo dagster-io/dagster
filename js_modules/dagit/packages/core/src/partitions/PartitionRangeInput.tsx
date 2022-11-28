@@ -7,23 +7,24 @@ import {ClearButton} from '../ui/ClearButton';
 export const PartitionRangeInput: React.FC<{
   value: string[];
   onChange: (partitionNames: string[]) => void;
-  partitionNames: string[];
-}> = ({value, onChange, partitionNames}) => {
+  partitionKeys: string[];
+  isTimeseries: boolean;
+}> = ({value, onChange, partitionKeys, isTimeseries}) => {
   const [valueString, setValueString] = React.useState('');
-  const partitionNameJSON = React.useMemo(() => JSON.stringify(partitionNames), [partitionNames]);
+  const partitionNameJSON = React.useMemo(() => JSON.stringify(partitionKeys), [partitionKeys]);
 
   React.useEffect(() => {
     const partitionNameArr = JSON.parse(partitionNameJSON);
-    setValueString(partitionsToText(value, partitionNameArr));
-  }, [value, partitionNameJSON]);
+    setValueString(isTimeseries ? partitionsToText(value, partitionNameArr) : value.join(', '));
+  }, [value, partitionNameJSON, isTimeseries]);
 
   const placeholder = React.useMemo(() => {
-    return placeholderForPartitions(partitionNames);
-  }, [partitionNames]);
+    return placeholderForPartitions(partitionKeys, isTimeseries);
+  }, [partitionKeys, isTimeseries]);
 
   const tryCommit = (e: React.SyntheticEvent<HTMLInputElement>) => {
     try {
-      onChange(textToPartitions(valueString, partitionNames));
+      onChange(textToPartitions(valueString, partitionKeys));
     } catch (err: any) {
       e.preventDefault();
       showCustomAlert({body: err.message});
@@ -56,11 +57,11 @@ export const PartitionRangeInput: React.FC<{
   );
 };
 
-export function assembleIntoSpans(keys: string[], keyTestFn: (key: string) => boolean) {
-  const spans: {startIdx: number; endIdx: number; status: boolean}[] = [];
+export function assembleIntoSpans<T>(keys: string[], keyTestFn: (key: string, idx: number) => T) {
+  const spans: {startIdx: number; endIdx: number; status: T}[] = [];
 
   for (let ii = 0; ii < keys.length; ii++) {
-    const status = keyTestFn(keys[ii]);
+    const status = keyTestFn(keys[ii], ii);
     if (!spans.length || spans[spans.length - 1].status !== status) {
       spans.push({startIdx: ii, endIdx: ii, status});
     } else {
@@ -78,11 +79,11 @@ export function stringForSpan(
   return startIdx === endIdx ? all[startIdx] : `[${all[startIdx]}...${all[endIdx]}]`;
 }
 
-function placeholderForPartitions(names: string[]) {
+function placeholderForPartitions(names: string[], isTimeseries: boolean) {
   if (names.length === 0) {
     return '';
   }
-  if (names.length < 4) {
+  if (names.length < 4 || !isTimeseries) {
     return `ex: ${names[0]}, ${names[1]}`;
   }
   return `ex: ${names[0]}, ${names[1]}, [${names[2]}...${names[names.length - 1]}]`;

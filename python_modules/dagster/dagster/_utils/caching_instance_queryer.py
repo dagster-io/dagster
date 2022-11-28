@@ -271,6 +271,9 @@ class CachingInstanceQueryer:
 
             # find the upstream times of each of the parents of this asset
             for parent_key in asset_graph.get_parents(asset_key):
+                if parent_key in asset_graph.source_asset_keys:
+                    continue
+
                 # the set of required keys which are upstream of this parent
                 upstream_required_keys = set()
                 if parent_key in unknown_required_keys:
@@ -322,7 +325,7 @@ class CachingInstanceQueryer:
                 "Can only calculate data times for records with an `asset_key`."
             )
         if upstream_keys is None:
-            upstream_keys = asset_graph.get_roots(record.asset_key)
+            upstream_keys = asset_graph.get_non_source_roots(record.asset_key)
 
         data = self.calculate_used_data(
             asset_graph=asset_graph,
@@ -339,3 +342,27 @@ class CachingInstanceQueryer:
             else None
             for key, (_, timestamp) in data.items()
         }
+
+    def get_current_minutes_late_for_key(
+        self,
+        evaluation_time: datetime.datetime,
+        asset_graph: AssetGraph,
+        asset_key: AssetKey,
+    ) -> Optional[float]:
+        freshness_policy = asset_graph.freshness_policies_by_key.get(asset_key)
+        if freshness_policy is None:
+            raise DagsterInvariantViolationError(
+                "Cannot calculate minutes late for asset without a FreshnessPolicy"
+            )
+
+        latest_record = self.get_latest_materialization_record(asset_key)
+        if latest_record is None:
+            return None
+
+        used_data_times = self.get_used_data_times_for_record(asset_graph, latest_record)
+
+        return freshness_policy.minutes_late(
+            evaluation_time=evaluation_time,
+            used_data_times=used_data_times,
+            available_data_times={key: evaluation_time for key in used_data_times},
+        )

@@ -22,13 +22,13 @@ from .utils import (
 @pytest.mark.parametrize("connection_to_group_fn", [None, lambda x: f"{x[0]}_group"])
 @pytest.mark.parametrize("filter_connection", [True, False])
 @pytest.mark.parametrize(
-    "connection_to_asset_key", [None, lambda conn, name: AssetKey([f"{conn.name[0]}_{name}"])]
+    "connection_to_asset_key_fn", [None, lambda conn, name: AssetKey([f"{conn.name[0]}_{name}"])]
 )
 def test_load_from_instance(
     use_normalization_tables,
     connection_to_group_fn,
     filter_connection,
-    connection_to_asset_key,
+    connection_to_asset_key_fn,
 ):
 
     load_calls = []
@@ -85,7 +85,7 @@ def test_load_from_instance(
             connection_to_group_fn=connection_to_group_fn,
             connection_filter=(lambda _: False) if filter_connection else None,
             connection_to_io_manager_key_fn=(lambda _: "test_io_manager"),
-            connection_to_asset_key=connection_to_asset_key,
+            connection_to_asset_key_fn=connection_to_asset_key_fn,
         )
     else:
         ab_cacheable_assets = load_assets_from_airbyte_instance(
@@ -93,12 +93,12 @@ def test_load_from_instance(
             create_assets_for_normalization_tables=use_normalization_tables,
             connection_filter=(lambda _: False) if filter_connection else None,
             io_manager_key="test_io_manager",
-            connection_to_asset_key=connection_to_asset_key,
+            connection_to_asset_key_fn=connection_to_asset_key_fn,
         )
     ab_assets = ab_cacheable_assets.build_definitions(ab_cacheable_assets.compute_cacheable_data())
     ab_assets = with_resources(ab_assets, {"test_io_manager": test_io_manager})
 
-    if connection_to_asset_key:
+    if connection_to_asset_key_fn:
 
         @asset
         def downstream_asset(G_dagster_tags):  # pylint: disable=unused-argument
@@ -127,9 +127,9 @@ def test_load_from_instance(
         else set()
     )
 
-    if connection_to_asset_key:
+    if connection_to_asset_key_fn:
         tables = {
-            connection_to_asset_key(
+            connection_to_asset_key_fn(
                 AirbyteConnectionMetadata(
                     "Github <> snowflake-ben", "", use_normalization_tables, []
                 ),
@@ -214,4 +214,6 @@ def test_load_from_instance(
     assert len(materializations) == len(tables)
     assert {m.asset_key for m in materializations} == {AssetKey(t) for t in tables}
 
-    assert load_calls == [AssetKey("G_dagster_tags" if connection_to_asset_key else "dagster_tags")]
+    assert load_calls == [
+        AssetKey("G_dagster_tags" if connection_to_asset_key_fn else "dagster_tags")
+    ]

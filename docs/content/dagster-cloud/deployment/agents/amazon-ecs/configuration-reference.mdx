@@ -29,8 +29,8 @@ locations:
     container_context:
       ecs:
         env_vars:
-          - FOO_ENV_VAR=foo_value
-          - BAR_ENV_VAR
+          - DATABASE_NAME=staging
+          - DATABASE_PASSWORD
         secrets:
           - name: "MY_API_TOKEN"
             valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::"
@@ -42,32 +42,7 @@ locations:
 
 ### Environment variables and secrets
 
-Using the `container_context.ecs.env_vars` and `container_context.ecs.secrets` properties, you can configure environment variables and secrets for a specific code location.
-
-<ReferenceTable>
-  <ReferenceTableItem propertyName="container_context.ecs.env_vars">
-    A list of keys or key-value pairs to include in the task. If a value is not
-    specified, the value will be pulled from the agent task.
-    <br />
-    In the example above, <code>FOO_ENV_VAR</code> will be set to{" "}
-    <code>foo_value</code> and <code>BAR_ENV_VAR</code> will be set to whatever
-    value it has in the agent task.
-  </ReferenceTableItem>
-  <ReferenceTableItem propertyName="container_context.ecs.secrets">
-    Individual secrets specified using the{" "}
-    <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html">
-      same structure as the ECS API
-    </a>
-    .
-  </ReferenceTableItem>
-  <ReferenceTableItem propertyName="container_context.ecs.secrets_tags">
-    A list of tag names. Each secret tagged with any of those tag names in AWS
-    Secrets Manager will be included in the launched tasks as environment
-    variables. The name of the environment variable will be the name of the
-    secret, and the value of the environment variable will be the value of the
-    secret.
-  </ReferenceTableItem>
-</ReferenceTable>
+<AmazonEcsEnvVarsConfiguration />
 
 Refer to the following guides for more info about environment variables:
 
@@ -188,26 +163,20 @@ user_code_launcher:
   propertyName="config.service_discovery_namespace_id"
   >
   The name of a <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-servicediscovery-privatednsnamespace.html" target="_blank">private DNS namespace</a>.
-
-   <p>
+  <br></br><br></br>
     The ECS agent launches each code location as its own ECS service. The agent communicates with these services via <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-discovery.html" target="_blank">AWS CloudMap service discovery</a>.
-   </p>
   </ReferenceTableItem>
   <ReferenceTableItem
   propertyName="config.execution_role_arn">
   The ARN of the <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html" target="_blank">Amazon ECS task execution IAM role</a>. This role allows ECS to interact with AWS resources on your behalf, such as getting an image from ECR or pushing logs to CloudWatch.
-
-   <p>
+   <br></br><br></br>
     <strong>Note:</strong> This role must include a trust relationship that allows ECS to use it.
-   </p>
   </ReferenceTableItem>
   <ReferenceTableItem
   propertyName="config.task_role_arn">
   The ARN of the <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html" target="_blank">Amazon ECS task IAM role</a>. This role allows the containers running in the ECS task to interact with AWS.
-
-   <p>
+  <br></br><br></br>
     <strong>Note:</strong> This role must include a trust relationship that allows ECS to use it.
-   </p>
   </ReferenceTableItem>
   <ReferenceTableItem
   propertyName="config.log_group">
@@ -215,11 +184,9 @@ user_code_launcher:
   </ReferenceTableItem>
   <ReferenceTableItem
   propertyName="config.server_process_startup_timeout">
-  The amount of time, in seconds, to wait for code to import when launching a new service for a code location. If your code takes an unusually long time to load and results in timeouts in the <strong>Workspace</strong> tab, you can increase this setting above the default. <strong>Note</strong> This setting isn't applicable to the time it takes for a job to execute.
+  The amount of time, in seconds, to wait for code to import when launching a new service for a code location. If your code takes an unusually long time to load and results in timeouts in the <strong>Deployment</strong> tab, you can increase this setting above the default. <strong>Note</strong> This setting isn't applicable to the time it takes for a job to execute.
   <ul>
   <li><strong>Default</strong> - 180 (seconds)</li>
   </ul>
   </ReferenceTableItem>
 </ReferenceTable>
-
----

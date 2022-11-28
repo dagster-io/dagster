@@ -1,8 +1,10 @@
 import gc
+import sys
 from contextlib import contextmanager
 from unittest import mock
 
 import objgraph
+import pytest
 from dagit.graphql import GraphQLWS
 from dagit.webserver import DagitWebserver
 from starlette.testclient import TestClient
@@ -100,6 +102,10 @@ def test_event_log_subscription():
             assert len(objgraph.by_type("async_generator")) == 0
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 8),
+    reason="Inconsistent GC on the async_generator in 3.7",
+)
 def test_event_log_subscription_chunked():
     with instance_for_test() as instance, environ({"DAGIT_EVENT_LOAD_CHUNK_SIZE": "2"}):
         run = execute_pipeline(example_pipeline, instance=instance)
@@ -116,8 +122,8 @@ def test_event_log_subscription_chunked():
 
                 end_subscription(ws)
 
-            gc.collect()
-            assert len(objgraph.by_type("async_generator")) == 0
+        gc.collect()
+        assert len(objgraph.by_type("async_generator")) == 0
 
 
 @mock.patch(

@@ -203,7 +203,7 @@ const OpJobPartitionsViewContent: React.FC<{
         <div {...containerProps}>
           <PartitionStatus
             partitionNames={partitionNames}
-            partitionData={statusData}
+            partitionStateForKey={(name) => statusData[name]}
             selected={showSteps ? selectedPartitions : undefined}
             selectionWindowSize={pageSize}
             onClick={(partitionName) => {

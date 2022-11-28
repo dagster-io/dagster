@@ -1051,10 +1051,12 @@ class DefaultPartitionsSubset(PartitionsSubset):
         return DefaultPartitionsSubset(self._partitions_def, self._subset | set(partition_keys))
 
     def serialize(self) -> str:
-        return json.dumps(self._subset)
+        return json.dumps(list(self._subset))
 
     @staticmethod
     def from_serialized(
         partitions_def: PartitionsDefinition, serialized: str
     ) -> "DefaultPartitionsSubset":
-        return DefaultPartitionsSubset(subset=json.loads(serialized), partitions_def=partitions_def)
+        return DefaultPartitionsSubset(
+            subset=set(json.loads(serialized)), partitions_def=partitions_def
+        )

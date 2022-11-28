@@ -1,7 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
-  BaseTag,
   Box,
   ButtonLink,
   Colors,
@@ -14,7 +13,6 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -22,13 +20,12 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
-import {CurrentMinutesLateTag} from '../asset-graph/AssetNode';
 import {GraphData, LiveDataForNode, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
+import {StaleTag} from '../assets/StaleTag';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {AssetComputeStatus} from '../types/globalTypes';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -37,9 +34,10 @@ import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDe
 import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {AssetLineageScope} from './AssetNodeLineageGraph';
-import {AssetOverview} from './AssetOverview';
 import {AssetPageHeader} from './AssetPageHeader';
+import {AssetPartitions} from './AssetPartitions';
 import {AssetPlots} from './AssetPlots';
+import {CurrentMinutesLateTag} from './CurrentMinutesLateTag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
 import {
@@ -53,7 +51,7 @@ interface Props {
 }
 
 export interface AssetViewParams {
-  view?: 'activity' | 'definition' | 'lineage' | 'overview' | 'plots';
+  view?: 'events' | 'definition' | 'lineage' | 'overview' | 'plots' | 'partitions';
   lineageScope?: AssetLineageScope;
   lineageDepth?: number;
   partition?: string;
@@ -63,14 +61,14 @@ export interface AssetViewParams {
 
 export const AssetView: React.FC<Props> = ({assetKey}) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
-  const {flagNewAssetDetails} = useFeatureFlags();
-  const defaultTab = flagNewAssetDetails ? 'overview' : 'activity';
-  const selectedTab = params.view || defaultTab;
 
   // Load the asset definition
   const {definition, definitionQueryResult, lastMaterialization} = useAssetViewAssetDefinition(
     assetKey,
   );
+
+  const defaultTab = definition?.partitionDefinition ? 'partitions' : 'events';
+  const selectedTab = params.view || defaultTab;
 
   // Load the asset graph - a large graph for the Lineage tab, a small graph for the Definition tab
   // tab, or just the current node for other tabs. NOTE: Changing the query does not re-fetch data,
@@ -154,19 +152,19 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         tabs={
           <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
             <Tabs size="large" selectedTabId={selectedTab}>
-              {flagNewAssetDetails ? (
+              {definition?.partitionDefinition && (
                 <Tab
-                  id="overview"
-                  title="Overview"
-                  onClick={() => setParams({...params, view: 'overview'})}
-                />
-              ) : (
-                <Tab
-                  id="activity"
-                  title="Activity"
-                  onClick={() => setParams({...params, view: 'activity'})}
+                  id="partitions"
+                  title="Partitions"
+                  onClick={() => setParams({...params, view: 'partitions'})}
                 />
               )}
+              <Tab
+                id="events"
+                title="Events"
+                onClick={() => setParams({...params, view: 'events', partition: undefined})}
+              />
+              <Tab id="plots" title="Plots" onClick={() => setParams({...params, view: 'plots'})} />
               <Tab
                 id="definition"
                 title="Definition"
@@ -179,13 +177,6 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
                 onClick={() => setParams({...params, view: 'lineage'})}
                 disabled={!definition}
               />
-              {flagNewAssetDetails && (
-                <Tab
-                  id="plots"
-                  title="Plots"
-                  onClick={() => setParams({...params, view: 'plots'})}
-                />
-              )}
             </Tabs>
             {refreshState && (
               <Box padding={{bottom: 8}}>
@@ -197,11 +188,19 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         right={
           <Box style={{margin: '-4px 0'}}>
             {definition && definition.jobNames.length > 0 && upstream && (
-              <LaunchAssetExecutionButton assetKeys={[definition.assetKey]} />
+              <LaunchAssetExecutionButton scope={{all: [definition]}} />
             )}
           </Box>
         }
       />
+      {!viewingMostRecent && (
+        <HistoricalViewAlert
+          asOf={params.asOf}
+          onClick={() => setParams({asOf: undefined, time: params.asOf})}
+          hasDefinition={!!definition}
+        />
+      )}
+
       {
         // Avoid thrashing the events UI (which chooses a different default query based on whether
         // data is partitioned) by waiting for the definition to be loaded before we show any tab content
@@ -215,23 +214,25 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         </Box>
       ) : (
         <>
-          {!viewingMostRecent && (
-            <HistoricalViewAlert
-              asOf={params.asOf}
-              onClick={() => setParams({asOf: undefined, time: params.asOf})}
-              hasDefinition={!!definition}
-            />
-          )}
-
           {selectedTab === 'definition' ? (
             renderDefinitionTab()
           ) : selectedTab === 'lineage' ? (
             renderLineageTab()
-          ) : selectedTab === 'overview' ? (
-            <AssetOverview
+          ) : selectedTab === 'partitions' ? (
+            <AssetPartitions
               assetKey={assetKey}
+              assetPartitionNames={definition?.partitionKeysByDimension.map((k) => k.name)}
               assetLastMaterializedAt={lastMaterializedAt}
+              params={params}
+              paramsTimeWindowOnly={!!params.asOf}
+              setParams={setParams}
+              liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
+            />
+          ) : selectedTab === 'events' ? (
+            <AssetEvents
+              assetKey={assetKey}
               assetHasDefinedPartitions={!!definition?.partitionDefinition}
+              assetLastMaterializedAt={lastMaterializedAt}
               params={params}
               paramsTimeWindowOnly={!!params.asOf}
               setParams={setParams}
@@ -245,15 +246,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               setParams={setParams}
             />
           ) : (
-            <AssetEvents
-              assetKey={assetKey}
-              assetLastMaterializedAt={lastMaterializedAt}
-              assetHasDefinedPartitions={!!definition?.partitionDefinition}
-              params={params}
-              paramsTimeWindowOnly={!!params.asOf}
-              setParams={setParams}
-              liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
-            />
+            <span />
           )}
         </>
       )}
@@ -354,7 +347,11 @@ const ASSET_VIEW_DEFINITION_QUERY = gql`
           id
           groupName
           partitionDefinition {
+            __typename
             description
+          }
+          partitionKeysByDimension {
+            name
           }
           repository {
             id
@@ -414,7 +411,6 @@ const AssetViewPageHeaderTags: React.FC<{
   liveData?: LiveDataForNode;
   onShowUpstream: () => void;
 }> = ({definition, liveData, onShowUpstream}) => {
-  const isUpstreamChanged = liveData?.computeStatus === AssetComputeStatus.OUT_OF_DATE;
   const repoAddress = definition
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;
@@ -439,16 +435,7 @@ const AssetViewPageHeaderTags: React.FC<{
         </Tag>
       )}
       {liveData?.freshnessPolicy && <CurrentMinutesLateTag liveData={liveData} policyOnHover />}
-      {isUpstreamChanged ? (
-        <Box onClick={onShowUpstream}>
-          <BaseTag
-            fillColor={Colors.Yellow50}
-            textColor={Colors.Yellow700}
-            label="Upstream changed"
-            interactive
-          />
-        </Box>
-      ) : undefined}
+      <StaleTag liveData={liveData} onClick={onShowUpstream} />
     </>
   );
 };

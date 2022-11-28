@@ -34,6 +34,7 @@ export interface AssetTableFragment_definition {
   __typename: "AssetNode";
   id: string;
   groupName: string | null;
+  isSource: boolean;
   partitionDefinition: AssetTableFragment_definition_partitionDefinition | null;
   description: string | null;
   repository: AssetTableFragment_definition_repository;

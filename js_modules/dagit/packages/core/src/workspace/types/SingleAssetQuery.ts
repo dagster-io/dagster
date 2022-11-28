@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { AssetKeyInput, AssetComputeStatus, RunStatus } from "./../../types/globalTypes";
+import { AssetKeyInput, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SingleAssetQuery
@@ -64,10 +64,17 @@ export interface SingleAssetQuery_assetOrError_Asset_definition_freshnessInfo {
   currentMinutesLate: number | null;
 }
 
+export interface SingleAssetQuery_assetOrError_Asset_definition_assetObservations {
+  __typename: "ObservationEvent";
+  timestamp: string;
+  runId: string;
+}
+
 export interface SingleAssetQuery_assetOrError_Asset_definition {
   __typename: "AssetNode";
   id: string;
   groupName: string | null;
+  isSource: boolean;
   partitionDefinition: SingleAssetQuery_assetOrError_Asset_definition_partitionDefinition | null;
   description: string | null;
   repository: SingleAssetQuery_assetOrError_Asset_definition_repository;
@@ -76,6 +83,9 @@ export interface SingleAssetQuery_assetOrError_Asset_definition {
   assetMaterializations: SingleAssetQuery_assetOrError_Asset_definition_assetMaterializations[];
   freshnessPolicy: SingleAssetQuery_assetOrError_Asset_definition_freshnessPolicy | null;
   freshnessInfo: SingleAssetQuery_assetOrError_Asset_definition_freshnessInfo | null;
+  assetObservations: SingleAssetQuery_assetOrError_Asset_definition_assetObservations[];
+  currentLogicalVersion: string | null;
+  projectedLogicalVersion: string | null;
 }
 
 export interface SingleAssetQuery_assetOrError_Asset {
@@ -102,7 +112,6 @@ export interface SingleAssetQuery_assetsLatestInfo_latestRun {
 export interface SingleAssetQuery_assetsLatestInfo {
   __typename: "AssetLatestInfo";
   assetKey: SingleAssetQuery_assetsLatestInfo_assetKey;
-  computeStatus: AssetComputeStatus;
   unstartedRunIds: string[];
   inProgressRunIds: string[];
   latestRun: SingleAssetQuery_assetsLatestInfo_latestRun | null;

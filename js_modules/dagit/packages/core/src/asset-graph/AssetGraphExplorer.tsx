@@ -5,10 +5,10 @@ import without from 'lodash/without';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
+import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
 import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
@@ -34,16 +34,9 @@ import {AssetEdges} from './AssetEdges';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
 import {AssetGroupNode} from './AssetGroupNode';
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
-import {ForeignNode} from './ForeignNode';
+import {AssetNodeLink} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
-import {
-  GraphData,
-  graphHasCycles,
-  LiveData,
-  GraphNode,
-  isSourceAsset,
-  tokenForAssetKey,
-} from './Utils';
+import {GraphData, graphHasCycles, LiveData, GraphNode, tokenForAssetKey} from './Utils';
 import {AssetGraphLayout} from './layout';
 import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
 import {AssetGraphFetchScope, useAssetGraphData} from './useAssetGraphData';
@@ -61,11 +54,11 @@ interface Props {
 
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-  onNavigateToForeignNode: (node: AssetLocation) => void;
+  onNavigateToSourceAssetNode: (node: AssetLocation) => void;
 }
 
-export const MINIMAL_SCALE = 0.5;
-export const EXPERIMENTAL_SCALE = 0.1;
+export const MINIMAL_SCALE = 0.6;
+export const GROUPS_ONLY_SCALE = 0.15;
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {
@@ -134,7 +127,7 @@ export const AssetGraphExplorerWithData: React.FC<
     setOptions,
     explorerPath,
     onChangeExplorerPath,
-    onNavigateToForeignNode,
+    onNavigateToSourceAssetNode: onNavigateToSourceAssetNode,
     liveDataRefreshState,
     liveDataByNode,
     assetGraphData,
@@ -144,7 +137,6 @@ export const AssetGraphExplorerWithData: React.FC<
   } = props;
 
   const findAssetLocation = useFindAssetLocation();
-  const flags = useFeatureFlags();
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
@@ -172,7 +164,7 @@ export const AssetGraphExplorerWithData: React.FC<
       if (!nodeIsInDisplayedGraph) {
         // The asset's definition was not provided in our query for job.assetNodes. It's either
         // in another job or asset group, or is a source asset not defined in any repository.
-        return onNavigateToForeignNode(await findAssetLocation(assetKey));
+        return onNavigateToSourceAssetNode(await findAssetLocation(assetKey));
       }
 
       // This asset is in a job and we can stay in the job graph explorer!
@@ -219,13 +211,18 @@ export const AssetGraphExplorerWithData: React.FC<
     [
       explorerPath,
       onChangeExplorerPath,
-      onNavigateToForeignNode,
+      onNavigateToSourceAssetNode,
       findAssetLocation,
       lastSelectedNode,
       assetGraphData,
       layout,
     ],
   );
+
+  // const layoutsEqual(layout1: AssetGraphLayout, layout2: AssetGraphLayout) {
+  //   return (layout1.width === layout2.width) &&
+  //     (layout1.height === layout2.height) &&
+  // }
 
   const [lastRenderedLayout, setLastRenderedLayout] = React.useState<AssetGraphLayout | null>(null);
   const renderingNewLayout = lastRenderedLayout !== layout;
@@ -238,7 +235,7 @@ export const AssetGraphExplorerWithData: React.FC<
     // focus on the selected node. (If selection was specified in the URL).
     // Don't animate this change.
     if (lastSelectedNode) {
-      viewportEl.current.zoomToSVGBox(layout.nodes[lastSelectedNode.id].bounds, false);
+      // viewportEl.current.zoomToSVGBox(layout.nodes[lastSelectedNode.id].bounds, false);
       viewportEl.current.focus();
     } else {
       viewportEl.current.autocenter(false);
@@ -267,8 +264,7 @@ export const AssetGraphExplorerWithData: React.FC<
     }
   };
 
-  const allowExperimentalZoom =
-    flags.flagAssetGraphExperimentalZoom && layout && Object.keys(layout.groups).length;
+  const allowGroupsOnlyZoomLevel = !!(layout && Object.keys(layout.groups).length);
 
   return (
     <SplitPanelContainer
@@ -292,6 +288,7 @@ export const AssetGraphExplorerWithData: React.FC<
               interactor={SVGViewport.Interactors.PanAndZoom}
               graphWidth={layout.width}
               graphHeight={layout.height}
+              graphHasNoMinimumZoom={allowGroupsOnlyZoomLevel}
               onClick={onClickBackground}
               onArrowKeyDown={onArrowKeyDown}
               onDoubleClick={(e) => {
@@ -299,7 +296,6 @@ export const AssetGraphExplorerWithData: React.FC<
                 e.stopPropagation();
               }}
               maxZoom={1.2}
-              minZoom={allowExperimentalZoom ? 0.01 : undefined}
               maxAutocenterZoom={1.0}
             >
               {({scale}) => (
@@ -307,9 +303,9 @@ export const AssetGraphExplorerWithData: React.FC<
                   <AssetEdges
                     highlighted={highlighted}
                     edges={layout.edges}
-                    strokeWidth={allowExperimentalZoom ? Math.max(4, 3 / scale) : 4}
+                    strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
                     baseColor={
-                      allowExperimentalZoom && scale < EXPERIMENTAL_SCALE
+                      allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE
                         ? Colors.Gray400
                         : Colors.KeylineGray
                     }
@@ -340,7 +336,7 @@ export const AssetGraphExplorerWithData: React.FC<
                   {Object.values(layout.nodes).map(({id, bounds}) => {
                     const graphNode = assetGraphData.nodes[id];
                     const path = JSON.parse(id);
-                    if (allowExperimentalZoom && scale < EXPERIMENTAL_SCALE) {
+                    if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
                       return;
                     }
                     return (
@@ -356,11 +352,12 @@ export const AssetGraphExplorerWithData: React.FC<
                         }}
                         style={{overflow: 'visible'}}
                       >
-                        {!graphNode || !graphNode.definition.opNames.length ? (
-                          <ForeignNode assetKey={{path}} />
+                        {!graphNode ? (
+                          <AssetNodeLink assetKey={{path}} />
                         ) : scale < MINIMAL_SCALE ? (
                           <AssetNodeMinimal
                             definition={graphNode.definition}
+                            liveData={liveDataByNode[graphNode.id]}
                             selected={selectedGraphNodes.includes(graphNode)}
                           />
                         ) : (
@@ -412,14 +409,23 @@ export const AssetGraphExplorerWithData: React.FC<
                 refreshState={liveDataRefreshState}
                 dataDescription="materializations"
               />
-
-              <LaunchAssetExecutionButton
-                context={selectedGraphNodes.length ? 'selected' : 'all'}
+              <LaunchAssetObservationButton
+                preferredJobName={explorerPath.pipelineName}
                 assetKeys={(selectedGraphNodes.length
                   ? selectedGraphNodes
-                  : Object.values(assetGraphData.nodes).filter((a) => !isSourceAsset(a.definition))
-                ).map((n) => n.assetKey)}
+                  : Object.values(assetGraphData.nodes)
+                )
+                  .filter((a) => a.definition.isObservable)
+                  .map((n) => n.assetKey)}
+              />
+              <LaunchAssetExecutionButton
                 preferredJobName={explorerPath.pipelineName}
+                liveDataForStale={liveDataByNode}
+                scope={
+                  selectedGraphNodes.length
+                    ? {selected: selectedGraphNodes.map((a) => a.definition)}
+                    : {all: Object.values(assetGraphData.nodes).map((a) => a.definition)}
+                }
               />
             </Box>
           </Box>

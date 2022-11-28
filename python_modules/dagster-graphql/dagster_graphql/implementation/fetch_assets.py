@@ -1,8 +1,12 @@
 import datetime
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, List, Mapping, NamedTuple, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple
 
-from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader
+from dagster_graphql.implementation.loader import (
+    CrossRepoAssetDependedByLoader,
+    ProjectedLogicalVersionLoader,
+)
 
 import dagster._seven as seven
 from dagster import AssetKey, DagsterEventType, DagsterInstance, EventRecordsFilter
@@ -12,6 +16,12 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.events import ASSET_EVENTS
+from dagster._core.host_representation.external import ExternalRepository
+from dagster._core.host_representation.external_data import (
+    ExternalAssetNode,
+    ExternalPartitionDimensionDefinition,
+)
+from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.storage.tags import get_dimension_from_partition_tag
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -69,7 +79,9 @@ def get_assets(graphene_info, prefix=None, cursor=None, limit=None):
     )
 
 
-def asset_node_iter(graphene_info):
+def asset_node_iter(
+    graphene_info,
+) -> Iterator[Tuple[RepositoryLocation, ExternalRepository, ExternalAssetNode]]:
     for location in graphene_info.context.repository_locations:
         for repository in location.get_repositories().values():
             for external_asset_node in repository.get_external_asset_nodes():
@@ -121,15 +133,22 @@ def get_asset_nodes_by_asset_key(graphene_info) -> Mapping[AssetKey, "GrapheneAs
 
     depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
+    projected_logical_version_loader = ProjectedLogicalVersionLoader(
+        instance=graphene_info.context.instance,
+        key_to_node_map={node.asset_key: node for _, _, node in asset_node_iter(graphene_info)},
+        repositories=unique_repos(repo for _, repo, _ in asset_node_iter(graphene_info)),
+    )
+
     asset_nodes_by_asset_key: Dict[AssetKey, GrapheneAssetNode] = {}
     for repo_loc, repo, external_asset_node in asset_node_iter(graphene_info):
         preexisting_node = asset_nodes_by_asset_key.get(external_asset_node.asset_key)
-        if preexisting_node is None or preexisting_node.external_asset_node.op_name is None:
+        if preexisting_node is None or preexisting_node.external_asset_node.is_source:
             asset_nodes_by_asset_key[external_asset_node.asset_key] = GrapheneAssetNode(
                 repo_loc,
                 repo,
                 external_asset_node,
                 depended_by_loader=depended_by_loader,
+                projected_logical_version_loader=projected_logical_version_loader,
             )
 
     return asset_nodes_by_asset_key
@@ -258,14 +277,16 @@ def get_unique_asset_id(
 
 
 def get_materialization_ct_in_tags(
-    graphene_info, asset_key: AssetKey, group_by_dimensions: Sequence[str]
+    graphene_info,
+    asset_key: AssetKey,
+    partition_dimensions: Sequence[ExternalPartitionDimensionDefinition],
 ) -> Dict[str, Dict[str, int]]:
     # This dict will by keyed by the primary dimension partition keys.
     # The values are dicts keyed by the secondary dimension partition keys, mapped to
     # the number of materializations.
     materialization_ct: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
 
-    primary_dimension, secondary_dimension = group_by_dimensions[0], group_by_dimensions[1]
+    dimension_names = [dimension.name for dimension in partition_dimensions]
 
     for event_tags in graphene_info.context.instance.get_event_tags_for_asset(asset_key):
         event_partition_keys_by_dimension = {
@@ -275,11 +296,11 @@ def get_materialization_ct_in_tags(
         if all(
             [
                 dimension_name in event_partition_keys_by_dimension.keys()
-                for dimension_name in group_by_dimensions
+                for dimension_name in dimension_names
             ]
         ):
-            materialization_ct[event_partition_keys_by_dimension[primary_dimension]][
-                event_partition_keys_by_dimension[secondary_dimension]
+            materialization_ct[event_partition_keys_by_dimension[dimension_names[0]]][
+                event_partition_keys_by_dimension[dimension_names[1]]
             ] += 1
     return materialization_ct
 
@@ -287,8 +308,7 @@ def get_materialization_ct_in_tags(
 def get_materialization_cts_grouped_by_dimension(
     graphene_info,
     asset_key: AssetKey,
-    group_by_dimensions: Sequence[str],
-    partition_keys_by_dimension: Mapping[str, Sequence[str]],
+    partition_dimensions: Sequence[ExternalPartitionDimensionDefinition],
 ) -> List[List[int]]:
     """
     Get the number of materializations for each partition key.
@@ -308,17 +328,27 @@ def get_materialization_cts_grouped_by_dimension(
         [b|x count, b|y count]
     ]
     """
-    primary_dimension, secondary_dimension = group_by_dimensions[0], group_by_dimensions[1]
     db_materialization_counts = get_materialization_ct_in_tags(
-        graphene_info, asset_key, group_by_dimensions
+        graphene_info, asset_key, partition_dimensions
     )
     materialization_counts_grouped_by_dimension: List[List[int]] = []
 
-    for primary_dim_key in partition_keys_by_dimension[primary_dimension]:
+    primary_dim_keys = (
+        partition_dimensions[0]
+        .external_partitions_def_data.get_partitions_definition()
+        .get_partition_keys()
+    )
+    secondary_dim_keys = (
+        partition_dimensions[1]
+        .external_partitions_def_data.get_partitions_definition()
+        .get_partition_keys()
+    )
+
+    for primary_dim_key in primary_dim_keys:
         materialization_counts_grouped_by_dimension.append(
             [
                 db_materialization_counts.get(primary_dim_key, {}).get(secondary_dim_key, 0)
-                for secondary_dim_key in partition_keys_by_dimension[secondary_dimension]
+                for secondary_dim_key in secondary_dim_keys
             ]
         )
     return materialization_counts_grouped_by_dimension
@@ -339,56 +369,6 @@ def get_materialization_cts_by_partition(
         ordered_materialization_counts.append(db_materialization_counts.get(partition_key, 0))
 
     return ordered_materialization_counts
-
-
-class AssetPartitionsStatusCacheValue(NamedTuple):
-    latest_storage_id: int
-    materialized_subset: PartitionsSubset
-    partitions_def_id: str
-
-
-def get_materialized_partition_ranges(
-    instance: DagsterInstance, asset_graph: AssetGraph, asset_key: AssetKey
-) -> Sequence[PartitionKeyRange]:
-    partitions_def = cast(PartitionsDefinition, asset_graph.get_partitions_def(asset_key))
-
-    latest_storage_id = None
-    materialized_subset = partitions_def.empty_subset()
-
-    serialized_cache_value = instance.run_storage.kvs_get(asset_key)
-    # TODO: assert that partitions_def_id is the same
-    if serialized_cache_value:
-        cache_value = AssetPartitionsStatusCacheValue.from_serialized(
-            serialized_cache_value, asset_graph.get_partitions_def(asset_key)
-        )
-        if partitions_def.unique_identifier == cache_value.partitions_def.unique_identifier:
-            latest_storage_id = cache_value.latest_storage_id
-            materialized_subset = cache_value.materialized_subset
-
-    new_materialization_records = instance.get_event_records(
-        EventRecordsFilter(
-            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-            asset_key=asset_key,
-            after_cursor=latest_storage_id,
-        )
-    )
-
-    new_materialization_partitions = {
-        record.partition_key for record in new_materialization_records
-    }
-    max_storage_id = max(
-        (record.storage_id for record in new_materialization_records), default=latest_storage_id
-    )
-
-    updated_materialized_subset = materialized_subset.with_partition_keys(
-        new_materialization_partitions
-    )
-
-    instance.kv_store.put(
-        asset_key, AssetPartitionsStatusCacheValue(updated_materialized_subset, max_storage_id)
-    )
-
-    return updated_materialized_subset.key_ranges
 
 
 def get_freshness_info(
@@ -438,3 +418,18 @@ def get_freshness_info(
         currentMinutesLate=current_minutes_late,
         latestMaterializationMinutesLate=latest_materialization_minutes_late,
     )
+
+
+def unique_repos(external_repositories):
+    repos = []
+    used = set()
+    for external_repository in external_repositories:
+        repo_id = (
+            external_repository.handle.location_name,
+            external_repository.name,
+        )
+        if not repo_id in used:
+            used.add(repo_id)
+            repos.append(external_repository)
+
+    return repos

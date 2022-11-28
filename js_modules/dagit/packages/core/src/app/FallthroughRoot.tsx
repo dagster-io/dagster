@@ -1,26 +1,14 @@
 import {Box, Colors, ExternalAnchorButton, NonIdealState, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
-import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
+import {Redirect, Route, Switch} from 'react-router-dom';
 
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {workspacePath, workspacePipelinePath} from '../workspace/workspacePath';
 
-const InstanceRedirect = () => {
-  const location = useLocation();
-  const path = `${location.pathname}${location.search}`;
-  return <Redirect to={`/instance${path}`} />;
-};
-
 export const FallthroughRoot = () => {
   return (
     <Switch>
-      <Route path={['/runs/(.*)?', '/assets/(.*)?', '/scheduler']}>
-        <InstanceRedirect />
-      </Route>
-      <Route path="/home">
-        <FinalRedirectOrLoadingRoot />
-      </Route>
       <Route path="*">
         <FinalRedirectOrLoadingRoot />
       </Route>

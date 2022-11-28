@@ -174,6 +174,7 @@ class JobDefinition(PipelineDefinition):
         presets = []
         config_mapping = None
         partitioned_config = None
+        self._explicit_config = False
 
         if partitions_def:
             partitioned_config = PartitionedConfig.from_flexible_config(config, partitions_def)
@@ -201,6 +202,7 @@ class JobDefinition(PipelineDefinition):
                     config,
                     name,
                 )
+                self._explicit_config = True
             elif config is not None:
                 check.failed(
                     f"config param must be a ConfigMapping, a PartitionedConfig, or a dictionary, but "
@@ -437,20 +439,22 @@ class JobDefinition(PipelineDefinition):
     ) -> "JobDefinition":
         asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
 
-        for asset in asset_selection:
-            nonexistent_assets = [
-                asset for asset in asset_selection if asset not in self.asset_layer.asset_keys
-            ]
-            nonexistent_asset_strings = [
-                asset_str
-                for asset_str in (asset.to_string() for asset in nonexistent_assets)
-                if asset_str
-            ]
-            if nonexistent_assets:
-                raise DagsterInvalidSubsetError(
-                    "Assets provided in asset_selection argument "
-                    f"{', '.join(nonexistent_asset_strings)} do not exist in parent asset group or job."
-                )
+        nonexistent_assets = [
+            asset
+            for asset in asset_selection
+            if asset not in self.asset_layer.asset_keys
+            and asset not in self.asset_layer.source_assets_by_key
+        ]
+        nonexistent_asset_strings = [
+            asset_str
+            for asset_str in (asset.to_string() for asset in nonexistent_assets)
+            if asset_str
+        ]
+        if nonexistent_assets:
+            raise DagsterInvalidSubsetError(
+                "Assets provided in asset_selection argument "
+                f"{', '.join(nonexistent_asset_strings)} do not exist in parent asset group or job."
+            )
         asset_selection_data = AssetSelectionData(
             asset_selection=asset_selection,
             parent_job_def=self,
@@ -489,13 +493,20 @@ class JobDefinition(PipelineDefinition):
         try:
             sub_graph = get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
 
+            # if explicit config was passed the config_mapping that resolves the defaults implicitly is
+            # very unlikely to work. The preset will still present the default config in dagit.
+            if self._explicit_config:
+                config_arg = None
+            else:
+                config_arg = self.config_mapping or self.partitioned_config
+
             return JobDefinition(
                 name=self.name,
                 description=self.description,
                 resource_defs=dict(self.resource_defs),
                 logger_defs=dict(self.loggers),
                 executor_def=self.executor_def,
-                config=self.config_mapping or self.partitioned_config,
+                config=config_arg,
                 tags=self.tags,
                 hook_defs=self.hook_defs,
                 op_retry_policy=self._solid_retry_policy,

@@ -78,9 +78,6 @@ def test_non_launchable_marks_filter():
     non_launchable_test_ids = {
         var.test_id
         for var in [
-            GraphQLContextVariant.non_launchable_in_memory_instance_lazy_repository(),
-            GraphQLContextVariant.non_launchable_in_memory_instance_multi_location(),
-            GraphQLContextVariant.non_launchable_in_memory_instance_managed_grpc_env(),
             GraphQLContextVariant.non_launchable_sqlite_instance_lazy_repository(),
             GraphQLContextVariant.non_launchable_sqlite_instance_multi_location(),
             GraphQLContextVariant.non_launchable_sqlite_instance_managed_grpc_env(),

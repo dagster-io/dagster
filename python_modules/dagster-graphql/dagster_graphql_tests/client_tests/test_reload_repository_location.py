@@ -89,7 +89,7 @@ def test_failure_with_query_error(mock_client: MockClient):
 
 
 BaseTestSuite: Any = make_graphql_context_test_suite(
-    context_variants=[GraphQLContextVariant.non_launchable_in_memory_instance_managed_grpc_env()]
+    context_variants=[GraphQLContextVariant.non_launchable_sqlite_instance_managed_grpc_env()]
 )
 
 

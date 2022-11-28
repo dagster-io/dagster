@@ -32,6 +32,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
+from dagster._core.test_utils import assert_namedtuple_lists_equal
 
 
 @pytest.fixture(autouse=True)
@@ -96,9 +97,11 @@ def test_single_partitioned_asset_job():
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="b")
-    assert result.asset_materializations_for_node("my_asset") == [
-        AssetMaterialization(asset_key=AssetKey(["my_asset"]), partition="b")
-    ]
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("my_asset"),
+        [AssetMaterialization(asset_key=AssetKey(["my_asset"]), partition="b")],
+        exclude_fields=["tags"],
+    )
 
 
 def test_two_partitioned_assets_job():
@@ -112,12 +115,16 @@ def test_two_partitioned_assets_job():
 
     my_job = build_assets_job("my_job", assets=[upstream, downstream])
     result = my_job.execute_in_process(partition_key="b")
-    assert result.asset_materializations_for_node("upstream") == [
-        AssetMaterialization(AssetKey(["upstream"]), partition="b")
-    ]
-    assert result.asset_materializations_for_node("downstream") == [
-        AssetMaterialization(AssetKey(["downstream"]), partition="b")
-    ]
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("upstream"),
+        [AssetMaterialization(AssetKey(["upstream"]), partition="b")],
+        exclude_fields=["tags"],
+    )
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("downstream"),
+        [AssetMaterialization(AssetKey(["downstream"]), partition="b")],
+        exclude_fields=["tags"],
+    )
 
 
 def test_assets_job_with_different_partitions_defs():
@@ -172,9 +179,11 @@ def test_access_partition_keys_from_context_only_one_asset_partitioned():
         resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
         partition_key="b",
     )
-    assert result.asset_materializations_for_node("upstream_asset") == [
-        AssetMaterialization(asset_key=AssetKey(["upstream_asset"]), partition="b")
-    ]
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("upstream_asset"),
+        [AssetMaterialization(asset_key=AssetKey(["upstream_asset"]), partition="b")],
+        exclude_fields=["tags"],
+    )
 
     assert materialize(
         assets=[upstream_asset.to_source_assets()[0], downstream_asset, double_downstream_asset],
@@ -370,10 +379,15 @@ def test_single_partitioned_multi_asset_job():
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="b")
-    assert result.asset_materializations_for_node("my_asset") == [
-        AssetMaterialization(asset_key=AssetKey(["my_asset_1"]), partition="b"),
-        AssetMaterialization(asset_key=AssetKey(["my_asset_2"]), partition="b"),
-    ]
+
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("my_asset"),
+        [
+            AssetMaterialization(asset_key=AssetKey(["my_asset_1"]), partition="b"),
+            AssetMaterialization(asset_key=AssetKey(["my_asset_2"]), partition="b"),
+        ],
+        exclude_fields=["tags"],
+    )
 
 
 def test_two_partitioned_multi_assets_job():
@@ -402,18 +416,26 @@ def test_two_partitioned_multi_assets_job():
     )
     result = my_job.execute_in_process(partition_key="b")
 
-    assert result.asset_materializations_for_node("upstream_asset") == [
-        AssetMaterialization(AssetKey(["upstream_asset_1"]), partition="b"),
-        AssetMaterialization(AssetKey(["upstream_asset_2"]), partition="b"),
-    ]
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("upstream_asset"),
+        [
+            AssetMaterialization(AssetKey(["upstream_asset_1"]), partition="b"),
+            AssetMaterialization(AssetKey(["upstream_asset_2"]), partition="b"),
+        ],
+        exclude_fields=["tags"],
+    )
 
-    assert result.asset_materializations_for_node("downstream_asset_1") == [
-        AssetMaterialization(AssetKey(["downstream_asset_1"]), partition="b")
-    ]
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("downstream_asset_1"),
+        [AssetMaterialization(AssetKey(["downstream_asset_1"]), partition="b")],
+        exclude_fields=["tags"],
+    )
 
-    assert result.asset_materializations_for_node("downstream_asset_2") == [
-        AssetMaterialization(AssetKey(["downstream_asset_2"]), partition="b")
-    ]
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("downstream_asset_2"),
+        [AssetMaterialization(AssetKey(["downstream_asset_2"]), partition="b")],
+        exclude_fields=["tags"],
+    )
 
 
 def test_job_config_with_asset_partitions():

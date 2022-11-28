@@ -1,5 +1,7 @@
 import io
 import os
+import random
+import string
 import subprocess
 import sys
 import tempfile
@@ -14,6 +16,10 @@ from dagster._seven import IS_WINDOWS, wait_for_process
 from dagster._utils import ensure_file
 
 WIN_PY36_COMPUTE_LOG_DISABLED_MSG = """\u001b[33mWARNING: Compute log capture is disabled for the current environment. Set the environment variable `PYTHONLEGACYWINDOWSSTDIO` to enable.\n\u001b[0m"""
+
+
+def create_compute_log_file_key():
+    return "".join(random.choice(string.ascii_lowercase) for x in range(8))
 
 
 @contextmanager

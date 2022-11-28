@@ -24,12 +24,14 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.asset_layer import AssetOutputInfo
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
+from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.dependency import NodeOutputHandle
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionScheduleDefinition, ScheduleType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorDefinition
@@ -834,6 +836,7 @@ class ExternalAssetNode(
             ("compute_kind", Optional[str]),
             ("op_name", Optional[str]),
             ("op_names", Optional[Sequence[str]]),
+            ("op_version", Optional[str]),
             ("node_definition_name", Optional[str]),
             ("graph_name", Optional[str]),
             ("op_description", Optional[str]),
@@ -844,6 +847,8 @@ class ExternalAssetNode(
             ("metadata_entries", Sequence[MetadataEntry]),
             ("group_name", Optional[str]),
             ("freshness_policy", Optional[FreshnessPolicy]),
+            ("is_source", bool),
+            ("is_observable", bool),
         ],
     )
 ):
@@ -860,6 +865,7 @@ class ExternalAssetNode(
         compute_kind: Optional[str] = None,
         op_name: Optional[str] = None,
         op_names: Optional[Sequence[str]] = None,
+        op_version: Optional[str] = None,
         node_definition_name: Optional[str] = None,
         graph_name: Optional[str] = None,
         op_description: Optional[str] = None,
@@ -870,10 +876,19 @@ class ExternalAssetNode(
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         group_name: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
+        is_source: Optional[bool] = None,
+        is_observable: bool = False,
     ):
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
             op_names = list(filter(None, [op_name]))
+
+        # backcompat logic to handle ExternalAssetNodes serialzied without is_source
+        if is_source is None:
+            # prior to this field being added, all non-source assets must be part of at least one
+            # job, and no source assets could be part of any job
+            is_source = len(job_names or []) == 0
+
         return super(ExternalAssetNode, cls).__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
@@ -886,6 +901,7 @@ class ExternalAssetNode(
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
             op_name=check.opt_str_param(op_name, "op_name"),
             op_names=check.opt_sequence_param(op_names, "op_names"),
+            op_version=check.opt_str_param(op_version, "op_version"),
             node_definition_name=check.opt_str_param(node_definition_name, "node_definition_name"),
             graph_name=check.opt_str_param(graph_name, "graph_name"),
             op_description=check.opt_str_param(
@@ -904,6 +920,8 @@ class ExternalAssetNode(
             freshness_policy=check.opt_inst_param(
                 freshness_policy, "freshness_policy", FreshnessPolicy
             ),
+            is_source=check.bool_param(is_source, "is_source"),
+            is_observable=check.bool_param(is_observable, "is_observable"),
         )
 
 
@@ -966,7 +984,8 @@ def external_asset_graph_from_defs(
     dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
     all_upstream_asset_keys: Set[AssetKey] = set()
     op_names_by_asset_key: Dict[AssetKey, Sequence[str]] = {}
-    group_names: Dict[AssetKey, str] = {}
+    op_version_by_asset_key: Dict[AssetKey, Optional[str]] = dict()
+    group_name_by_asset_key: Dict[AssetKey, str] = {}
 
     for pipeline_def in pipelines:
         asset_info_by_node_output = pipeline_def.asset_layer.asset_info_by_node_output_handle
@@ -987,6 +1006,10 @@ def external_asset_graph_from_defs(
             node_defs_by_asset_key[output_key].append((node_output_handle, pipeline_def))
             asset_info_by_asset_key[output_key] = asset_info
 
+            node_def = pipeline_def.get_solid(node_output_handle.node_handle).definition
+            if isinstance(node_def, OpDefinition):
+                op_version_by_asset_key[output_key] = node_def.version
+
             for upstream_key in upstream_asset_keys:
                 deps[output_key][upstream_key] = ExternalAssetDependency(
                     upstream_asset_key=upstream_key
@@ -995,10 +1018,11 @@ def external_asset_graph_from_defs(
                     downstream_asset_key=output_key
                 )
 
+        # for assets_def in pipeline_def.asset_layer.assets_defs_by_key.values():
         for assets_def in pipeline_def.asset_layer.assets_defs_by_key.values():
             metadata_by_asset_key.update(assets_def.metadata_by_key)
             freshness_policy_by_asset_key.update(assets_def.freshness_policies_by_key)
-        group_names.update(pipeline_def.asset_layer.group_names_by_assets())
+        group_name_by_asset_key.update(pipeline_def.asset_layer.group_names_by_assets())
 
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
         node_defs_by_asset_key.keys()
@@ -1010,7 +1034,8 @@ def external_asset_graph_from_defs(
             dependencies=list(deps[asset_key].values()),
             depended_by=list(dep_by[asset_key].values()),
             job_names=[],
-            group_name=group_names.get(asset_key),
+            group_name=group_name_by_asset_key.get(asset_key),
+            op_version=op_version_by_asset_key.get(asset_key),
         )
         for asset_key in asset_keys_without_definitions
     ]
@@ -1026,10 +1051,12 @@ def external_asset_graph_from_defs(
                     asset_key=source_asset.key,
                     dependencies=list(deps[source_asset.key].values()),
                     depended_by=list(dep_by[source_asset.key].values()),
-                    job_names=[],
+                    job_names=[ASSET_BASE_JOB_PREFIX] if source_asset.node_def is not None else [],
                     op_description=source_asset.description,
                     metadata_entries=metadata_entries,
                     group_name=source_asset.group_name,
+                    is_source=True,
+                    is_observable=source_asset.is_observable,
                 )
             )
 
@@ -1081,6 +1108,7 @@ def external_asset_graph_from_defs(
                 or node_def.name,
                 graph_name=graph_name,
                 op_names=op_names_by_asset_key[asset_key],
+                op_version=op_version_by_asset_key.get(asset_key),
                 op_description=node_def.description or output_def.description,
                 node_definition_name=node_def.name,
                 job_names=job_names,
@@ -1090,7 +1118,7 @@ def external_asset_graph_from_defs(
                 # assets defined by Out(asset_key="k") do not have any group
                 # name specified we default to DEFAULT_GROUP_NAME here to ensure
                 # such assets are part of the default group
-                group_name=group_names.get(asset_key, DEFAULT_GROUP_NAME),
+                group_name=group_name_by_asset_key.get(asset_key, DEFAULT_GROUP_NAME),
                 freshness_policy=freshness_policy_by_asset_key.get(asset_key),
             )
         )

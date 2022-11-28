@@ -122,8 +122,14 @@ class AssetReconciliationCursor(NamedTuple):
             | requested_non_partitioned_root_assets
         )
 
+        if latest_storage_id and self.latest_storage_id:
+            check.invariant(
+                latest_storage_id >= self.latest_storage_id,
+                "Latest storage ID should be >= previous latest storage ID",
+            )
+
         return AssetReconciliationCursor(
-            latest_storage_id=latest_storage_id,
+            latest_storage_id=latest_storage_id or self.latest_storage_id,
             materialized_or_requested_root_asset_keys=result_materialized_or_requested_root_asset_keys,
             materialized_or_requested_root_partitions_by_asset_key=result_materialized_or_requested_root_partitions_by_asset_key,
         )
@@ -414,7 +420,7 @@ def get_freshness_constraints_by_key(
         if freshness_policy is None:
             continue
         has_freshness_policy = True
-        upstream_keys = asset_graph.get_roots(key)
+        upstream_keys = asset_graph.get_non_source_roots(key)
         latest_record = instance_queryer.get_latest_materialization_record(key)
         used_data_times = (
             instance_queryer.get_used_data_times_for_record(
@@ -443,6 +449,8 @@ def get_freshness_constraints_by_key(
     # upstream of another asset.
     for level in reversed(asset_graph.toposort_asset_keys()):
         for key in level:
+            if key in asset_graph.source_asset_keys:
+                continue
             for upstream_key in asset_graph.get_parents(key):
                 # pass along all of your constraints to your parents
                 constraints_by_key[upstream_key] |= constraints_by_key[key]
@@ -452,22 +460,15 @@ def get_freshness_constraints_by_key(
 def get_current_data_times_for_key(
     instance_queryer: CachingInstanceQueryer,
     asset_graph: AssetGraph,
-    constraints: AbstractSet[FreshnessConstraint],
-    expected_data_times: Mapping[AssetKey, datetime.datetime],
+    relevant_upstream_keys: AbstractSet[AssetKey],
     asset_key: AssetKey,
 ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
-    relevant_upstream_keys = set()
-    for constraint in constraints:
-        # we take in expected data times as a trick to keep track of which constraint keys are
-        # actually relevant to this asset
-        if constraint.asset_key in expected_data_times:
-            relevant_upstream_keys.add(constraint.asset_key)
 
     # calculate the data time for this record in relation to the upstream keys which are
     # set to be updated this tick and are involved in some constraint
     latest_record = instance_queryer.get_latest_materialization_record(asset_key)
     if latest_record is None:
-        return {}
+        return {upstream_key: None for upstream_key in relevant_upstream_keys}
     else:
         return instance_queryer.get_used_data_times_for_record(
             asset_graph=asset_graph,
@@ -479,13 +480,18 @@ def get_current_data_times_for_key(
 def get_expected_data_times_for_key(
     asset_graph: AssetGraph,
     current_time: datetime.datetime,
-    expected_data_times_by_key: Mapping[AssetKey, Mapping[AssetKey, datetime.datetime]],
+    expected_data_times_by_key: Mapping[AssetKey, Mapping[AssetKey, Optional[datetime.datetime]]],
     asset_key: AssetKey,
-) -> Mapping[AssetKey, datetime.datetime]:
+) -> Mapping[AssetKey, Optional[datetime.datetime]]:
     """Returns the data times for the given asset key if this asset were to be executed in this
     tick.
     """
     expected_data_times: Dict[AssetKey, datetime.datetime] = {asset_key: current_time}
+
+    def _min_or_none(a, b):
+        if a is None or b is None:
+            return None
+        return min(a, b)
 
     # get the expected data time for each upstream asset key if you were to run this asset on
     # this tick
@@ -494,7 +500,7 @@ def get_expected_data_times_for_key(
             upstream_key
         ].items():
             # take the minimum data time from each of your parents that uses this key
-            expected_data_times[upstream_upstream_key] = min(
+            expected_data_times[upstream_upstream_key] = _min_or_none(
                 expected_data_times.get(upstream_upstream_key, expected_data_time),
                 expected_data_time,
             )
@@ -507,7 +513,7 @@ def get_execution_time_window_for_constraints(
     constraints: AbstractSet[FreshnessConstraint],
     current_time: datetime.datetime,
     current_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
-    expected_data_times: Mapping[AssetKey, datetime.datetime],
+    expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     asset_key: AssetKey,
 ) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
@@ -524,20 +530,22 @@ def get_execution_time_window_for_constraints(
     execution_window_end = None
     for constraint in sorted(constraints, key=lambda c: c.required_by_time):
         current_data_time = current_data_times.get(constraint.asset_key)
+        expected_data_time = expected_data_times.get(constraint.asset_key)
 
         if not (
             # this constraint is irrelevant, as it is satisfied by the current data time
             (current_data_time is not None and current_data_time > constraint.required_data_time)
+            # this constraint is irrelevant, as materializing on this tick will not solve it
+            or (expected_data_time is None)
+            # this constraint is irrelevant, as materializing on this tick will not make progress
+            # towards solving it
+            or (current_data_time is not None and expected_data_time <= current_data_time)
             # this constraint is irrelevant, as a currently-executing run will satisfy it
             or (
                 constraint.asset_key in currently_materializing
                 # if the run hasn't started yet, assume it'll get data from the current time
                 and (current_run_data_time or current_time) > constraint.required_data_time
             )
-            # this constraint is irrelevant, as it does not correspond to an asset which is
-            # directly upstream of this asset, nor to an asset which is transitively
-            # upstream of this asset and will be materialized this tick
-            or constraint.asset_key not in expected_data_times
         ):
             if execution_window_start is None:
                 execution_window_start = constraint.required_data_time
@@ -589,49 +597,63 @@ def determine_asset_partitions_to_reconcile_for_freshness(
     # now we have a full set of constraints, we can find solutions for them as we move down
     to_materialize: Set[AssetKeyPartitionKey] = set()
     eventually_materialize: Set[AssetKeyPartitionKey] = set()
-    expected_data_times_by_key: Dict[AssetKey, Mapping[AssetKey, datetime.datetime]] = defaultdict(
-        dict
-    )
+    expected_data_times_by_key: Dict[
+        AssetKey, Mapping[AssetKey, Optional[datetime.datetime]]
+    ] = defaultdict(dict)
     for level in asset_graph.toposort_asset_keys():
         for key in level:
+            if key in asset_graph.source_asset_keys:
+                continue
             # no need to evaluate this key, as it has no constraints
             constraints = constraints_by_key[key]
             if not constraints:
                 continue
-            # this key has constraints within the plan window, so must be updated within it
-            eventually_materialize.add(AssetKeyPartitionKey(key, None))
 
-            # figure out the data times you'd expect for this key if you were to run it on this tick
-            expected_data_times = get_expected_data_times_for_key(
-                asset_graph, current_time, expected_data_times_by_key, key
-            )
+            constraint_keys = {constraint.asset_key for constraint in constraints}
+
+            # the set of asset keys which are involved in some constraint and are actually upstream
+            # of this asset
+            relevant_upstream_keys = (
+                set().union(
+                    *(
+                        expected_data_times_by_key[parent_key].keys()
+                        for parent_key in asset_graph.get_parents(key)
+                    )
+                )
+                & constraint_keys
+            ) | {key}
 
             # figure out the current contents of this asset with respect to its constraints
             current_data_times = get_current_data_times_for_key(
-                instance_queryer, asset_graph, constraints, expected_data_times, key
+                instance_queryer, asset_graph, relevant_upstream_keys, key
             )
 
             if key not in target_asset_keys:
                 # cannot execute this asset, so if something consumes it, it should expect to
                 # recieve the current contents of the asset
-                expected_data_times_by_key[key] = {
-                    key: time for key, time in current_data_times.items() if time is not None
-                }
-                continue
+                execution_window_start = None
+                expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]] = {}
+            else:
+                # figure out the data times you'd expect for this key if you were to run it
+                expected_data_times = get_expected_data_times_for_key(
+                    asset_graph, current_time, expected_data_times_by_key, key
+                )
+                # this key has constraints within the plan window, so must be updated within it
+                eventually_materialize.add(AssetKeyPartitionKey(key, None))
 
-            # figure out a time window that you can execute this asset within to solve a maximum
-            # number of constraints
-            (
-                execution_window_start,
-                _execution_window_end,
-            ) = get_execution_time_window_for_constraints(
-                instance_queryer,
-                constraints,
-                current_time,
-                current_data_times,
-                expected_data_times,
-                key,
-            )
+                # figure out a time window that you can execute this asset within to solve a maximum
+                # number of constraints
+                (
+                    execution_window_start,
+                    _execution_window_end,
+                ) = get_execution_time_window_for_constraints(
+                    instance_queryer,
+                    constraints,
+                    current_time,
+                    current_data_times,
+                    expected_data_times,
+                    key,
+                )
 
             # this key should be updated on this tick, as we are within the allowable window
             if execution_window_start is not None and execution_window_start <= current_time:
@@ -640,9 +662,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
             else:
                 # if downstream assets consume this, they should expect data times equal to the
                 # current times for this asset, as it's not going to be updated
-                expected_data_times_by_key[key] = {
-                    key: time for key, time in current_data_times.items() if time is not None
-                }
+                expected_data_times_by_key[key] = current_data_times
 
     return to_materialize, eventually_materialize
 
@@ -732,8 +752,11 @@ def build_asset_reconciliation_sensor(
     - This sensor has never tried to materialize it and it has never been materialized.
     - Any of its parents have been materialized more recently than it has.
     - Any of its parents are unreconciled.
+    - It is not currently up to date with respect to its FreshnessPolicy
 
-    The sensor won't try to reconcile any assets before their parents are reconciled.
+    The sensor won't try to reconcile any assets before their parents are reconciled. When multiple
+    FreshnessPolicies require data from the same upstream assets, this sensor will attempt to
+    launch a minimal number of runs of that asset to satisfy all constraints.
 
     Args:
         asset_selection (AssetSelection): The group of assets you want to keep up-to-date
@@ -748,7 +771,7 @@ def build_asset_reconciliation_sensor(
         SensorDefinition
 
     Example:
-        If you have the following asset graph:
+        If you have the following asset graph, with no freshness policies:
 
         .. code-block:: python
 
@@ -776,6 +799,43 @@ def build_asset_reconciliation_sensor(
               materialize ``d``, ``e``, and ``f``, because they're downstream of ``a`` and ``b``.
               Even though ``c`` hasn't been materialized, the downstream assets can still be
               updated, because ``c`` is still considered "reconciled".
+
+    Example:
+        If you have the following asset graph, with the following freshness policies:
+            * ``c: FreshnessPolicy(maximum_lag_minutes=120, cron_schedule="0 2 \* \* \*")``, meaning
+              that by 2AM, c needs to be materialized with data from a and b that is no more than 120
+              minutes old (i.e. all of yesterday's data).
+
+        .. code-block:: python
+
+            a       b
+             \     /
+                c
+
+        and create the sensor:
+
+        .. code-block:: python
+
+            build_asset_reconciliation_sensor(
+                AssetSelection.all(),
+                name="my_reconciliation_sensor",
+            )
+
+        Assume that ``c`` currently has incorporated all source data up to ``2022-01-01 23:00``.
+
+        You will observe the following behavior:
+            * At any time between ``2022-01-02 00:00`` and ``2022-01-02 02:00``, the sensor will see that
+              ``c`` will soon require data from ``2022-01-02 00:00``. In order to satisfy this
+              requirement, there must be a materialization for both ``a`` and ``b`` with time >=
+              ``2022-01-02 00:00``. If such a materialization does not exist for one of those assets,
+              the missing asset(s) will be executed on this tick, to help satisfy the constraint imposed
+              by ``c``. Materializing ``c`` in the same run as those assets will satisfy its
+              required data constraint, and so the sensor will kick off a run for ``c`` alongside
+              whichever upstream assets did not have up-to-date data.
+            * On the next tick, the sensor will see that a run is currently planned which will satisfy that constraint, so no
+              runs will be kicked off.
+
+
     """
     check_valid_name(name)
     check.opt_dict_param(run_tags, "run_tags", key_type=str, value_type=str)

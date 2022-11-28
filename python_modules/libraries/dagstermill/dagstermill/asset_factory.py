@@ -1,4 +1,5 @@
 import os
+import pickle
 import sys
 import tempfile
 import uuid
@@ -11,7 +12,17 @@ from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
 
 import dagster._check as check
-from dagster import AssetIn, AssetKey, Output, PartitionsDefinition, ResourceDefinition, asset
+from dagster import (
+    AssetIn,
+    AssetKey,
+    Failure,
+    Output,
+    PartitionsDefinition,
+    ResourceDefinition,
+    RetryPolicy,
+    RetryRequested,
+    asset,
+)
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.execution.context.compute import SolidExecutionContext
@@ -93,7 +104,21 @@ def _dm_compute(
                 f"Notebook execution complete for {name} at {executed_notebook_path}."
             )
             with open(executed_notebook_path, "rb") as fd:
-                return Output(fd.read())
+                yield Output(fd.read())
+
+            # deferred import for perf
+            import scrapbook
+
+            output_nb = scrapbook.read_notebook(executed_notebook_path)
+
+            for key, value in output_nb.scraps.items():
+                if key.startswith("event-"):
+                    with open(value.data, "rb") as fd:
+                        event = pickle.loads(fd.read())
+                        if isinstance(event, (Failure, RetryRequested)):
+                            raise event
+                        else:
+                            yield event
 
     return _t_fn
 
@@ -113,6 +138,7 @@ def define_dagstermill_asset(
     op_tags: Optional[Mapping[str, Any]] = None,
     group_name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
+    retry_policy: Optional[RetryPolicy] = None,
 ):
     """Creates a Dagster asset for a Jupyter notebook.
 
@@ -147,6 +173,7 @@ def define_dagstermill_asset(
             context within the notebook.
         io_manager_key (Optional[str]): A string key for the IO manager used to store the output notebook.
             If not provided, the default key output_notebook_io_manager will be used.
+        retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
 
     Examples:
 
@@ -223,6 +250,7 @@ def define_dagstermill_asset(
         group_name=group_name,
         output_required=False,
         io_manager_key=io_mgr_key,
+        retry_policy=retry_policy,
     )(
         _dm_compute(
             name=name,

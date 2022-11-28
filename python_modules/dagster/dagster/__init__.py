@@ -185,6 +185,12 @@ from dagster._core.definitions.executor_definition import (
 from dagster._core.definitions.freshness_policy import (
     FreshnessPolicy as FreshnessPolicy,
 )
+from dagster._core.definitions.freshness_policy_sensor_definition import (
+    FreshnessPolicySensorContext as FreshnessPolicySensorContext,
+    FreshnessPolicySensorDefinition as FreshnessPolicySensorDefinition,
+    build_freshness_policy_sensor_context as build_freshness_policy_sensor_context,
+    freshness_policy_sensor as freshness_policy_sensor,
+)
 from dagster._core.definitions.graph_definition import (
     GraphDefinition as GraphDefinition,
 )
@@ -209,6 +215,9 @@ from dagster._core.definitions.logger_definition import (
     LoggerDefinition as LoggerDefinition,
     build_init_logger_context as build_init_logger_context,
     logger as logger,
+)
+from dagster._core.definitions.logical_version import (
+    LogicalVersion as LogicalVersion,
 )
 from dagster._core.definitions.materialize import (
     materialize as materialize,
@@ -338,6 +347,10 @@ from dagster._core.definitions.time_window_partitions import (
     hourly_partitioned_config as hourly_partitioned_config,
     monthly_partitioned_config as monthly_partitioned_config,
     weekly_partitioned_config as weekly_partitioned_config,
+)
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionsDefinition as MultiPartitionsDefinition,
+    MultiPartitionKey as MultiPartitionKey,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import (
     define_asset_job as define_asset_job,

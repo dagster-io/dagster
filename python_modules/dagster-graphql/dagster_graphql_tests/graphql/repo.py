@@ -71,6 +71,7 @@ from dagster import (
     op,
     repository,
     resource,
+    schedule,
     static_partitioned_config,
     usable_as_dagster_type,
 )
@@ -1226,6 +1227,13 @@ def define_schedules():
         run_config={"solids": {"takes_an_enum": {"config": "invalid"}}},
     )
 
+    @schedule(
+        job_name="nested_job",
+        cron_schedule=["45 23 * * 6", "30 9 * * 0"],
+    )
+    def composite_cron_schedule(_context):
+        return {}
+
     return [
         run_config_error_schedule,
         no_config_pipeline_hourly_schedule,
@@ -1246,6 +1254,7 @@ def define_schedules():
         timezone_schedule,
         invalid_config_schedule,
         running_in_code_schedule,
+        composite_cron_schedule,
     ]
 
 
@@ -1319,6 +1328,11 @@ def define_sensors():
             tags={"test": "1234"},
         )
 
+    @sensor(job_name="no_config_pipeline")
+    def logging_sensor(context):
+        context.log.info("hello hello")
+        return SkipReason()
+
     return [
         always_no_config_sensor,
         once_no_config_sensor,
@@ -1326,6 +1340,7 @@ def define_sensors():
         multi_no_config_sensor,
         custom_interval_sensor,
         running_in_code_sensor,
+        logging_sensor,
     ]
 
 
@@ -1733,7 +1748,7 @@ def untyped_asset(typed_asset):
     return typed_asset
 
 
-@asset
+@asset(non_argument_deps={AssetKey("diamond_source")})
 def fresh_diamond_top():
     return 1
 
@@ -1869,6 +1884,7 @@ def define_asset_jobs():
             AssetSelection.assets(multipartitions_1, multipartitions_2),
             partitions_def=multipartitions_def,
         ),
+        SourceAsset("diamond_source"),
         fresh_diamond_top,
         fresh_diamond_left,
         fresh_diamond_right,

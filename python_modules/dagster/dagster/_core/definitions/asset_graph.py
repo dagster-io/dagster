@@ -18,7 +18,6 @@ import toposort
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.selector.subset_selector import DependencyGraph, generate_asset_dep_graph
-from dagster._utils import make_readonly_value
 
 from .assets import AssetsDefinition
 from .events import AssetKey, AssetKeyPartitionKey
@@ -62,12 +61,12 @@ class AssetGraph(
     ):
         return super(AssetGraph, cls).__new__(
             cls,
-            asset_dep_graph=make_readonly_value(asset_dep_graph),
-            source_asset_keys=make_readonly_value(source_asset_keys),
-            partitions_defs_by_key=make_readonly_value(partitions_defs_by_key),
-            partition_mappings_by_key=make_readonly_value(partition_mappings_by_key),
-            group_names_by_key=make_readonly_value(group_names_by_key),
-            freshness_policies_by_key=make_readonly_value(freshness_policies_by_key),
+            asset_dep_graph=asset_dep_graph,
+            source_asset_keys=source_asset_keys,
+            partitions_defs_by_key=partitions_defs_by_key,
+            partition_mappings_by_key=partition_mappings_by_key,
+            group_names_by_key=group_names_by_key,
+            freshness_policies_by_key=freshness_policies_by_key,
         )
 
     @staticmethod
@@ -110,11 +109,14 @@ class AssetGraph(
     def from_external_assets(external_asset_nodes: Sequence["ExternalAssetNode"]) -> "AssetGraph":
         upstream = {}
         downstream = {}
+        source_asset_keys = set()
         partitions_defs_by_key = {}
         group_names_by_key = {}
         freshness_policies_by_key = {}
 
         for node in external_asset_nodes:
+            if node.is_source:
+                source_asset_keys.add(node.asset_key)
             upstream[node.asset_key] = {dep.upstream_asset_key for dep in node.dependencies}
             downstream[node.asset_key] = {dep.downstream_asset_key for dep in node.depended_by}
             partitions_defs_by_key[node.asset_key] = (
@@ -127,7 +129,7 @@ class AssetGraph(
 
         return AssetGraph(
             asset_dep_graph={"upstream": upstream, "downstream": downstream},
-            source_asset_keys=set(),
+            source_asset_keys=source_asset_keys,
             partitions_defs_by_key=partitions_defs_by_key,
             partition_mappings_by_key=None,
             group_names_by_key=group_names_by_key,
@@ -310,11 +312,23 @@ class AssetGraph(
 
         return parent_partitions_def.get_partition_keys_in_range(upstream_partition_key_range)
 
-    def get_roots(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
-        """Returns all root assets that the given asset depends on"""
-        if not self.get_parents(asset_key):
+    def has_non_source_parents(self, asset_key: AssetKey) -> bool:
+        """Determines if an asset has any parents which are not source assets"""
+        if asset_key in self.source_asset_keys:
+            return False
+        return bool(self.get_parents(asset_key) - self.source_asset_keys)
+
+    def get_non_source_roots(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
+        """Returns all assets upstream of the given asset which do not consume any other
+        AssetsDefinitions (but may consume SourceAssets).
+        """
+        if not self.has_non_source_parents(asset_key):
             return {asset_key}
-        return {key for key in self.upstream_key_iterator(asset_key) if not self.get_parents(key)}
+        return {
+            key
+            for key in self.upstream_key_iterator(asset_key)
+            if not self.has_non_source_parents(key)
+        }
 
     def upstream_key_iterator(self, asset_key: AssetKey) -> Iterator[AssetKey]:
         """Iterates through all asset keys which are upstream of the given key."""
@@ -322,6 +336,8 @@ class AssetGraph(
         queue = deque([asset_key])
         while queue:
             current_key = queue.popleft()
+            if current_key in self.source_asset_keys:
+                continue
             for parent_key in self.get_parents(current_key):
                 if parent_key not in visited:
                     yield parent_key
@@ -332,3 +348,9 @@ class AssetGraph(
         return [
             {key for key in level} for level in toposort.toposort(self.asset_dep_graph["upstream"])
         ]
+
+    def __hash__(self):
+        return id(self)
+
+    def __eq__(self, other):
+        return self is other

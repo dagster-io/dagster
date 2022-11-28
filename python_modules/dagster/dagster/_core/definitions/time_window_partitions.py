@@ -1044,7 +1044,8 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
     def from_serialized(
         partitions_def: TimeWindowPartitionsDefinition, serialized: str
     ) -> "TimeWindowPartitionsSubset":
-        return TimeWindowPartitionsSubset(partitions_def, json.loads(serialized))
+        key_ranges = [PartitionKeyRange(tup[0], tup[1]) for tup in json.loads(serialized)]
+        return TimeWindowPartitionsSubset(partitions_def, key_ranges)
 
     def serialize(self) -> str:
         return json.dumps(self._key_ranges)

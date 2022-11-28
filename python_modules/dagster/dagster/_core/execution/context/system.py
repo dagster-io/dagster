@@ -66,6 +66,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.dependency import Node, NodeHandle
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.resource_definition import Resources
+    from dagster._core.event_api import EventLogRecord
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.state import KnownExecutionState
     from dagster._core.instance import DagsterInstance
@@ -477,6 +478,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._output_metadata: Dict[str, Any] = {}
         self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
 
+        self._input_asset_records: Optional[Dict[AssetKey, Optional["EventLogRecord"]]] = None
+
     @property
     def step(self) -> ExecutionStep:
         return self._step
@@ -787,6 +790,46 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def op_config(self) -> Any:
         solid_config = self.resolved_run_config.solids.get(str(self.solid_handle))
         return solid_config.config if solid_config else None
+
+    @property
+    def step_materializes_assets(self) -> bool:
+        step_outputs = self.step.step_outputs
+        if len(step_outputs) == 0:
+            return False
+        else:
+            asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
+                self.solid_handle, step_outputs[0].name
+            )
+            return asset_info is not None
+
+    @property
+    def input_asset_records(self) -> Optional[Mapping[AssetKey, Optional["EventLogRecord"]]]:
+        return self._input_asset_records
+
+    def fetch_input_asset_records(self) -> None:
+        # pylint: disable=protected-access
+        output_keys: List[AssetKey] = []
+        for step_output in self.step.step_outputs:
+            asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
+                self.solid_handle, step_output.name
+            )
+            if asset_info is None:
+                continue
+            output_keys.append(asset_info.key)
+
+        all_dep_keys: List[AssetKey] = []
+        for output_key in output_keys:
+            if output_key not in self.pipeline_def.asset_layer._asset_deps:
+                continue
+            dep_keys = self.pipeline_def.asset_layer.upstream_assets_for_asset(output_key)
+            for key in dep_keys:
+                if not key in all_dep_keys and key not in output_keys:
+                    all_dep_keys.append(key)
+
+        self._input_asset_records = {}
+        for key in all_dep_keys:
+            event = self.instance.get_latest_logical_version_record(key)
+            self._input_asset_records[key] = event
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.pipeline_def.asset_layer

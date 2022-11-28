@@ -9,8 +9,7 @@ export const DAGIT_FLAGS_KEY = 'DAGIT_FLAGS';
 export const FeatureFlag = {
   flagDebugConsoleLogging: 'flagDebugConsoleLogging' as const,
   flagDisableWebsockets: 'flagDisableWebsockets' as const,
-  flagNewAssetDetails: 'flagNewAssetDetails' as const,
-  flagAssetGraphExperimentalZoom: 'flagAssetGraphExperimentalZoom' as const,
+  flagSensorScheduleLogging: 'flagSensorScheduleLogging' as const,
 };
 export type FeatureFlagType = keyof typeof FeatureFlag;
 

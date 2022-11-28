@@ -353,8 +353,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_extra_cmds=dagster_graphql_extra_cmds,
         pytest_tox_factors=[
             "not_graphql_context_test_suite",
-            "in_memory_instance_multi_location",
-            "in_memory_instance_managed_grpc_env",
             "sqlite_instance_multi_location",
             "sqlite_instance_managed_grpc_env",
             "sqlite_instance_deployed_grpc_env",
