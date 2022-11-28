@@ -62,27 +62,29 @@ export const OpJobPartitionsView: React.FC<{
 };
 
 export function usePartitionDurations(partitions: PartitionRuns[]) {
-  const stepDurationData: {[name: string]: {[key: string]: (number | undefined)[]}} = {};
-  const runDurationData: {[name: string]: number | undefined} = {};
+  return React.useMemo(() => {
+    const stepDurationData: {[name: string]: {[key: string]: (number | undefined)[]}} = {};
+    const runDurationData: {[name: string]: number | undefined} = {};
 
-  partitions.forEach((p) => {
-    if (!p.runsLoaded || p.runs.length === 0) {
-      return;
-    }
-    const sortedRuns = p.runs.sort((a, b) => a.startTime || 0 - (b.startTime || 0));
-    const lastRun = sortedRuns[sortedRuns.length - 1];
-    stepDurationData[p.name] = {};
-    runDurationData[p.name] =
-      lastRun?.endTime && lastRun?.startTime ? lastRun.endTime - lastRun.startTime : undefined;
+    partitions.forEach((p) => {
+      if (!p.runsLoaded || p.runs.length === 0) {
+        return;
+      }
+      const sortedRuns = p.runs.sort((a, b) => a.startTime || 0 - (b.startTime || 0));
+      const lastRun = sortedRuns[sortedRuns.length - 1];
+      stepDurationData[p.name] = {};
+      runDurationData[p.name] =
+        lastRun?.endTime && lastRun?.startTime ? lastRun.endTime - lastRun.startTime : undefined;
 
-    lastRun.stepStats.forEach((s) => {
-      stepDurationData[p.name][s.stepKey] = [
-        s.endTime && s.startTime ? s.endTime - s.startTime : undefined,
-      ];
+      lastRun.stepStats.forEach((s) => {
+        stepDurationData[p.name][s.stepKey] = [
+          s.endTime && s.startTime ? s.endTime - s.startTime : undefined,
+        ];
+      });
     });
-  });
 
-  return {runDurationData, stepDurationData};
+    return {runDurationData, stepDurationData};
+  }, [partitions]);
 }
 
 const OpJobPartitionsViewContent: React.FC<{
