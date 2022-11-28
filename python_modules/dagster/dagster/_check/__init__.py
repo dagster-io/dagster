@@ -8,6 +8,7 @@ from typing import (
     Dict,
     Generator,
     Iterable,
+    Iterator,
     List,
     Mapping,
     NoReturn,
@@ -258,12 +259,12 @@ def dict_param(
 
 
 def opt_dict_param(
-    obj: object,
+    obj: Optional[Dict[T, U]],
     param_name: str,
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Dict:
+) -> Dict[T, U]:
     """Ensures argument obj is either a dictionary or None; if the latter, instantiates an empty
     dictionary.
     """
@@ -525,9 +526,9 @@ def opt_float_elem(
 
 
 def generator_param(
-    obj: object,
+    obj: Generator[T, U, V],
     param_name: str,
-) -> Generator:
+) -> Generator[T, U, V]:
     if not inspect.isgenerator(obj):
         raise ParameterCheckError(
             f'Param "{param_name}" is not a generator (return value of function that yields) Got '
@@ -724,6 +725,39 @@ def opt_inst(
 
 
 # ########################
+# ##### ITERATOR
+# ########################
+
+
+@overload
+def iterator_param(
+    obj: Iterator[T],
+    param_name: str,
+    additional_message: Optional[str] = ...,
+) -> Iterator[T]:
+    ...
+
+
+@overload
+def iterator_param(
+    obj: object,
+    param_name: str,
+    additional_message: Optional[str] = ...,
+) -> Iterator[Any]:
+    ...
+
+
+def iterator_param(
+    obj: Any,
+    param_name: str,
+    additional_message: Optional[str] = None,
+) -> Iterator[Any]:
+    if not isinstance(obj, Iterator):
+        raise _param_type_mismatch_exception(obj, Iterator, param_name, additional_message)
+    return obj
+
+
+# ########################
 # ##### LIST
 # ########################
 
@@ -903,6 +937,7 @@ def is_list(
 # ########################
 
 
+@overload
 def mapping_param(
     obj: Mapping[T, U],
     param_name: str,
@@ -910,6 +945,27 @@ def mapping_param(
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Mapping[T, U]:
+    ...
+
+
+@overload
+def mapping_param(
+    obj: object,
+    param_name: str,
+    key_type: Optional[TypeOrTupleOfTypes] = ...,
+    value_type: Optional[TypeOrTupleOfTypes] = ...,
+    additional_message: Optional[str] = ...,
+) -> Mapping[object, object]:
+    ...
+
+
+def mapping_param(
+    obj: object,
+    param_name: str,
+    key_type: Optional[TypeOrTupleOfTypes] = None,
+    value_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Mapping[Any, Any]:
     if not isinstance(obj, collections.abc.Mapping):
         raise _param_type_mismatch_exception(
             obj, (collections.abc.Mapping,), param_name, additional_message=additional_message
@@ -921,13 +977,35 @@ def mapping_param(
     return _check_mapping_entries(obj, key_type, value_type, mapping_type=collections.abc.Mapping)
 
 
+@overload
 def opt_mapping_param(
     obj: Optional[Mapping[T, U]],
+    param_name: str,
+    key_type: Optional[TypeOrTupleOfTypes] = ...,
+    value_type: Optional[TypeOrTupleOfTypes] = ...,
+    additional_message: Optional[str] = ...,
+) -> Mapping[T, U]:
+    ...
+
+
+@overload
+def opt_mapping_param(
+    obj: object,
+    param_name: str,
+    key_type: Optional[TypeOrTupleOfTypes] = ...,
+    value_type: Optional[TypeOrTupleOfTypes] = ...,
+    additional_message: Optional[str] = ...,
+) -> Mapping[object, object]:
+    ...
+
+
+def opt_mapping_param(
+    obj: Optional[object],
     param_name: str,
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Mapping[T, U]:
+) -> Mapping[Any, Any]:
     if obj is None:
         return dict()
     else:
@@ -1357,18 +1435,18 @@ def opt_str_elem(
 
 
 def tuple_param(
-    obj: object,
+    obj: Tuple[T, ...],
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
     additional_message: Optional[str] = None,
-) -> Tuple:
+) -> Tuple[T, ...]:
     """Ensure param is a tuple and is of a specified type. `of_type` defines a variadic tuple type--
     `obj` may be of any length, but each element must match the `of_type` argmument. `of_shape`
     defines a fixed-length tuple type-- each element must match the corresponding element in
     `of_shape`. Passing both `of_type` and `of_shape` will raise an error.
     """
-    if not isinstance(obj, tuple):
+    if not isinstance(obj, tuple):  # type: ignore
         raise _param_type_mismatch_exception(obj, tuple, param_name, additional_message)
 
     if of_type is None and of_shape is None:
@@ -1380,6 +1458,28 @@ def tuple_param(
     return _check_tuple_items(obj, of_type, of_shape)
 
 
+@overload
+def opt_tuple_param(
+    obj: Optional[Tuple[T, ...]],
+    param_name: str,
+    of_type: Optional[TypeOrTupleOfTypes] = ...,
+    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
+    additional_message: Optional[str] = ...,
+) -> Tuple[T, ...]:
+    ...
+
+
+@overload
+def opt_tuple_param(
+    obj: object,
+    param_name: str,
+    of_type: Optional[TypeOrTupleOfTypes] = ...,
+    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
+    additional_message: Optional[str] = ...,
+) -> Tuple[object, ...]:
+    ...
+
+
 def opt_tuple_param(
     obj: object,
     param_name: str,
@@ -1387,6 +1487,53 @@ def opt_tuple_param(
     of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
     additional_message: Optional[str] = None,
 ) -> Tuple[Any, ...]:
+    """Ensures argument obj is a tuple or None; in the latter case, instantiates an empty tuple
+    and returns it."""
+
+    if obj is not None and not isinstance(obj, tuple):  # type: ignore
+        raise _param_type_mismatch_exception(obj, tuple, param_name, additional_message)
+
+    if obj is None:
+        return tuple()
+
+    if of_type is None and of_shape is None:
+        return obj
+
+    if of_type and of_shape:
+        raise CheckError("Must specify exactly one `of_type` or `of_shape`")
+
+    return _check_tuple_items(obj, of_type, of_shape)
+
+
+@overload
+def opt_nullable_tuple_param(
+    obj: None,
+    param_name: str,
+    of_type: Optional[TypeOrTupleOfTypes] = ...,
+    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
+    additional_message: Optional[str] = ...,
+) -> None:
+    ...
+
+
+@overload
+def opt_nullable_tuple_param(
+    obj: Tuple[T, ...],
+    param_name: str,
+    of_type: TypeOrTupleOfTypes = ...,
+    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
+    additional_message: Optional[str] = None,
+) -> Tuple[T, ...]:
+    ...
+
+
+def opt_nullable_tuple_param(
+    obj: Optional[Tuple[T, ...]],
+    param_name: str,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
+    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
+    additional_message: Optional[str] = None,
+) -> Optional[Tuple[T, ...]]:
     """Ensure optional param is a tuple and is of a specified type. `default` is returned if `obj`
     is None. `of_type` defines a variadic tuple type-- `obj` may be of any length, but each element
     must match the `of_type` argmument. `of_shape` defines a fixed-length tuple type-- each element
@@ -1396,8 +1543,8 @@ def opt_tuple_param(
     if obj is not None and not isinstance(obj, tuple):
         raise _param_type_mismatch_exception(obj, tuple, param_name, additional_message)
 
-    if not obj:
-        return tuple()
+    if obj is None:
+        return None
 
     if of_type is None and of_shape is None:
         return obj
@@ -1432,10 +1579,10 @@ def is_tuple(
 
 
 def _check_tuple_items(
-    obj_tuple: Tuple,
+    obj_tuple: Tuple[T, ...],
     of_type: Optional[TypeOrTupleOfTypes] = None,
     of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
-) -> Tuple:
+) -> Tuple[T, ...]:
     if of_shape is not None:
         len_tuple = len(obj_tuple)
         len_type = len(of_shape)

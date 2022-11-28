@@ -249,7 +249,7 @@ class ExternalJobRef(
             cls,
             name=check.str_param(name, "name"),
             snapshot_id=check.str_param(snapshot_id, "snapshot_id"),
-            active_presets=check.list_param(
+            active_presets=check.sequence_param(
                 active_presets, "active_presets", of_type=ExternalPresetData
             ),
             parent_snapshot_id=check.opt_str_param(parent_snapshot_id, "parent_snapshot_id"),

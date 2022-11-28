@@ -114,7 +114,6 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
     PartitionState.MISSING,
-    PartitionState.SUCCESS_MISSING,
   ]);
 
   const allInRanges = React.useMemo(
@@ -268,11 +267,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           ))}
           <PartitionStateCheckboxes
             partitionKeysForCounts={allInRanges}
-            allowed={[
-              PartitionState.MISSING,
-              PartitionState.SUCCESS_MISSING,
-              PartitionState.SUCCESS,
-            ]}
+            allowed={[PartitionState.MISSING, PartitionState.SUCCESS]}
             value={stateFilters}
             onChange={setStateFilters}
           />
