@@ -37,7 +37,7 @@ def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefi
 
 
 def test_basic_asset():
-    assert Definitions
+    assert Definitions  # type: ignore
 
     @asset
     def an_asset():

@@ -1215,7 +1215,7 @@ def test_list_load():
 
     source = SourceAsset(key=AssetKey("a_source_asset"))
 
-    all_assets: Sequence[AssetsDefinition, SourceAsset] = [asset1, asset2, source]
+    all_assets: Sequence[AssetsDefinition, SourceAsset] = [asset1, asset2, source]  # type: ignore
 
     @repository
     def assets_repo():
@@ -1286,7 +1286,7 @@ def test_multi_nested_list():
 
     source = SourceAsset(key=AssetKey("a_source_asset"))
 
-    layer_1: Sequence[AssetsDefinition, SourceAsset] = [asset2, source]
+    layer_1: Sequence[AssetsDefinition, SourceAsset] = [asset2, source]  # type: ignore
     layer_2 = [layer_1, asset1]
 
     with pytest.raises(DagsterInvalidDefinitionError, match="Bad return value from repository"):

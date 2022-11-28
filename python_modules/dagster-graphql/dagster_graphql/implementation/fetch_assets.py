@@ -6,6 +6,7 @@ from dagster_graphql.implementation.loader import (
     CrossRepoAssetDependedByLoader,
     ProjectedLogicalVersionLoader,
 )
+from dagster_graphql.schema.util import HasContext
 
 import dagster._seven as seven
 from dagster import AssetKey, DagsterEventType, EventRecordsFilter
@@ -85,11 +86,11 @@ def asset_node_iter(
                 yield location, repository, external_asset_node
 
 
-def get_asset_node_definition_collisions(graphene_info, asset_keys):
+def get_asset_node_definition_collisions(graphene_info: HasContext, asset_keys: Sequence[AssetKey]):
     from ..schema.asset_graph import GrapheneAssetNodeDefinitionCollision
     from ..schema.external import GrapheneRepository
 
-    repos: Dict[AssetKey, GrapheneRepository] = defaultdict(list)
+    repos: Dict[AssetKey, List[GrapheneRepository]] = defaultdict(list)
 
     for repo_loc, repo, external_asset_node in asset_node_iter(graphene_info):
         if external_asset_node.asset_key in asset_keys:
@@ -259,7 +260,9 @@ def get_assets_for_run_id(graphene_info, run_id):
 
 
 def get_unique_asset_id(
-    asset_key: AssetKey, repository_location_name: str = None, repository_name: str = None
+    asset_key: AssetKey,
+    repository_location_name: Optional[str] = None,
+    repository_name: Optional[str] = None,
 ) -> str:
     repository_identifier = (
         f"{repository_location_name}.{repository_name}"

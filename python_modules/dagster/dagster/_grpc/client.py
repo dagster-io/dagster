@@ -68,7 +68,7 @@ class DagsterGrpcClient:
 
         self._ssl_creds = grpc.ssl_channel_credentials() if use_ssl else None
 
-        self._metadata = check.opt_list_param(metadata, "metadata")
+        self._metadata = check.opt_sequence_param(metadata, "metadata")
 
         check.invariant(
             port is not None if seven.IS_WINDOWS else True,
