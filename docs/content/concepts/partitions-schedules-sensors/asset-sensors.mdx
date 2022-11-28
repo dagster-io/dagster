@@ -51,7 +51,7 @@ def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry
     )
 ```
 
-## Freshness policy sensors<Experimental />
+## Freshness policy sensors <Experimental />
 
 A freshness policy sensor checks the freshness of a given selection of assets on each tick, and performs some action in response to that status.
 
@@ -72,11 +72,11 @@ def my_freshness_alerting_sensor(context: FreshnessPolicySensorEvaluationContext
 
     if context.current_minutes_late >= 10 and context.previous_minutes_late < 10:
         send_alert(f"Asset with key {context.asset_key} is now more than 10 minutes late.")
-    elif context.current_minutes_late == 0 and context.previous_minutes_late != 0:
+    elif context.current_minutes_late == 0 and context.previous_minutes_late >= 10:
         send_alert(f"Asset with key {context.asset_key} is now on time.")
 ```
 
-## Multi-asset sensors<Experimental />
+## Multi-asset sensors <Experimental />
 
 ### Triggering runs upon materializations
 
@@ -85,14 +85,14 @@ Multi-asset sensors, which can trigger job executions based on multiple asset ma
 In the body of the sensor, you have access to the materialization event records for each asset via the <PyObject object="MultiAssetSensorEvaluationContext" /> context object. Methods within the context object will search for events after the [cursor](/concepts/partitions-schedules-sensors/sensors#sensor-optimizations-using-cursors).
 
 - <PyObject
-    object="MultiAssetSensorEvaluationContext"
-    method="latest_materialization_records_by_key"
+  object="MultiAssetSensorEvaluationContext"
+  method="latest_materialization_records_by_key"
   /> returns a dictionary mapping the asset key for each monitored asset to the most
   recent materialization record. If there is no materialization event, the mapped
   value will be none.
 - <PyObject
-    object="MultiAssetSensorEvaluationContext"
-    method="materialization_records_for_key"
+  object="MultiAssetSensorEvaluationContext"
+  method="materialization_records_for_key"
   /> returns a list of materialization event records for a specified asset key.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_multi_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
@@ -139,8 +139,8 @@ def asset_a_and_b_sensor_with_skip_reason(context):
 You can use the <PyObject object="MultiAssetSensorEvaluationContext" /> context object to fetch partitioned materializations for each monitored asset.
 
 - <PyObject
-    object="MultiAssetSensorEvaluationContext"
-    method="latest_materialization_records_by_partition"
+  object="MultiAssetSensorEvaluationContext"
+  method="latest_materialization_records_by_partition"
   /> returns an mapping of partition key to the most recent materialization event
   record for that partition. Returns records in order by event ID.
 - If all monitored assets have the same partitions definition, <PyObject
@@ -213,14 +213,14 @@ def trigger_daily_asset_when_any_upstream_partitions_have_new_materializations(c
   of updating a weekly asset when upstream daily assets are materialized.
 </Note>
 
-## Asset reconciliation sensor<Experimental />
+## Asset reconciliation sensor <Experimental />
 
 Dagster provides an out-of-box sensor that will monitor a provided set of assets and automatically materialize them if they're "unreconciled". An asset is considered "unreconciled" if any of:
 
 - The sensor has never tried to materialize it and it has never been materialized.
 - Any of its parents have been materialized more recently than it has.
 - Any of its parents are unreconciled.
-- It is not up to date with respect to its FreshnessPolicy (see [Freshness-based scheduling](/concepts/partitions-schedules-sensors/asset-sensors#freshness-based-scheduling)).
+- It is not up to date with respect to its FreshnessPolicy (see [Freshness-based scheduling](/concepts/partitions-schedules-sensors/asset-sensors#freshness-based-scheduling-)).
 
 The sensor materializes unreconciled assets and avoids materializing assets before their parents are reconciled.
 
@@ -242,7 +242,7 @@ def repository_1():
 
 This sensor will materialize `asset_b` whenever any of its parents materialize, and it will materialize `asset_c` whenever any of its parents materialize.
 
-### Freshness-based scheduling<Experimental />
+### Freshness-based scheduling <Experimental />
 
 Setting a `FreshnessPolicy` on an asset specifies how up-to-date the data in that asset is expected to be. The asset reconciliation sensor created using `build_asset_reconciliation_sensor` will kick off runs to keep that data in line with the defined policy.
 
