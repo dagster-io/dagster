@@ -85,14 +85,14 @@ Multi-asset sensors, which can trigger job executions based on multiple asset ma
 In the body of the sensor, you have access to the materialization event records for each asset via the <PyObject object="MultiAssetSensorEvaluationContext" /> context object. Methods within the context object will search for events after the [cursor](/concepts/partitions-schedules-sensors/sensors#sensor-optimizations-using-cursors).
 
 - <PyObject
-  object="MultiAssetSensorEvaluationContext"
-  method="latest_materialization_records_by_key"
+    object="MultiAssetSensorEvaluationContext"
+    method="latest_materialization_records_by_key"
   /> returns a dictionary mapping the asset key for each monitored asset to the most
   recent materialization record. If there is no materialization event, the mapped
   value will be none.
 - <PyObject
-  object="MultiAssetSensorEvaluationContext"
-  method="materialization_records_for_key"
+    object="MultiAssetSensorEvaluationContext"
+    method="materialization_records_for_key"
   /> returns a list of materialization event records for a specified asset key.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_multi_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
@@ -139,8 +139,8 @@ def asset_a_and_b_sensor_with_skip_reason(context):
 You can use the <PyObject object="MultiAssetSensorEvaluationContext" /> context object to fetch partitioned materializations for each monitored asset.
 
 - <PyObject
-  object="MultiAssetSensorEvaluationContext"
-  method="latest_materialization_records_by_partition"
+    object="MultiAssetSensorEvaluationContext"
+    method="latest_materialization_records_by_partition"
   /> returns an mapping of partition key to the most recent materialization event
   record for that partition. Returns records in order by event ID.
 - If all monitored assets have the same partitions definition, <PyObject
@@ -220,7 +220,7 @@ Dagster provides an out-of-box sensor that will monitor a provided set of assets
 - The sensor has never tried to materialize it and it has never been materialized.
 - Any of its parents have been materialized more recently than it has.
 - Any of its parents are unreconciled.
-- It is not up to date with respect to its FreshnessPolicy (see [Freshness-based scheduling](/concepts/partitions-schedules-sensors/asset-sensors#freshness-based-scheduling-)).
+- It is not up to date with respect to its FreshnessPolicy (see [Freshness-based scheduling](#freshness-based-scheduling-)).
 
 The sensor materializes unreconciled assets and avoids materializing assets before their parents are reconciled.
 
