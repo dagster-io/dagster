@@ -47,7 +47,9 @@ class CensusResource:
     def api_base_url(self) -> str:
         return f"https://{CENSUS_API_BASE}/{CENSUS_VERSION}"
 
-    def make_request(self, method: str, endpoint: str, data: str = None) -> Mapping[str, Any]:
+    def make_request(
+        self, method: str, endpoint: str, data: Optional[str] = None
+    ) -> Mapping[str, Any]:
         """
         Creates and sends a request to the desired Census API endpoint.
 

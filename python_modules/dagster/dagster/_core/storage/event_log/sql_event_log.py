@@ -18,7 +18,6 @@ from dagster._core.errors import (
 )
 from dagster._core.event_api import RunShardedEventsCursor
 from dagster._core.events import ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
-from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import build_run_step_stats_from_events
 from dagster._serdes import (
     deserialize_as,
@@ -34,6 +33,7 @@ from .base import (
     AssetRecord,
     EventLogConnection,
     EventLogCursor,
+    EventLogEntry,
     EventLogRecord,
     EventLogStorage,
     EventRecordsFilter,
@@ -157,7 +157,7 @@ class SqlEventLogStorage(EventLogStorage):
             except db.exc.IntegrityError:
                 conn.execute(update_statement)
 
-    def _get_asset_entry_values(self, event, has_asset_key_index_cols):
+    def _get_asset_entry_values(self, event: EventLogEntry, has_asset_key_index_cols):
         # The AssetKeyTable contains a `last_materialization_timestamp` column that is exclusively
         # used to determine if an asset exists (last materialization timestamp > wipe timestamp).
         # This column is used nowhere else, and as of AssetObservation/AssetMaterializationPlanned
@@ -171,7 +171,8 @@ class SqlEventLogStorage(EventLogStorage):
         # https://github.com/dagster-io/dagster/pull/7319
 
         entry_values: Dict[str, Any] = {}
-        if event.dagster_event.is_step_materialization:
+        dagster_event = check.not_none(event.dagster_event)
+        if dagster_event.is_step_materialization:
             entry_values.update(
                 {
                     "last_materialization": serialize_dagster_namedtuple(event),
@@ -186,7 +187,7 @@ class SqlEventLogStorage(EventLogStorage):
                         ),
                     }
                 )
-        elif event.dagster_event.is_asset_materialization_planned:
+        elif dagster_event.is_asset_materialization_planned:
             # The AssetKeyTable also contains a `last_run_id` column that is updated upon asset
             # materialization. This column was not being used until the below PR. This new change
             # writes to the column upon `ASSET_MATERIALIZATION_PLANNED` events to fetch the last
@@ -201,7 +202,7 @@ class SqlEventLogStorage(EventLogStorage):
                         ),
                     }
                 )
-        elif event.dagster_event.is_asset_observation:
+        elif dagster_event.is_asset_observation:
             if has_asset_key_index_cols:
                 entry_values.update(
                     {
@@ -228,7 +229,7 @@ class SqlEventLogStorage(EventLogStorage):
         check.inst_param(asset_key, "asset_key", AssetKey)
         check.mapping_param(new_tags, "new_tags", key_type=str, value_type=str)
 
-        if not self.supports_add_asset_event_tags:
+        if not self.supports_add_asset_event_tags():
             raise DagsterInvalidInvocationError(
                 "In order to add asset event tags, you must run `dagster instance migrate` to "
                 "create the AssetEventTags table."

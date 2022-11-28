@@ -138,8 +138,8 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
     def get_log_data(
         self,
         log_key: Sequence[str],
-        cursor: str = None,
-        max_bytes: int = None,
+        cursor: Optional[str] = None,
+        max_bytes: Optional[int] = None,
     ) -> CapturedLogData:
         stdout_offset, stderr_offset = self.local_manager.parse_cursor(cursor)
         stdout, new_stdout_offset = self._log_data_for_type(

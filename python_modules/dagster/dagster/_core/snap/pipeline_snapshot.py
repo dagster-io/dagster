@@ -1,15 +1,4 @@
-from typing import (
-    AbstractSet,
-    Any,
-    FrozenSet,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-    cast,
-)
+from typing import AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence, Set, Union, cast
 
 from dagster import _check as check
 from dagster._config import (
@@ -465,7 +454,7 @@ class PipelineSnapshotLineage(
             ("parent_snapshot_id", str),
             ("solid_selection", Optional[Sequence[str]]),
             ("solids_to_execute", Optional[AbstractSet[str]]),
-            ("asset_selection", Optional[FrozenSet[AssetKey]]),
+            ("asset_selection", Optional[AbstractSet[AssetKey]]),
         ],
     )
 ):
@@ -474,7 +463,7 @@ class PipelineSnapshotLineage(
         parent_snapshot_id: str,
         solid_selection: Optional[Sequence[str]] = None,
         solids_to_execute: Optional[AbstractSet[str]] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         return super(PipelineSnapshotLineage, cls).__new__(
