@@ -1,4 +1,5 @@
 import json
+import hashlib
 import re
 from datetime import datetime
 from typing import (
@@ -431,8 +432,10 @@ class TimeWindowPartitionsDefinition(
         return TimeWindowPartitionsSubset.from_serialized(self, serialized)
 
     @property
-    def unique_identifier(self) -> str:
-        return str(self)
+    def serialized_unique_identifier(self) -> str:
+        # TODO add notes to repr function to indicate that changing the function
+        # will trigger a recompute of all partitions
+        return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
 
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
@@ -982,6 +985,11 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
                 )
 
         return result
+
+    def get_partition_keys(self) -> Iterable[str]:
+        return set(self._partitions_def.get_partition_keys()) - set(
+            self.get_partition_keys_not_in_subset()
+        )
 
     @property
     def key_ranges(self) -> Sequence[PartitionKeyRange]:

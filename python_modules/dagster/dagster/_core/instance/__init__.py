@@ -118,6 +118,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.schedules import ScheduleStorage
     from dagster._core.workspace.workspace import IWorkspace
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
+    from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 
 def _check_run_equality(
@@ -1420,6 +1421,18 @@ class DagsterInstance:
         return self._event_storage.end_watch(run_id, cb)
 
     # asset storage
+
+    @traced
+    def update_asset_cached_status_data(
+        self, asset_key: AssetKey, cache_values: "AssetStatusCacheValue"
+    ) -> None:
+        self._event_storage.update_asset_cached_status_data(asset_key, cache_values)
+
+    # @traced
+    # def get_cached_partition_status_by_asset(
+    #     self, asset_keys: Sequence[AssetKey]
+    # ) -> Optional["AssetStatusCacheValue"]:
+    #     return self._event_storage.get_cached_partition_status_by_asset(asset_keys)
 
     @traced
     def all_asset_keys(self):
