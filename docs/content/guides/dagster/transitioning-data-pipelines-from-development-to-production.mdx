@@ -46,7 +46,6 @@ pip install -e .
 In this section we will:
 
 - Write our assets
-- Add the assets to our repository
 - Add run configuration for the Snowflake I/O manager
 - Materialize assets in Dagit
 
@@ -160,7 +159,7 @@ Now that our assets work locally, we can start the deployment process! We'll fir
 
 We want to store the assets in a production Snowflake database, so we need to update the configuration for the `snowflake_pandas_io_manager`. But if we were to simply update the values we set for local development, we would run into an issue: the next time a developer wants to work on these assets, they will need to remember to change the configuration back to the local values. This leaves room for a developer to accidentally overwrite the production asset during local development.
 
-Instead, we can set up the repository to determine the configuration for resources based on the environment:
+Instead, we can determine the configuration for resources based on the environment:
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v2.py startafter=start endbefore=end
 # __init__.py
