@@ -82,14 +82,25 @@ async function loadPartitionHealthData(client: ApolloClient<any>, loadKey: Asset
   const stateForSingleDimension = (
     dimensionIdx: number,
     dimensionKey: string,
-    withinParentDimensions?: string[],
+    otherDimensionSelectedKeys?: string[],
   ) => {
+    if (dimensionIdx === 0 && dimensions.length === 1) {
+      return stateForKey([dimensionKey]);
+    }
     if (dimensionIdx === 0) {
-      return stateForPartialKey([dimensionKey]);
+      return mergedStates(
+        Object.entries<PartitionState>(stateByKey[dimensionKey])
+          .filter(
+            ([key]) => !otherDimensionSelectedKeys || otherDimensionSelectedKeys.includes(key),
+          )
+          .map(([_, val]) => val),
+      );
     } else if (dimensionIdx === 1) {
       return mergedStates(
         Object.entries<{[subdimensionKey: string]: PartitionState}>(stateByKey)
-          .filter(([key]) => !withinParentDimensions || withinParentDimensions.includes(key))
+          .filter(
+            ([key]) => !otherDimensionSelectedKeys || otherDimensionSelectedKeys.includes(key),
+          )
           .map(([_, val]) => val[dimensionKey]),
       );
     } else {

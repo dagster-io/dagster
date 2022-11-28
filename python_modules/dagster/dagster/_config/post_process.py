@@ -135,9 +135,11 @@ def _recurse_in_to_shape(
 
     fields = context.config_type.fields  # type: ignore
 
-    field_aliases = getattr(context.config_type, "field_aliases", None)
-    field_aliases = check.opt_dict_param(
-        field_aliases, "field_aliases", key_type=str, value_type=str
+    field_aliases: Dict[str, str] = check.opt_dict_param(
+        getattr(context.config_type, "field_aliases", None),
+        "field_aliases",
+        key_type=str,
+        value_type=str,
     )
 
     incoming_fields = config_value.keys()

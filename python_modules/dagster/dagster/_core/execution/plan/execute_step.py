@@ -86,7 +86,7 @@ def _step_output_error_checked_user_event_sequence(
     This consumes and emits an event sequence.
     """
     check.inst_param(step_context, "step_context", StepExecutionContext)
-    check.generator_param(user_event_sequence, "user_event_sequence")
+    check.iterator_param(user_event_sequence, "user_event_sequence")
 
     step = step_context.step
     op_label = step_context.describe_op()

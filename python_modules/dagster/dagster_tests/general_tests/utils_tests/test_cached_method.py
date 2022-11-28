@@ -1,3 +1,5 @@
+# mypy: disable-error-code=annotation-unchecked
+
 import gc
 from typing import NamedTuple
 
