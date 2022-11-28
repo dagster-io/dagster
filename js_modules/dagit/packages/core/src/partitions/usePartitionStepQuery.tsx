@@ -35,6 +35,7 @@ const InitialDataState: DataState = {
  */
 export function usePartitionStepQuery(
   partitionSetName: string,
+  partitionTagName: string,
   partitionNames: string[],
   pageSize: number,
   runsFilter: RunFilterToken[],
@@ -85,7 +86,7 @@ export function usePartitionStepQuery(
         const fetched = await Promise.all(
           sliceNames.map((partitionName) => {
             const partitionSetTag = {key: DagsterTag.PartitionSet, value: partitionSetName};
-            const partitionTag = {key: DagsterTag.Partition, value: partitionName};
+            const partitionTag = {key: partitionTagName, value: partitionName};
             // for jobs, filter by pipelineName/jobName instead of by partition set tag.  This
             // preserves partition run history across the pipeline => job transition
             const runTagsFilter = jobName
@@ -146,7 +147,7 @@ export function usePartitionStepQuery(
         // Filter detected changes to just runs in our visible range of partitions, and then update
         // local state if changes have been found.
         const relevant = [...pending, ...recent].filter((run) =>
-          run.tags.find((t) => t.key === DagsterTag.Partition && partitionNames.includes(t.value)),
+          run.tags.find((t) => t.key === partitionTagName && partitionNames.includes(t.value)),
         );
         setDataState((state) => {
           const updated = state.runs
@@ -168,6 +169,7 @@ export function usePartitionStepQuery(
     pageSize,
     client,
     partitionSetName,
+    partitionTagName,
     _serializedRunTags,
     jobName,
     offset,
@@ -175,7 +177,7 @@ export function usePartitionStepQuery(
     skipQuery,
   ]);
 
-  return assemblePartitions(dataState);
+  return assemblePartitions(dataState, partitionTagName);
 }
 
 async function fetchRunsForFilter(
@@ -194,7 +196,7 @@ async function fetchRunsForFilter(
   );
 }
 
-function assemblePartitions(data: DataState) {
+function assemblePartitions(data: DataState, partitionTagName: string) {
   // Note: Partitions don't have any unique keys beside their names, so we use names
   // extensively in our display layer as React keys. To create unique empty partitions
   // we use different numbers of zero-width space characters
@@ -211,7 +213,7 @@ function assemblePartitions(data: DataState) {
   });
 
   data.runs.forEach((r) => {
-    const partitionName = r.tags.find((t) => t.key === DagsterTag.Partition)?.value || '';
+    const partitionName = r.tags.find((t) => t.key === partitionTagName)?.value || '';
     byName[partitionName]?.runs.push(r);
   });
 
