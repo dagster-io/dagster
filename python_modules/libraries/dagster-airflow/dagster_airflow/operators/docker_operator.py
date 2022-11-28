@@ -68,8 +68,7 @@ class DagsterDockerOperator(DockerOperator):
                 kwargs["docker_conn_id"] = True
 
         if "environment" not in kwargs:
-            kwargs["environment"] = get_aws_environment()\
-
+            kwargs["environment"] = get_aws_environment()
         super(DagsterDockerOperator, self).__init__(
             task_id=dagster_operator_parameters.task_id,
             dag=dagster_operator_parameters.dag,
