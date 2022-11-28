@@ -184,7 +184,8 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   const pipelineSelector: PipelineSelector = {
     ...repoAddressToSelector(repoAddress),
     pipelineName: pipeline.name,
-    solidSelection: currentSession?.solidSelection || undefined,
+    solidSelection: currentSession.solidSelection || undefined,
+    assetSelection: currentSession.assetSelection?.map(({assetKey: {path}}) => ({path})),
   };
 
   const configResult = useQuery<

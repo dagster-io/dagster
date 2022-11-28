@@ -64,7 +64,6 @@ from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.resolve_versions import resolve_step_output_versions
-from dagster._core.storage.io_manager import IOManager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import ensure_gen, iterate_with_context
@@ -458,33 +457,17 @@ def _type_check_and_store_output(
 
 def _asset_key_and_partitions_for_output(
     output_context: OutputContext,
-    output_def: OutputDefinition,
-    output_manager: IOManager,
 ) -> Tuple[Optional[AssetKey], AbstractSet[str]]:
 
-    manager_asset_key = output_manager.get_output_asset_key(output_context)
-    node_handle = output_context.step_context.solid_handle
     output_asset_info = output_context.asset_info
 
     if output_asset_info:
-        if manager_asset_key is not None:
-            raise DagsterInvariantViolationError(
-                f'The IOManager of output "{output_def.name}" on node "{node_handle}" associates it '
-                f'with asset key "{manager_asset_key}", but this output has already been defined to '
-                f'produce asset "{output_asset_info.key}", either via a Software Defined Asset, '
-                "or by setting the asset_key parameter on the OutputDefinition. In most cases, this "
-                "means that you should use an IOManager that does not specify an AssetKey in its "
-                "get_output_asset_key() function for this output."
-            )
         if not output_asset_info.is_required:
             output_context.log.warn(f"Materializing unexpected asset key: {output_asset_info.key}.")
         return (
             output_asset_info.key,
             output_asset_info.partitions_fn(output_context) or set(),
         )
-
-    if manager_asset_key:
-        return manager_asset_key, output_manager.get_output_asset_partitions(output_context)
 
     return None, set()
 
@@ -693,9 +676,7 @@ def _store_output(
                 )
         yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
 
-    asset_key, partitions = _asset_key_and_partitions_for_output(
-        output_context, output_def, output_manager
-    )
+    asset_key, partitions = _asset_key_and_partitions_for_output(output_context)
     if asset_key:
         for materialization in _get_output_asset_materializations(
             asset_key,
