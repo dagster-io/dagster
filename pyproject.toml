@@ -57,6 +57,10 @@ line_length=100
 # Allow variables to be redefined with arbitrary types even if they already are typed.
 allow_redefinition = true
 
+# Allow for use of type annotations in local variables inside function bodies even when the
+# signature is not annotated.
+disable_error_code = ['annotation-unchecked']
+
 # Ignore cases where mypy cannot resolve *the types* for a given import. Note that this is different
 # than not being able to resolve the import at runtime. A module can be installed, but mypy will
 # consider it unresolveable if it does not either (a) have a `py.typed` marker file; (b) have

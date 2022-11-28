@@ -115,7 +115,7 @@ class SourceAsset(ResourceAddable):
             experimental_arg_warning("io_manager_def", "SourceAsset.__new__")
 
         self.key = AssetKey.from_coerceable(key)
-        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self.metadata_entries = _metadata_entries or normalize_metadata(
             metadata, [], allow_invalid=True
         )
