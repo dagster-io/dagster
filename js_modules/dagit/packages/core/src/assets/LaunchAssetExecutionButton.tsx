@@ -9,7 +9,7 @@ import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {usePermissions} from '../app/Permissions';
 import {displayNameForAssetKey, LiveData, toGraphId} from '../asset-graph/Utils';
-import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {DagsterTag} from '../runs/RunTag';
 import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
@@ -198,7 +198,9 @@ export const LaunchAssetExecutionButton: React.FC<{
 };
 
 export const useMaterializationAction = (preferredJobName?: string) => {
+  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
+
   const client = useApolloClient();
   const confirm = useConfirmation();
 
