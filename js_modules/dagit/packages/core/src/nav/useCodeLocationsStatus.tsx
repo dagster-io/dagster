@@ -67,7 +67,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         intent: 'success',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
-            <div>Workspace ready</div>
+            <div>Definitions reloaded</div>
             <ViewButton onClick={() => history.push('/workspace')} color={Colors.White}>
               View
             </ViewButton>
