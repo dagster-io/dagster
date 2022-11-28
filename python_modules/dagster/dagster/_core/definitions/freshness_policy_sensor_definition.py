@@ -154,12 +154,12 @@ def build_freshness_policy_sensor_context(
         .. code-block:: python
 
             context = build_freshness_policy_sensor_context(
-                sensor_name="run_status_sensor_to_invoke",
+                sensor_name="freshness_policy_sensor_to_invoke",
                 asset_key=AssetKey("some_asset"),
                 freshness_policy=FreshnessPolicy(maximum_lag_minutes=30)<
                 minutes_late=10.0,
             )
-            run_status_sensor_to_invoke(context)
+            freshness_policy_sensor_to_invoke(context)
     """
 
     return FreshnessPolicySensorEvaluationContext(

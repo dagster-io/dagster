@@ -808,9 +808,9 @@ def build_asset_reconciliation_sensor(
 
         .. code-block:: python
 
-            a       b
-             \     /
-                c
+            a     b
+             \   /
+               c
 
         and create the sensor:
 
@@ -832,8 +832,11 @@ def build_asset_reconciliation_sensor(
               by ``c``. Materializing ``c`` in the same run as those assets will satisfy its
               required data constraint, and so the sensor will kick off a run for ``c`` alongside
               whichever upstream assets did not have up-to-date data.
-            * On the next tick, the sensor will see that a run is currently planned which will satisfy that constraint, so no
-              runs will be kicked off.
+            * On the next tick, the sensor will see that a run is currently planned which will
+              satisfy that constraint, so no runs will be kicked off.
+            * Once that run completes, a new materialization event will exist for ``c``, which will
+              incorporate all of the required data, so no new runs will be kicked off until the
+              following day.
 
 
     """

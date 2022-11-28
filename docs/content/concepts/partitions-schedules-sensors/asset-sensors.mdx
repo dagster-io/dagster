@@ -51,7 +51,7 @@ def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry
     )
 ```
 
-## Freshness policy sensors (Experimental)
+## Freshness policy sensors<Experimental />
 
 A freshness policy sensor checks the freshness of a given selection of assets on each tick, and performs some action in response to that status.
 
@@ -76,7 +76,7 @@ def my_freshness_alerting_sensor(context: FreshnessPolicySensorEvaluationContext
         send_alert(f"Asset with key {context.asset_key} is now on time.")
 ```
 
-## Multi-asset sensors (Experimental)
+## Multi-asset sensors<Experimental />
 
 ### Triggering runs upon materializations
 
@@ -85,14 +85,14 @@ Multi-asset sensors, which can trigger job executions based on multiple asset ma
 In the body of the sensor, you have access to the materialization event records for each asset via the <PyObject object="MultiAssetSensorEvaluationContext" /> context object. Methods within the context object will search for events after the [cursor](/concepts/partitions-schedules-sensors/sensors#sensor-optimizations-using-cursors).
 
 - <PyObject
-  object="MultiAssetSensorEvaluationContext"
-  method="latest_materialization_records_by_key"
+    object="MultiAssetSensorEvaluationContext"
+    method="latest_materialization_records_by_key"
   /> returns a dictionary mapping the asset key for each monitored asset to the most
   recent materialization record. If there is no materialization event, the mapped
   value will be none.
 - <PyObject
-  object="MultiAssetSensorEvaluationContext"
-  method="materialization_records_for_key"
+    object="MultiAssetSensorEvaluationContext"
+    method="materialization_records_for_key"
   /> returns a list of materialization event records for a specified asset key.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_multi_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
@@ -139,8 +139,8 @@ def asset_a_and_b_sensor_with_skip_reason(context):
 You can use the <PyObject object="MultiAssetSensorEvaluationContext" /> context object to fetch partitioned materializations for each monitored asset.
 
 - <PyObject
-  object="MultiAssetSensorEvaluationContext"
-  method="latest_materialization_records_by_partition"
+    object="MultiAssetSensorEvaluationContext"
+    method="latest_materialization_records_by_partition"
   /> returns an mapping of partition key to the most recent materialization event
   record for that partition. Returns records in order by event ID.
 - If all monitored assets have the same partitions definition, <PyObject
@@ -213,7 +213,7 @@ def trigger_daily_asset_when_any_upstream_partitions_have_new_materializations(c
   of updating a weekly asset when upstream daily assets are materialized.
 </Note>
 
-## Asset reconciliation sensor <Experimental />
+## Asset reconciliation sensor<Experimental />
 
 Dagster provides an out-of-box sensor that will monitor a provided set of assets and automatically materialize them if they're "unreconciled". An asset is considered "unreconciled" if any of:
 
@@ -242,65 +242,18 @@ def repository_1():
 
 This sensor will materialize `asset_b` whenever any of its parents materialize, and it will materialize `asset_c` whenever any of its parents materialize.
 
-### Freshness-based scheduling <Experimental />
+### Freshness-based scheduling<Experimental />
 
-Setting a `FreshnessPolicy` on an asset tells dagster how up-to-date the data in that asset is expected to be. The asset reconciliation sensor can kick off runs to keep that data in line with the defined policy.
+Setting a `FreshnessPolicy` on an asset specifies how up-to-date the data in that asset is expected to be. The asset reconciliation sensor created using `build_asset_reconciliation_sensor` will kick off runs to keep that data in line with the defined policy.
 
-To minimize unnecessary computation, the sensor will take into account a few bits of information when determining if it needs to kick off a run for a given asset.
+As an example, if an asset has a `freshness_policy=FreshnessPolicy(maximum_lag_minutes=60)`, this specifies that, at any point in time, that asset should incoporate all upstream data from no more than an hour before that time. Manually setting up a schedule to do this would be fairly simple: simply kick off a job to update that asset along with all of its upstream assets once an hour. However, there are a few drawbacks to this approach.
 
-- The most recent materialization for that asset, to see what upstream data is incorporated into the current state of the asset.
-- Any in-progress runs that will update that asset in the near future.
-- The current and future constraints specifying what upstream data must be incorporated into the state of the asset by certain times.
+First, this ignores updates that may be made outside the scheduled runs. If someone kicks off an ad-hoc run of an upstream asset, a sensor triggers an update, or another job runs some of the same assets, the static schedule will still recompute the contents of each selected asset even if it is no longer required to do so. Second, if multiple FreshnessPolicies are defined, it's likely that there will be a large degree of overlap in their dependencies. Setting up a schedule for each independent policy would be tedious, and result in a high degree of redundant work. Trying to eliminate this redundant work with a combination of custom schedules and asset sensors grows exponentially more difficult as the number of FreshnessPolicies increases.
 
-The asset reconciliation sensor will attempt to optimize over all constraints specified by FreshnessPolicies on assets within its selection -- if two separate assets with FreshnessPolicies require data from the same upstream asset, a single run of the upstream asset will be kicked off to satisfy both constraints (if possible).
+Freshness-based scheduling offloads this complexity to the orchestrator, which can monitor the current state of all assets and plan runs to keep assets in line with their FreshnessPolicies. To minimize unnecessary computation, the sensor will take into account a few bits of information when determining if it needs to kick off a run for a given asset:
 
-## Examples
+- A timestamp of the upstream data that is incorporated into the current state of the asset. This is calculated by finding the most recent materialization of that asset, then recursively finding the most recent materializations of its parents that happened before that event. The minimum timestamp found this way will be used as the current data time.
+- Any in-progress runs that will update that asset in the near future. If an in-progress run will update an asset to an acceptable data time, then a new run will not be kicked off.
+- The constraints specifying what upstream data must be incorporated into the state of an asset by certain times. If waiting some amount of time to kick off a materialization of an asset will allow multiple constraints to be satisfied at once, then the asset will not be materialized on that tick.
 
-### Monitoring daily assets to materialize a weekly asset
-
-The following code example monitors an upstream daily-partitioned asset, kicking off materializations of a downstream weekly-partitioned asset whenever a daily partition is materialized and all daily partitions in the week have existing materializations. Every time a daily partition has a new materialization, the weekly partition will materialize.
-
-<PyObject
-object="MultiAssetSensorEvaluationContext"
-method="all_partitions_materialized"
-/> is a utility method accepts a list of partitions and checks if every provided
-partition has been materialized. This method ignores the cursor, so it searches through
-all existing materializations.
-
-If the <PyObject object="PartitionsDefinition"/> of the monitored assets differs from the triggered asset, you can use the <PyObject object="MultiAssetSensorEvaluationContext" method="get_downstream_partition_keys"/> method to map a partition key from one asset to another. This method accepts a partition key from the upstream asset and uses the existing <PyObject object="PartitionMapping"/> object on the downstream asset to fetch the corresponding partitions in the downstream asset.
-
-If a partition mapping is not defined, Dagster will use the default partition mapping, which is the <PyObject object="TimeWindowPartitionMapping"/> for time window partitions definitions and the <PyObject object="IdentityPartitionMapping"/> for other partitions definitions. The <PyObject object="TimeWindowPartitionMapping"/> will map an upstream partition to the downstream partitions that overlap with it.
-
-```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_daily_asset_to_weekly_asset endbefore=end_daily_asset_to_weekly_asset
-@multi_asset_sensor(asset_keys=[AssetKey("upstream_daily_1")], job=weekly_asset_job)
-def trigger_weekly_asset_from_daily_asset(context):
-    run_requests_by_partition = {}
-    materializations_by_partition = context.latest_materialization_records_by_partition(
-        AssetKey("upstream_daily_1")
-    )
-
-    # Get all corresponding weekly partitions for any materialized daily partitions
-    for partition, materialization in materializations_by_partition.items():
-        weekly_partitions = context.get_downstream_partition_keys(
-            partition,
-            from_asset_key=AssetKey("upstream_daily_1"),
-            to_asset_key=AssetKey("downstream_weekly_asset"),
-        )
-
-        if weekly_partitions:  # Check that a downstream weekly partition exists
-            # Upstream daily partition can only map to at most one downstream weekly partition
-            daily_partitions_in_week = context.get_downstream_partition_keys(
-                weekly_partitions[0],
-                from_asset_key=AssetKey("downstream_weekly_asset"),
-                to_asset_key=AssetKey("upstream_daily_1"),
-            )
-            if context.all_partitions_materialized(
-                AssetKey("upstream_daily_1"), daily_partitions_in_week
-            ):
-                run_requests_by_partition[
-                    weekly_partitions[0]
-                ] = weekly_asset_job.run_request_for_partition(weekly_partitions[0])
-                # Advance the cursor so we only check event log records past the cursor
-                context.advance_cursor({AssetKey("upstream_daily_1"): materialization})
-    return list(run_requests_by_partition.values())
-```
+The sensor will only kick off runs for assets specified in the `asset_selection` argument of `build_asset_reconciliation_sensor`. If an asset in this selection is downstream of an asset outside of the selection, the sensor will not kick off a run of the selected asset until a materialization event for the upstream asset is created.
