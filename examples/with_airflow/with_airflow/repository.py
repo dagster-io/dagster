@@ -1,6 +1,6 @@
-# start_repo_marker_0
 import os
 
+# start_repo_marker_0
 from dagster_airflow import (
     make_dagster_job_from_airflow_dag,
     make_dagster_repo_from_airflow_dags_path,
@@ -16,22 +16,20 @@ airflow_simple_dag = make_dagster_job_from_airflow_dag(simple_dag)
 airflow_complex_dag = make_dagster_job_from_airflow_dag(complex_dag)
 airflow_kubernetes_dag = make_dagster_job_from_airflow_dag(kubernetes_dag, mock_xcom=True)
 
+
+@repository
+def with_airflow():
+    return [airflow_complex_dag, airflow_simple_dag, airflow_kubernetes_dag]
+# end_repo_marker_0
+
+
 task_flow_repo = make_dagster_repo_from_airflow_dags_path(
     os.path.abspath("./with_airflow/task_flow_dags/"),
     "task_flow_repo",
 )
 
 
-@repository
-def with_airflow():
-    return [airflow_complex_dag, airflow_simple_dag, airflow_kubernetes_dag]
-
-
 airflow_examples_dags_repo = make_dagster_repo_from_airflow_example_dags()
-
-
-# end_repo_marker_0
-
 
 # start_repo_marker_1
 

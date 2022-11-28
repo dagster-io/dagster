@@ -124,6 +124,7 @@ class DockerOperator(BaseOperator):
     def __init__(  # pylint: disable=keyword-arg-before-vararg
         self,
         image,
+        task_id=None,
         api_version=None,
         command=None,
         cpus=1.0,
@@ -148,11 +149,10 @@ class DockerOperator(BaseOperator):
         dns_search=None,
         auto_remove=False,
         shm_size=None,
-        *args,
+        # *args,
         **kwargs,
     ):
-
-        super(DockerOperator, self).__init__(*args, **kwargs)
+        super(DockerOperator, self).__init__(**kwargs)
         self.api_version = api_version
         self.auto_remove = auto_remove
         self.command = command
