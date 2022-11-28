@@ -99,11 +99,13 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   assetJobName,
   upstreamAssetKeys,
 }) => {
-  const {canLaunchPartitionBackfill} = usePermissions();
-  const [previewCount, setPreviewCount] = React.useState(0);
-  const [launching, setLaunching] = React.useState(false);
-
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
+
+  const {canLaunchPartitionBackfill} = usePermissions();
+  const [launching, setLaunching] = React.useState(false);
+  const [previewCount, setPreviewCount] = React.useState(0);
+  const morePreviewsCount = partitionedAssets.length - previewCount;
+
   const assetHealth = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
   const mergedHealth = React.useMemo(() => mergedAssetHealth(assetHealth), [assetHealth]);
 
@@ -301,10 +303,10 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                 ranges={ranges}
               />
             ))}
-            {previewCount < partitionedAssets.length && (
+            {morePreviewsCount > 0 && (
               <Box margin={{vertical: 8}}>
                 <ButtonLink onClick={() => setPreviewCount(partitionedAssets.length)}>
-                  Show {partitionedAssets.length - previewCount} more previews
+                  Show {morePreviewsCount} more {morePreviewsCount > 1 ? 'previews' : 'preview'}
                 </ButtonLink>
               </Box>
             )}
