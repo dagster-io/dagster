@@ -20,6 +20,8 @@ airflow_kubernetes_dag = make_dagster_job_from_airflow_dag(kubernetes_dag, mock_
 @repository
 def with_airflow():
     return [airflow_complex_dag, airflow_simple_dag, airflow_kubernetes_dag]
+
+
 # end_repo_marker_0
 
 

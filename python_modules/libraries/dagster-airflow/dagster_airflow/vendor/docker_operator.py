@@ -124,9 +124,9 @@ class DockerOperator(BaseOperator):
     def __init__(  # pylint: disable=keyword-arg-before-vararg
         self,
         image,
-        task_id=None,
         api_version=None,
         command=None,
+        task_id=None,
         cpus=1.0,
         docker_url="unix://var/run/docker.sock",
         environment=None,
@@ -149,10 +149,10 @@ class DockerOperator(BaseOperator):
         dns_search=None,
         auto_remove=False,
         shm_size=None,
-        # *args,
-        **kwargs,
+        *args,
+        **_kwargs,
     ):
-        super(DockerOperator, self).__init__(**kwargs)
+        super(DockerOperator, self).__init__(task_id=task_id, *args)
         self.api_version = api_version
         self.auto_remove = auto_remove
         self.command = command
