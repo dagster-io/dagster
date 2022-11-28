@@ -56,7 +56,7 @@ class TraversalContext(ABC):
         return self._stack
 
     @abstractmethod
-    def for_array(self: Self, index: int) -> Self:
+    def for_array_element(self: Self, index: int) -> Self:
         ...
 
     @abstractmethod
@@ -71,101 +71,3 @@ class TraversalContext(ABC):
 
 
 
-class DefaultResolutionContext(TraversalContext):
-    __slots__ = ["_config_type", "_traversal_type", "_all_config_types"]
-
-    def __init__(
-        self,
-        config_schema_snapshot: ConfigSchemaSnap,
-        config_type_snap: ConfigTypeSnap,
-        config_type: ConfigType,
-        stack: EvaluationStack,
-        traversal_type: TraversalType,
-    ):
-        super(TraversalContext, self).__init__(
-            config_schema_snapshot=config_schema_snapshot,
-            config_type_snap=config_type_snap,
-            stack=stack,
-        )
-        self._config_type = check.inst_param(config_type, "config_type", ConfigType)
-        self._traversal_type = check.inst_param(traversal_type, "traversal_type", TraversalType)
-
-    @staticmethod
-    def from_config_type(
-        config_type: ConfigType,
-        stack: EvaluationStack,
-        traversal_type: TraversalType,
-    ) -> "TraversalContext":
-        return TraversalContext(
-            config_schema_snapshot=config_type.get_schema_snapshot(),
-            config_type_snap=config_type.get_snapshot(),
-            config_type=config_type,
-            stack=stack,
-            traversal_type=traversal_type,
-        )
-
-    @property
-    def config_type(self) -> ConfigType:
-        return self._config_type
-
-    @property
-    def traversal_type(self) -> TraversalType:
-        return self._traversal_type
-
-    @property
-    def do_post_process(self) -> bool:
-        return self.traversal_type == TraversalType.RESOLVE_DEFAULTS_AND_POSTPROCESS
-
-    def for_array(self, index: int) -> "TraversalContext":
-        check.int_param(index, "index")
-        return TraversalContext(
-            config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
-                self.config_type_snap.inner_type_key
-            ),
-            config_type=self.config_type.inner_type,  # type: ignore
-            stack=self.stack.for_array_index(index),
-            traversal_type=self.traversal_type,
-        )
-
-    def for_map(self, key: object) -> "TraversalContext":
-        return TraversalContext(
-            config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
-                self.config_type_snap.inner_type_key
-            ),
-            config_type=self.config_type.inner_type,  # type: ignore
-            stack=self.stack.for_map_value(key),
-            traversal_type=self.traversal_type,
-        )
-
-    def for_field(self, field_def: Field, field_name: str) -> "TraversalContext":
-        check.inst_param(field_def, "field_def", Field)
-        check.str_param(field_name, "field_name")
-        return TraversalContext(
-            config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_type_snap(field_def.config_type.key),
-            config_type=field_def.config_type,
-            stack=self.stack.for_field(field_name),
-            traversal_type=self.traversal_type,
-        )
-
-    def for_nullable_inner_type(self) -> "TraversalContext":
-        return TraversalContext(
-            config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
-                self.config_type_snap.inner_type_key
-            ),
-            config_type=self.config_type.inner_type,  # type: ignore
-            stack=self.stack,
-            traversal_type=self.traversal_type,
-        )
-
-    def for_new_config_type(self, config_type: ConfigType) -> "TraversalContext":
-        return TraversalContext(
-            config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_type_snap(config_type.key),
-            config_type=config_type,
-            stack=self.stack,
-            traversal_type=self.traversal_type,
-        )

@@ -23,7 +23,7 @@ class EvaluationStack(
     def for_field(self, field_name: str) -> "EvaluationStack":
         return EvaluationStack(entries=[*self.entries, EvaluationStackPathEntry(field_name)])
 
-    def for_array_index(self, list_index: int) -> "EvaluationStack":
+    def for_array_element(self, list_index: int) -> "EvaluationStack":
         return EvaluationStack(entries=[*self.entries, EvaluationStackListItemEntry(list_index)])
 
     def for_map_key(self, map_key: object) -> "EvaluationStack":

@@ -313,6 +313,7 @@ def _handle_scalar_union(context: ValidationContext, value: T) -> EvaluateValueR
 
 
 class ValidationContext(TraversalContext):
+
     def for_field_snap(self, field_snap: ConfigFieldSnap) -> "ValidationContext":
         check.inst_param(field_snap, "field_snap", ConfigFieldSnap)
         field_snap_name = check.not_none(field_snap.name)
