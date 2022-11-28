@@ -361,7 +361,7 @@ const BackfillRunStatus = ({
           (r) => r.partitionName === partitionName,
         );
         if (entry) {
-          history.push(`/instance/runs/${entry.runId}`);
+          history.push(`/runs/${entry.runId}`);
         }
       }}
     />

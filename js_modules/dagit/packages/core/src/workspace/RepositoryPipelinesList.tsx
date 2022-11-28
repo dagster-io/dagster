@@ -72,13 +72,15 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
     return null;
   }
 
+  const repoName = repoAddressAsString(repoAddress);
+
   if (error || !pipelinesForTable) {
     return (
       <Box padding={{vertical: 64}}>
         <NonIdealState
           icon="error"
           title="Unable to load pipelines"
-          description={`Could not load pipelines for ${repoAddressAsString(repoAddress)}`}
+          description={`Could not load pipelines for ${repoName}`}
         />
       </Box>
     );
@@ -93,8 +95,8 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
           description={
             <div>
               {display === 'jobs'
-                ? 'This repository does not have any jobs defined.'
-                : 'This repository does not have any pipelines defined.'}
+                ? `${repoName} does not have any jobs defined.`
+                : `${repoName} does not have any pipelines defined.`}
             </div>
           }
         />

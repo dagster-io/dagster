@@ -45,11 +45,18 @@ setup(
         "Blog": "https://dagster.io/blog",
     },
     classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Environment :: Console",
+        "Environment :: Web Environment",
+        "Intended Audience :: Developers",
+        "Intended Audience :: System Administrators",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: Apache Software License",
+        "Topic :: System :: Monitoring",
+        "Topic :: Software Development :: Libraries :: Application Frameworks",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_tests*"]),
@@ -78,6 +85,7 @@ setup(
         "requests",
         "setuptools",
         "tabulate",
+        "tomli",
         "tqdm",
         "typing_compat",
         "typing_extensions>=4.0.1",
@@ -121,7 +129,7 @@ setup(
             "isort==5.10.1",
         ],
         "mypy": [
-            "mypy==0.950",
+            "mypy==0.991",
             "types-backports",  # version will be resolved against backports
             "types-certifi",  # version will be resolved against certifi
             "types-chardet",  # chardet is a 2+-order dependency of some Dagster libs

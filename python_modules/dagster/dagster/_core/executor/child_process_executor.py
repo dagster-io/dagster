@@ -5,12 +5,17 @@ import os
 import queue
 import sys
 from abc import ABC, abstractmethod
-from typing import NamedTuple
+from multiprocessing import Queue
+from multiprocessing.context import BaseContext as MultiprocessingBaseContext
+from typing import TYPE_CHECKING, Iterator, NamedTuple, Union
 
 import dagster._check as check
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
+
+if TYPE_CHECKING:
+    from dagster._core.events import DagsterEvent
 
 
 class ChildProcessEvent:
@@ -42,7 +47,7 @@ class ChildProcessCommand(ABC):  # pylint: disable=no-init
     The object must be picklable; instantiate it and pass it to _execute_command_in_child_process."""
 
     @abstractmethod
-    def execute(self):
+    def execute(self) -> Iterator[Union[ChildProcessEvent, "DagsterEvent"]]:
         """This method is invoked in the child process.
 
         Yields a sequence of events to be handled by _execute_command_in_child_process."""
@@ -56,7 +61,7 @@ class ChildProcessCrashException(Exception):
         super().__init__()
 
 
-def _execute_command_in_child_process(event_queue, command):
+def _execute_command_in_child_process(event_queue: Queue, command: ChildProcessCommand):
     """Wraps the execution of a ChildProcessCommand.
 
     Handles errors and communicates across a queue with the parent process."""
@@ -108,7 +113,9 @@ def _poll_for_event(process, event_queue):
     return None
 
 
-def execute_child_process_command(multiprocessing_ctx, command):
+def execute_child_process_command(
+    multiprocessing_ctx: MultiprocessingBaseContext, command: ChildProcessCommand
+) -> Iterator["DagsterEvent"]:
     """Execute a ChildProcessCommand in a new process.
 
     This function starts a new process whose execution target is a ChildProcessCommand wrapped by
@@ -140,7 +147,7 @@ def execute_child_process_command(multiprocessing_ctx, command):
 
     event_queue = multiprocessing_ctx.Queue()
     try:
-        process = multiprocessing_ctx.Process(
+        process = multiprocessing_ctx.Process(  # type: ignore
             target=_execute_command_in_child_process, args=(event_queue, command)
         )
         process.start()

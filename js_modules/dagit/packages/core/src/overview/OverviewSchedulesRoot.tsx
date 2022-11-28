@@ -193,8 +193,8 @@ const UnloadableSchedulesAlert: React.FC<{
             <Box flex={{direction: 'column', gap: 12, alignItems: 'flex-start'}}>
               <div>
                 Schedules were previously started but now cannot be loaded. They may be part of a
-                different workspace or from a schedule or repository that no longer exists in code.
-                You can turn them off, but you cannot turn them back on.
+                different workspace or from a schedule or code location that no longer exists in
+                code. You can turn them off, but you cannot turn them back on.
               </div>
               <Button onClick={() => setIsOpen(true)}>
                 {count === 1 ? 'View unloadable schedule' : 'View unloadable schedules'}

@@ -31,13 +31,13 @@ const RepoRouteContainer = () => {
       <Box padding={{vertical: 64}}>
         <NonIdealState
           icon="error"
-          title="Invalid repository"
+          title="Invalid code location path"
           description={
             <div>
               <div>
                 <strong>{repoPath}</strong>
               </div>
-              {'  is not a valid repository path.'}
+              {'  is not a valid code location path.'}
             </div>
           }
         />
@@ -64,7 +64,7 @@ const RepoRouteContainer = () => {
       <Box padding={{vertical: 64}}>
         <NonIdealState
           icon="error"
-          title="Unknown repository"
+          title="Unknown code location"
           description={
             <div>
               <div>

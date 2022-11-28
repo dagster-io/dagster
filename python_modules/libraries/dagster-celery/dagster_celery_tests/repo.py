@@ -16,7 +16,7 @@ from dagster._legacy import (
 
 celery_mode_defs = [
     ModeDefinition(
-        executor_defs=default_executors + [celery_executor],
+        executor_defs=[*default_executors, celery_executor],
         resource_defs={"io_manager": fs_io_manager},
     )
 ]
@@ -337,7 +337,7 @@ class BasicVersionStrategy(VersionStrategy):
     mode_defs=[
         ModeDefinition(
             resource_defs={"io_manager": fs_io_manager},
-            executor_defs=default_executors + [celery_executor],
+            executor_defs=[*default_executors, celery_executor],
         )
     ],
     version_strategy=BasicVersionStrategy(),

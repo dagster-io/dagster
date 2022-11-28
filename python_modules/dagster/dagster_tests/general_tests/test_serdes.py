@@ -1,3 +1,5 @@
+# mypy: disable-error-code=annotation-unchecked
+
 import re
 import string
 from collections import namedtuple

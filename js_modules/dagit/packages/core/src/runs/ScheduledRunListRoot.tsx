@@ -74,6 +74,10 @@ export const ScheduledRunListRoot = () => {
   );
 };
 
+// Imported via React.lazy, which requires a default export.
+// eslint-disable-next-line import/no-default-export
+export default ScheduledRunListRoot;
+
 const SCHEDULER_INFO_QUERY = gql`
   query SchedulerInfoQuery {
     instance {

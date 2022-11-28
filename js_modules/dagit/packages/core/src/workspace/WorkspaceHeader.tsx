@@ -26,7 +26,7 @@ export const WorkspaceHeader = <TData extends Record<string, any>>(props: Props<
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <Heading>
             <Link to="/workspace" style={{color: Colors.Dark}}>
-              Workspace
+              Deployment
             </Link>
           </Heading>
           <Heading>/</Heading>
@@ -50,7 +50,7 @@ export const WorkspaceHeader = <TData extends Record<string, any>>(props: Props<
                 loading={reloading}
                 icon={<Icon name="refresh" />}
               >
-                Reload repository location
+                Reload definitions
               </Button>
             );
           }}

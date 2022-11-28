@@ -56,7 +56,9 @@ def _build_airbyte_asset_defn_metadata(
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
 ) -> AssetsDefinitionCacheableData:
 
-    asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str) or []
+    asset_key_prefix = (
+        check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str) or []
+    )
 
     # Generate a list of outputs, the set of destination tables plus any affiliated
     # normalization tables
@@ -69,8 +71,7 @@ def _build_airbyte_asset_defn_metadata(
     )
 
     outputs = {
-        table: AssetKey(asset_key_prefix + list(table_to_asset_key_fn(table).path))
-        for table in tables
+        table: AssetKey([*asset_key_prefix, *table_to_asset_key_fn(table).path]) for table in tables
     }
 
     internal_deps: Dict[str, Set[AssetKey]] = {}
@@ -85,7 +86,7 @@ def _build_airbyte_asset_defn_metadata(
         for base_table, derived_tables in normalization_tables.items():
             for derived_table in derived_tables:
                 internal_deps[derived_table] = {
-                    AssetKey(asset_key_prefix + list(table_to_asset_key_fn(base_table).path))
+                    AssetKey([*asset_key_prefix, *table_to_asset_key_fn(base_table).path])
                 }
 
     # All non-normalization tables depend on any user-provided upstream assets

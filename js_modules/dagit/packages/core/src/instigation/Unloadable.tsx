@@ -96,8 +96,8 @@ const UnloadableSensorInfo = () => (
     description={
       <div>
         The following sensors were previously started but now cannot be loaded. They may be part of
-        a different workspace or from a sensor or repository that no longer exists in code. You can
-        turn them off, but you cannot turn them back on since they can’t be loaded.
+        a different workspace or from a sensor or code location that no longer exists in code. You
+        can turn them off, but you cannot turn them back on since they can’t be loaded.
       </div>
     }
   />
@@ -114,8 +114,8 @@ const UnloadableScheduleInfo = () => (
     description={
       <div>
         The following schedules were previously started but now cannot be loaded. They may be part
-        of a different workspace or from a schedule or repository that no longer exists in code. You
-        can turn them off, but you cannot turn them back on since they can’t be loaded.
+        of a different workspace or from a schedule or code location that no longer exists in code.
+        You can turn them off, but you cannot turn them back on since they can’t be loaded.
       </div>
     }
   />

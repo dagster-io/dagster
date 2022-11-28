@@ -69,7 +69,9 @@ export const WorkspacePipelineRoot = () => {
         title={<Heading>{pipelineName}</Heading>}
         icon="job"
         description={
-          anyPipelines ? 'Job / pipeline in multiple repositories' : 'Job in multiple repositories'
+          anyPipelines
+            ? 'Job / pipeline in multiple code locations'
+            : 'Job in multiple code locations'
         }
       />
       <Box padding={{vertical: 16, horizontal: 24}}>
@@ -80,11 +82,11 @@ export const WorkspacePipelineRoot = () => {
               {anyPipelines ? (
                 <>
                   Jobs or pipelines named <strong>{pipelineName}</strong> were found in multiple
-                  repositories.
+                  code locations.
                 </>
               ) : (
                 <>
-                  Jobs named <strong>{pipelineName}</strong> were found in multiple repositories.
+                  Jobs named <strong>{pipelineName}</strong> were found in multiple code locations.
                 </>
               )}
             </div>
@@ -94,7 +96,7 @@ export const WorkspacePipelineRoot = () => {
       <Table>
         <thead>
           <tr>
-            <th>Repository name and location</th>
+            <th>Code location</th>
             <th>{anyPipelines ? 'Job / Pipeline' : 'Job'}</th>
           </tr>
         </thead>

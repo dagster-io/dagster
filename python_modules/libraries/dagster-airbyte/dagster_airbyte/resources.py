@@ -124,7 +124,7 @@ class AirbyteResource:
         while True:
             try:
                 response = requests.request(
-                    **deep_merge_dicts(
+                    **deep_merge_dicts(  # type: ignore
                         dict(
                             method="POST",
                             url=self.api_base_url + endpoint,

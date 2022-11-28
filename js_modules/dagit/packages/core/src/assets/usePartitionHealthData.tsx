@@ -1,4 +1,5 @@
 import {ApolloClient, gql, useApolloClient} from '@apollo/client';
+import isEqual from 'lodash/isEqual';
 import React from 'react';
 
 import {PartitionState} from '../partitions/PartitionStatus';
@@ -81,14 +82,25 @@ async function loadPartitionHealthData(client: ApolloClient<any>, loadKey: Asset
   const stateForSingleDimension = (
     dimensionIdx: number,
     dimensionKey: string,
-    withinParentDimensions?: string[],
+    otherDimensionSelectedKeys?: string[],
   ) => {
+    if (dimensionIdx === 0 && dimensions.length === 1) {
+      return stateForKey([dimensionKey]);
+    }
     if (dimensionIdx === 0) {
-      return stateForPartialKey([dimensionKey]);
+      return mergedStates(
+        Object.entries<PartitionState>(stateByKey[dimensionKey])
+          .filter(
+            ([key]) => !otherDimensionSelectedKeys || otherDimensionSelectedKeys.includes(key),
+          )
+          .map(([_, val]) => val),
+      );
     } else if (dimensionIdx === 1) {
       return mergedStates(
         Object.entries<{[subdimensionKey: string]: PartitionState}>(stateByKey)
-          .filter(([key]) => !withinParentDimensions || withinParentDimensions.includes(key))
+          .filter(
+            ([key]) => !otherDimensionSelectedKeys || otherDimensionSelectedKeys.includes(key),
+          )
           .map(([_, val]) => val[dimensionKey]),
       );
     } else {
@@ -116,14 +128,21 @@ async function loadPartitionHealthData(client: ApolloClient<any>, loadKey: Asset
   return result;
 }
 
-export function usePartitionHealthData(assetKeys: AssetKey[]) {
-  const [result, setResult] = React.useState<PartitionHealthData[]>([]);
+// Note: assetLastMaterializedAt is used as a "hint" - if the input value changes, it's
+// a sign that we should invalidate and reload previously loaded health stats. We don't
+// clear them immediately to avoid an empty state.
+//
+export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMaterializedAt = '') {
+  const [result, setResult] = React.useState<(PartitionHealthData & {fetchedAt: string})[]>([]);
   const client = useApolloClient();
 
   const assetKeyJSONs = assetKeys.map((k) => JSON.stringify(k));
   const assetKeyJSON = JSON.stringify(assetKeyJSONs);
   const missingKeyJSON = assetKeyJSONs.find(
-    (k) => !result.some((r) => JSON.stringify(r.assetKey) === k),
+    (k) =>
+      !result.some(
+        (r) => JSON.stringify(r.assetKey) === k && r.fetchedAt === assetLastMaterializedAt,
+      ),
   );
 
   React.useMemo(() => {
@@ -133,10 +152,13 @@ export function usePartitionHealthData(assetKeys: AssetKey[]) {
     const loadKey: AssetKey = JSON.parse(missingKeyJSON);
     const run = async () => {
       const loaded = await loadPartitionHealthData(client, loadKey);
-      setResult((result) => [...result, loaded]);
+      setResult((result) => [
+        ...result.filter((r) => !isEqual(r.assetKey, loadKey)),
+        {...loaded, fetchedAt: assetLastMaterializedAt},
+      ]);
     };
     run();
-  }, [client, missingKeyJSON]);
+  }, [client, missingKeyJSON, assetLastMaterializedAt]);
 
   return React.useMemo(() => {
     const assetKeyJSONs = JSON.parse(assetKeyJSON);

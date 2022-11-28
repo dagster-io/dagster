@@ -8,6 +8,7 @@ import {useTrackPageView} from '../app/analytics';
 
 import {VirtualizedSensorTable} from './VirtualizedSensorTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
+import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {WorkspaceSensorsQuery, WorkspaceSensorsQueryVariables} from './types/WorkspaceSensorsQuery';
@@ -56,6 +57,8 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
       );
     }
 
+    const repoName = repoAddressAsString(repoAddress);
+
     if (!filteredBySearch.length) {
       if (anySearch) {
         return (
@@ -65,7 +68,7 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
               title="No matching sensors"
               description={
                 <div>
-                  No sensors matching <strong>{searchValue}</strong> were found in this repository
+                  No sensors matching <strong>{searchValue}</strong> were found in {repoName}
                 </div>
               }
             />
@@ -78,7 +81,7 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
           <NonIdealState
             icon="search"
             title="No sensors"
-            description="No sensors were found in this repository"
+            description={`No sensors were found in ${repoName}`}
           />
         </Box>
       );

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, KeysView, List, Mapping, cast
+from typing import TYPE_CHECKING, Dict, KeysView, List, Mapping, Sequence, cast
 
 from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 from graphene import ResolveInfo
@@ -147,7 +147,7 @@ def add_all_upstream_keys(
     return required.keys()
 
 
-def get_assets_latest_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, List[str]]):
+def get_assets_latest_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, Sequence[str]]):
     from ..schema.asset_graph import GrapheneAssetLatestInfo
     from ..schema.logs.events import GrapheneMaterializationEvent
     from ..schema.pipelines.pipeline import GrapheneRun
@@ -213,8 +213,8 @@ def get_assets_latest_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, 
 
 def _get_in_progress_runs_for_assets(
     graphene_info,
-    in_progress_records: List[RunRecord],
-    step_keys_by_asset: Mapping[AssetKey, List[str]],
+    in_progress_records: Sequence[RunRecord],
+    step_keys_by_asset: Mapping[AssetKey, Sequence[str]],
 ):
     # Build mapping of step key to the assets it generates
     asset_key_by_step_key = defaultdict(set)
