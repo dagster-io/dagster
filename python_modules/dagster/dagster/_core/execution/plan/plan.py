@@ -33,6 +33,7 @@ from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryLoadData
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import (
     DagsterExecutionStepNotFoundError,
     DagsterInvariantViolationError,
@@ -908,14 +909,14 @@ class ExecutionPlan(
                     "supported."
                 )
 
-        unmemoized_step_keys = set()
+        unmemoized_step_keys: Set[str] = set()
 
         log_manager = initialize_console_manager(None)
 
         step_output_versions = resolve_all_step_output_versions(pipeline_def, self, resolved_run_config)
 
-        resource_defs_to_init = {}
-        io_manager_keys = {}  # Map step output handles to io manager keys
+        resource_defs_to_init: Dict[str, ResourceDefinition] = {}
+        io_manager_keys: Dict[StepOutputHandle, str] = {}  # Map step output handles to io manager keys
 
         for step in self.steps:
             for output_name in cast(ExecutionStepUnion, step).step_output_dict.keys():
