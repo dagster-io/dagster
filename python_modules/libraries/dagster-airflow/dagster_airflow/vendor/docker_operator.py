@@ -126,7 +126,6 @@ class DockerOperator(BaseOperator):
         image,
         api_version=None,
         command=None,
-        task_id=None,
         cpus=1.0,
         docker_url="unix://var/run/docker.sock",
         environment=None,
@@ -150,9 +149,9 @@ class DockerOperator(BaseOperator):
         auto_remove=False,
         shm_size=None,
         *args,
-        **_kwargs,
+        **kwargs,
     ):
-        super(DockerOperator, self).__init__(task_id=task_id, *args)
+        super(DockerOperator, self).__init__(*args, **kwargs)
         self.api_version = api_version
         self.auto_remove = auto_remove
         self.command = command

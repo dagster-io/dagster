@@ -68,19 +68,18 @@ class DagsterDockerOperator(DockerOperator):
                 kwargs["docker_conn_id"] = True
 
         if "environment" not in kwargs:
-            kwargs["environment"] = get_aws_environment()
+            kwargs["environment"] = get_aws_environment()\
 
         super(DagsterDockerOperator, self).__init__(
             task_id=dagster_operator_parameters.task_id,
             dag=dagster_operator_parameters.dag,
             tmp_dir=tmp_dir,
-            host_tmp_dir=host_tmp_dir,
             xcom_push=True,
             # We do this because log lines won't necessarily be emitted in order (!) -- so we can't
             # just check the last log line to see if it's JSON.
             xcom_all=True,
             *args,
-            **dagster_operator_parameters.op_kwargs,
+            **kwargs,
         )
 
     @contextmanager
