@@ -225,7 +225,7 @@ class CachingInstanceQueryer:
     ):
         event_log_storage = self._instance.event_log_storage
         if (
-            event_log_storage.supports_add_asset_event_tags
+            event_log_storage.supports_add_asset_event_tags()
             and record.asset_key is not None
             and record.storage_id is not None
             and record.event_log_entry.timestamp is not None
