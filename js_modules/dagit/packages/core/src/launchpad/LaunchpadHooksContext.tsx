@@ -1,6 +1,7 @@
 import React from 'react';
 
-import {LaunchRootExecutionButton, useLaunchWithTelemetry} from './LaunchRootExecutionButton';
+import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
+import {useLaunchWithTelemetry} from './useLaunchWithTelemetry';
 
 type LaunchpadHooksContextValue = {
   LaunchRootExecutionButton?: typeof LaunchRootExecutionButton;
