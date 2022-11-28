@@ -28,7 +28,7 @@ const FinalRedirectOrLoadingRoot = () => {
       <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
           <Spinner purpose="section" />
-          <div style={{color: Colors.Gray600}}>Loading workspace…</div>
+          <div style={{color: Colors.Gray600}}>Loading definitions…</div>
         </Box>
       </Box>
     );

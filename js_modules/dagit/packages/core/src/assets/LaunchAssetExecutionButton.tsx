@@ -491,8 +491,8 @@ export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
     title: MULTIPLE_DEFINITIONS_WARNING,
     body: (
       <div style={{overflow: 'auto'}}>
-        One or more of the selected assets are defined in multiple repositories in your workspace.
-        Rename these assets to avoid collisions and then try again.
+        One or more of the selected assets are defined in multiple code locations. Rename these
+        assets to avoid collisions and then try again.
         <ul>
           {data.assetNodeDefinitionCollisions.map((collision, idx) => (
             <li key={idx}>

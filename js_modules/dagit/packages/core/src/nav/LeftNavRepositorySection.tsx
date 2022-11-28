@@ -20,7 +20,14 @@ const LoadedRepositorySection: React.FC<{
     }
 
     if (allRepos.length > 0) {
-      return <EmptyState>Select a code location to see a list of jobs.</EmptyState>;
+      return (
+        <EmptyState>
+          <Box flex={{direction: 'column', gap: 8}} padding={{top: 12}}>
+            <span style={{fontSize: '16px', fontWeight: 500}}>No definitions</span>
+            <Body>Select a code location to see a list of jobs</Body>
+          </Box>
+        </EmptyState>
+      );
     }
 
     return (

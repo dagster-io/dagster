@@ -194,7 +194,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
   if (showSpinner) {
     return {
       type: 'spinner',
-      content: <div>Loading workspace…</div>,
+      content: <div>Loading definitions…</div>,
     };
   }
 

@@ -79,12 +79,12 @@ export const OverviewJobsRoot = () => {
               description={
                 anyReposHidden ? (
                   <div>
-                    No jobs matching <strong>{searchValue}</strong> were found in the selected
-                    repositories
+                    No jobs matching <strong>{searchValue}</strong> were found in the selected code
+                    locations
                   </div>
                 ) : (
                   <div>
-                    No jobs matching <strong>{searchValue}</strong> were found in this workspace
+                    No jobs matching <strong>{searchValue}</strong> were found in your definitions
                   </div>
                 )
               }
@@ -100,8 +100,8 @@ export const OverviewJobsRoot = () => {
             title="No jobs"
             description={
               anyReposHidden
-                ? 'No jobs were found in the selected repositories'
-                : 'No jobs were found in this workspace'
+                ? 'No jobs were found in the selected code locations'
+                : 'No jobs were found in your definitions'
             }
           />
         </Box>

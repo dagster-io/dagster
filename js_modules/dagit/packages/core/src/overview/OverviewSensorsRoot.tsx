@@ -94,11 +94,12 @@ export const OverviewSensorsRoot = () => {
                 anyReposHidden ? (
                   <div>
                     No sensors matching <strong>{searchValue}</strong> were found in the selected
-                    repositories
+                    code locations
                   </div>
                 ) : (
                   <div>
-                    No sensors matching <strong>{searchValue}</strong> were found in this workspace
+                    No sensors matching <strong>{searchValue}</strong> were found in your
+                    definitions
                   </div>
                 )
               }
@@ -114,8 +115,8 @@ export const OverviewSensorsRoot = () => {
             title="No sensors"
             description={
               anyReposHidden
-                ? 'No sensors were found in the selected repositories'
-                : 'No sensors were found in this workspace'
+                ? 'No sensors were found in the selected code locations'
+                : 'No sensors were found in your definitions'
             }
           />
         </Box>
@@ -190,9 +191,9 @@ const UnloadableSensorsAlert: React.FC<{
           description={
             <Box flex={{direction: 'column', gap: 12, alignItems: 'flex-start'}}>
               <div>
-                Sensors were previously started but now cannot be loaded. They may be part of a
-                different workspace or from a sensor or code location that no longer exists in code.
-                You can turn them off, but you cannot turn them back on.
+                Sensors were previously started but now cannot be loaded. They may be part of a code
+                location that no longer exists. You can turn them off, but you cannot turn them back
+                on.
               </div>
               <Button onClick={() => setIsOpen(true)}>
                 {count === 1 ? 'View unloadable sensor' : 'View unloadable sensors'}
