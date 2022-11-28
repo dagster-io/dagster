@@ -2,7 +2,7 @@ import keyword
 import os
 import re
 from glob import glob
-from typing import Any, Dict, Mapping, Optional, Sequence, Tuple, cast
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, cast
 
 import yaml
 
@@ -50,8 +50,13 @@ def has_valid_name_chars(name: str) -> bool:
     return bool(VALID_NAME_REGEX.match(name))
 
 
-def check_valid_name(name: str) -> str:
+def check_valid_name(name: str, allow_list: List[str] = None) -> str:
+
     check.str_param(name, "name")
+
+    if allow_list and name in allow_list:
+        return name
+
     if name in DISALLOWED_NAMES:
         raise DagsterInvalidDefinitionError(
             f'"{name}" is not a valid name in Dagster. It conflicts with a Dagster or python reserved keyword.'

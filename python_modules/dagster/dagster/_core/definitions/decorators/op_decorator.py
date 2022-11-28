@@ -61,6 +61,19 @@ class _Op:
             else NoContextDecoratedOpFunction(decorated_fn=fn)
         )
 
+        if compute_fn.has_config_arg():
+            check.param_invariant(
+                self.config_schema is None,
+                "If the @op has a config arg, you cannot specify a config schema",
+            )
+
+            from dagster._config.structured_config import infer_schema_from_config_annotation
+
+            # Parse schema from the type annotation of the config arg
+            config_arg = compute_fn.get_config_arg()
+            config_arg_type = config_arg.annotation
+            self.config_schema = infer_schema_from_config_annotation(config_arg_type)
+
         outs: Optional[Mapping[str, Out]] = None
         if self.out is not None and isinstance(self.out, Out):
             outs = {DEFAULT_OUTPUT: self.out}
