@@ -7,7 +7,6 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
-    FrozenSet,
     List,
     Mapping,
     Optional,
@@ -420,7 +419,7 @@ class JobDefinition(PipelineDefinition):
     def get_job_def_for_subset_selection(
         self,
         op_selection: Optional[Sequence[str]] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
         check.invariant(
             not (op_selection and asset_selection),
@@ -435,7 +434,7 @@ class JobDefinition(PipelineDefinition):
 
     def _get_job_def_for_asset_selection(
         self,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> "JobDefinition":
         asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
 

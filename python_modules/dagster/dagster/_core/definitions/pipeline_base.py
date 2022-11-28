@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, FrozenSet, Optional, Sequence
+from typing import TYPE_CHECKING, AbstractSet, FrozenSet, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
@@ -26,25 +26,25 @@ class IPipeline(ABC):
     def subset_for_execution(
         self,
         solid_selection: Optional[Sequence[str]] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> "IPipeline":
         pass
 
     @property
     @abstractmethod
-    def solids_to_execute(self) -> Optional[FrozenSet[str]]:
+    def solids_to_execute(self) -> Optional[AbstractSet[str]]:
         pass
 
     @property
     @abstractmethod
-    def asset_selection(self) -> Optional[FrozenSet[AssetKey]]:
+    def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
         pass
 
     @abstractmethod
     def subset_for_execution_from_existing_pipeline(
         self,
-        solids_to_execute: Optional[FrozenSet[str]] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        solids_to_execute: Optional[AbstractSet[str]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> "IPipeline":
         pass
 
@@ -100,7 +100,7 @@ class InMemoryPipeline(IPipeline, object):
     def subset_for_execution(
         self,
         solid_selection: Optional[Sequence[str]] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
         # take a list of solid queries and resolve the queries to names of solids to execute
         solid_selection = check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
@@ -118,8 +118,8 @@ class InMemoryPipeline(IPipeline, object):
 
     def subset_for_execution_from_existing_pipeline(
         self,
-        solids_to_execute: Optional[FrozenSet[str]] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        solids_to_execute: Optional[AbstractSet[str]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
         # take a frozenset of resolved solid names from an existing pipeline run
         # so there's no need to parse the selection

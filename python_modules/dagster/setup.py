@@ -129,7 +129,7 @@ setup(
             "isort==5.10.1",
         ],
         "mypy": [
-            "mypy==0.950",
+            "mypy==0.991",
             "types-backports",  # version will be resolved against backports
             "types-certifi",  # version will be resolved against certifi
             "types-chardet",  # chardet is a 2+-order dependency of some Dagster libs
