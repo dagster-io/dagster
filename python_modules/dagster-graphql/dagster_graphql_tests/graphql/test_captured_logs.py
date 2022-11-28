@@ -31,7 +31,7 @@ CAPTURED_LOGS_SUBSCRIPTION = """
 
 
 class TestCapturedLogs(ExecutingGraphQLContextTestMatrix):
-    def test_get_captured_logs_over_graphql(self, graphql_context, snapshot):
+    def test_get_captured_logs_over_graphql(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "spew_pipeline")
         payload = sync_execute_get_run_log_data(
             context=graphql_context,
@@ -51,7 +51,6 @@ class TestCapturedLogs(ExecutingGraphQLContextTestMatrix):
         )
         stdout = result.data["capturedLogs"]["stdout"]
         assert stdout == "HELLO WORLD\n"
-
 
     def test_captured_logs_subscription_graphql(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "spew_pipeline")

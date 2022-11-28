@@ -92,7 +92,11 @@ from ..instigation import (
     GrapheneInstigationStatesOrError,
     GrapheneInstigationType,
 )
-from ..logs.compute_logs import GrapheneCapturedLogsMetadata, GrapheneCapturedLogs, from_captured_log_data
+from ..logs.compute_logs import (
+    GrapheneCapturedLogs,
+    GrapheneCapturedLogsMetadata,
+    from_captured_log_data,
+)
 from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
 from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
@@ -681,5 +685,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return get_captured_log_metadata(graphene_info, logKey)
 
     def resolve_capturedLogs(self, graphene_info, logKey, cursor=None, limit=None):
-        log_data = graphene_info.context.instance.compute_log_manager.get_log_data(logKey, cursor=cursor, max_bytes=limit)
+        log_data = graphene_info.context.instance.compute_log_manager.get_log_data(
+            logKey, cursor=cursor, max_bytes=limit
+        )
         return from_captured_log_data(log_data)

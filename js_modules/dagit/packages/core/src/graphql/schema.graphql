@@ -3242,7 +3242,7 @@ type DagitQuery {
   """
   Captured logs are the stdout/stderr logs for a given log key
   """
-  capturedLogs(logKey: [String!]!): CapturedLogs!
+  capturedLogs(logKey: [String!]!, cursor: String, limit: Int): CapturedLogs!
 }
 
 union WorkspaceOrError = Workspace | PythonError
