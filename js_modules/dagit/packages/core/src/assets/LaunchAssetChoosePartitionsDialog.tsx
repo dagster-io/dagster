@@ -27,6 +27,7 @@ import {
   LaunchPartitionBackfillVariables,
 } from '../instance/types/LaunchPartitionBackfill';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {
   ConfigPartitionSelectionQuery,
   ConfigPartitionSelectionQueryVariables,
@@ -48,8 +49,6 @@ import {
 import {usePartitionDimensionRanges} from './usePartitionDimensionRanges';
 import {PartitionHealthDimensionRange, usePartitionHealthData} from './usePartitionHealthData';
 import {usePartitionNameForPipeline} from './usePartitionNameForPipeline';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
-
 interface Props {
   open: boolean;
   setOpen: (open: boolean) => void;

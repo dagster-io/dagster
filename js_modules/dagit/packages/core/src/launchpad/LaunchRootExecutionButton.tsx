@@ -1,6 +1,4 @@
-import {useMutation} from '@apollo/client';
 import * as React from 'react';
-import {useHistory} from 'react-router';
 
 import {IconName} from '../../../ui/src';
 import {usePermissions} from '../app/Permissions';
