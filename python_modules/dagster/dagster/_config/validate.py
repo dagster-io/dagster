@@ -263,7 +263,7 @@ def _validate_shape_config(
     field_errors = []
     field_snaps = check.not_none(context.config_type_snap.fields)
     for field_snap in field_snaps:
-        name = field_snap.name
+        name = check.not_none(field_snap.name)
         aliased_name = field_aliases.get(name)
         if aliased_name is not None and aliased_name in config_value and name in config_value:
             field_errors.append(

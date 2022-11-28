@@ -245,7 +245,9 @@ def job_list_versions_command(**kwargs):
 def execute_list_versions_command(instance: DagsterInstance, kwargs: Mapping[str, object]):
     check.inst_param(instance, "instance", DagsterInstance)
 
-    config = list(check.opt_tuple_param(kwargs.get("config"), "config", of_type=str))
+    config = list(
+        check.opt_tuple_param(cast(Tuple[str, ...], kwargs.get("config")), "config", of_type=str)
+    )
 
     job_origin = get_job_python_origin_from_kwargs(kwargs)
     job = recon_pipeline_from_origin(job_origin)
@@ -262,9 +264,9 @@ def execute_list_versions_command(instance: DagsterInstance, kwargs: Mapping[str
     add_step_to_table(memoized_plan)
 
 
-def get_run_config_from_file_list(file_list: Optional[Sequence[str]]):
-    check.opt_list_param(file_list, "file_list", of_type=str)
-    return load_yaml_from_glob_list(file_list) if file_list else {}
+def get_run_config_from_file_list(file_list: Optional[Sequence[str]]) -> Mapping[str, object]:
+    check.opt_sequence_param(file_list, "file_list", of_type=str)
+    return cast(Mapping[str, object], load_yaml_from_glob_list(file_list) if file_list else {})
 
 
 def add_step_to_table(memoized_plan):
@@ -312,7 +314,9 @@ def execute_execute_command(
 ):
     check.inst_param(instance, "instance", DagsterInstance)
 
-    config = list(check.opt_tuple_param(kwargs.get("config"), "config", of_type=str))
+    config = list(
+        check.opt_tuple_param(cast(Tuple[str, ...], kwargs.get("config")), "config", of_type=str)
+    )
     preset = cast(Optional[str], kwargs.get("preset"))
     mode = cast(Optional[str], kwargs.get("mode"))
 
@@ -348,7 +352,7 @@ def get_tags_from_args(kwargs):
 
 def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
 
-    config = kwargs.get("config")  # files
+    config = cast(Tuple[str, ...], kwargs.get("config"))  # files
     config_json = kwargs.get("config_json")
 
     if not config and not config_json:
@@ -396,7 +400,7 @@ def do_execute_command(
 ):
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(instance, "instance", DagsterInstance)
-    check.opt_list_param(config, "config", of_type=str)
+    check.opt_sequence_param(config, "config", of_type=str)
 
     return execute_pipeline(
         pipeline,
@@ -496,12 +500,12 @@ def _create_external_pipeline_run(
     check.inst_param(repo_location, "repo_location", RepositoryLocation)
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-    check.opt_dict_param(run_config, "run_config", key_type=str)
+    check.opt_mapping_param(run_config, "run_config", key_type=str)
 
     check.opt_str_param(mode, "mode")
     check.opt_str_param(preset, "preset")
-    check.opt_dict_param(tags, "tags", key_type=str)
-    check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+    check.opt_mapping_param(tags, "tags", key_type=str)
+    check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
     check.opt_str_param(run_id, "run_id")
 
     run_config, mode, tags, solid_selection = _check_execute_external_pipeline_args(
@@ -574,7 +578,7 @@ def _check_execute_external_pipeline_args(
         ),
     )
 
-    tags = check.opt_dict_param(tags, "tags", key_type=str)
+    tags = check.opt_mapping_param(tags, "tags", key_type=str)
     check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
 
     if preset is not None:

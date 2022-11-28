@@ -166,14 +166,14 @@ class AssetsDefinition(ResourceAddable):
                 "FreshnessPolicies are currently unsupported for partitioned assets.",
             )
 
-        self._freshness_policies_by_key = check.opt_dict_param(
+        self._freshness_policies_by_key = check.opt_mapping_param(
             freshness_policies_by_key,
             "freshness_policies_by_key",
             key_type=AssetKey,
             value_type=FreshnessPolicy,
         )
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: object, **kwargs: object) -> object:
         from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
         from dagster._core.execution.context.compute import OpExecutionContext
 
@@ -188,13 +188,13 @@ class AssetsDefinition(ResourceAddable):
             new_args = [provided_context, *args[1:]]
             return solid_def(*new_args, **kwargs)
         elif (
-            isinstance(solid_def.compute_fn.decorated_fn, DecoratedSolidFunction)
+            isinstance(solid_def.compute_fn, DecoratedSolidFunction)
             and solid_def.compute_fn.has_context_arg()
         ):
             context_param_name = get_function_params(solid_def.compute_fn.decorated_fn)[0].name
             if context_param_name in kwargs:
                 provided_context = _build_invocation_context_with_included_resources(
-                    self, kwargs[context_param_name]
+                    self, cast(OpExecutionContext, kwargs[context_param_name])
                 )
                 new_kwargs = dict(kwargs)
                 new_kwargs[context_param_name] = provided_context
