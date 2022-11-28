@@ -13,6 +13,8 @@ from typing import (
     cast,
 )
 
+from typing_extensions import TypeGuard
+
 import dagster._check as check
 from dagster._core.definitions.utils import validate_tags
 from dagster._serdes.serdes import DefaultEnumSerializer, whitelist_for_serdes
@@ -45,7 +47,9 @@ class StepKind(Enum):
     UNRESOLVED_COLLECT = "UNRESOLVED_COLLECT"
 
 
-def is_executable_step(step: Union["ExecutionStep", "UnresolvedMappedExecutionStep"]) -> bool:
+def is_executable_step(
+    step: Union["ExecutionStep", "UnresolvedMappedExecutionStep"]
+) -> TypeGuard["ExecutionStep"]:
     # This function is set up defensively to ensure new step types handled properly
     if isinstance(step, ExecutionStep):
         return True
@@ -101,6 +105,16 @@ class IExecutionStep:
 
     @abstractmethod
     def step_output_named(self, name: str) -> StepOutput:
+        pass
+
+    @property
+    @abstractmethod
+    def step_output_dict(self) -> Mapping[str, StepOutput]:
+        pass
+
+    @property
+    @abstractmethod
+    def step_input_dict(self) -> Mapping[str, StepInput]:
         pass
 
 
@@ -207,7 +221,7 @@ class ExecutionStep(
         return None
 
 
-class UnresolvedMappedExecutionStep(
+class UnresolvedMappedExecutionStep(  # type: ignore
     NamedTuple(
         "_UnresolvedMappedExecutionStep",
         [
@@ -361,7 +375,7 @@ def _resolved_input(
     return step_input.resolve(map_key)
 
 
-class UnresolvedCollectExecutionStep(
+class UnresolvedCollectExecutionStep(  # type: ignore
     NamedTuple(
         "_UnresolvedCollectExecutionStep",
         [

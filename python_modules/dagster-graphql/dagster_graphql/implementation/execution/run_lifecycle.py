@@ -1,5 +1,6 @@
 from typing import cast
 
+from dagster_graphql.schema.util import HasContext
 from graphene import ResolveInfo
 
 import dagster._check as check
@@ -24,7 +25,7 @@ def _get_run(instance: DagsterInstance, run_id: str) -> DagsterRun:
     return cast(DagsterRun, run)
 
 
-def compute_step_keys_to_execute(graphene_info, execution_params):
+def compute_step_keys_to_execute(graphene_info: HasContext, execution_params: ExecutionParams):
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(execution_params, "execution_params", ExecutionParams)
 
@@ -32,7 +33,9 @@ def compute_step_keys_to_execute(graphene_info, execution_params):
 
     if not execution_params.step_keys and is_resume_retry(execution_params):
         # Get step keys from parent_run_id if it's a resume/retry
-        parent_run = _get_run(instance, execution_params.execution_metadata.parent_run_id)
+        parent_run = _get_run(
+            instance, check.not_none(execution_params.execution_metadata.parent_run_id)
+        )
         return get_retry_steps_from_parent_run(
             instance,
             parent_run,

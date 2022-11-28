@@ -23,13 +23,20 @@ class _TagConcurrencyLimitsCounter:
     Helper object that keeps track of when the tag concurrency limits are met
     """
 
+    _key_limits: Dict[str, int]
+    _key_value_limits: Dict[Tuple[str, str], int]
+    _unique_value_limits: Dict[str, int]
+    _key_counts: Dict[str, int]
+    _key_value_counts: Dict[Tuple[str, str], int]
+    _unique_value_counts: Dict[Tuple[str, str], int]
+
     def __init__(self, tag_concurrency_limits, in_progress_runs):
         check.opt_list_param(tag_concurrency_limits, "tag_concurrency_limits", of_type=dict)
         check.list_param(in_progress_runs, "in_progress_runs", of_type=PipelineRun)
 
-        self._key_limits: Dict[str, int] = {}
-        self._key_value_limits: Dict[Tuple[str, str], int] = {}
-        self._unique_value_limits: Dict[str, int] = {}
+        self._key_limits = {}
+        self._key_value_limits = {}
+        self._unique_value_limits = {}
 
         for tag_limit in tag_concurrency_limits:
             key = tag_limit["key"]
@@ -43,9 +50,9 @@ class _TagConcurrencyLimitsCounter:
             else:
                 self._unique_value_limits[key] = limit
 
-        self._key_counts: Dict[str, int] = defaultdict(lambda: 0)
-        self._key_value_counts: Dict[Tuple[str, str], int] = defaultdict(lambda: 0)
-        self._unique_value_counts: Dict[Tuple[str, str], int] = defaultdict(lambda: 0)
+        self._key_counts = defaultdict(lambda: 0)
+        self._key_value_counts = defaultdict(lambda: 0)
+        self._unique_value_counts = defaultdict(lambda: 0)
 
         # initialize counters based on current in progress runs
         for run in in_progress_runs:
