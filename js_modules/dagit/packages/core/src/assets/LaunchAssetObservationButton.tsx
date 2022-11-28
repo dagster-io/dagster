@@ -4,7 +4,7 @@ import React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissions} from '../app/Permissions';
-import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
@@ -37,6 +37,7 @@ export const LaunchAssetObservationButton: React.FC<{
   preferredJobName?: string;
 }> = ({assetKeys, preferredJobName, intent = 'none'}) => {
   const {canLaunchPipelineExecution} = usePermissions();
+  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
   const [state, setState] = React.useState<ObserveAssetsState>({type: 'none'});

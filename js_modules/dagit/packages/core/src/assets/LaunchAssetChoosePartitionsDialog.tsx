@@ -27,7 +27,6 @@ import {
   LaunchPartitionBackfillVariables,
 } from '../instance/types/LaunchPartitionBackfill';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
-import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
 import {
   ConfigPartitionSelectionQuery,
   ConfigPartitionSelectionQueryVariables,
@@ -49,6 +48,7 @@ import {
 import {usePartitionDimensionRanges} from './usePartitionDimensionRanges';
 import {PartitionHealthDimensionRange, usePartitionHealthData} from './usePartitionHealthData';
 import {usePartitionNameForPipeline} from './usePartitionNameForPipeline';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 
 interface Props {
   open: boolean;
@@ -127,6 +127,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   const client = useApolloClient();
   const history = useHistory();
+  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
   // Find the partition set name. This seems like a bit of a hack, unclear
