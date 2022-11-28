@@ -59,7 +59,7 @@ class ConfigurableDefinition(ABC):
         return (
             self.config_schema.resolve_config(config)
             if isinstance(self.config_schema, ConfiguredDefinitionConfigSchema)
-            else EvaluateValueResult.for_value(config)
+            else EvaluateValueResult.successonfig)
         )
 
 

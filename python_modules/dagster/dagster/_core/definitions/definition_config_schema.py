@@ -7,7 +7,7 @@ from dagster._config import (
     ConfigType,
     EvaluateValueResult,
     Field,
-    UserConfigSchema,
+    ConfigSchema,
     normalize_field,
     process_config,
 )
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 CoercableToConfigSchema = Union[
     None,
-    UserConfigSchema,
+    ConfigSchema,
     "IDefinitionConfigSchema",
 ]
 

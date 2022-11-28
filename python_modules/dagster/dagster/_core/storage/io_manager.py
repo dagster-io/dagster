@@ -6,7 +6,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._config import UserConfigSchema
+from dagster._config import ConfigSchema
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.definition_config_schema import (
     CoercableToConfigSchema,
@@ -225,7 +225,7 @@ def io_manager(
 
     def _wrap(resource_fn: IOManagerFunction) -> IOManagerDefinition:
         return _IOManagerDecoratorCallable(
-            config_schema=cast(Optional[UserConfigSchema], config_schema),
+            config_schema=cast(Optional[ConfigSchema], config_schema),
             description=description,
             required_resource_keys=required_resource_keys,
             version=version,

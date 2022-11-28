@@ -23,7 +23,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster._loggers import default_system_loggers
-from dagster._utils import ensure_single_item
+from dagster._utils import single_item_dict_to_tupleo_tuple
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .api import ExecuteRunWithPlanIterable, pipeline_execution_iterator
@@ -48,7 +48,7 @@ def _get_host_mode_executor(recon_pipeline, run_config, executor_defs, instance)
 
     execution_config_value = check.not_none(config_evr.value)
 
-    executor_name, executor_config = ensure_single_item(execution_config_value)
+    executor_name, executor_config = single_item_dict_to_tupleo_tuple(execution_config_value)
 
     executor_defs_by_name = {executor_def.name: executor_def for executor_def in executor_defs}
     executor_def = executor_defs_by_name[executor_name]

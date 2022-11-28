@@ -1,8 +1,8 @@
 import sys
-from typing import Any, Dict, List, Mapping, Optional, cast
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, TypeVar, cast
 
 import dagster._check as check
-from dagster._utils import ensure_single_item, frozendict, frozenlist
+from dagster._utils import frozendict, frozenlist, single_item_dict_to_tuple
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .config_type import ConfigType, ConfigTypeKind
@@ -10,6 +10,8 @@ from .errors import EvaluationError, PostProcessingError, create_failed_post_pro
 from .evaluate_value_result import EvaluateValueResult
 from .stack import EvaluationStack
 from .traversal_context import TraversalContext, TraversalType
+
+T = TypeVar("T")
 
 
 def post_process_config(config_type: ConfigType, config_value: Any) -> EvaluateValueResult[Any]:
@@ -44,36 +46,6 @@ def _recursively_process_config(
         return evr
 
 
-def _recursively_resolve_defaults(  # type: ignore # mypy missing check.failed NoReturn
-    context: TraversalContext, config_value: Any
-) -> EvaluateValueResult[Any]:
-    kind = context.config_type.kind
-
-    if kind == ConfigTypeKind.SCALAR:
-        return EvaluateValueResult.for_value(config_value)
-    elif kind == ConfigTypeKind.ENUM:
-        return EvaluateValueResult.for_value(config_value)
-    elif kind == ConfigTypeKind.SELECTOR:
-        return _recurse_in_to_selector(context, config_value)
-    elif ConfigTypeKind.is_shape(kind):
-        return _recurse_in_to_shape(context, config_value)
-    elif kind == ConfigTypeKind.ARRAY:
-        return _recurse_in_to_array(context, config_value)
-    elif kind == ConfigTypeKind.MAP:
-        return _recurse_in_to_map(context, config_value)
-    elif kind == ConfigTypeKind.NONEABLE:
-        if config_value is None:
-            return EvaluateValueResult.for_value(None)
-        else:
-            return _recursively_process_config(context.for_nullable_inner_type(), config_value)
-    elif kind == ConfigTypeKind.ANY:
-        return EvaluateValueResult.for_value(config_value)
-    elif context.config_type.kind == ConfigTypeKind.SCALAR_UNION:
-        return _recurse_in_to_scalar_union(context, config_value)
-    else:
-        check.failed(f"Unsupported type {context.config_type.key}")
-
-
 def _post_process(context: TraversalContext, config_value: Any) -> EvaluateValueResult[Any]:
     try:
         new_value = context.config_type.post_process(config_value)
@@ -85,49 +57,63 @@ def _post_process(context: TraversalContext, config_value: Any) -> EvaluateValue
         )
 
 
-def _recurse_in_to_scalar_union(
-    context: TraversalContext, config_value: Any
-) -> EvaluateValueResult[Any]:
-    if isinstance(config_value, dict) or isinstance(config_value, list):
-        return _recursively_process_config(
-            context.for_new_config_type(context.config_type.non_scalar_type), config_value  # type: ignore
-        )
+def _handle(context: TraversalContext, config_value: Any) -> EvaluateValueResult[Any]:
+    kind = context.config_type.kind
+
+    if kind == ConfigTypeKind.SCALAR:
+        return _handle_scalar(context, config_value)
+    elif kind == ConfigTypeKind.ENUM:
+        return _handle_enum(context, config_value)
+    elif kind == ConfigTypeKind.SELECTOR:
+        return _handle_selector(context, config_value)
+    elif ConfigTypeKind.is_shape(kind):
+        return _handle_shape(context, config_value)
+    elif kind == ConfigTypeKind.ARRAY:
+        return _handle_array(context, config_value)
+    elif kind == ConfigTypeKind.MAP:
+        return _handle_map(context, config_value)
+    elif kind == ConfigTypeKind.NONEABLE:
+        if config_value is None:
+            return EvaluateValueResult.for_value(None)
+        else:
+            return _handle(context.for_nullable_inner_type(), config_value)
+    elif kind == ConfigTypeKind.ANY:
+        return EvaluateValueResult.for_value(config_value)
+    elif context.config_type.kind == ConfigTypeKind.SCALAR_UNION:
+        return _handle_scalar_union(context, config_value)
     else:
-        return _recursively_process_config(
-            context.for_new_config_type(context.config_type.scalar_type), config_value  # type: ignore
-        )
+        check.failed(f"Unsupported type {context.config_type.key}")
 
 
-def _recurse_in_to_selector(
-    context: TraversalContext, config_value: Mapping[str, Any]
+def _handle_scalar(_context: TraversalContext, value: T) -> EvaluateValueResult[T]:
+    return EvaluateValueResult.valid(value)
+
+
+def _handle_enum(_context: TraversalContext, value: T) -> EvaluateValueResult[T]:
+    return EvaluateValueResult.valid(value)
+
+
+def _handle_selector(
+    context: TraversalContext, value: Mapping[str, Any]
 ) -> EvaluateValueResult[Any]:
-    check.invariant(
-        context.config_type.kind == ConfigTypeKind.SELECTOR,
-        "Non-selector not caught in validation",
-    )
 
-    if config_value:
-        check.invariant(config_value and len(config_value) == 1)
-        field_name, incoming_field_value = ensure_single_item(config_value)
+    if value:
+        field_name, field_value = single_item_dict_to_tuple(value)
+        field_def = context.config_type.fields[field_name]
     else:
-        field_name, field_def = ensure_single_item(context.config_type.fields)  # type: ignore
-        incoming_field_value = field_def.default_value if field_def.default_provided else None
+        field_name, field_def = single_item_dict_to_tuple(context.config_type.fields)
+        if field_def.default_provided:
+            field_value = field_def.default_value
+        elif ConfigTypeKind.has_fields(field_def.config_type.kind):
+            field_value = {}
+        else:
+            field_value = None
 
-    field_def = context.config_type.fields[field_name]  # type: ignore
+    child_result = _handle(context.for_field(field_def, field_name), field_value)
+    processed_value = frozendict({field_name: child_result.value})
+    return _package_result(processed_value, child_result.errors)
 
-    field_evr = _recursively_process_config(
-        context.for_field(field_def, field_name),
-        {}
-        if incoming_field_value is None and ConfigTypeKind.has_fields(field_def.config_type.kind)
-        else incoming_field_value,
-    )
-    if field_evr.success:
-        return EvaluateValueResult.for_value(frozendict({field_name: field_evr.value}))
-
-    return field_evr
-
-
-def _recurse_in_to_shape(
+def _handle_shape(
     context: TraversalContext, config_value: Optional[Mapping[str, object]]
 ) -> EvaluateValueResult[Any]:
     check.invariant(ConfigTypeKind.is_shape(context.config_type.kind), "Unexpected non shape type")
@@ -144,105 +130,181 @@ def _recurse_in_to_shape(
 
     incoming_fields = config_value.keys()
 
-    processed_fields = {}
-
+    resolved_values: Dict[str, object] = {}
     for expected_field, field_def in fields.items():
+        alias = field_aliases.get(expected_field)
         if expected_field in incoming_fields:
-            processed_fields[expected_field] = _recursively_process_config(
-                context.for_field(field_def, expected_field),
-                config_value[expected_field],
-            )
-        elif expected_field in field_aliases and field_aliases[expected_field] in incoming_fields:
-            processed_fields[expected_field] = _recursively_process_config(
-                context.for_field(field_def, expected_field),
-                config_value[field_aliases[expected_field]],
-            )
-
+            resolved_values[expected_field] = config_value[expected_field]
+        elif alias is not None and alias in incoming_fields:
+            resolved_values[expected_field] = config_value[alias]
         elif field_def.default_provided:
-            processed_fields[expected_field] = _recursively_process_config(
-                context.for_field(field_def, expected_field), field_def.default_value
-            )
-
+            resolved_values[expected_field] = field_def.default_value
         elif field_def.is_required:
             check.failed("Missing required composite member not caught in validation")
+
+    child_results: Dict[str, EvaluateValueResult[Any]] = {}
+    for field_name, field_value in resolved_values.items():
+        child_results[field_name] = _handle(
+            context.for_field(fields[field_name], field_name),
+            field_value,
+        )
 
     # For permissive composite fields, we skip applying defaults because these fields are unknown
     # to us
     if context.config_type.kind == ConfigTypeKind.PERMISSIVE_SHAPE:
-        defined_fields = fields.keys()
-        extra_fields = [field for field in incoming_fields if field not in defined_fields]
-        for extra_field in extra_fields:
-            processed_fields[extra_field] = EvaluateValueResult.for_value(config_value[extra_field])
-
-    errors: List[EvaluationError] = []
-    for result in processed_fields.values():
-        if not result.success:
-            errors.extend(check.not_none(result.errors))
-
-    if errors:
-        return EvaluateValueResult.for_errors(errors)
-
-    return EvaluateValueResult.for_value(
-        frozendict({key: result.value for key, result in processed_fields.items()})
-    )
+        for field_name in incoming_fields:
+            if field_name not in fields and field_name not in field_aliases:
+                child_results[field_name] = EvaluateValueResult.valid(config_value[field_name])
 
 
-def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> EvaluateValueResult[Any]:
-    check.invariant(context.config_type.kind == ConfigTypeKind.ARRAY, "Unexpected non array type")
-
-    if not config_value:
-        return EvaluateValueResult.for_value([])
-
-    if context.config_type.inner_type.kind != ConfigTypeKind.NONEABLE:  # type: ignore
-        if any((cv is None for cv in config_value)):
-            check.failed("Null array member not caught in validation")
-
-    results = [
-        _recursively_process_config(context.for_array(idx), item)
-        for idx, item in enumerate(config_value)
-    ]
-
-    errors: List[EvaluationError] = []
-    for result in results:
-        if not result.success:
-            errors.extend(check.not_none(result.errors))
-
-    if errors:
-        return EvaluateValueResult.for_errors(errors)
-
-    return EvaluateValueResult.for_value(frozenlist([result.value for result in results]))
+    errors = _gather_child_errors(child_results.values())
+    processed_value = frozendict({key: result.value for key, result in child_results.items()})
+    return _package_result(processed_value, errors)
 
 
-def _recurse_in_to_map(context: TraversalContext, config_value: Any) -> EvaluateValueResult[Any]:
-    check.invariant(
-        context.config_type.kind == ConfigTypeKind.MAP,
-        "Unexpected non map type",
-    )
+def _handle_map(context: TraversalContext, value: Any) -> EvaluateValueResult[Any]:
+    value = value or {}
 
-    if not config_value:
-        return EvaluateValueResult.for_value({})
-
-    config_value = cast(Dict[object, object], config_value)
-
-    if any((ck is None for ck in config_value.keys())):
-        check.failed("Null map key not caught in validation")
-    if context.config_type.inner_type.kind != ConfigTypeKind.NONEABLE:  # type: ignore
-        if any((cv is None for cv in config_value.values())):
-            check.failed("Null map member not caught in validation")
-
-    results = {
-        key: _recursively_process_config(context.for_map(key), item)
-        for key, item in config_value.items()
+    child_results = {
+        key: _handle(context.for_map(key), item) for key, item in value.items()
     }
 
+    errors = _gather_child_errors(child_results.values())
+    processed_value = frozendict({key: result.value for key, result in child_results.items()})
+    return _package_result(processed_value, errors)
+
+def _handle_array(context: TraversalContext, value: Any) -> EvaluateValueResult[Any]:
+    value = value or []
+
+    child_results = [
+        _handle(context.for_array_element(idx), item) for idx, item in enumerate(value)
+    ]
+
+    errors = _gather_child_errors(child_results)
+    processed_value = frozenlist([result.value for result in child_results])
+    return _package_result(processed_value, errors)
+
+
+def _handle_scalar_union(context: TraversalContext, value: Any) -> EvaluateValueResult[Any]:
+    if isinstance(value, dict) or isinstance(value, list):
+        return _handle(
+            context.for_new_config_type(context.config_type.non_scalar_type), value
+        )
+    else:
+        return _handle(
+            context.for_new_config_type(context.config_type.scalar_type), value
+        )
+
+def _gather_child_errors(child_results: Iterable[EvaluateValueResult[Any]]) -> Sequence[EvaluationError]:
     errors: List[EvaluationError] = []
-    for result in results.values():
+    for result in child_results:
         if not result.success:
-            errors.extend(check.not_none(result.errors))
+            errors.extend(result.errors)
+    return errors
 
-    if errors:
-        return EvaluateValueResult.for_errors(errors)
+def _package_result(value: T, errors: Sequence[EvaluationError]) -> EvaluateValueResult[T]:
+    if len(errors) == 0:
+        return EvaluateValueResult.valid(value)
+    else:
+        return EvaluateValueResult.invalid(value, *errors)
 
-    return EvaluateValueResult.for_value(
-        frozendict({key: result.value for key, result in results.items()})
-    )
+class DefaultResolutionContext(TraversalContext):
+    __slots__ = ["_config_type", "_traversal_type", "_all_config_types"]
+
+    def __init__(
+        self,
+        config_schema_snapshot: ConfigSchemaSnap,
+        config_type_snap: ConfigTypeSnap,
+        config_type: ConfigType,
+        stack: EvaluationStack,
+        traversal_type: TraversalType,
+    ):
+        super(TraversalContext, self).__init__(
+            config_schema_snapshot=config_schema_snapshot,
+            config_type_snap=config_type_snap,
+            stack=stack,
+        )
+        self._config_type = check.inst_param(config_type, "config_type", ConfigType)
+        self._traversal_type = check.inst_param(traversal_type, "traversal_type", TraversalType)
+
+    @staticmethod
+    def from_config_type(
+        config_type: ConfigType,
+        stack: EvaluationStack,
+        traversal_type: TraversalType,
+    ) -> "TraversalContext":
+        return TraversalContext(
+            config_schema_snapshot=config_type.get_schema_snapshot(),
+            config_type_snap=config_type.get_snapshot(),
+            config_type=config_type,
+            stack=stack,
+            traversal_type=traversal_type,
+        )
+
+    @property
+    def config_type(self) -> ConfigType:
+        return self._config_type
+
+    @property
+    def traversal_type(self) -> TraversalType:
+        return self._traversal_type
+
+    @property
+    def do_post_process(self) -> bool:
+        return self.traversal_type == TraversalType.RESOLVE_DEFAULTS_AND_POSTPROCESS
+
+    def for_array_element(self, index: int) -> "TraversalContext":
+        check.int_param(index, "index")
+        return TraversalContext(
+            config_schema_snapshot=self.config_schema_snapshot,
+            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
+                self.config_type_snap.inner_type_key
+            ),
+            config_type=self.config_type.inner_type,  # type: ignore
+            stack=self.stack.for_array_element(index),
+            traversal_type=self.traversal_type,
+        )
+
+    def for_map(self, key: object) -> "TraversalContext":
+        return TraversalContext(
+            config_schema_snapshot=self.config_schema_snapshot,
+            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
+                self.config_type_snap.inner_type_key
+            ),
+            config_type=self.config_type.inner_type,  # type: ignore
+            stack=self.stack.for_map_value(key),
+            traversal_type=self.traversal_type,
+        )
+
+    def for_field(self, field_def: Field, field_name: str) -> "TraversalContext":
+        check.inst_param(field_def, "field_def", Field)
+        check.str_param(field_name, "field_name")
+        return TraversalContext(
+            config_schema_snapshot=self.config_schema_snapshot,
+            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
+                field_def.config_type.key
+            ),
+            config_type=field_def.config_type,
+            stack=self.stack.for_field(field_name),
+            traversal_type=self.traversal_type,
+        )
+
+    def for_nullable_inner_type(self) -> "TraversalContext":
+        return TraversalContext(
+            config_schema_snapshot=self.config_schema_snapshot,
+            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
+                self.config_type_snap.inner_type_key
+            ),
+            config_type=self.config_type.inner_type,  # type: ignore
+            stack=self.stack,
+            traversal_type=self.traversal_type,
+        )
+
+    def for_new_config_type(self, config_type: ConfigType) -> "TraversalContext":
+        return TraversalContext(
+            config_schema_snapshot=self.config_schema_snapshot,
+            config_type_snap=self.config_schema_snapshot.get_config_type_snap(config_type.key),
+            config_type=config_type,
+            stack=self.stack,
+            traversal_type=self.traversal_type,
+        )

@@ -2,7 +2,7 @@ from functools import update_wrapper
 from typing import Any, Callable, Mapping, Optional, Sequence, Set, Union, overload
 
 import dagster._check as check
-from dagster._config import UserConfigSchema
+from dagster._config import ConfigSchema
 from dagster._core.decorator_utils import format_docstring_for_description
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._utils.backcompat import experimental_arg_warning
@@ -28,7 +28,7 @@ class _Pipeline:
         hook_defs: Optional[Set[HookDefinition]] = None,
         input_defs: Optional[Sequence[InputDefinition]] = None,
         output_defs: Optional[Sequence[OutputDefinition]] = None,
-        config_schema: Optional[UserConfigSchema] = None,
+        config_schema: Optional[ConfigSchema] = None,
         config_fn: Optional[Callable[[Mapping[str, Any]], Mapping[str, Any]]] = None,
         solid_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
@@ -129,7 +129,7 @@ def pipeline(
     hook_defs: Optional[Set[HookDefinition]] = ...,
     input_defs: Optional[Sequence[InputDefinition]] = ...,
     output_defs: Optional[Sequence[OutputDefinition]] = ...,
-    config_schema: Optional[UserConfigSchema] = ...,
+    config_schema: Optional[ConfigSchema] = ...,
     config_fn: Optional[Callable[[Mapping[str, Any]], Mapping[str, Any]]] = ...,
     solid_retry_policy: Optional[RetryPolicy] = ...,
     version_strategy: Optional[VersionStrategy] = ...,
@@ -146,7 +146,7 @@ def pipeline(
     hook_defs: Optional[Set[HookDefinition]] = None,
     input_defs: Optional[Sequence[InputDefinition]] = None,
     output_defs: Optional[Sequence[OutputDefinition]] = None,
-    config_schema: Optional[UserConfigSchema] = None,
+    config_schema: Optional[ConfigSchema] = None,
     config_fn: Optional[Callable[[Mapping[str, Any]], Mapping[str, Any]]] = None,
     solid_retry_policy: Optional[RetryPolicy] = None,
     version_strategy: Optional[VersionStrategy] = None,

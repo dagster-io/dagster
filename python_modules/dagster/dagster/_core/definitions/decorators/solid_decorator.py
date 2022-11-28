@@ -14,7 +14,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._config import UserConfigSchema
+from dagster._config import ConfigSchema
 from dagster._core.decorator_utils import format_docstring_for_description
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
@@ -80,7 +80,7 @@ class _Solid:
         output_defs: Optional[Sequence[OutputDefinition]] = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[AbstractSet[str]] = None,
-        config_schema: Optional[UserConfigSchema] = None,
+        config_schema: Optional[ConfigSchema] = None,
         tags: Optional[Mapping[str, Any]] = None,
         version: Optional[str] = None,
         decorator_takes_context: Optional[bool] = True,
@@ -161,7 +161,7 @@ def solid(
     description: Optional[str] = ...,
     input_defs: Optional[Sequence[InputDefinition]] = ...,
     output_defs: Optional[Sequence[OutputDefinition]] = ...,
-    config_schema: Optional[UserConfigSchema] = ...,
+    config_schema: Optional[ConfigSchema] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
     tags: Optional[Mapping[str, Any]] = ...,
     version: Optional[str] = ...,
@@ -175,7 +175,7 @@ def solid(
     description: Optional[str] = None,
     input_defs: Optional[Sequence[InputDefinition]] = None,
     output_defs: Optional[Sequence[OutputDefinition]] = None,
-    config_schema: Optional[UserConfigSchema] = None,
+    config_schema: Optional[ConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     tags: Optional[Mapping[str, Any]] = None,
     version: Optional[str] = None,

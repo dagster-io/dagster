@@ -1,4 +1,6 @@
+from abc import ABC, abstractmethod
 from enum import Enum
+from typing_extensions import Self
 
 import dagster._check as check
 
@@ -14,7 +16,7 @@ class TraversalType(Enum):
     RESOLVE_DEFAULTS_AND_POSTPROCESS = "RESOLVE_DEFAULTS_AND_POSTPROCESS"
 
 
-class ContextData:
+class TraversalContext(ABC):
     __slots__ = ["_config_schema_snapshot", "_config_type_snap", "_stack"]
 
     _config_schema_snapshot: ConfigSchemaSnap
@@ -53,64 +55,23 @@ class ContextData:
     def stack(self) -> EvaluationStack:
         return self._stack
 
+    @abstractmethod
+    def for_array(self: Self, index: int) -> Self:
+        ...
 
-class ValidationContext(ContextData):
-    def for_field_snap(self, field_snap: ConfigFieldSnap) -> "ValidationContext":
-        check.inst_param(field_snap, "field_snap", ConfigFieldSnap)
-        field_snap_name = check.not_none(field_snap.name)
-        return ValidationContext(
-            config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_type_snap(field_snap.type_key),
-            stack=self.stack.for_field(field_snap_name),
-        )
+    @abstractmethod
+    def for_map_key(self: Self, index: int) -> Self:
+        ...
 
-    def for_array(self, index: int) -> "ValidationContext":
-        check.int_param(index, "index")
-        return ValidationContext(
-            config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
-                self.config_type_snap.inner_type_key
-            ),
-            stack=self.stack.for_array_index(index),
-        )
-
-    def for_map_key(self, key: object) -> "ValidationContext":
-        return ValidationContext(
-            config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
-                self.config_type_snap.key_type_key
-            ),
-            stack=self.stack.for_map_key(key),
-        )
-
-    def for_map_value(self, key: object) -> "ValidationContext":
-        return ValidationContext(
-            config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
-                self.config_type_snap.inner_type_key
-            ),
-            stack=self.stack.for_map_value(key),
-        )
-
-    def for_new_config_type_key(self, config_type_key: str) -> "ValidationContext":
-        check.str_param(config_type_key, "config_type_key")
-        return ValidationContext(
-            config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_type_snap(config_type_key),
-            stack=self.stack,
-        )
-
-    def for_nullable_inner_type(self) -> "ValidationContext":
-        return ValidationContext(
-            config_schema_snapshot=self.config_schema_snapshot,
-            config_type_snap=self.config_schema_snapshot.get_config_type_snap(
-                self.config_type_snap.inner_type_key
-            ),
-            stack=self.stack,
-        )
+    @abstractmethod
+    def for_map_value(self: Self, map_key: object) -> Self:
+        ...
 
 
-class TraversalContext(ContextData):
+
+
+
+class DefaultResolutionContext(TraversalContext):
     __slots__ = ["_config_type", "_traversal_type", "_all_config_types"]
 
     def __init__(

@@ -157,10 +157,10 @@ def camelcase(string: str) -> str:
     )
 
 
-def ensure_single_item(ddict: Mapping[T, U]) -> Tuple[T, U]:
+def single_item_dict_to_tuple(ddict: Mapping[T, U]) -> Tuple[T, U]:
     check.mapping_param(ddict, "ddict")
     check.param_invariant(len(ddict) == 1, "ddict", "Expected dict with single item")
-    return list(ddict.items())[0]
+    return next(iter(ddict.items()))
 
 
 @contextlib.contextmanager

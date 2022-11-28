@@ -2,7 +2,7 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Set, Union, overload
 
 import dagster._check as check
-from dagster._config import UserConfigSchema
+from dagster._config import ConfigSchema
 from dagster._core.decorator_utils import format_docstring_for_description
 
 from ..input import In
@@ -94,7 +94,7 @@ def op(
     description: Optional[str] = ...,
     ins: Optional[Mapping[str, In]] = ...,
     out: Optional[Union[Out, Mapping[str, Out]]] = ...,
-    config_schema: Optional[UserConfigSchema] = ...,
+    config_schema: Optional[ConfigSchema] = ...,
     required_resource_keys: Optional[Set[str]] = ...,
     tags: Optional[Mapping[str, Any]] = ...,
     version: Optional[str] = ...,
@@ -110,7 +110,7 @@ def op(
     description: Optional[str] = None,
     ins: Optional[Mapping[str, In]] = None,
     out: Optional[Union[Out, Mapping[str, Out]]] = None,
-    config_schema: Optional[UserConfigSchema] = None,
+    config_schema: Optional[ConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = None,
     tags: Optional[Mapping[str, Any]] = None,
     version: Optional[str] = None,

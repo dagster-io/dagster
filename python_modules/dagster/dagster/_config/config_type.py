@@ -17,15 +17,14 @@ from typing import (
     cast,
 )
 
-from typing_extensions import Final, TypeAlias, TypeGuard, final
+from typing_extensions import Final, TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._builtins import BuiltinEnum
-from dagster._config import UserConfigSchema
+from dagster._config import ConfigSchema
 from dagster._config.errors import PostProcessingError
-from dagster._config.field import Field
-from dagster._config.memoize import memoize_composite_type
+from dagster._config.field import Field, hash_fields
 from dagster._core.errors import (
     DagsterInvalidConfigDefinitionError,
     DagsterInvalidConfigError,
@@ -55,6 +54,10 @@ VALID_CONFIG_DESC: Final[
 5. None. Becomes Any.
 """
 
+CONFIG_SCHEMA_DESCRIPTION: Final[str] = """
+A Dagster config schema is either a Field or an value coercible to a ConfigType.
+"""
+
 RawConfigType: TypeAlias = Union[
     "ConfigType",
     Type[Type[typing.Any]],
@@ -68,6 +71,8 @@ RawConfigType: TypeAlias = Union[
     List[object],
     None,
 ]
+
+ConfigSchema: TypeAlias = Union[Field, RawConfigType]
 
 # ########################
 # ##### CONFIG TYPE KIND
@@ -656,7 +661,7 @@ class ScalarUnion(ConfigType):
     def __init__(
         self,
         scalar_type: typing.Any,
-        non_scalar_schema: UserConfigSchema,
+        non_scalar_schema: ConfigSchema,
         _key: Optional[str] = None,
     ):
 
@@ -839,7 +844,31 @@ class Map(ConfigType):
         yield from self.inner_type.descendant_type_iterator()
         yield from super().descendant_type_iterator()
 
+_MEMOIZED_CONFIG_TYPES: Final[Dict[str, KeyValueConfigType]] = {}
+
 class KeyValueConfigType(ConfigType):
+
+    @classmethod
+    def get_memoized_instance(cls, key: str):
+        if not key in _MEMOIZED_CONFIG_TYPES:
+            _MEMOIZED_CONFIG_TYPES[key] = super(cls, cls).__new__(cls)
+        return _MEMOIZED_CONFIG_TYPES[key]
+
+    @classmethod
+    def get_key(
+        cls,
+        fields: Optional[Mapping[str, object]] = None,
+        description: Optional[str] = None,
+        field_aliases: Optional[Mapping[str, str]] = None,
+    ) -> str:
+        return (
+            ".".join([cls.__name__, hash_fields(fields, description, field_aliases)])
+            if fields is not None
+            else cls.__name__
+        )
+
+    _is_initialized: bool = False
+
     def __init__(self, fields: Mapping[str, object], **kwargs):
         from .field import normalize_field
         self.fields = {key: normalize_field(value) for key, value in fields.items()}
@@ -849,7 +878,6 @@ class KeyValueConfigType(ConfigType):
         for field in self.fields.values():
             yield from field.config_type.descendant_type_iterator()
         yield from super().descendant_type_iterator()
-
 
 class Shape(KeyValueConfigType):
     """Schema for configuration data with string keys and typed values via :py:class:`Field`.
@@ -868,39 +896,34 @@ class Shape(KeyValueConfigType):
 
     def __new__(
         cls,
-        fields,
-        description=None,
-        field_aliases=None,
+        fields: Mapping[str, object],
+        description: Optional[str] = None,
+        field_aliases: Optional[Mapping[str, str]] = None,
     ):
-        return memoize_composite_type(
-            cls,
-            Shape,
-            fields,
-            description,
-            field_aliases,
-        )
+        key = cls.get_key(fields, description, field_aliases)
+        return cls.get_memoized_instance(key)
 
     def __init__(
         self,
-        fields,
-        description=None,
-        field_aliases=None,
+        fields: Mapping[str, object],
+        description: Optional[str] = None,
+        field_aliases: Optional[Mapping[str, str]] = None,
     ):
         # if we hit in the field cache - skip double init
-        if self._initialized:  # pylint: disable=access-member-before-definition
+        if self._is_initialized:
             return
 
         fields = expand_fields_dict(fields)
         super(Shape, self).__init__(
             kind=ConfigTypeKind.STRICT_SHAPE,
-            key=_define_shape_key_hash(fields, description, field_aliases),
+            key=Shape.get_key(fields, description, field_aliases),
             description=description,
             fields=fields,
         )
         self.field_aliases = check.opt_dict_param(
             field_aliases, "field_aliases", key_type=str, value_type=str
         )
-        self._initialized = True
+        self._is_initialized = True
 
     def has_implicit_default(self) -> bool:
         for field in self.fields.values():
@@ -928,27 +951,30 @@ class Permissive(KeyValueConfigType):
             return sorted(list(context.op_config.items()))
     """
 
-    def __new__(cls, fields=None, description=None):
-        return memoize_composite_type(
-            cls,
-            Permissive,
-            fields,
-            description,
-        )
+    def __new__(
+        cls,
+        fields: Optional[Mapping[str, object]] = None,
+        description: Optional[str] = None,
+    ):
+        key = cls.get_key(fields, description)
+        return cls.get_memoized_instance(key)
 
-    def __init__(self, fields=None, description=None):
+    def __init__(
+        self,
+        fields: Optional[Mapping[str, object]] = None,
+        description: Optional[str] = None,
+    ):
         # if we hit in field cache avoid double init
-        if self._initialized:  # pylint: disable=access-member-before-definition
+        if self._is_initialized:
             return
 
-        fields = expand_fields_dict(fields) if fields else None
         super(Permissive, self).__init__(
-            key=_define_permissive_dict_key(fields, description),
+            key=Permissive.get_key(fields, description),
             kind=ConfigTypeKind.PERMISSIVE_SHAPE,
             fields=fields or dict(),
             description=description,
         )
-        self._initialized = True
+        self._is_initialized = True
 
     def has_implicit_default(self) -> bool:
         for field in self.fields.values():
@@ -998,26 +1024,29 @@ class Selector(KeyValueConfigType):
                 return 'Hello, {whom}!'.format(whom=context.op_config['en']['whom'])
     """
 
-    def __new__(cls, fields, description=None):
-        return memoize_composite_type(
-            cls,
-            Selector,
-            _define_selector_key(expand_fields_dict(fields), description),
-        )
+    def __new__(
+        cls,
+        fields: Optional[Mapping[str, object]] = None,
+        description: Optional[str] = None,
+    ):
+        key = cls.get_key(fields, description)
+        return cls.get_memoized_instance(key)
 
-    def __init__(self, fields, description=None):
-        # if we hit in field cache avoid double init
-        if self._initialized:  # pylint: disable=access-member-before-definition
+    def __init__(
+        self,
+        fields: Optional[Mapping[str, object]] = None,
+        description: Optional[str] = None,
+    ):
+        if self._is_initialized:
             return
 
-        fields = expand_fields_dict(fields)
         super(Selector, self).__init__(
-            key=_define_selector_key(fields, description),
+            key=Selector.get_key(fields, description),
             kind=ConfigTypeKind.SELECTOR,
-            fields=fields,
+            fields=fields or dict(),
             description=description,
         )
-        self._initialized = True
+        self._is_initialized = True
 
     def has_implicit_default(self) -> bool:
         if len(config_type.fields) == 1:  # type: ignore

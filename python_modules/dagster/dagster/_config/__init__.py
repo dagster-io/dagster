@@ -1,4 +1,3 @@
-from .config_schema import ConfigSchema, UserConfigSchema
 from .config_type import (
     ALL_CONFIG_BUILTINS,
     Array,
@@ -10,6 +9,7 @@ from .config_type import (
     ConfigScalar,
     ConfigScalarKind,
     ConfigStringInstance,
+    ConfigSchema,
     ConfigType,
     ConfigTypeKind,
     Enum,

@@ -3,13 +3,13 @@ import os
 import pytest
 
 from dagster._check import CheckError, ParameterCheckError
-from dagster._utils import EventGenerationManager, ensure_dir, ensure_gen, ensure_single_item
+from dagster._utils import EventGenerationManager, ensure_dir, ensure_gen, single_item_dict_to_tupleo_tuple
 
 
 def test_ensure_single_item():
-    assert ensure_single_item({"foo": "bar"}) == ("foo", "bar")
+    assert single_item_dict_to_tupleo_tuple({"foo": "bar"}) == ("foo", "bar")
     with pytest.raises(ParameterCheckError, match="Expected dict with single item"):
-        ensure_single_item({"foo": "bar", "baz": "quux"})
+        single_item_dict_to_tupleo_tuple({"foo": "bar", "baz": "quux"})
 
 
 def test_ensure_gen():

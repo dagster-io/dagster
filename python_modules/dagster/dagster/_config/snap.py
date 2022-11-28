@@ -80,36 +80,38 @@ class ConfigTypeSnap(
     # * Adding field_aliases
     def __new__(
         cls,
-        kind,
-        key,
-        given_name,
-        description,
-        type_param_keys,
-        enum_values,
-        fields,
+        kind: ConfigTypeKind,
+        key: str,
+        given_name: Optional[str],
+        description: Optional[str],
+        type_param_keys: Optional[Sequence[str]],
+        enum_values: Optional[Sequence["ConfigEnumValueSnap"]],
+        fields: Optional[Sequence["ConfigFieldSnap"]],
         # Old version of object will not have these properties
-        scalar_kind=None,
-        field_aliases=None,
+        scalar_kind: Optional[ConfigScalarKind] = None,
+        field_aliases: Optional[Mapping[str, str]] = None,
     ):
         return super(ConfigTypeSnap, cls).__new__(
             cls,
             kind=check.inst_param(kind, "kind", ConfigTypeKind),
             key=check.str_param(key, "key"),
             given_name=check.opt_str_param(given_name, "given_name"),
-            type_param_keys=None
-            if type_param_keys is None
-            else check.list_param(type_param_keys, "type_param_keys", of_type=str),
-            enum_values=None
-            if enum_values is None
-            else check.list_param(enum_values, "enum_values", of_type=ConfigEnumValueSnap),
-            fields=None
-            if fields is None
-            else sorted(
-                check.list_param(fields, "field", of_type=ConfigFieldSnap), key=lambda ct: ct.name
+            type_param_keys=check.opt_nullable_sequence_param(
+                type_param_keys, "type_param_keys", str
             ),
+            enum_values=check.opt_nullable_sequence_param(
+                enum_values, "enum_values", ConfigEnumValueSnap
+            ),
+            fields=sorted(
+                check.opt_sequence_param(fields, "field", of_type=ConfigFieldSnap),
+                key=lambda ct: check.not_none(ct.name),
+            )
+            or None,
             description=check.opt_str_param(description, "description"),
             scalar_kind=check.opt_inst_param(scalar_kind, "scalar_kind", ConfigScalarKind),
-            field_aliases=check.opt_dict_param(field_aliases, "field_aliases"),
+            field_aliases=check.opt_nullable_mapping_param(
+                field_aliases, "field_aliases", key_type=str, value_type=str
+            ),
         )
 
     @property
@@ -173,6 +175,10 @@ class ConfigTypeSnap(
         return bool(self._get_field(name))
 
     @property
+    def has_fields(self) -> bool:
+        return ConfigTypeKind.has_fields(self.kind)
+
+    @property
     def field_names(self) -> Sequence[str]:
         fields = check.is_list(self.fields, of_type=ConfigFieldSnap)
         return [fs.name for fs in fields]
@@ -222,8 +228,15 @@ class ConfigFieldSnap(
         ],
     )
 ):
+
     def __new__(
-        cls, name, type_key, is_required, default_provided, default_value_as_json_str, description
+            cls,
+            name: Optional[str],
+            type_key: str,
+            is_required: bool,
+            default_provided: bool,
+            default_value_as_json_str: Optional[str],
+            description: Optional[str],
     ):
         return super(ConfigFieldSnap, cls).__new__(
             cls,
@@ -238,7 +251,7 @@ class ConfigFieldSnap(
         )
 
 
-def snap_from_field(name: str, field: Field):
+def snap_from_field(name: str, field: Field) -> ConfigFieldSnap:
     return ConfigFieldSnap(
         name=name,
         type_key=field.config_type.key,

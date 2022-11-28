@@ -1,6 +1,7 @@
 from __future__ import annotations
+import hashlib
 
-from typing import Any, List, Optional, Union
+from typing import Any, List, Mapping, Optional, Union
 
 from typing_extensions import TypeAlias
 
@@ -247,3 +248,39 @@ class Field:
             else self._default_value,
             is_required=self.is_required,
         )
+
+def hash_fields(
+    fields: Mapping[str, object],
+    description: Optional[str] = None,
+    field_aliases: Optional[Mapping[str, str]] = None,
+) -> str:
+
+    _fields = {key: normalize_field(value) for key, value in fields.items()}
+
+    m = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
+    if description:
+        _add_hash(m, f":description: {description}")
+
+    for field_name in sorted(list(_fields.keys())):
+        field = _fields[field_name]
+        _add_hash(m, f":fieldname: {field_name}")
+        if field.default_provided:
+            _add_hash(m, f":default_value: {field.default_value_as_json_str}")
+        _add_hash(m, f":is_required: {field.is_required}")
+        _add_hash(m, f":type_key: {field.config_type.key}")
+        if field.description:
+            _add_hash(m, f":description: {field.description}")
+
+    field_aliases = check.opt_dict_param(
+        field_aliases, "field_aliases", key_type=str, value_type=str
+    )
+    for field_name in sorted(list(field_aliases.keys())):
+        field_alias = field_aliases[field_name]
+        _add_hash(m, f":fieldname: {field_name}")
+        _add_hash(m, f":fieldalias: {field_alias}")
+
+    return m.hexdigest()
+
+
+def _add_hash(m, string):
+    m.update(string.encode("utf-8"))

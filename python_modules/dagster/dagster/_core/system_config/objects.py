@@ -22,7 +22,7 @@ from dagster._core.definitions.executor_definition import (
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._utils import ensure_single_item
+from dagster._utils import single_item_dict_to_tupleo_tuple
 
 
 class SolidConfig(
@@ -361,7 +361,7 @@ def config_map_objects(
     if not config:
         return None
 
-    obj_name, obj_config = ensure_single_item(config)
+    obj_name, obj_config = single_item_dict_to_tupleo_tuple(config)
 
     obj_def = next(
         (defi for defi in defs if defi.name == obj_name), None
@@ -416,7 +416,7 @@ class ExecutionConfig(
     def from_dict(config: Optional[Mapping[str, Mapping[str, Any]]] = None) -> "ExecutionConfig":
         config = check.opt_mapping_param(config, "config", key_type=str)
         if config:
-            execution_engine_name, execution_engine_config = ensure_single_item(config)
+            execution_engine_name, execution_engine_config = single_item_dict_to_tupleo_tuple(config)
             return ExecutionConfig(
                 execution_engine_name, check.is_dict(execution_engine_config).get("config")
             )

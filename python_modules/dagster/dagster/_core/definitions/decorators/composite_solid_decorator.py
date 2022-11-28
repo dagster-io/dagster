@@ -2,7 +2,7 @@ from functools import update_wrapper
 from typing import Any, Callable, Optional, Sequence, Union, overload
 
 import dagster._check as check
-from dagster._config import UserConfigSchema
+from dagster._config import ConfigSchema
 from dagster._core.decorator_utils import format_docstring_for_description
 
 from ..composition import do_composition, get_validated_config_mapping
@@ -18,7 +18,7 @@ class _CompositeSolid:
         input_defs: Optional[Sequence[InputDefinition]] = None,
         output_defs: Optional[Sequence[OutputDefinition]] = None,
         description: Optional[str] = None,
-        config_schema: Optional[UserConfigSchema] = None,
+        config_schema: Optional[ConfigSchema] = None,
         config_fn: Optional[Callable[[dict], dict]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
@@ -85,7 +85,7 @@ def composite_solid(
     input_defs: Optional[Sequence[InputDefinition]] = ...,
     output_defs: Optional[Sequence[OutputDefinition]] = ...,
     description: Optional[str] = ...,
-    config_schema: Optional[UserConfigSchema] = ...,
+    config_schema: Optional[ConfigSchema] = ...,
     config_fn: Optional[Callable[[dict], dict]] = ...,
 ) -> _CompositeSolid:
     ...
@@ -96,7 +96,7 @@ def composite_solid(
     input_defs: Optional[Sequence[InputDefinition]] = None,
     output_defs: Optional[Sequence[OutputDefinition]] = None,
     description: Optional[str] = None,
-    config_schema: Optional[UserConfigSchema] = None,
+    config_schema: Optional[ConfigSchema] = None,
     config_fn: Optional[Callable[[dict], dict]] = None,
 ) -> Union[CompositeSolidDefinition, _CompositeSolid]:
     """Create a composite solid with the specified parameters from the decorated composition
