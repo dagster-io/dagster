@@ -493,7 +493,7 @@ class AssetLayer:
             key_type=NodeInputHandle,
             value_type=AssetKey,
         )
-        self._asset_info_by_node_output_handle = check.opt_dict_param(
+        self._asset_info_by_node_output_handle = check.opt_mapping_param(
             asset_info_by_node_output_handle,
             "asset_info_by_node_output_handle",
             key_type=NodeOutputHandle,
@@ -535,7 +535,7 @@ class AssetLayer:
 
         # Used to store the asset key dependencies of op node handles within graph backed assets
         # See AssetLayer.downstream_dep_assets for more information
-        self._node_output_handle_to_dep_asset_keys = check.opt_dict_param(
+        self._node_output_handle_to_dep_asset_keys = check.opt_mapping_param(
             node_output_handles_to_dep_asset_keys,
             "node_output_handles_to_dep_asset_keys",
             key_type=NodeOutputHandle,

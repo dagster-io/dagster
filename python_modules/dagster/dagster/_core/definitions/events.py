@@ -177,9 +177,11 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         elif isinstance(arg, list):
             check.list_param(arg, "arg", of_type=str)
             return AssetKey(arg)
-        else:
+        elif isinstance(arg, tuple):
             check.tuple_param(arg, "arg", of_type=str)
             return AssetKey(arg)
+        else:
+            check.failed(f"Unexpected type for AssetKey: {type(arg)}")
 
 
 class AssetKeyPartitionKey(NamedTuple):
@@ -391,11 +393,8 @@ class AssetObservation(
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
-        elif isinstance(asset_key, list):
-            check.list_param(asset_key, "asset_key", of_type=str)
-            asset_key = AssetKey(asset_key)
-        else:
-            check.tuple_param(asset_key, "asset_key", of_type=str)
+        elif isinstance(asset_key, Sequence):
+            check.sequence_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
         tags = check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
@@ -481,11 +480,8 @@ class AssetMaterialization(
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
-        elif isinstance(asset_key, list):
+        elif isinstance(asset_key, Sequence):
             check.sequence_param(asset_key, "asset_key", of_type=str)
-            asset_key = AssetKey(asset_key)
-        else:
-            check.tuple_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
         check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
