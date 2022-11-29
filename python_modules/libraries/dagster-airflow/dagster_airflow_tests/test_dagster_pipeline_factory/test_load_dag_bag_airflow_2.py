@@ -480,6 +480,7 @@ def test_airflow_example_dags(
         assert repo.has_job(job_name)
 
         if job_name not in exclude_from_execution_tests:
+            print("RUNNING JOB: {}".format(job_name))
             job = repo.get_job(job_name)
             result = job.execute_in_process()
             assert result.success
