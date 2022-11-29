@@ -87,27 +87,29 @@ def parse_time_range_args(args):
     return before_timestamp, after_timestamp
 
 
-class GrapheneMaterializationCountSingleDimension(graphene.ObjectType):
-    materializationCounts = non_null_list(graphene.Int)
+class GrapheneMaterializationStatusSingleDimension(graphene.ObjectType):
+    # False if not materialized, true if materialized
+    materializationStatus = non_null_list(graphene.Boolean)
 
     class Meta:
-        name = "MaterializationCountSingleDimension"
+        name = "MaterializationStatusSingleDimension"
 
 
-class GrapheneMaterializationCountGroupedByDimension(graphene.ObjectType):
-    materializationCountsGrouped = graphene.NonNull(graphene.List(non_null_list(graphene.Int)))
+class GrapheneMaterializationStatusGroupedByDimension(graphene.ObjectType):
+    # False if not materialized, true if materialized
+    materializationStatusGrouped = graphene.NonNull(graphene.List(non_null_list(graphene.Boolean)))
 
     class Meta:
-        name = "MaterializationCountGroupedByDimension"
+        name = "MaterializationStatusGroupedByDimension"
 
 
-class GraphenePartitionMaterializationCounts(graphene.Union):
+class GraphenePartitionMaterializationStatus(graphene.Union):
     class Meta:
         types = (
-            GrapheneMaterializationCountSingleDimension,
-            GrapheneMaterializationCountGroupedByDimension,
+            GrapheneMaterializationStatusSingleDimension,
+            GrapheneMaterializationStatusGroupedByDimension,
         )
-        name = "PartitionMaterializationCounts"
+        name = "PartitionMaterializationStatus"
 
 
 class GrapheneAsset(graphene.ObjectType):

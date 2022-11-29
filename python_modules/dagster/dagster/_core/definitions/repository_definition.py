@@ -708,13 +708,18 @@ class CachingRepositoryData(RepositoryData):
                 definitions.
         """
         from dagster._core.definitions import AssetGroup, AssetsDefinition
+        from .cache_asset_partition_status_sensor import (
+            update_asset_partition_status_cache_sensor,
+        )
 
         pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
         coerced_graphs: Dict[str, JobDefinition] = {}
         unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition] = {}
         partition_sets: Dict[str, PartitionSetDefinition] = {}
         schedules: Dict[str, ScheduleDefinition] = {}
-        sensors: Dict[str, SensorDefinition] = {}
+        sensors: Dict[str, SensorDefinition] = {
+            "__dagster_asset_partition_status_cache_sensor": update_asset_partition_status_cache_sensor()
+        }
         assets_defs: List[AssetsDefinition] = []
         asset_keys: Set[AssetKey] = set()
         source_assets: List[SourceAsset] = []

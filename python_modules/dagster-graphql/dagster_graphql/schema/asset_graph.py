@@ -38,8 +38,7 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from ..implementation.fetch_assets import (
     get_freshness_info,
-    get_materialization_cts_by_partition,
-    get_materialization_cts_grouped_by_dimension,
+    get_materialization_status_by_partition,
 )
 from ..implementation.loader import (
     BatchMaterializationLoader,
@@ -52,10 +51,10 @@ from .dagster_types import GrapheneDagsterType, to_dagster_type
 from .errors import GrapheneAssetNotFoundError
 from .freshness_policy import GrapheneAssetFreshnessInfo, GrapheneFreshnessPolicy
 from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
-from .pipelines.pipeline import (  # GraphenePartitionMaterializationS,
-    GrapheneMaterializationCountGroupedByDimension,
-    GrapheneMaterializationCountSingleDimension,
-    GraphenePartitionMaterializationCounts,
+from .pipelines.pipeline import (
+    GrapheneMaterializationStatusGroupedByDimension,
+    GrapheneMaterializationStatusSingleDimension,
+    GraphenePartitionMaterializationStatus,
     GraphenePipeline,
     GrapheneRun,
 )
@@ -175,7 +174,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene.NonNull(graphene.List(GrapheneMaterializationEvent)),
         partitions=graphene.List(graphene.String),
     )
-    partitionMaterializationCounts = graphene.NonNull(GraphenePartitionMaterializationCounts)
+    partitionMaterializationStatus = graphene.NonNull(GraphenePartitionMaterializationStatus)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
     op = graphene.Field(GrapheneSolidDefinition)
     opName = graphene.String()
@@ -587,30 +586,26 @@ class GrapheneAssetNode(graphene.ObjectType):
             for event in ordered_materializations
         ]
 
-    def resolve_partitionMaterializationCounts(
+    def resolve_partitionMaterializationStatus(
         self, graphene_info
-    ) -> GraphenePartitionMaterializationCounts:
+    ) -> Union[
+        GrapheneMaterializationStatusSingleDimension, GrapheneMaterializationStatusGroupedByDimension
+    ]:
+        asset_graph = AssetGraph.from_external_assets(
+            self._external_repository.get_external_asset_nodes()
+        )
         asset_key = self._external_asset_node.asset_key
+        materialization_status_by_partition = get_materialization_status_by_partition(
+            graphene_info.context.instance, asset_key, asset_graph=asset_graph
+        )
 
         if not self.is_multipartitioned():
-            partition_keys = self.get_partition_keys()
-            return GrapheneMaterializationCountSingleDimension(
-                materializationCounts=iter(
-                    get_materialization_cts_by_partition(
-                        graphene_info, asset_key, partition_keys=partition_keys
-                    )
-                )
+            return GrapheneMaterializationStatusSingleDimension(
+                materializationStatus=iter(materialization_status_by_partition)
             )
         else:
-            return GrapheneMaterializationCountGroupedByDimension(
-                materializationCountsGrouped=get_materialization_cts_grouped_by_dimension(
-                    graphene_info,
-                    asset_key,
-                    cast(
-                        ExternalMultiPartitionsDefinitionData,
-                        self._external_asset_node.partitions_def_data,
-                    ).external_partition_dimension_definitions,
-                )
+            return GrapheneMaterializationStatusGroupedByDimension(
+                materializationStatusGrouped=materialization_status_by_partition
             )
 
     def resolve_metadata_entries(self, _graphene_info) -> Sequence[GrapheneMetadataEntry]:

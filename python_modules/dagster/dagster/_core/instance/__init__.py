@@ -1423,16 +1423,14 @@ class DagsterInstance:
     # asset storage
 
     @traced
+    def can_cache_asset_status_data(self) -> bool:
+        return self._event_storage.can_cache_asset_status_data()
+
+    @traced
     def update_asset_cached_status_data(
         self, asset_key: AssetKey, cache_values: "AssetStatusCacheValue"
     ) -> None:
         self._event_storage.update_asset_cached_status_data(asset_key, cache_values)
-
-    # @traced
-    # def get_cached_partition_status_by_asset(
-    #     self, asset_keys: Sequence[AssetKey]
-    # ) -> Optional["AssetStatusCacheValue"]:
-    #     return self._event_storage.get_cached_partition_status_by_asset(asset_keys)
 
     @traced
     def all_asset_keys(self):

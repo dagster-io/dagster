@@ -274,6 +274,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         raise NotImplementedError()
 
     @abstractmethod
+    def can_cache_asset_status_data(self) -> bool:
+        pass
+
+    @abstractmethod
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
     ) -> Iterable[AssetRecord]:

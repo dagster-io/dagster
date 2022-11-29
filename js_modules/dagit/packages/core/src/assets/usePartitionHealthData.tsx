@@ -53,24 +53,24 @@ async function loadPartitionHealthData(client: ApolloClient<any>, loadKey: Asset
       ? data.assetNodeOrError.partitionKeysByDimension
       : [];
 
-  const counts = (data.assetNodeOrError.__typename === 'AssetNode' &&
-    data.assetNodeOrError.partitionMaterializationCounts) || {
-    __typename: 'MaterializationCountSingleDimension',
-    materializationCounts: [],
+  const materializationStatus = (data.assetNodeOrError.__typename === 'AssetNode' &&
+    data.assetNodeOrError.partitionMaterializationStatus) || {
+    __typename: 'MaterializationStatusSingleDimension',
+    materializationStatus: [],
   };
 
   const stateByKey = Object.fromEntries(
-    counts.__typename === 'MaterializationCountSingleDimension'
-      ? counts.materializationCounts.map((count, idx) => [
+    materializationStatus.__typename === 'MaterializationStatusSingleDimension'
+      ? materializationStatus.materializationStatus.map((materialized, idx) => [
           dimensions[0].partitionKeys[idx],
-          count > 0 ? PartitionState.SUCCESS : PartitionState.MISSING,
+          materialized ? PartitionState.SUCCESS : PartitionState.MISSING,
         ])
-      : counts.materializationCountsGrouped.map((dim0, idx0) => [
+      : materializationStatus.materializationStatusGrouped.map((dim0, idx0) => [
           dimensions[0].partitionKeys[idx0],
           Object.fromEntries(
-            dim0.map((count, idx1) => [
+            dim0.map((materialized, idx1) => [
               dimensions[1].partitionKeys[idx1],
-              count > 0 ? PartitionState.SUCCESS : PartitionState.MISSING,
+              materialized ? PartitionState.SUCCESS : PartitionState.MISSING,
             ]),
           ),
         ]),
@@ -164,12 +164,12 @@ const PARTITION_HEALTH_QUERY = gql`
           name
           partitionKeys
         }
-        partitionMaterializationCounts {
-          ... on MaterializationCountGroupedByDimension {
-            materializationCountsGrouped
+        partitionMaterializationStatus {
+          ... on MaterializationStatusGroupedByDimension {
+            materializationStatusGrouped
           }
-          ... on MaterializationCountSingleDimension {
-            materializationCounts
+          ... on MaterializationStatusSingleDimension {
+            materializationStatus
           }
         }
       }

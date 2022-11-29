@@ -1,35 +1,18 @@
-from typing import Optional, List, cast, Sequence, NamedTuple, Mapping
+from typing import Optional, NamedTuple, Mapping
 from dagster._serdes import (
-    deserialize_as,
     deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
 )
+from collections import defaultdict
 from dagster._serdes import whitelist_for_serdes
-from dagster._core.storage.event_log import EventLogRecord
 from dagster import _check as check
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster import AssetKey, DagsterEventType, DagsterInstance, EventRecordsFilter
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionKeyRange
-from dagster._core.storage.event_log import AssetRecord
-
-# from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
-
-# class PartitionSubsetCacheValue(
-#     NamedTuple(
-#         "_PartitionSubsetCacheValue", [("partition_subsets", str)]
-#     )
-# ):
-#     def __new__(
-#         cls,
-#         partition_subsets: str,
-#         # Is a different object than PartitionSubset to allow for future serializable values,
-#         # e.g. a hash of the contained partition keys
-#     ):
-#         check.str_param(partition_subsets, "partition_subsets")
-#         return super(PartitionSubsetCacheValue, cls).__new__(
-#             cls, partition_subsets
-#         )
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionsDefinition,
+    get_multipartition_key_from_tags,
+)
 
 
 @whitelist_for_serdes
@@ -81,25 +64,13 @@ class AssetStatusCacheValue(
 
         return cached_data
 
+    def deserialize_materialized_partition_subsets(
+        self, partitions_def: PartitionsDefinition
+    ) -> PartitionsSubset:
+        if not self.materialized_partition_subsets:
+            return partitions_def.empty_subset()
 
-# def rebuild_partition_status_cache_value(
-#     asset_key: AssetKey,
-#     storage: SqlEventLogStorage,
-#     partitions_def: Optional[PartitionsDefinition] = None,
-# ):
-#     materialized_subset = None
-#     if partitions_def:
-#         materialized_subset = partitions_def.empty_subset()
-#         materialization_counts_by_partition = storage.get_materialization_count_by_partition(
-#             [asset_key]
-#         )
-#         partition_keys = partitions_def.get_partition_keys()
-#         materialized_keys = set(
-#             materialization_counts_by_partition.get(asset_key, {}).keys()
-#         ) & set(partition_keys)
-
-#         materialized_subset.with_partition_keys(materialized_keys)
-#     return materialized_subset
+        return partitions_def.deserialize_subset(self.materialized_partition_subsets)
 
 
 def rebuild_materialized_partition_subset(
@@ -111,9 +82,16 @@ def rebuild_materialized_partition_subset(
     if not partitions_def:
         return AssetStatusCacheValue(latest_storage_id=latest_storage_id)
 
-    materialization_counts_by_partition = instance.get_materialization_count_by_partition(
-        [asset_key]
-    ).get(asset_key, {})
+    if isinstance(partitions_def, MultiPartitionsDefinition):
+        materialization_counts_by_partition = defaultdict(int)
+        for event_tags in instance.get_event_tags_for_asset(asset_key):
+            partition_key = get_multipartition_key_from_tags(event_tags)
+            materialization_counts_by_partition[partition_key] += 1
+    else:
+        materialization_counts_by_partition = instance.get_materialization_count_by_partition(
+            [asset_key]
+        ).get(asset_key, {})
+
     materialized_partition_subsets = partitions_def.empty_subset()
     partition_keys = partitions_def.get_partition_keys()
     materialized_keys = set(materialization_counts_by_partition.keys()) & set(partition_keys)
@@ -180,16 +158,28 @@ def get_updated_partition_status_cache_values(
     )
 
 
-def get_updated_asset_status_cache_values(
-    instance: DagsterInstance,
-    asset_graph: AssetGraph,
-) -> Mapping[AssetKey, AssetStatusCacheValue]:
-
-    asset_records = instance.get_asset_records()
-    cached_status_data_by_asset_key = {
+def fetch_asset_status_cache_values_from_storage(
+    instance: DagsterInstance, asset_key: Optional[AssetKey] = None
+) -> Mapping[AssetKey, Optional[AssetStatusCacheValue]]:
+    asset_records = (
+        instance.get_asset_records()
+        if not asset_key
+        else instance.get_asset_records(asset_keys=[asset_key])
+    )
+    return {
         asset_record.asset_entry.asset_key: asset_record.asset_entry.cached_status
         for asset_record in asset_records
     }
+
+
+def get_updated_asset_status_cache_values(
+    instance: DagsterInstance,
+    asset_graph: AssetGraph,
+    asset_key: Optional[AssetKey] = None,  # If not provided, fetches all asset cache values
+) -> Mapping[AssetKey, AssetStatusCacheValue]:
+    cached_status_data_by_asset_key = fetch_asset_status_cache_values_from_storage(
+        instance, asset_key
+    )
 
     updated_cache_values_by_asset_key = {}
     for asset_key, cached_status_data in cached_status_data_by_asset_key.items():
@@ -231,70 +221,12 @@ def get_updated_asset_status_cache_values(
 
 
 def update_asset_status_cache_values(
-    instance: DagsterInstance,
-    asset_graph: AssetGraph,
-) -> None:
-    for asset_key, status_cache_value in get_updated_asset_status_cache_values(
-        instance, asset_graph
-    ).items():
+    instance: DagsterInstance, asset_graph: AssetGraph, asset_key: Optional[AssetKey] = None
+) -> Mapping[AssetKey, AssetStatusCacheValue]:
+    updated_cache_values_by_asset_key = get_updated_asset_status_cache_values(
+        instance, asset_graph, asset_key
+    )
+    for asset_key, status_cache_value in updated_cache_values_by_asset_key.items():
         instance.update_asset_cached_status_data(asset_key, status_cache_value)
 
-
-# def get_materialized_partition_ranges(
-#     instance: DagsterInstance,
-#     asset_graph: AssetGraph,
-#     asset_key: AssetKey,
-# ) -> List[PartitionKeyRange]:
-#     partitions_def = asset_graph.get_partitions_def(asset_key)
-#     if partitions_def is None:
-#         return []
-#     partition_keys = partitions_def.get_partition_keys()
-
-#     latest_storage_id = None
-#     materialized_subset: PartitionsSubset = partitions_def.empty_subset()
-
-#     asset_key_str = cast(str, asset_key.to_string())
-#     serialized_cache_value = instance.run_storage.kvs_get(set(asset_key_str)).get(asset_key_str, "")
-#     # TODO: assert that partitions_def_id is the same
-#     if serialized_cache_value:
-#         cache_value = cast(
-#             AssetStatusCacheValue,
-#             deserialize_json_to_dagster_namedtuple(serialized_cache_value),
-#         )
-
-#         # Call get_updated_asset_status_cache_value
-
-#     new_materialization_records = instance.get_event_records(
-#         EventRecordsFilter(
-#             event_type=DagsterEventType.ASSET_MATERIALIZATION,
-#             asset_key=asset_key,
-#             after_cursor=latest_storage_id,
-#         )
-#     )
-
-#     new_materialization_partitions = {
-#         cast(str, record.partition_key)
-#         for record in new_materialization_records
-#         if record.partition_key in partition_keys
-#     }
-#     max_storage_id = max(
-#         (record.storage_id for record in new_materialization_records), default=latest_storage_id
-#     )
-#     updated_materialized_subset = materialized_subset.with_partition_keys(
-#         new_materialization_partitions
-#     )
-
-#     if max_storage_id:  # If nonexistent, asset has not been materialized
-#         instance.run_storage.kvs_set(
-#             {
-#                 asset_key_str: serialize_dagster_namedtuple(
-#                     AssetStatusCacheValue(
-#                         latest_storage_id=max_storage_id,
-#                         partitions_def_id=partitions_def.serializable_unique_identifier,
-#                         materialized_partition_subsets=updated_materialized_subset.serialize(),
-#                     )
-#                 ),
-#             }
-#         )
-
-#     # return updated_materialized_subset.key_ranges
+    return updated_cache_values_by_asset_key

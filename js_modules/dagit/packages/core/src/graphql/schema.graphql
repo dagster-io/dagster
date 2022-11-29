@@ -671,7 +671,7 @@ type AssetNode {
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
-  partitionMaterializationCounts: PartitionMaterializationCounts!
+  partitionMaterializationStatus: PartitionMaterializationStatus!
   metadataEntries: [MetadataEntry!]!
   op: SolidDefinition
   opName: String
@@ -701,16 +701,16 @@ type FreshnessPolicy {
   cronSchedule: String
 }
 
-union PartitionMaterializationCounts =
-    MaterializationCountSingleDimension
-  | MaterializationCountGroupedByDimension
+union PartitionMaterializationStatus =
+    MaterializationStatusSingleDimension
+  | MaterializationStatusGroupedByDimension
 
-type MaterializationCountSingleDimension {
-  materializationCounts: [Int!]!
+type MaterializationStatusSingleDimension {
+  materializationStatus: [Boolean!]!
 }
 
-type MaterializationCountGroupedByDimension {
-  materializationCountsGrouped: [[Int!]!]!
+type MaterializationStatusGroupedByDimension {
+  materializationStatusGrouped: [[Boolean!]!]!
 }
 
 type PartitionDefinition {
