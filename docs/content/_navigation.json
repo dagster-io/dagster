@@ -602,7 +602,17 @@
       },
       {
         "title": "Jupyter / Papermill",
-        "path": "/integrations/dagstermill"
+        "path": "/integrations/dagstermill",
+        "children": [
+          {
+            "title": "Jupyter, Papermill + Dagster tutorial",
+            "path": "/integrations/dagstermill/using-notebooks-with-dagster"
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/dagstermill/reference"
+          }
+        ]
       },
       {
         "title": "Pandas",
