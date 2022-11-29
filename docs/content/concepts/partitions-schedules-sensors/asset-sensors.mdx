@@ -263,3 +263,59 @@ To minimize unnecessary computation, the sensor will take into account a few bit
 - The constraints specifying what upstream data must be incorporated into the state of an asset by certain times. If waiting some amount of time to kick off a materialization of an asset will allow multiple constraints to be satisfied at once, then the asset will not be materialized on that tick.
 
 The sensor will only kick off runs for assets specified in the `asset_selection` argument of `build_asset_reconciliation_sensor`. If an asset in this selection is downstream of an asset outside of the selection, the sensor will not kick off a run of the selected asset until a materialization event for the upstream asset is created.
+
+## Examples
+
+### Monitoring daily assets to materialize a weekly asset using a `multi_asset_sensor`
+
+<Note>
+  The functionality demonstrated by this custom sensor is identical to the
+  functionality provided by `build_asset_reconciliation_sensor`. However, this
+  example provides a starting point for those wishing to customize this behavior
+  beyond what the pre-built sensor supports.
+</Note>
+
+The following code example monitors an upstream daily-partitioned asset, kicking off materializations of a downstream weekly-partitioned asset whenever a daily partition is materialized and all daily partitions in the week have existing materializations. Every time a daily partition has a new materialization, the weekly partition will materialize.
+
+<PyObject
+  object="MultiAssetSensorEvaluationContext"
+  method="all_partitions_materialized"
+/> is a utility method accepts a list of partitions and checks if every provided
+partition has been materialized. This method ignores the cursor, so it searches through
+all existing materializations.
+
+If the <PyObject object="PartitionsDefinition"/> of the monitored assets differs from the triggered asset, you can use the <PyObject object="MultiAssetSensorEvaluationContext" method="get_downstream_partition_keys"/> method to map a partition key from one asset to another. This method accepts a partition key from the upstream asset and uses the existing <PyObject object="PartitionMapping"/> object on the downstream asset to fetch the corresponding partitions in the downstream asset.
+
+If a partition mapping is not defined, Dagster will use the default partition mapping, which is the <PyObject object="TimeWindowPartitionMapping"/> for time window partitions definitions and the <PyObject object="IdentityPartitionMapping"/> for other partitions definitions. The <PyObject object="TimeWindowPartitionMapping"/> will map an upstream partition to the downstream partitions that overlap with it.
+
+```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_daily_asset_to_weekly_asset endbefore=end_daily_asset_to_weekly_asset
+@multi_asset_sensor(asset_keys=[AssetKey("upstream_daily_1")], job=weekly_asset_job)
+def trigger_weekly_asset_from_daily_asset(context):
+    run_requests_by_partition = {}
+    materializations_by_partition = context.latest_materialization_records_by_partition(
+        AssetKey("upstream_daily_1")
+    )
+    # Get all corresponding weekly partitions for any materialized daily partitions
+    for partition, materialization in materializations_by_partition.items():
+        weekly_partitions = context.get_downstream_partition_keys(
+            partition,
+            from_asset_key=AssetKey("upstream_daily_1"),
+            to_asset_key=AssetKey("downstream_weekly_asset"),
+        )
+        if weekly_partitions:  # Check that a downstream weekly partition exists
+            # Upstream daily partition can only map to at most one downstream weekly partition
+            daily_partitions_in_week = context.get_downstream_partition_keys(
+                weekly_partitions[0],
+                from_asset_key=AssetKey("downstream_weekly_asset"),
+                to_asset_key=AssetKey("upstream_daily_1"),
+            )
+            if context.all_partitions_materialized(
+                AssetKey("upstream_daily_1"), daily_partitions_in_week
+            ):
+                run_requests_by_partition[
+                    weekly_partitions[0]
+                ] = weekly_asset_job.run_request_for_partition(weekly_partitions[0])
+                # Advance the cursor so we only check event log records past the cursor
+                context.advance_cursor({AssetKey("upstream_daily_1"): materialization})
+    return list(run_requests_by_partition.values())
+```
