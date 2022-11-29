@@ -37,7 +37,7 @@ const FinalRedirectOrLoadingRoot = () => {
   // If we have location entries but no repos, we have no useful objects to show.
   // Redirect to Workspace overview to surface relevant errors to the user.
   if (locationEntries.length && allRepos.length === 0) {
-    return <Redirect to="/workspace" />;
+    return <Redirect to="/locations" />;
   }
 
   const reposWithVisibleJobs = allRepos.filter((r) => getVisibleJobs(r).length > 0);

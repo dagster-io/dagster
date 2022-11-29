@@ -313,6 +313,9 @@ def create_backfill_run(
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
         solid_selection=solid_selection,
+        asset_selection=frozenset(backfill_job.asset_selection)
+        if backfill_job.asset_selection
+        else None,
     )
 
 

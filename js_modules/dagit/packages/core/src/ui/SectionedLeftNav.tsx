@@ -222,8 +222,8 @@ type PathMatch = {
 
 const usePathMatch = () => {
   const match = useRouteMatch<PathMatch>([
-    '/workspace/:repoPath/(jobs|pipelines)/:pipelinePath',
-    '/workspace/:repoPath/asset-groups/:groupName',
+    '/locations/:repoPath/(jobs|pipelines)/:pipelinePath',
+    '/locations/:repoPath/asset-groups/:groupName',
   ]);
   const {groupName, repoPath, pipelinePath} = match?.params || {};
 

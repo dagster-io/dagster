@@ -43,6 +43,7 @@ setup(
         "YouTube": "https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q",
         "Slack": "https://dagster.io/slack",
         "Blog": "https://dagster.io/blog",
+        "Newsletter": "https://dagster.io/newsletter-signup",
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",

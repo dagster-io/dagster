@@ -57,7 +57,7 @@ describe('PipelineRoot', () => {
 
   const repoAddress = buildRepoAddress(REPO_NAME, REPO_LOCATION);
   const pipelineName = 'pipez';
-  const path = `/workspace/${repoAddressAsString(repoAddress)}/pipelines/${pipelineName}:default`;
+  const path = `/locations/${repoAddressAsString(repoAddress)}/pipelines/${pipelineName}:default`;
 
   it('renders overview by default', async () => {
     const routerProps = {

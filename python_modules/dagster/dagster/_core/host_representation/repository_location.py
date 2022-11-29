@@ -57,7 +57,7 @@ from dagster._grpc.impl import (
     get_partition_set_execution_param_data,
     get_partition_tags,
 )
-from dagster._grpc.types import GetCurrentImageResult
+from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
 from dagster._serdes import deserialize_as
 from dagster._seven.compat.pendulum import PendulumDateTime
 from dagster._utils import merge_dicts
@@ -668,6 +668,9 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             self.client.get_current_image(),
             GetCurrentImageResult,
         ).current_image
+
+    def get_current_runs(self) -> Sequence[str]:
+        return deserialize_as(self.client.get_current_runs(), GetCurrentRunsResult).current_runs
 
     def cleanup(self) -> None:
         if self._heartbeat_shutdown_event:

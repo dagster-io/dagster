@@ -47,7 +47,7 @@ export function useLaunchWithTelemetry() {
         showLaunchError(error as Error);
       }
 
-      return result.data;
+      return result.data?.launchPipelineExecution;
     },
     [canLaunchPipelineExecution, history, launchPipelineExecution, logTelemetry],
   );
