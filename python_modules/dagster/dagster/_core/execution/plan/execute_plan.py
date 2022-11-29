@@ -50,15 +50,8 @@ def inner_plan_execution_iterator(
                     yield DagsterEvent.capture_logs(
                         pipeline_context, step_keys, log_key, log_context
                     )
-                except Exception as e:
-                    yield DagsterEvent.engine_event(
-                        plan_context=pipeline_context,
-                        message="Exception while setting up compute log capture",
-                        event_specific_data=EngineEventData(
-                            error=serializable_error_info_from_exc_info(sys.exc_info())
-                        ),
-                    )
-                    log_capture_error = e
+                except Exception:
+                    yield from _handle_compute_log_setup_error(pipeline_context, sys.exc_info())
 
             # It would be good to implement a reference tracking algorithm here to
             # garbage collect results that are no longer needed by any steps
@@ -89,25 +82,15 @@ def inner_plan_execution_iterator(
                 with ExitStack() as step_stack:
                     if not isinstance(compute_log_manager, CapturedLogManager):
                         # capture all of the logs for individual steps
-                        log_capture_error = None
                         try:
                             step_stack.enter_context(
                                 pipeline_context.instance.compute_log_manager.watch(
                                     step_context.pipeline_run, step_context.step.key
                                 )
                             )
-                        except Exception as e:
-                            yield DagsterEvent.engine_event(
-                                plan_context=step_context,
-                                message="Exception while setting up compute log capture",
-                                event_specific_data=EngineEventData(
-                                    error=serializable_error_info_from_exc_info(sys.exc_info())
-                                ),
-                            )
-                            log_capture_error = e
-
-                        if not log_capture_error:
                             yield DagsterEvent.legacy_compute_log_step_event(step_context)
+                        except Exception as e:
+                            yield from _handle_compute_log_setup_error(step_context, sys.exc_info())
 
                         for step_event in check.generator(
                             dagster_event_sequence_for_step(step_context)
@@ -122,13 +105,7 @@ def inner_plan_execution_iterator(
                         try:
                             step_stack.close()
                         except Exception:
-                            yield DagsterEvent.engine_event(
-                                plan_context=step_context,
-                                message="Exception while cleaning up compute log capture",
-                                event_specific_data=EngineEventData(
-                                    error=serializable_error_info_from_exc_info(sys.exc_info())
-                                ),
-                            )
+                            yield from _handle_compute_log_teardown_error(step_context, sys.exc_info())
                     else:
                         # we have already set up the log capture at the process level, just handle the
                         # step events
@@ -154,14 +131,25 @@ def inner_plan_execution_iterator(
             try:
                 capture_stack.close()
             except Exception:
-                yield DagsterEvent.engine_event(
-                    plan_context=pipeline_context,
-                    message="Exception while cleaning up compute log capture",
-                    event_specific_data=EngineEventData(
-                        error=serializable_error_info_from_exc_info(sys.exc_info())
-                    ),
-                )
+                yield from _handle_compute_log_teardown_error(pipeline_context, sys.exc_info())
 
+def _handle_compute_log_setup_error(context, exc_info):
+    yield DagsterEvent.engine_event(
+        plan_context=context,
+        message="Exception while setting up compute log capture",
+        event_specific_data=EngineEventData(
+            error=serializable_error_info_from_exc_info(exc_info)
+        ),
+    )
+
+def _handle_compute_log_teardown_error(context, exc_info):
+    yield DagsterEvent.engine_event(
+        plan_context=context,
+        message="Exception while cleaning up compute log capture",
+        event_specific_data=EngineEventData(
+            error=serializable_error_info_from_exc_info(exc_info)
+        ),
+    )
 
 def _trigger_hook(
     step_context: StepExecutionContext, step_event_list: Sequence[DagsterEvent]

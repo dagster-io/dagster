@@ -42,10 +42,10 @@ class BrokenCapturedLogManager(CapturedLogManager, ComputeLogManager):
     @contextmanager
     def capture_logs(self, log_key: Sequence[str]) -> Generator[CapturedLogContext, None, None]:
         if self._fail_on_setup:
-            raise Exception("wahhh")
+            raise Exception("fail on setup")
         yield CapturedLogContext(log_key=log_key)
         if self._fail_on_teardown:
-            raise Exception("blahhh")
+            raise Exception("fail on teardown")
 
     @contextmanager
     def open_log_stream(
@@ -75,10 +75,10 @@ class BrokenCapturedLogManager(CapturedLogManager, ComputeLogManager):
     def subscribe(
         self, log_key: Sequence[str], cursor: Optional[str] = None
     ) -> CapturedLogSubscription:
-        pass
+        return CapturedLogSubscription(self, log_key, cursor)
 
     def unsubscribe(self, subscription: CapturedLogSubscription):
-        pass
+        return
 
     @contextmanager
     def _watch_logs(self, pipeline_run, step_key=None):
