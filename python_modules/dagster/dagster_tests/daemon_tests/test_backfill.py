@@ -200,6 +200,13 @@ def bar(a1):
     return a1
 
 
+@asset(
+    config_schema={"myparam": Field(str, description="YYYY-MM-DD")},
+)
+def baz():
+    return 10
+
+
 @op(ins={"in1": In(Nothing), "in2": In(Nothing)}, out={"out1": Out(), "out2": Out()})
 def reusable():
     return 1, 2
@@ -247,13 +254,15 @@ def the_repo():
         # the lineage graph defined with these assets is such that: foo -> a1 -> bar -> b1
         # this requires ab1 to be split into two separate asset definitions using the automatic
         # subsetting capabilities. ab2 is defines similarly, so in total 4 copies of the "reusable"
-        # op will exist in the full plan, whereas onle a single copy will be needed for a subset
+        # op will exist in the full plan, whereas only a single copy will be needed for a subset
         # plan which only materializes foo -> a1 -> bar
         foo,
         bar,
         ab1,
         ab2,
-        define_asset_job("twisted_asset_mess", selection="*", partitions_def=static_partitions),
+        define_asset_job("twisted_asset_mess", selection="*b2", partitions_def=static_partitions),
+        # baz is a configurable asset which has no dependencies
+        baz,
     ]
 
 
@@ -621,10 +630,10 @@ def test_backfill_from_partitioned_job(instance, workspace_context, external_rep
 
 def test_backfill_with_asset_selection(instance, workspace_context, external_repo):
     partition_name_list = [partition.name for partition in static_partitions.get_partitions()]
-    external_partition_set = external_repo.get_external_partition_set(
-        "twisted_asset_mess_partition_set"
-    )
     asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
+    asset_job_name = the_repo.get_base_job_for_assets(asset_selection).name
+    partition_set_name = f"{asset_job_name}_partition_set"
+    external_partition_set = external_repo.get_external_partition_set(partition_set_name)
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="backfill_with_asset_selection",
@@ -650,7 +659,7 @@ def test_backfill_with_asset_selection(instance, workspace_context, external_rep
     for idx, run in enumerate(runs):
         assert run.tags[BACKFILL_ID_TAG] == "backfill_with_asset_selection"
         assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
-        assert run.tags[PARTITION_SET_TAG] == "twisted_asset_mess_partition_set"
+        assert run.tags[PARTITION_SET_TAG] == partition_set_name
         assert step_succeeded(instance, run, "foo")
         assert step_succeeded(instance, run, "reusable")
         assert step_succeeded(instance, run, "bar")
@@ -658,8 +667,56 @@ def test_backfill_with_asset_selection(instance, workspace_context, external_rep
     for asset_key in asset_selection:
         assert len(instance.run_ids_for_asset_key(asset_key)) == 3
     # not selected
-    for asset_key in [AssetKey("a2"), AssetKey("b2")]:
+    for asset_key in [AssetKey("a2"), AssetKey("b2"), AssetKey("baz")]:
         assert len(instance.run_ids_for_asset_key(asset_key)) == 0
+
+
+def test_backfill_from_asset_job(instance, workspace_context, external_repo):
+
+    partition_name_list = [partition.name for partition in static_partitions.get_partitions()]
+    asset_selection = [
+        AssetKey("foo"),
+        AssetKey("a1"),
+        AssetKey("a2"),
+        AssetKey("bar"),
+        AssetKey("b1"),
+        AssetKey("b2"),
+    ]
+    external_partition_set = external_repo.get_external_partition_set("__ASSET_JOB_0_partition_set")
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id="backfill_from_asset_job",
+            partition_set_origin=external_partition_set.get_external_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=partition_name_list,
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            asset_selection=asset_selection,
+            backfill_timestamp=pendulum.now().timestamp(),
+        )
+    )
+    assert instance.get_runs_count() == 0
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    wait_for_all_runs_to_start(instance, timeout=30)
+    assert instance.get_runs_count() == 3
+    wait_for_all_runs_to_finish(instance, timeout=30)
+
+    assert instance.get_runs_count() == 3
+    runs = reversed(instance.get_runs())
+    for idx, run in enumerate(runs):
+        assert run.tags[BACKFILL_ID_TAG] == "backfill_from_asset_job"
+        assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
+        assert run.tags[PARTITION_SET_TAG] == "__ASSET_JOB_0_partition_set"
+        assert step_succeeded(instance, run, "reusable")
+        assert step_succeeded(instance, run, "foo")
+        assert step_succeeded(instance, run, "reusable_2")
+        assert step_succeeded(instance, run, "reusable_3")
+        assert step_succeeded(instance, run, "bar")
+        assert step_succeeded(instance, run, "reusable_4")
+    for asset_key in asset_selection:
+        assert len(instance.run_ids_for_asset_key(asset_key)) == 3
 
 
 def test_backfill_from_failure_for_subselection(instance, workspace_context, external_repo):
