@@ -380,19 +380,6 @@ class RunStatusSensorDefinition(SensorDefinition):
             for job in (monitored_jobs or [])
         ]
 
-        monitored_jobs = cast(
-            List[
-                Union[
-                    PipelineDefinition,
-                    GraphDefinition,
-                    UnresolvedAssetJobDefinition,
-                    RepositorySelector,
-                    JobSelector,
-                ]
-            ],
-            monitored_jobs,
-        )
-
         self._run_status_sensor_fn = check.callable_param(
             run_status_sensor_fn, "run_status_sensor_fn"
         )
@@ -441,6 +428,13 @@ class RunStatusSensorDefinition(SensorDefinition):
                 limit=5,
             )
 
+            check.invariant(
+                bool(
+                    [job for job in (monitored_jobs or []) if isinstance(job, CodeLocationSelector)]
+                ),
+                "No code location selectors in monitored_jobs at this point",
+            )
+
             # split monitored_jobs into external repos, external jobs, and jobs in the current repo
             other_repos = (
                 [x for x in monitored_jobs if isinstance(x, RepositorySelector)]
@@ -452,7 +446,13 @@ class RunStatusSensorDefinition(SensorDefinition):
             )
 
             current_repo_jobs = (
-                [x for x in monitored_jobs if not isinstance(x, (JobSelector, RepositorySelector))]
+                [
+                    x
+                    for x in monitored_jobs
+                    # monitored_jobs will not contain any CodeLocationSelectors at this point, but this
+                    # is in this list to make mypy/pyright happy. Verfied by invariant above.
+                    if not isinstance(x, (JobSelector, RepositorySelector, CodeLocationSelector))
+                ]
                 if monitored_jobs
                 else []
             )
