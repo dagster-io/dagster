@@ -89,7 +89,7 @@ def inner_plan_execution_iterator(
                                 )
                             )
                             yield DagsterEvent.legacy_compute_log_step_event(step_context)
-                        except Exception as e:
+                        except Exception:
                             yield from _handle_compute_log_setup_error(step_context, sys.exc_info())
 
                         for step_event in check.generator(
