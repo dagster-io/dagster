@@ -7,7 +7,7 @@ import {usePermissions} from '../app/Permissions';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 import {
   buildAssetCollisionsAlert,
@@ -135,7 +135,7 @@ async function stateForObservingAssets(
     assets[0]?.repository.name || '',
     assets[0]?.repository.location.name || '',
   );
-  const repoName = repoAddressAsString(repoAddress);
+  const repoName = repoAddressAsHumanString(repoAddress);
 
   if (
     !assets.every(

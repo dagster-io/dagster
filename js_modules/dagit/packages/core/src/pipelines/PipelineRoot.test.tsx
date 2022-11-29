@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {TestProvider} from '../testing/TestProvider';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 
 import {PipelineRoot} from './PipelineRoot';
 
@@ -57,7 +57,9 @@ describe('PipelineRoot', () => {
 
   const repoAddress = buildRepoAddress(REPO_NAME, REPO_LOCATION);
   const pipelineName = 'pipez';
-  const path = `/locations/${repoAddressAsString(repoAddress)}/pipelines/${pipelineName}:default`;
+  const path = `/locations/${repoAddressAsURLString(
+    repoAddress,
+  )}/pipelines/${pipelineName}:default`;
 
   it('renders overview by default', async () => {
     const routerProps = {

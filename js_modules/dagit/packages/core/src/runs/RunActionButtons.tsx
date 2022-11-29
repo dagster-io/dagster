@@ -5,8 +5,8 @@ import {SharedToaster} from '../app/DomUtils';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {usePermissions} from '../app/Permissions';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
-import {buildRepoAddress, buildRepoPath} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {buildRepoAddress, buildRepoPathForHuman} from '../workspace/buildRepoAddress';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
 import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
@@ -292,7 +292,7 @@ function usePipelineAvailabilityErrorForRun(
     if (matchType === 'snapshot-only') {
       // Only the snapshot ID matched, but not the repo.
       const originRepoName = run.repositoryOrigin
-        ? repoAddressAsString(
+        ? repoAddressAsHumanString(
             buildRepoAddress(
               run.repositoryOrigin.repositoryName,
               run.repositoryOrigin.repositoryLocationName,
@@ -335,7 +335,7 @@ function usePipelineAvailabilityErrorForRun(
     <Group direction="column" spacing={8}>
       <div>{`"${run.pipelineName}" is not available in the your definitions.`}</div>
       {repoForRun && repoLocationForRun ? (
-        <div>{`Load definitions for ${buildRepoPath(
+        <div>{`Load definitions for ${buildRepoPathForHuman(
           repoForRun,
           repoLocationForRun,
         )} and try again.`}</div>

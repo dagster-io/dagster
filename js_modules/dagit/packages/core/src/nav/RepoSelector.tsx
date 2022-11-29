@@ -17,7 +17,7 @@ import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -74,7 +74,7 @@ export const RepoSelector: React.FC<Props> = (props) => {
               location: option.repositoryLocation.name,
               name: option.repository.name,
             };
-            const addressString = repoAddressAsString(repoAddress);
+            const addressString = repoAddressAsHumanString(repoAddress);
             return (
               <tr key={addressString}>
                 <td>
@@ -92,8 +92,8 @@ export const RepoSelector: React.FC<Props> = (props) => {
                   <RepoLabel htmlFor={`switch-${addressString}`}>
                     <Group direction="column" spacing={4}>
                       <Box flex={{direction: 'row'}} title={addressString}>
+                        <RepoLocation>{repoAddress.location}</RepoLocation>
                         <RepoName>{repoAddress.name}</RepoName>
-                        <RepoLocation>{`@${repoAddress.location}`}</RepoLocation>
                       </Box>
                       <Group direction="column" spacing={2}>
                         {option.repository.displayMetadata.map(({key, value}) => (
