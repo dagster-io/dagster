@@ -68,7 +68,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
             <div>Definitions reloaded</div>
-            <ViewButton onClick={() => history.push('/workspace')} color={Colors.White}>
+            <ViewButton onClick={() => history.push('/locations')} color={Colors.White}>
               View
             </ViewButton>
           </Box>
@@ -138,7 +138,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
             ) : (
               <span>{addedEntries.length} code locations added</span>
             )}
-            <ViewButton onClick={() => history.push('/workspace')} color={Colors.White}>
+            <ViewButton onClick={() => history.push('/locations')} color={Colors.White}>
               View
             </ViewButton>
           </Box>

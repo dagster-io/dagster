@@ -53,7 +53,7 @@ describe('Repository options', () => {
       render(
         <TestProvider
           apolloProps={{mocks: [defaultMocks, mocks]}}
-          routerProps={{initialEntries: ['/workspace/foo@bar/etc']}}
+          routerProps={{initialEntries: ['/locations/foo@bar/etc']}}
         >
           <LeftNavRepositorySection />
         </TestProvider>,
@@ -372,7 +372,7 @@ describe('Repository options', () => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocks]}}
-            routerProps={{initialEntries: ['/workspace/foo@bar/etc']}}
+            routerProps={{initialEntries: ['/locations/foo@bar/etc']}}
           >
             <LeftNavRepositorySection />
           </TestProvider>,
