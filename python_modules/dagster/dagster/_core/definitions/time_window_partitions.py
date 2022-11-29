@@ -432,9 +432,7 @@ class TimeWindowPartitionsDefinition(
         return TimeWindowPartitionsSubset.from_serialized(self, serialized)
 
     @property
-    def serialized_unique_identifier(self) -> str:
-        # TODO add notes to repr function to indicate that changing the function
-        # will trigger a recompute of all partitions
+    def serializable_unique_identifier(self) -> str:
         return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
 
 

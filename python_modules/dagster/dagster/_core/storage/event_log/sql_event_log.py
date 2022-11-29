@@ -1194,7 +1194,6 @@ class SqlEventLogStorage(EventLogStorage):
         self, asset_key: AssetKey, cache_values: "AssetStatusCacheValue"
     ) -> None:
         if self.has_asset_key_col("cached_status_data"):
-            print("WRITING CACHE VALUES", asset_key, cache_values)
             with self.index_connection() as conn:
                 conn.execute(
                     AssetKeyTable.update()  # pylint: disable=no-value-for-parameter

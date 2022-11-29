@@ -1,4 +1,4 @@
-from typing import Optional, NamedTuple, Mapping
+from typing import Optional, NamedTuple, Mapping, List
 from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
 )
@@ -11,7 +11,12 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionsDefinition,
+    MultiPartitionKey,
     get_multipartition_key_from_tags,
+)
+from dagster._core.storage.tags import (
+    get_dimension_from_partition_tag,
+    MULTIDIMENSIONAL_PARTITION_PREFIX,
 )
 
 
@@ -31,9 +36,14 @@ class AssetStatusCacheValue(
     Set of asset fields that reflect partition materialization status. This is used to display
     global partition status in the asset view.
 
-    When recalculating:
-        if partitions ID has changed, then need to recalculate. Could keep it simple and
-        recalculate every time the partitions def changes, but if
+    Properties:
+        latest_storage_id (int): The latest evaluated storage id for the asset.
+        partitions_def_id (Optional(str)): The serializable unique identifier for the partitions
+            definition. When this value differs from the new partitions definition, this cache
+            value needs to be recalculated. None if the asset is unpartitioned.
+        materialized_partition_subsets (Optional(str)): The serializable representation of the
+            materialized partition subsets, up to the latest storage id. None if the asset is
+            unpartitioned.
     """
 
     def __new__(
@@ -73,28 +83,64 @@ class AssetStatusCacheValue(
         return partitions_def.deserialize_subset(self.materialized_partition_subsets)
 
 
-def rebuild_materialized_partition_subset(
+def get_materialized_multipartitions_from_tags(
+    instance: DagsterInstance, asset_key: AssetKey, partitions_def: MultiPartitionsDefinition
+) -> List[MultiPartitionKey]:
+    dimension_names = partitions_def.partition_dimension_names
+    materialized_keys: List[MultiPartitionKey] = []
+    for event_tags in instance.get_event_tags_for_asset(asset_key):
+        event_partition_keys_by_dimension = {
+            get_dimension_from_partition_tag(key): value
+            for key, value in event_tags.items()
+            if key.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX)
+        }
+
+        if all(
+            [
+                dimension_name in event_partition_keys_by_dimension.keys()
+                for dimension_name in dimension_names
+            ]
+        ):
+            materialized_keys.append(
+                MultiPartitionKey(
+                    {
+                        dimension_names[0]: event_partition_keys_by_dimension[dimension_names[0]],
+                        dimension_names[1]: event_partition_keys_by_dimension[dimension_names[1]],
+                    }
+                )
+            )
+    return materialized_keys
+
+
+def _rebuild_status_cache(
     instance: DagsterInstance,
     asset_key: AssetKey,
     latest_storage_id: int,
     partitions_def: Optional[PartitionsDefinition] = None,
 ):
+    """
+    This method refreshes the asset status cache for a given asset key. It recalculates
+    the materialized partition subset for the asset key and updates the cache value.
+    """
     if not partitions_def:
         return AssetStatusCacheValue(latest_storage_id=latest_storage_id)
 
     if isinstance(partitions_def, MultiPartitionsDefinition):
-        materialization_counts_by_partition = defaultdict(int)
-        for event_tags in instance.get_event_tags_for_asset(asset_key):
-            partition_key = get_multipartition_key_from_tags(event_tags)
-            materialization_counts_by_partition[partition_key] += 1
+        materialized_keys = get_materialized_multipartitions_from_tags(
+            instance, asset_key, partitions_def
+        )
     else:
-        materialization_counts_by_partition = instance.get_materialization_count_by_partition(
-            [asset_key]
-        ).get(asset_key, {})
+        materialized_keys = [
+            key
+            for key, count in instance.get_materialization_count_by_partition([asset_key])
+            .get(asset_key, {})
+            .items()
+            if count > 0
+        ]
 
     materialized_partition_subsets = partitions_def.empty_subset()
     partition_keys = partitions_def.get_partition_keys()
-    materialized_keys = set(materialization_counts_by_partition.keys()) & set(partition_keys)
+    materialized_keys = set(materialized_keys) & set(partition_keys)
 
     materialized_partition_subsets = materialized_partition_subsets.with_partition_keys(
         materialized_keys
@@ -107,12 +153,16 @@ def rebuild_materialized_partition_subset(
     )
 
 
-def get_updated_partition_status_cache_values(
+def _get_updated_status_cache(
     instance: DagsterInstance,
     asset_key: AssetKey,
     current_status_cache_value: AssetStatusCacheValue,
     partitions_def: Optional[PartitionsDefinition] = None,
 ):
+    """
+    This method accepts the current asset status cache value, and fetches unevaluated
+    records from the event log. It then updates the cache value with the new materializations.
+    """
     unevaluated_event_records = instance.get_event_records(
         event_records_filter=EventRecordsFilter(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -158,7 +208,7 @@ def get_updated_partition_status_cache_values(
     )
 
 
-def fetch_asset_status_cache_values_from_storage(
+def _fetch_stored_asset_status_cache_values(
     instance: DagsterInstance, asset_key: Optional[AssetKey] = None
 ) -> Mapping[AssetKey, Optional[AssetStatusCacheValue]]:
     asset_records = (
@@ -172,14 +222,12 @@ def fetch_asset_status_cache_values_from_storage(
     }
 
 
-def get_updated_asset_status_cache_values(
+def _get_fresh_asset_status_cache_values(
     instance: DagsterInstance,
     asset_graph: AssetGraph,
     asset_key: Optional[AssetKey] = None,  # If not provided, fetches all asset cache values
 ) -> Mapping[AssetKey, AssetStatusCacheValue]:
-    cached_status_data_by_asset_key = fetch_asset_status_cache_values_from_storage(
-        instance, asset_key
-    )
+    cached_status_data_by_asset_key = _fetch_stored_asset_status_cache_values(instance, asset_key)
 
     updated_cache_values_by_asset_key = {}
     for asset_key, cached_status_data in cached_status_data_by_asset_key.items():
@@ -199,18 +247,14 @@ def get_updated_asset_status_cache_values(
                 limit=1,
             )
             if event_records:
-                updated_cache_values_by_asset_key[
-                    asset_key
-                ] = rebuild_materialized_partition_subset(
+                updated_cache_values_by_asset_key[asset_key] = _rebuild_status_cache(
                     instance=instance,
                     asset_key=asset_key,
                     partitions_def=partitions_def,
                     latest_storage_id=next(iter(event_records)).storage_id,
                 )
         else:
-            updated_cache_values_by_asset_key[
-                asset_key
-            ] = get_updated_partition_status_cache_values(
+            updated_cache_values_by_asset_key[asset_key] = _get_updated_status_cache(
                 instance=instance,
                 asset_key=asset_key,
                 partitions_def=partitions_def,
@@ -223,7 +267,7 @@ def get_updated_asset_status_cache_values(
 def update_asset_status_cache_values(
     instance: DagsterInstance, asset_graph: AssetGraph, asset_key: Optional[AssetKey] = None
 ) -> Mapping[AssetKey, AssetStatusCacheValue]:
-    updated_cache_values_by_asset_key = get_updated_asset_status_cache_values(
+    updated_cache_values_by_asset_key = _get_fresh_asset_status_cache_values(
         instance, asset_graph, asset_key
     )
     for asset_key, status_cache_value in updated_cache_values_by_asset_key.items():

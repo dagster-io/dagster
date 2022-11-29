@@ -256,8 +256,7 @@ class PartitionsDefinition(ABC, Generic[T]):
 
     @property
     def serializable_unique_identifier(self) -> str:
-        return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
-        # return hashlib.sha1(json.dumps(self.get_partition_keys()).encode("utf-8")).hexdigest()
+        return hashlib.sha1(json.dumps(self.get_partition_keys()).encode("utf-8")).hexdigest()
 
 
 class StaticPartitionsDefinition(

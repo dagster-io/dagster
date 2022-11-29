@@ -16,7 +16,9 @@ from dagster import (
     EventRecordsFilter,
     PartitionsDefinition,
     MultiPartitionsDefinition,
+    MultiPartitionKey,
 )
+from dagster._core.storage.partition_status_cache import get_materialized_multipartitions_from_tags
 from dagster import _check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -283,39 +285,9 @@ def get_unique_asset_id(
     )
 
 
-def get_partition_materialization_status_from_tags(
-    instance: DagsterInstance,
-    asset_key: AssetKey,
+def get_materialization_status_2d_array(
     partitions_def: MultiPartitionsDefinition,
-) -> Dict[str, Dict[str, bool]]:
-    # TODO update docstring
-    # This dict will by keyed by the primary dimension partition keys.
-    # The values are dicts keyed by the secondary dimension partition keys, mapped to
-    # the number of materializations.
-    materialization_ct: Dict[str, Dict[str, bool]] = defaultdict(lambda: defaultdict(lambda: False))
-
-    dimension_names = partitions_def.partition_dimension_names
-
-    for event_tags in instance.get_event_tags_for_asset(asset_key):
-        event_partition_keys_by_dimension = {
-            get_dimension_from_partition_tag(key): value for key, value in event_tags.items()
-        }
-
-        if all(
-            [
-                dimension_name in event_partition_keys_by_dimension.keys()
-                for dimension_name in dimension_names
-            ]
-        ):
-            materialization_ct[event_partition_keys_by_dimension[dimension_names[0]]][
-                event_partition_keys_by_dimension[dimension_names[1]]
-            ] = True
-    return materialization_ct
-
-
-def get_materialization_status_grouped_by_dimension(
-    partitions_def: MultiPartitionsDefinition,
-    db_materialization_status: Mapping[str, Mapping[str, bool]],
+    materialized_keys: List[MultiPartitionKey],
 ) -> List[List[bool]]:
     """
     # TODO update docstring
@@ -336,31 +308,48 @@ def get_materialization_status_grouped_by_dimension(
         [b|x count, b|y count]
     ]
     """
-    materialization_counts_grouped_by_dimension: List[List[bool]] = []
 
-    primary_dim_keys = partitions_def.partitions_defs[0].partitions_def.get_partition_keys()
-    secondary_dim_keys = partitions_def.partitions_defs[1].partitions_def.get_partition_keys()
+    materialization_status_by_dimension: Dict[str, Dict[str, bool]] = defaultdict(
+        lambda: defaultdict(lambda: False)
+    )
+    primary_dim, secondary_dim = (
+        partitions_def.partitions_defs[0],
+        partitions_def.partitions_defs[1],
+    )
+    for partition_key in materialized_keys:
+        keys_by_dim = partition_key.keys_by_dimension
+        materialization_status_by_dimension[keys_by_dim[primary_dim.name]][
+            keys_by_dim[secondary_dim.name]
+        ] = True
 
-    for primary_dim_key in primary_dim_keys:
-        materialization_counts_grouped_by_dimension.append(
+    materialization_status_2d_arr: List[List[bool]] = []
+    secondary_dim_keys = secondary_dim.partitions_def.get_partition_keys()
+    for primary_dim_key in primary_dim.partitions_def.get_partition_keys():
+        materialization_status_2d_arr.append(
             [
-                db_materialization_status.get(primary_dim_key, {}).get(secondary_dim_key, False)
+                materialization_status_by_dimension[primary_dim_key][secondary_dim_key]
                 for secondary_dim_key in secondary_dim_keys
             ]
         )
-    return materialization_counts_grouped_by_dimension
+    return materialization_status_2d_arr
 
 
-def get_single_dimension_materialization_cts_by_partition(
+def get_single_dimension_materialization_status(
     partitions_def: Optional[PartitionsDefinition],
-    db_materialization_status: Mapping[str, bool],
+    materialized_keys: List[str],
 ) -> List[bool]:
     if not partitions_def:
         return []
 
+    materialization_status_by_partition: Dict[str, bool] = defaultdict(lambda: False)
+    for partition_key in materialized_keys:
+        materialization_status_by_partition[partition_key] = True
+
     ordered_materialization_counts: List[bool] = []
     for partition_key in partitions_def.get_partition_keys():
-        ordered_materialization_counts.append(db_materialization_status.get(partition_key, False))
+        ordered_materialization_counts.append(
+            materialization_status_by_partition.get(partition_key, False)
+        )
     return ordered_materialization_counts
 
 
@@ -380,7 +369,8 @@ def get_materialization_status_by_partition(
         return []
 
     if instance.can_cache_asset_status_data():
-        print("fetching from cache")
+        # When the "cached_status_data" column exists in storage, update the column to contain
+        # the latest partition status values
         updated_cache_value = update_asset_status_cache_values(
             instance, asset_graph, asset_key
         ).get(asset_key)
@@ -392,44 +382,31 @@ def get_materialization_status_by_partition(
         materialized_keys = materialized_subset.get_partition_keys()
 
         if isinstance(partitions_def, MultiPartitionsDefinition):
-            materialization_status_by_dimension: Dict[str, Dict[str, bool]] = defaultdict(
-                lambda: defaultdict(lambda: False)
+            return get_materialization_status_2d_array(
+                partitions_def, [cast(MultiPartitionKey, key) for key in materialized_keys]
             )
-            primary_dim, secondary_dim = (
-                partitions_def.partition_dimension_names[0],
-                partitions_def.partition_dimension_names[1],
-            )
-            for partition_key in materialized_keys:
-                keys_by_dim = cast(MultiPartitionKey, partition_key).keys_by_dimension
-                materialization_status_by_dimension[keys_by_dim[primary_dim]][
-                    keys_by_dim[secondary_dim]
-                ] = True
-            return get_materialization_status_grouped_by_dimension(
-                partitions_def, materialization_status_by_dimension
-            )
-        else:  # Return single dimension materialization status
-            materialization_status_by_partition: Dict[str, bool] = defaultdict(lambda: False)
-            for partition_key in materialized_keys:
-                materialization_status_by_partition[partition_key] = True
-            return get_single_dimension_materialization_cts_by_partition(
-                partitions_def, materialization_status_by_partition
+        else:
+            return get_single_dimension_materialization_status(
+                partitions_def, list(materialized_keys)
             )
 
     else:
+        # If the partition status can't be cached, fetch partition status from storage
         if isinstance(partitions_def, MultiPartitionsDefinition):
-            return get_materialization_status_grouped_by_dimension(
+            return get_materialization_status_2d_array(
                 partitions_def,
-                get_partition_materialization_status_from_tags(instance, asset_key, partitions_def),
+                get_materialized_multipartitions_from_tags(instance, asset_key, partitions_def),
             )
         else:
-            return get_single_dimension_materialization_cts_by_partition(
+            return get_single_dimension_materialization_status(
                 partitions_def,
-                {
-                    partition_key: count > 0
+                [
+                    partition_key
                     for partition_key, count in instance.get_materialization_count_by_partition(
                         [asset_key]
                     )[asset_key].items()
-                },
+                    if count > 0
+                ],
             )
 
 
