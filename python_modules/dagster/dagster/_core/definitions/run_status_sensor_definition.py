@@ -1,6 +1,6 @@
 import warnings
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Callable, List, NamedTuple, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Sequence, Union, cast
 
 import pendulum
 
