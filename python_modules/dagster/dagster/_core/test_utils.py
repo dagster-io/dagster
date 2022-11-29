@@ -8,11 +8,12 @@ import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
+from typing import NamedTuple, Optional, Sequence, TypeVar
 
 import pendulum
 import yaml
 
-from dagster import Shape
+from dagster import Permissive, Shape
 from dagster import _check as check
 from dagster import fs_io_manager
 from dagster._config import Array, Field
@@ -23,6 +24,7 @@ from dagster._core.host_representation.origin import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import RunLauncher
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
+from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
@@ -33,6 +35,26 @@ from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_t
 from dagster._utils import Counter, merge_dicts, traced, traced_counter
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import configure_loggers
+
+T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
+
+
+def assert_namedtuple_lists_equal(
+    t1_list: Sequence[T_NamedTuple],
+    t2_list: Sequence[T_NamedTuple],
+    exclude_fields: Optional[Sequence[str]] = None,
+) -> None:
+    for t1, t2 in zip(t1_list, t2_list):
+        assert_namedtuples_equal(t1, t2, exclude_fields)
+
+
+def assert_namedtuples_equal(
+    t1: T_NamedTuple, t2: T_NamedTuple, exclude_fields: Optional[Sequence[str]] = None
+) -> None:
+    exclude_fields = exclude_fields or []
+    for field in type(t1)._fields:
+        if not field in exclude_fields:
+            assert getattr(t1, field) == getattr(t2, field)
 
 
 def step_output_event_filter(pipe_iterator):
@@ -145,7 +167,10 @@ def cleanup_test_instance(instance):
     # To avoid filesystem contention when we close the temporary directory, wait for
     # all runs to reach a terminal state, and close any subprocesses or threads
     # that might be accessing the run history DB.
-    instance.run_launcher.join()
+
+    # Since launcher is lazy loaded, we don't need to do anyting if it's None
+    if instance._run_launcher:  # pylint: disable=protected-access
+        instance._run_launcher.join()  # pylint: disable=protected-access
 
 
 TEST_PIPELINE_NAME = "_test_pipeline_"
@@ -412,6 +437,31 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
 
     def cancel_run(self, run_id):
         check.not_implemented("Cancellation not supported")
+
+
+class TestSecretsLoader(SecretsLoader, ConfigurableClass):
+    def __init__(
+        self,
+        inst_data,
+        env_vars,
+    ):
+        self._inst_data = inst_data
+        self.env_vars = env_vars
+
+    def get_secrets_for_environment(self, location_name):
+        return self.env_vars.copy()
+
+    @property
+    def inst_data(self):
+        return self._inst_data
+
+    @classmethod
+    def config_type(cls):
+        return {"env_vars": Field(Permissive())}
+
+    @staticmethod
+    def from_config_value(inst_data, config_value):
+        return TestSecretsLoader(inst_data=inst_data, **config_value)
 
 
 def get_terminate_signal():

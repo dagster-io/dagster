@@ -344,6 +344,10 @@
               {
                 "title": "Hybrid Deployment",
                 "path": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment"
+              },
+              {
+                "title": "Environment variables and secrets",
+                "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets"
               }
             ]
           },
@@ -382,7 +386,7 @@
           {
             "title": "Authentication",
             "path": "/dagster-cloud/account/authentication",
-            "children":[
+            "children": [
               {
                 "title": "Azure Active Directory",
                 "path": "/dagster-cloud/account/authentication/setting-up-azure-ad-saml-sso"
@@ -411,15 +415,57 @@
             "children": [
               {
                 "title": "Amazon ECS",
-                "path": "/dagster-cloud/deployment/agents/amazon-ecs"
+                "path": "/dagster-cloud/deployment/agents/amazon-ecs",
+                "children": [
+                  {
+                    "title": "Setup in new VPC",
+                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc"
+                  },
+                  {
+                    "title": "Setup in existing VPC",
+                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-existing-vpc"
+                  },
+                  {
+                    "title": "Manual provision",
+                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/manually-provisioning-ecs-agent"
+                  },
+                  {
+                    "title": "Configuration",
+                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference"
+                  },
+                  {
+                    "title": "Upgrade CloudFormation",
+                    "path": "/dagster-cloud/deployment/agents/amazon-ecs/upgrading-cloudformation-template"
+                  }
+                ]
               },
               {
                 "title": "Docker",
-                "path": "/dagster-cloud/deployment/agents/docker"
+                "path": "/dagster-cloud/deployment/agents/docker",
+                "children": [
+                  {
+                    "title": "Setup",
+                    "path": "/dagster-cloud/deployment/agents/docker/configuring-running-docker-agent"
+                  },
+                  {
+                    "title": "Configuration",
+                    "path": "/dagster-cloud/deployment/agents/docker/configuration-reference"
+                  }
+                ]
               },
               {
                 "title": "Kubernetes",
-                "path": "/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent"
+                "path": "/dagster-cloud/deployment/agents/kubernetes",
+                "children": [
+                  {
+                    "title": "Setup",
+                    "path": "/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent"
+                  },
+                  {
+                    "title": "Configuration",
+                    "path": "/dagster-cloud/deployment/agents/kubernetes/configuration-reference"
+                  }
+                ]
               },
               {
                 "title": "Local",
@@ -432,6 +478,10 @@
               {
                 "title": "Multiple agents",
                 "path": "/dagster-cloud/deployment/agents/running-multiple-agents"
+              },
+              {
+                "title": "Setting environment variables",
+                "path": "/dagster-cloud/developing-testing/setting-environment-variables-dagster-cloud-agents"
               }
             ]
           },
@@ -439,6 +489,19 @@
             "title": "Developing and testing",
             "path": "/dagster-cloud/developing-testing",
             "children": [
+              {
+                "title": "Environment variables and secrets",
+                "children": [
+                  {
+                    "title": "Overview and setup",
+                    "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets"
+                  },
+                  {
+                    "title": "Setup for Hybrid agents",
+                    "path": "/dagster-cloud/developing-testing/setting-environment-variables-dagster-cloud-agents"
+                  }
+                ]
+              },
               {
                 "title": "dagster-cloud CLI",
                 "path": "/dagster-cloud/developing-testing/dagster-cloud-cli"
@@ -462,11 +525,17 @@
               },
               {
                 "title": "Branch deployments",
-                "path": "/dagster-cloud/developing-testing/branch-deployments"
-              },
-              {
-                "title": "Environment variables",
-                "path": "/dagster-cloud/developing-testing/environment-variables"
+                "path": "/dagster-cloud/developing-testing/branch-deployments",
+                "children": [
+                  {
+                    "title": "Using with GitHub",
+                    "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github"
+                  },
+                  {
+                    "title": "Using with dagster-cloud CLI",
+                    "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments"
+                  }
+                ]
               }
             ]
           }
@@ -479,10 +548,10 @@
     "icon": "Integrations",
     "path": "/integrations",
     "children": [
-        {
-          "title": "Airbyte",
-          "path": "/integrations/airbyte"
-        },
+      {
+        "title": "Airbyte",
+        "path": "/integrations/airbyte"
+      },
       {
         "title": "Airflow",
         "path": "/integrations/airflow"
@@ -524,11 +593,15 @@
         "path": "/integrations/dbt-cloud"
       },
       {
+        "title": "Fivetran",
+        "path": "/integrations/fivetran"
+      },
+      {
         "title": "Great Expectations",
         "path": "/integrations/great-expectations"
       },
       {
-        "title": "Jupyter/Papermill",
+        "title": "Jupyter / Papermill",
         "path": "/integrations/dagstermill"
       },
       {
@@ -585,6 +658,10 @@
         "title": "Best practices",
         "path": "/guides/best-practices",
         "children": [
+          {
+            "title": "Using environment variables and secrets",
+            "path": "/guides/dagster/using-environment-variables-and-secrets"
+          },
           {
             "title": "Exploring a Dagster project",
             "path": "/guides/dagster/example_project"
@@ -709,10 +786,6 @@
         "title": "Libraries",
         "children": [
           {
-            "title": "Dagstermill",
-            "path": "/_apidocs/libraries/dagstermill"
-          },
-          {
             "title": "Airbyte (dagster-airbyte)",
             "path": "/_apidocs/libraries/dagster-airbyte"
           },
@@ -791,6 +864,10 @@
           {
             "title": "Github (dagster-github)",
             "path": "/_apidocs/libraries/dagster-github"
+          },
+          {
+            "title": "Jupyter / Papermill (dagstermill)",
+            "path": "/_apidocs/libraries/dagstermill"
           },
           {
             "title": "Kubernetes (dagster-k8s)",
@@ -879,7 +956,7 @@
       },
       {
         "title": "Slack",
-        "path": "https://dagster-slackin.herokuapp.com/",
+        "path": "https://dagster.io/slack",
         "isExternalLink": true
       },
       {

@@ -1,28 +1,27 @@
 <p align="center">
-  <a target="_blank" href="https://dagster.io">
-    <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/dagster-io/dagster/master/.github/dagster-logo-dark.svg">
-        <img alt="dagster logo" src="https://raw.githubusercontent.com/dagster-io/dagster/master/.github/dagster-logo-light.svg" width="auto" height="120">
-    </picture>
+  <a target="_blank" href="https://dagster.io" style="background:none">
+    <img alt="dagster logo" src="https://raw.githubusercontent.com/dagster-io/dagster/master/.github/dagster-logo-light.svg" width="auto" height="120">
   </a>
   <br /><br />
-  <a target="_blank" href="https://twitter.com/dagster">
+  <a target="_blank" href="https://twitter.com/dagster" style="background:none">
     <img src="https://img.shields.io/twitter/follow/dagster?labelColor=4F43DD&color=163B36&logo=twitter&style=flat">
   </a>
-  <a target="_blank" href="https://dagster.io/slack">
-    <img src="https://dagster-slackin.herokuapp.com/badge.svg?bg=163B36">
+  <a target="_blank" href="https://dagster.io/slack" style="background:none">
+    <img src="https://img.shields.io/badge/slack-dagster-blue.svg?labelColor=4F43DD&color=163B36&logo=slack" />
   </a>
-  <a target="_blank" href="https://github.com/dagster-io/dagster">
+  <a target="_blank" href="https://github.com/dagster-io/dagster" style="background:none">
     <img src="https://img.shields.io/github/stars/dagster-io/dagster?labelColor=4F43DD&color=163B36&logo=github">
   </a>
   <br />
-  <a target="_blank" href="https://github.com/dagster-io/dagster/blob/master/LICENSE">
+  <a target="_blank" href="https://github.com/dagster-io/dagster/blob/master/LICENSE" style="background:none">
     <img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg?label=license&labelColor=4F43DD&color=163B36">
   </a>
-  <a target="_blank" href="https://pypi.org/project/dagster/">
+  <a target="_blank" href="https://pypi.org/project/dagster/" style="background:none">
     <img src="https://img.shields.io/pypi/v/dagster?labelColor=4F43DD&color=163B36">
   </a>
-  <img src="https://img.shields.io/pypi/pyversions/dagster?labelColor=4F43DD&color=163B36">
+  <a target="_blank" href="https://pypi.org/project/dagster/" style="background:none">
+    <img src="https://img.shields.io/pypi/pyversions/dagster?labelColor=4F43DD&color=163B36">
+  </a>
 </p>
 
 # Dagster

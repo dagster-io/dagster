@@ -7,6 +7,11 @@
 // GraphQL fragment: AssetTableDefinitionFragment
 // ====================================================
 
+export interface AssetTableDefinitionFragment_partitionDefinition {
+  __typename: "PartitionDefinition";
+  description: string;
+}
+
 export interface AssetTableDefinitionFragment_repository_location {
   __typename: "RepositoryLocation";
   id: string;
@@ -24,7 +29,8 @@ export interface AssetTableDefinitionFragment {
   __typename: "AssetNode";
   id: string;
   groupName: string | null;
-  partitionDefinition: string | null;
+  isSource: boolean;
+  partitionDefinition: AssetTableDefinitionFragment_partitionDefinition | null;
   description: string | null;
   repository: AssetTableDefinitionFragment_repository;
 }

@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Any, Dict, Sequence
 
 import graphene
 from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
@@ -22,6 +22,7 @@ from ...implementation.fetch_assets import (
     get_asset_node_definition_collisions,
     get_asset_nodes,
     get_assets,
+    unique_repos,
 )
 from ...implementation.fetch_backfills import get_backfill, get_backfills
 from ...implementation.fetch_instigators import (
@@ -50,7 +51,11 @@ from ...implementation.fetch_schedules import (
 )
 from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from ...implementation.fetch_solids import get_graph_or_error
-from ...implementation.loader import BatchMaterializationLoader, CrossRepoAssetDependedByLoader
+from ...implementation.loader import (
+    BatchMaterializationLoader,
+    CrossRepoAssetDependedByLoader,
+    ProjectedLogicalVersionLoader,
+)
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
 from ...implementation.utils import graph_selector_from_graphql, pipeline_selector_from_graphql
 from ..asset_graph import (
@@ -87,7 +92,11 @@ from ..instigation import (
     GrapheneInstigationStatesOrError,
     GrapheneInstigationType,
 )
-from ..logs.compute_logs import GrapheneCapturedLogsMetadata
+from ..logs.compute_logs import (
+    GrapheneCapturedLogs,
+    GrapheneCapturedLogsMetadata,
+    from_captured_log_data,
+)
 from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
 from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
@@ -105,7 +114,7 @@ from ..runs import (
 from ..schedules import GrapheneScheduleOrError, GrapheneSchedulerOrError, GrapheneSchedulesOrError
 from ..sensors import GrapheneSensorOrError, GrapheneSensorsOrError
 from ..tags import GraphenePipelineTagAndValues
-from ..util import non_null_list
+from ..util import HasContext, non_null_list
 from .assets import GrapheneAssetOrError, GrapheneAssetsOrError
 from .execution_plan import GrapheneExecutionPlanOrError
 from .pipeline import GrapheneGraphOrError, GraphenePipelineOrError
@@ -362,6 +371,13 @@ class GrapheneDagitQuery(graphene.ObjectType):
         logKey=graphene.Argument(non_null_list(graphene.String)),
         description="Retrieve the captured log metadata for a given log key.",
     )
+    capturedLogs = graphene.Field(
+        graphene.NonNull(GrapheneCapturedLogs),
+        logKey=graphene.Argument(non_null_list(graphene.String)),
+        cursor=graphene.Argument(graphene.String),
+        limit=graphene.Argument(graphene.Int),
+        description="Captured logs are the stdout/stderr logs for a given log key",
+    )
 
     def resolve_repositoriesOrError(self, graphene_info, **kwargs):
         if kwargs.get("repositorySelector"):
@@ -541,6 +557,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
         )
 
+        repo = None
         if "group" in kwargs:
             group_name = kwargs.get("group").get("groupName")
             repo_sel = RepositorySelector.from_graphql_input(kwargs.get("group"))
@@ -584,6 +601,18 @@ class GrapheneDagitQuery(graphene.ObjectType):
         )
 
         depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
+
+        if repo is not None:
+            repos = [repo]
+        else:
+            repos = unique_repos(result.external_repository for result in results)
+
+        projected_logical_version_loader = ProjectedLogicalVersionLoader(
+            instance=graphene_info.context.instance,
+            key_to_node_map={node.assetKey: node.external_asset_node for node in results},
+            repositories=repos,
+        )
+
         return [
             GrapheneAssetNode(
                 node.repository_location,
@@ -591,6 +620,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
                 node.external_asset_node,
                 materialization_loader=materialization_loader,
                 depended_by_loader=depended_by_loader,
+                projected_logical_version_loader=projected_logical_version_loader,
             )
             for node in results
         ]
@@ -631,16 +661,17 @@ class GrapheneDagitQuery(graphene.ObjectType):
         permissions = graphene_info.context.permissions
         return [GraphenePermission(permission, value) for permission, value in permissions.items()]
 
-    def resolve_assetsLatestInfo(self, graphene_info, **kwargs):
+    def resolve_assetsLatestInfo(self, graphene_info: HasContext, **kwargs: Any):
         asset_keys = set(
-            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys")
+            AssetKey.from_graphql_input(asset_key)
+            for asset_key in check.not_none(kwargs.get("assetKeys"))  # type: ignore
         )
 
         results = get_asset_nodes(graphene_info)
 
         # Filter down to requested asset keys
         # Build mapping of asset key to the step keys required to generate the asset
-        step_keys_by_asset: Dict[AssetKey, List[str]] = {
+        step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {  # type: ignore
             node.external_asset_node.asset_key: node.external_asset_node.op_names
             for node in results
             if node.assetKey in asset_keys
@@ -653,3 +684,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_capturedLogsMetadata(self, graphene_info, logKey):
         return get_captured_log_metadata(graphene_info, logKey)
+
+    def resolve_capturedLogs(self, graphene_info, logKey, cursor=None, limit=None):
+        log_data = graphene_info.context.instance.compute_log_manager.get_log_data(
+            logKey, cursor=cursor, max_bytes=limit
+        )
+        return from_captured_log_data(log_data)

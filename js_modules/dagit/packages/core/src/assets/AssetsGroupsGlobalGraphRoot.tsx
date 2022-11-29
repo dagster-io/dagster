@@ -33,7 +33,7 @@ export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
   const onChangeExplorerPath = React.useCallback(
     (path: ExplorerPath, mode: 'push' | 'replace') => {
       history[mode](
-        `/instance/asset-groups${explorerPathToString({...path, pipelineName: __GLOBAL__}).replace(
+        `/asset-groups${explorerPathToString({...path, pipelineName: __GLOBAL__}).replace(
           __GLOBAL__,
           '',
         )}`,
@@ -42,7 +42,7 @@ export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
     [history],
   );
 
-  const onNavigateToForeignNode = React.useCallback(
+  const onNavigateToSourceAssetNode = React.useCallback(
     (node: AssetLocation) => {
       history.push(assetDetailsPathForKey(node.assetKey, {view: 'definition'}));
     },
@@ -79,8 +79,12 @@ export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
         options={{preferAssetRendering: true, explodeComposites: true}}
         explorerPath={explorerPathFromString(__GLOBAL__ + path || '/')}
         onChangeExplorerPath={onChangeExplorerPath}
-        onNavigateToForeignNode={onNavigateToForeignNode}
+        onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
       />
     </Page>
   );
 };
+
+// Imported via React.lazy, which requires a default export.
+// eslint-disable-next-line import/no-default-export
+export default AssetsGroupsGlobalGraphRoot;

@@ -2,7 +2,7 @@ import functools
 import importlib
 import sys
 from types import ModuleType
-from typing import List, Optional
+from typing import Optional, Sequence
 
 import click
 from dagster_managed_elements.types import ManagedElementDiff, ManagedElementReconciler
@@ -18,7 +18,7 @@ def _deepgetattr(obj, attr: str):
 
 def get_reconcilable_objects_from_module(
     module_dir: Optional[str], import_str: str
-) -> List[ManagedElementReconciler]:
+) -> Sequence[ManagedElementReconciler]:
     module_str = import_str
     object_paths = None
 
@@ -49,7 +49,7 @@ def get_reconcilable_objects_from_module(
     return reconcilable_objects
 
 
-def get_reconcilable_objects(module: ModuleType) -> List[ManagedElementReconciler]:
+def get_reconcilable_objects(module: ModuleType) -> Sequence[ManagedElementReconciler]:
     """
     Collect all ManagedElementReconciler-implementing objects in the root of the
     module.
@@ -61,7 +61,7 @@ def get_reconcilable_objects(module: ModuleType) -> List[ManagedElementReconcile
     ]
 
 
-def check(module_dir: str, import_str: str) -> ManagedElementDiff:
+def check(module_dir: str, import_str: str, **kwargs) -> ManagedElementDiff:
     reconcilable_objects = get_reconcilable_objects_from_module(
         module_dir=module_dir, import_str=import_str
     )
@@ -70,7 +70,7 @@ def check(module_dir: str, import_str: str) -> ManagedElementDiff:
 
     diff = ManagedElementDiff()
     for obj in reconcilable_objects:
-        result = obj.check()
+        result = obj.check(**kwargs)
         if isinstance(result, ManagedElementDiff):
             diff = diff.join(result)
         else:
@@ -78,7 +78,7 @@ def check(module_dir: str, import_str: str) -> ManagedElementDiff:
     return diff
 
 
-def apply(module_dir: str, import_str: str) -> ManagedElementDiff:
+def apply(module_dir: str, import_str: str, **kwargs) -> ManagedElementDiff:
     reconcilable_objects = get_reconcilable_objects_from_module(
         module_dir=module_dir, import_str=import_str
     )
@@ -87,7 +87,7 @@ def apply(module_dir: str, import_str: str) -> ManagedElementDiff:
 
     diff = ManagedElementDiff()
     for obj in reconcilable_objects:
-        result = obj.apply()
+        result = obj.apply(**kwargs)
         if isinstance(result, ManagedElementDiff):
             diff = diff.join(result)
         else:
@@ -117,8 +117,16 @@ def main():
     type=click.Path(exists=True),
     help="Optional relative or absolute path to load module from, will be appended to system path.",
 )
-def check_cmd(module, working_directory):
-    click.echo(check(working_directory, module))
+@click.option(
+    "--include-all-secrets",
+    is_flag=True,
+    help=(
+        "Whether to include all secrets in the diff, acting as if all secrets will be pushed to the remote state."
+        " Secrets cannot be retrieved and diffed against the remote state, so this option simulates the diff if this flag is included to the apply command."
+    ),
+)
+def check_cmd(module, working_directory, include_all_secrets):
+    click.echo(check(working_directory, module, include_all_secrets=include_all_secrets))
 
 
 @main.command(
@@ -138,5 +146,14 @@ def check_cmd(module, working_directory):
     type=click.Path(exists=True),
     help="Optional relative or absolute path to load module from, will be appended to system path.",
 )
-def apply_cmd(module, working_directory):
-    click.echo(apply(working_directory, module))
+@click.option(
+    "--include-all-secrets",
+    is_flag=True,
+    help=(
+        "Whether to push all secret values to the remote state, or only those that aren't already present."
+        " Secrets cannot be retrieved and diffed against the remote state, so this option is required when a secret is changed."
+        " If False, secrets that are already present in the remote state will not be pushed."
+    ),
+)
+def apply_cmd(module, working_directory, include_all_secrets):
+    click.echo(apply(working_directory, module, include_all_secrets=include_all_secrets))

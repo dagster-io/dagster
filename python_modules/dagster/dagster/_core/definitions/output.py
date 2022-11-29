@@ -5,9 +5,9 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
-    List,
     NamedTuple,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
@@ -96,7 +96,7 @@ class OutputDefinition:
             "io_manager_key",
             default=DEFAULT_IO_MANAGER_KEY,
         )
-        self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        self._metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self._metadata_entries = check.is_list(
             normalize_metadata(self._metadata, [], allow_invalid=True), MetadataEntry
         )
@@ -170,7 +170,7 @@ class OutputDefinition:
         return self._metadata
 
     @property
-    def metadata_entries(self) -> List[MetadataEntry]:
+    def metadata_entries(self) -> Sequence[MetadataEntry]:
         return self._metadata_entries
 
     @property

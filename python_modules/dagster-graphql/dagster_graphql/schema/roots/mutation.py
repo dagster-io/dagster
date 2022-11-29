@@ -15,7 +15,7 @@ from ...implementation.execution import (
     terminate_pipeline_execution,
     wipe_assets,
 )
-from ...implementation.external import fetch_workspace, get_full_external_job_or_raise
+from ...implementation.external import fetch_workspace, get_full_external_pipeline_or_raise
 from ...implementation.telemetry import log_dagit_telemetry_event
 from ...implementation.utils import (
     ExecutionMetadata,
@@ -84,7 +84,10 @@ def create_execution_params(graphene_info, graphql_execution_params):
                 )
             )
 
-        external_pipeline = get_full_external_job_or_raise(graphene_info, selector)
+        external_pipeline = get_full_external_pipeline_or_raise(
+            graphene_info,
+            selector,
+        )
 
         if not external_pipeline.has_preset(preset_name):
             raise UserFacingGraphQLError(
@@ -579,6 +582,7 @@ class GrapheneLogTelemetryMutation(graphene.Mutation):
     class Arguments:
         action = graphene.Argument(graphene.NonNull(graphene.String))
         clientTime = graphene.Argument(graphene.NonNull(graphene.String))
+        clientId = graphene.Argument(graphene.NonNull(graphene.String))
         metadata = graphene.Argument(graphene.NonNull(graphene.String))
 
     class Meta:
@@ -590,6 +594,7 @@ class GrapheneLogTelemetryMutation(graphene.Mutation):
             graphene_info,
             action=kwargs["action"],
             client_time=kwargs["clientTime"],
+            client_id=kwargs["clientId"],
             metadata=kwargs["metadata"],
         )
         return action

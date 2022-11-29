@@ -7,12 +7,6 @@
 // START Enums and Input Objects
 //==============================================================
 
-export enum AssetComputeStatus {
-  NONE = "NONE",
-  OUT_OF_DATE = "OUT_OF_DATE",
-  UP_TO_DATE = "UP_TO_DATE",
-}
-
 export enum BackfillStatus {
   CANCELED = "CANCELED",
   COMPLETED = "COMPLETED",
@@ -250,6 +244,7 @@ export interface PipelineSelector {
   repositoryName: string;
   repositoryLocationName: string;
   solidSelection?: string[] | null;
+  assetSelection?: AssetKeyInput[] | null;
 }
 
 export interface ReexecutionParams {

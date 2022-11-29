@@ -18,12 +18,9 @@ import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
-import {
-  AssetLatestRunWithNotices,
-  AssetRunLink,
-  ComputeStatusNotice,
-} from '../asset-graph/AssetNode';
+import {AssetLatestRunWithNotices, AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {LiveData, toGraphId} from '../asset-graph/Utils';
+import {StaleTag} from '../assets/StaleTag';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -110,7 +107,9 @@ export const AssetTable = ({
               </Button>
             </Tooltip>
           ) : (
-            <LaunchAssetExecutionButton assetKeys={checkedAssets.map((c) => c.key)} />
+            <LaunchAssetExecutionButton
+              scope={{selected: checkedAssets.map((a) => ({...a.definition!, assetKey: a.key}))}}
+            />
           )}
           <MoreActionsDropdown selected={checkedAssets} clearSelection={() => onToggleAll(false)} />
         </Box>
@@ -138,7 +137,7 @@ export const AssetTable = ({
             <th>{view === 'directory' ? 'Asset Key Prefix' : 'Asset Key'}</th>
             <th style={{width: 340}}>Defined in</th>
             <th style={{width: 265}}>Materialized</th>
-            <th style={{width: 115}}>Latest run</th>
+            <th style={{width: 215}}>Latest run</th>
             <th style={{width: 80}}>Actions</th>
           </tr>
         </thead>
@@ -258,7 +257,7 @@ const AssetEntryRow: React.FC<{
         </td>
         <td>
           {liveData ? (
-            <Box flex={{gap: 8, alignItems: 'center'}}>
+            <Box flex={{gap: 8, alignItems: 'center', justifyContent: 'space-between'}}>
               {liveData.lastMaterialization ? (
                 <Mono style={{flex: 1}}>
                   <AssetRunLink
@@ -277,15 +276,13 @@ const AssetEntryRow: React.FC<{
               ) : (
                 <span>–</span>
               )}
-              <ComputeStatusNotice computeStatus={liveData?.computeStatus} />
+              <StaleTag liveData={liveData} />
             </Box>
           ) : undefined}
         </td>
         <td>
           {liveData && (
-            <Mono>
-              <AssetLatestRunWithNotices liveData={liveData} />
-            </Mono>
+            <AssetLatestRunWithNotices liveData={liveData} includeFreshness includeRunStatus />
           )}
         </td>
         <td>
@@ -353,7 +350,10 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
   fragment AssetTableDefinitionFragment on AssetNode {
     id
     groupName
-    partitionDefinition
+    isSource
+    partitionDefinition {
+      description
+    }
     description
     repository {
       id

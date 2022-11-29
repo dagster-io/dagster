@@ -14,6 +14,13 @@ export interface DagsterTypeFragment_metadataEntries_PathMetadataEntry {
   path: string;
 }
 
+export interface DagsterTypeFragment_metadataEntries_NotebookMetadataEntry {
+  __typename: "NotebookMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
 export interface DagsterTypeFragment_metadataEntries_JsonMetadataEntry {
   __typename: "JsonMetadataEntry";
   label: string;
@@ -163,7 +170,7 @@ export interface DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry {
   schema: DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type DagsterTypeFragment_metadataEntries = DagsterTypeFragment_metadataEntries_PathMetadataEntry | DagsterTypeFragment_metadataEntries_JsonMetadataEntry | DagsterTypeFragment_metadataEntries_UrlMetadataEntry | DagsterTypeFragment_metadataEntries_TextMetadataEntry | DagsterTypeFragment_metadataEntries_MarkdownMetadataEntry | DagsterTypeFragment_metadataEntries_PythonArtifactMetadataEntry | DagsterTypeFragment_metadataEntries_FloatMetadataEntry | DagsterTypeFragment_metadataEntries_IntMetadataEntry | DagsterTypeFragment_metadataEntries_BoolMetadataEntry | DagsterTypeFragment_metadataEntries_PipelineRunMetadataEntry | DagsterTypeFragment_metadataEntries_AssetMetadataEntry | DagsterTypeFragment_metadataEntries_TableMetadataEntry | DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry;
+export type DagsterTypeFragment_metadataEntries = DagsterTypeFragment_metadataEntries_PathMetadataEntry | DagsterTypeFragment_metadataEntries_NotebookMetadataEntry | DagsterTypeFragment_metadataEntries_JsonMetadataEntry | DagsterTypeFragment_metadataEntries_UrlMetadataEntry | DagsterTypeFragment_metadataEntries_TextMetadataEntry | DagsterTypeFragment_metadataEntries_MarkdownMetadataEntry | DagsterTypeFragment_metadataEntries_PythonArtifactMetadataEntry | DagsterTypeFragment_metadataEntries_FloatMetadataEntry | DagsterTypeFragment_metadataEntries_IntMetadataEntry | DagsterTypeFragment_metadataEntries_BoolMetadataEntry | DagsterTypeFragment_metadataEntries_PipelineRunMetadataEntry | DagsterTypeFragment_metadataEntries_AssetMetadataEntry | DagsterTypeFragment_metadataEntries_TableMetadataEntry | DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry;
 
 export interface DagsterTypeFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -1192,6 +1199,13 @@ export interface DagsterTypeFragment_innerTypes_metadataEntries_PathMetadataEntr
   path: string;
 }
 
+export interface DagsterTypeFragment_innerTypes_metadataEntries_NotebookMetadataEntry {
+  __typename: "NotebookMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
 export interface DagsterTypeFragment_innerTypes_metadataEntries_JsonMetadataEntry {
   __typename: "JsonMetadataEntry";
   label: string;
@@ -1341,7 +1355,7 @@ export interface DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetad
   schema: DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type DagsterTypeFragment_innerTypes_metadataEntries = DagsterTypeFragment_innerTypes_metadataEntries_PathMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_JsonMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_UrlMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_TextMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_MarkdownMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_PythonArtifactMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_FloatMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_IntMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_BoolMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_PipelineRunMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_AssetMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_TableMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetadataEntry;
+export type DagsterTypeFragment_innerTypes_metadataEntries = DagsterTypeFragment_innerTypes_metadataEntries_PathMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_NotebookMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_JsonMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_UrlMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_TextMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_MarkdownMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_PythonArtifactMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_FloatMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_IntMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_BoolMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_PipelineRunMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_AssetMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_TableMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetadataEntry;
 
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -2364,7 +2378,7 @@ export interface DagsterTypeFragment_innerTypes_outputSchemaType_MapConfigType {
 export type DagsterTypeFragment_innerTypes_outputSchemaType = DagsterTypeFragment_innerTypes_outputSchemaType_ArrayConfigType | DagsterTypeFragment_innerTypes_outputSchemaType_EnumConfigType | DagsterTypeFragment_innerTypes_outputSchemaType_RegularConfigType | DagsterTypeFragment_innerTypes_outputSchemaType_CompositeConfigType | DagsterTypeFragment_innerTypes_outputSchemaType_ScalarUnionConfigType | DagsterTypeFragment_innerTypes_outputSchemaType_MapConfigType;
 
 export interface DagsterTypeFragment_innerTypes {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   key: string;
   name: string | null;
   displayName: string;
@@ -2379,7 +2393,7 @@ export interface DagsterTypeFragment_innerTypes {
 }
 
 export interface DagsterTypeFragment {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   key: string;
   name: string | null;
   displayName: string;

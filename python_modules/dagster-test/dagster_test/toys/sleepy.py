@@ -1,8 +1,9 @@
 # pylint:disable=no-member
 from time import sleep
-from typing import List
+from typing import List, Tuple
 
 from dagster import Field, Out, Output, graph, op
+from dagster._core.execution.context.compute import OpExecutionContext
 
 
 @op
@@ -25,7 +26,7 @@ def sleeper(context, units: List[int]) -> int:
         "out_4": Out(List[int]),
     },
 )
-def giver(context):
+def giver(context: OpExecutionContext) -> Tuple[List[int], List[int], List[int], List[int]]:
     units = context.op_config
     queues: List[List[int]] = [[], [], [], []]
     for i, sec in enumerate(units):

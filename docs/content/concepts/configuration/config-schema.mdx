@@ -7,19 +7,21 @@ description: Job run configuration allows providing parameters to jobs at the ti
 
 Run configuration allows providing parameters to jobs at the time they're executed.
 
+It's often useful to provide user-chosen values to Dagster jobs or software-defined assets at runtime. For example, you might want to choose what dataset an op runs against, or provide a connection URL for a database resource. Dagster exposes this functionality through a configuration API.
+
+Various Dagster entities (ops, assets, resources) can be individually configured. When launching a job that executes (ops), materializes (assets), or instantiates (resources) a configurable entity, you can provide _run configuration_ for each entity. Within the function that defines the entity, you can access the passed-in configuration off of the `context`. Typically, the provided run configuration values correspond to a _configuration schema_ attached to the op/asset/resource definition. Dagster validates the run configuration against the schema and proceeds only if validation is successful.
+
+A common use of configuration is for a [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/schedules) to provide configuration to the job run it is launching. For example, a daily schedule might provide the day it's running on to one of the ops as a config value, and that op might use that config value to decide what day's data to read.
+
+---
+
 ## Relevant APIs
 
 | Name                                                 | Description                                              |
 | ---------------------------------------------------- | -------------------------------------------------------- |
 | <PyObject module="dagster" object="ConfigSchema"  /> | See details with code examples in the API documentation. |
 
-## Overview
-
-It's often useful to provide user-chosen values to Dagster jobs or software-defined assets at runtime. For example, you might want to choose what dataset an op runs against, or provide a connection URL for a database resource. Dagster exposes this functionality through a configuration API.
-
-Various Dagster entities (ops, assets, resources) can be individually configured. When launching a job that executes (ops), materializes (assets), or instantiates (resources) a configurable entity, you can provide _run configuration_ for each entity. Within the function that defines the entity, you can access the passed-in configuration off of the `context`. Typically, the provided run configuration values correspond to a _configuration schema_ attached to the op/asset/resource definition. Dagster validates the run configuration against the schema and proceeds only if validation is successful.
-
-A common use of configuration is for a [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/schedules) to provide configuration to the job run it is launching. For example, a daily schedule might provide the day it's running on to one of the ops as a config value, and that op might use that config value to decide what day's data to read.
+---
 
 ## Defining and accessing configuration for an op, asset, or resource
 
@@ -53,6 +55,8 @@ def resource_using_config(context):
 </Note>
 
 You can also build config into jobs, as described in [the Jobs documentation](/concepts/ops-jobs-graphs/jobs#configuring-jobs).
+
+---
 
 ## Specifying runtime configuration
 
@@ -94,7 +98,7 @@ width={3808}
 height={2414}
 />
 
-### Command Line
+### Command line
 
 When executing a job from Dagster's CLI with [dagster job execute](/\_apidocs/cli#dagster-job-execute), we can put config in a YAML file and pass the file path with the `--config` option:
 
@@ -108,6 +112,8 @@ ops:
 ```bash
 dagster job execute --config my_config.yaml
 ```
+
+---
 
 ## Validation
 
@@ -132,9 +138,14 @@ asset_result = materialize(
 )
 ```
 
+---
+
 ## Examples
 
-### Passing Secrets as Configuration
+- [Passing secrets as configuration](#passing-secrets-as-configuration)
+- [Passing configuration to multiple ops in a job](#passing-configuration-to-multiple-ops-in-a-job)
+
+### Passing secrets as configuration
 
 A common use case for configuration is passing secrets to connect to external services. Resources, which can be used to model connections to external services, accept secrets as configuration values. These secrets can be read from your environment variables:
 
@@ -166,7 +177,7 @@ get_one_from_db.execute_in_process(
 )
 ```
 
-By providing secrets through environment variables, your secrets won't be visible in your code or Dagit's launchpad.
+By providing secrets through environment variables, your secrets won't be visible in your code or Dagit's launchpad. Refer to the [Using environment variables and secrets in Dagster code guide](/guides/dagster/using-environment-variables-and-secrets) for more info and examples.
 
 <Note>
   The{" "}
@@ -176,7 +187,7 @@ By providing secrets through environment variables, your secrets won't be visibl
   page features an example of providing per-environment configuration.
 </Note>
 
-### Passing Configuration to Multiple Ops in a Job
+### Passing configuration to multiple ops in a job
 
 If you want multiple ops to share values, You can use <PyObject module="dagster" object="make_values_resource" /> to pass the values via a resource and reference that resource from any op that needs it.
 
@@ -264,6 +275,8 @@ resources:
       write_file_dir: /write_files/
       count_file_dir: /count_files/
 ```
+
+---
 
 ## See it in action
 

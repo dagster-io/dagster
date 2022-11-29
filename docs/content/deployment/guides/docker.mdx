@@ -135,7 +135,7 @@ load_from:
 
 When you update your code, you can rebuild and restart your user code container without needing to redeploy other parts of the system. Dagit will automatically notice that a new server has been redeployed and prompt you to refresh your workspace.
 
-When you add or remove a user code container, you can also remove the corresponding entry from your `workspace.yaml` file. If this file is mounted on the dagit and dagster-daemon containers as a volume, you can pick up the changes in Dagit by reloading the workspace from the Workspace tab. The dagster-daemon container will automatically pick up the changes by periodically reloading the workspace from the `workspace.yaml` file.
+When you add or remove a user code container, you can also remove the corresponding entry from your `workspace.yaml` file. If this file is mounted on the dagit and dagster-daemon containers as a volume, you can pick up the changes in Dagit by reloading the workspace from the Deployment tab. The dagster-daemon container will automatically pick up the changes by periodically reloading the workspace from the `workspace.yaml` file.
 
 ## Launching runs in containers
 

@@ -1,6 +1,7 @@
 import pytest
 import responses
 from dagster_airbyte import airbyte_resource, load_assets_from_airbyte_project
+from dagster_airbyte.asset_defs import AirbyteConnectionMetadata
 
 from dagster import AssetKey, build_init_resource_context, materialize, with_resources
 from dagster._utils import file_relative_path
@@ -12,7 +13,12 @@ from .utils import get_project_connection_json, get_project_job_json
 @pytest.mark.parametrize("use_normalization_tables", [True, False])
 @pytest.mark.parametrize("connection_to_group_fn", [None, lambda x: f"{x[0]}_group"])
 @pytest.mark.parametrize("filter_connection", [None, "filter_fn", "dirs"])
-def test_load_from_project(use_normalization_tables, connection_to_group_fn, filter_connection):
+@pytest.mark.parametrize(
+    "connection_to_asset_key_fn", [None, lambda conn, name: AssetKey([f"{conn.name[0]}_{name}"])]
+)
+def test_load_from_project(
+    use_normalization_tables, connection_to_group_fn, filter_connection, connection_to_asset_key_fn
+):
 
     ab_resource = airbyte_resource(
         build_init_resource_context(
@@ -32,6 +38,7 @@ def test_load_from_project(use_normalization_tables, connection_to_group_fn, fil
             connection_directories=["github_snowflake_ben"]
             if filter_connection == "dirs"
             else None,
+            connection_to_asset_key_fn=connection_to_asset_key_fn,
         )
     else:
         ab_cacheable_assets = load_assets_from_airbyte_project(
@@ -41,6 +48,7 @@ def test_load_from_project(use_normalization_tables, connection_to_group_fn, fil
             connection_directories=["github_snowflake_ben"]
             if filter_connection == "dirs"
             else None,
+            connection_to_asset_key_fn=connection_to_asset_key_fn,
         )
     ab_assets = ab_cacheable_assets.build_definitions(ab_cacheable_assets.compute_cacheable_data())
 
@@ -53,6 +61,18 @@ def test_load_from_project(use_normalization_tables, connection_to_group_fn, fil
         if use_normalization_tables
         else set()
     )
+
+    if connection_to_asset_key_fn:
+        tables = {
+            connection_to_asset_key_fn(
+                AirbyteConnectionMetadata(
+                    "Github <> snowflake-ben", "", use_normalization_tables, []
+                ),
+                t,
+            ).path[0]
+            for t in tables
+        }
+
     assert ab_assets[0].keys == {AssetKey(t) for t in tables}
     assert all(
         [

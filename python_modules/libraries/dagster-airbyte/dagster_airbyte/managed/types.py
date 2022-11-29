@@ -1,19 +1,108 @@
+import json
+from abc import ABC
 from enum import Enum
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 import dagster._check as check
 
 
-class AirbyteSyncMode(Enum):
+class AirbyteSyncMode(ABC):
     """
-    Represents the sync mode for a given Airbyte stream.
+    Represents the sync mode for a given Airbyte stream, which governs how Airbyte reads
+    from a source and writes to a destination.
+
+    For more information, see https://docs.airbyte.com/understanding-airbyte/connections/.
     """
 
-    FULL_REFRESH_APPEND = ("full_refresh", "append")
-    FULL_REFRESH_OVERWRITE = ("full_refresh", "overwrite")
-    INCREMENTAL_APPEND = ("incremental", "append")
-    INCREMENTAL_OVERWRITE = ("incremental", "overwrite")
-    INCREMENTAL_APPEND_DEDUP = ("incremental", "append_dedup")
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, AirbyteSyncMode) and self.to_json() == other.to_json()
+
+    def __init__(self, json_repr: Dict[str, Any]):
+        self.json_repr = json_repr
+
+    def to_json(self) -> Dict[str, Any]:
+        return self.json_repr
+
+    @classmethod
+    def from_json(cls, json_repr: Dict[str, Any]) -> "AirbyteSyncMode":
+        return cls(
+            {
+                k: v
+                for k, v in json_repr.items()
+                if k in ("syncMode", "destinationSyncMode", "cursorField", "primaryKey")
+            }
+        )
+
+    @classmethod
+    def full_refresh_append(cls) -> "AirbyteSyncMode":
+        """
+        Syncs the entire data stream from the source, appending to the destination.
+
+        https://docs.airbyte.com/understanding-airbyte/connections/full-refresh-append/
+        """
+        return cls({"syncMode": "full_refresh", "destinationSyncMode": "append"})
+
+    @classmethod
+    def full_refresh_overwrite(cls) -> "AirbyteSyncMode":
+        """
+        Syncs the entire data stream from the source, replaces data in the destination by
+        overwriting it.
+
+        https://docs.airbyte.com/understanding-airbyte/connections/full-refresh-overwrite
+        """
+        return cls({"syncMode": "full_refresh", "destinationSyncMode": "overwrite"})
+
+    @classmethod
+    def incremental_append(
+        cls,
+        cursor_field: Optional[str] = None,
+    ) -> "AirbyteSyncMode":
+        """
+        Syncs only new records from the source, appending to the destination.
+        May optionally specify the cursor field used to determine which records
+        are new.
+
+        https://docs.airbyte.com/understanding-airbyte/connections/incremental-append/
+        """
+        cursor_field = check.opt_str_param(cursor_field, "cursor_field")
+
+        return cls(
+            {
+                "syncMode": "incremental",
+                "destinationSyncMode": "append",
+                **({"cursorField": [cursor_field]} if cursor_field else {}),
+            }
+        )
+
+    @classmethod
+    def incremental_append_dedup(
+        cls,
+        cursor_field: Optional[str] = None,
+        primary_key: Optional[Union[str, List[str]]] = None,
+    ) -> "AirbyteSyncMode":
+        """
+        Syncs new records from the source, appending to an append-only history
+        table in the destination. Also generates a deduplicated view mirroring the
+        source table. May optionally specify the cursor field used to determine
+        which records are new, and the primary key used to determine which records
+        are duplicates.
+
+        https://docs.airbyte.com/understanding-airbyte/connections/incremental-append-dedup/
+        """
+
+        cursor_field = check.opt_str_param(cursor_field, "cursor_field")
+        if isinstance(primary_key, str):
+            primary_key = [primary_key]
+        primary_key = check.opt_list_param(primary_key, "primary_key", of_type=str)
+
+        return cls(
+            {
+                "syncMode": "incremental",
+                "destinationSyncMode": "append_dedup",
+                **({"cursorField": [cursor_field]} if cursor_field else {}),
+                **({"primaryKey": [[x] for x in primary_key]} if primary_key else {}),
+            }
+        )
 
 
 class AirbyteSource:
@@ -21,10 +110,10 @@ class AirbyteSource:
     Represents a user-defined Airbyte source.
     """
 
-    def __init__(self, name: str, source_type: str, source_configuration: Dict[str, Any]):
+    def __init__(self, name: str, source_type: str, source_configuration: Mapping[str, Any]):
         self.name = check.str_param(name, "name")
         self.source_type = check.str_param(source_type, "source_type")
-        self.source_configuration = check.dict_param(
+        self.source_configuration = check.mapping_param(
             source_configuration, "source_configuration", key_type=str
         )
 
@@ -43,7 +132,7 @@ class InitializedAirbyteSource:
         self.source_definition_id = source_definition_id
 
     @classmethod
-    def from_api_json(cls, api_json: Dict[str, Any]):
+    def from_api_json(cls, api_json: Mapping[str, Any]):
         return cls(
             source=AirbyteSource(
                 name=api_json["name"],
@@ -60,10 +149,12 @@ class AirbyteDestination:
     Represents a user-defined Airbyte destination.
     """
 
-    def __init__(self, name: str, destination_type: str, destination_configuration: Dict[str, Any]):
+    def __init__(
+        self, name: str, destination_type: str, destination_configuration: Mapping[str, Any]
+    ):
         self.name = check.str_param(name, "name")
         self.destination_type = check.str_param(destination_type, "destination_type")
-        self.destination_configuration = check.dict_param(
+        self.destination_configuration = check.mapping_param(
             destination_configuration, "destination_configuration", key_type=str
         )
 
@@ -90,7 +181,7 @@ class InitializedAirbyteDestination:
         self.destination_definition_id = destination_definition_id
 
     @classmethod
-    def from_api_json(cls, api_json: Dict[str, Any]):
+    def from_api_json(cls, api_json: Mapping[str, Any]):
         return cls(
             destination=AirbyteDestination(
                 name=api_json["name"],
@@ -100,6 +191,15 @@ class InitializedAirbyteDestination:
             destination_id=api_json["destinationId"],
             destination_definition_id=None,
         )
+
+
+class AirbyteDestinationNamespace(Enum):
+    """
+    Represents the sync mode for a given Airbyte stream.
+    """
+
+    SAME_AS_SOURCE = "source"
+    DESTINATION_DEFAULT = "destination"
 
 
 class AirbyteConnection:
@@ -112,16 +212,22 @@ class AirbyteConnection:
         name: str,
         source: AirbyteSource,
         destination: AirbyteDestination,
-        stream_config: Dict[str, AirbyteSyncMode],
+        stream_config: Mapping[str, AirbyteSyncMode],
         normalize_data: Optional[bool] = None,
+        destination_namespace: Optional[
+            Union[AirbyteDestinationNamespace, str]
+        ] = AirbyteDestinationNamespace.SAME_AS_SOURCE,
     ):
         self.name = check.str_param(name, "name")
         self.source = check.inst_param(source, "source", AirbyteSource)
         self.destination = check.inst_param(destination, "destination", AirbyteDestination)
-        self.stream_config = check.dict_param(
+        self.stream_config = check.mapping_param(
             stream_config, "stream_config", key_type=str, value_type=AirbyteSyncMode
         )
         self.normalize_data = check.opt_bool_param(normalize_data, "normalize_data")
+        self.destination_namespace = check.opt_inst_param(
+            destination_namespace, "destination_namespace", (str, AirbyteDestinationNamespace)
+        )
 
     def must_be_recreated(self, other: Optional["AirbyteConnection"]) -> bool:
         return (
@@ -147,7 +253,7 @@ class InitializedAirbyteConnection:
     @classmethod
     def from_api_json(
         cls,
-        api_dict: Dict[str, Any],
+        api_dict: Mapping[str, Any],
         init_sources: Mapping[str, InitializedAirbyteSource],
         init_dests: Mapping[str, InitializedAirbyteDestination],
     ):
@@ -175,12 +281,7 @@ class InitializedAirbyteConnection:
         )
 
         streams = {
-            stream["stream"]["name"]: AirbyteSyncMode(
-                (
-                    stream["config"]["syncMode"],
-                    stream["config"]["destinationSyncMode"],
-                )
-            )
+            stream["stream"]["name"]: AirbyteSyncMode.from_json(stream["config"])
             for stream in api_dict["syncCatalog"]["streams"]
         }
         return cls(
@@ -190,6 +291,49 @@ class InitializedAirbyteConnection:
                 destination=dest,
                 stream_config=streams,
                 normalize_data=len(api_dict["operationIds"]) > 0,
+                destination_namespace=api_dict["namespaceFormat"]
+                if api_dict["namespaceDefinition"] == "customformat"
+                else AirbyteDestinationNamespace(api_dict["namespaceDefinition"]),
             ),
             api_dict["connectionId"],
+        )
+
+
+def _remove_none_values(obj: Dict[str, Any]) -> Dict[str, Any]:
+    return {k: v for k, v in obj.items() if v is not None}
+
+
+def _dump_class(obj: Any) -> Dict[str, Any]:
+    return json.loads(json.dumps(obj, default=lambda o: _remove_none_values(o.__dict__)))
+
+
+class GeneratedAirbyteSource(AirbyteSource):
+    """
+    Base class used by the codegen Airbyte sources. This class is not intended to be used directly.
+
+    Converts all of its attributes into a source configuration dict which is passed down to the base
+    AirbyteSource class.
+    """
+
+    def __init__(self, source_type: str, name: str):
+        source_configuration = _dump_class(self)
+        super().__init__(
+            name=name, source_type=source_type, source_configuration=source_configuration
+        )
+
+
+class GeneratedAirbyteDestination(AirbyteDestination):
+    """
+    Base class used by the codegen Airbyte destinations. This class is not intended to be used directly.
+
+    Converts all of its attributes into a destination configuration dict which is passed down to the
+    base AirbyteDestination class.
+    """
+
+    def __init__(self, source_type: str, name: str):
+        destination_configuration = _dump_class(self)
+        super().__init__(
+            name=name,
+            destination_type=source_type,
+            destination_configuration=destination_configuration,
         )

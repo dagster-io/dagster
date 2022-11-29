@@ -2,7 +2,7 @@ import warnings
 from abc import ABC
 from typing import Any, Mapping, Optional, Sequence
 
-from dagster import Failure, MetadataValue
+from dagster import DagsterInvariantViolationError, Failure, MetadataValue
 from dagster import _check as check
 
 
@@ -16,7 +16,7 @@ class DagsterDbtCliUnexpectedOutputError(DagsterDbtError):
     invalid_line_nos: Sequence[int]
 
     def __init__(self, invalid_line_nos: Sequence[int]):
-        check.list_param(invalid_line_nos, "invalid_line_nos", int)
+        check.sequence_param(invalid_line_nos, "invalid_line_nos", int)
         line_nos_str = ", ".join(map(str, invalid_line_nos))
         description = f"dbt CLI emitted unexpected output on lines {line_nos_str}"
         metadata = {
@@ -91,3 +91,7 @@ class DagsterDbtCliOutputsNotFoundError(DagsterDbtError):
 
     def __init__(self, path: str):
         super().__init__("Expected to find file at path {}".format(path))
+
+
+class DagsterDbtCloudJobInvariantViolationError(DagsterDbtError, DagsterInvariantViolationError):
+    """Represents an error when a dbt Cloud job is not supported by the ``dagster-dbt`` library."""

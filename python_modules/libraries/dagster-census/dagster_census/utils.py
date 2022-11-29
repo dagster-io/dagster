@@ -1,4 +1,4 @@
-from typing import List
+from typing import Sequence
 
 from dagster import AssetMaterialization
 
@@ -6,7 +6,7 @@ from .types import CensusOutput
 
 
 def generate_materialization(
-    census_output: CensusOutput, asset_key_prefix: List[str]
+    census_output: CensusOutput, asset_key_prefix: Sequence[str]
 ) -> AssetMaterialization:
 
     sync_id = census_output.sync_run["sync_id"]
@@ -27,7 +27,7 @@ def generate_materialization(
         "full_sync": census_output.sync_run["full_sync"],
     }
 
-    asset_key_name = asset_key_prefix + [f"sync_{sync_id}"]
+    asset_key_name = [*asset_key_prefix, f"sync_{sync_id}"]
 
     return AssetMaterialization(
         asset_key=asset_key_name,

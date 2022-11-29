@@ -64,6 +64,7 @@ export interface ILogCaptureInfo {
   fileKey: string;
   stepKeys: string[];
   pid?: string;
+  externalUrl?: string;
 }
 
 export interface IRunMetadataDict {
@@ -242,6 +243,7 @@ export function extractMetadataFromLogs(
         fileKey: log.fileKey,
         stepKeys: log.stepKeys || [],
         pid: String(log.pid),
+        externalUrl: log.externalUrl || undefined,
       };
     }
 
@@ -359,6 +361,7 @@ export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
       fileKey
       stepKeys
       pid
+      externalUrl
     }
   }
   ${METADATA_ENTRY_FRAGMENT}

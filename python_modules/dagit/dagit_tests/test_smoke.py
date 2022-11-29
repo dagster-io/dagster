@@ -2,7 +2,6 @@ import pytest
 from dagit import app
 from starlette.testclient import TestClient
 
-from dagster import DagsterInstance
 from dagster._cli.workspace import get_workspace_process_context_from_kwargs
 from dagster._core.test_utils import instance_for_test
 
@@ -27,7 +26,7 @@ SMOKE_TEST_QUERY = """
 
 @pytest.mark.parametrize(
     "gen_instance",
-    [DagsterInstance.ephemeral, instance_for_test],
+    [instance_for_test],
 )
 def test_smoke_app(gen_instance):
     with gen_instance() as instance:
@@ -66,7 +65,7 @@ def test_smoke_app(gen_instance):
             data = result.json()
             assert "errors" in data
             assert len(data["errors"]) == 1
-            assert "must not have a sub selection" in data["errors"][0]["message"]
+            assert "must not have a selection" in data["errors"][0]["message"]
 
             # Missing routes redirect to the index.html file of the Dagit react app, so the user
             # gets our UI when they navigate to "synthetic" react router URLs.

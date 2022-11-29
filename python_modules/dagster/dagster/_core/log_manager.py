@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import datetime
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._core.utils import coerce_valid_log_level, make_new_run_id
@@ -59,7 +61,7 @@ class DagsterMessageProps(
 
         error = getattr(event_specific_data, "error", None)
         if error:
-            return "\n\n" + getattr(event_specific_data, "error_display_string", error.to_string())
+            return f'\n\n{getattr(event_specific_data, "error_display_string", error.to_string())}'
         return None
 
     @property
@@ -87,7 +89,7 @@ class DagsterLoggingMetadata(
         [
             ("run_id", Optional[str]),
             ("pipeline_name", Optional[str]),
-            ("pipeline_tags", Dict[str, str]),
+            ("pipeline_tags", Mapping[str, str]),
             ("step_key", Optional[str]),
             ("solid_name", Optional[str]),
             ("resource_name", Optional[str]),
@@ -103,7 +105,7 @@ class DagsterLoggingMetadata(
         cls,
         run_id: Optional[str] = None,
         pipeline_name: Optional[str] = None,
-        pipeline_tags: Optional[Dict[str, str]] = None,
+        pipeline_tags: Optional[Mapping[str, str]] = None,
         step_key: Optional[str] = None,
         solid_name: Optional[str] = None,
         resource_name: Optional[str] = None,
@@ -126,7 +128,7 @@ class DagsterLoggingMetadata(
             return self.pipeline_name or "system"
         return f"resource:{self.resource_name}"
 
-    def to_tags(self) -> Dict[str, str]:
+    def to_tags(self) -> Mapping[str, str]:
         # converts all values into strings
         return {k: str(v) for k, v in self._asdict().items()}
 
@@ -159,7 +161,7 @@ def construct_log_string(
 
 def get_dagster_meta_dict(
     logging_metadata: DagsterLoggingMetadata, dagster_message_props: DagsterMessageProps
-) -> Dict[str, Any]:
+) -> Mapping[str, Any]:
     # combine all dagster meta information into a single dictionary
     meta_dict = {
         **logging_metadata._asdict(),
@@ -186,8 +188,8 @@ class DagsterLogHandler(logging.Handler):
     def __init__(
         self,
         logging_metadata: DagsterLoggingMetadata,
-        loggers: List[logging.Logger],
-        handlers: List[logging.Handler],
+        loggers: Sequence[logging.Logger],
+        handlers: Sequence[logging.Handler],
     ):
         self._logging_metadata = logging_metadata
         self._loggers = loggers
@@ -199,14 +201,14 @@ class DagsterLogHandler(logging.Handler):
     def logging_metadata(self):
         return self._logging_metadata
 
-    def with_tags(self, **new_tags):
+    def with_tags(self, **new_tags: str) -> DagsterLogHandler:
         return DagsterLogHandler(
             logging_metadata=self.logging_metadata._replace(**new_tags),
             loggers=self._loggers,
             handlers=self._handlers,
         )
 
-    def _extract_extra(self, record: logging.LogRecord) -> Dict[str, Any]:
+    def _extract_extra(self, record: logging.LogRecord) -> Mapping[str, Any]:
         """In the logging.Logger log() implementation, the elements of the `extra` dictionary
         argument are smashed into the __dict__ of the underlying logging.LogRecord.
         This function figures out what the original `extra` values of the log call were by
@@ -302,10 +304,10 @@ class DagsterLogManager(logging.Logger):
         self,
         dagster_handler: DagsterLogHandler,
         level: int = logging.NOTSET,
-        managed_loggers: Optional[List[logging.Logger]] = None,
+        managed_loggers: Optional[Sequence[logging.Logger]] = None,
     ):
         super().__init__(name="dagster", level=coerce_valid_log_level(level))
-        self._managed_loggers = check.opt_list_param(
+        self._managed_loggers = check.opt_sequence_param(
             managed_loggers, "managed_loggers", of_type=logging.Logger
         )
         self._dagster_handler = dagster_handler
@@ -314,14 +316,14 @@ class DagsterLogManager(logging.Logger):
     @classmethod
     def create(
         cls,
-        loggers: List[logging.Logger],
-        handlers: Optional[List[logging.Handler]] = None,
+        loggers: Sequence[logging.Logger],
+        handlers: Optional[Sequence[logging.Handler]] = None,
         instance: Optional["DagsterInstance"] = None,
         pipeline_run: Optional["PipelineRun"] = None,
     ) -> "DagsterLogManager":
         """Create a DagsterLogManager with a set of subservient loggers."""
 
-        handlers = check.opt_list_param(handlers, "handlers", of_type=logging.Handler)
+        handlers = check.opt_sequence_param(handlers, "handlers", of_type=logging.Handler)
 
         managed_loggers = [get_dagster_logger()]
         python_log_level = logging.NOTSET
@@ -362,15 +364,17 @@ class DagsterLogManager(logging.Logger):
     def logging_metadata(self) -> DagsterLoggingMetadata:
         return self._dagster_handler.logging_metadata
 
-    def begin_python_log_capture(self):
+    def begin_python_log_capture(self) -> None:
         for logger in self._managed_loggers:
             logger.addHandler(self._dagster_handler)
 
-    def end_python_log_capture(self):
+    def end_python_log_capture(self) -> None:
         for logger in self._managed_loggers:
             logger.removeHandler(self._dagster_handler)
 
-    def log_dagster_event(self, level: Union[str, int], msg: str, dagster_event: "DagsterEvent"):
+    def log_dagster_event(
+        self, level: Union[str, int], msg: str, dagster_event: "DagsterEvent"
+    ) -> None:
         """Log a DagsterEvent at the given level. Attributes about the context it was logged in
         (such as the solid name or pipeline name) will be automatically attached to the created record.
 
@@ -382,7 +386,7 @@ class DagsterLogManager(logging.Logger):
         """
         self.log(level=level, msg=msg, extra={DAGSTER_META_KEY: dagster_event})
 
-    def log(self, level, msg, *args, **kwargs):
+    def log(self, level: Union[str, int], msg: object, *args: Any, **kwargs: Any) -> None:
         """Log a message at the given level. Attributes about the context it was logged in (such as
         the solid name or pipeline name) will be automatically attached to the created record.
 
@@ -397,7 +401,7 @@ class DagsterLogManager(logging.Logger):
         if self.isEnabledFor(level) or ("extra" in kwargs and DAGSTER_META_KEY in kwargs["extra"]):
             self._log(level, msg, args, **kwargs)
 
-    def with_tags(self, **new_tags):
+    def with_tags(self, **new_tags: str) -> DagsterLogManager:
         """Add new tags in "new_tags" to the set of tags attached to this log manager instance, and
         return a new DagsterLogManager with the merged set of tags.
 

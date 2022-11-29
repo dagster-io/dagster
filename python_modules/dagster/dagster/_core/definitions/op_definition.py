@@ -4,13 +4,14 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
-    Dict,
     Mapping,
     Optional,
     Sequence,
     Union,
     cast,
 )
+
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
@@ -29,6 +30,8 @@ from .solid_definition import SolidDefinition
 if TYPE_CHECKING:
     from .composition import PendingNodeInvocation
     from .decorators.solid_decorator import DecoratedSolidFunction
+
+OpComputeFunction: TypeAlias = Callable[..., Any]
 
 
 class OpDefinition(SolidDefinition):
@@ -144,12 +147,12 @@ class OpDefinition(SolidDefinition):
 
     @public  # type: ignore
     @property
-    def ins(self) -> Dict[str, In]:
+    def ins(self) -> Mapping[str, In]:
         return {input_def.name: In.from_definition(input_def) for input_def in self.input_defs}
 
     @public  # type: ignore
     @property
-    def outs(self) -> Dict[str, Out]:
+    def outs(self) -> Mapping[str, Out]:
         return {output_def.name: Out.from_definition(output_def) for output_def in self.output_defs}
 
     @public  # type: ignore
@@ -182,7 +185,7 @@ class OpDefinition(SolidDefinition):
         return super(OpDefinition, self).alias(name)
 
     @public
-    def tag(self, tags: Optional[Dict[str, str]]) -> "PendingNodeInvocation":
+    def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
         return super(OpDefinition, self).tag(tags)
 
     @public

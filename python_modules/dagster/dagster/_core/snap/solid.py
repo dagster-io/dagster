@@ -51,7 +51,7 @@ class InputDefSnap(
             name=check.str_param(name, "name"),
             dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
             description=check.opt_str_param(description, "description"),
-            metadata_entries=check.opt_list_param(
+            metadata_entries=check.opt_sequence_param(
                 metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
         )
@@ -190,15 +190,15 @@ def _check_solid_def_header_args(
     input_def_snaps: Sequence[InputDefSnap],
     output_def_snaps: Sequence[OutputDefSnap],
     description: Optional[str],
-    tags: Mapping[str, object],
+    tags: Mapping[str, str],
     config_field_snap: Optional[ConfigFieldSnap],
 ):
     return dict(
         name=check.str_param(name, "name"),
-        input_def_snaps=check.list_param(input_def_snaps, "input_def_snaps", InputDefSnap),
-        output_def_snaps=check.list_param(output_def_snaps, "output_def_snaps", OutputDefSnap),
+        input_def_snaps=check.sequence_param(input_def_snaps, "input_def_snaps", InputDefSnap),
+        output_def_snaps=check.sequence_param(output_def_snaps, "output_def_snaps", OutputDefSnap),
         description=check.opt_str_param(description, "description"),
-        tags=check.dict_param(tags, "tags"),  # validate using validate_tags?
+        tags=check.mapping_param(tags, "tags"),  # validate using validate_tags?
         config_field_snap=check.opt_inst_param(
             config_field_snap, "config_field_snap", ConfigFieldSnap
         ),
@@ -228,7 +228,7 @@ class CompositeSolidDefSnap(
         input_def_snaps: Sequence[InputDefSnap],
         output_def_snaps: Sequence[OutputDefSnap],
         description: Optional[str],
-        tags: Mapping[str, object],
+        tags: Mapping[str, str],
         config_field_snap: Optional[ConfigFieldSnap],
         dep_structure_snapshot: DependencyStructureSnapshot,
         input_mapping_snaps: Sequence[InputMappingSnap],
@@ -239,10 +239,10 @@ class CompositeSolidDefSnap(
             dep_structure_snapshot=check.inst_param(
                 dep_structure_snapshot, "dep_structure_snapshot", DependencyStructureSnapshot
             ),
-            input_mapping_snaps=check.list_param(
+            input_mapping_snaps=check.sequence_param(
                 input_mapping_snaps, "input_mapping_snaps", of_type=InputMappingSnap
             ),
-            output_mapping_snaps=check.list_param(
+            output_mapping_snaps=check.sequence_param(
                 output_mapping_snaps, "output_mapping_snaps", of_type=OutputMappingSnap
             ),
             **_check_solid_def_header_args(
@@ -283,13 +283,13 @@ class SolidDefSnap(
         input_def_snaps: Sequence[InputDefSnap],
         output_def_snaps: Sequence[OutputDefSnap],
         description: Optional[str],
-        tags: Mapping[str, object],
+        tags: Mapping[str, str],
         required_resource_keys: Sequence[str],
         config_field_snap: Optional[ConfigFieldSnap],
     ):
         return super(SolidDefSnap, cls).__new__(
             cls,
-            required_resource_keys=check.list_param(
+            required_resource_keys=check.sequence_param(
                 required_resource_keys, "required_resource_keys", str
             ),
             **_check_solid_def_header_args(
@@ -327,11 +327,11 @@ class SolidDefinitionsSnapshot(
         return super(SolidDefinitionsSnapshot, cls).__new__(
             cls,
             solid_def_snaps=sorted(
-                check.list_param(solid_def_snaps, "solid_def_snaps", of_type=SolidDefSnap),
+                check.sequence_param(solid_def_snaps, "solid_def_snaps", of_type=SolidDefSnap),
                 key=lambda solid_def: solid_def.name,
             ),
             composite_solid_def_snaps=sorted(
-                check.list_param(
+                check.sequence_param(
                     composite_solid_def_snaps,
                     "composite_solid_def_snaps",
                     of_type=CompositeSolidDefSnap,

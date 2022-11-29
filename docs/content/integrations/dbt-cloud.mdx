@@ -5,21 +5,37 @@ description: Dagster can orchestrate dbt Cloud alongside other technologies.
 
 # Using dbt Cloud with Dagster
 
-Dagster allows you to run dbt Cloud jobs alongside other technologies. You can schedule them to run on a regular basis, and as part of larger pipelines.
+<Note>
+  Using the local dbt Core CLI? Check out the{" "}
+  <a href="/integrations/dbt/using-dbt-with-dagster">
+    dbt Core with Dagster guide
+  </a>
+  !
+</Note>
 
-If you're using the dbt CLI, check out [Using dbt with Dagster](/integrations/dbt) instead!
+Dagster allows you to run dbt Cloud alongside other technologies like Spark, Python, etc., and has built-in support for loading dbt Cloud models, seeds, and snapshots as [software-defined assets](/concepts/assets/software-defined-assets).
 
 ---
 
-## Running a dbt Cloud job
+## Prerequisites
 
-To run a dbt Cloud job, you'll need to configure three values:
+To get started, you will need to install the `dagster` and `dagster-dbt` Python packages:
 
-- the `job_id` of the job you want to run
-- the `account_id` of your dbt Cloud account
-- an `auth_token` for connecting with the dbt Cloud API
+```bash
+pip install dagster dagster-dbt
+```
 
-The first two values can be obtained by navigating to the page for your job in the dbt Cloud console, and looking at the URL. For example, in this screenshot, the `account_id` is `11111`, and the `job_id` is `33333`:
+You'll also want to have a dbt Cloud instance with an existing project that is deployed with a dbt Cloud job. If you don't have one already, you can [set up dbt Cloud with a sample project](https://docs.getdbt.com/docs/get-started/getting-started/set-up-dbt-cloud).
+
+To manage the dbt Cloud job from Dagster, you'll need three values:
+
+1. An `auth_token` for connecting with the dbt Cloud API, stored in an environment variable `DBT_CLOUD_API_TOKEN`,
+2. The `account_id` of your dbt Cloud account, stored in an environment variable `DBT_CLOUD_ACCOUNT_ID`, and
+3. The `job_id` of the dbt Cloud job you want to manage in Dagster
+
+The `auth_token` can also be found by generating a [Service account token](https://docs.getdbt.com/docs/dbt-cloud/dbt-cloud-api/service-tokens) in the dbt Cloud console.
+
+The `account_id` and `job_id` can be obtained by inspecting the URL of the dbt Cloud job in the dbt Cloud console. For example, in this screenshot, the `account_id` is `111111` and the `job_id` is `33333`.
 
 <Image
 alt="Screenshot of the dbt Cloud console on the job page."
@@ -28,78 +44,82 @@ width={1055}
 height={673}
 />
 
-The `auth_token` can also be found or generated in the dbt Cloud console. It's recommended that you use a [Service account token](https://docs.getdbt.com/docs/dbt-cloud/dbt-cloud-api/service-tokens) for this purpose, and that you store this value in an environment variable, rather than hardcoding its value in your codebase.
-
-Putting it all together, you'll get the following:
-
-```python startafter=start_dbt_cloud_job endbefore=end_dbt_cloud_job file=/integrations/dbt/dbt_cloud.py dedent=4
-from dagster import job
-from dagster_dbt import dbt_cloud_resource, dbt_cloud_run_op
-
-# configure an operation to run the specific job
-run_dbt_nightly_sync = dbt_cloud_run_op.configured(
-    {"job_id": 33333}, name="run_dbt_nightly_sync"
-)
-
-# configure a resource to connect to your dbt Cloud instance
-my_dbt_cloud_resource = dbt_cloud_resource.configured(
-    {"auth_token": {"env": "DBT_CLOUD_AUTH_TOKEN"}, "account_id": 11111}
-)
-
-# create a job that uses your op and resource
-@job(resource_defs={"dbt_cloud": my_dbt_cloud_resource})
-def my_dbt_cloud_job():
-    run_dbt_nightly_sync()
-```
-
 ---
 
-## Running a dbt Cloud job after another op completes
+## Step 1: Connecting to dbt Cloud
 
-The `dbt_cloud_run_op` has an optional `start_after` input. If you supply the output of another operation to this input, the dbt Cloud op will not start until that upstream operation successfully completes:
+The first step in using dbt Cloud with Dagster is to tell Dagster how to connect to your dbt Cloud instance using a dbt Cloud [resource](/concepts/resources). This resource contains information on where the dbt Cloud instance is located and any credentials sourced from environment variables that are needed to access it.
 
-```python startafter=start_dbt_cloud_job2 endbefore=end_dbt_cloud_job2 file=/integrations/dbt/dbt_cloud.py dedent=4
-@job(resource_defs={"dbt_cloud": my_dbt_cloud_resource})
-def my_two_op_job():
-    run_dbt_nightly_sync(start_after=another_op())
+```python startafter=start_define_dbt_cloud_instance endbefore=end_define_dbt_cloud_instance file=/integrations/dbt/dbt_cloud.py dedent=4
+from dagster_dbt import dbt_cloud_resource
+
+dbt_cloud_instance = dbt_cloud_resource.configured(
+    {
+        "auth_token": {"env": "DBT_CLOUD_API_TOKEN"},
+        "account_id": {"env": "DBT_CLOUD_ACCOUNT_ID"},
+    }
+)
 ```
 
----
+## Step 2: Loading dbt Cloud models as assets
 
-## Scheduling dbt Cloud jobs
+In this step, you'll load the dbt Cloud models managed by a dbt Cloud job into Dagster as assets. For context, a dbt Cloud job defines set of commands to run for a dbt Cloud project. The dbt Cloud models managed by a dbt Cloud job are the models that are run by the job after filtering options are respected.
 
-You can run dbt Cloud jobs on a schedule in the same way as any other Dagster job:
+Using our dbt Cloud resource, we can retrieve information about the models that the dbt Cloud job is managing.
 
-```python startafter=start_schedule_dbt_cloud endbefore=end_schedule_dbt_cloud file=/integrations/dbt/dbt_cloud.py dedent=4
-from dagster import ScheduleDefinition, repository
+```python startafter=start_load_assets_from_dbt_cloud_job endbefore=end_load_assets_from_dbt_cloud_job file=/integrations/dbt/dbt_cloud.py dedent=4
+from dagster_dbt import load_assets_from_dbt_cloud_job
+
+# Use the dbt_cloud_instance resource we defined in Step 1, and the job_id from Prerequisites
+dbt_cloud_assets = load_assets_from_dbt_cloud_job(
+    dbt_cloud=dbt_cloud_instance,
+    job_id=33333,
+)
+```
+
+<Note>
+  We currently require that your dbt Cloud job only has one command: one of
+  either `dbt run` or `dbt build`, along with any optional command line
+  arguments.
+</Note>
+
+The <PyObject module="dagster_dbt" object="load_assets_from_dbt_cloud_job" /> function loads the dbt Cloud models into Dagster as assets, creating one Dagster asset for each model.
+
+When invoked, the function:
+
+1. Invokes your dbt Cloud job with command overrides to compile your dbt project,
+2. Parses the metadata provided by dbt Cloud, and
+3. Generates a set of software-defined assets reflecting the models in the project managed by the dbt Cloud job. Materializing these assets will run the dbt Cloud job that is represented by the loaded assets.
+
+## Step 3: Schedule dbt Cloud job runs
+
+Now that your dbt Cloud assets are loaded, you can define a Dagster job that materializes some or all of these assets, triggering the underlying dbt Cloud job.
+
+You can explicitly define when your assets should be materialized. For example, you can schedule assets based on their upstream or downstream dependencies, external events using a sensor, or a cron schedule.
+
+```python startafter=start_schedule_dbt_cloud_assets endbefore=end_schedule_dbt_cloud_assets file=/integrations/dbt/dbt_cloud.py dedent=4
+from dagster import ScheduleDefinition, define_asset_job, repository, AssetSelection
+
+# Materialize all assets in the repository
+run_everything_job = define_asset_job("run_everything_job", AssetSelection.all())
 
 @repository
 def my_repo():
     return [
+        # Use the dbt_cloud_assets defined in Step 2
+        dbt_cloud_assets,
         ScheduleDefinition(
-            job=my_dbt_cloud_job,
+            job=run_everything_job,
             cron_schedule="@daily",
         ),
     ]
 ```
 
-Refer to the [Schedule documentation](/concepts/partitions-schedules-sensors/schedules#running-the-scheduler) for more info on running jobs on a schedule.
+## What's next?
 
----
+By now, you should have a working dbt Cloud and Dagster integration and a handful of materialized Dagster assets.
 
-## Conclusion
+What's next? From here, you can:
 
-If you find a bug or want to add a feature to the `dagster-dbt` library, we invite you to [contribute](/community/contributing).
-
-If you have questions on using dbt Cloud with Dagster, we'd love to hear from you:
-
-<p align="center">
-  <a href="https://dagster-slackin.herokuapp.com/" target="_blank">
-    <Image
-      alt="join-us-on-slack"
-      src="/assets/join-us-on-slack.png"
-      width="160"
-      height="40"
-    />
-  </a>
-</p>
+- Learn more about [software-defined assets](/concepts/assets/software-defined-assets)
+- Check out the [`dagster-dbt` API docs](/\_apidocs/libraries/dagster-dbt)

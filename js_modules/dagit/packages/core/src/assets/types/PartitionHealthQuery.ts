@@ -13,16 +13,29 @@ export interface PartitionHealthQuery_assetNodeOrError_AssetNotFoundError {
   __typename: "AssetNotFoundError";
 }
 
-export interface PartitionHealthQuery_assetNodeOrError_AssetNode_materializationCountByPartition {
-  __typename: "MaterializationCountByPartition";
-  partition: string;
-  materializationCount: number;
+export interface PartitionHealthQuery_assetNodeOrError_AssetNode_partitionKeysByDimension {
+  __typename: "DimensionPartitionKeys";
+  name: string;
+  partitionKeys: string[];
 }
+
+export interface PartitionHealthQuery_assetNodeOrError_AssetNode_partitionMaterializationCounts_MaterializationCountGroupedByDimension {
+  __typename: "MaterializationCountGroupedByDimension";
+  materializationCountsGrouped: number[][];
+}
+
+export interface PartitionHealthQuery_assetNodeOrError_AssetNode_partitionMaterializationCounts_MaterializationCountSingleDimension {
+  __typename: "MaterializationCountSingleDimension";
+  materializationCounts: number[];
+}
+
+export type PartitionHealthQuery_assetNodeOrError_AssetNode_partitionMaterializationCounts = PartitionHealthQuery_assetNodeOrError_AssetNode_partitionMaterializationCounts_MaterializationCountGroupedByDimension | PartitionHealthQuery_assetNodeOrError_AssetNode_partitionMaterializationCounts_MaterializationCountSingleDimension;
 
 export interface PartitionHealthQuery_assetNodeOrError_AssetNode {
   __typename: "AssetNode";
   id: string;
-  materializationCountByPartition: PartitionHealthQuery_assetNodeOrError_AssetNode_materializationCountByPartition[];
+  partitionKeysByDimension: PartitionHealthQuery_assetNodeOrError_AssetNode_partitionKeysByDimension[];
+  partitionMaterializationCounts: PartitionHealthQuery_assetNodeOrError_AssetNode_partitionMaterializationCounts;
 }
 
 export type PartitionHealthQuery_assetNodeOrError = PartitionHealthQuery_assetNodeOrError_AssetNotFoundError | PartitionHealthQuery_assetNodeOrError_AssetNode;

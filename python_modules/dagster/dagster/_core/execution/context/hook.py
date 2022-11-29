@@ -151,7 +151,7 @@ class HookContext:
         return self._step_execution_context.step_exception
 
     @property
-    def solid_output_values(self) -> Dict[str, Union[Any, Dict[str, Any]]]:
+    def solid_output_values(self) -> Mapping[str, Union[Any, Mapping[str, Any]]]:
         """The computed output values.
 
         Returns a dictionary where keys are output names and the values are:
@@ -285,7 +285,7 @@ class UnboundHookContext(HookContext):
         return self._op_exception
 
     @property
-    def solid_output_values(self) -> Dict[str, Union[Any, Dict[str, Any]]]:
+    def solid_output_values(self) -> Mapping[str, Union[Any, Mapping[str, Any]]]:
         """The computed output values.
 
         Returns a dictionary where keys are output names and the values are:
@@ -365,7 +365,7 @@ class BoundHookContext(HookContext):
         return self._op_exception
 
     @property
-    def solid_output_values(self) -> Dict[str, Union[Any, Dict[str, Any]]]:
+    def solid_output_values(self) -> Mapping[str, Union[Any, Mapping[str, Any]]]:
         """The computed output values.
 
         Returns a dictionary where keys are output names and the values are:
@@ -411,7 +411,7 @@ def build_hook_context(
     op = check.opt_inst_param(op, "op", (OpDefinition, PendingNodeInvocation))
 
     return UnboundHookContext(
-        resources=check.opt_dict_param(resources, "resources", key_type=str),
+        resources=check.opt_mapping_param(resources, "resources", key_type=str),
         op=op,  # type: ignore[arg-type] # (mypy bug)
         run_id=check.opt_str_param(run_id, "run_id"),
         job_name=check.opt_str_param(job_name, "job_name"),

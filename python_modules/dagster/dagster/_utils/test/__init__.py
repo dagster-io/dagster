@@ -4,7 +4,17 @@ import tempfile
 import uuid
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Generator, Optional, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    Generator,
+    Mapping,
+    Optional,
+    Union,
+    overload,
+)
 
 # top-level include is dangerous in terms of incurring circular deps
 from dagster import (
@@ -16,7 +26,18 @@ from dagster import (
     TypeCheck,
 )
 from dagster import _check as check
-from dagster._core.definitions import ModeDefinition, PipelineDefinition, lambda_solid
+from dagster._core.definitions import (
+    GraphDefinition,
+    GraphIn,
+    GraphOut,
+    InputMapping,
+    ModeDefinition,
+    OpDefinition,
+    OutputMapping,
+    PipelineDefinition,
+    ResourceDefinition,
+    lambda_solid,
+)
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
@@ -38,13 +59,14 @@ from dagster._core.execution.context_creation_pipeline import (
     create_log_manager,
     create_plan_data,
 )
+from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler import Scheduler
 from dagster._core.scheduler.scheduler import DagsterScheduleDoesNotExist, DagsterSchedulerError
 from dagster._core.snap import snapshot_from_execution_plan
 from dagster._core.storage.file_manager import LocalFileManager
 from dagster._core.storage.pipeline_run import PipelineRun
-from dagster._core.types.dagster_type import resolve_dagster_type
+from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster._core.utility_solids import define_stub_solid
 from dagster._core.utils import make_new_run_id
 from dagster._serdes import ConfigurableClass
@@ -65,9 +87,9 @@ if TYPE_CHECKING:
 
 
 def create_test_pipeline_execution_context(
-    logger_defs: Optional[Dict[str, LoggerDefinition]] = None
+    logger_defs: Optional[Mapping[str, LoggerDefinition]] = None
 ) -> PlanExecutionContext:
-    loggers = check.opt_dict_param(
+    loggers = check.opt_mapping_param(
         logger_defs, "logger_defs", key_type=str, value_type=LoggerDefinition
     )
     mode_def = ModeDefinition(logger_defs=loggers)
@@ -105,10 +127,10 @@ def _dep_key_of(solid):
 
 
 def build_pipeline_with_input_stubs(
-    pipeline_def: PipelineDefinition, inputs: Dict[str, dict]
+    pipeline_def: PipelineDefinition, inputs: Mapping[str, Mapping[str, object]]
 ) -> PipelineDefinition:
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-    check.dict_param(inputs, "inputs", key_type=str, value_type=dict)
+    check.mapping_param(inputs, "inputs", key_type=str, value_type=dict)
 
     deps: Dict[str, Dict[str, object]] = defaultdict(dict)
     for solid_name, dep_dict in pipeline_def.dependencies.items():
@@ -148,13 +170,13 @@ def build_pipeline_with_input_stubs(
 def execute_solids_within_pipeline(
     pipeline_def: PipelineDefinition,
     solid_names: AbstractSet[str],
-    inputs: Optional[Dict[str, dict]] = None,
-    run_config: Optional[Dict[str, object]] = None,
+    inputs: Optional[Mapping[str, Mapping[str, object]]] = None,
+    run_config: Optional[Mapping[str, object]] = None,
     mode: Optional[str] = None,
     preset: Optional[str] = None,
-    tags: Optional[Dict[str, str]] = None,
+    tags: Optional[Mapping[str, str]] = None,
     instance: Optional[DagsterInstance] = None,
-) -> Dict[str, Union["CompositeSolidExecutionResult", "SolidExecutionResult"]]:
+) -> Mapping[str, Union["CompositeSolidExecutionResult", "SolidExecutionResult"]]:
     """Execute a set of solids within an existing pipeline.
 
     Intended to support tests. Input values may be passed directly.
@@ -182,7 +204,7 @@ def execute_solids_within_pipeline(
     """
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     check.set_param(solid_names, "solid_names", of_type=str)
-    inputs = check.opt_dict_param(inputs, "inputs", key_type=str, value_type=dict)
+    inputs = check.opt_mapping_param(inputs, "inputs", key_type=str, value_type=dict)
 
     sub_pipeline = pipeline_def.get_pipeline_subset_def(solid_names)
     stubbed_pipeline = build_pipeline_with_input_stubs(sub_pipeline, inputs)
@@ -198,16 +220,73 @@ def execute_solids_within_pipeline(
     return {sr.solid.name: sr for sr in result.solid_result_list}
 
 
+def wrap_op_in_graph(
+    op_def: OpDefinition, tags: Optional[Mapping[str, Any]] = None
+) -> GraphDefinition:
+    """Wraps op in a graph with the same inputs/outputs as the original op."""
+    check.inst_param(op_def, "op_def", OpDefinition)
+    check.opt_mapping_param(tags, "tags", key_type=str)
+
+    input_mappings = []
+    for input_name in op_def.ins.keys():
+        # create an input mapping to the inner node with the same name.
+        input_mappings.append(
+            InputMapping(
+                graph_input_name=input_name,
+                mapped_node_name=op_def.name,
+                mapped_node_input_name=input_name,
+            )
+        )
+
+    output_mappings = []
+    for output_name in op_def.outs.keys():
+        out = op_def.outs[output_name]
+        output_mappings.append(
+            OutputMapping(
+                graph_output_name=output_name,
+                mapped_node_name=op_def.name,
+                mapped_node_output_name=output_name,
+                from_dynamic_mapping=out.is_dynamic,
+            )
+        )
+    return GraphDefinition(
+        name=f"wraps_{op_def.name}",
+        node_defs=[op_def],
+        input_mappings=input_mappings,
+        output_mappings=output_mappings,
+        tags=tags,
+    )
+
+
+def wrap_op_in_graph_and_execute(
+    op_def: OpDefinition,
+    resources: Optional[Mapping[str, Any]] = None,
+    input_values: Optional[Mapping[str, Any]] = None,
+    tags: Optional[Mapping[str, Any]] = None,
+    run_config: Optional[Mapping[str, object]] = None,
+    raise_on_error: bool = True,
+) -> ExecuteInProcessResult:
+    """Run a dagster op in an actual execution.
+    For internal use."""
+    return wrap_op_in_graph(op_def, tags).execute_in_process(
+        resources=resources,
+        input_values=input_values,
+        raise_on_error=raise_on_error,
+        run_config=run_config,
+    )
+
+
 def execute_solid_within_pipeline(
-    pipeline_def,
-    solid_name,
-    inputs=None,
-    run_config=None,
-    mode=None,
-    preset=None,
-    tags=None,
-    instance=None,
-):
+    pipeline_def: PipelineDefinition,
+    solid_name: str,
+    inputs: Optional[Dict[str, object]] = None,
+    run_config: Optional[Dict[str, object]] = None,
+    mode: Optional[str] = None,
+    preset: Optional[str] = None,
+    tags: Optional[Dict[str, str]] = None,
+    instance: Optional[DagsterInstance] = None,
+) -> Union["CompositeSolidExecutionResult", "SolidExecutionResult"]:
+
     """Execute a single solid within an existing pipeline.
 
     Intended to support tests. Input values may be passed directly.
@@ -250,9 +329,9 @@ def execute_solid_within_pipeline(
 def execute_solid(
     solid_def: CompositeSolidDefinition,
     mode_def: Optional[ModeDefinition] = ...,
-    input_values: Optional[Dict[str, object]] = ...,
-    tags: Optional[Dict[str, Any]] = ...,
-    run_config: Optional[Dict[str, object]] = ...,
+    input_values: Optional[Mapping[str, object]] = ...,
+    tags: Optional[Mapping[str, Any]] = ...,
+    run_config: Optional[Mapping[str, object]] = ...,
     raise_on_error: bool = ...,
 ) -> "CompositeSolidExecutionResult":
     ...
@@ -262,9 +341,9 @@ def execute_solid(
 def execute_solid(
     solid_def: SolidDefinition,
     mode_def: Optional[ModeDefinition] = ...,
-    input_values: Optional[Dict[str, object]] = ...,
-    tags: Optional[Dict[str, Any]] = ...,
-    run_config: Optional[Dict[str, object]] = ...,
+    input_values: Optional[Mapping[str, object]] = ...,
+    tags: Optional[Mapping[str, Any]] = ...,
+    run_config: Optional[Mapping[str, object]] = ...,
     raise_on_error: bool = ...,
 ) -> "SolidExecutionResult":
     ...
@@ -273,9 +352,9 @@ def execute_solid(
 def execute_solid(
     solid_def: NodeDefinition,
     mode_def: Optional[ModeDefinition] = None,
-    input_values: Optional[Dict[str, object]] = None,
-    tags: Optional[Dict[str, Any]] = None,
-    run_config: Optional[Dict[str, object]] = None,
+    input_values: Optional[Mapping[str, object]] = None,
+    tags: Optional[Mapping[str, Any]] = None,
+    run_config: Optional[Mapping[str, object]] = None,
     raise_on_error: bool = True,
 ) -> Union["CompositeSolidExecutionResult", "SolidExecutionResult"]:
     """Execute a single solid in an ephemeral pipeline.
@@ -303,7 +382,7 @@ def execute_solid(
     """
     check.inst_param(solid_def, "solid_def", NodeDefinition)
     check.opt_inst_param(mode_def, "mode_def", ModeDefinition)
-    input_values = check.opt_dict_param(input_values, "input_values", key_type=str)
+    input_values = check.opt_mapping_param(input_values, "input_values", key_type=str)
     solid_defs = [solid_def]
 
     def create_value_solid(input_name, input_value):

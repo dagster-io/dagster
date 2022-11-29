@@ -1,7 +1,8 @@
 import json
+import os
 import warnings
 from collections import namedtuple
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -57,7 +58,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         env_vars=None,
         include_sidecars=False,
         use_current_ecs_task_config: bool = True,
-        run_task_kwargs: Optional[Dict[str, Any]] = None,
+        run_task_kwargs: Optional[Mapping[str, Any]] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -65,10 +66,24 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self.secrets_manager = boto3.client("secretsmanager")
         self.logs = boto3.client("logs")
 
-        self.task_definition = task_definition if isinstance(task_definition, str) else None
-        self.task_definition_dict = (
-            task_definition if not isinstance(task_definition, str) else None
-        )
+        self.task_definition = None
+        self.task_definition_dict = None
+        if isinstance(task_definition, str):
+            self.task_definition = task_definition
+        elif task_definition and "env" in task_definition:
+            check.invariant(
+                len(task_definition) == 1,
+                "If `task_definition` is set to a dictionary with `env`, `env` must be the only key.",
+            )
+            env_var = task_definition["env"]
+            self.task_definition = os.getenv(env_var)
+            if not self.task_definition:
+                raise Exception(
+                    f"You have attempted to fetch the environment variable {env_var} which is not set."
+                )
+        else:
+            self.task_definition_dict = task_definition
+
         self.container_name = container_name
 
         self.secrets = check.opt_list_param(secrets, "secrets")
@@ -93,7 +108,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self.include_sidecars = include_sidecars
 
         if self.task_definition:
-            task_definition = self.ecs.describe_task_definition(taskDefinition=task_definition)
+            task_definition = self.ecs.describe_task_definition(taskDefinition=self.task_definition)
             container_names = [
                 container.get("name")
                 for container in task_definition["taskDefinition"]["containerDefinitions"]
@@ -109,7 +124,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             use_current_ecs_task_config, "use_current_ecs_task_config"
         )
 
-        self.run_task_kwargs = check.opt_dict_param(run_task_kwargs, "run_task_kwargs")
+        self.run_task_kwargs = check.opt_mapping_param(run_task_kwargs, "run_task_kwargs")
         if run_task_kwargs:
             check.invariant(
                 "taskDefinition" not in run_task_kwargs,
@@ -148,6 +163,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                         "execution_role_arn": Field(StringSource, is_required=False),
                         "task_role_arn": Field(StringSource, is_required=False),
                         "requires_compatibilities": Field(Array(str), is_required=False),
+                        "env": Field(
+                            str,
+                            is_required=False,
+                            description="Backwards-compatibility for when task_definition was a StringSource."
+                            "Can be used to source the task_definition scalar from an environment variable.",
+                        ),
                     },
                 ),
                 is_required=False,
@@ -295,9 +316,9 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         task_overrides = self._get_task_overrides(run)
 
-        container_overrides = [
+        container_overrides: List[Dict[str, Any]] = [
             {
-                "name": self.container_name,
+                "name": self._get_container_name(container_context),
                 "command": command,
                 # containerOverrides expects cpu/memory as integers
                 **{k: int(v) for k, v in cpu_and_memory_overrides.items()},
@@ -354,7 +375,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             cls=self.__class__,
         )
 
-    def get_cpu_and_memory_overrides(self, run: PipelineRun) -> Dict[str, str]:
+    def get_cpu_and_memory_overrides(self, run: PipelineRun) -> Mapping[str, str]:
         overrides = {}
 
         cpu = run.tags.get("ecs/cpu")
@@ -366,7 +387,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             overrides["memory"] = memory
         return overrides
 
-    def _get_task_overrides(self, run: PipelineRun) -> Dict[str, Any]:
+    def _get_task_overrides(self, run: PipelineRun) -> Mapping[str, Any]:
         overrides = run.tags.get("ecs/task_overrides")
         if overrides:
             return json.loads(overrides)
@@ -408,6 +429,9 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name  # type: ignore
         )
 
+    def _get_container_name(self, container_context) -> str:
+        return container_context.container_name or self.container_name
+
     def _run_task_kwargs(self, run, image, container_context) -> Dict[str, Any]:
         """
         Return a dictionary of args to launch the ECS task, registering a new task
@@ -425,7 +449,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 task_definition_config = DagsterEcsTaskDefinitionConfig(
                     family,
                     image,
-                    self.container_name,
+                    self._get_container_name(container_context),
                     command=None,
                     log_configuration=(
                         {
@@ -455,7 +479,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     family,
                     self._get_current_task(),
                     image,
-                    self.container_name,
+                    self._get_container_name(container_context),
                     environment=environment,
                     secrets=secrets if secrets else {},
                     include_sidecars=self.include_sidecars,
@@ -463,11 +487,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
                 task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
                     task_definition_dict,
-                    self.container_name,
+                    self._get_container_name(container_context),
                 )
 
             if not self._reuse_task_definition(
                 task_definition_config,
+                self._get_container_name(container_context),
             ):
                 self.ecs.register_task_definition(**task_definition_dict)
 
@@ -489,7 +514,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         return {**task_kwargs, **self.run_task_kwargs, "taskDefinition": task_definition}
 
     def _reuse_task_definition(
-        self, desired_task_definition_config: DagsterEcsTaskDefinitionConfig
+        self, desired_task_definition_config: DagsterEcsTaskDefinitionConfig, container_name: str
     ):
         family = desired_task_definition_config.family
 
@@ -504,7 +529,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         return task_definitions_match(
             desired_task_definition_config,
             existing_task_definition,
-            container_name=self.container_name,
+            container_name=container_name,
         )
 
     def _environment(self, container_context):

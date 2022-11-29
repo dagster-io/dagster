@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { AssetKeyInput, AssetComputeStatus, RunStatus } from "./../../types/globalTypes";
+import { AssetKeyInput, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: AssetGraphLiveQuery
@@ -25,6 +25,23 @@ export interface AssetGraphLiveQuery_assetNodes_assetMaterializations {
   runId: string;
 }
 
+export interface AssetGraphLiveQuery_assetNodes_freshnessPolicy {
+  __typename: "FreshnessPolicy";
+  maximumLagMinutes: number;
+  cronSchedule: string | null;
+}
+
+export interface AssetGraphLiveQuery_assetNodes_freshnessInfo {
+  __typename: "AssetFreshnessInfo";
+  currentMinutesLate: number | null;
+}
+
+export interface AssetGraphLiveQuery_assetNodes_assetObservations {
+  __typename: "ObservationEvent";
+  timestamp: string;
+  runId: string;
+}
+
 export interface AssetGraphLiveQuery_assetNodes {
   __typename: "AssetNode";
   id: string;
@@ -32,6 +49,11 @@ export interface AssetGraphLiveQuery_assetNodes {
   repository: AssetGraphLiveQuery_assetNodes_repository;
   assetKey: AssetGraphLiveQuery_assetNodes_assetKey;
   assetMaterializations: AssetGraphLiveQuery_assetNodes_assetMaterializations[];
+  freshnessPolicy: AssetGraphLiveQuery_assetNodes_freshnessPolicy | null;
+  freshnessInfo: AssetGraphLiveQuery_assetNodes_freshnessInfo | null;
+  assetObservations: AssetGraphLiveQuery_assetNodes_assetObservations[];
+  currentLogicalVersion: string | null;
+  projectedLogicalVersion: string | null;
 }
 
 export interface AssetGraphLiveQuery_assetsLatestInfo_assetKey {
@@ -48,7 +70,6 @@ export interface AssetGraphLiveQuery_assetsLatestInfo_latestRun {
 export interface AssetGraphLiveQuery_assetsLatestInfo {
   __typename: "AssetLatestInfo";
   assetKey: AssetGraphLiveQuery_assetsLatestInfo_assetKey;
-  computeStatus: AssetComputeStatus;
   unstartedRunIds: string[];
   inProgressRunIds: string[];
   latestRun: AssetGraphLiveQuery_assetsLatestInfo_latestRun | null;

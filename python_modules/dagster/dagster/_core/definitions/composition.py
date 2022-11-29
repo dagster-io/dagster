@@ -564,7 +564,7 @@ class PendingNodeInvocation:
         )
 
     @public
-    def tag(self, tags: Optional[Dict[str, str]]) -> "PendingNodeInvocation":
+    def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
         tags = validate_tags(tags)
         return PendingNodeInvocation(
             node_def=self.node_def,
@@ -601,8 +601,8 @@ class PendingNodeInvocation:
         name: Optional[str] = None,
         description: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
-        tags: Optional[Dict[str, Any]] = None,
+        config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
@@ -617,7 +617,7 @@ class PendingNodeInvocation:
                 "constructed using the `@graph` decorator support this method."
             )
 
-        tags = check.opt_dict_param(tags, "tags", key_type=str)
+        tags = check.opt_mapping_param(tags, "tags", key_type=str)
         hooks = check.opt_set_param(hooks, "hooks", HookDefinition)
         input_values = check.opt_mapping_param(input_values, "input_values")
         op_retry_policy = check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy)
@@ -644,7 +644,7 @@ class PendingNodeInvocation:
         self,
         run_config: Optional[Any] = None,
         instance: Optional["DagsterInstance"] = None,
-        resources: Optional[Dict[str, Any]] = None,
+        resources: Optional[Mapping[str, Any]] = None,
         raise_on_error: bool = True,
         run_id: Optional[str] = None,
         input_values: Optional[Mapping[str, object]] = None,
@@ -656,7 +656,6 @@ class PendingNodeInvocation:
             )
 
         from dagster._core.execution.build_resources import wrap_resources_for_execution
-        from dagster._core.execution.execute_in_process import core_execute_in_process
 
         from .executor_definition import execute_in_process_executor
         from .job_definition import JobDefinition
@@ -674,11 +673,9 @@ class PendingNodeInvocation:
             input_values=input_values,
         )
 
-        return core_execute_in_process(
-            ephemeral_pipeline=ephemeral_job,
-            run_config=run_config if run_config is not None else {},
+        return ephemeral_job.execute_in_process(
+            run_config=run_config,
             instance=instance,
-            output_capturing_enabled=True,
             raise_on_error=raise_on_error,
             run_id=run_id,
         )

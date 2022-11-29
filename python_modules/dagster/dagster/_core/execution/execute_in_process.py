@@ -6,6 +6,7 @@ from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.instance import DagsterInstance
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterTypeKind
 
 from .api import (
@@ -27,7 +28,7 @@ def core_execute_in_process(
     instance: Optional[DagsterInstance],
     output_capturing_enabled: bool,
     raise_on_error: bool,
-    run_tags: Optional[Mapping[str, object]] = None,
+    run_tags: Optional[Mapping[str, str]] = None,
     run_id: Optional[str] = None,
     asset_selection: Optional[FrozenSet[AssetKey]] = None,
 ) -> ExecuteInProcessResult:
@@ -54,6 +55,7 @@ def core_execute_in_process(
             tags={**job_def.tags, **(run_tags or {})},
             run_id=run_id,
             asset_selection=asset_selection,
+            execution_plan=execution_plan,
         )
         run_id = pipeline_run.run_id
 
@@ -78,7 +80,7 @@ def core_execute_in_process(
     return ExecuteInProcessResult(
         job_def=ephemeral_pipeline,
         event_list=event_list,
-        dagster_run=execute_instance.get_run_by_id(run_id),
+        dagster_run=cast(DagsterRun, execute_instance.get_run_by_id(run_id)),
         output_capture=output_capture,
     )
 

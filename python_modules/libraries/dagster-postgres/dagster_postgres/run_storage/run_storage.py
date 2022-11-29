@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Mapping
 
 import sqlalchemy as db
 
@@ -94,13 +94,14 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                 # This revision may be shared by any other dagster storage classes using the same DB
                 stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
-    def optimize_for_dagit(self, statement_timeout):
+    def optimize_for_dagit(self, statement_timeout, pool_recycle):
         # When running in dagit, hold 1 open connection and set statement_timeout
         self._engine = create_engine(
             self.postgres_url,
             isolation_level="AUTOCOMMIT",
             pool_size=1,
             connect_args={"options": pg_statement_timeout(statement_timeout)},
+            pool_recycle=pool_recycle,
         )
 
     @property
@@ -171,8 +172,8 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                 )
             )
 
-    def kvs_set(self, pairs: Dict[str, str]) -> None:
-        check.dict_param(pairs, "pairs", key_type=str, value_type=str)
+    def kvs_set(self, pairs: Mapping[str, str]) -> None:
+        check.mapping_param(pairs, "pairs", key_type=str, value_type=str)
 
         # pg speciic on_conflict_do_update
         insert_stmt = db.dialects.postgresql.insert(KeyValueStoreTable).values(

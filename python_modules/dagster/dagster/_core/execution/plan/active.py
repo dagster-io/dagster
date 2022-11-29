@@ -1,5 +1,5 @@
 import time
-from typing import Callable, Dict, Iterator, List, Optional, Set, cast
+from typing import Callable, Dict, Iterator, List, Mapping, Optional, Sequence, Set, cast
 
 import dagster._check as check
 from dagster._core.errors import (
@@ -10,7 +10,7 @@ from dagster._core.errors import (
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.retries import RetryMode, RetryState
 from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._utils.interrupts import pop_captured_interrupt
 
@@ -52,13 +52,13 @@ class ActiveExecution:
         self._step_outputs: Set[StepOutputHandle] = set(self._plan.known_state.ready_outputs)
 
         # All steps to be executed start out here in _pending
-        self._pending: Dict[str, Set[str]] = self._plan.get_executable_step_deps()
+        self._pending: Dict[str, Set[str]] = dict(self._plan.get_executable_step_deps())
 
         # track mapping keys from DynamicOutputs, step_key, output_name -> list of keys
         # to _gathering while in flight
-        self._gathering_dynamic_outputs: Dict[str, Dict[str, List[str]]] = {}
+        self._gathering_dynamic_outputs: Dict[str, Mapping[str, List[str]]] = {}
         # then on success move to _successful
-        self._successful_dynamic_outputs: Dict[str, Dict[str, List[str]]] = (
+        self._successful_dynamic_outputs: Dict[str, Mapping[str, Sequence[str]]] = (
             dict(self._plan.known_state.dynamic_mappings) if self._plan.known_state else {}
         )
         self._new_dynamic_mappings: bool = False
@@ -239,7 +239,7 @@ class ActiveExecution:
         step = self._plan.get_step_by_key(step_key)
         return cast(ExecutionStep, check.inst(step, ExecutionStep))
 
-    def get_steps_to_execute(self, limit: Optional[int] = None) -> List[ExecutionStep]:
+    def get_steps_to_execute(self, limit: Optional[int] = None) -> Sequence[ExecutionStep]:
         check.invariant(
             self._context_guard,
             "ActiveExecution must be used as a context manager",
@@ -262,7 +262,7 @@ class ActiveExecution:
 
         return steps
 
-    def get_steps_to_skip(self) -> List[ExecutionStep]:
+    def get_steps_to_skip(self) -> Sequence[ExecutionStep]:
         self._update()
 
         steps = []
@@ -276,7 +276,7 @@ class ActiveExecution:
 
         return sorted(steps, key=self._sort_key_fn)
 
-    def get_steps_to_abandon(self) -> List[ExecutionStep]:
+    def get_steps_to_abandon(self) -> Sequence[ExecutionStep]:
         self._update()
 
         steps = []
@@ -358,7 +358,7 @@ class ActiveExecution:
     def mark_interrupted(self) -> None:
         self._interrupted = True
 
-    def check_for_interrupts(self) -> None:
+    def check_for_interrupts(self) -> bool:
         return pop_captured_interrupt()
 
     def mark_up_for_retry(self, step_key: str, at_time: Optional[float] = None) -> None:
@@ -463,10 +463,10 @@ class ActiveExecution:
         )
 
     @property
-    def retry_state(self):
+    def retry_state(self) -> RetryState:
         return self._retry_state
 
-    def get_known_state(self):
+    def get_known_state(self) -> KnownExecutionState:
         return KnownExecutionState(
             previous_retry_attempts=self._retry_state.snapshot_attempts(),
             dynamic_mappings=dict(self._successful_dynamic_outputs),
@@ -481,12 +481,14 @@ class ActiveExecution:
         if dyn_outputs:
             self._gathering_dynamic_outputs[step.key] = {out.name: [] for out in dyn_outputs}
 
-    def _resolve_any_dynamic_outputs(self, step_key: str):
+    def _resolve_any_dynamic_outputs(self, step_key: str) -> None:
         if step_key in self._gathering_dynamic_outputs:
             self._successful_dynamic_outputs[step_key] = self._gathering_dynamic_outputs[step_key]
             self._new_dynamic_mappings = True
 
-    def rebuild_from_events(self, dagster_events: List[DagsterEvent]) -> List[ExecutionStep]:
+    def rebuild_from_events(
+        self, dagster_events: Sequence[DagsterEvent]
+    ) -> Sequence[ExecutionStep]:
         """
         Replay events to rebuild the execution state and continue after a failure.
 

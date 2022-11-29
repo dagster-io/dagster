@@ -6,7 +6,9 @@ from typing import AbstractSet as TypingAbstractSet
 from typing import Iterator as TypingIterator
 from typing import Mapping
 from typing import Optional as TypingOptional
-from typing import Sequence, cast
+from typing import Sequence
+from typing import Type as TypingType
+from typing import cast
 
 from typing_compat import get_args, get_origin
 
@@ -109,8 +111,8 @@ class DagsterType(RequiresResources):
         required_resource_keys: t.Optional[t.Set[str]] = None,
         kind: DagsterTypeKind = DagsterTypeKind.REGULAR,
         typing_type: t.Any = t.Any,
-        metadata_entries: t.Optional[t.List[MetadataEntry]] = None,
-        metadata: t.Optional[t.Dict[str, RawMetadataValue]] = None,
+        metadata_entries: t.Optional[t.Sequence[MetadataEntry]] = None,
+        metadata: t.Optional[t.Mapping[str, RawMetadataValue]] = None,
     ):
         check.opt_str_param(key, "key")
         check.opt_str_param(name, "name")
@@ -159,8 +161,9 @@ class DagsterType(RequiresResources):
         metadata_entries = check.opt_list_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
-        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
-        self._metadata_entries = normalize_metadata(metadata, metadata_entries)
+        self._metadata_entries = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str), metadata_entries
+        )
 
     @public  # type: ignore
     def type_check(self, context: "TypeCheckContext", value: object) -> TypeCheck:
@@ -192,7 +195,7 @@ class DagsterType(RequiresResources):
         return _RUNTIME_MAP[builtin_enum]
 
     @property
-    def metadata_entries(self) -> t.List[MetadataEntry]:
+    def metadata_entries(self) -> t.Sequence[MetadataEntry]:
         return self._metadata_entries  # type: ignore
 
     @public  # type: ignore
@@ -238,7 +241,7 @@ class DagsterType(RequiresResources):
         return self._description
 
     @property
-    def inner_types(self) -> t.List["DagsterType"]:
+    def inner_types(self) -> t.Sequence["DagsterType"]:
         return []
 
     @property
@@ -250,7 +253,7 @@ class DagsterType(RequiresResources):
         return self.materializer.schema_type.key if self.materializer else None
 
     @property
-    def type_param_keys(self) -> t.List[str]:
+    def type_param_keys(self) -> t.Sequence[str]:
         return []
 
     @property
@@ -739,7 +742,7 @@ class DagsterListApi:
         return _List(inner_type)
 
 
-List = DagsterListApi()
+List: DagsterListApi = DagsterListApi()
 
 
 def _List(inner_type):
@@ -793,7 +796,9 @@ _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY: t.Dict[type, DagsterType] = {}
 as_dagster_type are registered here so that we can remap the Python types to runtime types."""
 
 
-def make_python_type_usable_as_dagster_type(python_type: t.Type, dagster_type: DagsterType) -> None:
+def make_python_type_usable_as_dagster_type(
+    python_type: TypingType[t.Any], dagster_type: DagsterType
+) -> None:
     """
     Take any existing python type and map it to a dagster type (generally created with
     :py:class:`DagsterType <dagster.DagsterType>`) This can only be called once
@@ -1028,4 +1033,4 @@ class DagsterOptionalApi:
         return OptionalType(inner_type)
 
 
-Optional = DagsterOptionalApi()
+Optional: DagsterOptionalApi = DagsterOptionalApi()

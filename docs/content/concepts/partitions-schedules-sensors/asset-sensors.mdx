@@ -192,7 +192,15 @@ def trigger_daily_asset_when_any_upstream_partitions_have_new_materializations(c
 
 ## Asset reconciliation sensor <Experimental />
 
-Dagster provides an out-of-box sensor that will monitor a provided set of assets and automatically materialize the assets if their upstream dependencies are materialized. You can create this sensor using the <PyObject object="build_asset_reconciliation_sensor"/> function. You can specify if the sensor should materialize an asset when **any** of its parent assets have been materialized or after **all** of its parent assets have been materialized. This sensor can help you keep your assets up-to-date without needing to write custom schedules or sensors for each asset. To use an asset reconciliation sensor, add it to your repository:
+Dagster provides an out-of-box sensor that will monitor a provided set of assets and automatically materialize them if they're "unreconciled". An asset is considered "unreconciled" if any of:
+
+- The sensor has never tried to materialize it and it has never been materialized.
+- Any of its parents have been materialized more recently than it has.
+- Any of its parents are unreconciled.
+
+The sensor materializes unreconciled assets and avoids materializing assets before their parents are reconciled.
+
+You can create this sensor using the <PyObject object="build_asset_reconciliation_sensor"/> function. This sensor can help you keep your assets up-to-date without needing to write custom schedules or sensors for each asset. To use an asset reconciliation sensor, add it to your repository:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_reconciliation_sensor.py startafter=start_asset_reconciliation_sensor endbefore=end_asset_reconciliation_sensor
 @repository
@@ -209,42 +217,6 @@ def repository_1():
 ```
 
 This sensor will materialize `asset_b` whenever any of its parents materialize, and it will materialize `asset_c` whenever any of its parents materialize.
-
-By default the created sensor will materialize an asset in the `asset_selection` whenever any of its parents materialize. You can modify this behavior to wait until all parents have materialized:
-
-```python file=/concepts/partitions_schedules_sensors/sensors/asset_reconciliation_sensor.py startafter=start_asset_reconciliation_sensor_wait_for_upstream endbefore=end_asset_reconciliation_sensor_wait_for_upstream
-@repository
-def repository_2():
-    return [
-        asset_a,
-        asset_b,
-        asset_c,
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(asset_b, asset_c),
-            name="asset_reconciliation_sensor",
-            wait_for_all_upstream=True,
-        ),
-    ]
-```
-
-To try to avoid unnecessary materializations of assets, the reconciliation sensor will wait to materialize an asset if one of its parents is currently materializing. You can override this so that the sensor will materialize the asset even if a parent is currently materializing:
-
-```python file=/concepts/partitions_schedules_sensors/sensors/asset_reconciliation_sensor.py startafter=start_asset_reconciliation_sensor_wait_for_in_progress endbefore=end_asset_reconciliation_sensor_wait_for_in_progress
-@repository
-def repository_3():
-    return [
-        asset_a,
-        asset_b,
-        asset_c,
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(asset_b, asset_c),
-            name="asset_reconciliation_sensor",
-            wait_for_in_progress_runs=False,
-        ),
-    ]
-```
-
-**Note:** By default, the asset reconciliation sensor does not materialize any asset whose parent is currently materializing. To avoid a deadlock for an asset whose parents update frequently, you can set `wait_for_in_progress_runs=False` to kick off a materialization regardless of whether any run in progress exists for a parent asset.
 
 ## Examples
 

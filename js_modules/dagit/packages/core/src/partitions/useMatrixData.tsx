@@ -13,26 +13,7 @@ import {StepEventStatus} from '../types/globalTypes';
 import {PartitionMatrixSolidHandleFragment} from './types/PartitionMatrixSolidHandleFragment';
 import {PartitionMatrixStepRunFragment} from './types/PartitionMatrixStepRunFragment';
 
-type StatusSquareColor =
-  | 'SUCCESS'
-  | 'FAILURE'
-  | 'SKIPPED'
-  | 'MISSING'
-  | 'FAILURE-SUCCESS'
-  | 'FAILURE-SKIPPED'
-  | 'SUCCESS-FAILURE'
-  | 'SUCCESS-SKIPPED'
-  | 'SKIPPED-SUCCESS'
-  | 'SKIPPED-FAILURE';
-
-export const StatusSquareFinalColor: {[key: string]: StatusSquareColor} = {
-  'FAILURE-SUCCESS': 'SUCCESS',
-  'SKIPPED-SUCCESS': 'SUCCESS',
-  'SUCCESS-FAILURE': 'FAILURE',
-  'SKIPPED-FAILURE': 'FAILURE',
-  'FAILURE-SKIPPED': 'SKIPPED',
-  'SUCCESS-SKIPPED': 'SKIPPED',
-};
+type StatusSquareColor = 'SUCCESS' | 'FAILURE' | 'MISSING' | 'FAILURE-MISSING' | 'SUCCESS-MISSING';
 
 export interface PartitionRuns {
   name: string;
@@ -54,6 +35,8 @@ export interface MatrixStep {
   color: string;
   unix: number;
 }
+
+const MISSING_STEP_STATUSES = new Set([StepEventStatus.IN_PROGRESS, StepEventStatus.SKIPPED]);
 
 function getStartTime(a: PartitionMatrixStepRunFragment) {
   return a.startTime || 0;
@@ -107,14 +90,37 @@ function buildMatrixData(
         isStepKeyForNode(node.name, stats.stepKey),
       )?.status;
 
-      if (!lastRunStepStatus || lastRunStepStatus === StepEventStatus.IN_PROGRESS) {
+      let previousRunStatus;
+      if (
+        partition.runs.length > 1 &&
+        (!lastRunStepStatus || MISSING_STEP_STATUSES.has(lastRunStepStatus))
+      ) {
+        let idx = partition.runs.length - 2;
+        while (idx >= 0 && !previousRunStatus) {
+          const currRun = partition.runs[idx];
+          const currRunStatus = currRun.stepStats.find((stats) =>
+            isStepKeyForNode(node.name, stats.stepKey),
+          )?.status;
+          if (currRunStatus && !MISSING_STEP_STATUSES.has(currRunStatus)) {
+            previousRunStatus = currRunStatus;
+            break;
+          }
+          idx--;
+        }
+      }
+
+      if (!lastRunStepStatus && !previousRunStatus) {
         return blankState;
       }
 
+      const color: StatusSquareColor =
+        !lastRunStepStatus || MISSING_STEP_STATUSES.has(lastRunStepStatus)
+          ? (`${previousRunStatus}-MISSING` as StatusSquareColor)
+          : (lastRunStepStatus as StatusSquareColor);
       return {
         name: node.name,
         unix: getStartTime(lastRun),
-        color: lastRunStepStatus,
+        color,
       };
     });
     return {
@@ -169,6 +175,8 @@ interface MatrixDataInputs {
   options?: DisplayOptions;
 }
 
+export type MatrixData = ReturnType<typeof buildMatrixData>;
+
 /**
  * This hook uses the inputs provided to filter the data displayed and calls through to buildMatrixData.
  * It uses a React ref to cache the result and avoids re-computing when all inputs are shallow-equal.
@@ -182,7 +190,7 @@ interface MatrixDataInputs {
  */
 export const useMatrixData = (inputs: MatrixDataInputs) => {
   const cachedMatrixData = React.useRef<{
-    result: ReturnType<typeof buildMatrixData>;
+    result: MatrixData;
     inputs: MatrixDataInputs;
   }>();
   if (!inputs.solidHandles) {

@@ -34,13 +34,29 @@ setup(
     description="The data orchestration platform built for productivity.",
     long_description=get_description(),
     long_description_content_type="text/markdown",
-    url="https://github.com/dagster-io/dagster",
+    project_urls={
+        "Homepage": "https://dagster.io",
+        "GitHub": "https://github.com/dagster-io/dagster",
+        "Changelog": "https://github.com/dagster-io/dagster/releases",
+        "Issue Tracker": "https://github.com/dagster-io/dagster/issues",
+        "Twitter": "https://twitter.com/dagster",
+        "YouTube": "https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q",
+        "Slack": "https://dagster.io/slack",
+        "Blog": "https://dagster.io/blog",
+    },
     classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Environment :: Console",
+        "Environment :: Web Environment",
+        "Intended Audience :: Developers",
+        "Intended Audience :: System Administrators",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: Apache Software License",
+        "Topic :: System :: Monitoring",
+        "Topic :: Software Development :: Libraries :: Application Frameworks",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_tests*"]),
@@ -64,11 +80,12 @@ setup(
         "pendulum",
         "protobuf>=3.13.0,<4",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
         "python-dateutil",
+        "python-dotenv",
         "pytz",
         "requests",
-        "rx>=1.6,<2",  # https://github.com/dagster-io/dagster/issues/4089
         "setuptools",
         "tabulate",
+        "tomli",
         "tqdm",
         "typing_compat",
         "typing_extensions>=4.0.1",
@@ -112,7 +129,7 @@ setup(
             "isort==5.10.1",
         ],
         "mypy": [
-            "mypy==0.950",
+            "mypy==0.991",
             "types-backports",  # version will be resolved against backports
             "types-certifi",  # version will be resolved against certifi
             "types-chardet",  # chardet is a 2+-order dependency of some Dagster libs

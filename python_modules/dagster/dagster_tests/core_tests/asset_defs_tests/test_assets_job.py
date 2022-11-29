@@ -37,7 +37,7 @@ from dagster._core.definitions import AssetGroup, AssetIn, SourceAsset, asset, b
 from dagster._core.definitions.assets_job import get_base_asset_jobs
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.execution.api import execute_pipeline, execute_run_iterator
 from dagster._core.snap import DependencyStructureIndex
 from dagster._core.snap.dep_snapshot import (
@@ -662,39 +662,6 @@ def test_nasty_nested_graph_assets():
     assert _asset_keys_for_node(result, "create_twenty") == {AssetKey("twenty")}
 
 
-def test_fail_with_get_output_asset_key():
-    @io_manager
-    def my_io_manager(_context):
-        class Mine(IOManager):
-            def get_output_asset_key(self, _context):
-                return AssetKey("hey")
-
-            def handle_output(self, context, obj):
-                pass
-
-            def load_input(self, context):
-                return None
-
-        return Mine()
-
-    @asset
-    def foo():
-        return 1
-
-    @asset
-    def bar(foo):
-        return foo + 1
-
-    job = build_assets_job("x", [foo, bar], resource_defs={"io_manager": my_io_manager})
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match=r'The IOManager of output "result" on node "foo" associates it with asset key '
-        r"\"AssetKey\(\['hey'\]\)\", but this output has already been defined to produce asset "
-        r"\"AssetKey\(\['foo'\]\)\"",
-    ):
-        job.execute_in_process()
-
-
 def test_internal_asset_deps():
     @op
     def my_op(x, y):  # pylint: disable=unused-argument
@@ -1304,11 +1271,11 @@ def test_subset_of_asset_job():
         assert materialization_events[1].asset_key == AssetKey("foo")
         assert materialization_events[2].asset_key == AssetKey("foo_bar")
 
-        with pytest.raises(DagsterInvalidSubsetError):
-            result = foo_job.execute_in_process(
-                instance=instance,
-                asset_selection=[AssetKey("unconnected")],
-            )
+        # with pytest.raises(DagsterInvalidSubsetError):
+        #     result = foo_job.execute_in_process(
+        #         instance=instance,
+        #         asset_selection=[AssetKey("unconnected")],
+        #     )
 
 
 def test_subset_of_build_assets_job():

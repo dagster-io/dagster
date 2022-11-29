@@ -4,9 +4,9 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
-    Dict,
     Iterator,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Sequence,
@@ -89,7 +89,7 @@ class StepInput(
     def dependency_keys(self) -> Set[str]:
         return self.source.step_key_dependencies
 
-    def get_step_output_handle_dependencies(self) -> List[StepOutputHandle]:
+    def get_step_output_handle_dependencies(self) -> Sequence[StepOutputHandle]:
         return self.source.step_output_handle_dependencies
 
 
@@ -111,7 +111,7 @@ class StepInputSource(ABC):
         return set()
 
     @property
-    def step_output_handle_dependencies(self) -> List[StepOutputHandle]:
+    def step_output_handle_dependencies(self) -> Sequence[StepOutputHandle]:
         return []
 
     @abstractmethod
@@ -125,13 +125,13 @@ class StepInputSource(ABC):
         self,
         _step_context: "StepExecutionContext",
         _input_def: InputDefinition,
-    ) -> List[AssetLineageInfo]:
+    ) -> Sequence[AssetLineageInfo]:
         return []
 
     @abstractmethod
     def compute_version(
         self,
-        step_versions: Dict[str, Optional[str]],
+        step_versions: Mapping[str, Optional[str]],
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
@@ -332,7 +332,7 @@ class FromRootInputManager(
 
     def compute_version(
         self,
-        step_versions: Dict[str, Optional[str]],
+        step_versions: Mapping[str, Optional[str]],
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
@@ -437,7 +437,7 @@ class FromStepOutput(
         return {self.step_output_handle.step_key}
 
     @property
-    def step_output_handle_dependencies(self) -> List[StepOutputHandle]:
+    def step_output_handle_dependencies(self) -> Sequence[StepOutputHandle]:
         return [self.step_output_handle]
 
     def get_load_context(
@@ -515,7 +515,7 @@ class FromStepOutput(
 
     def compute_version(
         self,
-        step_versions: Dict[str, Optional[str]],
+        step_versions: Mapping[str, Optional[str]],
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
@@ -536,9 +536,7 @@ class FromStepOutput(
         self,
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
-    ) -> List[AssetLineageInfo]:
-        source_handle = self.step_output_handle
-        input_manager = step_context.get_io_manager(source_handle)
+    ) -> Sequence[AssetLineageInfo]:
         load_context = self.get_load_context(step_context, input_def)
 
         # check input_def
@@ -547,15 +545,6 @@ class FromStepOutput(
                 load_context, input_def.get_asset_key, input_def.get_asset_partitions
             )
             return [lineage_info] if lineage_info else []
-
-        # check io manager
-        io_lineage_info = _get_asset_lineage_from_fns(
-            load_context,
-            input_manager.get_input_asset_key,
-            input_manager.get_input_asset_partitions,
-        )
-        if io_lineage_info is not None:
-            return [io_lineage_info]
 
         # check output_def
         upstream_output = step_context.execution_plan.get_step_output(self.step_output_handle)
@@ -645,7 +634,7 @@ class FromConfig(
 
     def compute_version(
         self,
-        step_versions: Dict[str, Optional[str]],
+        step_versions: Mapping[str, Optional[str]],
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
@@ -692,7 +681,7 @@ class FromDirectInputValue(
 
     def compute_version(
         self,
-        step_versions: Dict[str, Optional[str]],
+        step_versions: Mapping[str, Optional[str]],
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
@@ -731,7 +720,7 @@ class FromDefaultValue(
 
     def compute_version(
         self,
-        step_versions: Dict[str, Optional[str]],
+        step_versions: Mapping[str, Optional[str]],
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
@@ -760,7 +749,7 @@ class FromMultipleSources(
         solid_handle: Optional[NodeHandle] = None,
         input_name: Optional[str] = None,
     ):
-        check.list_param(sources, "sources", StepInputSource)
+        check.sequence_param(sources, "sources", StepInputSource)
         for source in sources:
             check.invariant(
                 not isinstance(source, FromMultipleSources),
@@ -842,7 +831,7 @@ class FromMultipleSources(
 
     def get_asset_lineage(
         self, step_context: "StepExecutionContext", input_def: InputDefinition
-    ) -> List[AssetLineageInfo]:
+    ) -> Sequence[AssetLineageInfo]:
         return [
             relation
             for source in self.sources
@@ -1069,7 +1058,7 @@ class UnresolvedMappedStepInput(NamedTuple):
             source=self.source.resolve(map_key),
         )
 
-    def get_step_output_handle_deps_with_placeholders(self) -> List[StepOutputHandle]:
+    def get_step_output_handle_deps_with_placeholders(self) -> Sequence[StepOutputHandle]:
         """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys"""
 
         return [self.source.get_step_output_handle_dep_with_placeholder()]
@@ -1090,14 +1079,14 @@ class UnresolvedCollectStepInput(NamedTuple):
     def resolved_by_output_name(self) -> str:
         return self.source.resolved_by_output_name
 
-    def resolve(self, mapping_keys: List[str]) -> StepInput:
+    def resolve(self, mapping_keys: Sequence[str]) -> StepInput:
         return StepInput(
             name=self.name,
             dagster_type_key=self.dagster_type_key,
             source=self.source.resolve(mapping_keys),
         )
 
-    def get_step_output_handle_deps_with_placeholders(self) -> List[StepOutputHandle]:
+    def get_step_output_handle_deps_with_placeholders(self) -> Sequence[StepOutputHandle]:
         """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys"""
 
         return [self.source.get_step_output_handle_dep_with_placeholder()]

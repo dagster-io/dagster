@@ -1,8 +1,9 @@
 import {Button, DialogFooter, Dialog} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PartitionStepStatus} from '../partitions/PartitionStepStatus';
+import {PartitionPerOpStatus} from '../partitions/PartitionStepStatus';
 import {usePartitionStepQuery} from '../partitions/usePartitionStepQuery';
+import {DagsterTag} from '../runs/RunTag';
 import {RunFilterToken} from '../runs/RunsFilterInput';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
@@ -74,6 +75,7 @@ export const BackfillStepStatusDialogContent = ({
 
   const partitions = usePartitionStepQuery(
     partitionSet.name,
+    DagsterTag.Partition,
     backfill.partitionNames,
     pageSize,
     runsFilter,
@@ -83,7 +85,7 @@ export const BackfillStepStatusDialogContent = ({
   );
 
   return (
-    <PartitionStepStatus
+    <PartitionPerOpStatus
       partitionNames={backfill.partitionNames}
       partitions={partitions}
       pipelineName={partitionSet?.pipelineName}

@@ -16,8 +16,8 @@ import {AssetEventsQuery, AssetEventsQueryVariables} from './types/AssetEventsQu
  */
 export function useRecentAssetEvents(
   assetKey: AssetKey,
-  assetHasDefinedPartitions: boolean,
   params: AssetViewParams,
+  {assetHasDefinedPartitions}: {assetHasDefinedPartitions: boolean},
 ) {
   // The params behavior on this page is a bit nuanced - there are two main query
   // params: ?timestamp= and ?partition= and only one is set at a time. They can
@@ -31,7 +31,7 @@ export function useRecentAssetEvents(
   const before = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
   const xAxisDefault = assetHasDefinedPartitions ? 'partition' : 'time';
   const xAxis: 'partition' | 'time' =
-    assetHasDefinedPartitions && params.partition !== undefined
+    params.partition !== undefined
       ? 'partition'
       : params.time !== undefined || before
       ? 'time'
@@ -79,6 +79,70 @@ export function useRecentAssetEvents(
   }, [data, loading, refetch, loadUsingPartitionKeys, xAxis]);
 }
 
+export const ASSET_MATERIALIZATION_FRAGMENT = gql`
+  fragment AssetMaterializationFragment on MaterializationEvent {
+    partition
+    runOrError {
+      ... on PipelineRun {
+        id
+        runId
+        mode
+        repositoryOrigin {
+          id
+          repositoryName
+          repositoryLocationName
+        }
+        status
+        pipelineName
+        pipelineSnapshotId
+      }
+    }
+    runId
+    timestamp
+    stepKey
+    label
+    description
+    metadataEntries {
+      ...MetadataEntryFragment
+    }
+    assetLineage {
+      ...AssetLineageFragment
+    }
+  }
+  ${METADATA_ENTRY_FRAGMENT}
+  ${ASSET_LINEAGE_FRAGMENT}
+`;
+
+export const ASSET_OBSERVATION_FRAGMENT = gql`
+  fragment AssetObservationFragment on ObservationEvent {
+    partition
+    runOrError {
+      ... on PipelineRun {
+        id
+        runId
+        mode
+        repositoryOrigin {
+          id
+          repositoryName
+          repositoryLocationName
+        }
+        status
+        pipelineName
+        pipelineSnapshotId
+      }
+    }
+    runId
+    timestamp
+    stepKey
+    label
+    description
+    metadataEntries {
+      ...MetadataEntryFragment
+    }
+  }
+  ${METADATA_ENTRY_FRAGMENT}
+`;
+
 const ASSET_EVENTS_QUERY = gql`
   query AssetEventsQuery(
     $assetKey: AssetKeyInput!
@@ -114,61 +178,6 @@ const ASSET_EVENTS_QUERY = gql`
       }
     }
   }
-  fragment AssetMaterializationFragment on MaterializationEvent {
-    partition
-    runOrError {
-      ... on PipelineRun {
-        id
-        runId
-        mode
-        repositoryOrigin {
-          id
-          repositoryName
-          repositoryLocationName
-        }
-        status
-        pipelineName
-        pipelineSnapshotId
-      }
-    }
-    runId
-    timestamp
-    stepKey
-    label
-    description
-    metadataEntries {
-      ...MetadataEntryFragment
-    }
-    assetLineage {
-      ...AssetLineageFragment
-    }
-  }
-  fragment AssetObservationFragment on ObservationEvent {
-    partition
-    runOrError {
-      ... on PipelineRun {
-        id
-        runId
-        mode
-        repositoryOrigin {
-          id
-          repositoryName
-          repositoryLocationName
-        }
-        status
-        pipelineName
-        pipelineSnapshotId
-      }
-    }
-    runId
-    timestamp
-    stepKey
-    label
-    description
-    metadataEntries {
-      ...MetadataEntryFragment
-    }
-  }
-  ${METADATA_ENTRY_FRAGMENT}
-  ${ASSET_LINEAGE_FRAGMENT}
+  ${ASSET_OBSERVATION_FRAGMENT}
+  ${ASSET_MATERIALIZATION_FRAGMENT}
 `;

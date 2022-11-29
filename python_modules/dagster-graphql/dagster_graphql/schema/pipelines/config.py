@@ -153,7 +153,7 @@ class GraphenePipelineConfigValidationError(graphene.Interface):
                 message=error.message,
                 path=[],  # TODO: remove
                 stack=GrapheneEvaluationStack(config_schema_snapshot, error.stack),
-                reason=error.reason,
+                reason=error.reason.value,
                 value_rep=error.error_data.value_rep,
             )
         elif isinstance(error.error_data, MissingFieldErrorData):
@@ -161,7 +161,7 @@ class GraphenePipelineConfigValidationError(graphene.Interface):
                 message=error.message,
                 path=[],  # TODO: remove
                 stack=GrapheneEvaluationStack(config_schema_snapshot, error.stack),
-                reason=error.reason,
+                reason=error.reason.value,
                 field=GrapheneConfigTypeField(
                     config_schema_snapshot=config_schema_snapshot,
                     field_snap=error.error_data.field_snap,
@@ -172,7 +172,7 @@ class GraphenePipelineConfigValidationError(graphene.Interface):
                 message=error.message,
                 path=[],  # TODO: remove
                 stack=GrapheneEvaluationStack(config_schema_snapshot, error.stack),
-                reason=error.reason,
+                reason=error.reason.value,
                 fields=[
                     GrapheneConfigTypeField(
                         config_schema_snapshot=config_schema_snapshot,
@@ -187,7 +187,7 @@ class GraphenePipelineConfigValidationError(graphene.Interface):
                 message=error.message,
                 path=[],  # TODO: remove
                 stack=GrapheneEvaluationStack(config_schema_snapshot, error.stack),
-                reason=error.reason,
+                reason=error.reason.value,
                 field_name=error.error_data.field_name,
             )
         elif isinstance(error.error_data, FieldsNotDefinedErrorData):
@@ -195,7 +195,7 @@ class GraphenePipelineConfigValidationError(graphene.Interface):
                 message=error.message,
                 path=[],  # TODO: remove
                 stack=GrapheneEvaluationStack(config_schema_snapshot, error.stack),
-                reason=error.reason,
+                reason=error.reason.value,
                 field_names=error.error_data.field_names,
             )
         elif isinstance(error.error_data, SelectorTypeErrorData):
@@ -203,7 +203,7 @@ class GraphenePipelineConfigValidationError(graphene.Interface):
                 message=error.message,
                 path=[],  # TODO: remove
                 stack=GrapheneEvaluationStack(config_schema_snapshot, error.stack),
-                reason=error.reason,
+                reason=error.reason.value,
                 incoming_fields=error.error_data.incoming_fields,
             )
         else:

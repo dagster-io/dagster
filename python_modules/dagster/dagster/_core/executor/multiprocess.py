@@ -1,10 +1,13 @@
 import multiprocessing
 import os
 import sys
-from typing import List, Optional
+from multiprocessing.context import BaseContext as MultiprocessingBaseContext
+from typing import Any, Dict, Iterator, Optional, Sequence
 
 from dagster import MetadataEntry
 from dagster import _check as check
+from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import (
     DagsterExecutionInterruptedError,
     DagsterSubprocessError,
@@ -12,15 +15,17 @@ from dagster._core.errors import (
 )
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster._core.execution.context.system import PlanOrchestrationContext
+from dagster._core.execution.context.system import IStepContext, PlanOrchestrationContext
 from dagster._core.execution.context_creation_pipeline import create_context_free_log_manager
 from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
 from dagster._utils import start_termination_thread
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration, time_execution_scope
 
 from .child_process_executor import (
@@ -57,7 +62,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
         self.known_state = known_state
         self.repository_load_data = repository_load_data
 
-    def execute(self):
+    def execute(self) -> Iterator[DagsterEvent]:
         pipeline = self.recon_pipeline
         with DagsterInstance.from_ref(self.instance_ref) as instance:
             start_termination_thread(self.term_event)
@@ -98,7 +103,7 @@ class MultiprocessExecutor(Executor):
         retries: RetryMode,
         max_concurrent: int,
         start_method: Optional[str] = None,
-        explicit_forkserver_preload: Optional[List[str]] = None,
+        explicit_forkserver_preload: Optional[Sequence[str]] = None,
     ):
         self._retries = check.inst_param(retries, "retries", RetryMode)
         max_concurrent = max_concurrent if max_concurrent else multiprocessing.cpu_count()
@@ -118,10 +123,12 @@ class MultiprocessExecutor(Executor):
         self._explicit_forkserver_preload = explicit_forkserver_preload
 
     @property
-    def retries(self):
+    def retries(self) -> RetryMode:
         return self._retries
 
-    def execute(self, plan_context, execution_plan):
+    def execute(
+        self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
+    ) -> Iterator[DagsterEvent]:
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
@@ -129,13 +136,14 @@ class MultiprocessExecutor(Executor):
 
         multiproc_ctx = multiprocessing.get_context(self._start_method)
         if self._start_method == "forkserver":
+            module = pipeline.get_module()
             # if explicitly listed in config we will use that
             if self._explicit_forkserver_preload is not None:
                 preload = self._explicit_forkserver_preload
 
             # or if the reconstructable pipeline has a module target, we will use that
-            elif pipeline.get_module():
-                preload = [pipeline.get_module()]
+            elif module is not None:
+                preload = [module]
 
             # base case is to preload the dagster library
             else:
@@ -144,9 +152,9 @@ class MultiprocessExecutor(Executor):
             # we import this module first to avoid user code like
             # pyspark.serializers._hijack_namedtuple from breaking us
             if "dagster._core.executor.multiprocess" not in preload:
-                preload = ["dagster._core.executor.multiprocess"] + preload
+                preload = ["dagster._core.executor.multiprocess", *preload]
 
-            multiproc_ctx.set_forkserver_preload(preload)
+            multiproc_ctx.set_forkserver_preload(list(preload))
 
         limit = self._max_concurrent
 
@@ -165,10 +173,10 @@ class MultiprocessExecutor(Executor):
         # https://github.com/dagster-io/dagster/issues/811
         with time_execution_scope() as timer_result:
             with execution_plan.start(retry_mode=self.retries) as active_execution:
-                active_iters = {}
-                errors = {}
-                term_events = {}
-                stopping = False
+                active_iters: Dict[str, Iterator[DagsterEvent]] = {}
+                errors: Dict[int, SerializableErrorInfo] = {}
+                term_events: Dict[str, Any] = {}
+                stopping: bool = False
 
                 while (not stopping and not active_execution.is_complete) or active_iters:
                     if active_execution.check_for_interrupts():
@@ -299,16 +307,16 @@ class MultiprocessExecutor(Executor):
 
 
 def execute_step_out_of_process(
-    multiproc_ctx,
-    pipeline,
-    step_context,
-    step,
-    errors,
-    term_events,
-    retries,
-    known_state,
-    repository_load_data,
-):
+    multiproc_ctx: MultiprocessingBaseContext,
+    pipeline: ReconstructablePipeline,
+    step_context: IStepContext,
+    step: ExecutionStep,
+    errors: Dict[int, SerializableErrorInfo],
+    term_events: Dict[str, Any],
+    retries: RetryMode,
+    known_state: KnownExecutionState,
+    repository_load_data: Optional[RepositoryLoadData],
+) -> Iterator[DagsterEvent]:
     command = MultiprocessExecutorChildProcessCommand(
         run_config=step_context.run_config,
         pipeline_run=step_context.pipeline_run,

@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Mapping, Optional
 
 import requests
 from airflow import __version__ as airflow_version
@@ -20,7 +20,7 @@ class DagsterHook(BaseHook):
     hook_name = "Dagster"
 
     @staticmethod
-    def get_ui_field_behaviour() -> Dict[str, Any]:
+    def get_ui_field_behaviour() -> Mapping[str, Any]:
         """Returns custom field behaviour"""
         return {
             "hidden_fields": ["port", "schema", "extra"],
@@ -107,7 +107,7 @@ class DagsterHook(BaseHook):
         repository_name: str = "my_dagster_project",
         repostitory_location_name: str = "example_location",
         job_name: str = "all_assets_job",
-        run_config: Optional[Dict[str, Any]] = None,
+        run_config: Optional[Mapping[str, Any]] = None,
     ) -> str:
         query = """
 mutation LaunchJobExecution($executionParams: ExecutionParams!) {

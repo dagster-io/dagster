@@ -33,6 +33,8 @@ Having defined a partitioned job or asset, you can:
 | <PyObject object="WeeklyPartitionsDefinition" />  | A partitions definition with a partition for each week.                           |
 | <PyObject object="MonthlyPartitionsDefinition" /> | A partitions definition with a partition for each month.                          |
 | <PyObject object="StaticPartitionsDefinition" />  | A partitions definition with a fixed set of partitions.                           |
+| <PyObject object="MultiPartitionsDefinition" />   | A partitions definition with multiple dimensions.                                 |
+| <PyObject object="MultiPartitionKey" />           | A multi-dimensional partition key.                                                |
 
 A software-defined asset can be assigned a <PyObject object="PartitionsDefinition" />, which determines the set of partitions that compose it. If the asset is stored in a filesystem or an object store, then each partition will typically correspond to a file or object. If the asset is stored in a database, then each partition will typically correspond to a range of values in a table that fall within a particular window.
 
@@ -77,6 +79,46 @@ def my_daily_partitioned_asset(context) -> pd.DataFrame:
 ```
 
 If you're using the default I/O manager, materializing partition `2022-07-23` of this asset would store the output `DataFrame` in a pickle file at a path like `my_daily_partitioned_asset/2022-07-23`.
+
+#### Multi-dimensionally partitioned assets (Experimental)
+
+The <PyObject object="MultiPartitionsDefinition" /> class accepts a mapping of dimension name to partitions definition, creating a partition for each unique combination of dimension partitions. For example, the asset below would contain a partition for each combination of color and date: `red|2022-01-01`, `yellow|2022-01-01`, `blue|2022-01-01`, `red|2022-01-02` and so on.
+
+```python file=/concepts/partitions_schedules_sensors/multipartitions_asset.py startafter=start_multi_partitions_marker endbefore=end_multi_partitions_marker
+from dagster import (
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+    asset,
+)
+
+
+@asset(
+    partitions_def=MultiPartitionsDefinition(
+        {
+            "date": DailyPartitionsDefinition(start_date="2022-01-01"),
+            "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
+        }
+    )
+)
+def multi_partitions_asset(context):
+    context.log.info(context.partition_key.keys_by_dimension)
+```
+
+<Note>
+  Currently, Dagster only allows two-dimensional multipartitions definitions.
+</Note>
+
+Notice the code snippet above fetches the partition key from the asset context. Multi-dimensional partition keys are returned as <PyObject object="MultiPartitionKey"/> objects, which contain a <PyObject object="MultiPartitionKey" method="keys_by_dimension"/> method that returns the key per dimension. This object can also be passed into partition key execution parameters:
+
+```python file=/concepts/partitions_schedules_sensors/multipartitions_asset.py startafter=start_multi_partitions_key_marker endbefore=end_multi_partitions_key_marker
+from dagster import MultiPartitionKey, materialize
+
+result = materialize(
+    [multi_partitions_asset],
+    partition_key=MultiPartitionKey({"date": "2022-01-01", "color": "red"}),
+)
+```
 
 ### Viewing asset partition status
 

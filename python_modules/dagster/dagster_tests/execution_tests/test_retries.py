@@ -2,7 +2,7 @@ import os
 import tempfile
 import time
 from collections import defaultdict
-from typing import List
+from typing import Sequence
 
 import pytest
 
@@ -438,7 +438,7 @@ def test_expo_backoff():
     assert (logged_times[3] - logged_times[2]) > (delay * 7)
 
 
-def _get_retry_events(events: List[DagsterEvent]):
+def _get_retry_events(events: Sequence[DagsterEvent]):
     return list(
         filter(
             lambda evt: evt.event_type == DagsterEventType.STEP_UP_FOR_RETRY,

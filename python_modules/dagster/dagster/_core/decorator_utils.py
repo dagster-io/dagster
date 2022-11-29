@@ -1,5 +1,5 @@
 import textwrap
-from typing import Any, Callable, List, Optional, Set
+from typing import Any, Callable, Optional, Sequence, Set
 
 from dagster._seven import funcsigs
 
@@ -27,12 +27,12 @@ def _is_param_valid(param: funcsigs.Parameter, expected_positional: str) -> bool
     )
 
 
-def get_function_params(fn: Callable[..., Any]) -> List[funcsigs.Parameter]:
+def get_function_params(fn: Callable[..., Any]) -> Sequence[funcsigs.Parameter]:
     return list(funcsigs.signature(fn).parameters.values())
 
 
 def validate_expected_params(
-    params: List[funcsigs.Parameter], expected_params: List[str]
+    params: Sequence[funcsigs.Parameter], expected_params: Sequence[str]
 ) -> Optional[str]:
     """Returns first missing positional, if any, otherwise None"""
     expected_idx = 0
@@ -47,7 +47,7 @@ def is_required_param(param: funcsigs.Parameter) -> bool:
     return param.default == funcsigs.Parameter.empty
 
 
-def positional_arg_name_list(params: List[funcsigs.Parameter]) -> List[str]:
+def positional_arg_name_list(params: Sequence[funcsigs.Parameter]) -> Sequence[str]:
     accepted_param_types = {
         funcsigs.Parameter.POSITIONAL_OR_KEYWORD,
         funcsigs.Parameter.POSITIONAL_ONLY,

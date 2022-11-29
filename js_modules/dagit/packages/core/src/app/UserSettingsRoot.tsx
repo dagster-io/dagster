@@ -126,22 +126,12 @@ export function getFeatureFlagRows(
       ),
     },
     {
-      key: 'New asset detail pages',
+      key: 'Experimental schedule/sensor logging view',
       value: (
         <Checkbox
           format="switch"
-          checked={flags.includes(FeatureFlag.flagNewAssetDetails)}
-          onChange={() => toggleFlag(FeatureFlag.flagNewAssetDetails)}
-        />
-      ),
-    },
-    {
-      key: 'Experimental "groups-only" asset graph zoom level',
-      value: (
-        <Checkbox
-          format="switch"
-          checked={flags.includes(FeatureFlag.flagAssetGraphExperimentalZoom)}
-          onChange={() => toggleFlag(FeatureFlag.flagAssetGraphExperimentalZoom)}
+          checked={flags.includes(FeatureFlag.flagSensorScheduleLogging)}
+          onChange={() => toggleFlag(FeatureFlag.flagSensorScheduleLogging)}
         />
       ),
     },

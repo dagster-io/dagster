@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import List
+from typing import Sequence
 
 import click
 
@@ -23,8 +23,8 @@ scaffold_repository_command_help_text = (
 
 scaffold_command_help_text = (
     "Create a folder structure with a single Dagster repository and other files such as "
-    "workspace.yaml, in the current directory. This CLI enables you to quickly start building "
-    "a new Dagster project with everything set up."
+    "workspace.yaml, in the target directory set by the --name option. This CLI enables "
+    "you to quickly start building a new Dagster project with everything set up."
 )
 
 from_example_command_help_text = (
@@ -129,7 +129,7 @@ def from_example_list_command():
     click.echo(_styled_list_examples_prints(AVAILABLE_EXAMPLES))
 
 
-def _styled_list_examples_prints(examples: List[str]) -> str:
+def _styled_list_examples_prints(examples: Sequence[str]) -> str:
     return "\n".join([f"* {name}" for name in examples])
 
 

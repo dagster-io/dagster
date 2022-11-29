@@ -17,9 +17,26 @@ import threading
 from collections import OrderedDict
 from datetime import timezone
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, ContextManager, Generator, Generic, Iterator
-from typing import Mapping as TypingMapping
-from typing import Optional, Type, TypeVar, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ContextManager,
+    Dict,
+    Generator,
+    Generic,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 from warnings import warn
 
 import packaging.version
@@ -27,11 +44,8 @@ from typing_extensions import Literal
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster._seven import IS_WINDOWS
-from dagster._seven.abc import Mapping
 
-from .merger import merge_dicts
+from .merger import deep_merge_dicts, merge_dicts
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
 if sys.version_info > (3,):
@@ -42,7 +56,10 @@ else:
 if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent
 
+K = TypeVar("K")
 T = TypeVar("T")
+U = TypeVar("U")
+V = TypeVar("V")
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)
 
@@ -81,12 +98,6 @@ def convert_dagster_submodule_name(name: str, mode: Literal["private", "public"]
         return re.sub(r"^dagster._", "dagster.", name)
     else:
         check.failed("`mode` must be 'private' or 'public'")
-
-
-def make_email_on_run_failure_sensor(*args, **kwargs):
-    from .alert import make_email_on_run_failure_sensor  # pylint: disable=redefined-outer-name
-
-    return make_email_on_run_failure_sensor(*args, **kwargs)
 
 
 def file_relative_path(dunderfile: str, relative_path: str) -> str:
@@ -135,7 +146,7 @@ def script_relative_path(file_path: str) -> str:
 
 
 # Adapted from https://github.com/okunishinishi/python-stringcase/blob/master/stringcase.py
-def camelcase(string):
+def camelcase(string: str) -> str:
     check.str_param(string, "string")
 
     string = re.sub(r"^[\-_\.]", "", str(string))
@@ -146,14 +157,14 @@ def camelcase(string):
     )
 
 
-def ensure_single_item(ddict):
-    check.dict_param(ddict, "ddict")
+def ensure_single_item(ddict: Mapping[T, U]) -> Tuple[T, U]:
+    check.mapping_param(ddict, "ddict")
     check.param_invariant(len(ddict) == 1, "ddict", "Expected dict with single item")
     return list(ddict.items())[0]
 
 
 @contextlib.contextmanager
-def pushd(path):
+def pushd(path: str) -> Iterator[str]:
     old_cwd = os.getcwd()
     os.chdir(path)
     try:
@@ -162,7 +173,7 @@ def pushd(path):
         os.chdir(old_cwd)
 
 
-def safe_isfile(path):
+def safe_isfile(path: str) -> bool:
     """ "Backport of Python 3.8 os.path.isfile behavior.
 
     This is intended to backport https://docs.python.org/dev/whatsnew/3.8.html#os-path. I'm not
@@ -177,13 +188,13 @@ def safe_isfile(path):
         return False
 
 
-def mkdir_p(path):
+def mkdir_p(path: str) -> str:
     try:
         os.makedirs(path)
         return path
     except OSError as exc:  # Python >2.5
         if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
+            return path
         else:
             raise
 
@@ -251,11 +262,28 @@ class frozenlist(list):
         return hash(tuple(self))
 
 
-def make_readonly_value(value):
+@overload
+def make_readonly_value(value: List[T]) -> Sequence[T]:  # type: ignore
+    ...
+
+
+@overload
+def make_readonly_value(value: Dict[T, U]) -> Mapping[T, U]:  # type: ignore
+    ...
+
+
+@overload
+def make_readonly_value(value: T) -> T:
+    ...
+
+
+def make_readonly_value(value: Any) -> Any:
     if isinstance(value, list):
         return frozenlist(list(map(make_readonly_value, value)))
     elif isinstance(value, dict):
         return frozendict({key: make_readonly_value(value) for key, value in value.items()})
+    elif isinstance(value, set):
+        return frozenset(map(make_readonly_value, value))
     else:
         return value
 
@@ -365,18 +393,20 @@ def ensure_gen(
     return thing_or_gen
 
 
-def ensure_dir(file_path):
+def ensure_dir(file_path: str) -> str:
     try:
         os.makedirs(file_path)
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
+    return file_path
 
 
-def ensure_file(path):
+def ensure_file(path: str) -> str:
     ensure_dir(os.path.dirname(path))
     if not os.path.exists(path):
         touch_file(path)
+    return path
 
 
 def touch_file(path):
@@ -391,7 +421,7 @@ def _kill_on_event(termination_event):
 
 
 def send_interrupt():
-    if IS_WINDOWS:
+    if seven.IS_WINDOWS:
         # This will raise a KeyboardInterrupt in python land - meaning this wont be able to
         # interrupt things like sleep()
         thread.interrupt_main()
@@ -421,7 +451,7 @@ def start_termination_thread(termination_event):
 # Executes the next() function within an instance of the supplied context manager class
 # (leaving the context before yielding each result)
 def iterate_with_context(
-    context_fn: Callable[[], ContextManager], iterator: Iterator[T]
+    context_fn: Callable[[], ContextManager[Any]], iterator: Iterator[T]
 ) -> Iterator[T]:
     while True:
         # Allow interrupts during user code so that we can terminate slow/hanging steps
@@ -516,25 +546,25 @@ class EventGenerationManager(Generic[GeneratedContext]):
             yield from self.generator
 
 
-def utc_datetime_from_timestamp(timestamp):
+def utc_datetime_from_timestamp(timestamp: float) -> datetime.datetime:
     tz = timezone.utc
     return datetime.datetime.fromtimestamp(timestamp, tz=tz)
 
 
-def utc_datetime_from_naive(dt):
+def utc_datetime_from_naive(dt: datetime.datetime) -> datetime.datetime:
     tz = timezone.utc
     return dt.replace(tzinfo=tz)
 
 
-def is_enum_value(value):
+def is_enum_value(value: object) -> bool:
     return False if value is None else issubclass(value.__class__, Enum)
 
 
-def git_repository_root():
+def git_repository_root() -> str:
     return subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).decode("utf-8").strip()
 
 
-def segfault():
+def segfault() -> None:
     """Reliable cross-Python version segfault.
 
     https://bugs.python.org/issue1215#msg143236
@@ -544,7 +574,7 @@ def segfault():
     ctypes.string_at(0)
 
 
-def find_free_port():
+def find_free_port() -> int:
     with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
         s.bind(("", 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -552,7 +582,7 @@ def find_free_port():
 
 
 @contextlib.contextmanager
-def alter_sys_path(to_add, to_remove):
+def alter_sys_path(to_add: Sequence[str], to_remove: Sequence[str]) -> Iterator[None]:
     to_restore = [path for path in sys.path]
 
     # remove paths
@@ -571,7 +601,7 @@ def alter_sys_path(to_add, to_remove):
 
 
 @contextlib.contextmanager
-def restore_sys_modules():
+def restore_sys_modules() -> Iterator[None]:
     sys_modules = {k: v for k, v in sys.modules.items()}
     try:
         yield
@@ -581,8 +611,8 @@ def restore_sys_modules():
             del sys.modules[key]
 
 
-def process_is_alive(pid):
-    if IS_WINDOWS:
+def process_is_alive(pid: int) -> bool:
+    if seven.IS_WINDOWS:
         import psutil  # pylint: disable=import-error
 
         return psutil.pid_exists(pid=pid)
@@ -618,7 +648,7 @@ class Counter:
         with self._lock:
             self._counts[key] = self._counts.get(key, 0) + 1
 
-    def counts(self) -> TypingMapping[str, int]:
+    def counts(self) -> Mapping[str, int]:
         with self._lock:
             copy = {k: v for k, v in self._counts.items()}
         return copy
@@ -626,8 +656,10 @@ class Counter:
 
 traced_counter = contextvars.ContextVar("traced_counts", default=Counter())
 
+T_Callable = TypeVar("T_Callable", bound=Callable)
 
-def traced(func=None):
+
+def traced(func: T_Callable) -> T_Callable:
     """
     A decorator that keeps track of how many times a function is called.
     """
@@ -639,4 +671,4 @@ def traced(func=None):
 
         return func(*args, **kwargs)
 
-    return inner
+    return cast(T_Callable, inner)

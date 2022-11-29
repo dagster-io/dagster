@@ -64,12 +64,13 @@ def asset(
     io_manager_key: Optional[str] = ...,
     compute_kind: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
-    partitions_def: Optional[PartitionsDefinition] = ...,
-    op_tags: Optional[Dict[str, Any]] = ...,
+    partitions_def: Optional[PartitionsDefinition[Any]] = ...,
+    op_tags: Optional[Mapping[str, Any]] = ...,
     group_name: Optional[str] = ...,
     output_required: bool = ...,
     freshness_policy: Optional[FreshnessPolicy] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
+    op_version: Optional[str] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -90,12 +91,13 @@ def asset(
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    op_tags: Optional[Dict[str, Any]] = None,
+    partitions_def: Optional[PartitionsDefinition[Any]] = None,
+    op_tags: Optional[Mapping[str, Any]] = None,
     group_name: Optional[str] = None,
     output_required: bool = True,
     freshness_policy: Optional[FreshnessPolicy] = None,
     retry_policy: Optional[RetryPolicy] = None,
+    op_version: Optional[str] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -153,6 +155,8 @@ def asset(
         freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is intended to be updated
             with respect to its root data.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
+        op_version (Optional[str]): (Experimental) Version string passed to the op underlying the
+            asset.
 
     Examples:
 
@@ -195,6 +199,7 @@ def asset(
             output_required=output_required,
             freshness_policy=freshness_policy,
             retry_policy=retry_policy,
+            op_version=op_version,
         )(fn)
 
     return inner
@@ -216,11 +221,12 @@ class _Asset:
         compute_kind: Optional[str] = None,
         dagster_type: Optional[DagsterType] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        op_tags: Optional[Dict[str, Any]] = None,
+        op_tags: Optional[Mapping[str, Any]] = None,
         group_name: Optional[str] = None,
         output_required: bool = True,
         freshness_policy: Optional[FreshnessPolicy] = None,
         retry_policy: Optional[RetryPolicy] = None,
+        op_version: Optional[str] = None,
     ):
         self.name = name
 
@@ -245,6 +251,7 @@ class _Asset:
         self.output_required = output_required
         self.freshness_policy = freshness_policy
         self.retry_policy = retry_policy
+        self.op_version = op_version
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -290,6 +297,7 @@ class _Asset:
                 },
                 config_schema=self.config_schema,
                 retry_policy=self.retry_policy,
+                version=self.op_version,
             )(fn)
 
         keys_by_input_name = {
@@ -326,8 +334,8 @@ def multi_asset(
     required_resource_keys: Optional[Set[str]] = None,
     compute_kind: Optional[str] = None,
     internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    op_tags: Optional[Dict[str, Any]] = None,
+    partitions_def: Optional[PartitionsDefinition[object]] = None,
+    op_tags: Optional[Mapping[str, Any]] = None,
     can_subset: bool = False,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     group_name: Optional[str] = None,
@@ -376,7 +384,7 @@ def multi_asset(
     if resource_defs is not None:
         experimental_arg_warning("resource_defs", "multi_asset")
 
-    asset_deps = check.opt_dict_param(
+    asset_deps = check.opt_mapping_param(
         internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
     )
     required_resource_keys = check.opt_set_param(
@@ -385,8 +393,8 @@ def multi_asset(
     resource_defs = check.opt_mapping_param(
         resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
     )
-    config_schema = check.opt_dict_param(
-        config_schema,
+    _config_schema = check.opt_mapping_param(
+        config_schema,  # type: ignore
         "config_schema",
         additional_message="Only dicts are supported for asset config_schema.",
     )
@@ -437,7 +445,7 @@ def multi_asset(
                     **({"kind": compute_kind} if compute_kind else {}),
                     **(op_tags or {}),
                 },
-                config_schema=config_schema,
+                config_schema=_config_schema,
                 retry_policy=retry_policy,
             )(fn)
 

@@ -1,9 +1,9 @@
 import datetime
 import smtplib
 import ssl
-from typing import TYPE_CHECKING, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.backcompat import deprecation_warning
 
@@ -48,7 +48,7 @@ Subject: {email_subject}
 def send_email_via_ssl(
     email_from: str,
     email_password: str,
-    email_to: List[str],
+    email_to: Sequence[str],
     message: str,
     smtp_host: str,
     smtp_port: int,
@@ -62,7 +62,7 @@ def send_email_via_ssl(
 def send_email_via_starttls(
     email_from: str,
     email_password: str,
-    email_to: List[str],
+    email_to: Sequence[str],
     message: str,
     smtp_host: str,
     smtp_port: int,
@@ -77,7 +77,7 @@ def send_email_via_starttls(
 def make_email_on_run_failure_sensor(
     email_from: str,
     email_password: str,
-    email_to: List[str],
+    email_to: Sequence[str],
     email_body_fn: Callable[["RunFailureSensorContext"], str] = _default_failure_email_body,
     email_subject_fn: Callable[["RunFailureSensorContext"], str] = _default_failure_email_subject,
     smtp_host: str = "smtp.gmail.com",
@@ -86,7 +86,7 @@ def make_email_on_run_failure_sensor(
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
     monitored_jobs: Optional[
-        List[
+        Sequence[
             Union[
                 "PipelineDefinition",
                 "GraphDefinition",
@@ -97,7 +97,7 @@ def make_email_on_run_failure_sensor(
         ]
     ] = None,
     job_selection: Optional[
-        List[
+        Sequence[
             Union[
                 "PipelineDefinition",
                 "GraphDefinition",
@@ -109,7 +109,7 @@ def make_email_on_run_failure_sensor(
     ] = None,
     monitor_all_repositories: bool = False,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-):
+) -> SensorDefinition:
     """Create a job failure sensor that sends email via the SMTP protocol.
 
     Args:

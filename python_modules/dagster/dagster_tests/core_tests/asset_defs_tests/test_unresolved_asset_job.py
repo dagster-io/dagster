@@ -179,22 +179,22 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         (
             "x",
             False,
-            (DagsterInvalidSubsetError, r"AssetKey\(s\) {'x'} were selected"),
+            (DagsterInvalidSubsetError, r"were selected"),
         ),
         (
             "x",
             True,
-            (DagsterInvalidSubsetError, r"AssetKey\(s\) {'x'} were selected"),
+            (DagsterInvalidSubsetError, r"were selected"),
         ),
         (
             ["start", "x"],
             False,
-            (DagsterInvalidSubsetError, r"AssetKey\(s\) {'x'} were selected"),
+            (DagsterInvalidSubsetError, r"were selected"),
         ),
         (
             ["start", "x"],
             True,
-            (DagsterInvalidSubsetError, r"AssetKey\(s\) {'x'} were selected"),
+            (DagsterInvalidSubsetError, r"were selected"),
         ),
         (["d", "e", "f"], False, None),
         (["d", "e", "f"], True, None),
@@ -672,3 +672,6 @@ def test_job_run_request():
 
     run_request = my_job_hardcoded_config.run_request_for_partition(partition_key="a", run_key=None)
     assert run_request.run_config == {"ops": {"my_asset": {"config": {"partition": "blabla"}}}}
+    assert my_job_hardcoded_config.run_request_for_partition(
+        partition_key="a", run_config={"a": 5}
+    ).run_config == {"a": 5}

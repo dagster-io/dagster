@@ -89,7 +89,7 @@ export const RunStatusOverlay = ({name, run}: OverlayProps) => {
       <RunRow>
         <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
           <RunStatusIndicator status={run.status} />
-          <Link to={`/instance/runs/${run.runId}`}>
+          <Link to={`/runs/${run.runId}`}>
             <Mono style={{fontSize: '14px'}}>{titleForRun(run)}</Mono>
           </Link>
         </Box>

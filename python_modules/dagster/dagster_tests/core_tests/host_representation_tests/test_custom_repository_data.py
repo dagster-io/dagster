@@ -2,25 +2,25 @@ import sys
 
 import pytest
 
-from dagster import file_relative_path, repository
+from dagster import file_relative_path, op, repository
 from dagster._core.definitions.repository_definition import RepositoryData
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import GrpcServerTarget
 from dagster._grpc.server import GrpcServerProcess
-from dagster._legacy import lambda_solid, pipeline
+from dagster._legacy import pipeline
 
 
 def define_do_something(num_calls):
-    @lambda_solid(name="do_something_" + str(num_calls))
+    @op(name="do_something_" + str(num_calls))
     def do_something():
         return num_calls
 
     return do_something
 
 
-@lambda_solid
+@op
 def do_input(x):
     return x
 
@@ -29,10 +29,10 @@ def define_foo_pipeline(num_calls):
     do_something = define_do_something(num_calls)
 
     @pipeline(name="foo_" + str(num_calls))
-    def foo_pipeline():
+    def foo_job():
         do_input(do_something())
 
-    return foo_pipeline
+    return foo_job
 
 
 class TestDynamicRepositoryData(RepositoryData):
@@ -62,7 +62,9 @@ def workspace_process_context_fixture(instance):
         executable_path=sys.executable,
         python_file=file_relative_path(__file__, "test_custom_repository_data.py"),
     )
-    server_process = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
+    server_process = GrpcServerProcess(
+        instance_ref=instance.get_ref(), loadable_target_origin=loadable_target_origin
+    )
     try:
         with server_process.create_ephemeral_client():  # shuts down when leaves this context
             with WorkspaceProcessContext(

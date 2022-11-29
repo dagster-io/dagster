@@ -172,6 +172,10 @@ def test_job_run_request():
         assert run_request_with_tags.tags.get(PARTITION_NAME_TAG) == partition_key
         assert run_request_with_tags.tags.get("foo") == "bar"
 
+    assert my_job.run_request_for_partition(partition_key="a", run_config={"a": 5}).run_config == {
+        "a": 5
+    }
+
 
 # Datetime is not serializable
 @op
@@ -192,3 +196,35 @@ def test_job_input_values_out_of_process():
     with instance_for_test() as instance:
         result = execute_pipeline(reconstructable(pass_from_job), instance=instance)
         assert result.success
+
+
+def test_subset_job_with_config():
+    @op
+    def echo(x: int):
+        return x
+
+    @job
+    def no_config():
+        echo(echo.alias("emit")())
+
+    result = no_config.execute_in_process(run_config={"ops": {"emit": {"inputs": {"x": 1}}}})
+    assert result.success
+
+    subset_no_config = no_config.get_job_def_for_subset_selection(op_selection=["echo"])
+
+    result = subset_no_config.execute_in_process(run_config={"ops": {"echo": {"inputs": {"x": 1}}}})
+    assert result.success
+
+    @job(config={"ops": {"emit": {"inputs": {"x": 1}}}})
+    def with_config():
+        echo(echo.alias("emit")())
+
+    result = with_config.execute_in_process()
+    assert result.success
+
+    subset_with_config = with_config.get_job_def_for_subset_selection(op_selection=["echo"])
+
+    result = subset_with_config.execute_in_process(
+        run_config={"ops": {"echo": {"inputs": {"x": 1}}}}
+    )
+    assert result.success

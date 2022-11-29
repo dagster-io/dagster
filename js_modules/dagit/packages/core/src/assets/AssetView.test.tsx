@@ -10,19 +10,22 @@ import {AssetView} from './AssetView';
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../graph/asyncGraphLayout', () => ({}));
 
+// This file must be mocked because useVirtualizer tries to create a ResizeObserver,
+// and the component tree fails to mount.
+jest.mock('./AssetPartitions', () => ({AssetPartitions: () => <div />}));
+
 describe('AssetView', () => {
-  const defaultMocks = {
+  const mocks = {
     AssetNode: () => ({
       partitionKeys: () => [...new Array(0)],
+      partitionKeysByDimension: () => [...new Array(1)],
     }),
     Asset: () => ({
-      assetMaterializations: () => [...new Array(2)],
+      assetMaterializations: () => [...new Array(1)],
+      assetObservations: () => [...new Array(0)],
     }),
     MaterializationEvent: () => ({
-      timestamp: () => `${Math.random() * 100}`,
-    }),
-    ObservationEvent: () => ({
-      timestamp: () => `${Math.random() * 100}`,
+      timestamp: () => '100',
     }),
     MetadataEntry: () => ({
       __typename: 'TextMetadataEntry',
@@ -32,7 +35,7 @@ describe('AssetView', () => {
 
   const Test = ({path}: {path: string}) => {
     return (
-      <TestProvider apolloProps={{mocks: defaultMocks}}>
+      <TestProvider apolloProps={{mocks}}>
         <MemoryRouter initialEntries={[path]}>
           <AssetView assetKey={{path: ['foo']}} />
         </MemoryRouter>

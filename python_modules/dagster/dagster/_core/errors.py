@@ -15,11 +15,17 @@ The wrapped exceptions include additional context for the original exceptions, i
 Dagster runtime.
 """
 
+from __future__ import annotations
+
 import sys
 from contextlib import contextmanager
+from typing import TYPE_CHECKING, Callable, Iterator, Optional, Type
 
 import dagster._check as check
 from dagster._utils.interrupts import raise_interrupts_as
+
+if TYPE_CHECKING:
+    from dagster._core.log_manager import DagsterLogManager
 
 
 class DagsterExecutionInterruptedError(BaseException):
@@ -45,6 +51,10 @@ class DagsterError(Exception):
 
 class DagsterInvalidDefinitionError(DagsterError):
     """Indicates that the rules for a definition have been violated by the user."""
+
+
+class DagsterInvalidObservationError(DagsterError):
+    """Indicates that an invalid value was returned from a source asset observation function."""
 
 
 class DagsterInvalidSubsetError(DagsterError):
@@ -146,13 +156,18 @@ class DagsterStepOutputNotFoundError(DagsterError):
 
 
 @contextmanager
-def raise_execution_interrupts():
+def raise_execution_interrupts() -> Iterator[None]:
     with raise_interrupts_as(DagsterExecutionInterruptedError):
         yield
 
 
 @contextmanager
-def user_code_error_boundary(error_cls, msg_fn, log_manager=None, **kwargs):
+def user_code_error_boundary(
+    error_cls: Type[DagsterUserCodeExecutionError],
+    msg_fn: Callable[[], str],
+    log_manager: Optional[DagsterLogManager] = None,
+    **kwargs: object,
+) -> Iterator[None]:
     """
     Wraps the execution of user-space code in an error boundary. This places a uniform
     policy around any user code invoked by the framework. This ensures that all user
@@ -223,7 +238,7 @@ class DagsterUserCodeExecutionError(DagsterError):
         self.original_exc_info = original_exc_info
 
     @property
-    def is_user_code_error(self):
+    def is_user_code_error(self) -> bool:
         return True
 
 
@@ -526,6 +541,10 @@ class RunStatusSensorExecutionError(DagsterUserCodeExecutionError):
     """Error raised during the execution of a user-defined run status sensor."""
 
 
+class FreshnessPolicySensorExecutionError(DagsterUserCodeExecutionError):
+    """Error raised during the execution of a user-defined freshness policy sensor."""
+
+
 class DagsterImportError(DagsterError):
     """Import error raised while importing user-code."""
 
@@ -557,4 +576,10 @@ class DagsterHomeNotSetError(DagsterError):
 class DagsterUnknownPartitionError(DagsterError):
     """
     The user has tried to access run config for a partition name that does not exist.
+    """
+
+
+class DagsterUndefinedLogicalVersionError(DagsterError):
+    """
+    The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined.
     """

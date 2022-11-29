@@ -54,6 +54,7 @@ import github from '../icon-svgs/github.svg';
 import github_pr_closed from '../icon-svgs/github_pr_closed.svg';
 import github_pr_merged from '../icon-svgs/github_pr_merged.svg';
 import github_pr_open from '../icon-svgs/github_pr_open.svg';
+import gitlab from '../icon-svgs/gitlab.svg';
 import graph_downstream from '../icon-svgs/graph_downstream.svg';
 import graph_neighbors from '../icon-svgs/graph_neighbors.svg';
 import graph_upstream from '../icon-svgs/graph_upstream.svg';
@@ -75,7 +76,6 @@ import menu from '../icon-svgs/menu.svg';
 import menu_book from '../icon-svgs/menu_book.svg';
 import more_horiz from '../icon-svgs/more_horiz.svg';
 import nightlight from '../icon-svgs/nightlight.svg';
-import noteable_logo from '../icon-svgs/noteable_logo.svg';
 import observation from '../icon-svgs/observation.svg';
 import open_in_new from '../icon-svgs/open_in_new.svg';
 import panel_hide_right from '../icon-svgs/panel_hide_right.svg';
@@ -97,6 +97,7 @@ import settings_backup_restore from '../icon-svgs/settings_backup_restore.svg';
 import slack from '../icon-svgs/slack.svg';
 import sort_by_alpha from '../icon-svgs/sort_by_alpha.svg';
 import source from '../icon-svgs/source.svg';
+import source_asset from '../icon-svgs/source_asset.svg';
 import speed from '../icon-svgs/speed.svg';
 import splitscreen from '../icon-svgs/splitscreen.svg';
 import star from '../icon-svgs/star.svg';
@@ -150,6 +151,7 @@ export const Icons = {
   run: history,
   sensors,
   schedule,
+  source_asset,
   workspace: source,
   gantt_flat,
   gantt_waterfall,
@@ -175,6 +177,7 @@ export const Icons = {
   github_pr_open,
   github_pr_closed,
   github_pr_merged,
+  gitlab,
   youtube,
 
   graph_downstream,
@@ -267,12 +270,9 @@ export const Icons = {
   wysiwyg,
   zoom_in,
   zoom_out,
-
-  // Integration icons
-  noteable_logo,
 } as const;
 
-const SVGS_WITH_COLORS = new Set([slack, noteable_logo]);
+const SVGS_WITH_COLORS = new Set([slack]);
 
 export type IconName = keyof typeof Icons;
 
@@ -328,15 +328,16 @@ export const IconWrapper = styled.div<WrapperProps>`
         // We could just use !important but specificity is a little more flexible
         `
         background: url(${p.$img});
+        background-size: cover;
         &[role='img'][role='img'] {
           background-color: transparent;
         }
       `
       : `
         background: ${p.$color};
+        mask-size: cover;
         mask-image: url(${p.$img});
       `}
-  mask-size: cover;
   object-fit: cover;
   transition: transform 150ms linear;
 

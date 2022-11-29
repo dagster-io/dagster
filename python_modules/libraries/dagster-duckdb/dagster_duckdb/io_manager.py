@@ -1,138 +1,23 @@
-from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Dict, Generic, Optional, Sequence, Type, TypeVar
+from typing import Sequence
 
 import duckdb
 
-from dagster import Field, IOManager, IOManagerDefinition, InputContext, OutputContext
-from dagster import _check as check
-from dagster import io_manager
-from dagster._seven.temp_dir import get_system_temp_directory
+from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
+from dagster._core.storage.db_io_manager import (
+    DbClient,
+    DbIOManager,
+    DbTypeHandler,
+    TablePartition,
+    TableSlice,
+)
 from dagster._utils.backoff import backoff
 
-T = TypeVar("T")
-
-
-class DbTypeHandler(ABC, Generic[T]):
-    @abstractmethod
-    def handle_output(
-        self, context: OutputContext, obj: T, conn: duckdb.DuckDBPyConnection, base_path: str
-    ):
-        """Stores the given object at the provided filepath."""
-
-    @abstractmethod
-    def load_input(self, context: InputContext, conn: duckdb.DuckDBPyConnection) -> T:
-        """Loads the return of the query as the correct type."""
-
-    @abstractmethod
-    def _get_path(self, context: OutputContext, base_path: str) -> Path:
-        """Creates the path where the file should be stored."""
-
-    @property
-    def supported_input_types(self) -> Sequence[Type]:
-        pass
-
-    @property
-    def supported_output_types(self) -> Sequence[Type]:
-        pass
-
-    def _schema(self, context, output_context: OutputContext):
-        if context.has_asset_key:
-            # the schema is the second to last component of the asset key, e.g.
-            # AssetKey([database, schema, tablename])
-            return context.asset_key.path[-2]
-        else:
-            # for non-asset outputs, the schema should be specified as metadata, or will default to public
-            context_metadata = output_context.metadata or {}
-            return context_metadata.get("schema", "public")
-
-    def _table(self, context, output_context: OutputContext):
-        if context.has_asset_key:
-            # the table is the  last component of the asset key, e.g.
-            # AssetKey([database, schema, tablename])
-            return context.asset_key.path[-1]
-        else:
-            # for non-asset outputs, the table is the output name
-            return output_context.name
-
-    def _table_path(self, context, output_context: OutputContext):
-        return f"{self._schema(context, output_context)}.{self._table(context, output_context)}"
-
-
-class DuckDBIOManager(IOManager):
-    """Stores data in csv files and creates duckdb views over those files."""
-
-    def __init__(self, base_path, type_handlers: Sequence[DbTypeHandler]):
-        self._base_path = base_path
-
-        self._output_handlers_by_type: Dict[Optional[Type], DbTypeHandler] = {}
-        self._input_handlers_by_type: Dict[Optional[Type], DbTypeHandler] = {}
-        for type_handler in type_handlers:
-            for handled_output_type in type_handler.supported_output_types:
-                check.invariant(
-                    handled_output_type not in self._output_handlers_by_type,
-                    "DuckDBIOManager provided with two handlers for the same type. "
-                    f"Type: '{handled_output_type}'. Handler classes: '{type(type_handler)}' and "
-                    f"'{type(self._output_handlers_by_type.get(handled_output_type))}'.",
-                )
-
-                self._output_handlers_by_type[handled_output_type] = type_handler
-
-            for handled_input_type in type_handler.supported_input_types:
-                check.invariant(
-                    handled_input_type not in self._input_handlers_by_type,
-                    "DuckDBIOManager provided with two handlers for the same type. "
-                    f"Type: '{handled_input_type}'. Handler classes: '{type(type_handler)}' and "
-                    f"'{type(self._input_handlers_by_type.get(handled_input_type))}'.",
-                )
-
-                self._input_handlers_by_type[handled_input_type] = type_handler
-
-    def handle_output(self, context: OutputContext, obj: object):
-        if obj is not None:  # if this is a dbt output, then the value will be None
-            obj_type = type(obj)
-            check.invariant(
-                obj_type in self._output_handlers_by_type,
-                f"DuckDBIOManager does not have a handler that supports outputs of type '{obj_type}'. Has handlers "
-                f"for types '{', '.join([str(handler_type) for handler_type in self._output_handlers_by_type.keys()])}'",
-            )
-            conn = self._connect_duckdb(context).cursor()
-            # type handler will store the output in duckdb
-            self._output_handlers_by_type[obj_type].handle_output(
-                context, obj=obj, conn=conn, base_path=self._base_path
-            )
-            conn.close()
-
-    def load_input(self, context: InputContext):
-        obj_type = context.dagster_type.typing_type
-        check.invariant(
-            obj_type in self._input_handlers_by_type,
-            f"DuckDBIOManager does not have a handler that supports inputs of type '{obj_type}'. Has handlers "
-            f"for types '{', '.join([str(handler_type) for handler_type in self._input_handlers_by_type.keys()])}'",
-        )
-
-        check.invariant(
-            not context.has_asset_partitions, "DuckDBIOManager can't load partitioned inputs"
-        )
-
-        conn = self._connect_duckdb(context).cursor()
-        ret = self._input_handlers_by_type[obj_type].load_input(context, conn=conn)
-        conn.close()
-        return ret
-
-    def _connect_duckdb(self, context):
-        return backoff(
-            fn=duckdb.connect,
-            retry_on=(RuntimeError, duckdb.IOException),
-            kwargs={"database": context.resource_config["duckdb_path"], "read_only": False},
-        )
+DUCKDB_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManagerDefinition:
     """
     Builds an IO manager definition that reads inputs from and writes outputs to DuckDB.
-
-    Note that the DuckDBIOManager cannot load partitioned assets.
 
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
@@ -148,38 +33,119 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
             from dagster_duckdb import build_duckdb_io_manager
             from dagster_duckdb_pandas import DuckDBPandasTypeHandler
 
-            duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
-
-            @job(resource_defs={'io_manager': duckdb_io_manager})
-            def my_job():
+            @asset(
+                key_prefix=["my_schema"]  # will be used as the schema in duckdb
+            )
+            def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-    You may configure the returned IO Manager as follows:
+            duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
 
-    .. code-block:: YAML
+            @repository
+            def my_repo():
+                return with_resources(
+                    [my_table],
+                    {"io_manager": duckdb_io_manager.configured({"database": "my_db.duckdb"})}
+                )
 
-        resources:
-            io_manager:
-                config:
-                    base_path: path/to/store/files  # all data will be stored at this path
-                    duckdb_path: path/to/database.duckdb  # path to the duckdb database
+    If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
+    the IO Manager. For assets, the schema will be determined from the asset key. For ops, the schema can be
+    specified by including a "schema" entry in output metadata. If none of these is provided, the schema will
+    default to "public".
+
+    .. code-block:: python
+
+        @op(
+            out={"my_table": Out(metadata={"schema": "my_schema"})}
+        )
+        def make_my_table() -> pd.DataFrame:
+            ...
+
+    To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
+    In or AssetIn.
+
+    .. code-block:: python
+
+        @asset(
+            ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
+        )
+        def my_table_a(my_table: pd.DataFrame):
+            # my_table will just contain the data from column "a"
+            ...
+
     """
 
-    @io_manager(config_schema={"base_path": Field(str, is_required=False), "duckdb_path": str})
-    def duckdb_io_manager(init_context):
+    @io_manager(
+        config_schema={
+            "database": Field(StringSource, description="Path to the DuckDB database."),
+            "schema": Field(
+                StringSource, description="Name of the schema to use.", is_required=False
+            ),
+        }
+    )
+    def duckdb_io_manager(_):
         """IO Manager for storing outputs in a DuckDB database
-
-        Supports storing and loading Pandas DataFrame objects. Converts the DataFrames to CSV and
-        creates DuckDB views over the files.
 
         Assets will be stored in the schema and table name specified by their AssetKey.
         Subsequent materializations of an asset will overwrite previous materializations of that asset.
         Op outputs will be stored in the schema specified by output metadata (defaults to public) in a
         table of the name of the output.
         """
-        return DuckDBIOManager(
-            base_path=init_context.resource_config.get("base_path", get_system_temp_directory()),
-            type_handlers=type_handlers,
+        return DbIOManager(
+            type_handlers=type_handlers, db_client=DuckDbClient(), io_manager_name="DuckDBIOManager"
         )
 
     return duckdb_io_manager
+
+
+class DuckDbClient(DbClient):
+    @staticmethod
+    def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
+        conn = _connect_duckdb(context).cursor()
+        try:
+            conn.execute(_get_cleanup_statement(table_slice))
+        except duckdb.CatalogException:
+            # table doesn't exist yet, so ignore the error
+            pass
+        conn.close()
+
+    @staticmethod
+    def get_select_statement(table_slice: TableSlice) -> str:
+        col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
+        if table_slice.partition:
+            return (
+                f"SELECT {col_str} FROM {table_slice.schema}.{table_slice.table}\n"
+                + _time_window_where_clause(table_slice.partition)
+            )
+        else:
+            return f"""SELECT {col_str} FROM {table_slice.schema}.{table_slice.table}"""
+
+
+def _connect_duckdb(context):
+    return backoff(
+        fn=duckdb.connect,
+        retry_on=(RuntimeError, duckdb.IOException),
+        kwargs={"database": context.resource_config["database"], "read_only": False},
+        max_retries=10,
+    )
+
+
+def _get_cleanup_statement(table_slice: TableSlice) -> str:
+    """
+    Returns a SQL statement that deletes data in the given table to make way for the output data
+    being written.
+    """
+    if table_slice.partition:
+        return (
+            f"DELETE FROM {table_slice.schema}.{table_slice.table}\n"
+            + _time_window_where_clause(table_slice.partition)
+        )
+    else:
+        return f"DELETE FROM {table_slice.schema}.{table_slice.table}"
+
+
+def _time_window_where_clause(table_partition: TablePartition) -> str:
+    start_dt, end_dt = table_partition.time_window
+    start_dt_str = start_dt.strftime(DUCKDB_DATETIME_FORMAT)
+    end_dt_str = end_dt.strftime(DUCKDB_DATETIME_FORMAT)
+    return f"""WHERE {table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""

@@ -14,6 +14,13 @@ export interface TypeExplorerFragment_metadataEntries_PathMetadataEntry {
   path: string;
 }
 
+export interface TypeExplorerFragment_metadataEntries_NotebookMetadataEntry {
+  __typename: "NotebookMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
 export interface TypeExplorerFragment_metadataEntries_JsonMetadataEntry {
   __typename: "JsonMetadataEntry";
   label: string;
@@ -163,7 +170,7 @@ export interface TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry {
   schema: TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type TypeExplorerFragment_metadataEntries = TypeExplorerFragment_metadataEntries_PathMetadataEntry | TypeExplorerFragment_metadataEntries_JsonMetadataEntry | TypeExplorerFragment_metadataEntries_UrlMetadataEntry | TypeExplorerFragment_metadataEntries_TextMetadataEntry | TypeExplorerFragment_metadataEntries_MarkdownMetadataEntry | TypeExplorerFragment_metadataEntries_PythonArtifactMetadataEntry | TypeExplorerFragment_metadataEntries_FloatMetadataEntry | TypeExplorerFragment_metadataEntries_IntMetadataEntry | TypeExplorerFragment_metadataEntries_BoolMetadataEntry | TypeExplorerFragment_metadataEntries_PipelineRunMetadataEntry | TypeExplorerFragment_metadataEntries_AssetMetadataEntry | TypeExplorerFragment_metadataEntries_TableMetadataEntry | TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry;
+export type TypeExplorerFragment_metadataEntries = TypeExplorerFragment_metadataEntries_PathMetadataEntry | TypeExplorerFragment_metadataEntries_NotebookMetadataEntry | TypeExplorerFragment_metadataEntries_JsonMetadataEntry | TypeExplorerFragment_metadataEntries_UrlMetadataEntry | TypeExplorerFragment_metadataEntries_TextMetadataEntry | TypeExplorerFragment_metadataEntries_MarkdownMetadataEntry | TypeExplorerFragment_metadataEntries_PythonArtifactMetadataEntry | TypeExplorerFragment_metadataEntries_FloatMetadataEntry | TypeExplorerFragment_metadataEntries_IntMetadataEntry | TypeExplorerFragment_metadataEntries_BoolMetadataEntry | TypeExplorerFragment_metadataEntries_PipelineRunMetadataEntry | TypeExplorerFragment_metadataEntries_AssetMetadataEntry | TypeExplorerFragment_metadataEntries_TableMetadataEntry | TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry;
 
 export interface TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -1186,7 +1193,7 @@ export interface TypeExplorerFragment_outputSchemaType_MapConfigType {
 export type TypeExplorerFragment_outputSchemaType = TypeExplorerFragment_outputSchemaType_ArrayConfigType | TypeExplorerFragment_outputSchemaType_EnumConfigType | TypeExplorerFragment_outputSchemaType_RegularConfigType | TypeExplorerFragment_outputSchemaType_CompositeConfigType | TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType | TypeExplorerFragment_outputSchemaType_MapConfigType;
 
 export interface TypeExplorerFragment {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   description: string | null;
   metadataEntries: TypeExplorerFragment_metadataEntries[];

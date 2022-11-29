@@ -1,4 +1,5 @@
 import sys
+from types import ModuleType
 
 import dagster._module_alias_map as _module_alias_map
 
@@ -98,6 +99,7 @@ from dagster._config.source import (
     IntSource as IntSource,
     StringSource as StringSource,
 )
+
 from dagster._core.definitions.asset_in import (
     AssetIn as AssetIn,
 )
@@ -153,11 +155,15 @@ from dagster._core.definitions.decorators.sensor_decorator import (
     sensor as sensor,
     multi_asset_sensor as multi_asset_sensor,
 )
+from dagster._core.definitions.decorators.source_asset_decorator import (
+    observable_source_asset as observable_source_asset,
+)
 from dagster._core.definitions.dependency import (
     DependencyDefinition as DependencyDefinition,
     MultiDependencyDefinition as MultiDependencyDefinition,
     NodeInvocation as NodeInvocation,
 )
+from dagster._core.definitions.definitions_class import Definitions as Definitions
 from dagster._core.definitions.events import (
     AssetKey as AssetKey,
     AssetMaterialization as AssetMaterialization,
@@ -177,6 +183,15 @@ from dagster._core.definitions.executor_definition import (
     multi_or_in_process_executor as multi_or_in_process_executor,
     multiple_process_executor_requirements as multiple_process_executor_requirements,
     multiprocess_executor as multiprocess_executor,
+)
+from dagster._core.definitions.freshness_policy import (
+    FreshnessPolicy as FreshnessPolicy,
+)
+from dagster._core.definitions.freshness_policy_sensor_definition import (
+    FreshnessPolicySensorContext as FreshnessPolicySensorContext,
+    FreshnessPolicySensorDefinition as FreshnessPolicySensorDefinition,
+    build_freshness_policy_sensor_context as build_freshness_policy_sensor_context,
+    freshness_policy_sensor as freshness_policy_sensor,
 )
 from dagster._core.definitions.graph_definition import (
     GraphDefinition as GraphDefinition,
@@ -203,6 +218,9 @@ from dagster._core.definitions.logger_definition import (
     build_init_logger_context as build_init_logger_context,
     logger as logger,
 )
+from dagster._core.definitions.logical_version import (
+    LogicalVersion as LogicalVersion,
+)
 from dagster._core.definitions.materialize import (
     materialize as materialize,
     materialize_to_memory as materialize_to_memory,
@@ -217,6 +235,7 @@ from dagster._core.definitions.metadata import (
     MarkdownMetadataValue as MarkdownMetadataValue,
     MetadataEntry as MetadataEntry,
     MetadataValue as MetadataValue,
+    NotebookMetadataValue as NotebookMetadataValue,
     PathMetadataValue as PathMetadataValue,
     PythonArtifactMetadataValue as PythonArtifactMetadataValue,
     TableMetadataValue as TableMetadataValue,
@@ -330,6 +349,10 @@ from dagster._core.definitions.time_window_partitions import (
     hourly_partitioned_config as hourly_partitioned_config,
     monthly_partitioned_config as monthly_partitioned_config,
     weekly_partitioned_config as weekly_partitioned_config,
+)
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionsDefinition as MultiPartitionsDefinition,
+    MultiPartitionKey as MultiPartitionKey,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import (
     define_asset_job as define_asset_job,
@@ -538,6 +561,7 @@ from dagster._serdes.serdes import (
     deserialize_value as deserialize_value,
     serialize_value as serialize_value,
 )
+from dagster._core.storage.upath_io_manager import UPathIOManager as UPathIOManager
 from dagster._utils import (
     file_relative_path as file_relative_path,
 )
@@ -567,7 +591,7 @@ from dagster.version import __version__
 import importlib
 from typing import TYPE_CHECKING
 from typing import Any as TypingAny
-from typing import Callable, Mapping
+from typing import Callable, Mapping, Sequence
 from typing import Tuple as TypingTuple
 
 from typing_extensions import Final
@@ -625,5 +649,5 @@ def __getattr__(name: str) -> TypingAny:
         raise AttributeError("module '{}' has no attribute '{}'".format(__name__, name))
 
 
-def __dir__(_self):
+def __dir__(_self: ModuleType) -> Sequence[str]:
     return [*globals(), *_DEPRECATED.keys(), *_DEPRECATED_RENAMED.keys()]

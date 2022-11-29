@@ -16,6 +16,7 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
+    Sequence,
     Set,
     Union,
     cast,
@@ -49,7 +50,12 @@ from dagster._core.executor.base import Executor
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.storage.pipeline_run import PipelineRun
-from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+    MULTIDIMENSIONAL_PARTITION_PREFIX,
+    PARTITION_NAME_TAG,
+)
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import DagsterType
 
@@ -60,6 +66,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.dependency import Node, NodeHandle
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.resource_definition import Resources
+    from dagster._core.event_api import EventLogRecord
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.state import KnownExecutionState
     from dagster._core.instance import DagsterInstance
@@ -128,7 +135,7 @@ class IPlanContext(ABC):
 
     @property
     @abstractmethod
-    def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
+    def output_capture(self) -> Optional[Mapping[StepOutputHandle, Any]]:
         raise NotImplementedError()
 
     @property
@@ -136,7 +143,7 @@ class IPlanContext(ABC):
         raise NotImplementedError()
 
     @property
-    def logging_tags(self) -> Dict[str, str]:
+    def logging_tags(self) -> Mapping[str, str]:
         return self.log.logging_metadata.to_tags()
 
     def has_tag(self, key: str) -> bool:
@@ -201,7 +208,7 @@ class PlanOrchestrationContext(IPlanContext):
         plan_data: PlanData,
         log_manager: DagsterLogManager,
         executor: Executor,
-        output_capture: Optional[Dict[StepOutputHandle, Any]],
+        output_capture: Optional[Mapping[StepOutputHandle, Any]],
         resume_from_failure: bool = False,
     ):
         self._plan_data = plan_data
@@ -231,7 +238,7 @@ class PlanOrchestrationContext(IPlanContext):
         return self._executor
 
     @property
-    def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
+    def output_capture(self) -> Optional[Mapping[StepOutputHandle, Any]]:
         return self._output_capture
 
     def for_step(self, step: ExecutionStep) -> "IStepContext":
@@ -330,11 +337,43 @@ class PlanExecutionContext(IPlanContext):
 
     @property
     def partition_key(self) -> str:
-        tags = self._plan_data.pipeline_run.tags
-        check.invariant(
-            PARTITION_NAME_TAG in tags, "Tried to access partition_key for a non-partitioned run"
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            get_multipartition_key_from_tags,
         )
-        return tags[PARTITION_NAME_TAG]
+
+        tags = self._plan_data.pipeline_run.tags
+
+        check.invariant(
+            PARTITION_NAME_TAG in tags
+            or any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]),
+            "Tried to access partition_key for a non-partitioned run",
+        )
+
+        if PARTITION_NAME_TAG in tags:
+            return tags[PARTITION_NAME_TAG]
+
+        return get_multipartition_key_from_tags(tags)
+
+    @property
+    def asset_partition_key_range(self) -> PartitionKeyRange:
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            get_multipartition_key_from_tags,
+        )
+
+        tags = self._plan_data.pipeline_run.tags
+        partition_key = tags.get(PARTITION_NAME_TAG)
+        if partition_key is not None:
+            return PartitionKeyRange(partition_key, partition_key)
+
+        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
+            partition_key = get_multipartition_key_from_tags(tags)
+            return PartitionKeyRange(partition_key, partition_key)
+
+        partition_key_range_start = tags.get(ASSET_PARTITION_RANGE_START_TAG)
+        if partition_key_range_start is not None:
+            return PartitionKeyRange(partition_key_range_start, tags[ASSET_PARTITION_RANGE_END_TAG])
+
+        check.failed("Tried to access partition_key_range for a non-partitioned run")
 
     @property
     def partition_time_window(self) -> str:
@@ -358,7 +397,16 @@ class PlanExecutionContext(IPlanContext):
 
     @property
     def has_partition_key(self) -> bool:
-        return PARTITION_NAME_TAG in self._plan_data.pipeline_run.tags
+        return PARTITION_NAME_TAG in self._plan_data.pipeline_run.tags or any(
+            [
+                tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX)
+                for tag in self._plan_data.pipeline_run.tags.keys()
+            ]
+        )
+
+    @property
+    def has_partition_key_range(self) -> bool:
+        return ASSET_PARTITION_RANGE_START_TAG in self._plan_data.pipeline_run.tags
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
         return TypeCheckContext(
@@ -429,6 +477,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         self._output_metadata: Dict[str, Any] = {}
         self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
+
+        self._input_asset_records: Optional[Dict[AssetKey, Optional["EventLogRecord"]]] = None
 
     @property
     def step(self) -> ExecutionStep:
@@ -553,7 +603,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             upstream_output = artificial_output_context
 
         return InputContext(
-            pipeline_name=self.pipeline_def.name,
+            job_name=self.pipeline_def.name,
             name=name,
             solid_def=self.solid_def,
             config=config,
@@ -741,6 +791,46 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         solid_config = self.resolved_run_config.solids.get(str(self.solid_handle))
         return solid_config.config if solid_config else None
 
+    @property
+    def step_materializes_assets(self) -> bool:
+        step_outputs = self.step.step_outputs
+        if len(step_outputs) == 0:
+            return False
+        else:
+            asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
+                self.solid_handle, step_outputs[0].name
+            )
+            return asset_info is not None
+
+    @property
+    def input_asset_records(self) -> Optional[Mapping[AssetKey, Optional["EventLogRecord"]]]:
+        return self._input_asset_records
+
+    def fetch_input_asset_records(self) -> None:
+        # pylint: disable=protected-access
+        output_keys: List[AssetKey] = []
+        for step_output in self.step.step_outputs:
+            asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
+                self.solid_handle, step_output.name
+            )
+            if asset_info is None:
+                continue
+            output_keys.append(asset_info.key)
+
+        all_dep_keys: List[AssetKey] = []
+        for output_key in output_keys:
+            if output_key not in self.pipeline_def.asset_layer._asset_deps:
+                continue
+            dep_keys = self.pipeline_def.asset_layer.upstream_assets_for_asset(output_key)
+            for key in dep_keys:
+                if not key in all_dep_keys and key not in output_keys:
+                    all_dep_keys.append(key)
+
+        self._input_asset_records = {}
+        for key in all_dep_keys:
+            event = self.instance.get_latest_logical_version_record(key)
+            self._input_asset_records[key] = event
+
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.pipeline_def.asset_layer
         assets_def = asset_layer.assets_def_for_node(self.solid_handle)
@@ -766,9 +856,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
             if assets_def is not None and upstream_asset_partitions_def is not None:
                 partition_key_range = (
-                    PartitionKeyRange(self.partition_key, self.partition_key)
-                    if assets_def.partitions_def
-                    else None
+                    self.asset_partition_key_range if assets_def.partitions_def else None
                 )
                 return get_upstream_partitions_for_partition_range(
                     assets_def,
@@ -796,14 +884,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if asset_info:
             return asset_info.partitions_def
         else:
-            return asset_info
+            return None
 
     def has_asset_partitions_for_output(self, output_name: str) -> bool:
         return self._partitions_def_for_output(output_name) is not None
 
     def asset_partition_key_range_for_output(self, output_name: str) -> PartitionKeyRange:
         if self._partitions_def_for_output(output_name) is not None:
-            return PartitionKeyRange(self.partition_key, self.partition_key)
+            return self.asset_partition_key_range
 
         check.failed("The output has no asset partitions")
 
@@ -844,7 +932,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,  # type: ignore
         )
 
-    def get_input_lineage(self) -> List[AssetLineageInfo]:
+    def get_input_lineage(self) -> Sequence[AssetLineageInfo]:
         if not self._input_lineage:
 
             for step_input in self.step.step_inputs:
@@ -881,7 +969,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
 
 
-def _dedup_asset_lineage(asset_lineage: List[AssetLineageInfo]) -> List[AssetLineageInfo]:
+def _dedup_asset_lineage(asset_lineage: Sequence[AssetLineageInfo]) -> List[AssetLineageInfo]:
     """Method to remove duplicate specifications of the same Asset/Partition pair from the lineage
     information. Duplicates can occur naturally when calculating transitive dependencies from solids
     with multiple Outputs, which in turn have multiple Inputs (because each Output of the solid will

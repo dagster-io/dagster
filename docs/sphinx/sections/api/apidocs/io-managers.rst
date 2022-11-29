@@ -42,6 +42,10 @@ Built-in IO Managers
 .. autodata:: fs_io_manager
   :annotation: IOManagerDefinition
 
+The ``UPathIOManager`` can be used to easily define filesystem-based IO Managers.
+
+.. autoclass:: UPathIOManager
+
 
 Input Managers (Experimental)
 ----------------------------------

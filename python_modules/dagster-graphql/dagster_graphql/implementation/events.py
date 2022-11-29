@@ -1,5 +1,5 @@
 from math import isnan
-from typing import Any, Iterator, Sequence, cast, no_type_check
+from typing import Any, Iterator, Sequence, no_type_check
 
 from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
 
@@ -13,6 +13,7 @@ from dagster import (
     JsonMetadataValue,
     MarkdownMetadataValue,
     MetadataEntry,
+    NotebookMetadataValue,
     PathMetadataValue,
     PythonArtifactMetadataValue,
     TableMetadataValue,
@@ -37,6 +38,7 @@ def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Itera
         GrapheneIntMetadataEntry,
         GrapheneJsonMetadataEntry,
         GrapheneMarkdownMetadataEntry,
+        GrapheneNotebookMetadataEntry,
         GraphenePathMetadataEntry,
         GraphenePipelineRunMetadataEntry,
         GraphenePythonArtifactMetadataEntry,
@@ -50,6 +52,12 @@ def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Itera
     for metadata_entry in metadata_entries:
         if isinstance(metadata_entry.entry_data, PathMetadataValue):
             yield GraphenePathMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                path=metadata_entry.entry_data.path,
+            )
+        elif isinstance(metadata_entry.entry_data, NotebookMetadataValue):
+            yield GrapheneNotebookMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 path=metadata_entry.entry_data.path,
@@ -100,7 +108,10 @@ def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Itera
         elif isinstance(metadata_entry.entry_data, IntMetadataValue):
             # coerce > 32 bit ints to null
             int_val = None
-            if MIN_INT <= cast(int, metadata_entry.entry_data.value) <= MAX_INT:
+            if (
+                isinstance(metadata_entry.entry_data.value, int)
+                and MIN_INT <= metadata_entry.entry_data.value <= MAX_INT
+            ):
                 int_val = metadata_entry.entry_data.value
 
             yield GrapheneIntMetadataEntry(

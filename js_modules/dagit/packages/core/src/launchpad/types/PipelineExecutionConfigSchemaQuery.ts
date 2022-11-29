@@ -14,7 +14,7 @@ export interface PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_Pipel
 }
 
 export interface PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_rootConfigType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
+  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
 }
 

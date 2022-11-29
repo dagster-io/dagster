@@ -266,6 +266,15 @@ def test_asset_with_dagster_type():
     assert my_asset.op.output_defs[0].dagster_type.display_name == "String"
 
 
+def test_asset_with_op_version():
+    @asset(op_version="foo")
+    def my_asset(arg1):
+        return arg1
+
+    assert my_asset.is_versioned
+    assert my_asset.op.version == "foo"
+
+
 def test_asset_with_key_prefix():
     @asset(key_prefix="my_key_prefix")
     def my_asset():
@@ -423,7 +432,7 @@ def test_infer_input_dagster_type():
 def test_infer_output_dagster_type():
     @asset
     def my_asset() -> str:
-        pass
+        return "foo"
 
     assert my_asset.op.outs["result"].dagster_type.display_name == "String"
     assert my_asset.op.outs["result"].dagster_type.typing_type == str

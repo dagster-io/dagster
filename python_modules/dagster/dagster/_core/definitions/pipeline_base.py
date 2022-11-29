@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, FrozenSet, List, Optional
+from typing import TYPE_CHECKING, AbstractSet, FrozenSet, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
@@ -25,26 +25,26 @@ class IPipeline(ABC):
     @abstractmethod
     def subset_for_execution(
         self,
-        solid_selection: Optional[List[str]] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        solid_selection: Optional[Sequence[str]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> "IPipeline":
         pass
 
     @property
     @abstractmethod
-    def solids_to_execute(self) -> Optional[FrozenSet[str]]:
+    def solids_to_execute(self) -> Optional[AbstractSet[str]]:
         pass
 
     @property
     @abstractmethod
-    def asset_selection(self) -> Optional[FrozenSet[AssetKey]]:
+    def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
         pass
 
     @abstractmethod
     def subset_for_execution_from_existing_pipeline(
         self,
-        solids_to_execute: Optional[FrozenSet[str]] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        solids_to_execute: Optional[AbstractSet[str]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> "IPipeline":
         pass
 
@@ -99,11 +99,11 @@ class InMemoryPipeline(IPipeline, object):
 
     def subset_for_execution(
         self,
-        solid_selection: Optional[List[str]] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        solid_selection: Optional[Sequence[str]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
         # take a list of solid queries and resolve the queries to names of solids to execute
-        solid_selection = check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+        solid_selection = check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         check.invariant(
@@ -118,8 +118,8 @@ class InMemoryPipeline(IPipeline, object):
 
     def subset_for_execution_from_existing_pipeline(
         self,
-        solids_to_execute: Optional[FrozenSet[str]] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        solids_to_execute: Optional[AbstractSet[str]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
         # take a frozenset of resolved solid names from an existing pipeline run
         # so there's no need to parse the selection
@@ -134,7 +134,7 @@ class InMemoryPipeline(IPipeline, object):
         return self._subset_for_execution(solids_to_execute, asset_selection=asset_selection)
 
     @property
-    def solid_selection(self) -> List[str]:
+    def solid_selection(self) -> Sequence[str]:
         # a list of solid queries provided by the user
         return self._solid_selection  # List[str]
 

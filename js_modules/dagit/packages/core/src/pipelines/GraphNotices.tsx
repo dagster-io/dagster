@@ -38,7 +38,7 @@ export const EmptyDAGNotice: React.FC<{isGraph: boolean; nodeType: 'asset' | 'op
         description={
           <div>
             This {isGraph ? 'graph' : 'pipeline'} is empty. {capitalize(nodeType)}s will appear here
-            when they are added to loaded repositories.
+            when they are added to your definitions.
           </div>
         }
       />

@@ -167,7 +167,7 @@ export const useRepositoryLocationReload = ({
 
         // On success, show the successful toast, hide the dialog (if open), and reset Apollo.
         SharedToaster.show({
-          message: `${scope === 'location' ? 'Repository location' : 'Workspace'} reloaded!`,
+          message: `${scope === 'location' ? 'Code location' : 'Definitions'} reloaded!`,
           timeout: 3000,
           icon: 'check_circle',
           intent: Intent.SUCCESS,
@@ -251,7 +251,7 @@ export const reloadFnForWorkspace = async (client: ApolloClient<any>): Promise<A
     mutation: RELOAD_WORKSPACE_MUTATION,
   });
   if (!data) {
-    return {type: 'error', error: {message: 'Unable to reload workspace'}, errorLocationId: null};
+    return {type: 'error', error: {message: 'Unable to reload definitions'}, errorLocationId: null};
   }
   if (
     data.reloadWorkspace.__typename === 'PythonError' ||

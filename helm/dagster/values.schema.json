@@ -301,6 +301,18 @@
             },
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
+        "VolumeMount": {
+            "title": "VolumeMount",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
+        },
+        "Volume": {
+            "title": "Volume",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
+        },
         "Dagit": {
             "title": "Dagit",
             "type": "object",
@@ -402,6 +414,17 @@
                         }
                     ]
                 },
+                "dbPoolRecycle": {
+                    "title": "Dbpoolrecycle",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
                 "logLevel": {
                     "title": "Loglevel",
                     "anyOf": [
@@ -418,6 +441,34 @@
                     "anyOf": [
                         {
                             "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "volumeMounts": {
+                    "title": "Volumemounts",
+                    "items": {
+                        "$ref": "#/definitions/VolumeMount"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "volumes": {
+                    "title": "Volumes",
+                    "items": {
+                        "$ref": "#/definitions/Volume"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "array"
                         },
                         {
                             "type": "null"
@@ -468,18 +519,6 @@
             "required": [
                 "enabled"
             ]
-        },
-        "VolumeMount": {
-            "title": "VolumeMount",
-            "type": "object",
-            "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
-        },
-        "Volume": {
-            "title": "Volume",
-            "type": "object",
-            "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
         },
         "UserDeployment": {
             "title": "UserDeployment",
@@ -1180,6 +1219,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "uploadInterval": {
+                    "title": "Uploadinterval",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -1239,6 +1289,17 @@
                         },
                         {
                             "$ref": "#/definitions/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "uploadInterval": {
+                    "title": "Uploadinterval",
+                    "anyOf": [
+                        {
+                            "type": "integer"
                         },
                         {
                             "type": "null"
@@ -1348,6 +1409,17 @@
                     "anyOf": [
                         {
                             "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "uploadInterval": {
+                    "title": "Uploadinterval",
+                    "anyOf": [
+                        {
+                            "type": "integer"
                         },
                         {
                             "type": "null"
@@ -2451,6 +2523,34 @@
                     "anyOf": [
                         {
                             "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "volumeMounts": {
+                    "title": "Volumemounts",
+                    "items": {
+                        "$ref": "#/definitions/VolumeMount"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "volumes": {
+                    "title": "Volumes",
+                    "items": {
+                        "$ref": "#/definitions/Volume"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "array"
                         },
                         {
                             "type": "null"

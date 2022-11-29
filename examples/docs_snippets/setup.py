@@ -25,6 +25,7 @@ setup(
         "dagster-celery",
         "dagster-dbt",
         "dagster-dask",
+        "dagster-fivetran",
         "dagster-gcp",
         "dagster-graphql",
         "dagster-k8s",

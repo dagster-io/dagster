@@ -1068,7 +1068,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_inp
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_inputs_dependsOn_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -1107,7 +1107,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_out
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_outputs_dependedBy_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -1147,7 +1147,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_def
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -1158,7 +1158,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_def
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -1170,7 +1170,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_def
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_configField_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
+  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
   description: string | null;
 }
@@ -1209,7 +1209,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_def
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -1220,7 +1220,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_def
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -1321,7 +1321,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_in
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_inputs_dependsOn_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -1360,7 +1360,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_ou
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_outputs_dependedBy_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -1400,7 +1400,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_de
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_SolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -1411,7 +1411,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_de
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_SolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -1423,7 +1423,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_de
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_SolidDefinition_configField_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
+  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
   description: string | null;
 }
@@ -1462,7 +1462,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_de
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 
@@ -1473,7 +1473,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_de
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   displayName: string;
 }
 

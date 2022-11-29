@@ -1,6 +1,6 @@
 import typing
 from enum import Enum as PythonEnum
-from typing import TYPE_CHECKING, Dict, Iterator, List, Optional, cast
+from typing import TYPE_CHECKING, Dict, Iterator, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._annotations import public
@@ -66,15 +66,15 @@ class ConfigType:
         kind: ConfigTypeKind,
         given_name: Optional[str] = None,
         description: Optional[str] = None,
-        type_params: Optional[List["ConfigType"]] = None,
+        type_params: Optional[Sequence["ConfigType"]] = None,
     ):
 
-        self.key = check.str_param(key, "key")
-        self.kind = check.inst_param(kind, "kind", ConfigTypeKind)
-        self.given_name = check.opt_str_param(given_name, "given_name")
-        self._description = check.opt_str_param(description, "description")
-        self.type_params = (
-            check.list_param(type_params, "type_params", of_type=ConfigType)
+        self.key: str = check.str_param(key, "key")
+        self.kind: ConfigTypeKind = check.inst_param(kind, "kind", ConfigTypeKind)
+        self.given_name: Optional[str] = check.opt_str_param(given_name, "given_name")
+        self._description: Optional[str] = check.opt_str_param(description, "description")
+        self.type_params: Optional[Sequence[ConfigType]] = (
+            check.sequence_param(type_params, "type_params", of_type=ConfigType)
             if type_params
             else None
         )
@@ -295,10 +295,10 @@ class Enum(ConfigType):
             # ...
     """
 
-    def __init__(self, name: str, enum_values: List[EnumValue]):
+    def __init__(self, name: str, enum_values: Sequence[EnumValue]):
         check.str_param(name, "name")
         super(Enum, self).__init__(key=name, given_name=name, kind=ConfigTypeKind.ENUM)
-        self.enum_values = check.list_param(enum_values, "enum_values", of_type=EnumValue)
+        self.enum_values = check.sequence_param(enum_values, "enum_values", of_type=EnumValue)
         self._valid_python_values = {ev.python_value for ev in enum_values}
         check.invariant(len(self._valid_python_values) == len(enum_values))
         self._valid_config_values = {ev.config_value for ev in enum_values}
@@ -434,11 +434,11 @@ class ScalarUnion(ConfigType):
         yield from super().type_iterator()
 
 
-ConfigAnyInstance = Any()
-ConfigBoolInstance = Bool()
-ConfigFloatInstance = Float()
-ConfigIntInstance = Int()
-ConfigStringInstance = String()
+ConfigAnyInstance: Any = Any()
+ConfigBoolInstance: Bool = Bool()
+ConfigFloatInstance: Float = Float()
+ConfigIntInstance: Int = Int()
+ConfigStringInstance: String = String()
 
 _CONFIG_MAP: Dict[check.TypeOrTupleOfTypes, ConfigType] = {
     BuiltinEnum.ANY: ConfigAnyInstance,

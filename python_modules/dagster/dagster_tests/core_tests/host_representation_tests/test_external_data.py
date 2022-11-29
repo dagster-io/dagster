@@ -3,9 +3,22 @@ from datetime import datetime
 import pendulum
 import pytest
 
-from dagster import AssetKey, AssetsDefinition, GraphOut, In, Out, define_asset_job, graph, job, op
+from dagster import (
+    AssetKey,
+    AssetsDefinition,
+    DailyPartitionsDefinition,
+    GraphOut,
+    In,
+    Out,
+    StaticPartitionsDefinition,
+    define_asset_job,
+    graph,
+    job,
+    op,
+)
 from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import ScheduleType
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
@@ -18,6 +31,7 @@ from dagster._core.host_representation.external_data import (
     ExternalTargetData,
     ExternalTimeWindowPartitionsDefinitionData,
     external_asset_graph_from_defs,
+    external_multi_partitions_definition_from_def,
     external_time_window_partitions_definition_from_def,
 )
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
@@ -629,6 +643,7 @@ def test_unused_source_asset():
             depended_by=[],
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
+            is_source=True,
         ),
         ExternalAssetNode(
             asset_key=AssetKey("bar"),
@@ -637,6 +652,7 @@ def test_unused_source_asset():
             depended_by=[],
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
+            is_source=True,
         ),
     ]
 
@@ -661,6 +677,7 @@ def test_used_source_asset():
             depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey(["foo"]))],
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
+            is_source=True,
         ),
         ExternalAssetNode(
             asset_key=AssetKey("foo"),
@@ -1010,3 +1027,18 @@ def test_external_time_window_partitions_def_cron_schedule():
     ).get_partitions_definition()
 
     _check_partitions_def_equal(external, partitions_def)
+
+
+def test_external_multi_partitions_def():
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "date": DailyPartitionsDefinition("2022-01-01"),
+            "static": StaticPartitionsDefinition(["a", "b", "c"]),
+        }
+    )
+
+    external = external_multi_partitions_definition_from_def(
+        partitions_def
+    ).get_partitions_definition()
+
+    assert external == partitions_def

@@ -3,7 +3,7 @@ import subprocess
 import sys
 import warnings
 from contextlib import contextmanager
-from typing import Iterator, List, Optional, Tuple
+from typing import Iterator, Optional, Sequence, Tuple
 
 import grpc
 from grpc_health.v1 import health_pb2
@@ -59,7 +59,7 @@ class DagsterGrpcClient:
         socket=None,
         host="localhost",
         use_ssl=False,
-        metadata: Optional[List[Tuple[str, str]]] = None,
+        metadata: Optional[Sequence[Tuple[str, str]]] = None,
     ):
         self.port = check.opt_int_param(port, "port")
         self.socket = check.opt_str_param(socket, "socket")
@@ -68,7 +68,7 @@ class DagsterGrpcClient:
 
         self._ssl_creds = grpc.ssl_channel_credentials() if use_ssl else None
 
-        self._metadata = check.opt_list_param(metadata, "metadata")
+        self._metadata = check.opt_sequence_param(metadata, "metadata")
 
         check.invariant(
             port is not None if seven.IS_WINDOWS else True,
@@ -89,7 +89,7 @@ class DagsterGrpcClient:
             self._server_address = "unix:" + os.path.abspath(socket)
 
     @property
-    def metadata(self) -> List[Tuple[str, str]]:
+    def metadata(self) -> Sequence[Tuple[str, str]]:
         return self._metadata
 
     @property
@@ -454,6 +454,10 @@ class DagsterGrpcClient:
         res = self._query("GetCurrentImage", api_pb2.Empty)
         return res.serialized_current_image
 
+    def get_current_runs(self):
+        res = self._query("GetCurrentRuns", api_pb2.Empty)
+        return res.serialized_current_runs
+
     def health_check_query(self):
         try:
             with self._channel() as channel:
@@ -514,10 +518,14 @@ def ephemeral_grpc_api_client(
     check.bool_param(force_port, "force_port")
     check.int_param(max_retries, "max_retries")
 
-    with GrpcServerProcess(
-        loadable_target_origin=loadable_target_origin,
-        force_port=force_port,
-        max_retries=max_retries,
-        max_workers=max_workers,
-    ).create_ephemeral_client() as client:
-        yield client
+    from dagster._core.test_utils import instance_for_test
+
+    with instance_for_test() as instance:
+        with GrpcServerProcess(
+            instance_ref=instance.get_ref(),
+            loadable_target_origin=loadable_target_origin,
+            force_port=force_port,
+            max_retries=max_retries,
+            max_workers=max_workers,
+        ).create_ephemeral_client() as client:
+            yield client

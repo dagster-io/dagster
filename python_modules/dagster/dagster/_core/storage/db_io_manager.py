@@ -70,9 +70,10 @@ class DbIOManager(IOManager):
         self,
         type_handlers: Sequence[DbTypeHandler],
         db_client: DbClient,
+        io_manager_name: Optional[str] = None,
     ):
         self._handlers_by_type: Dict[Optional[Type], DbTypeHandler] = {}
-        self._io_manager_name = self.__class__.__name__
+        self._io_manager_name = io_manager_name or self.__class__.__name__
         for type_handler in type_handlers:
             for handled_type in type_handler.supported_types:
                 check.invariant(

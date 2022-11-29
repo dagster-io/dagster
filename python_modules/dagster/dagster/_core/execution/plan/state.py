@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, List, NamedTuple, Optional, Set, cast
+from typing import Mapping, NamedTuple, Optional, Sequence, Set, cast
 
 import dagster._check as check
 from dagster._core.errors import DagsterRunNotFoundError
@@ -18,8 +18,8 @@ class StepOutputVersionData(NamedTuple):
 
     @staticmethod
     def get_version_list_from_dict(
-        step_output_versions: Dict[StepOutputHandle, str]
-    ) -> List["StepOutputVersionData"]:
+        step_output_versions: Mapping[StepOutputHandle, str]
+    ) -> Sequence["StepOutputVersionData"]:
         return [
             StepOutputVersionData(step_output_handle=step_output_handle, version=version)
             for step_output_handle, version in step_output_versions.items()
@@ -27,8 +27,8 @@ class StepOutputVersionData(NamedTuple):
 
     @staticmethod
     def get_version_dict_from_list(
-        step_output_versions: List["StepOutputVersionData"],
-    ) -> Dict[StepOutputHandle, str]:
+        step_output_versions: Sequence["StepOutputVersionData"],
+    ) -> Mapping[StepOutputHandle, str]:
         return {data.step_output_handle: data.version for data in step_output_versions}
 
 
@@ -72,11 +72,11 @@ class KnownExecutionState(
         "_KnownExecutionState",
         [
             # step_key -> count
-            ("previous_retry_attempts", Dict[str, int]),
+            ("previous_retry_attempts", Mapping[str, int]),
             # step_key -> output_name -> mapping_keys
-            ("dynamic_mappings", Dict[str, Dict[str, List[str]]]),
+            ("dynamic_mappings", Mapping[str, Mapping[str, Sequence[str]]]),
             # step_output_handle -> version
-            ("step_output_versions", List[StepOutputVersionData]),
+            ("step_output_versions", Sequence[StepOutputVersionData]),
             ("ready_outputs", Set[StepOutputHandle]),
             ("parent_state", Optional[PastExecutionState]),
         ],
@@ -90,13 +90,13 @@ class KnownExecutionState(
 
     def __new__(
         cls,
-        previous_retry_attempts: Optional[Dict[str, int]] = None,
-        dynamic_mappings: Optional[Dict[str, Dict[str, List[str]]]] = None,
-        step_output_versions: Optional[List[StepOutputVersionData]] = None,
+        previous_retry_attempts: Optional[Mapping[str, int]] = None,
+        dynamic_mappings: Optional[Mapping[str, Mapping[str, Sequence[str]]]] = None,
+        step_output_versions: Optional[Sequence[StepOutputVersionData]] = None,
         ready_outputs: Optional[Set[StepOutputHandle]] = None,
         parent_state: Optional[PastExecutionState] = None,
     ):
-        dynamic_mappings = check.opt_dict_param(
+        dynamic_mappings = check.opt_mapping_param(
             dynamic_mappings,
             "dynamic_mappings",
             key_type=str,
@@ -107,14 +107,14 @@ class KnownExecutionState(
 
         return super(KnownExecutionState, cls).__new__(
             cls,
-            check.opt_dict_param(
+            check.opt_mapping_param(
                 previous_retry_attempts,
                 "previous_retry_attempts",
                 key_type=str,
                 value_type=int,
             ),
             dynamic_mappings,
-            check.opt_list_param(
+            check.opt_sequence_param(
                 step_output_versions, "step_output_versions", of_type=StepOutputVersionData
             ),
             check.opt_set_param(ready_outputs, "ready_outputs", StepOutputHandle),

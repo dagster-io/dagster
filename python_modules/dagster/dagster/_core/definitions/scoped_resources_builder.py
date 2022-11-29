@@ -44,7 +44,7 @@ class ScopedResourcesBuilder(
     ):
         return super(ScopedResourcesBuilder, cls).__new__(
             cls,
-            resource_instance_dict=check.opt_dict_param(
+            resource_instance_dict=check.opt_mapping_param(
                 resource_instance_dict, "resource_instance_dict", key_type=str
             ),
             contains_generator=contains_generator,

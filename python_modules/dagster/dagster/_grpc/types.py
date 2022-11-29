@@ -1,4 +1,6 @@
-from typing import Any, Dict, FrozenSet, List, Mapping, NamedTuple, Optional, Sequence
+import base64
+import zlib
+from typing import Any, FrozenSet, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
@@ -54,7 +56,7 @@ class ExecutionPlanSnapshotArgs(
             solid_selection=check.opt_sequence_param(
                 solid_selection, "solid_selection", of_type=str
             ),
-            run_config=check.dict_param(run_config, "run_config", key_type=str),
+            run_config=check.mapping_param(run_config, "run_config", key_type=str),
             mode=check.str_param(mode, "mode"),
             step_keys_to_execute=check.opt_nullable_sequence_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
@@ -113,7 +115,7 @@ class ExecuteRunArgs(
             ),  # for back-compat
         )
 
-    def get_command_args(self) -> List[str]:
+    def get_command_args(self) -> Sequence[str]:
         return _get_entry_point(self.pipeline_origin) + [
             "api",
             "execute_run",
@@ -158,7 +160,7 @@ class ResumeRunArgs(
             ),  # for back-compat
         )
 
-    def get_command_args(self) -> List[str]:
+    def get_command_args(self) -> Sequence[str]:
         return _get_entry_point(self.pipeline_origin) + [
             "api",
             "resume_run",
@@ -203,7 +205,7 @@ class ExecuteStepArgs(
             # Deprecated, only needed for back-compat since it can be pulled from the PipelineRun
             ("pipeline_origin", PipelinePythonOrigin),
             ("pipeline_run_id", str),
-            ("step_keys_to_execute", Optional[List[str]]),
+            ("step_keys_to_execute", Optional[Sequence[str]]),
             ("instance_ref", Optional[InstanceRef]),
             ("retry_mode", Optional[RetryMode]),
             ("known_state", Optional[KnownExecutionState]),
@@ -215,7 +217,7 @@ class ExecuteStepArgs(
         cls,
         pipeline_origin: PipelinePythonOrigin,
         pipeline_run_id: str,
-        step_keys_to_execute: Optional[List[str]],
+        step_keys_to_execute: Optional[Sequence[str]],
         instance_ref: Optional[InstanceRef] = None,
         retry_mode: Optional[RetryMode] = None,
         known_state: Optional[KnownExecutionState] = None,
@@ -227,7 +229,7 @@ class ExecuteStepArgs(
                 pipeline_origin, "pipeline_origin", PipelinePythonOrigin
             ),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
-            step_keys_to_execute=check.opt_nullable_list_param(
+            step_keys_to_execute=check.opt_nullable_sequence_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
@@ -238,23 +240,34 @@ class ExecuteStepArgs(
             ),
         )
 
-    def get_command_args(self, skip_serialized_namedtuple=False) -> List[str]:
+    def _get_compressed_args(self) -> str:
+        # Compress, then base64 encode so we can pass it around as a str
+        return base64.b64encode(zlib.compress(serialize_dagster_namedtuple(self).encode())).decode()
+
+    def get_command_args(self, skip_serialized_namedtuple: bool = False) -> Sequence[str]:
         """
         Get the command args to run this step. If skip_serialized_namedtuple is True, then get_command_env should
         be used to pass the args to Click using an env var.
         """
+
         return (
             _get_entry_point(self.pipeline_origin)
             + ["api", "execute_step"]
-            + ([serialize_dagster_namedtuple(self)] if not skip_serialized_namedtuple else [])
+            + (
+                ["--compressed-input-json", self._get_compressed_args()]
+                if not skip_serialized_namedtuple
+                else []
+            )
         )
 
-    def get_command_env(self) -> List[Dict[str, str]]:
+    def get_command_env(self) -> Sequence[Mapping[str, str]]:
         """
         Get the env vars for overriding the Click args of this step. Used in conjuction with
         get_command_args(skip_serialized_namedtuple=True).
         """
-        return [{"name": "DAGSTER_EXECUTE_STEP_ARGS", "value": serialize_dagster_namedtuple(self)}]
+        return [
+            {"name": "DAGSTER_COMPRESSED_EXECUTE_STEP_ARGS", "value": self._get_compressed_args()},
+        ]
 
 
 @whitelist_for_serdes
@@ -274,12 +287,12 @@ class ListRepositoriesResponse(
     NamedTuple(
         "_ListRepositoriesResponse",
         [
-            ("repository_symbols", List[LoadableRepositorySymbol]),
+            ("repository_symbols", Sequence[LoadableRepositorySymbol]),
             ("executable_path", Optional[str]),
-            ("repository_code_pointer_dict", Dict[str, CodePointer]),
-            ("entry_point", Optional[List[str]]),
+            ("repository_code_pointer_dict", Mapping[str, CodePointer]),
+            ("entry_point", Optional[Sequence[str]]),
             ("container_image", Optional[str]),
-            ("container_context", Optional[Dict[str, Any]]),
+            ("container_context", Optional[Mapping[str, Any]]),
         ],
     )
 ):
@@ -294,7 +307,7 @@ class ListRepositoriesResponse(
     ):
         return super(ListRepositoriesResponse, cls).__new__(
             cls,
-            repository_symbols=check.list_param(
+            repository_symbols=check.sequence_param(
                 repository_symbols, "repository_symbols", of_type=LoadableRepositorySymbol
             ),
             executable_path=check.opt_str_param(executable_path, "executable_path"),
@@ -305,7 +318,7 @@ class ListRepositoriesResponse(
                 value_type=CodePointer,
             ),
             entry_point=(
-                frozenlist(check.list_param(entry_point, "entry_point", of_type=str))
+                frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))
                 if entry_point != None
                 else None
             ),
@@ -417,7 +430,7 @@ class PartitionSetExecutionParamArgs(
                 repository_origin, "repository_origin", ExternalRepositoryOrigin
             ),
             partition_set_name=check.str_param(partition_set_name, "partition_set_name"),
-            partition_names=check.list_param(partition_names, "partition_names", of_type=str),
+            partition_names=check.sequence_param(partition_names, "partition_names", of_type=str),
         )
 
 
@@ -683,6 +696,30 @@ class GetCurrentImageResult(
         return super(GetCurrentImageResult, cls).__new__(
             cls,
             current_image=check.opt_str_param(current_image, "current_image"),
+            serializable_error_info=check.opt_inst_param(
+                serializable_error_info, "serializable_error_info", SerializableErrorInfo
+            ),
+        )
+
+
+@whitelist_for_serdes
+class GetCurrentRunsResult(
+    NamedTuple(
+        "_GetCurrentRunsResult",
+        [
+            ("current_runs", Sequence[str]),
+            ("serializable_error_info", Optional[SerializableErrorInfo]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        current_runs: Sequence[str],
+        serializable_error_info: Optional[SerializableErrorInfo],
+    ):
+        return super(GetCurrentRunsResult, cls).__new__(
+            cls,
+            current_runs=check.list_param(current_runs, "current_runs", of_type=str),
             serializable_error_info=check.opt_inst_param(
                 serializable_error_info, "serializable_error_info", SerializableErrorInfo
             ),

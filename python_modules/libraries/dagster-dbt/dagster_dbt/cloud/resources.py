@@ -2,13 +2,14 @@ import datetime
 import json
 import logging
 import time
-from typing import Any, Dict, List, Optional, cast
+from enum import Enum
+from typing import Any, Mapping, Optional, Sequence, cast
 from urllib.parse import urlencode, urljoin
 
 import requests
 from requests.exceptions import RequestException
 
-from dagster import Failure, Field, MetadataValue, StringSource, __version__
+from dagster import Failure, Field, IntSource, MetadataValue, StringSource, __version__
 from dagster import _check as check
 from dagster import get_dagster_logger, resource
 from dagster._utils.merger import deep_merge_dicts
@@ -20,6 +21,15 @@ DBT_ACCOUNTS_PATH = "api/v2/accounts/"
 
 # default polling interval (in seconds)
 DEFAULT_POLL_INTERVAL = 10
+
+
+class DbtCloudRunStatus(str, Enum):
+    QUEUED = "Queued"
+    STARTING = "Starting"
+    RUNNING = "Running"
+    SUCCESS = "Success"
+    ERROR = "Error"
+    CANCELLED = "Cancelled"
 
 
 class DbtCloudResourceV2:
@@ -55,11 +65,23 @@ class DbtCloudResourceV2:
     def api_base_url(self) -> str:
         return urljoin(self._dbt_cloud_host, DBT_ACCOUNTS_PATH)
 
+    def build_url_for_job(self, project_id: int, job_id: int) -> str:
+        return urljoin(
+            self._dbt_cloud_host,
+            f"next/deploy/{self._account_id}/projects/{project_id}/jobs/{job_id}/",
+        )
+
+    def build_url_for_cloud_docs(self, job_id: int, resource_type: str, unique_id: str) -> str:
+        return urljoin(
+            self._dbt_cloud_host,
+            f"/accounts/{self._account_id}/jobs/{job_id}/docs/#!/{resource_type}/{unique_id}",
+        )
+
     def make_request(
         self,
         method: str,
         endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
+        data: Optional[Mapping[str, Any]] = None,
         return_text: bool = False,
     ) -> Any:
         """
@@ -106,7 +128,7 @@ class DbtCloudResourceV2:
 
         raise Failure("Exceeded max number of retries.")
 
-    def get_job(self, job_id: int) -> Dict[str, Any]:
+    def get_job(self, job_id: int) -> Mapping[str, Any]:
         """
         Gets details about a given dbt job from the dbt Cloud API.
 
@@ -119,7 +141,7 @@ class DbtCloudResourceV2:
         """
         return self.make_request("GET", f"{self._account_id}/jobs/{job_id}/")
 
-    def update_job(self, job_id: int, **kwargs) -> Dict[str, Any]:
+    def update_job(self, job_id: int, **kwargs) -> Mapping[str, Any]:
         """
         Updates specific properties of a dbt job. Documentation on the full set of potential
         parameters can be found here: https://docs.getdbt.com/dbt-cloud/api-v2#operation/updateJobById
@@ -146,7 +168,7 @@ class DbtCloudResourceV2:
             "POST", f"{self._account_id}/jobs/{job_id}/", data=deep_merge_dicts(job_data, kwargs)
         )
 
-    def run_job(self, job_id: int, **kwargs) -> Dict[str, Any]:
+    def run_job(self, job_id: int, **kwargs) -> Mapping[str, Any]:
         """
         Initializes a run for a job. Overrides for specific properties can be set by passing in
         values to the kwargs. A full list of overridable properties can be found here:
@@ -176,12 +198,12 @@ class DbtCloudResourceV2:
 
     def get_runs(
         self,
-        include_related: Optional[List[str]] = None,
+        include_related: Optional[Sequence[str]] = None,
         job_id: Optional[int] = None,
         order_by: Optional[str] = "-id",
         offset: int = 0,
         limit: int = 100,
-    ) -> List[Dict[str, object]]:
+    ) -> Sequence[Mapping[str, object]]:
         """
         Returns a list of runs from dbt Cloud. This can be optionally filtered to a specific job
         using the job_definition_id. It supports pagination using offset and limit as well and
@@ -217,7 +239,9 @@ class DbtCloudResourceV2:
             query_dict["job_definition_id"] = job_id
         return self.make_request("GET", f"{self._account_id}/runs/?{urlencode(query_dict)}")
 
-    def get_run(self, run_id: int, include_related: Optional[List[str]] = None) -> Dict[str, Any]:
+    def get_run(
+        self, run_id: int, include_related: Optional[Sequence[str]] = None
+    ) -> Mapping[str, Any]:
         """
         Gets details about a specific job run.
 
@@ -238,7 +262,7 @@ class DbtCloudResourceV2:
             f"{self._account_id}/runs/{run_id}/{query_params}",
         )
 
-    def get_run_steps(self, run_id: int) -> List[str]:
+    def get_run_steps(self, run_id: int) -> Sequence[str]:
         """
         Gets the steps of an initialized dbt Cloud run.
 
@@ -255,7 +279,7 @@ class DbtCloudResourceV2:
         steps_override = run_details["trigger"]["steps_override"]
         return steps_override or steps
 
-    def cancel_run(self, run_id: int) -> Dict[str, Any]:
+    def cancel_run(self, run_id: int) -> Mapping[str, Any]:
         """
         Cancels a dbt Cloud run.
 
@@ -271,7 +295,7 @@ class DbtCloudResourceV2:
         self._log.info(f"Cancelling run with id '{run_id}'")
         return self.make_request("POST", f"{self._account_id}/runs/{run_id}/cancel/")
 
-    def list_run_artifacts(self, run_id: int, step: Optional[int] = None) -> List[str]:
+    def list_run_artifacts(self, run_id: int, step: Optional[int] = None) -> Sequence[str]:
         """
         Lists the paths of the available run artifacts from a completed dbt Cloud run.
 
@@ -320,7 +344,7 @@ class DbtCloudResourceV2:
             return_text=True,
         )["text"]
 
-    def get_manifest(self, run_id: int, step: Optional[int] = None) -> Dict[str, Any]:
+    def get_manifest(self, run_id: int, step: Optional[int] = None) -> Mapping[str, Any]:
         """
         The parsed contents of a manifest.json file created by a completed run.
 
@@ -337,7 +361,7 @@ class DbtCloudResourceV2:
         """
         return json.loads(self.get_run_artifact(run_id, "manifest.json", step=step))
 
-    def get_run_results(self, run_id: int, step: Optional[int] = None) -> Dict[str, Any]:
+    def get_run_results(self, run_id: int, step: Optional[int] = None) -> Mapping[str, Any]:
         """
         The parsed contents of a run_results.json file created by a completed run.
 
@@ -360,7 +384,7 @@ class DbtCloudResourceV2:
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
         href: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> Mapping[str, Any]:
         """
         Polls a dbt Cloud job run until it completes. Will raise a `dagster.Failure` exception if the
         run does not complete successfully.
@@ -381,36 +405,50 @@ class DbtCloudResourceV2:
                 See: https://docs.getdbt.com/dbt-cloud/api-v2#operation/getRunById for schema.
         """
 
+        status: Optional[str] = None
+
         if href is None:
             href = self.get_run(run_id).get("href")
         assert isinstance(href, str), "Run must have an href"
 
         poll_start = datetime.datetime.now()
-        while True:
-            run_details = self.get_run(run_id)
-            status = run_details["status_humanized"]
-            self._log.info(f"Polled run {run_id}. Status: [{status}]")
+        try:
+            while True:
+                run_details = self.get_run(run_id)
+                status = run_details["status_humanized"]
+                self._log.info(f"Polled run {run_id}. Status: [{status}]")
 
-            # completed successfully
-            if status == "Success":
-                return self.get_run(run_id, include_related=["job", "trigger"])
-            elif status in ["Error", "Cancelled"]:
-                break
-            elif status not in ["Queued", "Starting", "Running"]:
-                check.failed(f"Received unexpected status '{status}'. This should never happen")
+                # completed successfully
+                if status == DbtCloudRunStatus.SUCCESS:
+                    return self.get_run(run_id, include_related=["job", "trigger", "run_steps"])
+                elif status in [DbtCloudRunStatus.ERROR, DbtCloudRunStatus.CANCELLED]:
+                    break
+                elif status not in [
+                    DbtCloudRunStatus.QUEUED,
+                    DbtCloudRunStatus.STARTING,
+                    DbtCloudRunStatus.RUNNING,
+                ]:
+                    check.failed(f"Received unexpected status '{status}'. This should never happen")
 
-            if poll_timeout and datetime.datetime.now() > poll_start + datetime.timedelta(
-                seconds=poll_timeout
+                if poll_timeout and datetime.datetime.now() > poll_start + datetime.timedelta(
+                    seconds=poll_timeout
+                ):
+                    self.cancel_run(run_id)
+                    raise Failure(
+                        f"Run {run_id} timed out after "
+                        f"{datetime.datetime.now() - poll_start}. Attempted to cancel.",
+                        metadata={"run_page_url": MetadataValue.url(href)},
+                    )
+
+                # Sleep for the configured time interval before polling again.
+                time.sleep(poll_interval)
+        finally:
+            if status not in (
+                DbtCloudRunStatus.SUCCESS,
+                DbtCloudRunStatus.ERROR,
+                DbtCloudRunStatus.CANCELLED,
             ):
                 self.cancel_run(run_id)
-                raise Failure(
-                    f"Run {run_id} timed out after "
-                    f"{datetime.datetime.now() - poll_start}. Attempted to cancel.",
-                    metadata={"run_page_url": MetadataValue.url(href)},
-                )
-
-            # Sleep for the configured time interval before polling again.
-            time.sleep(poll_interval)
 
         run_details = self.get_run(run_id, include_related=["trigger"])
         raise Failure(
@@ -426,6 +464,7 @@ class DbtCloudResourceV2:
         job_id: int,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
+        **kwargs,
     ) -> DbtCloudOutput:
         """
         Runs a dbt Cloud job and polls until it completes. Will raise a `dagster.Failure` exception
@@ -445,7 +484,7 @@ class DbtCloudResourceV2:
             :py:class:`~DbtCloudOutput`: Class containing details about the specific job run and the
                 parsed run results.
         """
-        run_details = self.run_job(job_id)
+        run_details = self.run_job(job_id, **kwargs)
         run_id = run_details["id"]
         href = run_details["href"]
         final_run_details = self.poll_run(
@@ -476,7 +515,7 @@ class DbtCloudResourceV2:
             "for instructions on creating a Service Account token.",
         ),
         "account_id": Field(
-            int,
+            IntSource,
             is_required=True,
             description="dbt Cloud Account ID. This value can be found in the url of a variety of "
             "views in the dbt Cloud UI, e.g. https://cloud.getdbt.com/#/accounts/{account_id}/settings/.",
@@ -528,11 +567,11 @@ def dbt_cloud_resource(context) -> DbtCloudResourceV2:
         my_dbt_cloud_resource = dbt_cloud_resource.configured(
             {
                 "auth_token": {"env": "DBT_CLOUD_AUTH_TOKEN"},
-                "account_id": 30000,
+                "account_id": {"env": "DBT_CLOUD_ACCOUNT_ID"},
             }
         )
 
-        @job(resource_defs={"dbt_cloud":my_dbt_cloud_resource})
+        @job(resource_defs={"dbt_cloud": my_dbt_cloud_resource})
         def my_dbt_cloud_job():
             ...
     """

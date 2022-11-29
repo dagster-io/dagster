@@ -531,6 +531,13 @@ export interface SidebarAssetFragment_metadataEntries_PathMetadataEntry {
   path: string;
 }
 
+export interface SidebarAssetFragment_metadataEntries_NotebookMetadataEntry {
+  __typename: "NotebookMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
 export interface SidebarAssetFragment_metadataEntries_JsonMetadataEntry {
   __typename: "JsonMetadataEntry";
   label: string;
@@ -680,7 +687,12 @@ export interface SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry {
   schema: SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type SidebarAssetFragment_metadataEntries = SidebarAssetFragment_metadataEntries_PathMetadataEntry | SidebarAssetFragment_metadataEntries_JsonMetadataEntry | SidebarAssetFragment_metadataEntries_UrlMetadataEntry | SidebarAssetFragment_metadataEntries_TextMetadataEntry | SidebarAssetFragment_metadataEntries_MarkdownMetadataEntry | SidebarAssetFragment_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetFragment_metadataEntries_FloatMetadataEntry | SidebarAssetFragment_metadataEntries_IntMetadataEntry | SidebarAssetFragment_metadataEntries_BoolMetadataEntry | SidebarAssetFragment_metadataEntries_PipelineRunMetadataEntry | SidebarAssetFragment_metadataEntries_AssetMetadataEntry | SidebarAssetFragment_metadataEntries_TableMetadataEntry | SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry;
+export type SidebarAssetFragment_metadataEntries = SidebarAssetFragment_metadataEntries_PathMetadataEntry | SidebarAssetFragment_metadataEntries_NotebookMetadataEntry | SidebarAssetFragment_metadataEntries_JsonMetadataEntry | SidebarAssetFragment_metadataEntries_UrlMetadataEntry | SidebarAssetFragment_metadataEntries_TextMetadataEntry | SidebarAssetFragment_metadataEntries_MarkdownMetadataEntry | SidebarAssetFragment_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetFragment_metadataEntries_FloatMetadataEntry | SidebarAssetFragment_metadataEntries_IntMetadataEntry | SidebarAssetFragment_metadataEntries_BoolMetadataEntry | SidebarAssetFragment_metadataEntries_PipelineRunMetadataEntry | SidebarAssetFragment_metadataEntries_AssetMetadataEntry | SidebarAssetFragment_metadataEntries_TableMetadataEntry | SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry;
+
+export interface SidebarAssetFragment_partitionDefinition {
+  __typename: "PartitionDefinition";
+  description: string;
+}
 
 export interface SidebarAssetFragment_assetKey {
   __typename: "AssetKey";
@@ -715,6 +727,13 @@ export interface SidebarAssetFragment_repository {
 
 export interface SidebarAssetFragment_type_metadataEntries_PathMetadataEntry {
   __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface SidebarAssetFragment_type_metadataEntries_NotebookMetadataEntry {
+  __typename: "NotebookMetadataEntry";
   label: string;
   description: string | null;
   path: string;
@@ -869,7 +888,7 @@ export interface SidebarAssetFragment_type_metadataEntries_TableSchemaMetadataEn
   schema: SidebarAssetFragment_type_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type SidebarAssetFragment_type_metadataEntries = SidebarAssetFragment_type_metadataEntries_PathMetadataEntry | SidebarAssetFragment_type_metadataEntries_JsonMetadataEntry | SidebarAssetFragment_type_metadataEntries_UrlMetadataEntry | SidebarAssetFragment_type_metadataEntries_TextMetadataEntry | SidebarAssetFragment_type_metadataEntries_MarkdownMetadataEntry | SidebarAssetFragment_type_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetFragment_type_metadataEntries_FloatMetadataEntry | SidebarAssetFragment_type_metadataEntries_IntMetadataEntry | SidebarAssetFragment_type_metadataEntries_BoolMetadataEntry | SidebarAssetFragment_type_metadataEntries_PipelineRunMetadataEntry | SidebarAssetFragment_type_metadataEntries_AssetMetadataEntry | SidebarAssetFragment_type_metadataEntries_TableMetadataEntry | SidebarAssetFragment_type_metadataEntries_TableSchemaMetadataEntry;
+export type SidebarAssetFragment_type_metadataEntries = SidebarAssetFragment_type_metadataEntries_PathMetadataEntry | SidebarAssetFragment_type_metadataEntries_NotebookMetadataEntry | SidebarAssetFragment_type_metadataEntries_JsonMetadataEntry | SidebarAssetFragment_type_metadataEntries_UrlMetadataEntry | SidebarAssetFragment_type_metadataEntries_TextMetadataEntry | SidebarAssetFragment_type_metadataEntries_MarkdownMetadataEntry | SidebarAssetFragment_type_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetFragment_type_metadataEntries_FloatMetadataEntry | SidebarAssetFragment_type_metadataEntries_IntMetadataEntry | SidebarAssetFragment_type_metadataEntries_BoolMetadataEntry | SidebarAssetFragment_type_metadataEntries_PipelineRunMetadataEntry | SidebarAssetFragment_type_metadataEntries_AssetMetadataEntry | SidebarAssetFragment_type_metadataEntries_TableMetadataEntry | SidebarAssetFragment_type_metadataEntries_TableSchemaMetadataEntry;
 
 export interface SidebarAssetFragment_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -1898,6 +1917,13 @@ export interface SidebarAssetFragment_type_innerTypes_metadataEntries_PathMetada
   path: string;
 }
 
+export interface SidebarAssetFragment_type_innerTypes_metadataEntries_NotebookMetadataEntry {
+  __typename: "NotebookMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
 export interface SidebarAssetFragment_type_innerTypes_metadataEntries_JsonMetadataEntry {
   __typename: "JsonMetadataEntry";
   label: string;
@@ -2047,7 +2073,7 @@ export interface SidebarAssetFragment_type_innerTypes_metadataEntries_TableSchem
   schema: SidebarAssetFragment_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type SidebarAssetFragment_type_innerTypes_metadataEntries = SidebarAssetFragment_type_innerTypes_metadataEntries_PathMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_JsonMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_UrlMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_TextMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_MarkdownMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_FloatMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_IntMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_BoolMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_PipelineRunMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_AssetMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_TableMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_TableSchemaMetadataEntry;
+export type SidebarAssetFragment_type_innerTypes_metadataEntries = SidebarAssetFragment_type_innerTypes_metadataEntries_PathMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_NotebookMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_JsonMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_UrlMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_TextMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_MarkdownMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_FloatMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_IntMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_BoolMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_PipelineRunMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_AssetMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_TableMetadataEntry | SidebarAssetFragment_type_innerTypes_metadataEntries_TableSchemaMetadataEntry;
 
 export interface SidebarAssetFragment_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -3070,7 +3096,7 @@ export interface SidebarAssetFragment_type_innerTypes_outputSchemaType_MapConfig
 export type SidebarAssetFragment_type_innerTypes_outputSchemaType = SidebarAssetFragment_type_innerTypes_outputSchemaType_ArrayConfigType | SidebarAssetFragment_type_innerTypes_outputSchemaType_EnumConfigType | SidebarAssetFragment_type_innerTypes_outputSchemaType_RegularConfigType | SidebarAssetFragment_type_innerTypes_outputSchemaType_CompositeConfigType | SidebarAssetFragment_type_innerTypes_outputSchemaType_ScalarUnionConfigType | SidebarAssetFragment_type_innerTypes_outputSchemaType_MapConfigType;
 
 export interface SidebarAssetFragment_type_innerTypes {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   key: string;
   name: string | null;
   displayName: string;
@@ -3085,7 +3111,7 @@ export interface SidebarAssetFragment_type_innerTypes {
 }
 
 export interface SidebarAssetFragment_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   key: string;
   name: string | null;
   displayName: string;
@@ -3106,9 +3132,10 @@ export interface SidebarAssetFragment {
   description: string | null;
   configField: SidebarAssetFragment_configField | null;
   metadataEntries: SidebarAssetFragment_metadataEntries[];
-  partitionDefinition: string | null;
+  partitionDefinition: SidebarAssetFragment_partitionDefinition | null;
   assetKey: SidebarAssetFragment_assetKey;
   op: SidebarAssetFragment_op | null;
+  opVersion: string | null;
   repository: SidebarAssetFragment_repository;
   type: SidebarAssetFragment_type | null;
 }

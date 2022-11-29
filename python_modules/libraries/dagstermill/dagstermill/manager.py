@@ -5,6 +5,7 @@ from typing import Any, Mapping, Optional
 
 from dagster import (
     AssetMaterialization,
+    AssetObservation,
     ExpectationResult,
     Failure,
     LoggerDefinition,
@@ -175,7 +176,7 @@ class Manager:
             self.context = DagstermillRuntimeExecutionContext(
                 pipeline_context=pipeline_context,
                 pipeline_def=pipeline_def,
-                solid_config=run_config.get("solids", {}).get(solid.name, {}).get("config"),
+                solid_config=run_config.get("ops", {}).get(solid.name, {}).get("config"),
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
                     pipeline_def,
@@ -327,13 +328,20 @@ class Manager:
 
         if not self.solid_def.has_output(output_name):
             raise DagstermillError(
-                f"Solid {self.solid_def.name} does not have output named {output_name}."
+                f"Op {self.solid_def.name} does not have output named {output_name}."
                 f"Expected one of {[str(output_def.name) for output_def in self.solid_def.output_defs]}"
             )
 
         # pass output value cross process boundary using io manager
         step_context = self.context._step_context  # pylint: disable=protected-access
         # Note: yield_result currently does not support DynamicOutput
+
+        # dagstermill assets do not support yielding additional results within the notebook:
+        if len(step_context.job_def.asset_layer.asset_keys) > 0:
+            raise DagstermillError(
+                "dagstermill assets do not currently support dagstermill.yield_result"
+            )
+
         step_output_handle = StepOutputHandle(
             step_key=step_context.step.key, output_name=output_name
         )
@@ -358,6 +366,7 @@ class Manager:
         valid_types = (
             Materialization,
             AssetMaterialization,
+            AssetObservation,
             ExpectationResult,
             TypeCheck,
             Failure,

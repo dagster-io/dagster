@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Callable, Dict, List, NamedTuple, Optional
+from typing import Any, Callable, Mapping, NamedTuple, Optional, Sequence
 
 from dagster._seven import funcsigs, is_module_available
 
@@ -24,7 +24,7 @@ class InferredOutputProps(NamedTuple):
     description: Optional[str]
 
 
-def _infer_input_description_from_docstring(fn: Callable) -> Dict[str, Optional[str]]:
+def _infer_input_description_from_docstring(fn: Callable) -> Mapping[str, Optional[str]]:
     doc_str = fn.__doc__
     if not IS_DOCSTRING_PARSER_AVAILABLE or doc_str is None:
         return {}
@@ -73,10 +73,10 @@ def has_explicit_return_type(fn: Callable) -> bool:
 
 
 def _infer_inputs_from_params(
-    params: List[funcsigs.Parameter],
-    descriptions: Optional[Dict[str, Optional[str]]] = None,
-) -> List[InferredInputProps]:
-    descriptions: Dict[str, Optional[str]] = descriptions or {}
+    params: Sequence[funcsigs.Parameter],
+    descriptions: Optional[Mapping[str, Optional[str]]] = None,
+) -> Sequence[InferredInputProps]:
+    _descriptions: Mapping[str, Optional[str]] = descriptions or {}
     input_defs = []
     for param in params:
         if param.default is not funcsigs.Parameter.empty:
@@ -84,13 +84,13 @@ def _infer_inputs_from_params(
                 param.name,
                 param.annotation,
                 default_value=param.default,
-                description=descriptions.get(param.name),
+                description=_descriptions.get(param.name),
             )
         else:
             input_def = InferredInputProps(
                 param.name,
                 param.annotation,
-                description=descriptions.get(param.name),
+                description=_descriptions.get(param.name),
             )
 
         input_defs.append(input_def)
@@ -98,7 +98,7 @@ def _infer_inputs_from_params(
     return input_defs
 
 
-def infer_input_props(fn: Callable, context_arg_provided: bool) -> List[InferredInputProps]:
+def infer_input_props(fn: Callable, context_arg_provided: bool) -> Sequence[InferredInputProps]:
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
     descriptions = _infer_input_description_from_docstring(fn)

@@ -3,7 +3,7 @@ import sys
 import threading
 from abc import abstractmethod
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, Tuple, Union, cast
 
 import dagster._check as check
 from dagster._api.get_server_id import sync_get_server_id
@@ -57,7 +57,7 @@ from dagster._grpc.impl import (
     get_partition_set_execution_param_data,
     get_partition_tags,
 )
-from dagster._grpc.types import GetCurrentImageResult
+from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
 from dagster._serdes import deserialize_as
 from dagster._seven.compat.pendulum import PendulumDateTime
 from dagster._utils import merge_dicts
@@ -104,10 +104,10 @@ class RepositoryLocation(AbstractContextManager):
         pass
 
     @abstractmethod
-    def get_repositories(self) -> Dict[str, ExternalRepository]:
+    def get_repositories(self) -> Mapping[str, ExternalRepository]:
         pass
 
-    def get_repository_names(self) -> List[str]:
+    def get_repository_names(self) -> Sequence[str]:
         return list(self.get_repositories().keys())
 
     @property
@@ -227,7 +227,7 @@ class RepositoryLocation(AbstractContextManager):
     def origin(self) -> RepositoryLocationOrigin:
         pass
 
-    def get_display_metadata(self) -> Dict[str, str]:
+    def get_display_metadata(self) -> Mapping[str, str]:
         return merge_dicts(
             self.origin.get_display_metadata(),
             ({"image": self.container_image} if self.container_image else {}),
@@ -244,17 +244,17 @@ class RepositoryLocation(AbstractContextManager):
         pass
 
     @property
-    def container_context(self) -> Optional[Dict[str, Any]]:
+    def container_context(self) -> Optional[Mapping[str, Any]]:
         return None
 
     @property
     @abstractmethod
-    def entry_point(self) -> Optional[List[str]]:
+    def entry_point(self) -> Optional[Sequence[str]]:
         pass
 
     @property
     @abstractmethod
-    def repository_code_pointer_dict(self) -> Dict[str, CodePointer]:
+    def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
         pass
 
     def get_repository_python_origin(self, repository_name: str) -> "RepositoryPythonOrigin":
@@ -313,15 +313,15 @@ class InProcessRepositoryLocation(RepositoryLocation):
         return self._origin.container_image
 
     @property
-    def container_context(self) -> Optional[Dict[str, Any]]:
+    def container_context(self) -> Optional[Mapping[str, Any]]:
         return self._origin.container_context
 
     @property
-    def entry_point(self) -> Optional[List[str]]:
+    def entry_point(self) -> Optional[Sequence[str]]:
         return self._origin.entry_point
 
     @property
-    def repository_code_pointer_dict(self) -> Dict[str, CodePointer]:
+    def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
         return self._repository_code_pointer_dict
 
     def get_reconstructable_pipeline(
@@ -340,7 +340,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
     def has_repository(self, name: str) -> bool:
         return name in self._repositories
 
-    def get_repositories(self) -> Dict[str, ExternalRepository]:
+    def get_repositories(self) -> Mapping[str, ExternalRepository]:
         return self._repositories
 
     def get_subset_external_pipeline_result(
@@ -373,7 +373,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-        check.dict_param(run_config, "run_config")
+        check.mapping_param(run_config, "run_config")
         check.str_param(mode, "mode")
         step_keys_to_execute = check.opt_nullable_sequence_param(
             step_keys_to_execute, "step_keys_to_execute", of_type=str
@@ -500,6 +500,10 @@ class InProcessRepositoryLocation(RepositoryLocation):
         partition_set_name: str,
         partition_names: Sequence[str],
     ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
+        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
+        check.str_param(partition_set_name, "partition_set_name")
+        check.sequence_param(partition_names, "partition_names", of_type=str)
+
         return get_partition_set_execution_param_data(
             self._get_repo_def(repository_handle.repository_name),
             partition_set_name=partition_set_name,
@@ -522,7 +526,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         heartbeat: Optional[bool] = False,
         watch_server: Optional[bool] = True,
         grpc_server_registry: Optional[GrpcServerRegistry] = None,
-        grpc_metadata: Optional[List[Tuple[str, str]]] = None,
+        grpc_metadata: Optional[Sequence[Tuple[str, str]]] = None,
     ):
         from dagster._grpc.client import DagsterGrpcClient, client_heartbeat_thread
 
@@ -628,19 +632,19 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         return cast(str, self._container_image)
 
     @property
-    def container_context(self) -> Optional[Dict[str, Any]]:
+    def container_context(self) -> Optional[Mapping[str, Any]]:
         return self._container_context
 
     @property
-    def repository_code_pointer_dict(self) -> Dict[str, CodePointer]:
-        return cast(Dict[str, CodePointer], self._repository_code_pointer_dict)
+    def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
+        return cast(Mapping[str, CodePointer], self._repository_code_pointer_dict)
 
     @property
     def executable_path(self) -> Optional[str]:
         return self._executable_path
 
     @property
-    def entry_point(self) -> Optional[List[str]]:
+    def entry_point(self) -> Optional[Sequence[str]]:
         return self._entry_point
 
     @property
@@ -665,6 +669,9 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             GetCurrentImageResult,
         ).current_image
 
+    def get_current_runs(self) -> Sequence[str]:
+        return deserialize_as(self.client.get_current_runs(), GetCurrentRunsResult).current_runs
+
     def cleanup(self) -> None:
         if self._heartbeat_shutdown_event:
             self._heartbeat_shutdown_event.set()
@@ -685,7 +692,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
     def has_repository(self, name: str) -> bool:
         return name in self.get_repositories()
 
-    def get_repositories(self) -> Dict[str, ExternalRepository]:
+    def get_repositories(self) -> Mapping[str, ExternalRepository]:
         return self.external_repositories
 
     def get_external_execution_plan(
@@ -698,7 +705,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-        run_config = check.dict_param(run_config, "run_config")
+        run_config = check.mapping_param(run_config, "run_config")
         check.str_param(mode, "mode")
         check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
@@ -828,10 +835,14 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         partition_set_name: str,
         partition_names: Sequence[str],
     ) -> "ExternalPartitionSetExecutionParamData":
+        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
+        check.str_param(partition_set_name, "partition_set_name")
+        check.sequence_param(partition_names, "partition_names", of_type=str)
+
         return sync_get_external_partition_set_execution_param_data_grpc(
             self.client, repository_handle, partition_set_name, partition_names
         )
 
     def get_external_notebook_data(self, notebook_path: str) -> bytes:
         check.str_param(notebook_path, "notebook_path")
-        return sync_get_streaming_external_notebook_data_grpc(self.client, notebook_path)
+        return sync_get_streaming_external_notebook_data_grpc(self.client, notebook_path)  # type: ignore

@@ -6,26 +6,24 @@ from dagster import (
     DagsterInvalidDefinitionError,
     Dict,
     Float,
+    GraphDefinition,
+    In,
     Int,
     List,
     Nothing,
     Optional,
+    Out,
     Set,
     String,
     Tuple,
+    job,
+    op,
 )
 from dagster._core.types.dagster_type import (
     ALL_RUNTIME_BUILTINS,
     DagsterType,
     DagsterTypeKind,
     resolve_dagster_type,
-)
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    lambda_solid,
-    pipeline,
 )
 
 
@@ -98,7 +96,7 @@ def test_display_name():
 
 
 def test_builtins_available():
-    pipeline_def = PipelineDefinition(name="test_builting_available", solid_defs=[])
+    pipeline_def = GraphDefinition(name="test_builting_available", node_defs=[]).to_job()
     for builtin_type in ALL_RUNTIME_BUILTINS:
         assert pipeline_def.has_dagster_type(builtin_type.unique_name)
         assert pipeline_def.dagster_type_named(builtin_type.unique_name).is_builtin
@@ -114,7 +112,7 @@ def test_python_mapping():
     runtime = resolve_dagster_type(float)
     assert runtime.unique_name == "Float"
 
-    @lambda_solid(input_defs=[InputDefinition("num", int)])
+    @op(ins={"num": In(int)})
     def add_one(num):
         return num + 1
 
@@ -136,20 +134,20 @@ def test_double_dagster_type():
     AlwaysSucceedsFoo = DagsterType(name="Foo", type_check_fn=lambda _, _val: True)
     AlwaysFailsFoo = DagsterType(name="Foo", type_check_fn=lambda _, _val: False)
 
-    @lambda_solid
+    @op
     def return_a_thing():
         return 1
 
-    @lambda_solid(
-        input_defs=[InputDefinition("succeeds", AlwaysSucceedsFoo)],
-        output_def=OutputDefinition(AlwaysFailsFoo),
+    @op(
+        ins={"succeeds": In(AlwaysSucceedsFoo)},
+        out=Out(AlwaysFailsFoo),
     )
     def yup(succeeds):
         return succeeds
 
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
 
-        @pipeline
+        @job
         def _should_fail():
             yup(return_a_thing())
 

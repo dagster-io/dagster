@@ -2,7 +2,19 @@ import hashlib
 import json
 import os
 import textwrap
-from typing import AbstractSet, Any, Callable, Dict, Mapping, Optional, Sequence, Set, Tuple
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+)
 
 from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
@@ -96,6 +108,9 @@ def _select_unique_ids_from_manifest_json(
         metrics={
             unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()  # type: ignore
         },
+        exposures={
+            unique_id: _DictShim(info) for unique_id, info in manifest_json["exposures"].items()  # type: ignore
+        },
     )
 
     # create a parsed selection from the select string
@@ -171,7 +186,11 @@ def _get_node_metadata(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
     return metadata
 
 
-def _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types):
+def _get_deps(
+    dbt_nodes: Mapping[str, Any],
+    selected_unique_ids: AbstractSet[str],
+    asset_resource_types: List[str],
+) -> Mapping[str, FrozenSet[str]]:
     def _replaceable_node(node_info):
         # some nodes exist inside the dbt graph but are not assets
         resource_type = node_info["resource_type"]
@@ -222,17 +241,91 @@ def _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types):
             elif _valid_parent_node(parent_node_info):
                 asset_deps[unique_id].add(parent_unique_id)
 
-    return asset_deps
+    frozen_asset_deps = {
+        unique_id: frozenset(parent_ids) for unique_id, parent_ids in asset_deps.items()
+    }
+
+    return frozen_asset_deps
+
+
+def _get_asset_deps(
+    dbt_nodes, deps, node_info_to_asset_key, node_info_to_group_fn, io_manager_key, display_raw_sql
+) -> Tuple[
+    Dict[AssetKey, Set[AssetKey]],
+    Dict[AssetKey, Tuple[str, In]],
+    Dict[AssetKey, Tuple[str, Out]],
+    Dict[AssetKey, str],
+    Dict[str, str],
+    Dict[str, Dict[str, Any]],
+]:
+    asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
+    asset_ins: Dict[AssetKey, Tuple[str, In]] = {}
+    asset_outs: Dict[AssetKey, Tuple[str, Out]] = {}
+
+    # These dicts could be refactored as a single dict, mapping from output name to arbitrary
+    # metadata that we need to store for reference.
+    group_names_by_key: Dict[AssetKey, str] = {}
+    fqns_by_output_name: Dict[str, str] = {}
+    metadata_by_output_name: Dict[str, Dict[str, Any]] = {}
+
+    for unique_id, parent_unique_ids in deps.items():
+        node_info = dbt_nodes[unique_id]
+
+        output_name = _get_output_name(node_info)
+        fqns_by_output_name[output_name] = node_info["fqn"]
+
+        metadata_by_output_name[output_name] = {
+            key: node_info[key] for key in ["unique_id", "resource_type"]
+        }
+
+        asset_key = node_info_to_asset_key(node_info)
+
+        asset_deps[asset_key] = set()
+
+        asset_outs[asset_key] = (
+            output_name,
+            Out(
+                io_manager_key=io_manager_key,
+                description=_get_node_description(node_info, display_raw_sql),
+                metadata=_get_node_metadata(node_info),
+                is_required=False,
+                dagster_type=Nothing,
+            ),
+        )
+
+        group_name = node_info_to_group_fn(node_info)
+        if group_name is not None:
+            group_names_by_key[asset_key] = group_name
+
+        for parent_unique_id in parent_unique_ids:
+            parent_node_info = dbt_nodes[parent_unique_id]
+            parent_asset_key = node_info_to_asset_key(parent_node_info)
+
+            asset_deps[asset_key].add(parent_asset_key)
+
+            # if this parent is not one of the selected nodes, it's an input
+            if parent_unique_id not in deps:
+                input_name = _get_input_name(parent_node_info)
+                asset_ins[parent_asset_key] = (input_name, In(Nothing))
+
+    return (
+        asset_deps,
+        asset_ins,
+        asset_outs,
+        group_names_by_key,
+        fqns_by_output_name,
+        metadata_by_output_name,
+    )
 
 
 def _get_dbt_op(
     op_name: str,
-    ins: Dict[str, In],
-    outs: Dict[str, Out],
+    ins: Mapping[str, In],
+    outs: Mapping[str, Out],
     select: str,
     exclude: str,
     use_build_command: bool,
-    fqns_by_output_name: Dict[str, str],
+    fqns_by_output_name: Mapping[str, str],
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
     runtime_metadata_fn: Optional[
@@ -314,18 +407,9 @@ def _dbt_nodes_to_assets(
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
     display_raw_sql: bool = True,
 ) -> AssetsDefinition:
-
-    asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
-
-    asset_ins: Dict[AssetKey, Tuple[str, In]] = {}
-    asset_outs: Dict[AssetKey, Tuple[str, Out]] = {}
-
-    group_names_by_key: Dict[AssetKey, str] = {}
-    fqns_by_output_name: Dict[str, str] = {}
-
     if use_build_command:
         deps = _get_deps(
             dbt_nodes,
@@ -335,41 +419,14 @@ def _dbt_nodes_to_assets(
     else:
         deps = _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types=["model"])
 
-    for unique_id, parent_unique_ids in deps.items():
-        node_info = dbt_nodes[unique_id]
-
-        output_name = _get_output_name(node_info)
-        fqns_by_output_name[output_name] = node_info["fqn"]
-
-        asset_key = node_info_to_asset_key(node_info)
-
-        asset_deps[asset_key] = set()
-
-        asset_outs[asset_key] = (
-            output_name,
-            Out(
-                io_manager_key=io_manager_key,
-                description=_get_node_description(node_info, display_raw_sql),
-                metadata=_get_node_metadata(node_info),
-                is_required=False,
-                dagster_type=Nothing,
-            ),
-        )
-
-        group_name = node_info_to_group_fn(node_info)
-        if group_name is not None:
-            group_names_by_key[asset_key] = group_name
-
-        for parent_unique_id in parent_unique_ids:
-            parent_node_info = dbt_nodes[parent_unique_id]
-            parent_asset_key = node_info_to_asset_key(parent_node_info)
-
-            asset_deps[asset_key].add(parent_asset_key)
-
-            # if this parent is not one of the selected nodes, it's an input
-            if parent_unique_id not in deps:
-                input_name = _get_input_name(parent_node_info)
-                asset_ins[parent_asset_key] = (input_name, In(Nothing))
+    asset_deps, asset_ins, asset_outs, group_names_by_key, fqns_by_output_name, _ = _get_asset_deps(
+        dbt_nodes=dbt_nodes,
+        deps=deps,
+        node_info_to_asset_key=node_info_to_asset_key,
+        node_info_to_group_fn=node_info_to_group_fn,
+        io_manager_key=io_manager_key,
+        display_raw_sql=display_raw_sql,
+    )
 
     # prevent op name collisions between multiple dbt multi-assets
     op_name = f"run_dbt_{project_id}"
@@ -420,7 +477,7 @@ def load_assets_from_dbt_project(
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
     display_raw_sql: Optional[bool] = None,
 ) -> Sequence[AssetsDefinition]:
     """
@@ -514,7 +571,7 @@ def load_assets_from_dbt_manifest(
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
     display_raw_sql: Optional[bool] = None,
 ) -> Sequence[AssetsDefinition]:
     """
@@ -558,7 +615,7 @@ def load_assets_from_dbt_manifest(
             with each model should be included in the asset description. For large projects, setting
             this flag to False is advised to reduce the size of the resulting snapshot.
     """
-    check.dict_param(manifest_json, "manifest_json", key_type=str)
+    check.mapping_param(manifest_json, "manifest_json", key_type=str)
     if partitions_def:
         experimental_arg_warning("partitions_def", "load_assets_from_dbt_manifest")
     if partition_key_to_vars_fn:
@@ -601,12 +658,13 @@ def load_assets_from_dbt_manifest(
         node_info_to_group_fn=node_info_to_group_fn,
         display_raw_sql=display_raw_sql,
     )
+    dbt_assets: Sequence[AssetsDefinition]
     if source_key_prefix:
         if isinstance(source_key_prefix, str):
             source_key_prefix = [source_key_prefix]
         source_key_prefix = check.list_param(source_key_prefix, "source_key_prefix", of_type=str)
         input_key_replacements = {
-            input_key: AssetKey(source_key_prefix + input_key.path)
+            input_key: AssetKey([*source_key_prefix, *input_key.path])
             for input_key in dbt_assets_def.keys_by_input_name.values()
         }
         dbt_assets = [

@@ -11,9 +11,9 @@ import { ComputeIOType } from "./../../types/globalTypes";
 
 export interface ComputeLogsSubscription_computeLogs {
   __typename: "ComputeLogFile";
-  data: string | null;
-  cursor: number;
   path: string;
+  cursor: number;
+  data: string | null;
   downloadUrl: string | null;
 }
 

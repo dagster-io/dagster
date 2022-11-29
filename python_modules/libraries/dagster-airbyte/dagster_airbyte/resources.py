@@ -4,7 +4,7 @@ import logging
 import sys
 import time
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Mapping, Optional, cast
 
 import requests
 from dagster_airbyte.types import AirbyteOutput
@@ -42,7 +42,7 @@ class AirbyteResource:
         request_max_retries: int = 3,
         request_retry_delay: float = 0.25,
         request_timeout: int = 15,
-        request_additional_params: Optional[Dict[str, Any]] = None,
+        request_additional_params: Optional[Mapping[str, Any]] = None,
         log: logging.Logger = get_dagster_logger(),
         forward_logs: bool = True,
         username: Optional[str] = None,
@@ -59,7 +59,7 @@ class AirbyteResource:
         self._log = log
 
         self._forward_logs = forward_logs
-        self._request_cache: Dict[str, Optional[Dict[str, object]]] = {}
+        self._request_cache: Dict[str, Optional[Mapping[str, object]]] = {}
         # Int in case we nest contexts
         self._cache_enabled = 0
 
@@ -91,7 +91,7 @@ class AirbyteResource:
     def clear_request_cache(self):
         self._request_cache = {}
 
-    def make_request_cached(self, endpoint: str, data: Optional[Dict[str, object]]):
+    def make_request_cached(self, endpoint: str, data: Optional[Mapping[str, object]]):
         if not self._cache_enabled > 0:
             return self.make_request(endpoint, data)
         data_json = json.dumps(data, sort_keys=True)
@@ -105,8 +105,8 @@ class AirbyteResource:
         return self._request_cache[digest]
 
     def make_request(
-        self, endpoint: str, data: Optional[Dict[str, object]]
-    ) -> Optional[Dict[str, object]]:
+        self, endpoint: str, data: Optional[Mapping[str, object]]
+    ) -> Optional[Mapping[str, object]]:
         """
         Creates and sends a request to the desired Airbyte REST API endpoint.
 
@@ -124,7 +124,7 @@ class AirbyteResource:
         while True:
             try:
                 response = requests.request(
-                    **deep_merge_dicts(
+                    **deep_merge_dicts(  # type: ignore
                         dict(
                             method="POST",
                             url=self.api_base_url + endpoint,
@@ -207,7 +207,7 @@ class AirbyteResource:
         )
         return result["catalogId"]
 
-    def get_source_schema(self, source_id: str) -> Dict[str, Any]:
+    def get_source_schema(self, source_id: str) -> Mapping[str, Any]:
         return cast(
             Dict[str, Any],
             check.not_none(
@@ -231,7 +231,7 @@ class AirbyteResource:
             ),
         ).get("supportsNormalization", False)
 
-    def get_job_status(self, connection_id: str, job_id: int) -> dict:
+    def get_job_status(self, connection_id: str, job_id: int) -> Mapping[str, object]:
         if self._forward_logs:
             return check.not_none(self.make_request(endpoint="/jobs/get", data={"id": job_id}))
         else:
@@ -252,12 +252,12 @@ class AirbyteResource:
 
             return check.not_none(job)
 
-    def start_sync(self, connection_id: str) -> Dict[str, object]:
+    def start_sync(self, connection_id: str) -> Mapping[str, object]:
         return check.not_none(
             self.make_request(endpoint="/connections/sync", data={"connectionId": connection_id})
         )
 
-    def get_connection_details(self, connection_id: str) -> Dict[str, object]:
+    def get_connection_details(self, connection_id: str) -> Mapping[str, object]:
         return check.not_none(
             self.make_request(endpoint="/connections/get", data={"connectionId": connection_id})
         )

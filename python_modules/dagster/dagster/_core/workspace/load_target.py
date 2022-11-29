@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, NamedTuple, Optional
+from typing import NamedTuple, Optional, Sequence
 
 from dagster._core.host_representation.origin import (
     GrpcServerRepositoryLocationOrigin,
@@ -16,12 +16,12 @@ from .load import (
 
 class WorkspaceLoadTarget(ABC):
     @abstractmethod
-    def create_origins(self) -> List[RepositoryLocationOrigin]:
+    def create_origins(self) -> Sequence[RepositoryLocationOrigin]:
         """Reloads the RepositoryLocationOrigins for this workspace."""
 
 
 class WorkspaceFileTarget(
-    NamedTuple("WorkspaceFileTarget", [("paths", List[str])]), WorkspaceLoadTarget
+    NamedTuple("WorkspaceFileTarget", [("paths", Sequence[str])]), WorkspaceLoadTarget
 ):
     def create_origins(self):
         return location_origins_from_yaml_paths(self.paths)

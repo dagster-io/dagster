@@ -1,6 +1,6 @@
 import operator
 from functools import reduce
-from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions import AssetKey
@@ -29,9 +29,9 @@ class UnresolvedAssetJobDefinition(
         [
             ("name", str),
             ("selection", "AssetSelection"),
-            ("config", Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]]),
+            ("config", Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]]),
             ("description", Optional[str]),
-            ("tags", Optional[Dict[str, Any]]),
+            ("tags", Optional[Mapping[str, Any]]),
             ("partitions_def", Optional["PartitionsDefinition"]),
             ("executor_def", Optional["ExecutorDefinition"]),
         ],
@@ -41,9 +41,9 @@ class UnresolvedAssetJobDefinition(
         cls,
         name: str,
         selection: "AssetSelection",
-        config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
+        config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]] = None,
         description: Optional[str] = None,
-        tags: Optional[Dict[str, Any]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
     ):
@@ -59,7 +59,7 @@ class UnresolvedAssetJobDefinition(
             selection=check.inst_param(selection, "selection", AssetSelection),
             config=config,
             description=check.opt_str_param(description, "description"),
-            tags=check.opt_dict_param(tags, "tags"),
+            tags=check.opt_mapping_param(tags, "tags"),
             partitions_def=check.opt_inst_param(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
@@ -83,7 +83,7 @@ class UnresolvedAssetJobDefinition(
         )
         run_config_fn = (
             partitioned_config
-            and partitioned_config.run_config_for_partition_fn
+            and partitioned_config.run_config_for_partition_fn  # type: ignore
             or (lambda _: cast(Dict[str, str], {}))
         )
         return PartitionSetDefinition(
@@ -98,8 +98,9 @@ class UnresolvedAssetJobDefinition(
         self,
         partition_key: str,
         run_key: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
+        run_config: Optional[Mapping[str, Any]] = None,
     ) -> RunRequest:
         """
         Creates a RunRequest object for a run that processes the given partition.
@@ -112,6 +113,9 @@ class UnresolvedAssetJobDefinition(
                 value means that a run will always be launched per evaluation.
             tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
                 to the launched run.
+            run_config (Optional[Mapping[str, Any]]: Configuration for the run. If the job has
+                a :py:class:`PartitionedConfig`, this value will override replace the config
+                provided by it.
 
         Returns:
             RunRequest: an object that requests a run to process the given partition.
@@ -121,7 +125,6 @@ class UnresolvedAssetJobDefinition(
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
         partition = partition_set.get_partition(partition_key)
-        run_config = partition_set.run_config_for_partition(partition)
         run_request_tags = (
             {**tags, **partition_set.tags_for_partition(partition)}
             if tags
@@ -130,7 +133,9 @@ class UnresolvedAssetJobDefinition(
 
         return RunRequest(
             run_key=run_key,
-            run_config=run_config,
+            run_config=run_config
+            if run_config is not None
+            else partition_set.run_config_for_partition(partition),
             tags=run_request_tags,
             asset_selection=asset_selection,
         )
@@ -179,10 +184,10 @@ def _selection_from_string(string: str) -> "AssetSelection":
 def define_asset_job(
     name: str,
     selection: Optional[Union[str, Sequence[str], "AssetSelection"]] = None,
-    config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
+    config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"]] = None,
     description: Optional[str] = None,
-    tags: Optional[Dict[str, Any]] = None,
-    partitions_def: Optional["PartitionsDefinition"] = None,
+    tags: Optional[Mapping[str, Any]] = None,
+    partitions_def: Optional["PartitionsDefinition[Any]"] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will materialize a selection of assets. This will only be

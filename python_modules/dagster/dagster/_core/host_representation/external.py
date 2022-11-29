@@ -353,7 +353,7 @@ class ExternalPipeline(RepresentedPipeline):
         return list(self._active_preset_dict.values())
 
     @property
-    def solid_names(self) -> List[str]:
+    def solid_names(self) -> Sequence[str]:
         return self._pipeline_index.pipeline_snapshot.solid_names
 
     def has_solid_invocation(self, solid_name: str):

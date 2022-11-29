@@ -4,6 +4,7 @@ import os
 import time
 from datetime import datetime
 
+import mock
 import pytest
 import requests
 from dagster_airbyte import airbyte_resource, load_assets_from_connections
@@ -104,7 +105,8 @@ def airbyte_source_files_fixture():
             f.write(contents)
 
 
-def test_basic_integration(empty_airbyte_instance, airbyte_source_files):
+@pytest.mark.parametrize("filename", ["example_airbyte_stack", "example_airbyte_stack_generated"])
+def test_basic_integration(empty_airbyte_instance, airbyte_source_files, filename):
 
     ab_instance = airbyte_resource.configured(
         {
@@ -123,7 +125,7 @@ def test_basic_integration(empty_airbyte_instance, airbyte_source_files):
         )
 
     # First, check that we get the expected diff
-    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    check_result = check(TEST_ROOT_DIR, f"{filename}:reconciler")
 
     config_dict = {
         "local-json-input": {
@@ -140,8 +142,9 @@ def test_basic_integration(empty_airbyte_instance, airbyte_source_files):
             "destination": "local-json-output",
             "normalize data": False,
             "streams": {
-                "my_data_stream": "FULL_REFRESH_APPEND",
+                "my_data_stream": {"syncMode": "full_refresh", "destinationSyncMode": "append"}
             },
+            "destination namespace": "SAME_AS_SOURCE",
         },
     }
     expected_result = diff_dicts(
@@ -153,13 +156,13 @@ def test_basic_integration(empty_airbyte_instance, airbyte_source_files):
 
     # Then, apply the diff and check that we get the expected diff again
 
-    apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    apply_result = apply(TEST_ROOT_DIR, f"{filename}:reconciler")
 
     assert expected_result == apply_result
 
     # Now, check that we get no diff after applying the stack
 
-    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    check_result = check(TEST_ROOT_DIR, f"{filename}:reconciler")
 
     assert check_result == ManagedElementDiff()
 
@@ -271,3 +274,137 @@ def test_change_source_and_destination(empty_airbyte_instance, airbyte_source_fi
 
     check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_dest")
     assert check_result == ManagedElementDiff()
+
+
+def test_mark_secrets_as_changed(docker_compose_airbyte_instance, airbyte_source_files):
+
+    # First, apply a stack and check that there's no diff after applying it
+    apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    assert ManagedElementDiff() == check_result
+
+    # Ensure that a different config has a diff
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_dest")
+    other_check_result = check(
+        TEST_ROOT_DIR,
+        "example_airbyte_stack:reconciler_different_dest",
+        include_all_secrets=True,
+    )
+    assert other_check_result == check_result
+    assert ManagedElementDiff() != check_result
+
+    # Next, mock to treat all config as secrets - now, we don't expect a diff
+    # because we ignore all the config fields which have changed
+    with mock.patch(
+        "dagster_airbyte.managed.reconciliation._ignore_secrets_compare_fn", return_value=True
+    ):
+        check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+        assert ManagedElementDiff() == check_result
+
+        check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_dest")
+        assert ManagedElementDiff() == check_result
+
+        # This reconciler has mark_secrets_as_changed set to True, so we expect a diff
+        check_result = check(
+            TEST_ROOT_DIR,
+            "example_airbyte_stack:reconciler_different_dest",
+            include_all_secrets=True,
+        )
+        assert ManagedElementDiff() != check_result
+
+
+def test_change_destination_namespace(empty_airbyte_instance, airbyte_source_files):
+
+    # Set up example element and ensure no diff
+    apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    assert check_result == ManagedElementDiff()
+
+    # Change the destination namespace, ensure that we get the proper diff
+    expected_diff = diff_dicts(
+        {
+            "local-json-conn": {
+                "destination namespace": "DESTINATION_DEFAULT",
+            },
+        },
+        {
+            "local-json-conn": {
+                "destination namespace": "SAME_AS_SOURCE",
+            },
+        },
+    )
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_dest_default")
+    assert check_result == expected_diff
+
+    apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_dest_default")
+    assert apply_result == expected_diff
+
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_dest_default")
+    assert check_result == ManagedElementDiff()
+
+    # Reset to original state
+    apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    assert check_result == ManagedElementDiff()
+
+    # Change the destination namespace, ensure that we get the proper diff
+    expected_diff = diff_dicts(
+        {
+            "local-json-conn": {
+                "destination namespace": "my-cool-namespace",
+            },
+        },
+        {
+            "local-json-conn": {
+                "destination namespace": "SAME_AS_SOURCE",
+            },
+        },
+    )
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_custom_namespace")
+    assert check_result == expected_diff
+
+    apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_custom_namespace")
+    assert apply_result == expected_diff
+
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_custom_namespace")
+    assert check_result == ManagedElementDiff()
+
+
+def test_sync_modes(docker_compose_airbyte_instance, airbyte_source_files):
+
+    # First, apply a stack and check that there's no diff after applying it
+    apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    assert ManagedElementDiff() == check_result
+
+    # Ensure that a different config has a diff
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_alt_sync_mode")
+
+    config_dict = {
+        "local-json-conn": {
+            "streams": {
+                "my_data_stream": {
+                    "syncMode": "incremental",
+                    "cursorField": ["foo"],
+                }
+            },
+        },
+    }
+    dest_dict = {
+        "local-json-conn": {
+            "streams": {
+                "my_data_stream": {
+                    "syncMode": "full_refresh",
+                    "cursorField": [],
+                }
+            },
+        },
+    }
+    expected_result = diff_dicts(
+        config_dict,
+        dest_dict,
+    )
+
+    assert check_result == expected_result

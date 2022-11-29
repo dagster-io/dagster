@@ -9,6 +9,16 @@ import { AssetKeyInput } from "./../../types/globalTypes";
 // GraphQL query operation: LaunchAssetLoaderQuery
 // ====================================================
 
+export interface LaunchAssetLoaderQuery_assetNodes_partitionDefinition {
+  __typename: "PartitionDefinition";
+  description: string;
+}
+
+export interface LaunchAssetLoaderQuery_assetNodes_partitionKeysByDimension {
+  __typename: "DimensionPartitionKeys";
+  name: string;
+}
+
 export interface LaunchAssetLoaderQuery_assetNodes_assetKey {
   __typename: "AssetKey";
   path: string[];
@@ -560,7 +570,10 @@ export interface LaunchAssetLoaderQuery_assetNodes {
   opNames: string[];
   jobNames: string[];
   graphName: string | null;
-  partitionDefinition: string | null;
+  partitionDefinition: LaunchAssetLoaderQuery_assetNodes_partitionDefinition | null;
+  partitionKeysByDimension: LaunchAssetLoaderQuery_assetNodes_partitionKeysByDimension[];
+  isObservable: boolean;
+  isSource: boolean;
   assetKey: LaunchAssetLoaderQuery_assetNodes_assetKey;
   dependencyKeys: LaunchAssetLoaderQuery_assetNodes_dependencyKeys[];
   repository: LaunchAssetLoaderQuery_assetNodes_repository;

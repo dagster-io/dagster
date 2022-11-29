@@ -18,6 +18,7 @@ setup(
     ],
     packages=find_packages(exclude=["automation_tests*"]),
     install_requires=[
+        "dagster==0+dev",
         "autoflake",
         "boto3",
         "packaging>=20.9",
@@ -32,7 +33,6 @@ setup(
     entry_points={
         "console_scripts": [
             "dagster-image = automation.docker.cli:main",
-            "dagster-scaffold = automation.scaffold.cli:main",
             "dagster-graphql-client = automation.graphql.python_client.cli:main",
         ]
     },

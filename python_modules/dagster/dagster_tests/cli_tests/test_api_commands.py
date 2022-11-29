@@ -1,16 +1,18 @@
+# pylint: disable=protected-access
+import os
+
 import mock
 from click.testing import CliRunner
 from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_pipeline_handle
 
-from dagster import DagsterEventType
+from dagster import DagsterEventType, job, op, reconstructable
 from dagster._cli import api
 from dagster._cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryState
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot
 from dagster._core.host_representation import PipelineHandle
-from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import create_run_for_test, instance_for_test
+from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
 from dagster._serdes import serialize_dagster_namedtuple
 
 
@@ -47,7 +49,6 @@ def test_execute_run():
         with get_foo_pipeline_handle(instance) as pipeline_handle:
             runner = CliRunner()
 
-            instance = DagsterInstance.get()
             run = create_run_for_test(
                 instance,
                 pipeline_name="foo",
@@ -75,6 +76,94 @@ def test_execute_run():
             assert result.exit_code == 0
 
 
+@op
+def needs_env_var():
+    if os.getenv("FOO") != "BAR":
+        raise Exception("Missing env var")
+
+
+@job
+def needs_env_var_job():
+    needs_env_var()
+
+
+def test_execute_run_with_secrets_loader():
+    recon_job = reconstructable(needs_env_var_job)
+    runner = CliRunner()
+
+    # Restore original env after test
+    with environ({"FOO": None}):
+        with instance_for_test(
+            overrides={
+                "compute_logs": {
+                    "module": "dagster._core.storage.noop_compute_log_manager",
+                    "class": "NoOpComputeLogManager",
+                },
+                "secrets": {
+                    "custom": {
+                        "module": "dagster._core.test_utils",
+                        "class": "TestSecretsLoader",
+                        "config": {"env_vars": {"FOO": "BAR"}},
+                    }
+                },
+            }
+        ) as instance:
+            run = create_run_for_test(
+                instance,
+                pipeline_name="needs_env_var_job",
+                run_id="new_run",
+                pipeline_code_origin=recon_job.get_python_origin(),
+            )
+
+            input_json = serialize_dagster_namedtuple(
+                ExecuteRunArgs(
+                    pipeline_origin=recon_job.get_python_origin(),
+                    pipeline_run_id=run.run_id,
+                    instance_ref=instance.get_ref(),
+                )
+            )
+
+            result = runner_execute_run(
+                runner,
+                [input_json],
+            )
+
+            assert "PIPELINE_SUCCESS" in result.stdout, "no match, result: {}".format(result.stdout)
+
+    # Without a secrets loader the run fails due to missing env var
+    with instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            },
+        }
+    ) as instance:
+        run = create_run_for_test(
+            instance,
+            pipeline_name="needs_env_var_job",
+            run_id="new_run",
+            pipeline_code_origin=recon_job.get_python_origin(),
+        )
+
+        input_json = serialize_dagster_namedtuple(
+            ExecuteRunArgs(
+                pipeline_origin=recon_job.get_python_origin(),
+                pipeline_run_id=run.run_id,
+                instance_ref=instance.get_ref(),
+            )
+        )
+
+        result = runner_execute_run(
+            runner,
+            [input_json],
+        )
+
+        assert (
+            "PIPELINE_FAILURE" in result.stdout and "Exception: Missing env var" in result.stdout
+        ), "no match, result: {}".format(result.stdout)
+
+
 def test_execute_run_fail_pipeline():
     with instance_for_test(
         overrides={
@@ -88,7 +177,6 @@ def test_execute_run_fail_pipeline():
             pipeline_handle = PipelineHandle("fail", repo_handle)
             runner = CliRunner()
 
-            instance = DagsterInstance.get()
             run = create_run_for_test(
                 instance,
                 pipeline_name="foo",
@@ -189,8 +277,8 @@ def test_execute_run_cannot_load():
             ), "no match, result: {}".format(result.stdout)
 
 
-def runner_execute_step(runner, cli_args):
-    result = runner.invoke(api.execute_step_command, cli_args)
+def runner_execute_step(runner, cli_args, env=None):
+    result = runner.invoke(api.execute_step_command, cli_args, env=env)
     if result.exit_code != 0:
         # CliRunner captures stdout so printing it out here
         raise Exception(
@@ -229,19 +317,83 @@ def test_execute_step():
                 pipeline_code_origin=pipeline_handle.get_python_origin(),
             )
 
-            input_json = serialize_dagster_namedtuple(
-                ExecuteStepArgs(
-                    pipeline_origin=pipeline_handle.get_python_origin(),
-                    pipeline_run_id=run.run_id,
-                    step_keys_to_execute=None,
-                    instance_ref=instance.get_ref(),
-                )
+            args = ExecuteStepArgs(
+                pipeline_origin=pipeline_handle.get_python_origin(),
+                pipeline_run_id=run.run_id,
+                step_keys_to_execute=None,
+                instance_ref=instance.get_ref(),
             )
 
             result = runner_execute_step(
                 runner,
-                [input_json],
+                args.get_command_args()[5:],
             )
+
+        assert "STEP_SUCCESS" in result.stdout
+
+
+def test_execute_step_with_env():
+    with instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_pipeline_handle(instance) as pipeline_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                pipeline_name="foo",
+                run_id="new_run",
+                pipeline_code_origin=pipeline_handle.get_python_origin(),
+            )
+
+            args = ExecuteStepArgs(
+                pipeline_origin=pipeline_handle.get_python_origin(),
+                pipeline_run_id=run.run_id,
+                step_keys_to_execute=None,
+                instance_ref=instance.get_ref(),
+            )
+
+            result = runner_execute_step(
+                runner,
+                args.get_command_args(skip_serialized_namedtuple=True)[5:],
+                env={d["name"]: d["value"] for d in args.get_command_env()},
+            )
+
+        assert "STEP_SUCCESS" in result.stdout
+
+
+def test_execute_step_non_compressed():
+    with instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_pipeline_handle(instance) as pipeline_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                pipeline_name="foo",
+                run_id="new_run",
+                pipeline_code_origin=pipeline_handle.get_python_origin(),
+            )
+
+            args = ExecuteStepArgs(
+                pipeline_origin=pipeline_handle.get_python_origin(),
+                pipeline_run_id=run.run_id,
+                step_keys_to_execute=None,
+                instance_ref=instance.get_ref(),
+            )
+
+            result = runner_execute_step(runner, [serialize_dagster_namedtuple(args)])
 
         assert "STEP_SUCCESS" in result.stdout
 
@@ -266,18 +418,16 @@ def test_execute_step_1():
                 pipeline_code_origin=pipeline_handle.get_python_origin(),
             )
 
-            input_json = serialize_dagster_namedtuple(
+            result = runner_execute_step(
+                runner,
                 ExecuteStepArgs(
                     pipeline_origin=pipeline_handle.get_python_origin(),
                     pipeline_run_id=run.run_id,
                     step_keys_to_execute=None,
                     instance_ref=instance.get_ref(),
-                )
-            )
-
-            result = runner_execute_step(
-                runner,
-                [input_json],
+                ).get_command_args()[
+                    5:
+                ],  # the runner doesn't take the `dagster api execute_step` section
             )
 
         assert "STEP_SUCCESS" in result.stdout
@@ -300,15 +450,6 @@ def test_execute_step_verify_step():
                 pipeline_name="foo",
                 run_id="new_run",
                 pipeline_code_origin=pipeline_handle.get_python_origin(),
-            )
-
-            input_json = serialize_dagster_namedtuple(
-                ExecuteStepArgs(
-                    pipeline_origin=pipeline_handle.get_python_origin(),
-                    pipeline_run_id=run.run_id,
-                    step_keys_to_execute=None,
-                    instance_ref=instance.get_ref(),
-                )
             )
 
             # Check that verify succeeds for step that has hasn't been fun (case 3)
@@ -336,7 +477,12 @@ def test_execute_step_verify_step():
 
             runner_execute_step(
                 runner,
-                [input_json],
+                ExecuteStepArgs(
+                    pipeline_origin=pipeline_handle.get_python_origin(),
+                    pipeline_run_id=run.run_id,
+                    step_keys_to_execute=None,
+                    instance_ref=instance.get_ref(),
+                ).get_command_args()[5:],
             )
 
             # # Check that verify fails for step that has already run (case 1)
@@ -366,7 +512,8 @@ def test_execute_step_verify_step_framework_error(mock_verify_step):
                 pipeline_code_origin=pipeline_handle.get_python_origin(),
             )
 
-            input_json = serialize_dagster_namedtuple(
+            result = runner.invoke(
+                api.execute_step_command,
                 ExecuteStepArgs(
                     pipeline_origin=pipeline_handle.get_python_origin(),
                     pipeline_run_id=run.run_id,
@@ -379,9 +526,8 @@ def test_execute_step_verify_step_framework_error(mock_verify_step):
                             "blah": {"result": ["0", "1", "2"]},
                         },
                     ),
-                )
+                ).get_command_args()[5:],
             )
-            result = runner.invoke(api.execute_step_command, [input_json])
 
             assert result.exit_code != 0
 

@@ -17,6 +17,7 @@ from watchdog.observers import Observer
 import dagster._check as check
 import dagster._seven as seven
 from dagster._config import StringSource
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
@@ -131,6 +132,11 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             if os.path.splitext(os.path.basename(filename))[0] != INDEX_SHARD_NAME
         ]
 
+    def has_table(self, table_name: str) -> bool:
+        conn_string = self.conn_string_for_shard(INDEX_SHARD_NAME)
+        engine = create_engine(conn_string, poolclass=NullPool)
+        return bool(engine.dialect.has_table(engine.connect(), table_name))
+
     def path_for_shard(self, run_id):
         return os.path.join(self._base_dir, "{run_id}.db".format(run_id=run_id))
 
@@ -231,11 +237,21 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 "Can only store asset materializations, materialization_planned, and observations in index database",
             )
 
+            event_id = None
+
             # mirror the event in the cross-run index database
             with self.index_connection() as conn:
-                conn.execute(insert_event_statement)
+                result = conn.execute(insert_event_statement)
+                event_id = result.inserted_primary_key[0]
 
             self.store_asset_event(event)
+
+            if event_id is None:
+                raise DagsterInvariantViolationError(
+                    "Cannot store asset event tags for null event id."
+                )
+
+            self.store_asset_event_tags(event, event_id)
 
     def get_event_records(
         self,

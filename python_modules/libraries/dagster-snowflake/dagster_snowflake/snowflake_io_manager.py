@@ -34,26 +34,76 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
             from dagster_snowflake import build_snowflake_io_manager
             from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 
-            snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
+            @asset(
+                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+            )
+            def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
+                ...
 
-            @job(resource_defs={'io_manager': snowflake_io_manager})
-            def my_job():
-                    ...
+            snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
+            @repository
+            def my_repo():
+                return with_resources(
+                    [my_table],
+                    {"io_manager": snowflake_io_manager.configured({
+                        "database": "my_database",
+                        "account" : {"env": "SNOWFLAKE_ACCOUNT"}
+                        ...
+                    })}
+                )
+
+        If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
+        the IO Manager. For assets, the schema will be determined from the asset key.
+        For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
+        via config or on the asset/op, "public" will be used for the schema.
+
+        .. code-block:: python
+
+            @op(
+                out={"my_table": Out(metadata={"schema": "my_schema"})}
+            )
+            def make_my_table() -> pd.DataFrame:
+                # the returned value will be stored at my_schema.my_table
+                ...
+
+        To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
+        In or AssetIn.
+
+        .. code-block:: python
+
+            @asset(
+                ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
+            )
+            def my_table_a(my_table: pd.DataFrame) -> pd.DataFrame:
+                # my_table will just contain the data from column "a"
+                ...
 
     """
 
     @io_manager(
         config_schema={
-            "database": StringSource,
-            "account": StringSource,
-            "user": StringSource,
-            "password": StringSource,
-            "warehouse": Field(StringSource, is_required=False),
-            "schema": Field(StringSource, is_required=False),
+            "database": Field(StringSource, description="Name of the database to use."),
+            "account": Field(
+                StringSource,
+                description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
+            ),
+            "user": Field(StringSource, description="User login name."),
+            "password": Field(StringSource, description="User password."),
+            "warehouse": Field(
+                StringSource, description="Name of the warehouse to use.", is_required=False
+            ),
+            "schema": Field(
+                StringSource, description="Name of the schema to use", is_required=False
+            ),
+            "role": Field(StringSource, description="Name of the role to use", is_required=False),
         }
     )
     def snowflake_io_manager():
-        return DbIOManager(type_handlers=type_handlers, db_client=SnowflakeDbClient())
+        return DbIOManager(
+            type_handlers=type_handlers,
+            db_client=SnowflakeDbClient(),
+            io_manager_name="SnowflakeIOManager",
+        )
 
     return snowflake_io_manager
 
@@ -105,4 +155,6 @@ def _time_window_where_clause(table_partition: TablePartition) -> str:
     start_dt, end_dt = table_partition.time_window
     start_dt_str = start_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
-    return f"""WHERE {table_partition.partition_expr} BETWEEN '{start_dt_str}' AND '{end_dt_str}'"""
+    # Snowflake BETWEEN is inclusive; start <= partition expr <= end. We don't want to remove the next partition so we instead
+    # write this as start <= partition expr < end.
+    return f"""WHERE {table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""

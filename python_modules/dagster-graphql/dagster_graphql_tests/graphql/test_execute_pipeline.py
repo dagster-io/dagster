@@ -7,8 +7,11 @@ from dagster_graphql.client.query import (
     RUN_EVENTS_QUERY,
     SUBSCRIPTION_QUERY,
 )
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
-from graphql import parse
+from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
+    execute_dagster_graphql_subscription,
+    infer_pipeline_selector,
+)
 
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.test_utils import wait_for_runs_to_finish
@@ -20,7 +23,7 @@ from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,
 )
-from .setup import csv_hello_world_solids_config
+from .repo import csv_hello_world_solids_config
 from .utils import (
     get_all_logs_for_finished_run_via_subscription,
     step_did_not_run,
@@ -351,13 +354,43 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             "ExecutionStepStartEvent",
             "ExecutionStepInputEvent",
             "ExecutionStepOutputEvent",
+            "LogMessageEvent",
+            "HandledOutputEvent",
+            "ExecutionStepSuccessEvent",
+            "ExecutionStepStartEvent",
+            "LogMessageEvent",
+            "LoadedInputEvent",
+            "ExecutionStepInputEvent",
+            "ExecutionStepOutputEvent",
+            "LogMessageEvent",
+            "HandledOutputEvent",
+            "ExecutionStepSuccessEvent",
+            "RunSuccessEvent",
+        ]
+
+    def _legacy_csv_hello_world_event_sequence(self):
+        # same as above, but matching when the instance has a legacy compute log manager which emits
+        # event for every step
+
+        return [
+            "RunStartingEvent",
+            "RunStartEvent",
+            "ResourceInitStartedEvent",
+            "ResourceInitSuccessEvent",
+            "LogsCapturedEvent",
+            "ExecutionStepStartEvent",
+            "ExecutionStepInputEvent",
+            "ExecutionStepOutputEvent",
+            "LogMessageEvent",
             "HandledOutputEvent",
             "ExecutionStepSuccessEvent",
             "LogsCapturedEvent",
             "ExecutionStepStartEvent",
+            "LogMessageEvent",
             "LoadedInputEvent",
             "ExecutionStepInputEvent",
             "ExecutionStepOutputEvent",
+            "LogMessageEvent",
             "HandledOutputEvent",
             "ExecutionStepSuccessEvent",
             "RunSuccessEvent",
@@ -389,7 +422,10 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             if message["__typename"] not in ("EngineEvent", "RunEnqueuedEvent", "RunDequeuedEvent")
         ]
 
-        assert non_engine_event_types == self._csv_hello_world_event_sequence()
+        assert (
+            non_engine_event_types == self._csv_hello_world_event_sequence()
+            or non_engine_event_types == self._legacy_csv_hello_world_event_sequence()
+        )
 
     def test_basic_start_pipeline_and_fetch(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
@@ -433,7 +469,10 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             for message in events_result.data["logsForRun"]["events"]
             if message["__typename"] not in ("EngineEvent", "RunEnqueuedEvent", "RunDequeuedEvent")
         ]
-        assert non_engine_event_types == self._csv_hello_world_event_sequence()
+        assert (
+            non_engine_event_types == self._csv_hello_world_event_sequence()
+            or non_engine_event_types == self._legacy_csv_hello_world_event_sequence()
+        )
 
     def test_basic_start_pipeline_and_poll(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
@@ -498,7 +537,10 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             for message in full_logs
             if message["__typename"] not in ("EngineEvent", "RunEnqueuedEvent", "RunDequeuedEvent")
         ]
-        assert non_engine_event_types == self._csv_hello_world_event_sequence()
+        assert (
+            non_engine_event_types == self._csv_hello_world_event_sequence()
+            or non_engine_event_types == self._legacy_csv_hello_world_event_sequence()
+        )
 
     def test_step_failure(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "naughty_programmer_pipeline")
@@ -558,12 +600,9 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
     def test_subscribe_bad_run_id(self, graphql_context):
         run_id = "nope"
-        subscription = execute_dagster_graphql(
-            graphql_context, parse(SUBSCRIPTION_QUERY), variables={"runId": run_id}
+        subscribe_results = execute_dagster_graphql_subscription(
+            graphql_context, SUBSCRIPTION_QUERY, variables={"runId": run_id}
         )
-
-        subscribe_results = []
-        subscription.subscribe(subscribe_results.append)
 
         assert len(subscribe_results) == 1
         subscribe_result = subscribe_results[0]

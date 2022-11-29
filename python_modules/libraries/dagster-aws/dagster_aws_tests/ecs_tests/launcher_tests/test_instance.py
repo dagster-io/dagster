@@ -1,5 +1,7 @@
 import pytest
 
+from dagster._core.test_utils import environ
+
 
 def test_default_instance(instance_cm):
     with instance_cm() as instance:
@@ -23,19 +25,41 @@ def test_run_task_kwargs(instance_cm):
 def test_invalid_kwargs_field(instance_cm):
 
     with pytest.raises(Exception, match="Found an unexpected key foo in run_task_kwargs"):
-        with instance_cm(config={"run_task_kwargs": {"foo": "bar"}}):
-            pass
+        with instance_cm(config={"run_task_kwargs": {"foo": "bar"}}) as instance:
+            print(instance.run_launcher)  # pylint: disable=print-call
 
     with pytest.raises(Exception):
         with instance_cm(
             config={"taskDefinition": "my-task-def"},
             match="Use the `taskDefinition` config field to pass in a task definition to run",
-        ):
-            pass
+        ) as instance:
+            print(instance.run_launcher)  # pylint: disable=print-call
 
     with pytest.raises(Exception):
         with instance_cm(
             config={"overrides": {"containerOverrides": {}}},
             match="Task overrides are set by the run launcher and cannot be set in run_task_kwargs.",
-        ):
-            pass
+        ) as instance:
+            print(instance.run_launcher)  # pylint: disable=print-call
+
+
+def test_task_definition_config(instance_cm, task_definition):
+    with instance_cm(
+        config={"task_definition": "dagster", "container_name": "dagster"}
+    ) as instance:
+        assert instance.run_launcher.task_definition == task_definition["taskDefinitionArn"]
+
+    with pytest.raises(
+        Exception,
+        match="You have attempted to fetch the environment variable FOO which is not set.",
+    ):
+        with instance_cm(
+            config={"task_definition": {"env": "FOO"}, "container_name": "dagster"}
+        ) as instance:
+            print(instance.run_launcher)  # pylint: disable=print-call
+
+    with environ({"FOO": "dagster"}):
+        with instance_cm(
+            config={"task_definition": {"env": "FOO"}, "container_name": "dagster"}
+        ) as instance:
+            assert instance.run_launcher.task_definition == task_definition["taskDefinitionArn"]

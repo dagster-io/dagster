@@ -20,7 +20,22 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     CANCEL_BACKFILL_MUTATION,
   );
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-
+  const unfinishedMap = React.useMemo(() => {
+    if (!backfill) {
+      return {};
+    }
+    const unfinishedPartitions = backfill.partitionStatuses.results.filter(
+      (partition) =>
+        partition.runStatus && partition.runId && cancelableStatuses.has(partition.runStatus),
+    );
+    return (
+      unfinishedPartitions.reduce(
+        (accum, partition) =>
+          partition && partition.runId ? {...accum, [partition.runId]: true} : accum,
+        {},
+      ) || {}
+    );
+  }, [backfill]);
   if (!backfill) {
     return null;
   }
@@ -33,17 +48,6 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     setIsSubmitting(false);
     onClose();
   };
-
-  const unfinishedPartitions = backfill.partitionStatuses.results.filter(
-    (partition) =>
-      partition.runStatus && partition.runId && partition.runStatus in cancelableStatuses,
-  );
-  const unfinishedMap =
-    unfinishedPartitions?.reduce(
-      (accum, partition) =>
-        partition && partition.runId ? {...accum, [partition.runId]: true} : accum,
-      {},
-    ) || {};
 
   return (
     <>
@@ -75,7 +79,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
         isOpen={
           !!backfill &&
           (!numUnscheduled || backfill.status !== 'REQUESTED') &&
-          !!unfinishedPartitions.length
+          !!Object.keys(unfinishedMap).length
         }
         onClose={onClose}
         onComplete={onComplete}
