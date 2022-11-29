@@ -3,6 +3,7 @@ from abc import abstractmethod
 from collections import OrderedDict, defaultdict
 from datetime import datetime
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     Iterable,
@@ -11,10 +12,9 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Union,
     cast,
-    Tuple,
-    TYPE_CHECKING,
 )
 
 import pendulum

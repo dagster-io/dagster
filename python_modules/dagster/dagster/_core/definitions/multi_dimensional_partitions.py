@@ -1,7 +1,8 @@
 import itertools
-from datetime import datetime
-from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple, Iterable
 import json
+from datetime import datetime
+from typing import Dict, Iterable, List, Mapping, NamedTuple, Optional, Sequence, Tuple
+
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
@@ -11,10 +12,10 @@ from dagster._core.storage.tags import (
 )
 
 from .partition import (
+    DefaultPartitionsSubset,
     Partition,
     PartitionsDefinition,
     StaticPartitionsDefinition,
-    DefaultPartitionsSubset,
 )
 
 INVALID_STATIC_PARTITIONS_KEY_CHARACTERS = set(["|", ",", "[", "]"])

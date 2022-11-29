@@ -589,7 +589,8 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_partitionMaterializationStatus(
         self, graphene_info
     ) -> Union[
-        GrapheneMaterializationStatusSingleDimension, GrapheneMaterializationStatusGroupedByDimension
+        GrapheneMaterializationStatusSingleDimension,
+        GrapheneMaterializationStatusGroupedByDimension,
     ]:
         asset_graph = AssetGraph.from_external_assets(
             self._external_repository.get_external_asset_nodes()

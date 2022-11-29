@@ -1,7 +1,18 @@
 import datetime
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Mapping, NamedTuple, Optional, Sequence, cast, Union
-from typing import TYPE_CHECKING, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 from dagster_graphql.implementation.loader import (
     CrossRepoAssetDependedByLoader,
@@ -14,11 +25,10 @@ from dagster import (
     DagsterEventType,
     DagsterInstance,
     EventRecordsFilter,
-    PartitionsDefinition,
-    MultiPartitionsDefinition,
     MultiPartitionKey,
+    MultiPartitionsDefinition,
+    PartitionsDefinition,
 )
-from dagster._core.storage.partition_status_cache import get_materialized_multipartitions_from_tags
 from dagster import _check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -31,9 +41,13 @@ from dagster._core.host_representation.external_data import (
     ExternalPartitionDimensionDefinition,
 )
 from dagster._core.host_representation.repository_location import RepositoryLocation
+from dagster._core.storage.partition_status_cache import (
+    get_materialized_multipartitions_from_tags,
+    update_asset_status_cache_values,
+)
 from dagster._core.storage.tags import get_dimension_from_partition_tag
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
-from dagster._core.storage.partition_status_cache import update_asset_status_cache_values
+
 from .utils import capture_error
 
 if TYPE_CHECKING:
@@ -290,22 +304,16 @@ def get_materialization_status_2d_array(
     materialized_keys: List[MultiPartitionKey],
 ) -> List[List[bool]]:
     """
-    # TODO update docstring
-    Get the number of materializations for each partition key.
+    Returns a 2d array of booleans representing the materialization status of each partition.
 
-    The group_by_dimensions arg represents the dimension order that the counts should be grouped by.
-    With 2-dimensional partitions, the primary dimension is the first dimension in the list,
-    and the secondary dimension is the second dimension in the list.
+    The rows represent each partition key of the first dimension, and the columns represent each
+    partition key of the second dimension. The dimensions follow the order of partitions definitions
+    defined in the MultiPartitionsDefinition, which are sorted alphabetically.
 
-    If group_by_dimensions is provided, the result will be a 2D array, where each row
-    represents a partition key in the primary dimension, and each element in that row
-    represents the number of materializations for each partition key in the secondary dimension.
-
-    For example, with partition dimensions ab: [a, b] and xy: [x, y] grouped by dimensions [ab, xy]:
-    the result would be:
+    For example, with partition dimensions ab: [a, b] and xy: [x, y], the 2d array will be:
     [
-        [a|x count, a|y count],
-        [b|x count, b|y count]
+        [a|x materialized?, a|y materialized?],
+        [b|x materialized?, b|y materialized?]
     ]
     """
 
@@ -338,6 +346,10 @@ def get_single_dimension_materialization_status(
     partitions_def: Optional[PartitionsDefinition],
     materialized_keys: List[str],
 ) -> List[bool]:
+    """
+    Returns an an array of booleans following the order of the partition keys. For partition keys
+    ["a", "b"], the result would be [True, False] if "a" has been materialized and "b" has not.
+    """
     if not partitions_def:
         return []
 
@@ -359,8 +371,9 @@ def get_materialization_status_by_partition(
     asset_graph: AssetGraph,
 ) -> Union[List[bool], List[List[bool]]]:
     """
-    For single-dimension partitions, returns a list of booleans, where each boolean represents
-    whether the partition has been materialized.
+    Returns the materialization status for each partition key. The materialization status
+    is a boolean indicating whether the partition has been materialized: True if materialized,
+    False if not.
     """
     from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 

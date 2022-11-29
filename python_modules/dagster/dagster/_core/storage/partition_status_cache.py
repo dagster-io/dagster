@@ -1,23 +1,20 @@
-from typing import Optional, NamedTuple, Mapping, List
-from dagster._serdes import (
-    deserialize_json_to_dagster_namedtuple,
-)
 from collections import defaultdict
-from dagster._serdes import whitelist_for_serdes
-from dagster import _check as check
-from dagster._core.definitions.partition import PartitionsSubset
+from typing import List, Mapping, NamedTuple, Optional
+
 from dagster import AssetKey, DagsterEventType, DagsterInstance, EventRecordsFilter
+from dagster import _check as check
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.multi_dimensional_partitions import (
-    MultiPartitionsDefinition,
     MultiPartitionKey,
+    MultiPartitionsDefinition,
     get_multipartition_key_from_tags,
 )
+from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.storage.tags import (
-    get_dimension_from_partition_tag,
     MULTIDIMENSIONAL_PARTITION_PREFIX,
+    get_dimension_from_partition_tag,
 )
+from dagster._serdes import deserialize_json_to_dagster_namedtuple, whitelist_for_serdes
 
 
 @whitelist_for_serdes

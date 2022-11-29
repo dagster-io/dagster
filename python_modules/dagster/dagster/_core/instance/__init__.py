@@ -113,12 +113,12 @@ if TYPE_CHECKING:
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.event_log.base import AssetRecord, EventLogRecord, EventRecordsFilter
+    from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs import RunStorage
     from dagster._core.storage.schedules import ScheduleStorage
     from dagster._core.workspace.workspace import IWorkspace
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
-    from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 
 def _check_run_equality(
