@@ -48,11 +48,15 @@ class DagsterAirflowError(Exception):
 
 
 def initialize_airflow_1_database():
-    subprocess.run(["airflow", "initdb"], check=True)
+    p = subprocess.run(["airflow", "checkdb"], check=True, capture_output=True)
+    if "WARNING" in p.stdout.decode("utf-8"):
+        subprocess.run(["airflow", "initdb"], check=True)
 
 
 def initialize_airflow_2_database():
-    subprocess.run(["airflow", "db", "init"], check=True)
+    p = subprocess.run(["airflow", "db", "check"], check=True, capture_output=True)
+    if "WARNING" in p.stdout.decode("utf-8"):
+        subprocess.run(["airflow", "db", "init"], check=True)
 
 
 def contains_duplicate_task_names(dag_bag, refresh_from_airflow_db):
