@@ -1,9 +1,10 @@
 import sys
 from contextlib import contextmanager
 from typing import (
+    AbstractSet,
     Any,
+    Callable,
     Dict,
-    FrozenSet,
     Iterator,
     Mapping,
     NamedTuple,
@@ -1165,7 +1166,12 @@ class ExecuteRunWithPlanIterable:
     cf. `dagster._utils.EventGenerationManager`.
     """
 
-    def __init__(self, execution_plan, iterator, execution_context_manager):
+    def __init__(
+        self,
+        execution_plan: ExecutionPlan,
+        iterator: Callable[..., Iterator[DagsterEvent]],
+        execution_context_manager: ExecutionContextManager[Any],
+    ):
         self.execution_plan = check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
         self.iterator = check.callable_param(iterator, "iterator")
         self.execution_context_manager = check.inst_param(
@@ -1213,7 +1219,7 @@ def _check_execute_pipeline_args(
     Optional[Mapping],
     Optional[str],
     Mapping[str, str],
-    Optional[FrozenSet[str]],
+    Optional[AbstractSet[str]],
     Optional[Sequence[str]],
 ]:
     pipeline = _check_pipeline(pipeline)

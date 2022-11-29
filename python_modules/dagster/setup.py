@@ -43,6 +43,7 @@ setup(
         "YouTube": "https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q",
         "Slack": "https://dagster.io/slack",
         "Blog": "https://dagster.io/blog",
+        "Newsletter": "https://dagster.io/newsletter-signup",
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
@@ -85,6 +86,7 @@ setup(
         "requests",
         "setuptools",
         "tabulate",
+        "tomli",
         "tqdm",
         "typing_compat",
         "typing_extensions>=4.0.1",
@@ -128,7 +130,7 @@ setup(
             "isort==5.10.1",
         ],
         "mypy": [
-            "mypy==0.950",
+            "mypy==0.991",
             "types-backports",  # version will be resolved against backports
             "types-certifi",  # version will be resolved against certifi
             "types-chardet",  # chardet is a 2+-order dependency of some Dagster libs

@@ -93,7 +93,8 @@ export const AppTopNav: React.FC<Props> = ({
                 const {pathname} = location;
                 return (
                   pathname.startsWith('/code-locations') ||
-                  pathname.startsWith('/workspace') ||
+                  pathname.startsWith('/locations') ||
+                  pathname.startsWith('/definitions') ||
                   pathname.startsWith('/health') ||
                   pathname.startsWith('/config')
                 );

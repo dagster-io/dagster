@@ -9,6 +9,7 @@ import {useAssetNodeSearch} from '../assets/useAssetSearch';
 
 import {VirtualizedAssetTable} from './VirtualizedAssetTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
+import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {WorkspaceAssetsQuery, WorkspaceAssetsQueryVariables} from './types/WorkspaceAssetsQuery';
@@ -54,6 +55,8 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
       );
     }
 
+    const repoName = repoAddressAsString(repoAddress);
+
     if (!filteredBySearch.length) {
       if (anySearch) {
         return (
@@ -63,7 +66,7 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
               title="No matching assets"
               description={
                 <div>
-                  No assets matching <strong>{searchValue}</strong> were found in this repository
+                  No assets matching <strong>{searchValue}</strong> were found in {repoName}
                 </div>
               }
             />
@@ -76,7 +79,7 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
           <NonIdealState
             icon="search"
             title="No assets"
-            description="No assets were found in this repository"
+            description={`No assets were found in ${repoName}`}
           />
         </Box>
       );

@@ -145,10 +145,11 @@ class UnboundInitResourceContext(InitResourceContext):
         # so ignore lint error
         instance = self._instance_cm.__enter__()  # pylint: disable=no-member
 
-        # Shouldn't actually ever have a resources object directly from this initialization
+        if isinstance(resources, Resources):
+            check.failed("Should not have a Resources object directly from this initialization")
 
         self._resource_defs = wrap_resources_for_execution(
-            check.opt_dict_param(resources, "resources")
+            check.opt_mapping_param(resources, "resources")
         )
 
         self._resources_cm = build_resources(self._resource_defs, instance=instance)
