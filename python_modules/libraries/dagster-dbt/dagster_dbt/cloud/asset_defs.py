@@ -309,6 +309,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 def load_assets_from_dbt_cloud_job(
     dbt_cloud: ResourceDefinition,
     job_id: int,
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
 ) -> CacheableAssetsDefinition:
     """
     Loads a set of dbt models, managed by a dbt Cloud job, into Dagster assets. In order to
@@ -320,6 +321,8 @@ def load_assets_from_dbt_cloud_job(
     Args:
         dbt_cloud (ResourceDefinition): The dbt Cloud resource to use to connect to the dbt Cloud API.
         job_id (int): The ID of the dbt Cloud job to load assets from.
+        node_info_to_group_fn (Dict[str, Any] -> Optional[str]): A function that takes a
+            dictionary of dbt node info and returns the group that this node should be assigned to.
 
     Returns:
         CacheableAssetsDefinition: A definition for the loaded assets.
@@ -356,5 +359,5 @@ def load_assets_from_dbt_cloud_job(
         # TODO: In the future, allow arbitrary mappings to asset keys and groups
         # from the dbt metadata.
         node_info_to_asset_key=_get_node_asset_key,
-        node_info_to_group_fn=_get_node_group_name,
+        node_info_to_group_fn=node_info_to_group_fn,
     )

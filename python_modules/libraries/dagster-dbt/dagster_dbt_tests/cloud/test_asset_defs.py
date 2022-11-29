@@ -9,6 +9,7 @@ from dagster_dbt import (
 )
 
 from dagster import (
+    AssetKey,
     AssetSelection,
     MetadataValue,
     build_init_resource_context,
@@ -227,3 +228,28 @@ def test_invalid_dbt_cloud_job(dbt_cloud, dbt_cloud_service):
     )
     with pytest.raises(DagsterDbtCloudJobInvariantViolationError):
         dbt_cloud_cacheable_assets.compute_cacheable_data()
+
+
+@responses.activate
+def test_custom_groups(dbt_cloud, dbt_cloud_service):
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_command="dbt build",
+    )
+
+    dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
+        dbt_cloud=dbt_cloud,
+        job_id=DBT_CLOUD_JOB_ID,
+        node_info_to_group_fn=lambda node_info: node_info["tags"][0],
+    )
+    dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
+    dbt_cloud_assets = dbt_cloud_cacheable_assets.build_definitions(
+        dbt_assets_definition_cacheable_data
+    )
+
+    assert dbt_cloud_assets[0].group_names_by_key == {
+        AssetKey(["cold_schema", "sort_cold_cereals_by_calories"]): "foo",
+        AssetKey(["sort_by_calories"]): "foo",
+        AssetKey(["sort_hot_cereals_by_calories"]): "bar",
+        AssetKey(["subdir_schema", "least_caloric"]): "bar",
+    }
