@@ -7,7 +7,6 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
-    FrozenSet,
     List,
     Mapping,
     Optional,
@@ -174,6 +173,7 @@ class JobDefinition(PipelineDefinition):
         presets = []
         config_mapping = None
         partitioned_config = None
+        self._explicit_config = False
 
         if partitions_def:
             partitioned_config = PartitionedConfig.from_flexible_config(config, partitions_def)
@@ -201,6 +201,7 @@ class JobDefinition(PipelineDefinition):
                     config,
                     name,
                 )
+                self._explicit_config = True
             elif config is not None:
                 check.failed(
                     f"config param must be a ConfigMapping, a PartitionedConfig, or a dictionary, but "
@@ -418,7 +419,7 @@ class JobDefinition(PipelineDefinition):
     def get_job_def_for_subset_selection(
         self,
         op_selection: Optional[Sequence[str]] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
         check.invariant(
             not (op_selection and asset_selection),
@@ -433,7 +434,7 @@ class JobDefinition(PipelineDefinition):
 
     def _get_job_def_for_asset_selection(
         self,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> "JobDefinition":
         asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
 
@@ -441,7 +442,7 @@ class JobDefinition(PipelineDefinition):
             asset
             for asset in asset_selection
             if asset not in self.asset_layer.asset_keys
-            # and asset not in self.asset_layer.source_assets_by_key
+            and asset not in self.asset_layer.source_assets_by_key
         ]
         nonexistent_asset_strings = [
             asset_str
@@ -491,13 +492,20 @@ class JobDefinition(PipelineDefinition):
         try:
             sub_graph = get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
 
+            # if explicit config was passed the config_mapping that resolves the defaults implicitly is
+            # very unlikely to work. The preset will still present the default config in dagit.
+            if self._explicit_config:
+                config_arg = None
+            else:
+                config_arg = self.config_mapping or self.partitioned_config
+
             return JobDefinition(
                 name=self.name,
                 description=self.description,
                 resource_defs=dict(self.resource_defs),
                 logger_defs=dict(self.loggers),
                 executor_def=self.executor_def,
-                config=self.config_mapping or self.partitioned_config,
+                config=config_arg,
                 tags=self.tags,
                 hook_defs=self.hook_defs,
                 op_retry_policy=self._solid_retry_policy,

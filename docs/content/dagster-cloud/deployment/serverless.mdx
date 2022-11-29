@@ -110,26 +110,26 @@ This method is the most flexible, but requires setting up a pipeline outside of 
 
 The default base image is `debian:bullseye-slim`, but it can be changed.
 
-- **With GitHub**: you can provide a `base_image` input parameter to the "build and deploy" step in your GitHub Actions configuration (usually at `.github/workflows/deploy.yml`):
+- **With GitHub**: Provide a `base_image` input parameter to the **Build and deploy** step in your GitHub Actions configuration (usually at `.github/workflows/deploy.yml`):
 
-```yaml
-- name: Build and deploy to Dagster Cloud serverless
-  uses: dagster-io/dagster-cloud-action/actions/serverless_prod_deploy@v0.1
-  with:
-    dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
-    location: ${{ toJson(matrix.location) }}
-    # Use a custom base image
-    base_image: "my_base_image:latest"
-    organization_id: ${{ secrets.ORGANIZATION_ID }}
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
+  ```yaml
+  - name: Build and deploy to Dagster Cloud serverless
+    uses: dagster-io/dagster-cloud-action/actions/serverless_prod_deploy@v0.1
+    with:
+      dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
+      location: ${{ toJson(matrix.location) }}
+      # Use a custom base image
+      base_image: "my_base_image:latest"
+      organization_id: ${{ secrets.ORGANIZATION_ID }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  ```
 
-- **With the CLI**: add the `--base-image` CLI argument to the deploy command to specify the registry path to the desired base image.
+- **With the CLI**: Add the `--base-image` CLI argument to the deploy command to specify the registry path to the desired base image:
 
-```shell
-    dagster-cloud serverless deploy --location-name=my_location --base-image=my_base_image:latest
-```
+  ```shell
+  dagster-cloud serverless deploy --location-name=my_location --base-image=my_base_image:latest
+  ```
 
 ---
 

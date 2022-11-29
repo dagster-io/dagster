@@ -64,7 +64,7 @@ def asset(
     io_manager_key: Optional[str] = ...,
     compute_kind: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
-    partitions_def: Optional[PartitionsDefinition] = ...,
+    partitions_def: Optional[PartitionsDefinition[Any]] = ...,
     op_tags: Optional[Mapping[str, Any]] = ...,
     group_name: Optional[str] = ...,
     output_required: bool = ...,
@@ -91,7 +91,7 @@ def asset(
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
+    partitions_def: Optional[PartitionsDefinition[Any]] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     group_name: Optional[str] = None,
     output_required: bool = True,
@@ -334,7 +334,7 @@ def multi_asset(
     required_resource_keys: Optional[Set[str]] = None,
     compute_kind: Optional[str] = None,
     internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
+    partitions_def: Optional[PartitionsDefinition[object]] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     can_subset: bool = False,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -393,8 +393,8 @@ def multi_asset(
     resource_defs = check.opt_mapping_param(
         resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
     )
-    config_schema = check.opt_dict_param(
-        config_schema,
+    _config_schema = check.opt_mapping_param(
+        config_schema,  # type: ignore
         "config_schema",
         additional_message="Only dicts are supported for asset config_schema.",
     )
@@ -445,7 +445,7 @@ def multi_asset(
                     **({"kind": compute_kind} if compute_kind else {}),
                     **(op_tags or {}),
                 },
-                config_schema=config_schema,
+                config_schema=_config_schema,
                 retry_policy=retry_policy,
             )(fn)
 

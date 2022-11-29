@@ -1,29 +1,11 @@
 import React from 'react';
 
 export const JoinSlackButton: React.FC<{icon?: boolean}> = ({icon}) => {
-  const [open, setOpen] = React.useState(false);
-
   return (
     <>
-      {open && (
-        <div
-          onClick={() => setOpen(false)}
-          className="h-screen inset-0 fixed z-50 flex flex-col justify-center items-center bg-opacity-25 bg-black ml-0"
-        >
-          <div
-            className="w-10/12 md:w-4/6 lg:w-3/6 rounded-3xl shadow-xl relative overflow-hidden bg-white"
-            style={{height: 600}}
-          >
-            <iframe
-              src="https://dagster-slackin.herokuapp.com/"
-              className="inset-0 absolute w-full h-full"
-            />
-          </div>
-        </div>
-      )}
       <p className="self-center">
         <a
-          onClick={() => setOpen(true)}
+          href="https://dagster.io/slack"
           className={
             icon
               ? 'px-3 py-3 inline-flex cursor-pointer hover:bg-lavender bg-opacity-0 hover:bg-opacity-50 rounded-full transition'

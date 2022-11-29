@@ -11,6 +11,8 @@ from typing import (
     cast,
 )
 
+from typing_extensions import TypeAlias
+
 import dagster._check as check
 from dagster._annotations import public
 from dagster._config.config_schema import UserConfigSchema
@@ -28,6 +30,8 @@ from .solid_definition import SolidDefinition
 if TYPE_CHECKING:
     from .composition import PendingNodeInvocation
     from .decorators.solid_decorator import DecoratedSolidFunction
+
+OpComputeFunction: TypeAlias = Callable[..., Any]
 
 
 class OpDefinition(SolidDefinition):

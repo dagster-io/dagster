@@ -118,7 +118,6 @@ GET_ASSET_LATEST_RUN_STATS = """
             assetKey {
                 path
             }
-            computeStatus
             latestMaterialization {
                 timestamp
                 runId
@@ -235,12 +234,12 @@ GET_MATERIALIZATION_COUNT_BY_PARTITION = """
 """
 
 GET_MATERIALIZATION_COUNT_BY_DIMENSION_PARTITION = """
-    query MaterializationCountByDimension($assetKeys: [AssetKeyInput!], $primaryDimension: String) {
+    query MaterializationCountByDimension($assetKeys: [AssetKeyInput!]) {
         assetNodes(assetKeys: $assetKeys) {
             assetKey {
                 path
             }
-            partitionMaterializationCounts(primaryDimension: $primaryDimension) {
+            partitionMaterializationCounts {
                 ... on MaterializationCountGroupedByDimension {
                     materializationCountsGrouped
                 }
@@ -913,7 +912,6 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result["asset_1"]["latestRun"] is None
         assert result["asset_1"]["latestMaterialization"] is None
-        assert result["asset_1"]["computeStatus"] == "NONE"
 
         # Test with 1 run on all assets
         first_run_id = _create_run(graphql_context, "failure_assets_job")
@@ -936,13 +934,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result["asset_1"]["latestRun"]["id"] == first_run_id
         assert result["asset_1"]["latestMaterialization"]["runId"] == first_run_id
-        assert result["asset_1"]["computeStatus"] == "UP_TO_DATE"
         assert result["asset_2"]["latestRun"]["id"] == first_run_id
         assert result["asset_2"]["latestMaterialization"] is None
-        assert result["asset_2"]["computeStatus"] == "NONE"
         assert result["asset_3"]["latestRun"]["id"] == first_run_id
         assert result["asset_3"]["latestMaterialization"] is None
-        assert result["asset_3"]["computeStatus"] == "NONE"
 
         # Confirm that asset selection is respected
         run_id = _create_run(
@@ -967,11 +962,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data["assetsLatestInfo"]
         result = get_response_by_asset(result.data["assetsLatestInfo"])
         assert result["asset_1"]["latestRun"]["id"] == first_run_id
-        assert result["asset_1"]["computeStatus"] == "UP_TO_DATE"
         assert result["asset_2"]["latestRun"]["id"] == first_run_id
-        assert result["asset_2"]["computeStatus"] == "NONE"
         assert result["asset_3"]["latestRun"]["id"] == run_id
-        assert result["asset_3"]["computeStatus"] == "OUT_OF_DATE"
 
     def test_get_run_materialization(self, graphql_context, snapshot):
         _create_run(graphql_context, "single_asset_pipeline")
@@ -1176,7 +1168,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert dimensions[1]["name"] == "ab"
         assert dimensions[1]["partitionKeys"] == ["a", "b"]
 
-    def test_multipartitions_asset_materializations(self, graphql_context):
+    def test_multipartitions_get_materialization_count(self, graphql_context):
         _create_partitioned_run(
             graphql_context,
             "multipartitions_job",
@@ -1197,6 +1189,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             },
         )
 
+        assert result.data
         assert result.data["assetNodes"]
         assert result.data["assetNodes"][0]["partitionMaterializationCounts"][
             "materializationCountsGrouped"
@@ -1232,18 +1225,24 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             "materializationCountsGrouped"
         ] == [[0, 0], [0, 2]]
 
+        _create_partitioned_run(
+            graphql_context,
+            "multipartitions_job",
+            [AssetKey("multipartitions_1")],
+            MultiPartitionKey({"ab": "b", "12": "1"}),
+        )
+
         result = execute_dagster_graphql(
             graphql_context,
             GET_MATERIALIZATION_COUNT_BY_DIMENSION_PARTITION,
             variables={
                 "assetKeys": [{"path": ["multipartitions_1"]}],
-                "primaryDimension": "ab",
             },
         )
         assert result.data["assetNodes"]
         assert result.data["assetNodes"][0]["partitionMaterializationCounts"][
             "materializationCountsGrouped"
-        ] == [[2, 0], [0, 1]]
+        ] == [[2, 1], [0, 1]]
 
     def test_get_materialization_for_multipartition(self, graphql_context):
         first_run_id = _create_partitioned_run(

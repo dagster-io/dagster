@@ -46,6 +46,12 @@ Partitions Definitions
 .. autoclass:: StaticPartitionsDefinition
     :members:
 
+.. autoclass:: MultiPartitionsDefinition
+    :members:
+
+.. autoclass:: MultiPartitionKey
+    :members:
+
 
 Partitioned Schedules
 =====================

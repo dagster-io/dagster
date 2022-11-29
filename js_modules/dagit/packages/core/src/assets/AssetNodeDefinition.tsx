@@ -1,24 +1,20 @@
 import {gql} from '@apollo/client';
-import {Box, Colors, Icon, Caption, Subheading, Mono, ConfigTypeSchema, Body} from '@dagster-io/ui';
+import {Body, Box, Caption, Colors, ConfigTypeSchema, Icon, Mono, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {
-  ASSET_NODE_FRAGMENT,
-  CurrentMinutesLateTag,
-  freshnessPolicyDescription,
-} from '../asset-graph/AssetNode';
+import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {
   displayNameForAssetKey,
-  LiveData,
   isHiddenAssetGroupJob,
-  __ASSET_JOB_PREFIX,
+  LiveData,
   toGraphId,
 } from '../asset-graph/Utils';
 import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {Version} from '../versions/Version';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -31,7 +27,7 @@ import {
   metadataForAssetNode,
 } from './AssetMetadata';
 import {AssetNodeList} from './AssetNodeList';
-import {PartitionHealthSummary, usePartitionHealthData} from './PartitionHealthSummary';
+import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeDefinition: React.FC<{
@@ -40,7 +36,6 @@ export const AssetNodeDefinition: React.FC<{
   downstream: AssetGraphQuery_assetNodes[] | null;
   liveDataByNode: LiveData;
 }> = ({assetNode, upstream, downstream, liveDataByNode}) => {
-  const partitionHealthData = usePartitionHealthData([assetNode.assetKey]);
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
   const liveDataForNode = liveDataByNode[toGraphId(assetNode.assetKey)];
 
@@ -80,6 +75,19 @@ export const AssetNodeDefinition: React.FC<{
               maxHeight={260}
             />
           </Box>
+          {assetNode.opVersion && (
+            <>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+              >
+                <Subheading>Code version</Subheading>
+              </Box>
+              <Box padding={{vertical: 16, horizontal: 24}} flex={{gap: 12, alignItems: 'center'}}>
+                <Version>{assetNode.opVersion}</Version>
+              </Box>
+            </>
+          )}
           {liveDataForNode?.freshnessPolicy && (
             <>
               <Box
@@ -94,25 +102,6 @@ export const AssetNodeDefinition: React.FC<{
               </Box>
             </>
           )}
-          {assetNode.partitionDefinition && (
-            <>
-              <Box
-                padding={{vertical: 16, horizontal: 24}}
-                border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-                flex={{justifyContent: 'space-between', gap: 8}}
-              >
-                <Subheading>Partitions</Subheading>
-              </Box>
-              <Box
-                padding={{top: 16, horizontal: 24, bottom: 24}}
-                flex={{direction: 'column', gap: 16}}
-              >
-                <p>{assetNode.partitionDefinition.description}</p>
-                <PartitionHealthSummary assetKey={assetNode.assetKey} data={partitionHealthData} />
-              </Box>
-            </>
-          )}
-
           <Box
             padding={{vertical: 16, horizontal: 24}}
             border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
@@ -282,6 +271,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     description
     graphName
     opNames
+    opVersion
     jobNames
     partitionDefinition {
       description

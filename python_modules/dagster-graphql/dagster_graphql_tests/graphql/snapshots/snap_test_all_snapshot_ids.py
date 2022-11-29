@@ -1315,7 +1315,14 @@ snapshots['test_all_snapshot_ids 1'] = '''{
       },
       {
         "__class__": "SolidInvocationSnap",
-        "input_dep_snaps": [],
+        "input_dep_snaps": [
+          {
+            "__class__": "InputDependencySnap",
+            "input_name": "diamond_source",
+            "is_dynamic_collect": false,
+            "upstream_output_snaps": []
+          }
+        ],
         "is_dynamic_mapped": false,
         "solid_def_name": "fresh_diamond_top",
         "solid_name": "fresh_diamond_top",
@@ -1570,7 +1577,14 @@ snapshots['test_all_snapshot_ids 1'] = '''{
           "type_key": "Any"
         },
         "description": null,
-        "input_def_snaps": [],
+        "input_def_snaps": [
+          {
+            "__class__": "InputDefSnap",
+            "dagster_type_key": "Nothing",
+            "description": null,
+            "name": "diamond_source"
+          }
+        ],
         "name": "fresh_diamond_top",
         "output_def_snaps": [
           {
@@ -24127,7 +24141,7 @@ snapshots['test_all_snapshot_ids 19'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 2'] = '456c52fc3762d51ecb455462c70ec46bc29d26ee'
+snapshots['test_all_snapshot_ids 2'] = 'bab456b676e37a478e372bacce6402298c71bf63'
 
 snapshots['test_all_snapshot_ids 20'] = '40c4bcc1d6e381a7c61f2203a913493af2f6ff97'
 
@@ -35886,7 +35900,14 @@ snapshots['test_all_snapshot_ids 35'] = '''{
       },
       {
         "__class__": "SolidInvocationSnap",
-        "input_dep_snaps": [],
+        "input_dep_snaps": [
+          {
+            "__class__": "InputDependencySnap",
+            "input_name": "diamond_source",
+            "is_dynamic_collect": false,
+            "upstream_output_snaps": []
+          }
+        ],
         "is_dynamic_mapped": false,
         "solid_def_name": "fresh_diamond_top",
         "solid_name": "fresh_diamond_top",
@@ -36062,7 +36083,14 @@ snapshots['test_all_snapshot_ids 35'] = '''{
           "type_key": "Any"
         },
         "description": null,
-        "input_def_snaps": [],
+        "input_def_snaps": [
+          {
+            "__class__": "InputDefSnap",
+            "dagster_type_key": "Nothing",
+            "description": null,
+            "name": "diamond_source"
+          }
+        ],
         "name": "fresh_diamond_top",
         "output_def_snaps": [
           {
@@ -36082,7 +36110,7 @@ snapshots['test_all_snapshot_ids 35'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 36'] = '82158c7343c900cbe8be2684116540a3be9fe9e4'
+snapshots['test_all_snapshot_ids 36'] = 'e8a31912230f0520312173c4713ffa693ff23d24'
 
 snapshots['test_all_snapshot_ids 37'] = '''{
   "__class__": "PipelineSnapshot",

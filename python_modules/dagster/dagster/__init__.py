@@ -1,4 +1,5 @@
 import sys
+from types import ModuleType
 
 import dagster._module_alias_map as _module_alias_map
 
@@ -162,6 +163,7 @@ from dagster._core.definitions.dependency import (
     MultiDependencyDefinition as MultiDependencyDefinition,
     NodeInvocation as NodeInvocation,
 )
+from dagster._core.definitions.definitions_class import Definitions as Definitions
 from dagster._core.definitions.events import (
     AssetKey as AssetKey,
     AssetMaterialization as AssetMaterialization,
@@ -184,6 +186,12 @@ from dagster._core.definitions.executor_definition import (
 )
 from dagster._core.definitions.freshness_policy import (
     FreshnessPolicy as FreshnessPolicy,
+)
+from dagster._core.definitions.freshness_policy_sensor_definition import (
+    FreshnessPolicySensorContext as FreshnessPolicySensorContext,
+    FreshnessPolicySensorDefinition as FreshnessPolicySensorDefinition,
+    build_freshness_policy_sensor_context as build_freshness_policy_sensor_context,
+    freshness_policy_sensor as freshness_policy_sensor,
 )
 from dagster._core.definitions.graph_definition import (
     GraphDefinition as GraphDefinition,
@@ -209,6 +217,9 @@ from dagster._core.definitions.logger_definition import (
     LoggerDefinition as LoggerDefinition,
     build_init_logger_context as build_init_logger_context,
     logger as logger,
+)
+from dagster._core.definitions.logical_version import (
+    LogicalVersion as LogicalVersion,
 )
 from dagster._core.definitions.materialize import (
     materialize as materialize,
@@ -338,6 +349,10 @@ from dagster._core.definitions.time_window_partitions import (
     hourly_partitioned_config as hourly_partitioned_config,
     monthly_partitioned_config as monthly_partitioned_config,
     weekly_partitioned_config as weekly_partitioned_config,
+)
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionsDefinition as MultiPartitionsDefinition,
+    MultiPartitionKey as MultiPartitionKey,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import (
     define_asset_job as define_asset_job,
@@ -634,5 +649,5 @@ def __getattr__(name: str) -> TypingAny:
         raise AttributeError("module '{}' has no attribute '{}'".format(__name__, name))
 
 
-def __dir__(_self) -> Sequence:
+def __dir__(_self: ModuleType) -> Sequence[str]:
     return [*globals(), *_DEPRECATED.keys(), *_DEPRECATED_RENAMED.keys()]

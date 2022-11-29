@@ -797,3 +797,15 @@ def test_static_partition_keys_in_range():
         partitions.get_partition_keys_in_range(
             PartitionKeyRange(start="foo", end="nonexistent_key")
         )
+
+
+def test_static_partitions_subset():
+    partitions = StaticPartitionsDefinition(["foo", "bar", "baz", "qux"])
+    subset = partitions.empty_subset()
+    with_some_partitions = subset.with_partition_keys(["foo", "bar"])
+    assert with_some_partitions.get_partition_keys_not_in_subset() == {"baz", "qux"}
+    serialized = with_some_partitions.serialize()
+    assert partitions.deserialize_subset(serialized).get_partition_keys_not_in_subset() == {
+        "baz",
+        "qux",
+    }

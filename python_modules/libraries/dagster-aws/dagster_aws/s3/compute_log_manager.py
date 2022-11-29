@@ -79,7 +79,7 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             "s3", use_ssl=use_ssl, verify=_verify, endpoint_url=endpoint_url
         ).meta.client
         self._s3_bucket = check.str_param(bucket, "bucket")
-        self._s3_prefix = check.str_param(prefix, "prefix")
+        self._s3_prefix = self._clean_prefix(check.str_param(prefix, "prefix"))
 
         # proxy calls to local compute log manager (for subscriptions, etc)
         if not local_dir:
@@ -121,6 +121,10 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
     def upload_interval(self) -> Optional[int]:
         return self._upload_interval if self._upload_interval else None
 
+    def _clean_prefix(self, prefix):
+        parts = prefix.split("/")
+        return "/".join([part for part in parts if part])
+
     def _s3_key(self, log_key, io_type, partial=False):
         check.inst_param(io_type, "io_type", ComputeIOType)
         extension = IO_TYPE_EXTENSION[io_type]
@@ -131,16 +135,30 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         paths = [self._s3_prefix, "storage", *namespace, filename]
         return "/".join(paths)  # s3 path delimiter
 
-    def delete_logs(self, log_key: Sequence[str]):
-        self.local_manager.delete_logs(log_key)
-        s3_keys_to_remove = [
-            self._s3_key(log_key, ComputeIOType.STDOUT),
-            self._s3_key(log_key, ComputeIOType.STDERR),
-            self._s3_key(log_key, ComputeIOType.STDOUT, partial=True),
-            self._s3_key(log_key, ComputeIOType.STDERR, partial=True),
-        ]
-        s3_objects = [{"Key": key} for key in s3_keys_to_remove]
-        self._s3_session.delete_objects(Bucket=self._s3_bucket, Delete={"Objects": s3_objects})
+    def delete_logs(
+        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+    ):
+        self.local_manager.delete_logs(log_key=log_key, prefix=prefix)
+
+        s3_keys_to_remove = None
+        if log_key:
+            s3_keys_to_remove = [
+                self._s3_key(log_key, ComputeIOType.STDOUT),
+                self._s3_key(log_key, ComputeIOType.STDERR),
+                self._s3_key(log_key, ComputeIOType.STDOUT, partial=True),
+                self._s3_key(log_key, ComputeIOType.STDERR, partial=True),
+            ]
+        elif prefix:
+            # add the trailing '' to make sure that ['a'] does not match ['apple']
+            s3_prefix = "/".join([self._s3_prefix, "storage", *prefix, ""])
+            matching = self._s3_session.list_objects(Bucket=self._s3_bucket, Prefix=s3_prefix)
+            s3_keys_to_remove = [obj["Key"] for obj in matching.get("Contents", [])]
+        else:
+            check.failed("Must pass in either `log_key` or `prefix` argument to delete_logs")
+
+        if s3_keys_to_remove:
+            to_delete = [{"Key": key} for key in s3_keys_to_remove]
+            self._s3_session.delete_objects(Bucket=self._s3_bucket, Delete={"Objects": to_delete})
 
     def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
         if not self.is_capture_complete(log_key):

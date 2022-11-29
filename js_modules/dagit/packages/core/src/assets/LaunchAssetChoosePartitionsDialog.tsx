@@ -7,9 +7,9 @@ import {
   Button,
   ButtonLink,
   DialogFooter,
-  Alert,
   Tooltip,
   Colors,
+  Alert,
 } from '@dagster-io/ui';
 import reject from 'lodash/reject';
 import React from 'react';
@@ -19,11 +19,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {
-  PartitionHealthData,
-  PartitionHealthSummary,
-  usePartitionHealthData,
-} from '../assets/PartitionHealthSummary';
+import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {AssetKey} from '../assets/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {
@@ -31,7 +27,7 @@ import {
   LaunchPartitionBackfillVariables,
 } from '../instance/types/LaunchPartitionBackfill';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
-import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {
   ConfigPartitionSelectionQuery,
   ConfigPartitionSelectionQueryVariables,
@@ -44,10 +40,15 @@ import {showBackfillErrorToast, showBackfillSuccessToast} from '../partitions/Pa
 import {RepoAddress} from '../workspace/types';
 
 import {executionParamsForAssetJob} from './LaunchAssetExecutionButton';
+import {explodePartitionKeysInRanges, mergedAssetHealth} from './MultipartitioningSupport';
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
-import {LaunchAssetExecutionAssetNodeFragment_partitionDefinition} from './types/LaunchAssetExecutionAssetNodeFragment';
+import {
+  LaunchAssetExecutionAssetNodeFragment_partitionDefinition,
+  LaunchAssetExecutionAssetNodeFragment_partitionKeysByDimension,
+} from './types/LaunchAssetExecutionAssetNodeFragment';
+import {usePartitionDimensionRanges} from './usePartitionDimensionRanges';
+import {PartitionHealthDimensionRange, usePartitionHealthData} from './usePartitionHealthData';
 import {usePartitionNameForPipeline} from './usePartitionNameForPipeline';
-
 interface Props {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -56,6 +57,7 @@ interface Props {
   assets: {
     assetKey: AssetKey;
     opNames: string[];
+    partitionKeysByDimension: LaunchAssetExecutionAssetNodeFragment_partitionKeysByDimension[];
     partitionDefinition: LaunchAssetExecutionAssetNodeFragment_partitionDefinition | null;
   }[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
@@ -82,16 +84,6 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<Props> = (props) => {
   );
 };
 
-export function assetHealthToPartitionStatus(assetHealth: PartitionHealthData[]) {
-  const partitionNames = assetHealth[0] ? assetHealth[0].timeline.keys : [];
-  const result: {[partitionName: string]: PartitionState} = {};
-  partitionNames.forEach((partitionName) => {
-    const success = assetHealth.every((d) => d.timeline.statusByPartition[partitionName]);
-    result[partitionName] = success ? PartitionState.SUCCESS : PartitionState.MISSING;
-  });
-  return result;
-}
-
 // Note: This dialog loads a lot of data - the body is broken into a separate
 // component so we can be *sure* the hooks won't load data until it's opened.
 // (<Dialog> does not render it's children until open=true)
@@ -107,38 +99,36 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   upstreamAssetKeys,
 }) => {
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
-  const assetHealth = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
-  const upstreamAssetHealth = usePartitionHealthData(upstreamAssetKeys);
-
-  const partitionStatusData = React.useMemo(() => assetHealthToPartitionStatus(assetHealth), [
-    assetHealth,
-  ]);
-  const partitionKeys = React.useMemo(() => (assetHealth[0] ? assetHealth[0].timeline.keys : []), [
-    assetHealth,
-  ]);
 
   const {canLaunchPartitionBackfill} = usePermissions();
+  const [launching, setLaunching] = React.useState(false);
+  const [previewCount, setPreviewCount] = React.useState(0);
+  const morePreviewsCount = partitionedAssets.length - previewCount;
 
-  const mostRecentKey = partitionKeys[partitionKeys.length - 1];
+  const assetHealth = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
+  const mergedHealth = React.useMemo(() => mergedAssetHealth(assetHealth), [assetHealth]);
 
-  const [range, setRange] = React.useState<string[]>([]);
+  const [ranges, setRanges] = usePartitionDimensionRanges(
+    mergedHealth,
+    partitionedAssets[0].partitionKeysByDimension.map((d) => d.name),
+  );
+
   const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
     PartitionState.MISSING,
   ]);
 
-  const [previewCount, setPreviewCount] = React.useState(0);
-  const [launching, setLaunching] = React.useState(false);
-
-  React.useEffect(() => {
-    setRange([mostRecentKey]);
-  }, [mostRecentKey]);
-
-  const selected = React.useMemo(() => {
-    return range.filter((r) => stateFilters.includes(partitionStatusData[r]));
-  }, [range, stateFilters, partitionStatusData]);
+  const allInRanges = React.useMemo(
+    () => explodePartitionKeysInRanges(ranges, mergedHealth.stateForKey),
+    [ranges, mergedHealth],
+  );
+  const allSelected = React.useMemo(
+    () => allInRanges.filter((key) => stateFilters.includes(key.state)),
+    [allInRanges, stateFilters],
+  );
 
   const client = useApolloClient();
   const history = useHistory();
+  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
   // Find the partition set name. This seems like a bit of a hack, unclear
@@ -157,7 +147,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       return;
     }
 
-    if (selected.length === 1) {
+    if (allSelected.length === 1) {
       const {data: tagAndConfigData} = await client.query<
         ConfigPartitionSelectionQuery,
         ConfigPartitionSelectionQueryVariables
@@ -170,7 +160,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             repositoryName: repoAddress.name,
           },
           partitionSetName: partitionSet.name,
-          partitionName: selected[0],
+          partitionName: allSelected[0].partitionKey,
         },
       });
 
@@ -236,7 +226,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
               },
             },
             assetSelection: assets.map((a) => ({path: a.assetKey.path})),
-            partitionNames: selected,
+            partitionNames: allSelected.map((k) => k.partitionKey),
             fromFailure: false,
             tags: [],
           },
@@ -254,19 +244,6 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     }
   };
 
-  const upstreamUnavailable = (key: string) =>
-    upstreamAssetHealth.length > 0 &&
-    upstreamAssetHealth.some(
-      (a) => a.timeline.keys.includes(key) && !a.timeline.statusByPartition[key],
-    );
-
-  const upstreamUnavailableSpans = assembleIntoSpans(selected, upstreamUnavailable).filter(
-    (s) => s.status === true,
-  );
-  const onRemoveUpstreamUnavailable = () => {
-    setRange(reject(selected, upstreamUnavailable));
-  };
-
   return (
     <>
       <DialogBody>
@@ -275,68 +252,80 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             Select partitions to materialize. Click and drag to select a range on the timeline.
           </Box>
 
-          <PartitionRangeWizard
-            all={partitionKeys}
-            selected={range}
-            setSelected={setRange}
-            partitionData={partitionStatusData}
-          />
+          {ranges.map((range, idx) => (
+            <PartitionRangeWizard
+              key={range.dimension.name}
+              partitionKeys={range.dimension.partitionKeys}
+              partitionStateForKey={(dimensionKey) =>
+                mergedHealth.stateForSingleDimension(
+                  idx,
+                  dimensionKey,
+                  ranges.length === 2 ? ranges[1 - idx].selected : undefined,
+                )
+              }
+              selected={range.selected}
+              setSelected={(selected) =>
+                setRanges(
+                  ranges.map((r) => (r.dimension === range.dimension ? {...r, selected} : r)),
+                )
+              }
+            />
+          ))}
           <PartitionStateCheckboxes
+            partitionKeysForCounts={allInRanges}
             allowed={[PartitionState.MISSING, PartitionState.SUCCESS]}
-            partitionData={partitionStatusData}
-            partitionKeysForCounts={range}
             value={stateFilters}
             onChange={setStateFilters}
           />
         </Box>
-        <Box
-          flex={{direction: 'column', gap: 8}}
-          border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-          style={{marginTop: 16, overflowY: 'auto', overflowX: 'visible', maxHeight: '50vh'}}
-        >
-          {partitionedAssets.slice(0, previewCount).map((a) => (
-            <PartitionHealthSummary
-              assetKey={a.assetKey}
-              showAssetKey
-              key={displayNameForAssetKey(a.assetKey)}
-              data={assetHealth}
-              selected={selected}
-            />
-          ))}
-          {partitionedAssets.length === 1 ? (
-            <span />
-          ) : previewCount === 0 ? (
-            <Box margin={{vertical: 8}}>
-              <ButtonLink onClick={() => setPreviewCount(5)}>
-                Show per-asset partition health
-              </ButtonLink>
-            </Box>
-          ) : previewCount < partitionedAssets.length ? (
-            <Box margin={{vertical: 8}}>
-              <ButtonLink onClick={() => setPreviewCount(partitionedAssets.length)}>
-                Show {partitionedAssets.length - previewCount} more previews
-              </ButtonLink>
-            </Box>
-          ) : undefined}
-        </Box>
-        {upstreamUnavailableSpans.length > 0 && (
-          <Box margin={{top: 16}}>
-            <Alert
-              intent="warning"
-              title="Upstream Data Missing"
-              description={
-                <>
-                  {upstreamUnavailableSpans.map((span) => stringForSpan(span, selected)).join(', ')}
-                  {
-                    ' cannot be materialized because upstream materializations are missing. Consider materializing upstream assets or '
-                  }
-                  <a onClick={onRemoveUpstreamUnavailable}>remove these partitions</a>
-                  {` to avoid failures.`}
-                </>
-              }
-            />
+
+        {previewCount > 0 && (
+          <Box
+            margin={{top: 16}}
+            flex={{direction: 'column', gap: 8}}
+            padding={{vertical: 16, horizontal: 20}}
+            border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+            background={Colors.Gray100}
+            style={{
+              marginLeft: -20,
+              marginRight: -20,
+              overflowY: 'auto',
+              overflowX: 'visible',
+              maxHeight: '35vh',
+            }}
+          >
+            {partitionedAssets.slice(0, previewCount).map((a) => (
+              <PartitionHealthSummary
+                key={displayNameForAssetKey(a.assetKey)}
+                assetKey={a.assetKey}
+                showAssetKey
+                data={assetHealth}
+                ranges={ranges}
+              />
+            ))}
+            {morePreviewsCount > 0 && (
+              <Box margin={{vertical: 8}}>
+                <ButtonLink onClick={() => setPreviewCount(partitionedAssets.length)}>
+                  Show {morePreviewsCount} more {morePreviewsCount > 1 ? 'previews' : 'preview'}
+                </ButtonLink>
+              </Box>
+            )}
           </Box>
         )}
+
+        {previewCount === 0 && partitionedAssets.length > 1 && (
+          <Box margin={{top: 16, bottom: 8}}>
+            <ButtonLink onClick={() => setPreviewCount(5)}>
+              Show per-asset partition health
+            </ButtonLink>
+          </Box>
+        )}
+
+        <UpstreamUnavailableWarning
+          upstreamAssetKeys={upstreamAssetKeys}
+          ranges={ranges}
+          setRanges={setRanges}
+        />
       </DialogBody>
       <DialogFooter
         left={partitionSet && <RunningBackfillsNotice partitionSetName={partitionSet.name} />}
@@ -344,25 +333,83 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         <Button intent="none" onClick={() => setOpen(false)}>
           Cancel
         </Button>
-        {selected.length !== 1 && !canLaunchPartitionBackfill.enabled ? (
+        {allSelected.length !== 1 && !canLaunchPartitionBackfill.enabled ? (
           <Tooltip content={canLaunchPartitionBackfill.disabledReason}>
-            <Button disabled>{`Launch ${selected.length}-Run Backfill`}</Button>
+            <Button disabled>{`Launch ${allSelected.length}-Run Backfill`}</Button>
           </Tooltip>
         ) : (
           <Button
             intent="primary"
             onClick={onLaunch}
-            disabled={selected.length === 0}
+            disabled={allSelected.length === 0}
             loading={launching}
           >
             {launching
               ? 'Launching...'
-              : selected.length !== 1
-              ? `Launch ${selected.length}-Run Backfill`
+              : allSelected.length !== 1
+              ? `Launch ${allSelected.length}-Run Backfill`
               : `Launch 1 Run`}
           </Button>
         )}
       </DialogFooter>
     </>
+  );
+};
+
+const UpstreamUnavailableWarning: React.FC<{
+  upstreamAssetKeys: AssetKey[];
+  ranges: PartitionHealthDimensionRange[];
+  setRanges: (next: PartitionHealthDimensionRange[]) => void;
+}> = ({upstreamAssetKeys, ranges, setRanges}) => {
+  // We want to warn if an immediately upstream asset 1) has the same partitioning and
+  // 2) is missing materializations for keys in `allSelected`. We only offer this feature
+  // for single-dimensional partitioned assets because it's difficult to express the
+  // unavailable partitions in the multi-dimensional case and our "two range inputs" won't
+  // allow us to remove missing individual pairs.
+  const upstreamAssetHealth = usePartitionHealthData(upstreamAssetKeys);
+  const upstreamUnavailable = (singleDimensionKey: string) =>
+    upstreamAssetHealth.length > 0 &&
+    upstreamAssetHealth.some((a) => {
+      // If the key is not undefined, it's present in the partition key space of the asset
+      return a.stateForKey([singleDimensionKey]) === PartitionState.MISSING;
+    });
+
+  const upstreamUnavailableSpans =
+    ranges.length === 1
+      ? assembleIntoSpans(ranges[0].selected, upstreamUnavailable).filter((s) => s.status === true)
+      : [];
+
+  const onRemoveUpstreamUnavailable = () => {
+    if (ranges.length > 1) {
+      throw new Error('Assertion failed, this feature is only available for 1 dimensional assets');
+    }
+    setRanges([{...ranges[0], selected: reject(ranges[0].selected, upstreamUnavailable)}]);
+  };
+
+  if (upstreamUnavailableSpans.length === 0) {
+    return <span />;
+  }
+
+  return (
+    <Box margin={{top: 16}}>
+      <Alert
+        intent="warning"
+        title="Upstream data missing"
+        description={
+          <>
+            {upstreamUnavailableSpans
+              .map((span) => stringForSpan(span, ranges[0].selected))
+              .join(', ')}
+            {
+              ' cannot be materialized because upstream materializations are missing. Consider materializing upstream assets or '
+            }
+            <ButtonLink underline="always" onClick={onRemoveUpstreamUnavailable}>
+              remove these partitions
+            </ButtonLink>
+            {` to avoid failures.`}
+          </>
+        }
+      />
+    </Box>
   );
 };

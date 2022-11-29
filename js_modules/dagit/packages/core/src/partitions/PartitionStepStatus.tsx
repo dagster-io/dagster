@@ -16,7 +16,7 @@ import styled from 'styled-components/macro';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {tokenForAssetKey} from '../asset-graph/Utils';
-import {PartitionHealthData} from '../assets/PartitionHealthSummary';
+import {PartitionHealthData, PartitionHealthDimension} from '../assets/usePartitionHealthData';
 import {GanttChartMode} from '../gantt/Constants';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
@@ -28,6 +28,7 @@ import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {PartitionRunList} from './PartitionRunList';
+import {PartitionState} from './PartitionStatus';
 import {
   BOX_SIZE,
   GridColumn,
@@ -85,47 +86,60 @@ const timeboundsOfPartitions = (partitionColumns: {steps: {unix: number}[]}[]) =
 };
 
 export const PartitionPerAssetStatus: React.FC<
-  PartitionStepStatusBaseProps & {
+  Omit<PartitionStepStatusBaseProps, 'partitionNames'> & {
     assetHealth: PartitionHealthData[];
     assetQueryItems: GraphQueryItem[];
+    rangeDimensionIdx: number;
+    rangeDimension: PartitionHealthDimension;
   }
-> = ({assetHealth, partitionNames, assetQueryItems, ...rest}) => {
+> = ({assetHealth, rangeDimension, rangeDimensionIdx, assetQueryItems, ...rest}) => {
   const healthByAssetKey = keyBy(assetHealth, (a) => tokenForAssetKey(a.assetKey));
 
   const layout = buildLayout({nodes: assetQueryItems, mode: GanttChartMode.FLAT});
-  const layoutBoxesWithPartitions = layout.boxes.filter(
-    (b) => healthByAssetKey[b.node.name].timeline.keys.length,
+  const layoutBoxesWithRangeDimension = layout.boxes.filter(
+    (b) =>
+      healthByAssetKey[b.node.name]?.dimensions[rangeDimensionIdx]?.name === rangeDimension.name,
   );
 
   const data: MatrixData = {
-    stepRows: layoutBoxesWithPartitions.map((box) => ({
+    stepRows: layoutBoxesWithRangeDimension.map((box) => ({
       x: box.x,
       name: box.node.name,
       totalFailurePercent: 0,
       finalFailurePercent: 0,
     })),
     partitions: [],
-    partitionColumns: partitionNames.map((p, idx) => ({
-      steps: layoutBoxesWithPartitions.map((a) => ({
-        name: a.node.name,
-        color: healthByAssetKey[a.node.name].timeline.statusByPartition[p] ? 'SUCCESS' : 'MISSING',
-        unix: 0,
-      })),
+    partitionColumns: rangeDimension.partitionKeys.map((partitionKey, idx) => ({
       idx,
-      name: p,
+      name: partitionKey,
       runsLoaded: true,
       runs: [],
+      steps: layoutBoxesWithRangeDimension.map((box) => ({
+        name: box.node.name,
+        unix: 0,
+        color: partitionStateToStatusSquareColor(
+          healthByAssetKey[box.node.name].stateForSingleDimension(rangeDimensionIdx, partitionKey),
+        ),
+      })),
     })),
   };
 
   return (
     <PartitionStepStatus
       {...rest}
-      partitionNames={partitionNames}
+      partitionNames={rangeDimension.partitionKeys}
       data={data}
       showLatestRun={false}
     />
   );
+};
+
+export const partitionStateToStatusSquareColor = (state: PartitionState) => {
+  return state === PartitionState.SUCCESS
+    ? 'SUCCESS'
+    : state === PartitionState.SUCCESS_MISSING
+    ? 'SUCCESS-MISSING'
+    : 'MISSING';
 };
 
 export const PartitionPerOpStatus: React.FC<

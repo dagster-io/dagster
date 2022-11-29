@@ -22,9 +22,11 @@ from typing import (
     Any,
     Callable,
     ContextManager,
+    Dict,
     Generator,
     Generic,
     Iterator,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -43,7 +45,7 @@ from typing_extensions import Literal
 import dagster._check as check
 import dagster._seven as seven
 
-from .merger import merge_dicts
+from .merger import deep_merge_dicts, merge_dicts
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
 if sys.version_info > (3,):
@@ -54,8 +56,10 @@ else:
 if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent
 
+K = TypeVar("K")
 T = TypeVar("T")
 U = TypeVar("U")
+V = TypeVar("V")
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)
 
@@ -94,12 +98,6 @@ def convert_dagster_submodule_name(name: str, mode: Literal["private", "public"]
         return re.sub(r"^dagster._", "dagster.", name)
     else:
         check.failed("`mode` must be 'private' or 'public'")
-
-
-def make_email_on_run_failure_sensor(*args, **kwargs):
-    from .alert import make_email_on_run_failure_sensor  # pylint: disable=redefined-outer-name
-
-    return make_email_on_run_failure_sensor(*args, **kwargs)
 
 
 def file_relative_path(dunderfile: str, relative_path: str) -> str:
@@ -264,7 +262,22 @@ class frozenlist(list):
         return hash(tuple(self))
 
 
-def make_readonly_value(value):
+@overload
+def make_readonly_value(value: List[T]) -> Sequence[T]:  # type: ignore
+    ...
+
+
+@overload
+def make_readonly_value(value: Dict[T, U]) -> Mapping[T, U]:  # type: ignore
+    ...
+
+
+@overload
+def make_readonly_value(value: T) -> T:
+    ...
+
+
+def make_readonly_value(value: Any) -> Any:
     if isinstance(value, list):
         return frozenlist(list(map(make_readonly_value, value)))
     elif isinstance(value, dict):
@@ -438,7 +451,7 @@ def start_termination_thread(termination_event):
 # Executes the next() function within an instance of the supplied context manager class
 # (leaving the context before yielding each result)
 def iterate_with_context(
-    context_fn: Callable[[], ContextManager], iterator: Iterator[T]
+    context_fn: Callable[[], ContextManager[Any]], iterator: Iterator[T]
 ) -> Iterator[T]:
     while True:
         # Allow interrupts during user code so that we can terminate slow/hanging steps
@@ -569,7 +582,7 @@ def find_free_port() -> int:
 
 
 @contextlib.contextmanager
-def alter_sys_path(to_add: Sequence[str], to_remove: Sequence[str]) -> Generator[None, None, None]:
+def alter_sys_path(to_add: Sequence[str], to_remove: Sequence[str]) -> Iterator[None]:
     to_restore = [path for path in sys.path]
 
     # remove paths
@@ -588,7 +601,7 @@ def alter_sys_path(to_add: Sequence[str], to_remove: Sequence[str]) -> Generator
 
 
 @contextlib.contextmanager
-def restore_sys_modules():
+def restore_sys_modules() -> Iterator[None]:
     sys_modules = {k: v for k, v in sys.modules.items()}
     try:
         yield
@@ -598,7 +611,7 @@ def restore_sys_modules():
             del sys.modules[key]
 
 
-def process_is_alive(pid):
+def process_is_alive(pid: int) -> bool:
     if seven.IS_WINDOWS:
         import psutil  # pylint: disable=import-error
 

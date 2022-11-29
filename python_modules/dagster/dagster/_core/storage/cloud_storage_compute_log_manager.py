@@ -50,9 +50,11 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
         """
 
     @abstractmethod
-    def delete_logs(self, log_key: Sequence[str]):
+    def delete_logs(
+        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+    ):
         """
-        Deletes logs for a given log_key
+        Deletes logs for a given log_key or prefix
         """
 
     @abstractmethod
@@ -136,8 +138,8 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
     def get_log_data(
         self,
         log_key: Sequence[str],
-        cursor: str = None,
-        max_bytes: int = None,
+        cursor: Optional[str] = None,
+        max_bytes: Optional[int] = None,
     ) -> CapturedLogData:
         stdout_offset, stderr_offset = self.local_manager.parse_cursor(cursor)
         stdout, new_stdout_offset = self._log_data_for_type(
@@ -295,13 +297,8 @@ class PollingComputeLogSubscriptionManager:
     def __init__(self, manager):
         self._manager = manager
         self._subscriptions = defaultdict(list)
-        self._polling_thread = threading.Thread(
-            target=self._poll,
-            name="polling-compute-log-subscription",
-        )
-        self._shutdown_event = threading.Event()
-        self._polling_thread.daemon = True
-        self._polling_thread.start()
+        self._shutdown_event = None
+        self._polling_thread = None
 
     def _log_key(self, subscription):
         check.inst_param(
@@ -315,12 +312,37 @@ class PollingComputeLogSubscriptionManager:
     def _watch_key(self, log_key: Sequence[str]) -> str:
         return json.dumps(log_key)
 
+    def _start_polling_thread(self):
+        if self._polling_thread:
+            return
+
+        self._shutdown_event = threading.Event()
+        self._polling_thread = threading.Thread(
+            target=self._poll,
+            args=[self._shutdown_event],
+            name="polling-compute-log-subscription",
+        )
+        self._polling_thread.daemon = True
+        self._polling_thread.start()
+
+    def _stop_polling_thread(self):
+        if not self._polling_thread:
+            return
+
+        old_shutdown_event = self._shutdown_event
+        old_shutdown_event.set()  # set to signal to the old thread to die
+        self._polling_thread = None
+        self._shutdown_event = None
+
     def add_subscription(
         self, subscription: Union[ComputeLogSubscription, CapturedLogSubscription]
     ):
         check.inst_param(
             subscription, "subscription", (ComputeLogSubscription, CapturedLogSubscription)
         )
+
+        if not self._polling_thread:
+            self._start_polling_thread()
 
         if self.is_complete(subscription):
             subscription.fetch()
@@ -343,35 +365,46 @@ class PollingComputeLogSubscriptionManager:
         check.inst_param(
             subscription, "subscription", (ComputeLogSubscription, CapturedLogSubscription)
         )
-        watch_key = self._watch_key(subscription.run_id, subscription.key)
+        log_key = self._log_key(subscription)
+        watch_key = self._watch_key(log_key)
+
         if subscription in self._subscriptions[watch_key]:
             self._subscriptions[watch_key].remove(subscription)
+            if len(self._subscriptions[watch_key]) == 0:
+                del self._subscriptions[watch_key]
             subscription.complete()
+
+        if not len(self._subscriptions) and self._polling_thread:
+            self._stop_polling_thread()
 
     def remove_all_subscriptions(self, log_key):
         watch_key = self._watch_key(log_key)
         for subscription in self._subscriptions.pop(watch_key, []):
             subscription.complete()
 
+        if not len(self._subscriptions) and self._polling_thread:
+            self._stop_polling_thread()
+
     def notify_subscriptions(self, log_key):
         watch_key = self._watch_key(log_key)
         for subscription in self._subscriptions[watch_key]:
             subscription.fetch()
 
-    def _poll(self):
+    def _poll(self, shutdown_event):
         while True:
-            if self._shutdown_event.is_set():
+            if shutdown_event.is_set():
                 return
             # need to do something smarter here that keeps track of updates
             for _, subscriptions in self._subscriptions.items():
                 for subscription in subscriptions:
-                    if self._shutdown_event.is_set():
+                    if shutdown_event.is_set():
                         return
                     subscription.fetch()
             time.sleep(SUBSCRIPTION_POLLING_INTERVAL)
 
     def dispose(self):
-        self._shutdown_event.set()
+        if self._shutdown_event:
+            self._shutdown_event.set()
 
 
 def _upload_partial_logs(

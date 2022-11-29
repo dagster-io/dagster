@@ -4,9 +4,10 @@ import React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissions} from '../app/Permissions';
-import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
 
 import {
   buildAssetCollisionsAlert,
@@ -32,28 +33,26 @@ type ObserveAssetsState =
 
 export const LaunchAssetObservationButton: React.FC<{
   assetKeys: AssetKey[]; // Memoization not required
-  context?: 'all' | 'selected';
   intent?: 'primary' | 'none';
   preferredJobName?: string;
-}> = ({assetKeys, preferredJobName, intent = 'primary'}) => {
+}> = ({assetKeys, preferredJobName, intent = 'none'}) => {
   const {canLaunchPipelineExecution} = usePermissions();
+  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
   const [state, setState] = React.useState<ObserveAssetsState>({type: 'none'});
   const client = useApolloClient();
 
   const count = assetKeys.length > 1 ? ` (${assetKeys.length})` : '';
-  const label = `Observe source ${count}`;
+  const label = `Observe sources ${count}`;
 
-  if (!assetKeys.length || !canLaunchPipelineExecution.enabled) {
+  if (!assetKeys.length) {
+    return <span />;
+  }
+
+  if (!canLaunchPipelineExecution.enabled) {
     return (
-      <Tooltip
-        content={
-          !canLaunchPipelineExecution.enabled
-            ? 'You do not have permission to observe source assets'
-            : 'Select one or more source assets to observe.'
-        }
-      >
+      <Tooltip content="You do not have permission to observe source assets">
         <Button intent={intent} icon={<Icon name="observation" />} disabled>
           {label}
         </Button>
@@ -114,9 +113,9 @@ export const LaunchAssetObservationButton: React.FC<{
 };
 
 async function stateForObservingAssets(
-  client: ApolloClient<any>,
+  _client: ApolloClient<any>,
   assets: LaunchAssetExecutionAssetNodeFragment[],
-  forceLaunchpad: boolean,
+  _forceLaunchpad: boolean,
   preferredJobName?: string,
 ): Promise<ObserveAssetsState> {
   if (assets.some((x) => !x.isSource)) {
@@ -136,6 +135,7 @@ async function stateForObservingAssets(
     assets[0]?.repository.name || '',
     assets[0]?.repository.location.name || '',
   );
+  const repoName = repoAddressAsString(repoAddress);
 
   if (
     !assets.every(
@@ -146,7 +146,7 @@ async function stateForObservingAssets(
   ) {
     return {
       type: 'error',
-      error: 'Assets must be in the same repository to be materialized together.',
+      error: `Assets must be in ${repoName} to be materialized together.`,
     };
   }
 

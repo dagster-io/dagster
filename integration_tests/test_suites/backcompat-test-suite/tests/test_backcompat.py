@@ -63,7 +63,11 @@ def dagster_most_recent_release():
     res = requests.get("https://pypi.org/pypi/dagster/json")
     module_json = res.json()
     releases = module_json["releases"]
-    release_versions = [parse_package_version(release) for release in releases.keys()]
+    release_versions = [
+        parse_package_version(version)
+        for version, files in releases.items()
+        if not any(file.get("yanked") for file in files)
+    ]
     for release_version in reversed(sorted(release_versions)):
         if not release_version.is_prerelease:
             return str(release_version)
@@ -76,6 +80,7 @@ def dagster_most_recent_release():
         pytest.param(value, marks=getattr(pytest.mark, key), id=key)
         for key, value in MARK_TO_VERSIONS_MAP.items()
     ],
+    scope="session",
 )
 def release_test_map(request, dagster_most_recent_release):
     dagit_version = request.param[0]
@@ -174,7 +179,7 @@ def docker_service_up(docker_compose_file, build_args=None):
         subprocess.check_output(["docker-compose", "-f", docker_compose_file, "rm", "-f"])
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def graphql_client(release_test_map, retrying_requests):
     dagit_host = os.environ.get("BACKCOMPAT_TESTS_DAGIT_HOST", "localhost")
 
@@ -216,6 +221,13 @@ def test_backcompat_deployed_job(graphql_client):
 
 def test_backcompat_deployed_job_subset(graphql_client):
     assert_runs_and_exists(graphql_client, "the_job", subset_selection=["my_op"])
+
+
+def test_backcompat_ping_dagit(graphql_client):
+    assert_runs_and_exists(
+        graphql_client,
+        "test_graphql",
+    )
 
 
 def assert_runs_and_exists(client: DagsterGraphQLClient, name, subset_selection=None):

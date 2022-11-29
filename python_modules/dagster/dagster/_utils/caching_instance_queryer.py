@@ -6,7 +6,8 @@ import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.storage.event_log import EventLogRecord
+from dagster._core.storage.event_log import EventLogRecord, SqlEventLogStorage
+from dagster._core.storage.event_log.sql_event_log import AssetEventTagsTable
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
@@ -19,6 +20,8 @@ from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
     from dagster import DagsterInstance
+
+USED_DATA_TAG = ".dagster/used_data"
 
 
 class CachingInstanceQueryer:
@@ -215,32 +218,46 @@ class CachingInstanceQueryer:
 
         return True
 
-    def _kvs_key_for_record_id(self, record_id: int) -> str:
-        return f".dagster/used_data/{record_id}"
-
     def set_known_used_data(
         self,
-        record_id: int,
+        record: EventLogRecord,
         new_known_data: Dict[AssetKey, Tuple[Optional[int], Optional[float]]],
     ):
-        if self._instance.run_storage.supports_kvs():
-            current_known_data = self.get_known_used_data(record_id)
+        event_log_storage = self._instance.event_log_storage
+        if (
+            event_log_storage.supports_add_asset_event_tags()
+            and record.asset_key is not None
+            and record.storage_id is not None
+            and record.event_log_entry.timestamp is not None
+        ):
+            current_known_data = self.get_known_used_data(record.asset_key, record.storage_id)
             known_data = merge_dicts(current_known_data, new_known_data)
             serialized_times = json.dumps(
                 {key.to_user_string(): value for key, value in known_data.items()}
             )
-            self._instance.run_storage.kvs_set(
-                {self._kvs_key_for_record_id(record_id): serialized_times}
+            event_log_storage.add_asset_event_tags(
+                event_id=record.storage_id,
+                event_timestamp=record.event_log_entry.timestamp,
+                asset_key=record.asset_key,
+                new_tags={USED_DATA_TAG: serialized_times},
             )
 
     def get_known_used_data(
-        self, record_id: int
+        self, asset_key: AssetKey, record_id: int
     ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
         """Returns the known upstream ids and timestamps stored on the instance"""
-        if self._instance.run_storage.supports_kvs():
-            # otherwise, attempt to fetch from the instance key-value store
-            kvs_key = self._kvs_key_for_record_id(record_id)
-            serialized_times = self._instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "{}")
+        event_log_storage = self._instance.event_log_storage
+        if isinstance(event_log_storage, SqlEventLogStorage) and event_log_storage.has_table(
+            AssetEventTagsTable.name
+        ):
+            # attempt to fetch from the instance asset event tags
+            tags_list = event_log_storage.get_event_tags_for_asset(
+                asset_key=asset_key, filter_event_id=record_id
+            )
+            if len(tags_list) == 0:
+                return {}
+
+            serialized_times = tags_list[0].get(USED_DATA_TAG, "{}")
             return {
                 AssetKey.from_user_string(key): tuple(value)  # type:ignore
                 for key, value in json.loads(serialized_times).items()
@@ -261,7 +278,7 @@ class CachingInstanceQueryer:
             return {key: (None, None) for key in required_keys}
 
         # grab the existing upstream data times already calculated for this record (if any)
-        known_data = self.get_known_used_data(record_id)
+        known_data = self.get_known_used_data(asset_key, record_id)
         if asset_key in required_keys:
             known_data[asset_key] = (record_id, record_timestamp)
 
@@ -271,6 +288,9 @@ class CachingInstanceQueryer:
 
             # find the upstream times of each of the parents of this asset
             for parent_key in asset_graph.get_parents(asset_key):
+                if parent_key in asset_graph.source_asset_keys:
+                    continue
+
                 # the set of required keys which are upstream of this parent
                 upstream_required_keys = set()
                 if parent_key in unknown_required_keys:
@@ -322,7 +342,7 @@ class CachingInstanceQueryer:
                 "Can only calculate data times for records with an `asset_key`."
             )
         if upstream_keys is None:
-            upstream_keys = asset_graph.get_roots(record.asset_key)
+            upstream_keys = asset_graph.get_non_source_roots(record.asset_key)
 
         data = self.calculate_used_data(
             asset_graph=asset_graph,
@@ -331,7 +351,7 @@ class CachingInstanceQueryer:
             record_timestamp=record.event_log_entry.timestamp,
             required_keys=frozenset(upstream_keys),
         )
-        self.set_known_used_data(record.storage_id, new_known_data=data)
+        self.set_known_used_data(record, new_known_data=data)
 
         return {
             key: datetime.datetime.fromtimestamp(timestamp, tz=datetime.timezone.utc)
@@ -339,3 +359,27 @@ class CachingInstanceQueryer:
             else None
             for key, (_, timestamp) in data.items()
         }
+
+    def get_current_minutes_late_for_key(
+        self,
+        evaluation_time: datetime.datetime,
+        asset_graph: AssetGraph,
+        asset_key: AssetKey,
+    ) -> Optional[float]:
+        freshness_policy = asset_graph.freshness_policies_by_key.get(asset_key)
+        if freshness_policy is None:
+            raise DagsterInvariantViolationError(
+                "Cannot calculate minutes late for asset without a FreshnessPolicy"
+            )
+
+        latest_record = self.get_latest_materialization_record(asset_key)
+        if latest_record is None:
+            return None
+
+        used_data_times = self.get_used_data_times_for_record(asset_graph, latest_record)
+
+        return freshness_policy.minutes_late(
+            evaluation_time=evaluation_time,
+            used_data_times=used_data_times,
+            available_data_times={key: evaluation_time for key in used_data_times},
+        )

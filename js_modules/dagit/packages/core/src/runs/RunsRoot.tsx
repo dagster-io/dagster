@@ -128,7 +128,7 @@ export const RunsRoot = () => {
         >
           <Alert
             intent="info"
-            title={<Link to="/instance/config#run_coordinator">View queue configuration</Link>}
+            title={<Link to="/config#run_coordinator">View queue configuration</Link>}
           />
           <QueueDaemonAlert />
         </Box>
@@ -224,6 +224,10 @@ export const RunsRoot = () => {
   );
 };
 
+// Imported via React.lazy, which requires a default export.
+// eslint-disable-next-line import/no-default-export
+export default RunsRoot;
+
 const RUNS_ROOT_QUERY = gql`
   query RunsRootQuery($limit: Int, $cursor: String, $filter: RunsFilter!) {
     pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
@@ -255,7 +259,7 @@ const QueueDaemonAlert = () => {
         title="The queued run coordinator is not healthy."
         description={
           <div>
-            View <Link to="/instance/health">{pageTitle}</Link> for details.
+            View <Link to="/health">{pageTitle}</Link> for details.
           </div>
         }
       />

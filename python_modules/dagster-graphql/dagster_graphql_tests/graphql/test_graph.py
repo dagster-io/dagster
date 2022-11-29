@@ -18,7 +18,7 @@ query {
                 name
                 repositories {
                     name
-                    pipelines {
+                    jobs {
                         name
                         graphName
                     }
@@ -76,9 +76,7 @@ class TestGraphs(NonLaunchableGraphQLContextTestMatrix):
 
         jobs = {
             blob["name"]: blob
-            for blob in repo_locations["test"]["locationOrLoadError"]["repositories"][0][
-                "pipelines"
-            ]
+            for blob in repo_locations["test"]["locationOrLoadError"]["repositories"][0]["jobs"]
         }
 
         assert "simple_job_a" in jobs

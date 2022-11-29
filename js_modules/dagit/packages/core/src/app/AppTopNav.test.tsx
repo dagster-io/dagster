@@ -56,7 +56,7 @@ describe('AppTopNav', () => {
     render(
       <TestProvider
         apolloProps={{mocks: [defaultMocks]}}
-        routerProps={{initialEntries: ['/workspace/my_repository@my_location']}}
+        routerProps={{initialEntries: ['/locations/my_repository@my_location']}}
       >
         <Test>
           <AppTopNav searchPlaceholder="Test..." rightOfSearchBar={<div>RightOfSearchBar</div>} />
@@ -66,9 +66,12 @@ describe('AppTopNav', () => {
 
     await waitFor(() => {
       const runsLink = screen.getByRole('link', {name: /runs/i});
-      expect(runsLink.closest('a')).toHaveAttribute('href', '/instance/runs');
-      expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/instance/assets');
-      expect(screen.getByText('Deployment').closest('a')).toHaveAttribute('href', '/instance');
+      expect(runsLink.closest('a')).toHaveAttribute('href', '/runs');
+      expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/assets');
+      expect(screen.getByText('Deployment').closest('a')).toHaveAttribute(
+        'href',
+        '/code-locations',
+      );
       expect(screen.getByText('RightOfSearchBar')).toBeVisible();
     });
   });
@@ -85,7 +88,6 @@ describe('AppTopNav', () => {
         );
       });
 
-      expect(screen.getByText(/workspace/i)).toBeVisible();
       expect(
         screen.queryByRole('img', {
           name: /warning/i,
@@ -110,7 +112,6 @@ describe('AppTopNav', () => {
         );
       });
 
-      expect(screen.getByText(/workspace/i)).toBeVisible();
       expect(
         screen.getByRole('img', {
           name: /warning/i,
@@ -160,7 +161,6 @@ describe('AppTopNav', () => {
         );
       });
 
-      expect(screen.getByText(/workspace/i)).toBeVisible();
       const link = screen.getByRole('link', {name: /deployment/i});
       expect(within(link).queryByText(/warning/i)).toBeNull();
     });
@@ -198,7 +198,6 @@ describe('AppTopNav', () => {
         );
       });
 
-      expect(screen.getByText(/workspace/i)).toBeVisible();
       const link = screen.getByRole('link', {name: /deployment/i});
       expect(within(link).queryByText(/warning/i)).toBeNull();
     });

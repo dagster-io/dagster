@@ -7,7 +7,7 @@ import {AssetEdges} from '../asset-graph/AssetEdges';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
 import {AssetGroupNode} from '../asset-graph/AssetGroupNode';
 import {AssetNodeMinimal, AssetNode} from '../asset-graph/AssetNode';
-import {SourceAssetNode} from '../asset-graph/ForeignNode';
+import {AssetNodeLink} from '../asset-graph/ForeignNode';
 import {GraphData, LiveData, toGraphId} from '../asset-graph/Utils';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
@@ -99,12 +99,8 @@ export const AssetNodeLineageGraph: React.FC<{
                   e.stopPropagation();
                 }}
               >
-                {!graphNode || !graphNode.definition.opNames.length ? (
-                  <SourceAssetNode
-                    assetKey={{path}}
-                    observable={graphNode.definition.isObservable || false}
-                    selected={graphNode.id === assetGraphId}
-                  />
+                {!graphNode ? (
+                  <AssetNodeLink assetKey={{path}} />
                 ) : scale < MINIMAL_SCALE ? (
                   <AssetNodeMinimal
                     definition={graphNode.definition}

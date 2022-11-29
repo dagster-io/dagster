@@ -21,7 +21,11 @@ import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {PartitionStatus, runStatusToPartitionState} from '../partitions/PartitionStatus';
+import {
+  PartitionState,
+  PartitionStatus,
+  runStatusToPartitionState,
+} from '../partitions/PartitionStatus';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../runs/AssetKeyTagCollection';
 import {inProgressStatuses} from '../runs/RunStatuses';
@@ -277,11 +281,6 @@ const BackfillRequested = ({
   backfill: BackfillTableFragment;
   onExpand: () => void;
 }) => {
-  const partitionData = {};
-  backfill.partitionNames.forEach((partitionName) => {
-    // kind of a hack, but set status here to get the coloring we want
-    partitionData[partitionName] = RunStatus.QUEUED;
-  });
   return (
     <Box flex={{direction: 'column', gap: 8}}>
       <div>
@@ -293,7 +292,7 @@ const BackfillRequested = ({
       </div>
       <PartitionStatus
         partitionNames={allPartitions}
-        partitionData={partitionData}
+        partitionStateForKey={() => PartitionState.QUEUED}
         small
         hideStatusTooltip
       />
@@ -341,21 +340,28 @@ const BackfillRunStatus = ({
   backfill: BackfillTableFragment;
   history: any;
 }) => {
-  const partitionData = {};
-  const partitionRun = {};
-  backfill.partitionStatuses.results.forEach((s) => {
-    partitionData[s.partitionName] = runStatusToPartitionState(s.runStatus);
-    partitionRun[s.partitionName] = s.runId;
-  });
+  const states = React.useMemo(
+    () =>
+      Object.fromEntries(
+        backfill.partitionStatuses.results.map((s) => [
+          s.partitionName,
+          runStatusToPartitionState(s.runStatus),
+        ]),
+      ),
+    [backfill],
+  );
 
   return (
     <PartitionStatus
       partitionNames={backfill.partitionNames}
-      partitionData={partitionData}
+      partitionStateForKey={(key) => states[key]}
       splitPartitions={true}
       onClick={(partitionName) => {
-        if (partitionRun[partitionName]) {
-          history.push(`/instance/runs/${partitionRun[partitionName]}`);
+        const entry = backfill.partitionStatuses.results.find(
+          (r) => r.partitionName === partitionName,
+        );
+        if (entry) {
+          history.push(`/runs/${entry.runId}`);
         }
       }}
     />

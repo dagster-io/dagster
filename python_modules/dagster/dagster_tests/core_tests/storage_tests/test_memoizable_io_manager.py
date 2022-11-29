@@ -7,6 +7,8 @@ from dagster import (
     build_input_context,
     build_output_context,
     io_manager,
+    job,
+    op,
 )
 from dagster._core.storage.memoizable_io_manager import (
     MemoizableIOManager,
@@ -15,7 +17,6 @@ from dagster._core.storage.memoizable_io_manager import (
 )
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
 
 
 def test_versioned_pickled_object_filesystem_io_manager():
@@ -49,26 +50,22 @@ def test_versioned_io_manager_with_resources():
 
         return FakeIOManager()
 
-    @solid(version="baz")
-    def basic_solid():
+    @op(version="baz")
+    def basic_op():
         pass
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "io_manager": construct_memoizable_io_manager,
-                    "foo": ResourceDefinition.hardcoded_resource("bar"),
-                }
-            )
-        ],
+    @job(
+        resource_defs={
+            "io_manager": construct_memoizable_io_manager,
+            "foo": ResourceDefinition.hardcoded_resource("bar"),
+        },
         tags={MEMOIZED_RUN_TAG: "true"},
     )
-    def basic_pipeline():
-        basic_solid()
+    def basic_job():
+        basic_op()
 
     with instance_for_test() as instance:
-        execute_pipeline(basic_pipeline, instance=instance)
+        basic_job.execute_in_process(instance=instance)
 
     assert occurrence_log == ["has", "handle"]
 

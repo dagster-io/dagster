@@ -10,7 +10,7 @@ import {RepoRow} from '../workspace/VirtualizedWorkspaceTable';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
-import {OVERVIEW_COLLAPSED_KEY, OVERVIEW_EXPANSION_KEY} from './OverviewExpansionKey';
+import {OVERVIEW_COLLAPSED_KEY} from './OverviewExpansionKey';
 
 type Repository = {
   repoAddress: RepoAddress;
@@ -32,7 +32,6 @@ export const OverviewSensorTable: React.FC<Props> = ({repos}) => {
     [repos],
   );
   const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
-    OVERVIEW_EXPANSION_KEY,
     OVERVIEW_COLLAPSED_KEY,
     allKeys,
   );

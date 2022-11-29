@@ -161,7 +161,6 @@ export const ASSET_LATEST_INFO_FRAGMENT = gql`
     assetKey {
       path
     }
-    computeStatus
     unstartedRunIds
     inProgressRunIds
     latestRun {

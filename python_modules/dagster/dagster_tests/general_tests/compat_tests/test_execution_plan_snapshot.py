@@ -113,7 +113,7 @@ def dynamic_echo(_, nums):
         ModeDefinition(
             resource_defs={
                 "io_manager": fs_io_manager,
-                "root_input_manager": fake_root_input_manager,
+                "root_input_manager": fake_root_input_manager,  # type: ignore
             }
         )
     ]

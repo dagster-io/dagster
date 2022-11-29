@@ -1,9 +1,10 @@
 import sys
 from contextlib import contextmanager
 from typing import (
+    AbstractSet,
     Any,
+    Callable,
     Dict,
-    FrozenSet,
     Iterator,
     Mapping,
     NamedTuple,
@@ -303,7 +304,7 @@ def execute_pipeline_iterator(
     run_config: Optional[Mapping[str, object]] = None,
     mode: Optional[str] = None,
     preset: Optional[str] = None,
-    tags: Optional[Mapping[str, Any]] = None,
+    tags: Optional[Mapping[str, str]] = None,
     solid_selection: Optional[Sequence[str]] = None,
     instance: Optional[DagsterInstance] = None,
 ) -> Iterator[DagsterEvent]:
@@ -538,7 +539,7 @@ def execute_job(
     check.opt_sequence_param(asset_selection, "asset_selection", of_type=AssetKey)
 
     # get the repository load data here because we call job.get_definition() later in this fn
-    job, _ = _pipeline_with_repository_load_data(job)
+    job_def, _ = _pipeline_with_repository_load_data(job)
 
     if reexecution_options is not None and op_selection is not None:
         raise DagsterInvariantViolationError(
@@ -550,7 +551,7 @@ def execute_job(
             run = check.not_none(instance.get_run_by_id(reexecution_options.parent_run_id))
             run_config = run.run_config
         result = reexecute_pipeline(
-            pipeline=job,
+            pipeline=job_def,
             parent_run_id=reexecution_options.parent_run_id,
             run_config=run_config,
             step_selection=list(reexecution_options.step_selection),
@@ -562,7 +563,7 @@ def execute_job(
         )
     else:
         result = _logged_execute_pipeline(
-            pipeline=job,
+            pipeline=job_def,
             instance=instance,
             run_config=run_config,
             mode=None,
@@ -575,7 +576,7 @@ def execute_job(
 
     # We use PipelineExecutionResult to construct the JobExecutionResult.
     return ExecuteJobResult(
-        job_def=cast(ReconstructableJob, job).get_definition(),
+        job_def=cast(ReconstructableJob, job_def).get_definition(),
         reconstruct_context=result.reconstruct_context(),
         event_list=result.event_list,
         dagster_run=instance.get_run_by_id(result.run_id),
@@ -584,10 +585,10 @@ def execute_job(
 
 def execute_pipeline(
     pipeline: Union[PipelineDefinition, IPipeline],
-    run_config: Optional[Mapping] = None,
+    run_config: Optional[Mapping[str, object]] = None,
     mode: Optional[str] = None,
     preset: Optional[str] = None,
-    tags: Optional[Mapping[str, Any]] = None,
+    tags: Optional[Mapping[str, str]] = None,
     solid_selection: Optional[Sequence[str]] = None,
     instance: Optional[DagsterInstance] = None,
     raise_on_error: bool = True,
@@ -644,10 +645,10 @@ def execute_pipeline(
 def _logged_execute_pipeline(
     pipeline: Union[IPipeline, PipelineDefinition],
     instance: DagsterInstance,
-    run_config: Optional[dict] = None,
+    run_config: Optional[Mapping[str, object]] = None,
     mode: Optional[str] = None,
     preset: Optional[str] = None,
-    tags: Optional[Mapping[str, Any]] = None,
+    tags: Optional[Mapping[str, str]] = None,
     solid_selection: Optional[Sequence[str]] = None,
     raise_on_error: bool = True,
     asset_selection: Optional[Sequence[AssetKey]] = None,
@@ -699,11 +700,11 @@ def _logged_execute_pipeline(
 def reexecute_pipeline(
     pipeline: Union[IPipeline, PipelineDefinition],
     parent_run_id: str,
-    run_config: Optional[Mapping] = None,
+    run_config: Optional[Mapping[str, object]] = None,
     step_selection: Optional[Sequence[str]] = None,
     mode: Optional[str] = None,
     preset: Optional[str] = None,
-    tags: Optional[Mapping[str, Any]] = None,
+    tags: Optional[Mapping[str, str]] = None,
     instance: Optional[DagsterInstance] = None,
     raise_on_error: bool = True,
 ) -> PipelineExecutionResult:
@@ -810,6 +811,7 @@ def reexecute_pipeline(
             execute_instance,
             raise_on_error=raise_on_error,
         )
+    check.failed("Should not reach here.")
 
 
 def reexecute_pipeline_iterator(
@@ -819,7 +821,7 @@ def reexecute_pipeline_iterator(
     step_selection: Optional[Sequence[str]] = None,
     mode: Optional[str] = None,
     preset: Optional[str] = None,
-    tags: Optional[Mapping[str, Any]] = None,
+    tags: Optional[Mapping[str, str]] = None,
     instance: Optional[DagsterInstance] = None,
 ) -> Iterator[DagsterEvent]:
     """Reexecute a pipeline iteratively.
@@ -909,6 +911,7 @@ def reexecute_pipeline_iterator(
         )
 
         return execute_run_iterator(pipeline, pipeline_run, execute_instance)
+    check.failed("Should not reach here.")
 
 
 def execute_plan_iterator(
@@ -950,7 +953,7 @@ def execute_plan(
     pipeline: IPipeline,
     instance: DagsterInstance,
     pipeline_run: PipelineRun,
-    run_config: Optional[Mapping] = None,
+    run_config: Optional[Mapping[str, object]] = None,
     retry_mode: Optional[RetryMode] = None,
 ) -> Sequence[DagsterEvent]:
     """This is the entry point of dagster-graphql executions. For the dagster CLI entry point, see
@@ -1163,7 +1166,12 @@ class ExecuteRunWithPlanIterable:
     cf. `dagster._utils.EventGenerationManager`.
     """
 
-    def __init__(self, execution_plan, iterator, execution_context_manager):
+    def __init__(
+        self,
+        execution_plan: ExecutionPlan,
+        iterator: Callable[..., Iterator[DagsterEvent]],
+        execution_context_manager: ExecutionContextManager[Any],
+    ):
         self.execution_plan = check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
         self.iterator = check.callable_param(iterator, "iterator")
         self.execution_context_manager = check.inst_param(
@@ -1201,17 +1209,17 @@ class ExecuteRunWithPlanIterable:
 
 def _check_execute_pipeline_args(
     pipeline: Union[PipelineDefinition, IPipeline],
-    run_config: Optional[Mapping],
+    run_config: Optional[Mapping[str, object]],
     mode: Optional[str],
     preset: Optional[str],
-    tags: Optional[Mapping[str, Any]],
+    tags: Optional[Mapping[str, str]],
     solid_selection: Optional[Sequence[str]] = None,
 ) -> Tuple[
     IPipeline,
     Optional[Mapping],
     Optional[str],
-    Mapping[str, Any],
-    Optional[FrozenSet[str]],
+    Mapping[str, str],
+    Optional[AbstractSet[str]],
     Optional[Sequence[str]],
 ]:
     pipeline = _check_pipeline(pipeline)

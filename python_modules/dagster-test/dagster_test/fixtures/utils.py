@@ -21,7 +21,7 @@ def sigterm_handler():
     signal.signal(signal.SIGTERM, original)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def retrying_requests():
     session = requests.Session()
     session.mount(

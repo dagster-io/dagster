@@ -12,15 +12,17 @@ import {
   metadataForAssetNode,
 } from '../assets/AssetMetadata';
 import {AssetSidebarActivitySummary} from '../assets/AssetSidebarActivitySummary';
-import {PartitionHealthSummary, usePartitionHealthData} from '../assets/PartitionHealthSummary';
+import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
+import {usePartitionHealthData} from '../assets/usePartitionHealthData';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterTypeFragment';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {pluginForMetadata} from '../plugins';
+import {Version} from '../versions/Version';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {LiveDataForNode, displayNameForAssetKey} from './Utils';
@@ -81,8 +83,18 @@ export const SidebarAssetInfo: React.FC<{
             <Description description={asset.description || 'No description provided.'} />
           </Box>
           {asset.op && OpMetadataPlugin?.SidebarComponent && (
-            <OpMetadataPlugin.SidebarComponent definition={asset.op} repoAddress={repoAddress} />
+            <Box padding={{bottom: 16, horizontal: 24}}>
+              <OpMetadataPlugin.SidebarComponent definition={asset.op} repoAddress={repoAddress} />
+            </Box>
           )}
+        </SidebarSection>
+      )}
+
+      {asset.opVersion && (
+        <SidebarSection title="Code Version">
+          <Box padding={{vertical: 16, horizontal: 24}}>
+            <Version>{asset.opVersion}</Version>
+          </Box>
         </SidebarSection>
       )}
 
@@ -186,6 +198,7 @@ export const SIDEBAR_ASSET_FRAGMENT = gql`
         value
       }
     }
+    opVersion
     repository {
       id
       name

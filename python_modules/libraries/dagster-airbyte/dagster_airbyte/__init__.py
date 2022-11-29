@@ -6,6 +6,7 @@ try:
     from .managed import (
         AirbyteConnection,
         AirbyteDestination,
+        AirbyteDestinationNamespace,
         AirbyteManagedElementReconciler,
         AirbyteSource,
         AirbyteSyncMode,

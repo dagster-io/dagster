@@ -519,7 +519,7 @@ class GraphDefinition(NodeDefinition):
         description: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         config: Optional[Union[ConfigMapping, Mapping[str, object], "PartitionedConfig"]] = None,
-        tags: Optional[Mapping[str, object]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
@@ -664,7 +664,6 @@ class GraphDefinition(NodeDefinition):
             :py:class:`~dagster.ExecuteInProcessResult`
         """
         from dagster._core.execution.build_resources import wrap_resources_for_execution
-        from dagster._core.execution.execute_in_process import core_execute_in_process
         from dagster._core.instance import DagsterInstance
 
         from .executor_definition import execute_in_process_executor
@@ -687,11 +686,9 @@ class GraphDefinition(NodeDefinition):
         run_config = run_config if run_config is not None else {}
         op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
 
-        return core_execute_in_process(
-            ephemeral_pipeline=ephemeral_job,
+        return ephemeral_job.execute_in_process(
             run_config=run_config,
             instance=instance,
-            output_capturing_enabled=True,
             raise_on_error=raise_on_error,
             run_id=run_id,
         )

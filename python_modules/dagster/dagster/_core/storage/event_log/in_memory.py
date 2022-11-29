@@ -23,7 +23,7 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def __init__(self, inst_data=None, preload=None):
         self._inst_data = inst_data
-        self._conn = self._create_connection()
+        self._engine, self._conn = self._create_connection()
         self._handlers = defaultdict(set)
         self._storage_id = 0  # mirror the storage id, to mimic watching cursors
 
@@ -43,7 +43,7 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         SqlEventLogStorageMetadata.create_all(conn)
         alembic_config = get_alembic_config(__file__, "sqlite/alembic/alembic.ini")
         stamp_alembic_rev(alembic_config, conn)
-        return conn
+        return engine, conn
 
     @contextmanager
     def run_connection(self, run_id=None):
@@ -52,6 +52,9 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     @contextmanager
     def index_connection(self):
         yield self._conn
+
+    def has_table(self, table_name: str) -> bool:
+        return bool(self._engine.dialect.has_table(self._conn, table_name))
 
     @property
     def inst_data(self):

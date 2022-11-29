@@ -951,7 +951,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         partitions_def: TimeWindowPartitionsDefinition,
         key_ranges: Sequence[PartitionKeyRange],
     ):
-        check.list_param(key_ranges, "key_ranges", of_type=PartitionKeyRange)
+        check.sequence_param(key_ranges, "key_ranges", of_type=PartitionKeyRange)
         self._partitions_def = partitions_def
         self._key_ranges = key_ranges
 
@@ -1040,7 +1040,8 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
     def from_serialized(
         partitions_def: TimeWindowPartitionsDefinition, serialized: str
     ) -> "TimeWindowPartitionsSubset":
-        return TimeWindowPartitionsSubset(partitions_def, json.loads(serialized))
+        key_ranges = [PartitionKeyRange(tup[0], tup[1]) for tup in json.loads(serialized)]
+        return TimeWindowPartitionsSubset(partitions_def, key_ranges)
 
     def serialize(self) -> str:
         return json.dumps(self._key_ranges)

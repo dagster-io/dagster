@@ -12,6 +12,11 @@ export interface LaunchAssetExecutionAssetNodeFragment_partitionDefinition {
   description: string;
 }
 
+export interface LaunchAssetExecutionAssetNodeFragment_partitionKeysByDimension {
+  __typename: "DimensionPartitionKeys";
+  name: string;
+}
+
 export interface LaunchAssetExecutionAssetNodeFragment_assetKey {
   __typename: "AssetKey";
   path: string[];
@@ -564,6 +569,7 @@ export interface LaunchAssetExecutionAssetNodeFragment {
   jobNames: string[];
   graphName: string | null;
   partitionDefinition: LaunchAssetExecutionAssetNodeFragment_partitionDefinition | null;
+  partitionKeysByDimension: LaunchAssetExecutionAssetNodeFragment_partitionKeysByDimension[];
   isObservable: boolean;
   isSource: boolean;
   assetKey: LaunchAssetExecutionAssetNodeFragment_assetKey;

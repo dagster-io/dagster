@@ -18,7 +18,6 @@ from dagster._core.errors import (
 )
 from dagster._core.event_api import RunShardedEventsCursor
 from dagster._core.events import ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
-from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import build_run_step_stats_from_events
 from dagster._serdes import (
     deserialize_as,
@@ -34,6 +33,7 @@ from .base import (
     AssetRecord,
     EventLogConnection,
     EventLogCursor,
+    EventLogEntry,
     EventLogRecord,
     EventLogStorage,
     EventRecordsFilter,
@@ -43,7 +43,6 @@ from .schema import (
     AssetEventTagsTable,
     AssetKeyTable,
     SecondaryIndexMigrationTable,
-    SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
 
@@ -80,6 +79,10 @@ class SqlEventLogStorage(EventLogStorage):
         """This method should perform any schema migrations necessary to bring an
         out-of-date instance of the storage up to date.
         """
+
+    @abstractmethod
+    def has_table(self, table_name: str) -> bool:
+        """This method checks if a table exists in the database."""
 
     def prepare_insert_event(self, event):
         """Helper method for preparing the event log SQL insertion statement.  Abstracted away to
@@ -154,7 +157,7 @@ class SqlEventLogStorage(EventLogStorage):
             except db.exc.IntegrityError:
                 conn.execute(update_statement)
 
-    def _get_asset_entry_values(self, event, has_asset_key_index_cols):
+    def _get_asset_entry_values(self, event: EventLogEntry, has_asset_key_index_cols):
         # The AssetKeyTable contains a `last_materialization_timestamp` column that is exclusively
         # used to determine if an asset exists (last materialization timestamp > wipe timestamp).
         # This column is used nowhere else, and as of AssetObservation/AssetMaterializationPlanned
@@ -168,7 +171,8 @@ class SqlEventLogStorage(EventLogStorage):
         # https://github.com/dagster-io/dagster/pull/7319
 
         entry_values: Dict[str, Any] = {}
-        if event.dagster_event.is_step_materialization:
+        dagster_event = check.not_none(event.dagster_event)
+        if dagster_event.is_step_materialization:
             entry_values.update(
                 {
                     "last_materialization": serialize_dagster_namedtuple(event),
@@ -183,7 +187,7 @@ class SqlEventLogStorage(EventLogStorage):
                         ),
                     }
                 )
-        elif event.dagster_event.is_asset_materialization_planned:
+        elif dagster_event.is_asset_materialization_planned:
             # The AssetKeyTable also contains a `last_run_id` column that is updated upon asset
             # materialization. This column was not being used until the below PR. This new change
             # writes to the column upon `ASSET_MATERIALIZATION_PLANNED` events to fetch the last
@@ -198,7 +202,7 @@ class SqlEventLogStorage(EventLogStorage):
                         ),
                     }
                 )
-        elif event.dagster_event.is_asset_observation:
+        elif dagster_event.is_asset_observation:
             if has_asset_key_index_cols:
                 entry_values.update(
                     {
@@ -209,6 +213,73 @@ class SqlEventLogStorage(EventLogStorage):
                 )
 
         return entry_values
+
+    def supports_add_asset_event_tags(self) -> bool:
+        return self.has_table(AssetEventTagsTable.name)
+
+    def add_asset_event_tags(
+        self,
+        event_id: int,
+        event_timestamp: float,
+        asset_key: AssetKey,
+        new_tags: Mapping[str, str],
+    ) -> None:
+        check.int_param(event_id, "event_id")
+        check.float_param(event_timestamp, "event_timestamp")
+        check.inst_param(asset_key, "asset_key", AssetKey)
+        check.mapping_param(new_tags, "new_tags", key_type=str, value_type=str)
+
+        if not self.supports_add_asset_event_tags():
+            raise DagsterInvalidInvocationError(
+                "In order to add asset event tags, you must run `dagster instance migrate` to "
+                "create the AssetEventTags table."
+            )
+
+        current_tags_list = self.get_event_tags_for_asset(asset_key, filter_event_id=event_id)
+
+        asset_key_str = asset_key.to_string()
+
+        if len(current_tags_list) == 0:
+            current_tags: Mapping[str, str] = {}
+        else:
+            current_tags = current_tags_list[0]
+
+        with self.index_connection() as conn:
+            current_tags_set = set(current_tags.keys())
+            new_tags_set = set(new_tags.keys())
+
+            existing_tags = current_tags_set & new_tags_set
+            added_tags = new_tags_set.difference(existing_tags)
+
+            for tag in existing_tags:
+                conn.execute(
+                    AssetEventTagsTable.update()  # pylint: disable=no-value-for-parameter
+                    .where(
+                        db.and_(
+                            AssetEventTagsTable.c.event_id == event_id,
+                            AssetEventTagsTable.c.asset_key == asset_key_str,
+                            AssetEventTagsTable.c.key == tag,
+                        )
+                    )
+                    .values(value=new_tags[tag])
+                )
+
+            if added_tags:
+                conn.execute(
+                    AssetEventTagsTable.insert(),  # pylint: disable=no-value-for-parameter
+                    [
+                        dict(
+                            event_id=event_id,
+                            asset_key=asset_key_str,
+                            key=tag,
+                            value=new_tags[tag],
+                            # Postgres requires a datetime that is in UTC but has no timezone info
+                            # set in order to be stored correctly
+                            event_timestamp=datetime.utcfromtimestamp(event_timestamp),
+                        )
+                        for tag in added_tags
+                    ],
+                )
 
     def store_asset_event_tags(self, event: EventLogEntry, event_id: int) -> None:
         check.inst_param(event, "event", EventLogEntry)
@@ -225,10 +296,10 @@ class SqlEventLogStorage(EventLogStorage):
         ):
 
             if not self.has_table(AssetEventTagsTable.name):
-                raise DagsterInvalidInvocationError(
-                    "In order to store multi-dimensional partition information, you must run "
-                    "`dagster instance migrate` to create the AssetEventTags table."
-                )
+                # If tags table does not exist, silently exit. This is to support OSS
+                # users who have not yet run the migration to create the table.
+                # On read, we will throw an error if the table does not exist.
+                return
 
             check.inst_param(event.dagster_event.asset_key, "asset_key", AssetKey)
             asset_key_str = event.dagster_event.asset_key.to_string()
@@ -524,6 +595,8 @@ class SqlEventLogStorage(EventLogStorage):
     def delete_events(self, run_id):
         with self.run_connection(run_id) as conn:
             self.delete_events_for_run(conn, run_id)
+        with self.index_connection() as conn:
+            self.delete_events_for_run(conn, run_id)
 
     def delete_events_for_run(self, conn, run_id):
         check.str_param(run_id, "run_id")
@@ -644,10 +717,6 @@ class SqlEventLogStorage(EventLogStorage):
                     .where(SecondaryIndexMigrationTable.c.name == name)
                     .values(migration_completed=datetime.now())
                 )
-
-    def has_table(self, table_name: str) -> bool:
-        """This method checks if a table exists in the database."""
-        return SqlEventLogStorageMetadata.tables and table_name in SqlEventLogStorageMetadata.tables
 
     def _apply_filter_to_query(
         self,
@@ -1216,7 +1285,10 @@ class SqlEventLogStorage(EventLogStorage):
         return query
 
     def get_event_tags_for_asset(
-        self, asset_key: AssetKey, filter_tags: Optional[Mapping[str, str]] = None
+        self,
+        asset_key: AssetKey,
+        filter_tags: Optional[Mapping[str, str]] = None,
+        filter_event_id: Optional[int] = None,
     ) -> Sequence[Mapping[str, str]]:
         """
         Fetches asset event tags for the given asset key.
@@ -1226,6 +1298,8 @@ class SqlEventLogStorage(EventLogStorage):
         partition tags with a fixed dimension value, e.g. all of the tags for events where
         "country" == "US".
 
+        If filter_event_id is provided, fetches only tags applied to the given event.
+
         Returns a list of dicts, where each dict is a mapping of tag key to tag value for a
         single event.
         """
@@ -1233,6 +1307,7 @@ class SqlEventLogStorage(EventLogStorage):
         filter_tags = check.opt_mapping_param(
             filter_tags, "filter_tags", key_type=str, value_type=str
         )
+        filter_event_id = check.opt_int_param(filter_event_id, "filter_event_id")
 
         if not self.has_table(AssetEventTagsTable.name):
             raise DagsterInvalidInvocationError(
@@ -1293,6 +1368,9 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetEventTagsTable.c.event_id.in_(db.intersect(*intersections)),
                 )
             )
+
+        if filter_event_id is not None:
+            tags_query = tags_query.where(AssetEventTagsTable.c.event_id == filter_event_id)
 
         with self.index_connection() as conn:
             results = conn.execute(tags_query).fetchall()

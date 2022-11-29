@@ -148,6 +148,10 @@ export const RunRoot = () => {
   );
 };
 
+// Imported via React.lazy, which requires a default export.
+// eslint-disable-next-line import/no-default-export
+export default RunRoot;
+
 const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (props) => {
   const {data, runId} = props;
 

@@ -46,7 +46,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         json_credentials_envvar (Optional[str]): Env variable that contain the JSON with a private key
             and other credentials information. If this is set GOOGLE_APPLICATION_CREDENTIALS will be ignored.
             Can be used when the private key cannot be used as a file.
-        upload_interval: (Optional[int]): Interval in seconds to upload partial log files to S3. By default, will only upload when the capture is complete.
+        upload_interval: (Optional[int]): Interval in seconds to upload partial log files to GCS. By default, will only upload when the capture is complete.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.
     """
@@ -61,7 +61,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         upload_interval=None,
     ):
         self._bucket_name = check.str_param(bucket, "bucket")
-        self._prefix = check.str_param(prefix, "prefix")
+        self._prefix = self._clean_prefix(check.str_param(prefix, "prefix"))
 
         if json_credentials_envvar:
             json_info_str = os.environ.get(json_credentials_envvar)
@@ -112,6 +112,10 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
     def upload_interval(self) -> Optional[int]:
         return self._upload_interval if self._upload_interval else None
 
+    def _clean_prefix(self, prefix):
+        parts = prefix.split("/")
+        return "/".join([part for part in parts if part])
+
     def _gcs_key(self, log_key, io_type, partial=False):
         check.inst_param(io_type, "io_type", ComputeIOType)
         extension = IO_TYPE_EXTENSION[io_type]
@@ -122,16 +126,26 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         paths = [self._prefix, "storage", *namespace, filename]
         return "/".join(paths)
 
-    def delete_logs(self, log_key: Sequence[str]):
-        self._local_manager.delete_logs(log_key)
-        gcs_keys_to_remove = [
-            self._gcs_key(log_key, ComputeIOType.STDOUT),
-            self._gcs_key(log_key, ComputeIOType.STDERR),
-            self._gcs_key(log_key, ComputeIOType.STDOUT, partial=True),
-            self._gcs_key(log_key, ComputeIOType.STDERR, partial=True),
-        ]
-        # if the blob doesn't exist, do nothing instead of raising a not found exception
-        self._bucket.delete_blobs(gcs_keys_to_remove, on_error=lambda _: None)
+    def delete_logs(
+        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+    ):
+        self._local_manager.delete_logs(log_key, prefix)
+        if log_key:
+            gcs_keys_to_remove = [
+                self._gcs_key(log_key, ComputeIOType.STDOUT),
+                self._gcs_key(log_key, ComputeIOType.STDERR),
+                self._gcs_key(log_key, ComputeIOType.STDOUT, partial=True),
+                self._gcs_key(log_key, ComputeIOType.STDERR, partial=True),
+            ]
+            # if the blob doesn't exist, do nothing instead of raising a not found exception
+            self._bucket.delete_blobs(gcs_keys_to_remove, on_error=lambda _: None)
+        elif prefix:
+            # add the trailing '/' to make sure that ['a'] does not match ['apple']
+            delete_prefix = "/".join([self._prefix, "storage", *prefix, ""])
+            to_delete = self._bucket.list_blobs(prefix=delete_prefix)
+            self._bucket.delete_blobs(list(to_delete))
+        else:
+            check.failed("Must pass in either `log_key` or `prefix` argument to delete_logs")
 
     def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
         if not self.is_capture_complete(log_key):

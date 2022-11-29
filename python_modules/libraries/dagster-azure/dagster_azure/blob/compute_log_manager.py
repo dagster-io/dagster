@@ -66,7 +66,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
     ):
         self._storage_account = check.str_param(storage_account, "storage_account")
         self._container = check.str_param(container, "container")
-        self._blob_prefix = check.str_param(prefix, "prefix")
+        self._blob_prefix = self._clean_prefix(check.str_param(prefix, "prefix"))
         check.str_param(secret_key, "secret_key")
 
         self._blob_client = create_blob_client(storage_account, secret_key)
@@ -117,6 +117,10 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
     def upload_interval(self) -> Optional[int]:
         return self._upload_interval if self._upload_interval else None
 
+    def _clean_prefix(self, prefix):
+        parts = prefix.split("/")
+        return "/".join([part for part in parts if part])
+
     def _blob_key(self, log_key, io_type, partial=False):
         check.inst_param(io_type, "io_type", ComputeIOType)
         extension = IO_TYPE_EXTENSION[io_type]
@@ -127,19 +131,37 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         paths = [self._blob_prefix, "storage", *namespace, filename]
         return "/".join(paths)  # blob path delimiter
 
-    def delete_logs(self, log_key: Sequence[str]):
-        prefix = "/".join(self._blob_key(log_key, ComputeIOType.STDERR).split("/")[:-1])
+    def delete_logs(
+        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+    ):
+        self.local_manager.delete_logs(log_key=log_key, prefix=prefix)
+        if log_key:
+            prefix_path = "/".join([self._blob_prefix, "storage", *log_key])
+        elif prefix:
+            # add the trailing '/' to make sure that ['a'] does not match ['apple']
+            prefix_path = "/".join([self._blob_prefix, "storage", *prefix, ""])
+
         blob_list = {
-            b.name for b in list(self._container_client.list_blobs(name_starts_with=prefix))
+            b.name for b in list(self._container_client.list_blobs(name_starts_with=prefix_path))
         }
-        known_keys = [
-            self._blob_key(log_key, ComputeIOType.STDOUT),
-            self._blob_key(log_key, ComputeIOType.STDERR),
-            self._blob_key(log_key, ComputeIOType.STDOUT, partial=True),
-            self._blob_key(log_key, ComputeIOType.STDERR, partial=True),
-        ]
-        to_remove = [key for key in known_keys if key in blob_list]
-        self._container_client.delete_blobs(*to_remove)
+
+        to_remove = None
+        if log_key:
+            # filter to the known set of keys
+            known_keys = [
+                self._blob_key(log_key, ComputeIOType.STDOUT),
+                self._blob_key(log_key, ComputeIOType.STDERR),
+                self._blob_key(log_key, ComputeIOType.STDOUT, partial=True),
+                self._blob_key(log_key, ComputeIOType.STDERR, partial=True),
+            ]
+            to_remove = [key for key in known_keys if key in blob_list]
+        elif prefix:
+            to_remove = list(blob_list)
+        else:
+            check.failed("Must pass in either `log_key` or `prefix` argument to delete_logs")
+
+        if to_remove:
+            self._container_client.delete_blobs(*to_remove)
 
     def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
         if not self.is_capture_complete(log_key):

@@ -14,6 +14,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {InstanceTabs} from '../instance/InstanceTabs';
 
 import {DagsterRepoOption, useRepositoryOptions} from './WorkspaceContext';
 import {buildRepoAddress} from './buildRepoAddress';
@@ -21,62 +22,62 @@ import {repoAddressAsString} from './repoAddressAsString';
 import {workspacePath} from './workspacePath';
 
 export const WorkspaceOverviewWithGrid = () => {
-  const {loading, error, options} = useRepositoryOptions();
-
-  const content = () => {
-    if (loading) {
-      return (
-        <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
-            <Spinner purpose="section" />
-            <div style={{color: Colors.Gray600}}>Loading workspace…</div>
-          </Box>
-        </Box>
-      );
-    }
-
-    if (error) {
-      return (
-        <Box padding={{vertical: 64}}>
-          <NonIdealState
-            icon="error"
-            title="Error loading repositories"
-            description="Could not load repositories in this workspace."
-          />
-        </Box>
-      );
-    }
-
-    if (!options.length) {
-      return (
-        <Box padding={{vertical: 64}}>
-          <NonIdealState
-            icon="folder"
-            title="No repositories"
-            description="When you add a repository to this workspace, it will appear here."
-          />
-        </Box>
-      );
-    }
-
-    return (
-      <CardGrid>
-        {options.map((option) => {
-          const repoAddress = buildRepoAddress(
-            option.repository.name,
-            option.repositoryLocation.name,
-          );
-          return <RepositoryGridItem key={repoAddressAsString(repoAddress)} repo={option} />;
-        })}
-      </CardGrid>
-    );
-  };
-
   return (
     <Page>
-      <PageHeader title={<Heading>Workspace</Heading>} />
-      {content()}
+      <PageHeader title={<Heading>Deployment</Heading>} tabs={<InstanceTabs tab="workspace" />} />
+      <WorkspaceOverviewGrid />
     </Page>
+  );
+};
+
+export const WorkspaceOverviewGrid = () => {
+  const {loading, error, options} = useRepositoryOptions();
+
+  if (loading) {
+    return (
+      <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
+          <Spinner purpose="section" />
+          <div style={{color: Colors.Gray600}}>Loading workspace…</div>
+        </Box>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box padding={{vertical: 64}}>
+        <NonIdealState
+          icon="error"
+          title="Error loading definitions"
+          description="Could not load definitions in this workspace."
+        />
+      </Box>
+    );
+  }
+
+  if (!options.length) {
+    return (
+      <Box padding={{vertical: 64}}>
+        <NonIdealState
+          icon="folder"
+          title="No definitions"
+          description="When you add a definition to this workspace, it will appear here."
+        />
+      </Box>
+    );
+  }
+
+  return (
+    <CardGrid>
+      {options.map((option) => {
+        const repoAddress = buildRepoAddress(
+          option.repository.name,
+          option.repositoryLocation.name,
+        );
+        return <RepositoryGridItem key={repoAddressAsString(repoAddress)} repo={option} />;
+      })}
+    </CardGrid>
   );
 };
 

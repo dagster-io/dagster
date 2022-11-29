@@ -9,7 +9,7 @@ import pandas
 import pytest
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
-from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+from dagster_snowflake_pandas import SnowflakePandasTypeHandler, snowflake_pandas_io_manager
 from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
     _convert_string_to_timestamp,
     _convert_timestamp_to_string,
@@ -17,6 +17,7 @@ from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
 from pandas import DataFrame
 
 from dagster import (
+    IOManagerDefinition,
     MetadataValue,
     Out,
     TableColumn,
@@ -133,6 +134,14 @@ def test_type_conversions():
     assert (_convert_string_to_timestamp(string_data) == string_data).all()
 
 
+def test_build_snowflake_pandas_io_manager():
+    assert isinstance(
+        build_snowflake_io_manager([SnowflakePandasTypeHandler()]), IOManagerDefinition
+    )
+    # test wrapping decorator to make sure that works as expected
+    assert isinstance(snowflake_pandas_io_manager, IOManagerDefinition)
+
+
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 def test_io_manager_with_snowflake_pandas():
     with temporary_snowflake_table(
@@ -159,10 +168,8 @@ def test_io_manager_with_snowflake_pandas():
             assert set(df.columns) == {"foo", "quux"}
             assert len(df.index) == 2
 
-        snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
-
         @job(
-            resource_defs={"snowflake": snowflake_io_manager},
+            resource_defs={"snowflake": snowflake_pandas_io_manager},
             config={
                 "resources": {
                     "snowflake": {
@@ -214,10 +221,8 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
             assert set(df.columns) == {"foo", "date"}
             assert (df["date"] == time_df["date"]).all()
 
-        snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
-
         @job(
-            resource_defs={"snowflake": snowflake_io_manager},
+            resource_defs={"snowflake": snowflake_pandas_io_manager},
             config={
                 "resources": {
                     "snowflake": {
