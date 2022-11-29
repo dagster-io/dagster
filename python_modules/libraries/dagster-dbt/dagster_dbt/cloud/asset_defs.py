@@ -1,3 +1,4 @@
+import json
 from typing import (
     Any,
     Callable,
@@ -14,11 +15,14 @@ from typing import (
 
 from dbt.main import parse_args as dbt_parse_args
 
+import dagster._check as check
 from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
     MetadataValue,
+    OpExecutionContext,
+    PartitionsDefinition,
     ResourceDefinition,
     multi_asset,
     with_resources,
@@ -30,6 +34,7 @@ from dagster._core.definitions.cacheable_assets import (
 )
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.execution.context.init import build_init_resource_context
+from dagster._utils.backcompat import experimental_arg_warning
 
 from ..asset_defs import _get_asset_deps, _get_deps, _get_node_asset_key, _get_node_group_name
 from ..errors import DagsterDbtCloudJobInvariantViolationError
@@ -44,14 +49,19 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         job_id: int,
         node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
         node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]],
+        partitions_def: Optional[PartitionsDefinition] = None,
+        partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     ):
         self._dbt_cloud_resource_def = dbt_cloud_resource_def
         self._dbt_cloud: DbtCloudResourceV2 = dbt_cloud_resource_def(build_init_resource_context())
         self._job_id = job_id
         self._project_id: int
         self._has_generate_docs: bool
+        self._dbt_cloud_job_command: str
         self._node_info_to_asset_key = node_info_to_asset_key
         self._node_info_to_group_fn = node_info_to_group_fn
+        self._partitions_def = partitions_def
+        self._partition_key_to_vars_fn = partition_key_to_vars_fn
 
         super().__init__(unique_id=f"dbt-cloud-{job_id}")
 
@@ -102,22 +112,37 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 "It must one of `dbt run` or `dbt build`. Received commands: {commands}."
             )
 
+        self._dbt_cloud_job_command = commands[0]
+
         # Retrieve the filters options from the dbt Cloud job's command.
         #
         # There are three filters: `--select`, `--exclude`, and `--selector`.
         parsed_args = dbt_parse_args(args=commands[0].split()[1:])
-        dbt_compile_filter_options: List[str] = []
+        dbt_compile_options: List[str] = []
 
         selected_models = parsed_args.select or []
         if selected_models:
-            dbt_compile_filter_options.append(f"--select {' '.join(selected_models)}")
+            dbt_compile_options.append(f"--select {' '.join(selected_models)}")
 
         excluded_models = parsed_args.exclude or []
         if excluded_models:
-            dbt_compile_filter_options.append(f"--exclude {' '.join(excluded_models)}")
+            dbt_compile_options.append(f"--exclude {' '.join(excluded_models)}")
 
         if parsed_args.selector_name:
-            dbt_compile_filter_options.append(f"--selector {parsed_args.selector_name}")
+            dbt_compile_options.append(f"--selector {parsed_args.selector_name}")
+
+        # Pass the partition variable to the dbt Cloud job's command.
+        #
+        # Since we're only doing this to generate the dependency structure, just use an arbitrary
+        # partition key (e.g. the last one) to retrieve the partition variable.
+        #
+        # TODO: Do not assume that `--vars` is empty. Instead, merge the partition variable with the
+        # existing vars passed into the dbt Cloud job's command.
+        if self._partitions_def and self._partition_key_to_vars_fn:
+            partition_key = self._partitions_def.get_last_partition_key()
+            dbt_vars = self._partition_key_to_vars_fn(partition_key)
+
+            dbt_compile_options.append(f"--vars '{json.dumps(dbt_vars)}'")
 
         # We need to retrieve the dependency structure for the assets in the dbt Cloud project.
         # However, we can't just use the dependency structure from the latest run, because
@@ -130,7 +155,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             job_id=self._job_id,
             cause="Generating software-defined assets for Dagster.",
             # Pass the filters from the run/build step to the compile step.
-            steps_override=[f"dbt compile {' '.join(dbt_compile_filter_options)}"],
+            steps_override=[f"dbt compile {' '.join(dbt_compile_options)}"],
         )
 
         # Target the compile execution step when retrieving run artifacts, rather than assuming
@@ -218,6 +243,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             can_subset=False,
             extra_metadata={
                 "job_id": self._job_id,
+                "job_command": self._dbt_cloud_job_command,
                 "group_names_by_output_name": {
                     asset_outs[asset_key][0]: group_name
                     for asset_key, group_name in group_names_by_key.items()
@@ -251,6 +277,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
     ) -> AssetsDefinition:
         metadata = cast(Mapping[str, Any], assets_definition_cacheable_data.extra_metadata)
         job_id = cast(int, metadata["job_id"])
+        job_command = cast(str, metadata["job_command"])
         group_names_by_output_name = cast(Mapping[str, str], metadata["group_names_by_output_name"])
 
         @multi_asset(
@@ -276,14 +303,26 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                     assets_definition_cacheable_data.internal_asset_deps or {}
                 ).items()
             },
+            partitions_def=self._partitions_def,
             required_resource_keys={"dbt_cloud"},
             compute_kind="dbt",
         )
-        def _assets(context):
+        def _assets(context: OpExecutionContext):
             dbt_cloud = cast(DbtCloudResourceV2, context.resources.dbt_cloud)
 
+            # TODO: Do not assume that `--vars` is empty. Instead, merge the partition variable with the
+            # existing vars passed into the dbt Cloud job's command.
+            dbt_options: List[str] = []
+            if context.has_partition_key and self._partition_key_to_vars_fn:
+                dbt_vars = self._partition_key_to_vars_fn(context.partition_key)
+
+                dbt_options.append(f"--vars '{json.dumps(dbt_vars)}'")
+
             # Run the dbt Cloud job to rematerialize the assets.
-            dbt_cloud_output = dbt_cloud.run_job_and_poll(job_id=job_id)
+            dbt_cloud_output = dbt_cloud.run_job_and_poll(
+                job_id=job_id,
+                steps_override=[f"{job_command} {' '.join(dbt_options)}"],
+            )
 
             # TODO: Assume the run completely fails or completely succeeds.
             # In the future, we can relax this assumption.
@@ -311,6 +350,8 @@ def load_assets_from_dbt_cloud_job(
     job_id: int,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
+    partitions_def: Optional[PartitionsDefinition] = None,
+    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
 ) -> CacheableAssetsDefinition:
     """
     Loads a set of dbt models, managed by a dbt Cloud job, into Dagster assets. In order to
@@ -328,6 +369,12 @@ def load_assets_from_dbt_cloud_job(
             dbt source -> AssetKey([source_name, table_name])
         node_info_to_group_fn (Dict[str, Any] -> Optional[str]): A function that takes a
             dictionary of dbt node info and returns the group that this node should be assigned to.
+            for this asset, rather than `dbt run`.
+        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+            compose the dbt assets.
+        partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given
+            partition key (e.g. '2022-01-01') to a dictionary of vars to be passed into the dbt
+            invocation (e.g. {"run_date": "2022-01-01"})
 
     Returns:
         CacheableAssetsDefinition: A definition for the loaded assets.
@@ -357,10 +404,20 @@ def load_assets_from_dbt_cloud_job(
         def dbt_cloud_sandbox():
             return [dbt_cloud_assets]
     """
+    if partitions_def:
+        experimental_arg_warning("partitions_def", "load_assets_from_dbt_manifest")
+    if partition_key_to_vars_fn:
+        experimental_arg_warning("partition_key_to_vars_fn", "load_assets_from_dbt_manifest")
+        check.invariant(
+            partitions_def is not None,
+            "Cannot supply a `partition_key_to_vars_fn` without a `partitions_def`.",
+        )
 
     return DbtCloudCacheableAssetsDefinition(
         dbt_cloud_resource_def=dbt_cloud,
         job_id=job_id,
         node_info_to_asset_key=node_info_to_asset_key,
         node_info_to_group_fn=node_info_to_group_fn,
+        partitions_def=partitions_def,
+        partition_key_to_vars_fn=partition_key_to_vars_fn,
     )
