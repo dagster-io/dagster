@@ -1,0 +1,126 @@
+---
+title: "CONCEPT | Dagster Docs"
+description: ""
+---
+
+# Code Locations
+
+- This guide refers to code locations when paired with the `Definitions` API.
+
+A code location is set of dagster definitions loadable and accessible by
+Dagster's tools, such as the CLI, Dagit, and Dagster Cloud. A code location comprises:
+
+* A reference a python module that has an instance of `Definitions` at the "defs" variable. We
+will refer to that as the "entry point".
+* A Python environment that can successfully load the entry point.
+
+Definitions within a code location have a common namespace and must have
+unique names. This allows them to be grouped and organized by code location
+in tools.
+
+Before the introduction of the `Definitions` UI, definitions were grouped into
+repositories, and there could be many repostories in a particular code location. See
+LINK for this previous mental model.
+
+<!-- Introduction
+	Make sure to include:
+
+	- What the concept is
+	- What it does
+	- When to use it
+	- How it ties into a Dagster project overall
+
+	For example: https://docs.dagster.io/concepts/ops-jobs-graphs/ops#ops
+	Ops includes the what, when, why, and a nifty diagram. Diagrams are huge for users.
+-->
+
+---
+
+## Relevant APIs
+
+<!-- See example: https://docs.dagster.io/concepts/ops-jobs-graphs/ops#relevant-apis -->
+
+| Name                                  | Description                                                                                                                                                                                                                  |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="" /> |                                                                                                                                                                                            |
+
+---
+
+
+## Creating/Applying/Using [CONCEPT]
+
+<!-- See example: https://docs.dagster.io/concepts/ops-jobs-graphs/ops#defining-an-op
+
+	This section outlines the 'how' part of applying the concept in code
+	Currently our docs go between the basics and some more complex use cases, but
+	I'd opt for going simple here and getting more complex in the Examples section
+
+	Additionally, if this concept will be surfaced in Dagit, consider covering that. Ex: Describe
+	how to navigate to viewing the relevant page in Dagit.
+-->
+
+---
+
+## Examples
+
+<!-- Common use cases and other more complex examples, each separated by a heading.
+	Examples should also include an explanation of what the code is doing / why
+	it's done this way. Link to other docs where pertinent.
+
+### Heading-for-this-example
+
+[description]
+
+```python file=
+```
+
+[code explanation]
+-->
+
+
+---
+
+## Troubleshooting
+
+<!-- Common issues or error messages specific to the concept.
+
+	See example: https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets#troubleshooting
+	While not a concept page, this guide ^ demonstrates how to interpret errors + resolve issues
+
+	The table used in that guide:
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "30%",
+        }}
+      >
+        Error
+      </th>
+      <th>Description and resolution</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <strong>[ERROR]</strong>
+      </td>
+      <td>
+        Description of the error and how to resolve it
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+	Headings can be used if an error isn't surfaced, or if a table will make readability difficult. Ex:
+
+### Brief-description-of-issue
+
+Describe when/why this happens and how to fix it. Include code examples if needed.
+-->
