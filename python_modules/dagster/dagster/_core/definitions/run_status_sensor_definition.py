@@ -1,6 +1,6 @@
 import warnings
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, List, NamedTuple, Optional, Sequence, Union, cast
 
 import pendulum
 
@@ -44,7 +44,11 @@ from .sensor_definition import (
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.selector import JobSelector, RepositorySelector
+    from dagster._core.host_representation.selector import (
+        CodeLocationSelector,
+        JobSelector,
+        RepositorySelector,
+    )
 
 
 @whitelist_for_serdes
@@ -333,6 +337,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                     UnresolvedAssetJobDefinition,
                     "RepositorySelector",
                     "JobSelector",
+                    "CodeLocationSelector",
                 ]
             ]
         ] = None,
@@ -343,7 +348,11 @@ class RunStatusSensorDefinition(SensorDefinition):
     ):
 
         from dagster._core.event_api import RunShardedEventsCursor
-        from dagster._core.host_representation.selector import JobSelector, RepositorySelector
+        from dagster._core.host_representation.selector import (
+            CodeLocationSelector,
+            JobSelector,
+            RepositorySelector,
+        )
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
         check.str_param(name, "name")
@@ -360,9 +369,29 @@ class RunStatusSensorDefinition(SensorDefinition):
                 UnresolvedAssetJobDefinition,
                 RepositorySelector,
                 JobSelector,
+                CodeLocationSelector,
             ),
         )
         check.inst_param(default_status, "default_status", DefaultSensorStatus)
+
+        # coerce CodeLocationSelectors to RepositorySelectors with repo name "__repository__"
+        monitored_jobs = [
+            job.to_repository_selector() if isinstance(job, CodeLocationSelector) else job
+            for job in (monitored_jobs or [])
+        ]
+
+        monitored_jobs = cast(
+            List[
+                Union[
+                    PipelineDefinition,
+                    GraphDefinition,
+                    UnresolvedAssetJobDefinition,
+                    RepositorySelector,
+                    JobSelector,
+                ]
+            ],
+            monitored_jobs,
+        )
 
         self._run_status_sensor_fn = check.callable_param(
             run_status_sensor_fn, "run_status_sensor_fn"
@@ -628,6 +657,7 @@ def run_status_sensor(
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",
                 "JobSelector",
+                "CodeLocationSelector",
             ]
         ]
     ] = None,
@@ -639,6 +669,7 @@ def run_status_sensor(
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",
                 "JobSelector",
+                "CodeLocationSelector",
             ]
         ]
     ] = None,
