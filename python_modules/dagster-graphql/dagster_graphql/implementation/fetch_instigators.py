@@ -1,3 +1,7 @@
+from itertools import chain
+
+from dagster_graphql.schema.util import HasContext
+
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.host_representation import InstigatorSelector
@@ -7,7 +11,7 @@ from .utils import capture_error
 
 
 @capture_error
-def get_unloadable_instigator_states_or_error(graphene_info, instigator_type=None):
+def get_unloadable_instigator_states_or_error(graphene_info: HasContext, instigator_type=None):
     from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStates
 
     check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
@@ -18,10 +22,15 @@ def get_unloadable_instigator_states_or_error(graphene_info, instigator_type=Non
         instigator
         for repository_location in graphene_info.context.repository_locations
         for repository in repository_location.get_repositories().values()
-        for instigator in repository.get_external_schedules() + repository.get_external_sensors()
+        for instigator in chain(
+            repository.get_external_schedules(), repository.get_external_sensors()
+        )
     ]
 
-    instigator_selector_ids = {instigator.selector_id for instigator in external_instigators}
+    instigator_selector_ids = {
+        instigator.selector_id  # type: ignore # mypy getting confused by chain
+        for instigator in external_instigators
+    }
     unloadable_states = [
         instigator_state
         for instigator_state in instigator_states
