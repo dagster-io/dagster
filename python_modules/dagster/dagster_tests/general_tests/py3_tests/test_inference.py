@@ -162,30 +162,29 @@ def test_kitchen_sink():
     ):  # pylint: disable=unused-argument
         pass
 
-    assert sink.input_defs[0].name == "n"
-    assert sink.input_defs[0].dagster_type.unique_name == "Int"
+    assert sink.input_defs[0].name == "b"
+    assert sink.input_defs[0].dagster_type.unique_name == "Bool"
 
-    assert sink.input_defs[1].name == "f"
-    assert sink.input_defs[1].dagster_type.unique_name == "Float"
+    assert sink.input_defs[1].name == "c"
+    assert sink.input_defs[1].dagster_type.unique_name == "Custom"
 
-    assert sink.input_defs[2].name == "b"
-    assert sink.input_defs[2].dagster_type.unique_name == "Bool"
+    assert sink.input_defs[2].name == "f"
+    assert sink.input_defs[2].dagster_type.unique_name == "Float"
 
-    assert sink.input_defs[3].name == "s"
-    assert sink.input_defs[3].dagster_type.unique_name == "String"
+    assert sink.input_defs[3].name == "l"
+    assert sink.input_defs[3].dagster_type.kind == DagsterTypeKind.LIST
 
-    assert sink.input_defs[4].name == "x"
-    assert sink.input_defs[4].dagster_type.unique_name == "Any"
+    assert sink.input_defs[4].name == "n"
+    assert sink.input_defs[4].dagster_type.unique_name == "Int"
 
     assert sink.input_defs[5].name == "o"
     assert sink.input_defs[5].dagster_type.kind == DagsterTypeKind.NULLABLE
 
-    assert sink.input_defs[6].name == "l"
-    assert sink.input_defs[6].dagster_type.kind == DagsterTypeKind.LIST
+    assert sink.input_defs[6].name == "s"
+    assert sink.input_defs[6].dagster_type.unique_name == "String"
 
-    assert sink.input_defs[7].name == "c"
-    assert sink.input_defs[7].dagster_type.unique_name == "Custom"
-
+    assert sink.input_defs[7].name == "x"
+    assert sink.input_defs[7].dagster_type.unique_name == "Any"
 
 def test_composites():
     @lambda_solid
