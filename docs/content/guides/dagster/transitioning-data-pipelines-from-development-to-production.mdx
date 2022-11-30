@@ -96,7 +96,7 @@ def stories(items: pd.DataFrame) -> pd.DataFrame:
     return items[items["type"] == "story"]
 ```
 
-Now we can add these assets to our <PyObject object="Definitions" />  object and materialize them via Dagit as part of our local development workflow. We will use the [configured API](/concepts/configuration/configured) to add configuration for the `snowflake_pandas_io_manager`.
+Now we can add these assets to our <PyObject object="Definitions" /> object and materialize them via Dagit as part of our local development workflow. We will use the [configured API](/concepts/configuration/configured) to add configuration for the `snowflake_pandas_io_manager`.
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v1.py startafter=start endbefore=end
 # __init__.py
