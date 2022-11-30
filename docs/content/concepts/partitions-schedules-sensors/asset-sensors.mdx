@@ -218,6 +218,23 @@ def repository_1():
 
 This sensor will materialize `asset_b` whenever any of its parents materialize, and it will materialize `asset_c` whenever any of its parents materialize.
 
+### With partitioned assets
+
+The asset reconciliation sensor automatically materializes any "unreconciled" partitions, following the same conditions for reconciliation as un-partitioned assets. When upstream partitions have not been materialized for a given partition, the asset reconciliation sensor will not trigger a materialization.
+
+In the following asset graph, each asset has partitions `["a", "b", "c"]`. Say that `asset1`, `asset3`, and `asset4` are selected in the asset reconciliation sensor, and are currently unreconciled:
+
+<Image
+alt="Partitioned asset graph"
+src="/images/concepts/partitions-schedules-sensors/partitions/partitioned-asset-graph.png"
+width={3138}
+height={2114}
+/>
+
+Because each partition of `asset1` is currently unreconciled, the sensor will immediately trigger materializations for each partition of `asset1`. Because `asset3` depends on `asset2` and no partitions have been materialized in `asset2`, the sensor will not trigger materializations for `asset3`.
+
+If we materialize partition `"a"` of `asset2`, each upstream dependency of partition `"a"` of `asset3` will be materialized. Because these partitions were materialized more recently than `asset3`, the sensor will materialize partition `"a"` of `asset3`. Since partition `"a"` of `asset4` is downstream and has no other dependencies, the sensor will materialize this partition in the same run. In the following tick, the sensor recognizes it triggered a materialization of `asset4` and thus does not trigger any materializations.
+
 ## Examples
 
 ### Monitoring daily assets to materialize a weekly asset
