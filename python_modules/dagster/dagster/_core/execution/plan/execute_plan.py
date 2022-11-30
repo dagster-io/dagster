@@ -35,106 +35,121 @@ def inner_plan_execution_iterator(
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     compute_log_manager = pipeline_context.instance.compute_log_manager
     step_keys = [step.key for step in execution_plan.get_steps_to_execute_in_topo_order()]
-    with ExitStack() as plan_stack:
-        active_execution = plan_stack.enter_context(
-            execution_plan.start(retry_mode=pipeline_context.retry_mode)
-        )
+    with execution_plan.start(retry_mode=pipeline_context.retry_mode) as active_execution:
+        with ExitStack() as capture_stack:
+            # begin capturing logs for the whole process if this is a captured log manager
+            if isinstance(compute_log_manager, CapturedLogManager):
+                file_key = create_compute_log_file_key()
+                log_key = compute_log_manager.build_log_key_for_run(
+                    pipeline_context.run_id, file_key
+                )
+                try:
+                    log_context = capture_stack.enter_context(
+                        compute_log_manager.capture_logs(log_key)
+                    )
+                    yield DagsterEvent.capture_logs(
+                        pipeline_context, step_keys, log_key, log_context
+                    )
+                except Exception:
+                    yield from _handle_compute_log_setup_error(pipeline_context, sys.exc_info())
 
-        # begin capturing logs for the whole process if this is a captured log manager
-        if isinstance(compute_log_manager, CapturedLogManager):
-            file_key = create_compute_log_file_key()
-            log_key = compute_log_manager.build_log_key_for_run(pipeline_context.run_id, file_key)
-            log_context = plan_stack.enter_context(compute_log_manager.capture_logs(log_key))
-            yield DagsterEvent.capture_logs(pipeline_context, step_keys, log_key, log_context)
+            # It would be good to implement a reference tracking algorithm here to
+            # garbage collect results that are no longer needed by any steps
+            # https://github.com/dagster-io/dagster/issues/811
+            while not active_execution.is_complete:
+                step = active_execution.get_next_step()
+                step_context = cast(
+                    StepExecutionContext,
+                    pipeline_context.for_step(step, active_execution.get_known_state()),
+                )
+                step_event_list = []
 
-        # It would be good to implement a reference tracking algorithm here to
-        # garbage collect results that are no longer needed by any steps
-        # https://github.com/dagster-io/dagster/issues/811
-        while not active_execution.is_complete:
-            step = active_execution.get_next_step()
-            step_context = cast(
-                StepExecutionContext,
-                pipeline_context.for_step(step, active_execution.get_known_state()),
-            )
-            step_event_list = []
+                missing_resources = [
+                    resource_key
+                    for resource_key in step_context.required_resource_keys
+                    if not hasattr(step_context.resources, resource_key)
+                ]
+                check.invariant(
+                    len(missing_resources) == 0,
+                    (
+                        "Expected step context for solid {solid_name} to have all required resources, but "
+                        "missing {missing_resources}."
+                    ).format(
+                        solid_name=step_context.solid.name, missing_resources=missing_resources
+                    ),
+                )
 
-            missing_resources = [
-                resource_key
-                for resource_key in step_context.required_resource_keys
-                if not hasattr(step_context.resources, resource_key)
-            ]
-            check.invariant(
-                len(missing_resources) == 0,
-                (
-                    "Expected step context for solid {solid_name} to have all required resources, but "
-                    "missing {missing_resources}."
-                ).format(solid_name=step_context.solid.name, missing_resources=missing_resources),
-            )
-
-            with ExitStack() as step_stack:
-                if not isinstance(compute_log_manager, CapturedLogManager):
-                    # capture all of the logs for individual steps
-                    log_capture_error = None
-                    try:
-                        step_stack.enter_context(
-                            pipeline_context.instance.compute_log_manager.watch(
-                                step_context.pipeline_run, step_context.step.key
+                with ExitStack() as step_stack:
+                    if not isinstance(compute_log_manager, CapturedLogManager):
+                        # capture all of the logs for individual steps
+                        try:
+                            step_stack.enter_context(
+                                pipeline_context.instance.compute_log_manager.watch(
+                                    step_context.pipeline_run, step_context.step.key
+                                )
                             )
-                        )
-                    except Exception as e:
-                        yield DagsterEvent.engine_event(
-                            plan_context=step_context,
-                            message="Exception while setting up compute log capture",
-                            event_specific_data=EngineEventData(
-                                error=serializable_error_info_from_exc_info(sys.exc_info())
-                            ),
-                        )
-                        log_capture_error = e
+                            yield DagsterEvent.legacy_compute_log_step_event(step_context)
+                        except Exception:
+                            yield from _handle_compute_log_setup_error(step_context, sys.exc_info())
 
-                    if not log_capture_error:
-                        yield DagsterEvent.legacy_compute_log_step_event(step_context)
+                        for step_event in check.generator(
+                            dagster_event_sequence_for_step(step_context)
+                        ):
+                            check.inst(step_event, DagsterEvent)
+                            step_event_list.append(step_event)
+                            yield step_event
+                            active_execution.handle_event(step_event)
 
-                    for step_event in check.generator(
-                        dagster_event_sequence_for_step(step_context)
-                    ):
-                        check.inst(step_event, DagsterEvent)
-                        step_event_list.append(step_event)
-                        yield step_event
-                        active_execution.handle_event(step_event)
+                        active_execution.verify_complete(pipeline_context, step.key)
 
-                    active_execution.verify_complete(pipeline_context, step.key)
+                        try:
+                            step_stack.close()
+                        except Exception:
+                            yield from _handle_compute_log_teardown_error(
+                                step_context, sys.exc_info()
+                            )
+                    else:
+                        # we have already set up the log capture at the process level, just handle the
+                        # step events
+                        for step_event in check.generator(
+                            dagster_event_sequence_for_step(step_context)
+                        ):
+                            check.inst(step_event, DagsterEvent)
+                            step_event_list.append(step_event)
+                            yield step_event
+                            active_execution.handle_event(step_event)
 
-                    try:
-                        step_stack.close()
-                    except Exception:
-                        yield DagsterEvent.engine_event(
-                            plan_context=step_context,
-                            message="Exception while cleaning up compute log capture",
-                            event_specific_data=EngineEventData(
-                                error=serializable_error_info_from_exc_info(sys.exc_info())
-                            ),
-                        )
-                else:
-                    # we have already set up the log capture at the process level, just handle the
-                    # step events
-                    for step_event in check.generator(
-                        dagster_event_sequence_for_step(step_context)
-                    ):
-                        check.inst(step_event, DagsterEvent)
-                        step_event_list.append(step_event)
-                        yield step_event
-                        active_execution.handle_event(step_event)
+                        active_execution.verify_complete(pipeline_context, step.key)
 
-                    active_execution.verify_complete(pipeline_context, step.key)
+                # process skips from failures or uncovered inputs
+                for event in active_execution.plan_events_iterator(pipeline_context):
+                    step_event_list.append(event)
+                    yield event
 
-            # process skips from failures or uncovered inputs
-            for event in active_execution.plan_events_iterator(pipeline_context):
-                step_event_list.append(event)
-                yield event
+                # pass a list of step events to hooks
+                for hook_event in _trigger_hook(step_context, step_event_list):
+                    yield hook_event
 
-            # pass a list of step events to hooks
-            for hook_event in _trigger_hook(step_context, step_event_list):
-                yield hook_event
+            try:
+                capture_stack.close()
+            except Exception:
+                yield from _handle_compute_log_teardown_error(pipeline_context, sys.exc_info())
+
+
+def _handle_compute_log_setup_error(context, exc_info):
+    yield DagsterEvent.engine_event(
+        plan_context=context,
+        message="Exception while setting up compute log capture",
+        event_specific_data=EngineEventData(error=serializable_error_info_from_exc_info(exc_info)),
+    )
+
+
+def _handle_compute_log_teardown_error(context, exc_info):
+    yield DagsterEvent.engine_event(
+        plan_context=context,
+        message="Exception while cleaning up compute log capture",
+        event_specific_data=EngineEventData(error=serializable_error_info_from_exc_info(exc_info)),
+    )
 
 
 def _trigger_hook(
