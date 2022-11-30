@@ -3,21 +3,15 @@ import re
 import pytest
 
 from dagster import DagsterInvariantViolationError, DagsterTypeCheckDidNotPass, Field, Int, resource
-from dagster._core.test_utils import nesting_composite_pipeline
+from dagster._core.definitions.decorators import graph
+from dagster._core.test_utils import nesting_graph_pipeline
 from dagster._core.utility_solids import (
     create_root_solid,
     create_solid_with_deps,
     define_stub_solid,
     input_set,
 )
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    composite_solid,
-    lambda_solid,
-    solid,
-)
+from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, lambda_solid, solid
 from dagster._utils.test import execute_solid
 
 
@@ -141,13 +135,13 @@ def test_failing_solid_in_isolation():
     assert isinstance(e_info.value, ThisException)
 
 
-def test_composites():
+def test_graphs():
     @lambda_solid
     def hello():
         return "hello"
 
-    @composite_solid
-    def hello_composite():
+    @graph
+    def hello_graph():
         return hello()
 
     result = execute_solid(hello)
@@ -155,7 +149,7 @@ def test_composites():
     assert result.output_value() == "hello"
     assert result.output_values == {"result": "hello"}
 
-    result = execute_solid(hello_composite)
+    result = execute_solid(hello_graph)
     assert result.success
     assert result.output_value() == "hello"
     assert result.output_values == {"result": "hello"}
@@ -171,26 +165,25 @@ def test_composites():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            "Tried to get result for solid 'goodbye' in 'hello_composite'. No such top level "
-            "solid"
+            "Tried to get result for solid 'goodbye' in 'hello_graph'. No such top level " "solid"
         ),
     ):
         _ = result.result_for_solid("goodbye")
 
 
-def test_composite_with_no_output_mappings():
+def test_graph_with_no_output_mappings():
     a_source = define_stub_solid("A_source", [input_set("A_input")])
     node_a = create_root_solid("A")
     node_b = create_solid_with_deps("B", node_a)
     node_c = create_solid_with_deps("C", node_a)
     node_d = create_solid_with_deps("D", node_b, node_c)
 
-    @composite_solid
-    def diamond_composite():
+    @graph
+    def diamond_graph():
         a = node_a(a_source())
         node_d(B=node_b(a), C=node_c(a))
 
-    res = execute_solid(diamond_composite)
+    res = execute_solid(diamond_graph)
 
     assert res.success
 
@@ -199,9 +192,9 @@ def test_composite_with_no_output_mappings():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            "Output 'result' not defined in composite solid 'diamond_composite': no output "
+            "Output 'result' not defined in graph 'diamond_graph': no output "
             "mappings were defined. If you were expecting this output to be present, you may be "
-            "missing an output_mapping from an inner solid to its enclosing composite solid."
+            "missing an output_mapping from an inner solid to its enclosing graph."
         ),
     ):
         _ = res.output_value()
@@ -209,9 +202,9 @@ def test_composite_with_no_output_mappings():
     assert len(res.solid_result_list) == 5
 
 
-def test_execute_nested_composite_solids():
-    nested_composite_pipeline = nesting_composite_pipeline(2, 2)
-    nested_composite_solid = nested_composite_pipeline.solids[0].definition
+def test_execute_nested_graphs():
+    nested_graph_pipeline = nesting_graph_pipeline(2, 2)
+    nested_composite_solid = nested_graph_pipeline.solids[0].definition
 
     res = execute_solid(nested_composite_solid)
 
@@ -223,9 +216,9 @@ def test_execute_nested_composite_solids():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            "Output 'result' not defined in composite solid 'layer_0': no output mappings were "
+            "Output 'result' not defined in graph 'layer_0': no output mappings were "
             "defined. If you were expecting this output to be present, you may be missing an "
-            "output_mapping from an inner solid to its enclosing composite solid."
+            "output_mapping from an inner solid to its enclosing graph."
         ),
     ):
         _ = res.output_value()

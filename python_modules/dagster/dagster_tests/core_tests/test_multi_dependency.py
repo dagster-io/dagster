@@ -10,12 +10,12 @@ from dagster import (
     Nothing,
 )
 from dagster._core.definitions.composition import MappedInputPlaceholder
+from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._legacy import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    composite_solid,
     execute_pipeline,
     lambda_solid,
     pipeline,
@@ -134,7 +134,7 @@ def test_collect_one():
 
 def test_fan_in_manual():
     # manually building up this guy
-    @composite_solid
+    @graph
     def _target_composite_dsl(str_in, none_in):
         num = emit_num()
         return collect([num, str_in, none_in])

@@ -14,13 +14,7 @@ from dagster import (
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.system_config.composite_descent import composite_descent
-from dagster._legacy import (
-    InputDefinition,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import InputDefinition, execute_pipeline, lambda_solid, pipeline, solid
 
 
 def test_single_level_pipeline():
@@ -99,7 +93,11 @@ def test_single_layer_pipeline_hardcoded_config_mapping():
     def return_int(context):
         return context.solid_config
 
-    @graph(config=ConfigMapping(config_schema={}, config_fn=lambda _cfg: {"return_int": {"config": 35}}))
+    @graph(
+        config=ConfigMapping(
+            config_schema={}, config_fn=lambda _cfg: {"return_int": {"config": 35}}
+        )
+    )
     def return_int_hardcode_wrap():
         return_int()
 
@@ -162,9 +160,9 @@ def test_mix_layer_computed_mapping():
             return {"layer_three_wrap": {"config": {"number": cfg["number"] + 1}}}
 
     @graph(
-        config =ConfigMapping(
-        config_schema={"number": int, "inject_error": bool},
-        config_fn=_layer_two_double_wrap_cfg_fn,
+        config=ConfigMapping(
+            config_schema={"number": int, "inject_error": bool},
+            config_fn=_layer_two_double_wrap_cfg_fn,
         )
     )
     def layer_two_double_wrap():
@@ -255,8 +253,8 @@ def test_nested_input_via_config_mapping():
 
     @graph(
         config=ConfigMapping(
-        config_schema={},
-        config_fn=lambda _cfg: {"add_one": {"inputs": {"num": {"value": 2}}}},
+            config_schema={},
+            config_fn=lambda _cfg: {"add_one": {"inputs": {"num": {"value": 2}}}},
         )
     )
     def wrap_add_one():
@@ -283,8 +281,8 @@ def test_double_nested_input_via_config_mapping():
 
     @graph(
         config=ConfigMapping(
-        config_fn=lambda _: {"number": {"inputs": {"num": {"value": 4}}}},
-        config_schema={},
+            config_fn=lambda _: {"number": {"inputs": {"num": {"value": 4}}}},
+            config_schema={},
         )
     )
     def wrap_solid():  # pylint: disable=unused-variable
@@ -339,20 +337,20 @@ def test_provide_one_of_two_inputs_via_config():
     @graph(
         input_defs=[InputDefinition("input_a", String)],
         config=ConfigMapping(
-        config_schema={
-            "config_field_a": Field(String),
-            "config_field_b": Field(String),
-        },
-        config_fn=lambda cfg: {
-            "basic": {
-                "config": {
-                    "config_field_a": cfg["config_field_a"],
-                    "config_field_b": cfg["config_field_b"],
-                },
-                "inputs": {"input_b": {"value": "set_input_b"}},
-            }
-        },
-        )
+            config_schema={
+                "config_field_a": Field(String),
+                "config_field_b": Field(String),
+            },
+            config_fn=lambda cfg: {
+                "basic": {
+                    "config": {
+                        "config_field_a": cfg["config_field_a"],
+                        "config_field_b": cfg["config_field_b"],
+                    },
+                    "inputs": {"input_b": {"value": "set_input_b"}},
+                }
+            },
+        ),
     )
     def wrap_all_config_one_input(input_a):
         return basic(input_a)
@@ -390,8 +388,8 @@ def required_scalar_config_solid(context):
 
 @graph(
     config=ConfigMapping(
-    config_schema={"override_str": Field(String)},
-    config_fn=lambda cfg: {"layer2": {"config": cfg["override_str"]}},
+        config_schema={"override_str": Field(String)},
+        config_fn=lambda cfg: {"layer2": {"config": cfg["override_str"]}},
     )
 )
 def wrap():
@@ -400,8 +398,8 @@ def wrap():
 
 @graph(
     config=ConfigMapping(
-    config_schema={"nesting_override": Field(String)},
-    config_fn=lambda cfg: {"layer1": {"config": {"override_str": cfg["nesting_override"]}}},
+        config_schema={"nesting_override": Field(String)},
+        config_fn=lambda cfg: {"layer1": {"config": {"override_str": cfg["nesting_override"]}}},
     )
 )
 def nesting_wrap():
@@ -437,8 +435,8 @@ def get_fully_unwrapped_config():
 def test_direct_composite_descent_with_error():
     @graph(
         config=ConfigMapping(
-        config_schema={"override_str": Field(int)},
-        config_fn=lambda cfg: {"layer2": {"config": cfg["override_str"]}},
+            config_schema={"override_str": Field(int)},
+            config_fn=lambda cfg: {"layer2": {"config": cfg["override_str"]}},
         )
     )
     def wrap_coerce_to_wrong_type():
@@ -446,8 +444,8 @@ def test_direct_composite_descent_with_error():
 
     @graph(
         config=ConfigMapping(
-        config_schema={"nesting_override": Field(int)},
-        config_fn=lambda cfg: {"layer1": {"config": {"override_str": cfg["nesting_override"]}}},
+            config_schema={"nesting_override": Field(int)},
+            config_fn=lambda cfg: {"layer1": {"config": {"override_str": cfg["nesting_override"]}}},
         )
     )
     def nesting_wrap_wrong_type_at_leaf():
@@ -515,10 +513,10 @@ def test_config_mapped_enum():
 
     @graph(
         config=ConfigMapping(
-        config_schema={"num": int},
-        config_fn=lambda cfg: {
-            "return_enum": {"config": {"enum": "VALUE_ONE" if cfg["num"] == 1 else "OTHER"}}
-        },
+            config_schema={"num": int},
+            config_fn=lambda cfg: {
+                "return_enum": {"config": {"enum": "VALUE_ONE" if cfg["num"] == 1 else "OTHER"}}
+            },
         )
     )
     def wrapping_return_enum():
@@ -550,10 +548,12 @@ def test_config_mapped_enum():
 
     @graph(
         config=ConfigMapping(
-        config_schema={"enum": DagsterEnumType},
-        config_fn=lambda cfg: {
-            "return_int": {"config": {"num": 1 if cfg["enum"] == TestPythonEnum.VALUE_ONE else 2}}
-        },
+            config_schema={"enum": DagsterEnumType},
+            config_fn=lambda cfg: {
+                "return_int": {
+                    "config": {"num": 1 if cfg["enum"] == TestPythonEnum.VALUE_ONE else 2}
+                }
+            },
         )
     )
     def wrap_return_int():
@@ -630,8 +630,8 @@ def test_single_level_pipeline_with_complex_configured_solid_within_composite():
 
     @graph(
         config=ConfigMapping(
-        config_schema={"num_as_str": str},
-        config_fn=lambda cfg: {"introduce_aj": {"config": {"age": int(cfg["num_as_str"])}}},
+            config_schema={"num_as_str": str},
+            config_fn=lambda cfg: {"introduce_aj": {"config": {"age": int(cfg["num_as_str"])}}},
         )
     )
     def introduce_wrapper():
@@ -699,11 +699,11 @@ def test_single_level_pipeline_with_configured_graph():
 
     @graph(
         config=ConfigMapping(
-        config_schema={"outer": int},
-        config_fn=lambda c: {
-            "multiply_by_two": {"config": {"inner": c["outer"]}},
-            "multiply_by_two_again": {"config": {"inner": c["outer"]}},
-        },
+            config_schema={"outer": int},
+            config_fn=lambda c: {
+                "multiply_by_two": {"config": {"inner": c["outer"]}},
+                "multiply_by_two_again": {"config": {"inner": c["outer"]}},
+            },
         )
     )
     def multiply_by_four():
@@ -734,11 +734,11 @@ def test_single_level_pipeline_with_configured_decorated_graph():
 
     @graph(
         config=ConfigMapping(
-        config_schema={"outer": int},
-        config_fn=lambda c: {
-            "multiply_by_two": {"config": {"inner": c["outer"]}},
-            "multiply_by_two_again": {"config": {"inner": c["outer"]}},
-        },
+            config_schema={"outer": int},
+            config_fn=lambda c: {
+                "multiply_by_two": {"config": {"inner": c["outer"]}},
+                "multiply_by_two_again": {"config": {"inner": c["outer"]}},
+            },
         )
     )
     def multiply_by_four():
@@ -778,9 +778,9 @@ def test_configured_graph_with_inputs():
     @graph(
         input_defs=[InputDefinition("x", int), InputDefinition("y", int)],
         config=ConfigMapping(
-        config_schema={"outer": str},
-        config_fn=lambda cfg: {"add": {"config": cfg["outer"]}},
-        )
+            config_schema={"outer": str},
+            config_fn=lambda cfg: {"add": {"config": cfg["outer"]}},
+        ),
     )
     def return_int_composite(x, y):
         return add(return_int_x(x), return_int_x.alias("return_int_again")(y))
@@ -809,8 +809,8 @@ def test_configured_graph_cannot_stub_inner_solids_config():
 
     @graph(
         config=ConfigMapping(
-        config_schema={"num": int},
-        config_fn=lambda config: {"return_int": {"config": config["num"]}},
+            config_schema={"num": int},
+            config_fn=lambda config: {"return_int": {"config": config["num"]}},
         )
     )
     def return_int_composite():

@@ -64,7 +64,7 @@ def step_output_event_filter(pipe_iterator):
             yield step_event
 
 
-def nesting_composite_pipeline(depth, num_children, *args, **kwargs):
+def nesting_graph_pipeline(depth, num_children, *args, **kwargs):
     """Creates a pipeline of nested composite solids up to "depth" layers, with a fan-out of
     num_children at each layer.
 

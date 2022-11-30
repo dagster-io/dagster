@@ -263,10 +263,9 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
 
         if not self.solid.definition.has_output(output_name):
             raise DagsterInvariantViolationError(
-                "Output '{output_name}' not defined in composite solid '{solid}': "
+                "Output '{output_name}' not defined in graph '{solid}': "
                 "{outputs_clause}. If you were expecting this output to be present, you may "
-                "be missing an output_mapping from an inner solid to its enclosing composite "
-                "solid.".format(
+                "be missing an output_mapping from an inner solid to its enclosing graph.".format(
                     output_name=output_name,
                     solid=self.solid.name,
                     outputs_clause="found outputs {output_names}".format(

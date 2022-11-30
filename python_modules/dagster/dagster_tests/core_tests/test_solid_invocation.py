@@ -23,6 +23,7 @@ from dagster import (
     op,
     resource,
 )
+from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -39,7 +40,6 @@ from dagster._legacy import (
     Materialization,
     OutputDefinition,
     build_solid_context,
-    composite_solid,
     execute_solid,
     pipeline,
     solid,
@@ -726,12 +726,12 @@ def test_pending_node_invocation():
     assert basic_solid_with_tag.tag({"foo": "bar"})(None) == "bar"
 
 
-def test_composite_solid_invocation_out_of_composition():
+def test_graph_invocation_out_of_composition():
     @solid
     def basic_solid():
         return 5
 
-    @composite_solid
+    @graph
     def composite():
         basic_solid()
 
@@ -739,7 +739,7 @@ def test_composite_solid_invocation_out_of_composition():
         DagsterInvariantViolationError,
         match="Attempted to call composite solid "
         "'composite' outside of a composition function. Invoking composite solids is only valid in a "
-        "function decorated with @pipeline or @composite_solid.",
+        "function decorated with @pipeline or @graph.",
     ):
         composite()
 

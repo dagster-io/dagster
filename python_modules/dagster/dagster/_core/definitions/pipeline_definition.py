@@ -17,7 +17,6 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.solid_definition import NodeDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidSubsetError,

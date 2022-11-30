@@ -1,14 +1,9 @@
 import pytest
 
 from dagster import DagsterInvalidConfigError, Field, String, root_input_manager
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    composite_solid,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
+from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._legacy import InputDefinition, ModeDefinition, execute_pipeline, pipeline, solid
 
 
 def test_basic_solid_with_config():
@@ -103,18 +98,18 @@ def test_extra_config_ignored_default_input():
 
 def test_extra_config_ignored_no_default_input():
     @solid(config_schema={"some_config": str})
-    def solid1(_):
+    def op1(_):
         return "public.table_1"
 
     @solid
-    def solid2(_, input_table):
+    def op2(_, input_table):
         return input_table
 
     @pipeline
     def my_pipeline():
-        solid2(solid1())
+        op2(op1())
 
-    run_config = {"solids": {"solid1": {"config": {"some_config": "a"}}}}
+    run_config = {"ops": {"op1": {"config": {"some_config": "a"}}}}
     assert execute_pipeline(my_pipeline, run_config=run_config).success
 
     # run config is invalid since there is no input for solid2
@@ -126,11 +121,11 @@ def test_extra_config_ignored_no_default_input():
         )
 
     # works if input added, don't need to remove other stuff
-    run_config["solids"]["solid2"] = {"inputs": {"input_table": {"value": "public.table_1"}}}
+    run_config["ops"]["op2"] = {"inputs": {"input_table": {"value": "public.table_1"}}}
     assert execute_pipeline(
         my_pipeline,
         run_config=run_config,
-        solid_selection=["solid2"],
+        solid_selection=["op2"],
     ).success
 
     # input for solid2 ignored if select solid1
@@ -141,40 +136,38 @@ def test_extra_config_ignored_no_default_input():
     ).success
 
 
-def test_extra_config_ignored_composites():
+def test_extra_config_ignored_graphs():
     @solid(config_schema={"some_config": str})
     def solid1(_):
         return "public.table_1"
 
-    @composite_solid(
-        config_schema={"wrapped_config": str},
-        config_fn=lambda cfg: {"solid1": {"config": {"some_config": cfg["wrapped_config"]}}},
+    @graph(
+        config=ConfigMapping(
+            config_schema={"wrapped_config": str},
+            config_fn=lambda cfg: {"solid1": {"config": {"some_config": cfg["wrapped_config"]}}},
+        )
     )
-    def composite1():
+    def graph1():
         return solid1()
 
     @solid
     def solid2(_, input_table="public.table"):
         return input_table
 
-    @composite_solid
-    def composite2(input_table):
+    @graph
+    def graph2(input_table):
         return solid2(input_table)
 
     @pipeline
     def my_pipeline():
-        composite2(composite1())
+        graph2(graph1())
 
-    run_config = {"solids": {"composite1": {"config": {"wrapped_config": "a"}}}}
+    run_config = {"solids": {"graph1": {"config": {"wrapped_config": "a"}}}}
     assert execute_pipeline(my_pipeline, run_config=run_config).success
 
-    assert execute_pipeline(
-        my_pipeline, run_config=run_config, solid_selection=["composite2"]
-    ).success
+    assert execute_pipeline(my_pipeline, run_config=run_config, solid_selection=["graph2"]).success
 
-    assert execute_pipeline(
-        my_pipeline, run_config=run_config, solid_selection=["composite1"]
-    ).success
+    assert execute_pipeline(my_pipeline, run_config=run_config, solid_selection=["graph1"]).success
 
 
 def test_extra_config_input_bug():

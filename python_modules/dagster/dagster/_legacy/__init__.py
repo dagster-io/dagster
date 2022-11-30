@@ -13,7 +13,6 @@ from dagster._core.definitions import (
     SensorExecutionContext,
     SolidInvocation,
     build_assets_job,
-    composite_solid,
     daily_schedule,
     default_executors,
     hourly_schedule,

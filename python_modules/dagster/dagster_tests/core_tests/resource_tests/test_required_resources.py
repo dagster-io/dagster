@@ -17,9 +17,10 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster._core.definitions.configurable import configured
+from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster._core.types.dagster_type import create_any_type
-from dagster._legacy import CompositeSolidDefinition, OutputDefinition
+from dagster._legacy import OutputDefinition
 
 
 def get_resource_init_pipeline(resources_initted):
@@ -452,7 +453,7 @@ def define_composite_materialization_pipeline(
     def output_op(_context):
         return "hello"
 
-    wrap_solid = CompositeSolidDefinition(
+    wrap_solid = GraphDefinition(
         name="wrap_solid",
         solid_defs=[output_op],
         output_mappings=[OutputDefinition(CustomDagsterType).mapping_from("output_op")],
