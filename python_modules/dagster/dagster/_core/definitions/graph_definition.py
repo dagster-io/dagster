@@ -59,8 +59,8 @@ if TYPE_CHECKING:
     from .composition import PendingNodeInvocation
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
+    from .op_definition import OpDefinition
     from .partition import PartitionedConfig, PartitionsDefinition
-    from .solid_definition import SolidDefinition
 
 
 def _check_node_defs_arg(
@@ -334,7 +334,7 @@ class GraphDefinition(NodeDefinition):
         for outer_node_def in self._node_defs:
             yield from outer_node_def.iterate_node_defs()
 
-    def iterate_solid_defs(self) -> Iterator["SolidDefinition"]:
+    def iterate_solid_defs(self) -> Iterator["OpDefinition"]:
         for outer_node_def in self._node_defs:
             yield from outer_node_def.iterate_solid_defs()
 
@@ -419,7 +419,7 @@ class GraphDefinition(NodeDefinition):
             NodeHandle(mapped_solid.name, handle),  # type: ignore
         )
 
-    def resolve_output_to_origin_op_def(self, output_name: str) -> "SolidDefinition":
+    def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition":
         mapping = self.get_output_mapping(output_name)
         check.invariant(mapping, "Can only resolve outputs for valid output names")
         return self.solid_named(

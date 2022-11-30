@@ -25,12 +25,12 @@ if TYPE_CHECKING:
     )
     from .composition import PendingNodeInvocation
     from .decorators.solid_decorator import DecoratedSolidFunction
+    from .op_definition import OpDefinition
     from .output import OutputDefinition
-    from .solid_definition import SolidDefinition
 
 
 def solid_invocation_result(
-    solid_def_or_invocation: Union["SolidDefinition", "PendingNodeInvocation"],
+    solid_def_or_invocation: Union["OpDefinition", "PendingNodeInvocation"],
     context: Optional["UnboundSolidExecutionContext"],
     *args,
     **kwargs,
@@ -41,7 +41,7 @@ def solid_invocation_result(
     from .composition import PendingNodeInvocation
 
     solid_def = (
-        solid_def_or_invocation.node_def.ensure_solid_def()
+        solid_def_or_invocation.node_def.ensure_op_def()
         if isinstance(solid_def_or_invocation, PendingNodeInvocation)
         else solid_def_or_invocation
     )
@@ -67,7 +67,7 @@ def solid_invocation_result(
 
 
 def _check_invocation_requirements(
-    solid_def: "SolidDefinition", context: Optional["UnboundSolidExecutionContext"]
+    solid_def: "OpDefinition", context: Optional["UnboundSolidExecutionContext"]
 ) -> None:
     """Ensure that provided context fulfills requirements of solid definition.
 
@@ -96,9 +96,7 @@ def _check_invocation_requirements(
         )
 
 
-def _resolve_inputs(
-    solid_def: "SolidDefinition", args, kwargs, context: "BoundSolidExecutionContext"
-):
+def _resolve_inputs(solid_def: "OpDefinition", args, kwargs, context: "BoundSolidExecutionContext"):
     from dagster._core.execution.plan.execute_step import do_type_check
 
     nothing_input_defs = [
@@ -193,7 +191,7 @@ def _resolve_inputs(
 
 
 def _type_check_output_wrapper(
-    solid_def: "SolidDefinition", result: Any, context: "BoundSolidExecutionContext"
+    solid_def: "OpDefinition", result: Any, context: "BoundSolidExecutionContext"
 ) -> Any:
     """Type checks and returns the result of a solid.
 
@@ -292,7 +290,7 @@ def _type_check_output_wrapper(
 
 
 def _type_check_function_output(
-    solid_def: "SolidDefinition", result: Any, context: "BoundSolidExecutionContext"
+    solid_def: "OpDefinition", result: Any, context: "BoundSolidExecutionContext"
 ):
     from ..execution.plan.compute_generator import validate_and_coerce_solid_result_to_iterator
 

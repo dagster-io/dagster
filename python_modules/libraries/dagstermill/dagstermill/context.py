@@ -8,7 +8,7 @@ from dagster._core.execution.context.compute import AbstractComputeExecutionCont
 from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._legacy import PipelineDefinition, PipelineRun, SolidDefinition
+from dagster._legacy import PipelineDefinition, PipelineRun
 from dagster._utils.backcompat import deprecation_warning
 
 
@@ -170,7 +170,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         return cast(OpDefinition, self._pipeline_def.solid_def_named(self.solid_name))
 
     @property
-    def solid_def(self) -> SolidDefinition:
+    def solid_def(self) -> OpDefinition:
         """:class:`dagster.SolidDefinition`: The solid definition for the context.
 
         In interactive contexts, this may be a dagstermill-specific shim, depending whether a
@@ -181,7 +181,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
             "0.17.0",
             "use the 'op_def' property instead.",
         )
-        return cast(SolidDefinition, self._pipeline_def.solid_def_named(self.solid_name))
+        return cast(OpDefinition, self._pipeline_def.solid_def_named(self.solid_name))
 
     @property
     def solid(self) -> Node:

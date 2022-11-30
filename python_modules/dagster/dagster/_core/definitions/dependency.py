@@ -133,7 +133,7 @@ class Node:
         retry_policy: Optional[RetryPolicy] = None,
     ):
         from .graph_definition import GraphDefinition
-        from .solid_definition import NodeDefinition
+        from .node_definition import NodeDefinition
 
         self.name = check.str_param(name, "name")
         self.definition = check.inst_param(definition, "definition", NodeDefinition)
@@ -189,13 +189,13 @@ class Node:
 
     def describe_node(self) -> str:
         from .op_definition import OpDefinition
-        from .solid_definition import CompositeSolidDefinition, SolidDefinition
+        from .solid_definition import CompositeSolidDefinition
 
         if isinstance(self.definition, CompositeSolidDefinition):
             return f"composite solid '{self.name}'"
         elif isinstance(self.definition, OpDefinition):
             return f"op '{self.name}'"
-        elif isinstance(self.definition, SolidDefinition):
+        elif isinstance(self.definition, OpDefinition):
             return f"solid '{self.name}'"
         else:
             return f"graph '{self.name}'"
@@ -268,7 +268,7 @@ class Node:
         cur_node_handle = NodeHandle(self.name, parent_handle)
 
         if not self.is_graph:
-            solid_def = self.definition.ensure_solid_def()
+            solid_def = self.definition.ensure_op_def()
             for requirement in solid_def.get_resource_requirements((cur_node_handle, asset_layer)):
                 # If requirement is a root input manager requirement, but the corresponding node has an upstream output, then ignore the requirement.
                 if (

@@ -161,7 +161,7 @@ from .run_status_sensor_definition import (
     run_failure_sensor,
     run_status_sensor,
 )
-from .solid_definition import CompositeSolidDefinition, NodeDefinition, SolidDefinition
+from .solid_definition import CompositeSolidDefinition, NodeDefinition
 from .source_asset import SourceAsset
 from .time_window_partition_mapping import TimeWindowPartitionMapping
 from .time_window_partitions import (

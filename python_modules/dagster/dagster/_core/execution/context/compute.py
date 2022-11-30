@@ -20,7 +20,6 @@ from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
-from dagster._core.definitions.solid_definition import SolidDefinition
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
@@ -262,23 +261,11 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """
         return self.solid
 
-    @property
-    def solid_def(self) -> SolidDefinition:
-        """SolidDefinition: The current solid definition."""
-        return self._step_execution_context.pipeline_def.get_solid(self.solid_handle).definition
-
     @public  # type: ignore
     @property
     def op_def(self) -> OpDefinition:
         """OpDefinition: The current op definition."""
-        return cast(
-            OpDefinition,
-            check.inst(
-                self.solid_def,
-                OpDefinition,
-                "Called op_def on a legacy solid. Use solid_def instead.",
-            ),
-        )
+        return cast(OpDefinition, self.solid.definition)
 
     @public  # type: ignore
     @property

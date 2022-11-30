@@ -36,7 +36,6 @@ from dagster._core.definitions.resource_definition import (
     ScopedResourcesBuilder,
 )
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
-from dagster._core.definitions.solid_definition import SolidDefinition
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -204,7 +203,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         raise DagsterInvalidPropertyError(_property_msg("solid", "property"))
 
     @property
-    def solid_def(self) -> SolidDefinition:
+    def op_def(self) -> OpDefinition:
         raise DagsterInvalidPropertyError(_property_msg("solid_def", "property"))
 
     @property
@@ -228,13 +227,14 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         raise DagsterInvalidPropertyError(_property_msg("get_step_execution_context", "methods"))
 
     def bind(
-        self, solid_def_or_invocation: Union[SolidDefinition, PendingNodeInvocation]
+        self,
+        solid_def_or_invocation: Union[OpDefinition, PendingNodeInvocation],
     ) -> "BoundSolidExecutionContext":
 
         solid_def = (
             solid_def_or_invocation
-            if isinstance(solid_def_or_invocation, SolidDefinition)
-            else solid_def_or_invocation.node_def.ensure_solid_def()
+            if isinstance(solid_def_or_invocation, OpDefinition)
+            else solid_def_or_invocation.node_def.ensure_op_def()
         )
 
         _validate_resource_requirements(self._resource_defs, solid_def)
@@ -311,7 +311,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
 
 
 def _validate_resource_requirements(
-    resource_defs: Mapping[str, ResourceDefinition], solid_def: SolidDefinition
+    resource_defs: Mapping[str, ResourceDefinition], solid_def: OpDefinition
 ) -> None:
     """Validate correctness of resources against required resource keys"""
     if cast(DecoratedSolidFunction, solid_def.compute_fn).has_context_arg():
@@ -320,7 +320,7 @@ def _validate_resource_requirements(
                 ensure_requirements_satisfied(resource_defs, [requirement])
 
 
-def _resolve_bound_config(solid_config: Any, solid_def: SolidDefinition) -> Any:
+def _resolve_bound_config(solid_config: Any, solid_def: OpDefinition) -> Any:
     """Validate config against config schema, and return validated config."""
     from dagster._config import process_config
 
@@ -355,7 +355,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
     been validated.
     """
 
-    _solid_def: SolidDefinition
+    _solid_def: OpDefinition
     _solid_config: Any
     _resources: "Resources"
     _resources_config: Mapping[str, Any]
@@ -372,7 +372,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
 
     def __init__(
         self,
-        solid_def: SolidDefinition,
+        solid_def: OpDefinition,
         solid_config: Any,
         resources: "Resources",
         resources_config: Mapping[str, Any],
@@ -478,7 +478,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
         raise DagsterInvalidPropertyError(_property_msg("solid", "property"))
 
     @property
-    def solid_def(self) -> SolidDefinition:
+    def solid_def(self) -> OpDefinition:
         return self._solid_def
 
     def has_tag(self, key: str) -> bool:

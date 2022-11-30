@@ -20,6 +20,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -43,7 +44,7 @@ from .logger_definition import LoggerDefinition
 from .output import OutputDefinition, OutputMapping
 from .policy import RetryPolicy
 from .resource_definition import ResourceDefinition
-from .solid_definition import NodeDefinition, SolidDefinition
+from .solid_definition import NodeDefinition
 from .utils import check_valid_name, validate_tags
 from .version_strategy import VersionStrategy
 
@@ -343,7 +344,7 @@ class PendingNodeInvocation:
 
         # If PendingNodeInvocation is not within composition context, and underlying node definition
         # is a solid definition, then permit it to be invoked and executed like a solid definition.
-        if not is_in_composition() and isinstance(self.node_def, SolidDefinition):
+        if not is_in_composition() and isinstance(self.node_def, OpDefinition):
             node_label = (
                 self.node_def.node_type_str
             )  # will be the string "solid" for solids, and the string "ops" for ops

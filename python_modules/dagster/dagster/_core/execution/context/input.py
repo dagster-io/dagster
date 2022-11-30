@@ -12,7 +12,7 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import PartitionsDefinition, SolidDefinition
+    from dagster._core.definitions import OpDefinition, PartitionsDefinition
     from dagster._core.definitions.op_definition import OpDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.events import DagsterEvent
@@ -71,7 +71,7 @@ class InputContext:
         self,
         name: Optional[str] = None,
         job_name: Optional[str] = None,
-        solid_def: Optional["SolidDefinition"] = None,
+        solid_def: Optional["OpDefinition"] = None,
         config: Optional[Any] = None,
         metadata: Optional[Mapping[str, Any]] = None,
         upstream_output: Optional["OutputContext"] = None,
@@ -166,7 +166,7 @@ class InputContext:
         return self.job_name
 
     @property
-    def solid_def(self) -> "SolidDefinition":
+    def solid_def(self) -> "OpDefinition":
         if self._solid_def is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access solid_def, "

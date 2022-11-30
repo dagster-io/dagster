@@ -45,9 +45,9 @@ from .hook_definition import HookDefinition
 from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue, normalize_metadata
 from .mode import ModeDefinition
 from .node_definition import NodeDefinition
+from .op_definition import OpDefinition
 from .preset import PresetDefinition
 from .resource_requirement import ensure_requirements_satisfied
-from .solid_definition import SolidDefinition
 from .utils import validate_tags
 from .version_strategy import VersionStrategy
 
@@ -595,7 +595,7 @@ class PipelineDefinition:
 
         if solid.retry_policy:
             return solid.retry_policy
-        elif isinstance(definition, SolidDefinition) and definition.retry_policy:
+        elif isinstance(definition, OpDefinition) and definition.retry_policy:
             return definition.retry_policy
 
         # could be expanded to look in composite_solid / graph containers

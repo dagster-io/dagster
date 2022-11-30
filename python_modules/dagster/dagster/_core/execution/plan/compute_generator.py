@@ -12,9 +12,9 @@ from dagster._core.definitions import (
     Materialization,
     Output,
     OutputDefinition,
-    SolidDefinition,
 )
 from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
 
@@ -25,7 +25,7 @@ class NoAnnotationSentinel:
     pass
 
 
-def create_solid_compute_wrapper(solid_def: SolidDefinition):
+def create_solid_compute_wrapper(solid_def: OpDefinition):
     compute_fn = cast(DecoratedSolidFunction, solid_def.compute_fn)
     fn = compute_fn.decorated_fn
     input_defs = solid_def.input_defs
@@ -109,18 +109,18 @@ def _validate_multi_return(
             "Length mismatch between returned tuple of outputs and number of "
             f"output defs on {context.describe_op()}. Output tuple has "
             f"{len(output_tuple)} outputs, while "
-            f"{context.solid_def.node_type_str} has {len(output_defs)} outputs."
+            f"{context.op_def.node_type_str} has {len(output_defs)} outputs."
         )
 
 
 def _get_annotation_for_output_position(
-    position: int, solid_def: SolidDefinition, output_defs: Sequence[OutputDefinition]
+    position: int, op_def: OpDefinition, output_defs: Sequence[OutputDefinition]
 ) -> Any:
-    if solid_def.is_from_decorator():
-        if len(output_defs) > 1 and solid_def.get_output_annotation() != inspect.Parameter.empty:
-            return get_args(solid_def.get_output_annotation())[position]
+    if op_def.is_from_decorator():
+        if len(output_defs) > 1 and op_def.get_output_annotation() != inspect.Parameter.empty:
+            return get_args(op_def.get_output_annotation())[position]
         else:
-            return solid_def.get_output_annotation()
+            return op_def.get_output_annotation()
     return NoAnnotationSentinel()
 
 
@@ -149,7 +149,7 @@ def validate_and_coerce_solid_result_to_iterator(
             f"Error in {context.describe_op()}: If you are "
             "returning an AssetMaterialization "
             f"or an ExpectationResult from "
-            f"{context.solid_def.node_type_str} you must yield them "
+            f"{context.op_def.node_type_str} you must yield them "
             "directly, or log them using the OpExecutionContext.log_event method to avoid "
             "ambiguity with an implied result from returning a "
             "value. Check out the docs on logging events here: "
@@ -158,16 +158,14 @@ def validate_and_coerce_solid_result_to_iterator(
     elif result is not None and not output_defs:
         raise DagsterInvariantViolationError(
             f"Error in {context.describe_op()}: Unexpectedly returned output of "
-            f"type {type(result)}. {context.solid_def.node_type_str.capitalize()} is explicitly defined to return no "
+            f"type {type(result)}. {context.op_def.node_type_str.capitalize()} is explicitly defined to return no "
             "results."
         )
     elif output_defs:
         for position, output_def, element in _zip_and_iterate_solid_result(
             result, context, output_defs
         ):
-            annotation = _get_annotation_for_output_position(
-                position, context.solid_def, output_defs
-            )
+            annotation = _get_annotation_for_output_position(position, context.op_def, output_defs)
             if output_def.is_dynamic:
                 if not isinstance(element, list):
                     raise DagsterInvariantViolationError(
@@ -229,7 +227,7 @@ def validate_and_coerce_solid_result_to_iterator(
                         'Value "None" returned for non-required output '
                         f'"{output_def.name}" of {context.describe_op()}. '
                         "This value will be passed to downstream "
-                        f"{context.solid_def.node_type_str}s. For conditional "
+                        f"{context.op_def.node_type_str}s. For conditional "
                         "execution, results must be yielded: "
                         "https://docs.dagster.io/concepts/ops-jobs-graphs/graphs#with-conditional-branching"
                     )
