@@ -87,8 +87,9 @@ class DbIOManager(IOManager):
         self._db_client = db_client
 
     def handle_output(self, context: OutputContext, obj: object) -> None:
+        table_slice = self._get_table_slice(context, context)
+
         if obj is not None:
-            table_slice = self._get_table_slice(context, context)
             obj_type = type(obj)
             check.invariant(
                 obj_type in self._handlers_by_type,
@@ -98,13 +99,9 @@ class DbIOManager(IOManager):
 
             self._db_client.delete_table_slice(context, table_slice)
 
-            metadata = (
+            handler_metadata = (
                 self._handlers_by_type[obj_type].handle_output(context, table_slice, obj) or {}
             )
-            handler_metadata = {
-                **metadata,
-                "Query": self._db_client.get_select_statement(table_slice),
-            }
         else:
             check.invariant(
                 context.dagster_type.is_nothing,
@@ -113,7 +110,9 @@ class DbIOManager(IOManager):
             # if obj is None, assume that I/O was handled in the op body
             handler_metadata = {}
 
-        context.add_output_metadata(handler_metadata)
+        context.add_output_metadata(
+            {**handler_metadata, "Query": self._db_client.get_select_statement(table_slice)}
+        )
 
     def load_input(self, context: InputContext) -> object:
         obj_type = context.dagster_type.typing_type
