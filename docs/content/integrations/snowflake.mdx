@@ -267,9 +267,9 @@ In this example, we only need the columns with sepal data in our `sepal_data` as
 You may want to have different assets stored in different Snowflake schemas. The Snowflake I/O manager allows you to specify the schema in several ways. You can specify the schema as configuration to the I/O manager:
 
 ```python file=/integrations/snowflake/schema.py startafter=start_configuration endbefore=end_configuration
-from dagster import repository, with_resources
 from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
+from dagster import repository, with_resources
 
 
 @repository
@@ -295,14 +295,14 @@ In this example, all assets will be stored in the `IRIS` schema.
 If you want to store assets in different schemas, you can specify the schema as part of the the asset's asset key:
 
 ```python file=/integrations/snowflake/schema.py startafter=start_asset_key endbefore=end_asset_key
-from dagster import asset, SourceAsset
 import pandas as pd
+
+from dagster import SourceAsset, asset
 
 daffodil_dataset = SourceAsset(key=["daffodil", "daffodil_dataset"])
 
-@asset(
-    key_prefix=["iris"]
-)
+
+@asset(key_prefix=["iris"])
 def iris_dataset() -> pd.DataFrame:
     return pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
@@ -332,16 +332,13 @@ You may have assets that you don't want to store in Snowflake. You can provide a
 
 ```python file=/integrations/snowflake/multiple_io_managers.py startafter=start_example endbefore=end_example
 import pandas as pd
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
+from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
 from dagster import asset, repository, with_resources
 
 
-
-@asset(
-    io_manager_key="warehouse_io_manager"
-)
+@asset(io_manager_key="warehouse_io_manager")
 def iris_dataset() -> pd.DataFrame:
     return pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
@@ -354,11 +351,11 @@ def iris_dataset() -> pd.DataFrame:
         ],
     )
 
-@asset(
-    io_manager_key="blob_io_manager"
-)
+
+@asset(io_manager_key="blob_io_manager")
 def iris_plots(iris_dataset):
     return plot_iris_data(iris_dataset)
+
 
 @repository
 def flowers_analysis_repository():
@@ -374,7 +371,7 @@ def flowers_analysis_repository():
                     "password": {"env": "SNOWFLAKE_PASSWORD"},
                 }
             ),
-            "blob_io_manager": s3_pickle_io_manager
+            "blob_io_manager": s3_pickle_io_manager,
         },
     )
 ```
@@ -383,9 +380,62 @@ In this example, the `iris_dataset` asset uses the I/O manager bound to the key 
 
 ### Configuring the Snowflake I/O manager
 
-The Snowflake I/O manager requires some configuration to connect to your Snowflake instance. Configuration can be supplied to the I/O manager when you attach it as a resource to your assets, like this:
+#### Connecting to Snowflake
 
-For documentation for each of the configuration values, see the **Config schema** dropdown in the [Snowflake API docs](#dagster_snowflake.build_snowflake_io_manager).
+The Snowflake I/O manager requires some configuration to connect to your Snowflake instance. The `account`, `user` and `password` are required to connect with Snowflake. You can also provide an optional `role` for the I/O manager. These configuration values can be supplied to the Snowflake I/O manager like this:
+
+```python file=/integrations/snowflake/creds_configuration.py startafter=start_example endbefore=end_example
+from dagster_snowflake_pandas import snowflake_pandas_io_manager
+
+from dagster import repository, with_resources
+
+
+@repository
+def flowers_analysis_repository():
+    return with_resources(
+        [iris_dataset],
+        resource_defs={
+            "io_manager": snowflake_pandas_io_manager.configured(
+                {
+                    "account": "abc1234.us-east-1",
+                    "user": {"env": "SNOWFLAKE_USER"},
+                    "password": {"env": "SNOWFLAKE_PASSWORD"},
+                    "role": "reader",
+                }
+            )
+        },
+    )
+```
+
+#### Specifying where data is stored
+
+You can also provide configuration to the Snowflake I/O manager that will tell it where to store your data. Specifically, you can tell the Snowflake I/O manager the `warehouse`, `database`, and `schema` to store your data in:
+
+```python file=/integrations/snowflake/location_configuration.py startafter=start_example endbefore=end_example
+from dagster_snowflake_pandas import snowflake_pandas_io_manager
+
+from dagster import repository, with_resources
+
+
+@repository
+def flowers_analysis_repository():
+    return with_resources(
+        [iris_dataset],
+        resource_defs={
+            "io_manager": snowflake_pandas_io_manager.configured(
+                {
+                    "warehouse": "PLANTS",
+                    "database": "FLOWERS",
+                    "schema": "IRIS",
+                }
+            )
+        },
+    )
+```
+
+Providing a warehouse and schema is optional. If you do not provide a warehouse, the default warehouse for your account will be used. If you do not provide a schema, Dagster will either infer a schema from your assets, or store the tables in the `PUBLIC` schema (see [Storing tables in multiple schemas](#storing-tables-in-multiple-schemas) for more information).
+
+For more documentation for each of the configuration values, see the **Config schema** dropdown in the [Snowflake API docs](#dagster_snowflake.build_snowflake_io_manager).
 
 <!--
 

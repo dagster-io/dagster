@@ -14,8 +14,6 @@ def flowers_analysis_repository():
         resource_defs={
             "io_manager": snowflake_pandas_io_manager.configured(
                 {
-                    "database": "FLOWERS",
-                    "schema": "IRIS",
                     "account": "abc1234.us-east-1",
                     "user": {"env": "SNOWFLAKE_USER"},
                     "password": {"env": "SNOWFLAKE_PASSWORD"},
