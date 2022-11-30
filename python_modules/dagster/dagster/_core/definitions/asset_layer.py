@@ -104,11 +104,13 @@ def _resolve_input_to_destinations(
     return all_destinations
 
 
-def _resolve_output_to_destinations(output_name, node_def, handle) -> Sequence[NodeInputHandle]:
-    node_input_handles: List[NodeInputHandle] = []
+def _resolve_output_to_destinations(
+    output_name: str, node_def: NodeDefinition, handle: NodeHandle
+) -> Sequence[NodeInputHandle]:
+    all_destinations: List[NodeInputHandle] = []
     if not isinstance(node_def, GraphDefinition):
         # must be in the op definition
-        return node_input_handles
+        return all_destinations
 
     for mapping in node_def.output_mappings:
         if mapping.graph_output_name != output_name:
@@ -116,7 +118,7 @@ def _resolve_output_to_destinations(output_name, node_def, handle) -> Sequence[N
         output_pointer = mapping.maps_from
         output_node = node_def.solid_named(output_pointer.solid_name)
 
-        node_input_handles.extend(
+        all_destinations.extend(
             _resolve_output_to_destinations(
                 output_pointer.output_name,
                 output_node.definition,
@@ -131,22 +133,22 @@ def _resolve_output_to_destinations(output_name, node_def, handle) -> Sequence[N
             ).get(SolidOutputHandle(output_node, output_def), [])
         )
         for input_handle in downstream_input_handles:
-            node_input_handles.append(
+            all_destinations.append(
                 NodeInputHandle(
                     NodeHandle(input_handle.solid_name, parent=handle), input_handle.input_name
                 )
             )
 
-    return node_input_handles
+    return all_destinations
 
 
 def _build_graph_dependencies(
     graph_def: GraphDefinition,
-    parent_handle: Union[NodeHandle, None],
+    parent_handle: Optional[NodeHandle],
     outputs_by_graph_handle: Dict[NodeHandle, Mapping[str, NodeOutputHandle]],
     non_asset_inputs_by_node_handle: Dict[NodeHandle, Sequence[NodeOutputHandle]],
     assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
-):
+) -> None:
     """
     Scans through every node in the graph, making a recursive call when a node is a graph.
 
@@ -256,7 +258,7 @@ def _get_dependency_node_output_handles(
 
 def get_dep_node_handles_of_graph_backed_asset(
     graph_def: GraphDefinition, assets_def: "AssetsDefinition"
-):
+) -> Mapping[AssetKey, Set[NodeHandle]]:
     """
     Given a graph-backed asset with graph_def, return a mapping of asset keys outputted by the graph
     to a list of node handles within graph_def that are the dependencies of the asset.
