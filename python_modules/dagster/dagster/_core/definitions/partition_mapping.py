@@ -1,9 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import Optional, cast
+from typing import Optional, cast, Union
 
 import dagster._check as check
 from dagster._annotations import experimental, public
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partition import (
+    PartitionsDefinition,
+    DefaultPartitionsSubset,
+    PartitionsSubset,
+)
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionsDefinition,
@@ -24,7 +28,7 @@ class PartitionMapping(ABC):
         downstream_partition_key_range: Optional[PartitionKeyRange],
         downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
+    ) -> Union[PartitionKeyRange, PartitionsSubset]:
         """Returns the range of partition keys in the upstream asset that include data necessary
         to compute the contents of the given partition key range in the downstream asset.
 
@@ -44,7 +48,7 @@ class PartitionMapping(ABC):
         upstream_partition_key_range: PartitionKeyRange,
         downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
+    ) -> Union[PartitionKeyRange, PartitionsSubset]:
         """Returns the range of partition keys in the downstream asset that use the data in the given
         partition key range of the downstream asset.
 
@@ -183,7 +187,7 @@ class SingleDimensionToMultiPartitionMapping(PartitionMapping):
         upstream_partition_key_range: PartitionKeyRange,
         downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
+    ) -> PartitionsSubset:
         if downstream_partitions_def is None or not isinstance(
             downstream_partitions_def, MultiPartitionsDefinition
         ):
@@ -210,21 +214,19 @@ class SingleDimensionToMultiPartitionMapping(PartitionMapping):
             and upstream_partition_key_range.end in dimension_partition_keys,
             f"Invalid upstream partition key range provided. The range must be a subset of the partition keys of the downstream {self.partition_dimension_name} dimension.",
         )
+        range_keys = dimension_partition_keys[
+            dimension_partition_keys.index(
+                upstream_partition_key_range.start
+            ) : dimension_partition_keys.index(upstream_partition_key_range.end)
+        ]
 
-        range_start = [
-            key
-            for key in downstream_partitions_def.get_partition_keys()
-            if cast(MultiPartitionKey, key).keys_by_dimension[self.partition_dimension_name]
-            == upstream_partition_key_range.start
-        ][0]
-        range_end = [
-            key
-            for key in downstream_partitions_def.get_partition_keys()
-            if cast(MultiPartitionKey, key).keys_by_dimension[self.partition_dimension_name]
-            == upstream_partition_key_range.end
-        ][-1]
+        matching_keys = []
+        for key in downstream_partitions_def.get_partition_keys():
+            key = cast(MultiPartitionKey, key)
+            if key.keys_by_dimension[self.partition_dimension_name] in range_keys:
+                matching_keys.append(key)
 
-        return PartitionKeyRange(range_start, range_end)
+        return DefaultPartitionsSubset(downstream_partitions_def, set(matching_keys))
 
 
 def infer_partition_mapping(
