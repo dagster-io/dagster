@@ -10,7 +10,7 @@ from dagster import (
     Nothing,
 )
 from dagster._core.definitions.composition import MappedInputPlaceholder
-from dagster._core.definitions.solid_definition import CompositeSolidDefinition
+from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._legacy import (
     InputDefinition,
     OutputDefinition,
@@ -140,7 +140,7 @@ def test_fan_in_manual():
         return collect([num, str_in, none_in])
 
     # base case works
-    _target_composite_manual = CompositeSolidDefinition(
+    _target_graph_manual = GraphDefinition(
         name="manual_composite",
         solid_defs=[emit_num, collect],
         input_mappings=[
@@ -165,8 +165,8 @@ def test_fan_in_manual():
         DagsterInvalidDefinitionError,
         match="index 2 in the MultiDependencyDefinition is not a MappedInputPlaceholder",
     ):
-        _missing_placeholder = CompositeSolidDefinition(
-            name="manual_composite",
+        _missing_placeholder = GraphDefinition(
+            name="manual_graph",
             solid_defs=[emit_num, collect],
             input_mappings=[
                 InputDefinition("str_in").mapping_to("collect", "stuff", 1),
@@ -186,8 +186,8 @@ def test_fan_in_manual():
         )
 
     with pytest.raises(DagsterInvalidDefinitionError, match="is not a MultiDependencyDefinition"):
-        _bad_target = CompositeSolidDefinition(
-            name="manual_composite",
+        _bad_target = GraphDefinition(
+            name="manual_graph",
             solid_defs=[emit_num, collect],
             input_mappings=[
                 InputDefinition("str_in").mapping_to("collect", "stuff", 1),
@@ -201,8 +201,8 @@ def test_fan_in_manual():
         DagsterInvalidDefinitionError,
         match="Unsatisfied MappedInputPlaceholder at index 3",
     ):
-        _missing_placeholder = CompositeSolidDefinition(
-            name="manual_composite",
+        _missing_placeholder = GraphDefinition(
+            name="manual_graph",
             solid_defs=[emit_num, collect],
             input_mappings=[
                 InputDefinition("str_in").mapping_to("collect", "stuff", 1),

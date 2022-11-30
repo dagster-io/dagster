@@ -189,14 +189,9 @@ class Node:
 
     def describe_node(self) -> str:
         from .op_definition import OpDefinition
-        from .solid_definition import CompositeSolidDefinition
 
-        if isinstance(self.definition, CompositeSolidDefinition):
-            return f"composite solid '{self.name}'"
-        elif isinstance(self.definition, OpDefinition):
+        if isinstance(self.definition, OpDefinition):
             return f"op '{self.name}'"
-        elif isinstance(self.definition, OpDefinition):
-            return f"solid '{self.name}'"
         else:
             return f"graph '{self.name}'"
 

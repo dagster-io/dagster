@@ -1,4 +1,4 @@
-from dagster._core.definitions import AssetGroup, CompositeSolidDefinition
+from dagster._core.definitions import AssetGroup
 from dagster._core.definitions import DagsterRunMetadataValue as DagsterPipelineRunMetadataValue
 from dagster._core.definitions import (
     DynamicOutputDefinition,
