@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Generator, Iterable, List, Mapping, Optional, Tuple, Union, cast
 
 import click
+import tomli
 from click import UsageError
 
 import dagster._check as check
@@ -72,8 +73,6 @@ WORKSPACE_CLI_ARGS = (
     "grpc_port",
     "grpc_socket",
 )
-
-import tomli
 
 
 def get_target_from_toml(path) -> Optional[PackageTarget]:

@@ -1,6 +1,6 @@
+# mypy: disable-error-code=valid-type
+
 # See: https://github.com/dagster-io/dagster/issues/4209
-# type: ignore[valid-type]
-# type: ignore[attr-defined]
 
 import os
 import pickle
@@ -68,7 +68,7 @@ def concat(_, x: String, y: str) -> str:
 @solid
 def wait(_) -> Nothing:
     time.sleep(0.2)
-    return
+    return None
 
 
 @solid(input_defs=[InputDefinition("ready", dagster_type=Nothing)])
@@ -129,17 +129,17 @@ def sum_pipeline():
 
 @solid
 def repeat(_, spec: Dict) -> str:
-    return spec["word"] * spec["times"]
+    return spec["word"] * spec["times"]  # type: ignore
 
 
 @solid
 def set_solid(_, set_input: Set[String]) -> List[String]:
-    return sorted([x for x in set_input])
+    return sorted([x for x in set_input])  # type: ignore
 
 
 @solid
 def tuple_solid(_, tuple_input: Tuple[String, Int, Float]) -> List:
-    return [x for x in tuple_input]
+    return [x for x in tuple_input]  # type: ignore
 
 
 @solid
@@ -366,6 +366,7 @@ def hello_world_default(context) -> str:
         return "你好，{whom}!".format(whom=context.solid_config["cn"]["whom"])
     if "en" in context.solid_config:
         return "Hello, {whom}!".format(whom=context.solid_config["en"]["whom"])
+    assert False, "invalid solid_config"
 
 
 @solid(config_schema=Field(Permissive({"required": Field(String)})))

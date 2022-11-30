@@ -1,4 +1,5 @@
 import datetime
+from typing import Any, Dict
 
 import great_expectations as ge
 from dagster_pandas import DataFrame
@@ -178,7 +179,7 @@ def ge_validation_op_factory_v3(
     check.str_param(data_connector_name, "data_connector_name")
     check.str_param(suite_name, "suite_name")
 
-    extra_kwargs = check.opt_dict_param(extra_kwargs, "extra_kwargs")
+    _extra_kwargs: Dict[Any, Any] = check.opt_dict_param(extra_kwargs, "extra_kwargs")
 
     @op(
         name=name,
@@ -204,7 +205,7 @@ def ge_validation_op_factory_v3(
             "runtime_parameters": {runtime_method_type: dataset},
             "batch_identifiers": batch_identifiers,
             "expectation_suite_name": suite_name,
-            **extra_kwargs,
+            **_extra_kwargs,
         }
         validator = data_context.get_validator(**validator_kwargs)
 
