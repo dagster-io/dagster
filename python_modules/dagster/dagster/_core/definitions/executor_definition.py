@@ -415,7 +415,7 @@ def multiprocess_executor(init_context):
     return _core_multiprocess_executor_creation(init_context.executor_config)
 
 
-default_executors = [in_process_executor, multiprocess_executor]
+default_executors: Sequence[ExecutorDefinition] = [in_process_executor, multiprocess_executor]
 
 
 def check_cross_process_constraints(init_context: "InitExecutorContext") -> None:

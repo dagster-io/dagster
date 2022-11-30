@@ -1,28 +1,38 @@
 import copy
-from typing import Dict, Mapping, TypeVar
+from typing import Any, Dict, Mapping, TypeVar, Union, cast
 
 import dagster._check as check
 
+K = TypeVar("K")
+V = TypeVar("V")
+K2 = TypeVar("K2")
+V2 = TypeVar("V2")
 
-def _deep_merge_dicts(onto_dict: Dict, from_dict: Mapping) -> Dict:
+
+def _deep_merge_dicts(
+    onto_dict: Dict[K, V], from_dict: Mapping[K2, V2]
+) -> Dict[Union[K, K2], Union[V, V2, Dict[object, object]]]:
     check.mapping_param(from_dict, "from_dict")
     check.dict_param(onto_dict, "onto_dict")
 
+    _onto_dict = cast(Dict[Union[K, K2], Union[V, V2, Dict[object, object]]], onto_dict)
     for from_key, from_value in from_dict.items():
         if from_key not in onto_dict:
-            onto_dict[from_key] = from_value
+            _onto_dict[from_key] = from_value
         else:
-            onto_value = onto_dict[from_key]
+            onto_value = _onto_dict[from_key]
 
             if isinstance(from_value, dict) and isinstance(onto_value, dict):
-                onto_dict[from_key] = _deep_merge_dicts(onto_value, from_value)
+                _onto_dict[from_key] = _deep_merge_dicts(onto_value, from_value)
             else:
-                onto_dict[from_key] = from_value  # smash
+                _onto_dict[from_key] = from_value  # smash
 
-    return onto_dict
+    return _onto_dict
 
 
-def deep_merge_dicts(onto_dict: Mapping, from_dict: Mapping) -> Dict:
+def deep_merge_dicts(
+    onto_dict: Mapping[K, V], from_dict: Mapping[K2, V2]
+) -> Dict[Union[K, K2], Union[V, V2, Dict[object, object]]]:
     """
     Returns a recursive union of two input dictionaries:
     * The returned dictionary has an entry for any key that's in either of the inputs.
@@ -33,13 +43,10 @@ def deep_merge_dicts(onto_dict: Mapping, from_dict: Mapping) -> Dict:
     dictionaries, the returned dictionary contains the value from from_dict.
     """
     onto_dict = copy.deepcopy(onto_dict if isinstance(onto_dict, dict) else dict(onto_dict))
-    return _deep_merge_dicts(onto_dict, from_dict)
+    return _deep_merge_dicts(onto_dict, from_dict)  # type: ignore # [mypy bug]
 
 
-K, V = TypeVar("K"), TypeVar("V")
-
-
-def merge_dicts(*args: Mapping) -> Dict:
+def merge_dicts(*args: Mapping[Any, Any]) -> Dict[Any, Any]:
     """
     Returns a dictionary with with all the keys in all of the input dictionaries.
 
@@ -50,7 +57,7 @@ def merge_dicts(*args: Mapping) -> Dict:
     if len(args) < 2:
         check.failed(f"Expected 2 or more args to merge_dicts, found {len(args)}")
 
-    result: dict = {}
+    result: Dict[object, object] = {}
     for arg in args:
         result.update(arg)
     return result

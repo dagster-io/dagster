@@ -31,68 +31,68 @@ export const PipelineRoot: React.FC<Props> = (props) => {
     >
       <PipelineNav repoAddress={repoAddress} />
       <Switch>
-        <Route path="/workspace/:repoPath/pipeline_or_job/:pipelinePath/(/?.*)">
+        <Route path="/locations/:repoPath/pipeline_or_job/:pipelinePath/(/?.*)">
           <PipelineOrJobDisambiguationRoot repoAddress={repoAddress} />
         </Route>
         <Route
           path={[
-            '/workspace/:repoPath/pipelines/:pipelinePath/playground/setup',
-            '/workspace/:repoPath/jobs/:pipelinePath/playground/setup',
+            '/locations/:repoPath/pipelines/:pipelinePath/playground/setup',
+            '/locations/:repoPath/jobs/:pipelinePath/playground/setup',
           ]}
         >
           <LaunchpadSetupRoot repoAddress={repoAddress} />
         </Route>
         <Route
           path={[
-            '/workspace/:repoPath/pipelines/:pipelinePath/playground/setup-from-run/:runId',
-            '/workspace/:repoPath/jobs/:pipelinePath/playground/setup-from-run/:runId',
+            '/locations/:repoPath/pipelines/:pipelinePath/playground/setup-from-run/:runId',
+            '/locations/:repoPath/jobs/:pipelinePath/playground/setup-from-run/:runId',
           ]}
         >
           <LaunchpadSetupFromRunRoot repoAddress={repoAddress} />
         </Route>
         <Route
           path={[
-            '/workspace/:repoPath/pipelines/:pipelinePath/playground',
-            '/workspace/:repoPath/jobs/:pipelinePath/playground',
+            '/locations/:repoPath/pipelines/:pipelinePath/playground',
+            '/locations/:repoPath/jobs/:pipelinePath/playground',
           ]}
         >
           <JobLaunchpad repoAddress={repoAddress} />
         </Route>
         <Route
           path={[
-            '/workspace/:repoPath/pipelines/:pipelinePath/runs/:runId',
-            '/workspace/:repoPath/jobs/:pipelinePath/runs/:runId',
+            '/locations/:repoPath/pipelines/:pipelinePath/runs/:runId',
+            '/locations/:repoPath/jobs/:pipelinePath/runs/:runId',
           ]}
           render={(props: RouteComponentProps<{runId: string}>) => (
-            <Redirect to={`/instance/runs/${props.match.params.runId}`} />
+            <Redirect to={`/runs/${props.match.params.runId}`} />
           )}
         />
         <Route
           path={[
-            '/workspace/:repoPath/pipelines/:pipelinePath/runs',
-            '/workspace/:repoPath/jobs/:pipelinePath/runs',
+            '/locations/:repoPath/pipelines/:pipelinePath/runs',
+            '/locations/:repoPath/jobs/:pipelinePath/runs',
           ]}
         >
           <PipelineRunsRoot repoAddress={repoAddress} />
         </Route>
         <Route
           path={[
-            '/workspace/:repoPath/pipelines/:pipelinePath/partitions',
-            '/workspace/:repoPath/jobs/:pipelinePath/partitions',
+            '/locations/:repoPath/pipelines/:pipelinePath/partitions',
+            '/locations/:repoPath/jobs/:pipelinePath/partitions',
           ]}
         >
           <PipelinePartitionsRoot repoAddress={repoAddress} />
         </Route>
         <Route
           path={[
-            '/workspace/:repoPath/pipelines/:pipelinePath/overview',
-            '/workspace/:repoPath/jobs/:pipelinePath/overview',
+            '/locations/:repoPath/pipelines/:pipelinePath/overview',
+            '/locations/:repoPath/jobs/:pipelinePath/overview',
           ]}
           render={(props) => (
-            <Redirect to={`/workspace/${props.match.url.replace(/\/overview$/i, '')}`} />
+            <Redirect to={`/locations/${props.match.url.replace(/\/overview$/i, '')}`} />
           )}
         />
-        <Route path={['/workspace/:repoPath/pipelines/(/?.*)', '/workspace/:repoPath/jobs/(/?.*)']}>
+        <Route path={['/locations/:repoPath/pipelines/(/?.*)', '/locations/:repoPath/jobs/(/?.*)']}>
           <PipelineOverviewRoot repoAddress={repoAddress} />
         </Route>
       </Switch>

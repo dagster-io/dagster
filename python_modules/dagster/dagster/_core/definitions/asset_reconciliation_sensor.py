@@ -122,8 +122,14 @@ class AssetReconciliationCursor(NamedTuple):
             | requested_non_partitioned_root_assets
         )
 
+        if latest_storage_id and self.latest_storage_id:
+            check.invariant(
+                latest_storage_id >= self.latest_storage_id,
+                "Latest storage ID should be >= previous latest storage ID",
+            )
+
         return AssetReconciliationCursor(
-            latest_storage_id=latest_storage_id,
+            latest_storage_id=latest_storage_id or self.latest_storage_id,
             materialized_or_requested_root_asset_keys=result_materialized_or_requested_root_asset_keys,
             materialized_or_requested_root_partitions_by_asset_key=result_materialized_or_requested_root_partitions_by_asset_key,
         )
@@ -832,7 +838,7 @@ def build_asset_reconciliation_sensor(
 
     """
     check_valid_name(name)
-    check.opt_dict_param(run_tags, "run_tags", key_type=str, value_type=str)
+    check.opt_mapping_param(run_tags, "run_tags", key_type=str, value_type=str)
 
     def sensor_fn(context):
         cursor = (

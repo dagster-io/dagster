@@ -1,4 +1,3 @@
-import {gql, useLazyQuery} from '@apollo/client';
 import {
   SuggestionProvider,
   TokenizingField,
@@ -12,14 +11,6 @@ import * as React from 'react';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RunStatus, RunsFilter} from '../types/globalTypes';
 import {DagsterRepoOption, useRepositoryOptions} from '../workspace/WorkspaceContext';
-
-import {canAddTagToFilter} from './RunTags';
-import {
-  RunsSearchSpaceQuery,
-  RunsSearchSpaceQuery_pipelineRunTags,
-} from './types/RunsSearchSpaceQuery';
-
-type PipelineRunTags = RunsSearchSpaceQuery_pipelineRunTags[];
 
 export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'job' | 'snapshotId' | 'tag';
 
@@ -80,10 +71,7 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
 }
 
 export function runsPathWithFilters(filterTokens: RunFilterToken[]) {
-  return `/instance/runs?${qs.stringify(
-    {q: tokensAsStringArray(filterTokens)},
-    {arrayFormat: 'brackets'},
-  )}`;
+  return `/runs?${qs.stringify({q: tokensAsStringArray(filterTokens)}, {arrayFormat: 'brackets'})}`;
 }
 
 export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
@@ -119,7 +107,6 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
 
 function searchSuggestionsForRuns(
   repositoryOptions: DagsterRepoOption[],
-  pipelineRunTags?: PipelineRunTags,
   enabledFilters?: RunFilterTokenType[],
 ): SuggestionProvider[] {
   const pipelineNames = new Set<string>();
@@ -155,14 +142,7 @@ function searchSuggestionsForRuns(
     },
     {
       token: 'tag',
-      values: () => {
-        const all: string[] = [];
-        [...(pipelineRunTags || [])]
-          .filter(({key}) => canAddTagToFilter(key))
-          .sort((a, b) => a.key.localeCompare(b.key))
-          .forEach((t) => t.values.forEach((v) => all.push(`${t.key}=${v}`)));
-        return all;
-      },
+      values: () => [],
     },
     {
       token: 'snapshotId',
@@ -191,11 +171,8 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
   enabledFilters,
 }) => {
   const {options} = useRepositoryOptions();
-  const [performQuery, {data}] = useLazyQuery<RunsSearchSpaceQuery>(RUNS_SEARCH_SPACE_QUERY, {
-    fetchPolicy: 'cache-and-network',
-  });
 
-  const suggestions = searchSuggestionsForRuns(options, data?.pipelineRunTags, enabledFilters);
+  const suggestions = searchSuggestionsForRuns(options, enabledFilters);
 
   const search = tokenizedValuesFromStringArray(tokensAsStringArray(tokens), suggestions);
 
@@ -224,25 +201,13 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
     );
   };
 
-  const onFocus = React.useCallback(() => performQuery(), [performQuery]);
-
   return (
     <TokenizingField
       values={search}
       onChange={(values) => onChange(values as RunFilterToken[])}
-      onFocus={onFocus}
       suggestionProviders={suggestions}
       suggestionProvidersFilter={suggestionProvidersFilter}
       loading={loading}
     />
   );
 };
-
-const RUNS_SEARCH_SPACE_QUERY = gql`
-  query RunsSearchSpaceQuery {
-    pipelineRunTags {
-      key
-      values
-    }
-  }
-`;

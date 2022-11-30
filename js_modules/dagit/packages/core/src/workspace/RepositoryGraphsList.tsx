@@ -116,13 +116,15 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
     return null;
   }
 
+  const repoName = repoAddressAsString(repoAddress);
+
   if (error || !graphsForTable) {
     return (
       <Box padding={{vertical: 64}}>
         <NonIdealState
           icon="error"
           title="Unable to load graphs"
-          description={`Could not load graphs for ${repoAddressAsString(repoAddress)}`}
+          description={`Could not load graphs for ${repoName}`}
         />
       </Box>
     );
@@ -134,7 +136,7 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
         <NonIdealState
           icon="schema"
           title="No graphs found"
-          description={<div>This repository does not have any graphs defined.</div>}
+          description={`${repoName} does not have any graphs defined.`}
         />
       </Box>
     );

@@ -5,6 +5,7 @@ import pytest
 
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import repository_def_from_pointer
 from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 from dagster._core.errors import DagsterImportError
@@ -26,7 +27,8 @@ def test_single_repository():
     assert symbol == "single_repository"
 
     repo_def = CodePointer.from_python_file(single_repo_path, symbol, None).load_target()
-    isinstance(repo_def, RepositoryDefinition)
+    assert isinstance(repo_def, RepositoryDefinition)
+
     assert repo_def.name == "single_repository"
 
 
@@ -35,7 +37,12 @@ def test_double_repository():
         file_relative_path(__file__, "double_repository.py"),
     )
 
-    assert set([lr.target_definition.name for lr in loadable_repos]) == {"repo_one", "repo_two"}
+    found_names = set()
+    for lr in loadable_repos:
+        assert isinstance(lr.target_definition, RepositoryDefinition)
+        found_names.add(lr.target_definition.name)
+
+    assert found_names == {"repo_one", "repo_two"}
 
 
 def test_single_pipeline():
@@ -50,7 +57,7 @@ def test_single_pipeline():
         CodePointer.from_python_file(single_pipeline_path, symbol, None)
     )
 
-    isinstance(repo_def, RepositoryDefinition)
+    assert isinstance(repo_def, RepositoryDefinition)
     assert repo_def.get_pipeline("a_pipeline")
 
 
@@ -79,7 +86,7 @@ def test_single_graph():
         CodePointer.from_python_file(single_graph_path, symbol, None)
     )
 
-    isinstance(repo_def, RepositoryDefinition)
+    assert isinstance(repo_def, RepositoryDefinition)
     assert repo_def.get_pipeline("graph_one")
 
 
@@ -106,7 +113,7 @@ def test_single_asset_group():
 
     repo_def = repository_def_from_pointer(CodePointer.from_python_file(path, symbol, None))
 
-    isinstance(repo_def, RepositoryDefinition)
+    assert isinstance(repo_def, RepositoryDefinition)
     the_job = repo_def.get_job("__ASSET_JOB")
     assert len(the_job.graph.node_defs) == 2
 
@@ -134,7 +141,7 @@ def test_multiple_assets():
 
     repo_def = repository_def_from_pointer(CodePointer.from_python_file(path, symbol, None))
 
-    isinstance(repo_def, RepositoryDefinition)
+    assert isinstance(repo_def, RepositoryDefinition)
     the_job = repo_def.get_job("__ASSET_JOB")
     assert len(the_job.graph.node_defs) == 2
 
@@ -158,7 +165,7 @@ def test_single_pending_repository():
     assert symbol == "single_pending_repository"
 
     repo_def = CodePointer.from_python_file(single_pending_repo_path, symbol, None).load_target()
-    isinstance(repo_def, PendingRepositoryDefinition)
+    assert isinstance(repo_def, PendingRepositoryDefinition)
     assert repo_def.name == "single_pending_repository"
 
 
@@ -174,7 +181,7 @@ def test_single_repository_in_module():
     repo_def = CodePointer.from_module(
         "dagster.utils.test.toys.single_repository", symbol, working_directory=None
     ).load_target()
-    isinstance(repo_def, RepositoryDefinition)
+    assert isinstance(repo_def, RepositoryDefinition)
     assert repo_def.name == "single_repository"
 
 
@@ -190,8 +197,41 @@ def test_single_repository_in_package():
     repo_def = CodePointer.from_python_package(
         "dagster.utils.test.toys.single_repository", symbol, working_directory=None
     ).load_target()
-    isinstance(repo_def, RepositoryDefinition)
+    assert isinstance(repo_def, RepositoryDefinition)
     assert repo_def.name == "single_repository"
+
+
+def test_single_defs_in_file():
+    dagster_defs_path = file_relative_path(__file__, "single_defs.py")
+    loadable_targets = loadable_targets_from_python_file(dagster_defs_path)
+
+    assert len(loadable_targets) == 1
+    symbol = loadable_targets[0].attribute
+    assert symbol == "defs"
+
+    repo_def = repository_def_from_pointer(
+        CodePointer.from_python_file(dagster_defs_path, symbol, None)
+    )
+
+    assert isinstance(repo_def, RepositoryDefinition)
+
+
+def test_single_def_wrong_variable():
+    dagster_defs_path = file_relative_path(__file__, "single_defs_wrong_name.py")
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Found Definitions object at wrong_name. This object must be at a top-level variable named 'defs'.",
+    ):
+        loadable_targets_from_python_file(dagster_defs_path)
+
+
+def test_double_defs_in_file():
+    dagster_defs_path = file_relative_path(__file__, "double_defs.py")
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Cannot have more than one Definitions object defined at module scope",
+    ):
+        loadable_targets_from_python_file(dagster_defs_path)
 
 
 def _current_test_directory_paths():

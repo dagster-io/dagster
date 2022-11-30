@@ -349,8 +349,8 @@ def test_invalid_configurable_class():
     ):
         with instance_for_test(
             overrides={"run_launcher": {"module": "dagster", "class": "MadeUpRunLauncher"}}
-        ):
-            pass
+        ) as instance:
+            print(instance.run_launcher)  # pylint: disable=print-call
 
 
 def test_invalid_configurable_module():
@@ -368,8 +368,8 @@ def test_invalid_configurable_module():
                     "class": "MadeUpRunLauncher",
                 }
             }
-        ):
-            pass
+        ) as instance:
+            print(instance.run_launcher)  # pylint: disable=print-call
 
 
 @pytest.mark.parametrize("dirname", (".", ".."))
@@ -499,5 +499,5 @@ def test_configurable_class_missing_methods():
                     "class": "InvalidRunLauncher",
                 }
             }
-        ):
-            pass
+        ) as instance:
+            print(instance.run_launcher)  # pylint: disable=print-call

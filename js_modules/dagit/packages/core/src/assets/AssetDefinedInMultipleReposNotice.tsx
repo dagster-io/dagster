@@ -55,7 +55,7 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
                   title: MULTIPLE_DEFINITIONS_WARNING,
                   body: (
                     <>
-                      Repositories containing an asset definition for{' '}
+                      Code locations containing an asset definition for{' '}
                       <strong>{displayNameForAssetKey(assetKey)}</strong>:
                       <ul>
                         {allReposWithAsset.map((addr) => (

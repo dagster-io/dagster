@@ -27,7 +27,7 @@ import {
   LaunchPartitionBackfillVariables,
 } from '../instance/types/LaunchPartitionBackfill';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
-import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {
   ConfigPartitionSelectionQuery,
   ConfigPartitionSelectionQueryVariables,
@@ -49,7 +49,6 @@ import {
 import {usePartitionDimensionRanges} from './usePartitionDimensionRanges';
 import {PartitionHealthDimensionRange, usePartitionHealthData} from './usePartitionHealthData';
 import {usePartitionNameForPipeline} from './usePartitionNameForPipeline';
-
 interface Props {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -99,23 +98,23 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   assetJobName,
   upstreamAssetKeys,
 }) => {
-  const {canLaunchPartitionBackfill} = usePermissions();
-  const [previewCount, setPreviewCount] = React.useState(0);
-  const [launching, setLaunching] = React.useState(false);
-
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
+
+  const {canLaunchPartitionBackfill} = usePermissions();
+  const [launching, setLaunching] = React.useState(false);
+  const [previewCount, setPreviewCount] = React.useState(0);
+  const morePreviewsCount = partitionedAssets.length - previewCount;
+
   const assetHealth = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
   const mergedHealth = React.useMemo(() => mergedAssetHealth(assetHealth), [assetHealth]);
 
   const [ranges, setRanges] = usePartitionDimensionRanges(
     mergedHealth,
     partitionedAssets[0].partitionKeysByDimension.map((d) => d.name),
-    'launch',
   );
 
   const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
     PartitionState.MISSING,
-    PartitionState.SUCCESS_MISSING,
   ]);
 
   const allInRanges = React.useMemo(
@@ -129,6 +128,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   const client = useApolloClient();
   const history = useHistory();
+  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
   // Find the partition set name. This seems like a bit of a hack, unclear
@@ -257,7 +257,11 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
               key={range.dimension.name}
               partitionKeys={range.dimension.partitionKeys}
               partitionStateForKey={(dimensionKey) =>
-                mergedHealth.stateForSingleDimension(idx, dimensionKey)
+                mergedHealth.stateForSingleDimension(
+                  idx,
+                  dimensionKey,
+                  ranges.length === 2 ? ranges[1 - idx].selected : undefined,
+                )
               }
               selected={range.selected}
               setSelected={(selected) =>
@@ -269,45 +273,54 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           ))}
           <PartitionStateCheckboxes
             partitionKeysForCounts={allInRanges}
-            allowed={[
-              PartitionState.MISSING,
-              PartitionState.SUCCESS_MISSING,
-              PartitionState.SUCCESS,
-            ]}
+            allowed={[PartitionState.MISSING, PartitionState.SUCCESS]}
             value={stateFilters}
             onChange={setStateFilters}
           />
         </Box>
-        <Box
-          flex={{direction: 'column', gap: 8}}
-          border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-          style={{marginTop: 16, overflowY: 'auto', overflowX: 'visible', maxHeight: '50vh'}}
-        >
-          {partitionedAssets.slice(0, previewCount).map((a) => (
-            <PartitionHealthSummary
-              assetKey={a.assetKey}
-              showAssetKey
-              key={displayNameForAssetKey(a.assetKey)}
-              data={assetHealth}
-              selected={allSelected}
-            />
-          ))}
-          {partitionedAssets.length === 1 ? (
-            <span />
-          ) : previewCount === 0 ? (
-            <Box margin={{vertical: 8}}>
-              <ButtonLink onClick={() => setPreviewCount(5)}>
-                Show per-asset partition health
-              </ButtonLink>
-            </Box>
-          ) : previewCount < partitionedAssets.length ? (
-            <Box margin={{vertical: 8}}>
-              <ButtonLink onClick={() => setPreviewCount(partitionedAssets.length)}>
-                Show {partitionedAssets.length - previewCount} more previews
-              </ButtonLink>
-            </Box>
-          ) : undefined}
-        </Box>
+
+        {previewCount > 0 && (
+          <Box
+            margin={{top: 16}}
+            flex={{direction: 'column', gap: 8}}
+            padding={{vertical: 16, horizontal: 20}}
+            border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+            background={Colors.Gray100}
+            style={{
+              marginLeft: -20,
+              marginRight: -20,
+              overflowY: 'auto',
+              overflowX: 'visible',
+              maxHeight: '35vh',
+            }}
+          >
+            {partitionedAssets.slice(0, previewCount).map((a) => (
+              <PartitionHealthSummary
+                key={displayNameForAssetKey(a.assetKey)}
+                assetKey={a.assetKey}
+                showAssetKey
+                data={assetHealth}
+                ranges={ranges}
+              />
+            ))}
+            {morePreviewsCount > 0 && (
+              <Box margin={{vertical: 8}}>
+                <ButtonLink onClick={() => setPreviewCount(partitionedAssets.length)}>
+                  Show {morePreviewsCount} more {morePreviewsCount > 1 ? 'previews' : 'preview'}
+                </ButtonLink>
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {previewCount === 0 && partitionedAssets.length > 1 && (
+          <Box margin={{top: 16, bottom: 8}}>
+            <ButtonLink onClick={() => setPreviewCount(5)}>
+              Show per-asset partition health
+            </ButtonLink>
+          </Box>
+        )}
+
         <UpstreamUnavailableWarning
           upstreamAssetKeys={upstreamAssetKeys}
           ranges={ranges}

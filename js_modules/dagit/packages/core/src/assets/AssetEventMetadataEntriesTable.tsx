@@ -59,7 +59,7 @@ export const AssetEventMetadataEntriesTable: React.FC<{
                       <Icon name="observation" size={16} style={{marginTop: 2}} />
                       <span>
                         {`${obs.stepKey} in `}
-                        <Link to={`/instance/runs/${obs.runId}?timestamp=${obs.timestamp}`}>
+                        <Link to={`/runs/${obs.runId}?timestamp=${obs.timestamp}`}>
                           <Mono>{titleForRun({runId: obs.runId})}</Mono>
                         </Link>
                       </span>

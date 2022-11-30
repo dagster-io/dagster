@@ -386,7 +386,7 @@
           {
             "title": "Authentication",
             "path": "/dagster-cloud/account/authentication",
-            "children":[
+            "children": [
               {
                 "title": "Azure Active Directory",
                 "path": "/dagster-cloud/account/authentication/setting-up-azure-ad-saml-sso"
@@ -548,10 +548,10 @@
     "icon": "Integrations",
     "path": "/integrations",
     "children": [
-        {
-          "title": "Airbyte",
-          "path": "/integrations/airbyte"
-        },
+      {
+        "title": "Airbyte",
+        "path": "/integrations/airbyte"
+      },
       {
         "title": "Airflow",
         "path": "/integrations/airflow"
@@ -601,7 +601,7 @@
         "path": "/integrations/great-expectations"
       },
       {
-        "title": "Jupyter/Papermill",
+        "title": "Jupyter / Papermill",
         "path": "/integrations/dagstermill"
       },
       {
@@ -786,10 +786,6 @@
         "title": "Libraries",
         "children": [
           {
-            "title": "Dagstermill",
-            "path": "/_apidocs/libraries/dagstermill"
-          },
-          {
             "title": "Airbyte (dagster-airbyte)",
             "path": "/_apidocs/libraries/dagster-airbyte"
           },
@@ -868,6 +864,10 @@
           {
             "title": "Github (dagster-github)",
             "path": "/_apidocs/libraries/dagster-github"
+          },
+          {
+            "title": "Jupyter / Papermill (dagstermill)",
+            "path": "/_apidocs/libraries/dagstermill"
           },
           {
             "title": "Kubernetes (dagster-k8s)",
@@ -956,7 +956,7 @@
       },
       {
         "title": "Slack",
-        "path": "https://dagster-slackin.herokuapp.com/",
+        "path": "https://dagster.io/slack",
         "isExternalLink": true
       },
       {

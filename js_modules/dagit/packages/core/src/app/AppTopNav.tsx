@@ -51,11 +51,12 @@ export const AppTopNav: React.FC<Props> = ({
         title: 'runs',
         element: (
           <ShortcutHandler
-            onShortcut={() => history.push('/instance/runs')}
+            key="runs"
+            onShortcut={() => history.push('/runs')}
             shortcutLabel="⌥2"
             shortcutFilter={(e) => e.altKey && e.code === 'Digit2'}
           >
-            <TopNavLink to="/instance/runs" data-cy="AppTopNav_RunsLink">
+            <TopNavLink to="/runs" data-cy="AppTopNav_RunsLink">
               Runs
             </TopNavLink>
           </ShortcutHandler>
@@ -65,27 +66,13 @@ export const AppTopNav: React.FC<Props> = ({
         title: 'assets',
         element: (
           <ShortcutHandler
-            onShortcut={() => history.push('/instance/assets')}
+            key="assets"
+            onShortcut={() => history.push('/assets')}
             shortcutLabel="⌥3"
             shortcutFilter={(e) => e.altKey && e.code === 'Digit3'}
           >
-            <TopNavLink to="/instance/assets" data-cy="AppTopNav_AssetsLink" exact={false}>
+            <TopNavLink to="/assets" data-cy="AppTopNav_AssetsLink" exact={false}>
               Assets
-            </TopNavLink>
-          </ShortcutHandler>
-        ),
-      },
-      {
-        title: 'workspace',
-        element: (
-          <ShortcutHandler
-            key="workspace"
-            onShortcut={() => history.push('/workspace')}
-            shortcutLabel="⌥4"
-            shortcutFilter={(e) => e.altKey && e.code === 'Digit4'}
-          >
-            <TopNavLink to="/workspace" data-cy="AppTopNav_WorkspaceLink">
-              Workspace
             </TopNavLink>
           </ShortcutHandler>
         ),
@@ -95,19 +82,21 @@ export const AppTopNav: React.FC<Props> = ({
         element: (
           <ShortcutHandler
             key="deployment"
-            onShortcut={() => history.push('/instance')}
-            shortcutLabel="⌥5"
-            shortcutFilter={(e) => e.altKey && e.code === 'Digit5'}
+            onShortcut={() => history.push('/code-locations')}
+            shortcutLabel="⌥4"
+            shortcutFilter={(e) => e.altKey && e.code === 'Digit4'}
           >
             <TopNavLink
-              to="/instance"
+              to="/code-locations"
               data-cy="AppTopNav_StatusLink"
               isActive={(_, location) => {
                 const {pathname} = location;
                 return (
-                  pathname.startsWith('/instance') &&
-                  !pathname.startsWith('/instance/runs') &&
-                  !pathname.startsWith('/instance/assets')
+                  pathname.startsWith('/code-locations') ||
+                  pathname.startsWith('/locations') ||
+                  pathname.startsWith('/definitions') ||
+                  pathname.startsWith('/health') ||
+                  pathname.startsWith('/config')
                 );
               }}
             >
@@ -126,10 +115,8 @@ export const AppTopNav: React.FC<Props> = ({
     <AppTopNavContainer>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
         <AppTopNavLogo />
-        <Box margin={{left: 8}}>
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
-            {getNavLinks ? getNavLinks(navLinks()) : navLinks().map((link) => link.element)}
-          </Box>
+        <Box margin={{left: 8}} flex={{direction: 'row', alignItems: 'center', gap: 16}}>
+          {getNavLinks ? getNavLinks(navLinks()) : navLinks().map((link) => link.element)}
         </Box>
         {rightOfSearchBar}
       </Box>

@@ -27,7 +27,7 @@ export const CurrentRunsBanner: React.FC<{liveData?: LiveDataForNode; border: Bo
                 {inProgressRunIds.map((runId) => (
                   <React.Fragment key={runId}>
                     Run{' '}
-                    <Link to={`/instance/runs/${runId}`}>
+                    <Link to={`/runs/${runId}`}>
                       {titleForRun({
                         runId,
                       })}
@@ -42,7 +42,7 @@ export const CurrentRunsBanner: React.FC<{liveData?: LiveDataForNode; border: Bo
                 {unstartedRunIds.map((runId) => (
                   <React.Fragment key={runId}>
                     Run{' '}
-                    <Link to={`/instance/runs/${runId}`}>
+                    <Link to={`/runs/${runId}`}>
                       {titleForRun({
                         runId,
                       })}

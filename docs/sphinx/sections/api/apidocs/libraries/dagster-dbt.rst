@@ -1,22 +1,58 @@
+#################
 dbt (dagster-dbt)
------------------
+#################
 
-This library provides a Dagster integration with `dbt <https://getdbt.com/>`_ (data build tool), created by `dbt Labs <https://www.getdbt.com/>`_.
+Dagster orchestrates dbt alongside other technologies, so you can combine dbt with Spark, Python,
+etc. in a single workflow. Dagster's software-defined asset abstractions make it simple to define
+data assets that depend on specific dbt models, or to define the computation required to compute
+the sources that your dbt models depend on.
+
+Related guides: `Visualize and orchestrate assets in dbt Core </integrations/dbt>`_ and
+`dbt Cloud <integrations/dbt-cloud>`_.
 
 .. currentmodule:: dagster_dbt
 
-Assets
-======
+********
+dbt Core
+********
+
+Here, we provide interfaces to manage dbt projects invoked by the local dbt command line interface
+(dbt CLI).
+
+Assets (dbt Core)
+=================
 
 .. autofunction:: load_assets_from_dbt_project
 
 .. autofunction:: load_assets_from_dbt_manifest
 
-Resources
-=========
+Ops (dbt Core)
+==============
+
+If you're using asset-based dbt APIs like `load_assets_from_dbt_project`, you usually will not also use the below op-based APIs.
+
+``dagster_dbt`` provides a set of pre-built ops that work with either the CLI or RPC interfaces. For
+more advanced use cases, we suggest building your own ops which directly interact with these resources.
+
+.. autoconfigurable:: dbt_run_op
+
+.. autofunction:: dbt_compile_op
+
+.. autofunction:: dbt_ls_op
+
+.. autofunction:: dbt_test_op
+
+.. autofunction:: dbt_snapshot_op
+
+.. autofunction:: dbt_seed_op
+
+.. autofunction:: dbt_docs_generate_op
+
+Resources (dbt Core)
+====================
 
 CLI Resources
-~~~~~~~~~~~~~
+-------------
 
 .. autoclass:: DbtCliResource
     :members:
@@ -27,17 +63,8 @@ CLI Resources
 .. autoconfigurable:: dbt_cli_resource
     :annotation: ResourceDefinition
 
-dbt Cloud Resources
-~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: DbtCloudResourceV2
-    :members:
-
-.. autoconfigurable:: dbt_cloud_resource
-    :annotation: ResourceDefinition
-
 RPC Resources
-~~~~~~~~~~~~~
+-------------
 
 .. autoclass:: DbtRpcResource
     :members:
@@ -57,38 +84,34 @@ RPC Resources
 .. autoconfigurable:: dbt_rpc_sync_resource
     :annotation: ResourceDefinition
 
-Ops
-===
+*********
+dbt Cloud
+*********
 
-If you're using asset-based dbt APIs like `load_assets_from_dbt_project`, you usually will not also use the below op-based APIs.
+Here, we provide interfaces to manage dbt projects invoked by the hosted dbt Cloud service.
 
-dbt Core Ops
-~~~~~~~~~~~~
+Assets (dbt Cloud)
+==================
 
-``dagster_dbt`` provides a set of pre-built ops that work with either the CLI or RPC interfaces. For
-more advanced use cases, we suggest building your own ops which directly interact with these resources.
+.. autofunction:: load_assets_from_dbt_cloud_job
 
-.. autoconfigurable:: dbt_run_op
-
-.. autofunction:: dbt_compile_op
-
-.. autofunction:: dbt_ls_op
-
-.. autofunction:: dbt_test_op
-
-.. autofunction:: dbt_snapshot_op
-
-.. autofunction:: dbt_seed_op
-
-.. autofunction:: dbt_docs_generate_op
-
-dbt Cloud Ops
-~~~~~~~~~~~~~
+Ops (dbt Cloud)
+===============
 
 .. autoconfigurable:: dbt_cloud_run_op
 
+Resources (dbt Cloud)
+=====================
+
+.. autoclass:: DbtCloudResourceV2
+    :members:
+
+.. autoconfigurable:: dbt_cloud_resource
+    :annotation: ResourceDefinition
+
+*****
 Types
-=====
+*****
 
 .. autoclass:: DbtOutput
     :members:
@@ -96,8 +119,9 @@ Types
 .. autoclass:: DbtResource
     :members:
 
+******
 Errors
-======
+******
 
 .. autoexception:: DagsterDbtError
 
@@ -113,8 +137,9 @@ Errors
 
 .. autoexception:: DagsterDbtRpcUnexpectedPollOutputError
 
+*****
 Utils
-=====
+*****
 
 .. currentmodule:: dagster_dbt.utils
 

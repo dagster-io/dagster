@@ -71,6 +71,7 @@ from dagster import (
     op,
     repository,
     resource,
+    schedule,
     static_partitioned_config,
     usable_as_dagster_type,
 )
@@ -1226,6 +1227,13 @@ def define_schedules():
         run_config={"solids": {"takes_an_enum": {"config": "invalid"}}},
     )
 
+    @schedule(
+        job_name="nested_job",
+        cron_schedule=["45 23 * * 6", "30 9 * * 0"],
+    )
+    def composite_cron_schedule(_context):
+        return {}
+
     return [
         run_config_error_schedule,
         no_config_pipeline_hourly_schedule,
@@ -1246,6 +1254,7 @@ def define_schedules():
         timezone_schedule,
         invalid_config_schedule,
         running_in_code_schedule,
+        composite_cron_schedule,
     ]
 
 

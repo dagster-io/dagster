@@ -1,16 +1,18 @@
-from typing import NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, NamedTuple, Optional, Sequence, Union
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
 
-from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
+if TYPE_CHECKING:
+    from .graph_definition import GraphDefinition
+
 ExecutableDefinition: TypeAlias = Union[
-    PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition
+    PipelineDefinition, "GraphDefinition", UnresolvedAssetJobDefinition
 ]
 
 
@@ -36,8 +38,11 @@ class DirectTarget(
     """
 
     def __new__(
-        cls, target: Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]
+        cls,
+        target: ExecutableDefinition,
     ):
+        from .graph_definition import GraphDefinition
+
         check.inst_param(
             target, "target", (GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition)
         )
@@ -72,5 +77,5 @@ class DirectTarget(
         # open question on how to direct target subset pipeline
         return None
 
-    def load(self) -> Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
+    def load(self) -> ExecutableDefinition:
         return self.target

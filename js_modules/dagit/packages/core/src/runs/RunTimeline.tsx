@@ -17,7 +17,7 @@ import styled from 'styled-components/macro';
 
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {browserTimezone} from '../app/time/browserTimezone';
-import {OVERVIEW_COLLAPSED_KEY, OVERVIEW_EXPANSION_KEY} from '../overview/OverviewExpansionKey';
+import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -83,7 +83,6 @@ export const RunTimeline = (props: Props) => {
 
   const allKeys = Object.keys(buckets);
   const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
-    OVERVIEW_EXPANSION_KEY,
     OVERVIEW_COLLAPSED_KEY,
     allKeys,
   );
@@ -607,7 +606,7 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
             Launch a run
           </AnchorButton>
           <span>or</span>
-          <AnchorButton icon={<Icon name="materialization" />} to="/instance/asset-groups">
+          <AnchorButton icon={<Icon name="materialization" />} to="/asset-groups">
             Materialize an asset
           </AnchorButton>
         </Box>
@@ -735,7 +734,7 @@ const RunHoverContent = (props: RunHoverContentProps) => {
               {run.status === 'SCHEDULED' ? (
                 'Scheduled'
               ) : (
-                <Link to={`/instance/runs/${run.id}`}>
+                <Link to={`/runs/${run.id}`}>
                   <Mono>{run.id.slice(0, 8)}</Mono>
                 </Link>
               )}
