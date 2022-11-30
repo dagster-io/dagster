@@ -17,6 +17,7 @@ from dagster import Permissive, Shape
 from dagster import _check as check
 from dagster import fs_io_manager
 from dagster._config import Array, Field
+from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     InProcessRepositoryLocationOrigin,
@@ -29,7 +30,7 @@ from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, R
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._daemon.controller import create_daemon_grpc_server_registry
-from dagster._legacy import ModeDefinition, composite_solid, pipeline, solid
+from dagster._legacy import ModeDefinition, pipeline, solid
 from dagster._serdes import ConfigurableClass
 from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
 from dagster._utils import Counter, merge_dicts, traced, traced_counter
@@ -75,7 +76,7 @@ def nesting_composite_pipeline(depth, num_children, *args, **kwargs):
         return 1
 
     def create_wrap(inner, name):
-        @composite_solid(name=name)
+        @graph(name=name)
         def wrap():
             for i in range(num_children):
                 solid_alias = "%s_node_%d" % (name, i)

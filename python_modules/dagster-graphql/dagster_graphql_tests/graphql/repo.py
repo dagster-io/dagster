@@ -100,7 +100,6 @@ from dagster._legacy import (
     PresetDefinition,
     SolidExecutionContext,
     build_assets_job,
-    composite_solid,
     daily_schedule,
     hourly_schedule,
     lambda_solid,
@@ -696,15 +695,15 @@ def composites_pipeline():
     def div_two(num):
         return num / 2
 
-    @composite_solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @graph(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
     def add_two(num):
         return add_one.alias("adder_2")(add_one.alias("adder_1")(num))
 
-    @composite_solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @graph(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
     def add_four(num):
         return add_two.alias("adder_2")(add_two.alias("adder_1")(num))
 
-    @composite_solid
+    @graph
     def div_four(num):
         return div_two.alias("div_2")(div_two.alias("div_1")(num))
 
