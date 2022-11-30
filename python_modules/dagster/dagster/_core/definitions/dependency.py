@@ -735,8 +735,8 @@ class MultiDependencyDefinition(
                 key = dep.node + ":" + dep.output
                 if key in seen:
                     raise DagsterInvalidDefinitionError(
-                        'Duplicate dependencies on node "{dep.solid}" output "{dep.output}" '
-                        "used in the same MultiDependencyDefinition.".format(dep=dep)
+                        f'Duplicate dependencies on node "{dep.node}" output "{dep.output}" '
+                        "used in the same MultiDependencyDefinition."
                     )
                 seen[key] = True
             elif dep is MappedInputPlaceholder:
@@ -746,12 +746,9 @@ class MultiDependencyDefinition(
 
         return super(MultiDependencyDefinition, cls).__new__(cls, deps)
 
-    def get_node_dependencies(self) -> Sequence[DependencyDefinition]:
-        return [dep for dep in self.dependencies if isinstance(dep, DependencyDefinition)]
-
     @public
     def get_node_dependencies(self) -> Sequence[DependencyDefinition]:
-        return self.get_node_dependencies()
+        return [dep for dep in self.dependencies if isinstance(dep, DependencyDefinition)]
 
     @public
     def is_fan_in(self) -> bool:

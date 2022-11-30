@@ -769,30 +769,30 @@ def get_subselected_graph_definition(
         deps[_dep_key_of(node)] = {}
         for node_input in node.inputs():
             if graph.dependency_structure.has_direct_dep(node_input):
-                output_handle = graph.dependency_structure.get_direct_dep(node_input)
-                if output_handle.solid.name in resolved_op_selection_dict:
+                node_output = graph.dependency_structure.get_direct_dep(node_input)
+                if node_output.node.name in resolved_op_selection_dict:
                     deps[_dep_key_of(node)][node_input.input_def.name] = DependencyDefinition(
-                        solid=output_handle.solid.name, output=output_handle.output_def.name
+                        node=node_output.node.name, output=node_output.output_def.name
                     )
             elif graph.dependency_structure.has_dynamic_fan_in_dep(node_input):
-                output_handle = graph.dependency_structure.get_dynamic_fan_in_dep(node_input)
-                if output_handle.solid.name in resolved_op_selection_dict:
+                node_output = graph.dependency_structure.get_dynamic_fan_in_dep(node_input)
+                if node_output.node.name in resolved_op_selection_dict:
                     deps[_dep_key_of(node)][
                         node_input.input_def.name
                     ] = DynamicCollectDependencyDefinition(
-                        solid_name=output_handle.solid.name,
-                        output_name=output_handle.output_def.name,
+                        solid_name=node_output.node.name,
+                        output_name=node_output.output_def.name,
                     )
             elif graph.dependency_structure.has_fan_in_deps(node_input):
                 outputs = graph.dependency_structure.get_fan_in_deps(node_input)
                 multi_dependencies = [
                     DependencyDefinition(
-                        solid=output_handle.solid.name, output=output_handle.output_def.name
+                        node=output_handle.node.name, output=output_handle.output_def.name
                     )
                     for output_handle in outputs
                     if (
                         isinstance(output_handle, NodeOutput)
-                        and output_handle.solid.name in resolved_op_selection_dict
+                        and output_handle.node.name in resolved_op_selection_dict
                     )
                 ]
                 deps[_dep_key_of(node)][node_input.input_def.name] = MultiDependencyDefinition(

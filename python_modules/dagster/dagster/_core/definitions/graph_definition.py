@@ -104,7 +104,7 @@ def _create_adjacency_lists(
         visit_dict[node_name] = True
 
         for node_output in dep_structure.all_upstream_outputs_from_node(node_name):
-            forward_node = node_output.solid.name
+            forward_node = node_output.node.name
             backward_node = node_name
             if forward_node in forward_edges:
                 forward_edges[forward_node].add(backward_node)
