@@ -4,8 +4,8 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
-    List,
     Iterator,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -24,8 +24,6 @@ from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._utils.backcompat import canonicalize_backcompat_args, deprecation_warning
 from dagster._core.definitions.resource_requirement import (
     InputManagerRequirement,
     OpDefinitionResourceRequirement,
@@ -35,7 +33,7 @@ from dagster._core.definitions.resource_requirement import (
 from dagster._core.definitions.solid_invocation import op_invocation_result
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
-from dagster._utils.backcompat import experimental_arg_warning
+from dagster._utils.backcompat import canonicalize_backcompat_args, deprecation_warning
 
 from .definition_config_schema import (
     IDefinitionConfigSchema,
@@ -153,6 +151,7 @@ class OpDefinition(NodeDefinition):
         code_version = canonicalize_backcompat_args(
             code_version, "code_version", version, "version", "2.0"
         )
+        self._version = code_version
 
         check.opt_mapping_param(outs, "outs")
         output_defs = _resolve_output_defs_from_outs(
@@ -163,9 +162,6 @@ class OpDefinition(NodeDefinition):
         self._required_resource_keys = frozenset(
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
         )
-        self._version = check.opt_str_param(version, "version")
-        if version:
-            experimental_arg_warning("version", "OpDefinition.__init__")
         self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
 
         positional_inputs = (
@@ -332,7 +328,7 @@ class OpDefinition(NodeDefinition):
             description=description or self.description,
             tags=self.tags,
             required_resource_keys=self.required_resource_keys,
-            version=self.version,
+            code_version=self.version,
             retry_policy=self.retry_policy,
         )
 
