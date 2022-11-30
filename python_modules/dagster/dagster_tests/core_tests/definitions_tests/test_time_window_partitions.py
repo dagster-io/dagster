@@ -505,10 +505,10 @@ def test_partition_subset_with_partition_keys(initial: str, added: str):
 
 def test_unique_identifier():
     assert (
-        DailyPartitionsDefinition(start_date="2015-01-01").unique_identifier
-        != DailyPartitionsDefinition(start_date="2015-01-02").unique_identifier
+        DailyPartitionsDefinition(start_date="2015-01-01").serializable_unique_identifier
+        != DailyPartitionsDefinition(start_date="2015-01-02").serializable_unique_identifier
     )
     assert (
-        DailyPartitionsDefinition(start_date="2015-01-01").unique_identifier
-        == DailyPartitionsDefinition(start_date="2015-01-01").unique_identifier
+        DailyPartitionsDefinition(start_date="2015-01-01").serializable_unique_identifier
+        == DailyPartitionsDefinition(start_date="2015-01-01").serializable_unique_identifier
     )
