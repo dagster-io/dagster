@@ -486,18 +486,18 @@ class NodeOutputHandle(
 register_serdes_tuple_fallbacks({"SolidHandle": NodeHandle})
 
 
-class NodeInput(NamedTuple("_NodeInput", [("solid", Node), ("input_def", InputDefinition)])):
-    def __new__(cls, solid: Node, input_def: InputDefinition):
+class NodeInput(NamedTuple("_NodeInput", [("node", Node), ("input_def", InputDefinition)])):
+    def __new__(cls, node: Node, input_def: InputDefinition):
         return super(NodeInput, cls).__new__(
             cls,
-            check.inst_param(solid, "solid", Node),
+            check.inst_param(node, "node", Node),
             check.inst_param(input_def, "input_def", InputDefinition),
         )
 
     def _inner_str(self) -> str:
         return struct_to_string(
             "NodeInput",
-            solid_name=self.solid.name,
+            node_name=self.node.name,
             input_name=self.input_def.name,
         )
 
@@ -508,40 +508,40 @@ class NodeInput(NamedTuple("_NodeInput", [("solid", Node), ("input_def", InputDe
         return self._inner_str()
 
     def __hash__(self):
-        return hash((self.solid.name, self.input_def.name))
+        return hash((self.node.name, self.input_def.name))
 
     def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, NodeInput)
-            and self.solid.name == other.solid.name
+            and self.node.name == other.node.name
             and self.input_def.name == other.input_def.name
         )
 
     @property
-    def solid_name(self) -> str:
-        return self.solid.name
+    def node_name(self) -> str:
+        return self.node.name
 
     @property
-    def node_name(self) -> str:
-        return self.solid.name
+    def solid_name(self) -> str:
+        return self.node.name
 
     @property
     def input_name(self) -> str:
         return self.input_def.name
 
 
-class NodeOutput(NamedTuple("_NodeOutput", [("solid", Node), ("output_def", OutputDefinition)])):
-    def __new__(cls, solid: Node, output_def: OutputDefinition):
+class NodeOutput(NamedTuple("_NodeOutput", [("node", Node), ("output_def", OutputDefinition)])):
+    def __new__(cls, node: Node, output_def: OutputDefinition):
         return super(NodeOutput, cls).__new__(
             cls,
-            check.inst_param(solid, "solid", Node),
+            check.inst_param(node, "solid", Node),
             check.inst_param(output_def, "output_def", OutputDefinition),
         )
 
     def _inner_str(self) -> str:
         return struct_to_string(
             "NodeOutput",
-            solid_name=self.solid.name,
+            node_name=self.node.name,
             output_name=self.output_def.name,
         )
 
@@ -552,17 +552,17 @@ class NodeOutput(NamedTuple("_NodeOutput", [("solid", Node), ("output_def", Outp
         return self._inner_str()
 
     def __hash__(self):
-        return hash((self.solid.name, self.output_def.name))
+        return hash((self.node.name, self.output_def.name))
 
     def __eq__(self, other: Any):
-        return self.solid.name == other.solid.name and self.output_def.name == other.output_def.name
+        return self.node.name == other.solid.name and self.output_def.name == other.output_def.name
 
     def describe(self) -> str:
-        return f"{self.solid_name}:{self.output_def.name}"
+        return f"{self.node_name}:{self.output_def.name}"
 
     @property
-    def solid_name(self) -> str:
-        return self.solid.name
+    def node_name(self) -> str:
+        return self.node.name
 
     @property
     def is_dynamic(self) -> bool:
@@ -577,7 +577,7 @@ class DependencyType(Enum):
 
 class IDependencyDefinition(ABC):  # pylint: disable=no-init
     @abstractmethod
-    def get_solid_dependencies(self) -> Sequence["DependencyDefinition"]:
+    def get_node_dependencies(self) -> Sequence["DependencyDefinition"]:
         pass
 
     @abstractmethod
@@ -656,14 +656,14 @@ class DependencyDefinition(
             check.opt_str_param(description, "description"),
         )
 
-    def get_solid_dependencies(self) -> Sequence["DependencyDefinition"]:
+    def get_node_dependencies(self) -> Sequence["DependencyDefinition"]:
         return [self]
 
     def is_fan_in(self) -> bool:
         return False
 
     @property
-    def solid(self) -> str:
+    def node(self) -> str:
         return self.node
 
     def get_op_dependencies(self) -> Sequence["DependencyDefinition"]:
@@ -732,7 +732,7 @@ class MultiDependencyDefinition(
         seen = {}
         for dep in deps:
             if isinstance(dep, DependencyDefinition):
-                key = dep.solid + ":" + dep.output
+                key = dep.node + ":" + dep.output
                 if key in seen:
                     raise DagsterInvalidDefinitionError(
                         'Duplicate dependencies on node "{dep.solid}" output "{dep.output}" '
@@ -746,12 +746,12 @@ class MultiDependencyDefinition(
 
         return super(MultiDependencyDefinition, cls).__new__(cls, deps)
 
-    def get_solid_dependencies(self) -> Sequence[DependencyDefinition]:
+    def get_node_dependencies(self) -> Sequence[DependencyDefinition]:
         return [dep for dep in self.dependencies if isinstance(dep, DependencyDefinition)]
 
     @public
     def get_node_dependencies(self) -> Sequence[DependencyDefinition]:
-        return self.get_solid_dependencies()
+        return self.get_node_dependencies()
 
     @public
     def is_fan_in(self) -> bool:
@@ -768,7 +768,7 @@ class DynamicCollectDependencyDefinition(
     NamedTuple("_DynamicCollectDependencyDefinition", [("solid_name", str), ("output_name", str)]),
     IDependencyDefinition,
 ):
-    def get_solid_dependencies(self) -> Sequence[DependencyDefinition]:
+    def get_node_dependencies(self) -> Sequence[DependencyDefinition]:
         return [DependencyDefinition(self.solid_name, self.output_name)]
 
     def is_fan_in(self) -> bool:
@@ -801,7 +801,7 @@ def _create_handle_dict(
                 handles: List[Union[NodeOutput, Type[MappedInputPlaceholder]]] = []
                 for inner_dep in dep_def.get_dependencies_and_mappings():
                     if isinstance(inner_dep, DependencyDefinition):
-                        handles.append(solid_dict[inner_dep.solid].get_output(inner_dep.output))
+                        handles.append(solid_dict[inner_dep.node].get_output(inner_dep.output))
                     elif inner_dep is MappedInputPlaceholder:
                         handles.append(inner_dep)
                     else:
@@ -816,7 +816,7 @@ def _create_handle_dict(
             elif isinstance(dep_def, DependencyDefinition):
                 handle_dict[from_solid.get_input(input_name)] = (
                     DependencyType.DIRECT,
-                    solid_dict[dep_def.solid].get_output(dep_def.output),
+                    solid_dict[dep_def.node].get_output(dep_def.output),
                 )
             elif isinstance(dep_def, DynamicCollectDependencyDefinition):
                 handle_dict[from_solid.get_input(input_name)] = (
@@ -867,11 +867,11 @@ class DependencyStructure:
                             "Currently, items in a fan-in dependency cannot be downstream of dynamic outputs. "
                             f'Problematic dependency on dynamic output "{node_output.describe()}".'
                         )
-                    if self._dynamic_fan_out_index.get(node_output.solid_name):
+                    if self._dynamic_fan_out_index.get(node_output.node_name):
                         raise DagsterInvalidDefinitionError(
                             "Currently, items in a fan-in dependency cannot be downstream of dynamic outputs. "
                             f'Problematic dependency on output "{node_output.describe()}", downstream of '
-                            f'"{self._dynamic_fan_out_index[node_output.solid_name].describe()}".'
+                            f'"{self._dynamic_fan_out_index[node_output.node_name].describe()}".'
                         )
 
                     node_output_list.append(node_output)
@@ -881,9 +881,9 @@ class DependencyStructure:
                 if node_output.is_dynamic:
                     self._validate_and_set_fan_out(node_input, node_output)
 
-                if self._dynamic_fan_out_index.get(node_output.solid_name):
+                if self._dynamic_fan_out_index.get(node_output.node_name):
                     self._validate_and_set_fan_out(
-                        node_input, self._dynamic_fan_out_index[node_output.solid_name]
+                        node_input, self._dynamic_fan_out_index[node_output.node_name]
                     )
 
                 node_output_list = [node_output]
@@ -893,10 +893,10 @@ class DependencyStructure:
                 if node_output.is_dynamic:
                     self._validate_and_set_collect(node_input, node_output)
 
-                elif self._dynamic_fan_out_index.get(node_output.solid_name):
+                elif self._dynamic_fan_out_index.get(node_output.node_name):
                     self._validate_and_set_collect(
                         node_input,
-                        self._dynamic_fan_out_index[node_output.solid_name],
+                        self._dynamic_fan_out_index[node_output.node_name],
                     )
                 else:
                     check.failed(
@@ -907,37 +907,37 @@ class DependencyStructure:
             else:
                 check.failed(f"Unexpected dep type {dep_type}")
 
-            self._node_input_index[node_input.solid.name][node_input] = node_output_list
+            self._node_input_index[node_input.node.name][node_input] = node_output_list
             for node_output in node_output_list:
-                self._node_output_index[node_output.solid.name][node_output].append(node_input)
+                self._node_output_index[node_output.node.name][node_output].append(node_input)
 
     def _validate_and_set_fan_out(self, node_input: NodeInput, node_output: NodeOutput) -> Any:
         """Helper function for populating _dynamic_fan_out_index"""
 
-        if not node_input.solid.definition.input_supports_dynamic_output_dep(node_input.input_name):
+        if not node_input.node.definition.input_supports_dynamic_output_dep(node_input.input_name):
             raise DagsterInvalidDefinitionError(
-                f"{node_input.solid.describe_node()} cannot be downstream of dynamic output "
+                f"{node_input.node.describe_node()} cannot be downstream of dynamic output "
                 f'"{node_output.describe()}" since input "{node_input.input_name}" maps to a node '
                 "that is already downstream of another dynamic output. Nodes cannot be downstream of more "
                 "than one dynamic output"
             )
 
-        if self._collect_index.get(node_input.solid_name):
+        if self._collect_index.get(node_input.node_name):
             raise DagsterInvalidDefinitionError(
-                f"{node_input.solid.describe_node()} cannot be both downstream of dynamic output "
+                f"{node_input.node.describe_node()} cannot be both downstream of dynamic output "
                 f"{node_output.describe()} and collect over dynamic output "
-                f"{list(self._collect_index[node_input.solid_name])[0].describe()}."
+                f"{list(self._collect_index[node_input.node_name])[0].describe()}."
             )
 
-        if self._dynamic_fan_out_index.get(node_input.solid_name) is None:
-            self._dynamic_fan_out_index[node_input.solid_name] = node_output
+        if self._dynamic_fan_out_index.get(node_input.node_name) is None:
+            self._dynamic_fan_out_index[node_input.node_name] = node_output
             return
 
-        if self._dynamic_fan_out_index[node_input.solid_name] != node_output:
+        if self._dynamic_fan_out_index[node_input.node_name] != node_output:
             raise DagsterInvalidDefinitionError(
-                f"{node_input.solid.describe_node()} cannot be downstream of more than one dynamic output. "
+                f"{node_input.node.describe_node()} cannot be downstream of more than one dynamic output. "
                 f'It is downstream of both "{node_output.describe()}" and '
-                f'"{self._dynamic_fan_out_index[node_input.solid_name].describe()}"'
+                f'"{self._dynamic_fan_out_index[node_input.node_name].describe()}"'
             )
 
     def _validate_and_set_collect(
@@ -945,25 +945,25 @@ class DependencyStructure:
         node_input: NodeInput,
         node_output: NodeOutput,
     ) -> None:
-        if self._dynamic_fan_out_index.get(node_input.solid_name):
+        if self._dynamic_fan_out_index.get(node_input.node_name):
             raise DagsterInvalidDefinitionError(
-                f"{node_input.solid.describe_node()} cannot both collect over dynamic output "
+                f"{node_input.node.describe_node()} cannot both collect over dynamic output "
                 f"{node_output.describe()} and be downstream of the dynamic output "
-                f"{self._dynamic_fan_out_index[node_input.solid_name].describe()}."
+                f"{self._dynamic_fan_out_index[node_input.node_name].describe()}."
             )
 
-        self._collect_index[node_input.solid_name].add(node_output)
+        self._collect_index[node_input.node_name].add(node_output)
 
         # if the output is already fanned out
-        if self._dynamic_fan_out_index.get(node_output.solid_name):
+        if self._dynamic_fan_out_index.get(node_output.node_name):
             raise DagsterInvalidDefinitionError(
-                f"{node_input.solid.describe_node()} cannot be downstream of more than one dynamic output. "
+                f"{node_input.node.describe_node()} cannot be downstream of more than one dynamic output. "
                 f'It is downstream of both "{node_output.describe()}" and '
-                f'"{self._dynamic_fan_out_index[node_output.solid_name].describe()}"'
+                f'"{self._dynamic_fan_out_index[node_output.node_name].describe()}"'
             )
 
     def all_upstream_outputs_from_node(self, node_name: str) -> Sequence[NodeOutput]:
-        check.str_param(node_name, "solid_name")
+        check.str_param(node_name, "node_name")
 
         # flatten out all outputs that feed into the inputs of this solid
         return [
@@ -1076,7 +1076,7 @@ class DependencyStructure:
 
     def has_dynamic_downstreams(self, node_name: str) -> bool:
         for node_output in self._dynamic_fan_out_index.values():
-            if node_output.solid_name == node_name:
+            if node_output.node_name == node_name:
                 return True
 
         return False

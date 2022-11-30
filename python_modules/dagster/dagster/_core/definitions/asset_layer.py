@@ -181,11 +181,11 @@ def _build_graph_dependencies(
             }
         non_asset_inputs_by_node_handle[curr_node_handle] = [
             NodeOutputHandle(
-                NodeHandle(output_handle.solid_name, parent=parent_handle),
-                output_handle.output_def.name,
+                NodeHandle(node_output.node_name, parent=parent_handle),
+                node_output.output_def.name,
             )
-            for output_handle in dep_struct.all_upstream_outputs_from_node(sub_node_name)
-            if NodeHandle(output_handle.solid.name, parent=parent_handle)
+            for node_output in dep_struct.all_upstream_outputs_from_node(sub_node_name)
+            if NodeHandle(node_output.node.name, parent=parent_handle)
             not in assets_defs_by_node_handle
         ]
 

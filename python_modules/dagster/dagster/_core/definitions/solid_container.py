@@ -198,7 +198,7 @@ def _build_pipeline_solid_dict(
 def _validate_dependencies(dependencies, solid_dict, alias_to_name):
     for from_solid, dep_by_input in dependencies.items():
         for from_input, dep_def in dep_by_input.items():
-            for dep in dep_def.get_solid_dependencies():
+            for dep in dep_def.get_op_dependencies():
 
                 if from_solid == dep.solid:
                     raise DagsterInvalidDefinitionError(
