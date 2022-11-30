@@ -11,7 +11,7 @@ This guide focuses on how to store and load Dagster's [software-defined assets (
 
 To use the Snowflake I/O manager, you will need to gather the following information:
 
-- **Snowflake account name**: You can find this by logging into Snowflake and getting the account name from the URL
+- **Snowflake account name**: You can find this by logging into Snowflake and getting the account name from the URL.
 
   <Image
   src="/images/integrations/snowflake/snowflake-account.png"
@@ -19,7 +19,7 @@ To use the Snowflake I/O manager, you will need to gather the following informat
   height={72}
   />
 
-- **Snowflake credentials**: This includes a username and a password. The Snowflake I/O manager can read these values from environment variables. In this guide, we store the username and password as `SNOWFLAKE_USER` and `SNOWFLAKE_PASSWORD`, respectively
+- **Snowflake credentials**: This includes a username and a password. The Snowflake I/O manager can read these values from environment variables. In this guide, we store the username and password as `SNOWFLAKE_USER` and `SNOWFLAKE_PASSWORD`, respectively.
 
   ```shell
   export SNOWFLAKE_USER=<your username>
@@ -32,13 +32,16 @@ You will also need to install the `dagster-snowflake` and `dagster-snowflake-pan
 pip install dagster-snowflake dagster-snowflake-pandas
 ```
 
+### Concepts
+This guide assumes you are familiar with Dagster's software-defined assets. For more information on software-defined assets, see the [Assets tutorial](/tutorial/defining-an-asset) or the [Assets concept page](/concepts/assets/software-defined-assets).
+
 ## I/O manager crash course
 
 Dagster factors out reading and writing data to storage into [I/O Managers](/concepts/io-management/io-managers). This unlocks several benefits:
 
 - When writing assets, you don't need to write additional code that writes the data to storage.
-- The same logic for reading and writing data is used for all assets using the same I/O manager, meaning you assets will be written and read consistently.
-- I/O managers can be swapped without changing the asset code, allowing you to write to different locations depending on if you are developing locally, or running in production
+- The same logic for reading and writing data is used for all assets using the same I/O manager, meaning your assets will be written and read consistently.
+- I/O managers can be swapped without changing the asset code, allowing you to write to different locations depending on if you are developing locally or running in production.
 
 But how to I/O managers work?
 
@@ -53,13 +56,23 @@ But how to I/O managers work?
 
 When running a job or materializing assets, whenever a value is returned from an op or asset, Dagster uses the I/O manager to store the value. Behind the scenes, Dagster passes the returned value to the `handle_output` method of the I/O manager, and the `handle_output` method takes care of storing the output correctly.
 
-When an op or asset needs the value from an upstream op or asset as input, the I/O manager can also fetch the value from the location where it was stored by the `handle_output` method. Dagster calls the `load_input` method of the I/O manager with the information required to find where the value was stored and the I/O manager returns the correct value. The `handle_output` and `load_input` methods are symmetric, meaning that `handle_input(handle_output(X)) == X`.
+When an op or asset needs the value from an upstream op or asset as input, the I/O manager can also fetch the value from the location where it was stored. Dagster calls the `load_input` method of the I/O manager with the information required to find where the value was stored and the I/O manager returns the correct value. The `handle_output` and `load_input` methods are symmetric, meaning that `handle_input(handle_output(X)) == X`.
 
-For the Snowflake I/O manager, the `handle_output` and `load_input` methods take care of creating the SQL queries required to store and load data in Snowflake tables.
+For the Snowflake I/O manager, the `handle_output` and `load_input` methods take care of creating the SQL queries required to store and fetch the data in Snowflake tables.
+
+To learn more about I/O managers, check out the [I/O manager concept page](/concepts/io-management/io-managers).
 
 ## Using the Snowflake IO manager
 
 In the remainder of this guide, we will go over how to use the Snowflake I/O manager with your Dagster assets. Each of the following examples will go over how to achieve a particular task, but all of the concepts covered can be combined.
+
+* [Storing data in Snowflake](#storing-data-in-snowflake)
+* [Making existing tables available in Dagster](#making-existing-tables-available-in-dagster)
+* [Loading Snowflake tables in downstream assets](#loading-snowflake-tables-in-downstream-assets)
+* [Selecting specific columns from a Snowflake table in downstream assets](#selecting-specific-columns-from-a-snowflake-table-in-downstream-assets)
+* [Storing tables in multiple schemas](#storing-tables-in-multiple-schemas)
+* [Using the Snowflake I/O manager with other I/O managers](#using-the-snowflake-io-manager-with-other-io-managers)
+* [Configuring the Snowflake I/O manager](#configuring-the-snowflake-io-manager)
 
 ### Storing data in Snowflake
 
@@ -116,13 +129,13 @@ Dagster has versions of the Snowflake I/O manager for multiple different datafra
 
 We attach the `dagster_snowflake_pandas` I/O manager to our asset using the `with_resources` function. This function lets you supply the [resources](/concepts/resources) and I/O managers your assets need. In this case, we say that the `snowflake_pandas_io_manager` should be used as the `io_manager`. `io_manager` is a reserved key for supplying the I/O manager that should be used by default.
 
-We also need to supply some configuration to the `snowflake_pandas_io_manager` so that it knows how to connect to your Snowflake instance. The configuration in this example tells the I/O manager to store outputs in the `FLOWERS` database under the `IRIS` schema. The table that is created for the data will be the name of the asset, in this case `iris_dataset`. We give the I/O manager the account information and tell it that our username and password can be found in the environment variables `SNOWFLAKE_USER` and `SNOWFLAKE_PASSWORD`, respectively.
+We also need to supply some configuration to the `snowflake_pandas_io_manager` so that it knows how to connect to your Snowflake instance. The configuration in this example tells the I/O manager to store outputs in the `FLOWERS` database in the `IRIS` schema. The table that is created for the data will be the name of the asset, in this case `iris_dataset`. We give the I/O manager the account information and tell it that our username and password can be found in the environment variables `SNOWFLAKE_USER` and `SNOWFLAKE_PASSWORD`, respectively.
 
 When the `handle_output` method of the `snowflake_pandas_io_manager` will create the table `FLOWERS.IRIS.IRIS_DATASET` if it does not exist and replace the contents of the table with the value returned from the `iris_dataset` asset.
 
 ### Making existing tables available in Dagster
 
-You may already have tables in Snowflake that you want to make available to other Dagster assets. You can create [source assets](/concepts/assets/software-defined-assets#defining-external-asset-dependencies) for these tables.
+You may already have tables in Snowflake that you want to make available to other Dagster assets. You can create [source assets](/concepts/assets/software-defined-assets#defining-external-asset-dependencies) for these tables. By creating a source asset for the existing table, you tell Dagster how to find the table, so it can be fetched for downstream assets.
 
 ```python file=/integrations/snowflake/source_asset.py
 from dagster_snowflake_pandas import snowflake_pandas_io_manager
@@ -260,11 +273,17 @@ def flowers_analysis_repository():
     )
 ```
 
-In this example, we only need the columns with sepal data in our `sepal_data` asset. Fetching the entire table would be unnecessarily costly. To select specific columns, we need to add metadata to the input asset. We do this by explicitly specifying which asset should be loaded into our `sepal_data` asset. In the `ins` parameter to `sepal_data` we create a dictionary where the keys are the parameters for the asset function and the values are `AssetIn`s that tell Dagster what assets to load. In this example, we tell Dagster that the `iris_sepal` parameter should be the `iris_dataset` asset. In the `metadata` of the `AssetIn` we supply the key `columns` with a list of the column names we want to fetch. When Dagster materializes the `sepal_data` asset, when it loads the `iris_dataset` asset using the Snowflake I/O manager, it will only fetch the `Sepal length (cm)` and `Sepal width (cm)` columns of the `FLOWERS.IRIS.IRIS_DATASET` table as a Pandas DataFrame and pass them to `sepal_data`.
+In this example, we only need the columns with sepal data in our `sepal_data` asset. Fetching the entire table would be unnecessarily costly. To select specific columns, we need to add metadata to the input asset. We do this by explicitly specifying which asset should be loaded into our `sepal_data` asset.
+
+In the `ins` parameter to `sepal_data` we create a dictionary where the keys are the parameters for the asset function and the values are `AssetIn`s that tell Dagster what assets to load. In this example, we tell Dagster that the `iris_sepal` parameter should be the `iris_dataset` asset. In the `metadata` of the `AssetIn` we supply the key `columns` with a list of the column names we want to fetch.
+
+When Dagster materializes the `sepal_data` asset, when it loads the `iris_dataset` asset using the Snowflake I/O manager, it will only fetch the `Sepal length (cm)` and `Sepal width (cm)` columns of the `FLOWERS.IRIS.IRIS_DATASET` table as a Pandas DataFrame and pass them to `sepal_data`.
 
 ### Storing tables in multiple schemas
 
-You may want to have different assets stored in different Snowflake schemas. The Snowflake I/O manager allows you to specify the schema in several ways. You can specify the schema as configuration to the I/O manager:
+You may want to have different assets stored in different Snowflake schemas. The Snowflake I/O manager allows you to specify the schema in several ways.
+
+If you want all of your assets to be stored in the same schema, you can specify the schema as configuration to the I/O manager:
 
 ```python file=/integrations/snowflake/schema.py startafter=start_configuration endbefore=end_configuration
 from dagster_snowflake_pandas import snowflake_pandas_io_manager
@@ -433,7 +452,7 @@ def flowers_analysis_repository():
     )
 ```
 
-Providing a warehouse and schema is optional. If you do not provide a warehouse, the default warehouse for your account will be used. If you do not provide a schema, Dagster will either infer a schema from your assets, or store the tables in the `PUBLIC` schema (see [Storing tables in multiple schemas](#storing-tables-in-multiple-schemas) for more information).
+Providing a `warehouse` and `schema` is optional. If you do not provide a warehouse, the default warehouse for your account will be used. If you do not provide a schema, Dagster will either infer a schema from your assets, or store the tables in the `PUBLIC` schema (see [Storing tables in multiple schemas](#storing-tables-in-multiple-schemas) for more information).
 
 For more documentation for each of the configuration values, see the **Config schema** dropdown in the [Snowflake API docs](#dagster_snowflake.build_snowflake_io_manager).
 
