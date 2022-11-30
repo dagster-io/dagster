@@ -31,7 +31,7 @@ from dagster._core.definitions.dependency import (
     Node,
     NodeHandle,
     NodeInvocation,
-    SolidOutputHandle,
+    NodeOutput,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.node_definition import NodeDefinition
@@ -791,7 +791,7 @@ def get_subselected_graph_definition(
                     )
                     for output_handle in output_handles
                     if (
-                        isinstance(output_handle, SolidOutputHandle)
+                        isinstance(output_handle, NodeOutput)
                         and output_handle.solid.name in resolved_op_selection_dict
                     )
                 ]

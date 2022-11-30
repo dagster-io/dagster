@@ -16,7 +16,7 @@ from dagster import (
     op,
 )
 from dagster._core.definitions import AssetMaterialization, Node, create_run_config_schema
-from dagster._core.definitions.dependency import NodeHandle, SolidOutputHandle
+from dagster._core.definitions.dependency import NodeHandle, NodeOutput
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._legacy import InputDefinition
 
@@ -62,22 +62,22 @@ def test_solid_def():
     assert len(solid_one_solid.output_dict) == 1
 
     assert str(solid_one_solid.input_handle("input_one")) == (
-        "SolidInputHandle(input_name=\"'input_one'\", solid_name=\"'op_one'\")"
+        "NodeInput(input_name=\"'input_one'\", solid_name=\"'op_one'\")"
     )
 
     assert repr(solid_one_solid.input_handle("input_one")) == (
-        "SolidInputHandle(input_name=\"'input_one'\", solid_name=\"'op_one'\")"
+        "NodeInput(input_name=\"'input_one'\", solid_name=\"'op_one'\")"
     )
 
     assert str(solid_one_solid.output_handle("result")) == (
-        "SolidOutputHandle(output_name=\"'result'\", solid_name=\"'op_one'\")"
+        "NodeOutput(output_name=\"'result'\", solid_name=\"'op_one'\")"
     )
 
     assert repr(solid_one_solid.output_handle("result")) == (
-        "SolidOutputHandle(output_name=\"'result'\", solid_name=\"'op_one'\")"
+        "NodeOutput(output_name=\"'result'\", solid_name=\"'op_one'\")"
     )
 
-    assert solid_one_solid.output_handle("result") == SolidOutputHandle(
+    assert solid_one_solid.output_handle("result") == NodeOutput(
         solid_one_solid, solid_one_solid.output_dict["result"]
     )
 

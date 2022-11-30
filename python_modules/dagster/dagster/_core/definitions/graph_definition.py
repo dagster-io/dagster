@@ -37,8 +37,8 @@ from .dependency import (
     IDependencyDefinition,
     Node,
     NodeHandle,
+    NodeInput,
     NodeInvocation,
-    SolidInputHandle,
 )
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
@@ -258,7 +258,7 @@ class GraphDefinition(NodeDefinition):
             for input_def in node.definition.get_inputs_must_be_resolved_top_level(
                 asset_layer, cur_handle
             ):
-                if self.dependency_structure.has_deps(SolidInputHandle(node, input_def)):
+                if self.dependency_structure.has_deps(NodeInput(node, input_def)):
                     continue
                 elif not node.container_maps_input(input_def.name):
                     raise DagsterInvalidDefinitionError(
@@ -840,7 +840,7 @@ def _validate_in_mappings(
             )
 
         target_input_def = target_node.input_def_named(mapping.maps_to.input_name)
-        solid_input_handle = SolidInputHandle(target_node, target_input_def)
+        solid_input_handle = NodeInput(target_node, target_input_def)
 
         if mapping.maps_to_fan_in:
             maps_to = cast(FanInInputPointer, mapping.maps_to)

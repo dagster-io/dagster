@@ -117,8 +117,8 @@ class Node:
     _additional_tags: Mapping[str, str]
     _hook_defs: AbstractSet[HookDefinition]
     _retry_policy: Optional[RetryPolicy]
-    _input_handles: Mapping[str, "SolidInputHandle"]
-    _output_handles: Mapping[str, "SolidOutputHandle"]
+    _input_handles: Mapping[str, "NodeInput"]
+    _output_handles: Mapping[str, "NodeOutput"]
 
     def __init__(
         self,
@@ -145,13 +145,13 @@ class Node:
 
         input_handles = {}
         for name, input_def in self.definition.input_dict.items():
-            input_handles[name] = SolidInputHandle(self, input_def)
+            input_handles[name] = NodeInput(self, input_def)
 
         self._input_handles = input_handles
 
         output_handles = {}
         for name, output_def in self.definition.output_dict.items():
-            output_handles[name] = SolidOutputHandle(self, output_def)
+            output_handles[name] = NodeOutput(self, output_def)
 
         self._output_handles = output_handles
 
@@ -161,11 +161,11 @@ class Node:
     def output_handles(self):
         return self._output_handles.values()
 
-    def input_handle(self, name: str) -> "SolidInputHandle":
+    def input_handle(self, name: str) -> "NodeInput":
         check.str_param(name, "name")
         return self._input_handles[name]
 
-    def output_handle(self, name: str) -> "SolidOutputHandle":
+    def output_handle(self, name: str) -> "NodeOutput":
         check.str_param(name, "name")
         return self._output_handles[name]
 
@@ -274,7 +274,7 @@ class Node:
                 if (
                     isinstance(requirement, InputManagerRequirement)
                     and outer_container.dependency_structure.has_deps(
-                        SolidInputHandle(self, solid_def.input_def_named(requirement.input_name))
+                        NodeInput(self, solid_def.input_def_named(requirement.input_name))
                     )
                     and requirement.root_input
                 ):
@@ -488,11 +488,9 @@ class NodeOutputHandle(
 register_serdes_tuple_fallbacks({"SolidHandle": NodeHandle})
 
 
-class SolidInputHandle(
-    NamedTuple("_SolidInputHandle", [("solid", Node), ("input_def", InputDefinition)])
-):
+class NodeInput(NamedTuple("_NodeInput", [("solid", Node), ("input_def", InputDefinition)])):
     def __new__(cls, solid: Node, input_def: InputDefinition):
-        return super(SolidInputHandle, cls).__new__(
+        return super(NodeInput, cls).__new__(
             cls,
             check.inst_param(solid, "solid", Node),
             check.inst_param(input_def, "input_def", InputDefinition),
@@ -500,7 +498,7 @@ class SolidInputHandle(
 
     def _inner_str(self) -> str:
         return struct_to_string(
-            "SolidInputHandle",
+            "NodeInput",
             solid_name=self.solid.name,
             input_name=self.input_def.name,
         )
@@ -516,7 +514,7 @@ class SolidInputHandle(
 
     def __eq__(self, other: object) -> bool:
         return (
-            isinstance(other, SolidInputHandle)
+            isinstance(other, NodeInput)
             and self.solid.name == other.solid.name
             and self.input_def.name == other.input_def.name
         )
@@ -534,11 +532,9 @@ class SolidInputHandle(
         return self.input_def.name
 
 
-class SolidOutputHandle(
-    NamedTuple("_SolidOutputHandle", [("solid", Node), ("output_def", OutputDefinition)])
-):
+class NodeOutput(NamedTuple("_NodeOutput", [("solid", Node), ("output_def", OutputDefinition)])):
     def __new__(cls, solid: Node, output_def: OutputDefinition):
-        return super(SolidOutputHandle, cls).__new__(
+        return super(NodeOutput, cls).__new__(
             cls,
             check.inst_param(solid, "solid", Node),
             check.inst_param(output_def, "output_def", OutputDefinition),
@@ -546,7 +542,7 @@ class SolidOutputHandle(
 
     def _inner_str(self) -> str:
         return struct_to_string(
-            "SolidOutputHandle",
+            "NodeOutput",
             solid_name=self.solid.name,
             output_name=self.output_def.name,
         )
@@ -783,10 +779,10 @@ class DynamicCollectDependencyDefinition(
 
 DepTypeAndOutputHandles = Tuple[
     DependencyType,
-    Union[SolidOutputHandle, List[Union[SolidOutputHandle, Type["MappedInputPlaceholder"]]]],
+    Union[NodeOutput, List[Union[NodeOutput, Type["MappedInputPlaceholder"]]]],
 ]
 
-InputToOutputHandleDict = Dict[SolidInputHandle, DepTypeAndOutputHandles]
+InputToOutputHandleDict = Dict[NodeInput, DepTypeAndOutputHandles]
 
 
 def _create_handle_dict(
@@ -804,7 +800,7 @@ def _create_handle_dict(
         from_solid = solid_dict[solid_name]
         for input_name, dep_def in input_dict.items():
             if isinstance(dep_def, MultiDependencyDefinition):
-                handles: List[Union[SolidOutputHandle, Type[MappedInputPlaceholder]]] = []
+                handles: List[Union[NodeOutput, Type[MappedInputPlaceholder]]] = []
                 for inner_dep in dep_def.get_dependencies_and_mappings():
                     if isinstance(inner_dep, DependencyDefinition):
                         handles.append(solid_dict[inner_dep.solid].output_handle(inner_dep.output))
@@ -865,7 +861,7 @@ class DependencyStructure:
             if dep_type == DependencyType.FAN_IN:
                 output_handle_list = []
                 for handle in output_handle_or_list:
-                    if not isinstance(handle, SolidOutputHandle):
+                    if not isinstance(handle, NodeOutput):
                         continue
 
                     if handle.is_dynamic:
@@ -882,7 +878,7 @@ class DependencyStructure:
 
                     output_handle_list.append(handle)
             elif dep_type == DependencyType.DIRECT:
-                output_handle = cast(SolidOutputHandle, output_handle_or_list)
+                output_handle = cast(NodeOutput, output_handle_or_list)
 
                 if output_handle.is_dynamic:
                     self._validate_and_set_fan_out(input_handle, output_handle)
@@ -894,7 +890,7 @@ class DependencyStructure:
 
                 output_handle_list = [output_handle]
             elif dep_type == DependencyType.DYNAMIC_COLLECT:
-                output_handle = cast(SolidOutputHandle, output_handle_or_list)
+                output_handle = cast(NodeOutput, output_handle_or_list)
 
                 if output_handle.is_dynamic:
                     self._validate_and_set_collect(input_handle, output_handle)
@@ -919,9 +915,7 @@ class DependencyStructure:
                     input_handle
                 )
 
-    def _validate_and_set_fan_out(
-        self, input_handle: SolidInputHandle, output_handle: SolidOutputHandle
-    ) -> Any:
+    def _validate_and_set_fan_out(self, input_handle: NodeInput, output_handle: NodeOutput) -> Any:
         """Helper function for populating _dynamic_fan_out_index"""
 
         if not input_handle.solid.definition.input_supports_dynamic_output_dep(
@@ -954,8 +948,8 @@ class DependencyStructure:
 
     def _validate_and_set_collect(
         self,
-        input_handle: SolidInputHandle,
-        output_handle: SolidOutputHandle,
+        input_handle: NodeInput,
+        output_handle: NodeOutput,
     ) -> None:
         if self._dynamic_fan_out_index.get(input_handle.solid_name):
             raise DagsterInvalidDefinitionError(
@@ -974,7 +968,7 @@ class DependencyStructure:
                 f'"{self._dynamic_fan_out_index[output_handle.solid_name].describe()}"'
             )
 
-    def all_upstream_outputs_from_solid(self, solid_name: str) -> Sequence[SolidOutputHandle]:
+    def all_upstream_outputs_from_solid(self, solid_name: str) -> Sequence[NodeOutput]:
         check.str_param(solid_name, "solid_name")
 
         # flatten out all outputs that feed into the inputs of this solid
@@ -986,9 +980,9 @@ class DependencyStructure:
 
     def input_to_upstream_outputs_for_solid(self, solid_name: str) -> Any:
         """
-        Returns a Dict[SolidInputHandle, List[SolidOutputHandle]] that encodes
+        Returns a Dict[NodeInput, List[NodeOutput]] that encodes
         where all the the inputs are sourced from upstream. Usually the
-        List[SolidOutputHandle] will be a list of one, except for the
+        List[NodeOutput] will be a list of one, except for the
         multi-dependency case.
         """
         check.str_param(solid_name, "solid_name")
@@ -996,87 +990,87 @@ class DependencyStructure:
 
     def output_to_downstream_inputs_for_solid(self, solid_name: str) -> Any:
         """
-        Returns a Dict[SolidOutputHandle, List[SolidInputHandle]] that
+        Returns a Dict[NodeOutput, List[NodeInput]] that
         represents all the downstream inputs for each output in the
         dictionary
         """
         check.str_param(solid_name, "solid_name")
         return self._solid_output_index[solid_name]
 
-    def has_direct_dep(self, solid_input_handle: SolidInputHandle) -> bool:
-        check.inst_param(solid_input_handle, "solid_input_handle", SolidInputHandle)
+    def has_direct_dep(self, solid_input_handle: NodeInput) -> bool:
+        check.inst_param(solid_input_handle, "solid_input_handle", NodeInput)
         if solid_input_handle not in self._handle_dict:
             return False
         dep_type, _ = self._handle_dict[solid_input_handle]
         return dep_type == DependencyType.DIRECT
 
-    def get_direct_dep(self, solid_input_handle: SolidInputHandle) -> SolidOutputHandle:
-        check.inst_param(solid_input_handle, "solid_input_handle", SolidInputHandle)
+    def get_direct_dep(self, solid_input_handle: NodeInput) -> NodeOutput:
+        check.inst_param(solid_input_handle, "solid_input_handle", NodeInput)
         dep_type, dep = self._handle_dict[solid_input_handle]
         check.invariant(
             dep_type == DependencyType.DIRECT,
             f"Cannot call get_direct_dep when dep is not singular, got {dep_type}",
         )
-        return cast(SolidOutputHandle, dep)
+        return cast(NodeOutput, dep)
 
-    def has_fan_in_deps(self, solid_input_handle: SolidInputHandle) -> bool:
-        check.inst_param(solid_input_handle, "solid_input_handle", SolidInputHandle)
+    def has_fan_in_deps(self, solid_input_handle: NodeInput) -> bool:
+        check.inst_param(solid_input_handle, "solid_input_handle", NodeInput)
         if solid_input_handle not in self._handle_dict:
             return False
         dep_type, _ = self._handle_dict[solid_input_handle]
         return dep_type == DependencyType.FAN_IN
 
     def get_fan_in_deps(
-        self, solid_input_handle: SolidInputHandle
-    ) -> Sequence[Union[SolidOutputHandle, Type["MappedInputPlaceholder"]]]:
-        check.inst_param(solid_input_handle, "solid_input_handle", SolidInputHandle)
+        self, solid_input_handle: NodeInput
+    ) -> Sequence[Union[NodeOutput, Type["MappedInputPlaceholder"]]]:
+        check.inst_param(solid_input_handle, "solid_input_handle", NodeInput)
         dep_type, deps = self._handle_dict[solid_input_handle]
         check.invariant(
             dep_type == DependencyType.FAN_IN,
             f"Cannot call get_multi_dep when dep is not fan in, got {dep_type}",
         )
-        return cast(List[Union[SolidOutputHandle, Type["MappedInputPlaceholder"]]], deps)
+        return cast(List[Union[NodeOutput, Type["MappedInputPlaceholder"]]], deps)
 
-    def has_dynamic_fan_in_dep(self, solid_input_handle: SolidInputHandle) -> bool:
-        check.inst_param(solid_input_handle, "solid_input_handle", SolidInputHandle)
+    def has_dynamic_fan_in_dep(self, solid_input_handle: NodeInput) -> bool:
+        check.inst_param(solid_input_handle, "solid_input_handle", NodeInput)
         if solid_input_handle not in self._handle_dict:
             return False
         dep_type, _ = self._handle_dict[solid_input_handle]
         return dep_type == DependencyType.DYNAMIC_COLLECT
 
-    def get_dynamic_fan_in_dep(self, solid_input_handle: SolidInputHandle) -> SolidOutputHandle:
-        check.inst_param(solid_input_handle, "solid_input_handle", SolidInputHandle)
+    def get_dynamic_fan_in_dep(self, solid_input_handle: NodeInput) -> NodeOutput:
+        check.inst_param(solid_input_handle, "solid_input_handle", NodeInput)
         dep_type, dep = self._handle_dict[solid_input_handle]
         check.invariant(
             dep_type == DependencyType.DYNAMIC_COLLECT,
             f"Cannot call get_dynamic_fan_in_dep when dep is not, got {dep_type}",
         )
-        return cast(SolidOutputHandle, dep)
+        return cast(NodeOutput, dep)
 
-    def has_deps(self, solid_input_handle: SolidInputHandle) -> bool:
-        check.inst_param(solid_input_handle, "solid_input_handle", SolidInputHandle)
+    def has_deps(self, solid_input_handle: NodeInput) -> bool:
+        check.inst_param(solid_input_handle, "solid_input_handle", NodeInput)
         return solid_input_handle in self._handle_dict
 
-    def get_deps_list(self, solid_input_handle: SolidInputHandle) -> Sequence[SolidOutputHandle]:
-        check.inst_param(solid_input_handle, "solid_input_handle", SolidInputHandle)
+    def get_deps_list(self, solid_input_handle: NodeInput) -> Sequence[NodeOutput]:
+        check.inst_param(solid_input_handle, "solid_input_handle", NodeInput)
         check.invariant(self.has_deps(solid_input_handle))
         dep_type, handle_or_list = self._handle_dict[solid_input_handle]
         if dep_type == DependencyType.DIRECT:
-            return [cast(SolidOutputHandle, handle_or_list)]
+            return [cast(NodeOutput, handle_or_list)]
         elif dep_type == DependencyType.DYNAMIC_COLLECT:
-            return [cast(SolidOutputHandle, handle_or_list)]
+            return [cast(NodeOutput, handle_or_list)]
         elif dep_type == DependencyType.FAN_IN:
-            return [handle for handle in handle_or_list if isinstance(handle, SolidOutputHandle)]
+            return [handle for handle in handle_or_list if isinstance(handle, NodeOutput)]
         else:
             check.failed(f"Unexpected dep type {dep_type}")
 
-    def input_handles(self) -> Sequence[SolidInputHandle]:
+    def input_handles(self) -> Sequence[NodeInput]:
         return list(self._handle_dict.keys())
 
     def get_upstream_dynamic_handle_for_solid(self, solid_name: str) -> Any:
         return self._dynamic_fan_out_index.get(solid_name)
 
-    def get_dependency_type(self, solid_input_handle: SolidInputHandle) -> Optional[DependencyType]:
+    def get_dependency_type(self, solid_input_handle: NodeInput) -> Optional[DependencyType]:
         result = self._handle_dict.get(solid_input_handle)
         if result is None:
             return None

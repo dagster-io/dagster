@@ -27,7 +27,7 @@ from dagster._utils.backcompat import ExperimentalWarning
 
 from ..errors import DagsterInvalidSubsetError
 from .config import ConfigMapping
-from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle, SolidOutputHandle
+from .dependency import NodeHandle, NodeInputHandle, NodeOutput, NodeOutputHandle
 from .events import AssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
@@ -130,7 +130,7 @@ def _resolve_output_to_destinations(
         downstream_input_handles = (
             node_def.dependency_structure.output_to_downstream_inputs_for_solid(
                 output_pointer.solid_name
-            ).get(SolidOutputHandle(output_node, output_def), [])
+            ).get(NodeOutput(output_node, output_def), [])
         )
         for input_handle in downstream_input_handles:
             all_destinations.append(

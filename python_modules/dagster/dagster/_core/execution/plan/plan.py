@@ -23,8 +23,8 @@ from dagster._core.definitions import (
     JobDefinition,
     Node,
     NodeHandle,
+    NodeOutput,
     SolidDefinition,
-    SolidOutputHandle,
 )
 from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.dependency import DependencyStructure
@@ -99,7 +99,7 @@ class _PlanBuilder:
 
     steps List[ExecutionStep]: a list of the execution steps that have been created.
 
-    step_output_map Dict[SolidOutputHandle, StepOutputHandle]:  maps logical solid outputs
+    step_output_map Dict[NodeOutput, StepOutputHandle]:  maps logical solid outputs
     (solid_name, output_name) to particular step outputs. This covers the case where a solid maps to
     multiple steps and one wants to be able to attach to the logical output of a solid during
     execution.
@@ -135,7 +135,7 @@ class _PlanBuilder:
         )
         self._steps: Dict[str, IExecutionStep] = OrderedDict()
         self.step_output_map: Dict[
-            SolidOutputHandle, Union[StepOutputHandle, UnresolvedStepOutputHandle]
+            NodeOutput[StepOutputHandle, UnresolvedStepOutputHandle]
         ] = dict()
         self.known_state = check.inst_param(known_state, "known_state", KnownExecutionState)
         self._instance_ref = instance_ref
@@ -166,15 +166,15 @@ class _PlanBuilder:
         return self._steps[handle.to_string()]
 
     def get_output_handle(
-        self, key: SolidOutputHandle
+        self, key: NodeOutput
     ) -> Union[StepOutputHandle, UnresolvedStepOutputHandle]:
-        check.inst_param(key, "key", SolidOutputHandle)
+        check.inst_param(key, "key", NodeOutput)
         return self.step_output_map[key]
 
     def set_output_handle(
-        self, key: SolidOutputHandle, val: Union[StepOutputHandle, UnresolvedStepOutputHandle]
+        self, key: NodeOutput, val: Union[StepOutputHandle, UnresolvedStepOutputHandle]
     ) -> None:
-        check.inst_param(key, "key", SolidOutputHandle)
+        check.inst_param(key, "key", NodeOutput)
         check.inst_param(val, "val", (StepOutputHandle, UnresolvedStepOutputHandle))
         self.step_output_map[key] = val
 
@@ -529,7 +529,7 @@ def get_step_input_source(
         sources: List[StepInputSource] = []
         deps = dependency_structure.get_fan_in_deps(input_handle)
         for idx, handle_or_placeholder in enumerate(deps):
-            if isinstance(handle_or_placeholder, SolidOutputHandle):
+            if isinstance(handle_or_placeholder, NodeOutput):
                 step_output_handle = plan_builder.get_output_handle(handle_or_placeholder)
                 if (
                     isinstance(step_output_handle, UnresolvedStepOutputHandle)
@@ -549,7 +549,7 @@ def get_step_input_source(
             else:
                 check.invariant(
                     handle_or_placeholder is MappedInputPlaceholder,
-                    f"Expected SolidOutputHandle or MappedInputPlaceholder, got {handle_or_placeholder}",
+                    f"Expected NodeOutput or MappedInputPlaceholder, got {handle_or_placeholder}",
                 )
                 if parent_step_inputs is None:
                     check.failed("unexpected error in composition descent during plan building")

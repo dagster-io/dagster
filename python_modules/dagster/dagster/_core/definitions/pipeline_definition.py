@@ -38,7 +38,7 @@ from .dependency import (
     Node,
     NodeHandle,
     NodeInvocation,
-    SolidOutputHandle,
+    NodeOutput,
 )
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
@@ -730,7 +730,7 @@ def _get_pipeline_subset_def(
                     )
             elif graph.dependency_structure.has_fan_in_deps(input_handle):
                 output_handles = cast(
-                    Sequence[SolidOutputHandle],
+                    Sequence[NodeOutput],
                     graph.dependency_structure.get_fan_in_deps(input_handle),
                 )
                 deps[_dep_key_of(solid)][input_handle.input_def.name] = MultiDependencyDefinition(

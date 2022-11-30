@@ -3,7 +3,7 @@ from typing import Mapping, NamedTuple, Sequence
 
 import dagster._check as check
 from dagster._core.definitions import GraphDefinition
-from dagster._core.definitions.dependency import DependencyType, Node, SolidInputHandle
+from dagster._core.definitions.dependency import DependencyType, Node, NodeInput
 from dagster._serdes import whitelist_for_serdes
 
 
@@ -17,7 +17,7 @@ def build_solid_invocation_snap(icontains_solids, solid):
     input_to_outputs_map = dep_structure.input_to_upstream_outputs_for_solid(solid.name)
 
     for input_def in solid.definition.input_defs:
-        input_handle = SolidInputHandle(solid, input_def)
+        input_handle = NodeInput(solid, input_def)
         input_def_snaps.append(
             InputDependencySnap(
                 input_def.name,
