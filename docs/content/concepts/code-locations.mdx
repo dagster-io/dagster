@@ -1,26 +1,18 @@
 ---
-title: "CONCEPT | Dagster Docs"
+title: "Code Locations | Dagster Docs"
 description: ""
 ---
 
 # Code Locations
 
-- This guide refers to code locations when paired with the `Definitions` API.
+A code location is set of dagster definitions loadable and accessible by Dagster's tools, such as the CLI, Dagit, and Dagster Cloud. A code location comprises:
 
-A code location is set of dagster definitions loadable and accessible by
-Dagster's tools, such as the CLI, Dagit, and Dagster Cloud. A code location comprises:
+- A reference to a python module or package that has an instance of `Definitions` at the "defs" variable. We will refer to that as the "entry point".
+- A Python environment that can successfully load the entry point.
 
-* A reference a python module that has an instance of `Definitions` at the "defs" variable. We
-will refer to that as the "entry point".
-* A Python environment that can successfully load the entry point.
+Definitions within a code location have a common namespace and must have unique names. This allows them to be grouped and organized by code location in tools.
 
-Definitions within a code location have a common namespace and must have
-unique names. This allows them to be grouped and organized by code location
-in tools.
-
-Before the introduction of the `Definitions` UI, definitions were grouped into
-repositories, and there could be many repostories in a particular code location. See
-LINK for this previous mental model.
+Before the introduction of the <PyObject object="Definitions" /> API, definitions were grouped into repositories, and there could be many repostories in a particular code location. See the [guide](/concepts/repositories-workspaces/repositories) on Repositories for this previous API and mental model.
 
 <!-- Introduction
 	Make sure to include:
@@ -40,14 +32,12 @@ LINK for this previous mental model.
 
 <!-- See example: https://docs.dagster.io/concepts/ops-jobs-graphs/ops#relevant-apis -->
 
-| Name                                  | Description                                                                                                                                                                                                                  |
-| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="" /> |                                                                                                                                                                                            |
+| Name                              | Description                                                                 |
+| --------------------------------- | --------------------------------------------------------------------------- |
+| <PyObject object="Definitions" /> | The object that contains all the definitions defined within a code location |
+| ---                               |                                                                             |
 
----
-
-
-## Creating/Applying/Using [CONCEPT]
+## Deploying And Loading Code Locations
 
 <!-- See example: https://docs.dagster.io/concepts/ops-jobs-graphs/ops#defining-an-op
 
@@ -58,6 +48,38 @@ LINK for this previous mental model.
 	Additionally, if this concept will be surfaced in Dagit, consider covering that. Ex: Describe
 	how to navigate to viewing the relevant page in Dagit.
 -->
+
+To define a code location, one first has to create a <PyObject object="Definitions"/> object in the `defs` variable of a python module. This can be is vanilla python file (e.g. `foo.py`). In that case the <PyObject object="Definitions"/> object can go in that file itself. Or it can be an installed python package in which case the definitions object should be defined in the `defs` symbol in that package's top-level `__init__.py` file.
+
+```python
+defs = Definitions(
+    assets=[an_asset, another_asset],
+    schedules=[a_schedule],
+    sensors=[a_sensor],
+    resources=some_resources
+)
+```
+
+### Local Development
+
+`dagit` and other Dagster tools can load a file directly as a code location. `dagit -f foo.py` is saying that Dagit should load the definitions in `foo.py` as a code location in the same python environment where Dagit resides.
+
+Installed python modules can also be loaded directly. For Dagster projects deployed to production we recommend this style of development, as it eliminates an entire class of python import errors. Create a Dagster project with the `dagster project scaffold` command or by using one of our templates. This project can then be installed using `pip install -e .` to make it an editable install for local development.
+
+Once installed, this package can be loaded typing `dagit -m your_package_name`. This should be read as "load definitions in the `defs` symbol in this package (defined as its root `__init__.py` file) in the same virtual environment as Dagit itself.
+
+Our project templates also create a `pyproject.toml` file with a `tool.dagster` section an assignment to the `python_package` variable in that section. This allows users to type just `dagit` without any parameters and the package name is defined in that variable. This is very convenient for local development.
+
+    [tool.dagster]
+    python_package = "your_package_name"
+
+### Cloud Deployment
+
+In cloud, instructions for creating and deploying code locations are specified in the `dagster_cloud.yaml` file. See LINK.
+
+### OSS Deployment
+
+OSS deployment uses the workspace.yaml file to load code locations. See particular guides for how to do that.
 
 ---
 
@@ -76,7 +98,6 @@ LINK for this previous mental model.
 
 [code explanation]
 -->
-
 
 ---
 
