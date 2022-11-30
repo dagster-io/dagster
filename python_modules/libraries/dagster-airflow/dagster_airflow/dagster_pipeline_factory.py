@@ -18,7 +18,6 @@ from airflow.models.baseoperator import BaseOperator
 from airflow.models.dag import DAG
 from airflow.models.dagbag import DagBag
 from airflow.settings import LOG_FORMAT
-from dagster._core.definitions.op_definition import OpDefinition
 from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 
 from dagster import (
@@ -34,6 +33,7 @@ from dagster import (
 )
 from dagster import _check as check
 from dagster import op, repository, resource
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX, validate_tags
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
 from dagster._legacy import ModeDefinition, PipelineDefinition

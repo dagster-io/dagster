@@ -15,6 +15,7 @@ from dagster import (
 from dagster import _check as check
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import RetryRequested
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
@@ -252,9 +253,7 @@ class Manager:
 
         solid_def = OpDefinition(
             name="this_solid",
-            input_defs=[],
             compute_fn=lambda *args, **kwargs: None,
-            output_defs=[],
             description="Ephemeral solid constructed by dagstermill.get_context()",
             required_resource_keys=mode_def.resource_key_set,
         )

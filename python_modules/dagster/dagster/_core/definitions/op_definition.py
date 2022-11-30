@@ -323,8 +323,10 @@ class OpDefinition(NodeDefinition):
     ) -> "OpDefinition":
         return OpDefinition(
             name=name,
-            ins={name: In.from_definition(input_def) for input_def in self.input_defs},
-            outs={name: Out.from_definition(output_def) for output_def in self.output_defs},
+            ins={input_def.name: In.from_definition(input_def) for input_def in self.input_defs},
+            outs={
+                output_def.name: Out.from_definition(output_def) for output_def in self.output_defs
+            },
             compute_fn=self.compute_fn,
             config_schema=config_schema,
             description=description or self.description,
@@ -406,9 +408,7 @@ class OpDefinition(NodeDefinition):
                         "was provided when invoking."
                     )
                 if len(args) > 0:
-                    if args[0] is not None and not isinstance(
-                        args[0], UnboundOpExecutionContext
-                    ):
+                    if args[0] is not None and not isinstance(args[0], UnboundOpExecutionContext):
                         raise DagsterInvalidInvocationError(
                             f"Compute function of {node_label} '{self.name}' has context argument, "
                             "but no context was provided when invoking."
