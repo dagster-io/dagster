@@ -55,7 +55,7 @@ def op_invocation_result(
 
     compute_fn = cast(DecoratedSolidFunction, compute_fn)
     result = (
-        compute_fn.decorated_fn(context, **input_dict)
+        compute_fn.decorated_fn(bound_context, **input_dict)
         if compute_fn.has_context_arg()
         else compute_fn.decorated_fn(**input_dict)
     )
