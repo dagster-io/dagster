@@ -128,7 +128,7 @@ def _resolve_output_to_destinations(
 
         output_def = output_node.definition.output_def_named(output_pointer.output_name)
         downstream_input_handles = (
-            node_def.dependency_structure.output_to_downstream_inputs_for_solid(
+            node_def.dependency_structure.output_to_downstream_inputs_for_node(
                 output_pointer.solid_name
             ).get(NodeOutput(output_node, output_def), [])
         )
@@ -184,7 +184,7 @@ def _build_graph_dependencies(
                 NodeHandle(output_handle.solid_name, parent=parent_handle),
                 output_handle.output_def.name,
             )
-            for output_handle in dep_struct.all_upstream_outputs_from_solid(sub_node_name)
+            for output_handle in dep_struct.all_upstream_outputs_from_node(sub_node_name)
             if NodeHandle(output_handle.solid.name, parent=parent_handle)
             not in assets_defs_by_node_handle
         ]

@@ -767,35 +767,35 @@ def get_subselected_graph_definition(
         # build dependencies for the node. we do it for both cases because nested graphs can have
         # inputs and outputs too
         deps[_dep_key_of(node)] = {}
-        for input_handle in node.input_handles():
-            if graph.dependency_structure.has_direct_dep(input_handle):
-                output_handle = graph.dependency_structure.get_direct_dep(input_handle)
+        for node_input in node.inputs():
+            if graph.dependency_structure.has_direct_dep(node_input):
+                output_handle = graph.dependency_structure.get_direct_dep(node_input)
                 if output_handle.solid.name in resolved_op_selection_dict:
-                    deps[_dep_key_of(node)][input_handle.input_def.name] = DependencyDefinition(
+                    deps[_dep_key_of(node)][node_input.input_def.name] = DependencyDefinition(
                         solid=output_handle.solid.name, output=output_handle.output_def.name
                     )
-            elif graph.dependency_structure.has_dynamic_fan_in_dep(input_handle):
-                output_handle = graph.dependency_structure.get_dynamic_fan_in_dep(input_handle)
+            elif graph.dependency_structure.has_dynamic_fan_in_dep(node_input):
+                output_handle = graph.dependency_structure.get_dynamic_fan_in_dep(node_input)
                 if output_handle.solid.name in resolved_op_selection_dict:
                     deps[_dep_key_of(node)][
-                        input_handle.input_def.name
+                        node_input.input_def.name
                     ] = DynamicCollectDependencyDefinition(
                         solid_name=output_handle.solid.name,
                         output_name=output_handle.output_def.name,
                     )
-            elif graph.dependency_structure.has_fan_in_deps(input_handle):
-                output_handles = graph.dependency_structure.get_fan_in_deps(input_handle)
+            elif graph.dependency_structure.has_fan_in_deps(node_input):
+                outputs = graph.dependency_structure.get_fan_in_deps(node_input)
                 multi_dependencies = [
                     DependencyDefinition(
                         solid=output_handle.solid.name, output=output_handle.output_def.name
                     )
-                    for output_handle in output_handles
+                    for output_handle in outputs
                     if (
                         isinstance(output_handle, NodeOutput)
                         and output_handle.solid.name in resolved_op_selection_dict
                     )
                 ]
-                deps[_dep_key_of(node)][input_handle.input_def.name] = MultiDependencyDefinition(
+                deps[_dep_key_of(node)][node_input.input_def.name] = MultiDependencyDefinition(
                     cast(
                         List[Union[DependencyDefinition, Type[MappedInputPlaceholder]]],
                         multi_dependencies,

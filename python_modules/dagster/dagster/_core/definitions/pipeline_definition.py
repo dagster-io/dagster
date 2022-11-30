@@ -712,33 +712,33 @@ def _get_pipeline_subset_def(
     ] = {_dep_key_of(solid): {} for solid in solids}
 
     for solid in solids:
-        for input_handle in solid.input_handles():
-            if graph.dependency_structure.has_direct_dep(input_handle):
-                output_handle = pipeline_def.dependency_structure.get_direct_dep(input_handle)
+        for node_input in solid.inputs():
+            if graph.dependency_structure.has_direct_dep(node_input):
+                output_handle = pipeline_def.dependency_structure.get_direct_dep(node_input)
                 if output_handle.solid.name in solids_to_execute:
-                    deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
+                    deps[_dep_key_of(solid)][node_input.input_def.name] = DependencyDefinition(
                         solid=output_handle.solid.name, output=output_handle.output_def.name
                     )
-            elif graph.dependency_structure.has_dynamic_fan_in_dep(input_handle):
-                output_handle = graph.dependency_structure.get_dynamic_fan_in_dep(input_handle)
+            elif graph.dependency_structure.has_dynamic_fan_in_dep(node_input):
+                output_handle = graph.dependency_structure.get_dynamic_fan_in_dep(node_input)
                 if output_handle.solid.name in solids_to_execute:
                     deps[_dep_key_of(solid)][
-                        input_handle.input_def.name
+                        node_input.input_def.name
                     ] = DynamicCollectDependencyDefinition(
                         solid_name=output_handle.solid.name,
                         output_name=output_handle.output_def.name,
                     )
-            elif graph.dependency_structure.has_fan_in_deps(input_handle):
-                output_handles = cast(
+            elif graph.dependency_structure.has_fan_in_deps(node_input):
+                outputs = cast(
                     Sequence[NodeOutput],
-                    graph.dependency_structure.get_fan_in_deps(input_handle),
+                    graph.dependency_structure.get_fan_in_deps(node_input),
                 )
-                deps[_dep_key_of(solid)][input_handle.input_def.name] = MultiDependencyDefinition(
+                deps[_dep_key_of(solid)][node_input.input_def.name] = MultiDependencyDefinition(
                     [
                         DependencyDefinition(
                             solid=output_handle.solid.name, output=output_handle.output_def.name
                         )
-                        for output_handle in output_handles
+                        for output_handle in outputs
                         if output_handle.solid.name in solids_to_execute
                     ]
                 )

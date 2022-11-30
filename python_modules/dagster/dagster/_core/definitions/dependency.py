@@ -6,6 +6,7 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -117,8 +118,8 @@ class Node:
     _additional_tags: Mapping[str, str]
     _hook_defs: AbstractSet[HookDefinition]
     _retry_policy: Optional[RetryPolicy]
-    _input_handles: Mapping[str, "NodeInput"]
-    _output_handles: Mapping[str, "NodeOutput"]
+    _inputs: Mapping[str, "NodeInput"]
+    _outputs: Mapping[str, "NodeOutput"]
 
     def __init__(
         self,
@@ -143,31 +144,28 @@ class Node:
         self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
         self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
 
-        input_handles = {}
-        for name, input_def in self.definition.input_dict.items():
-            input_handles[name] = NodeInput(self, input_def)
+        self._inputs = {
+            name: NodeInput(self, input_def)
+            for name, input_def in self.definition.input_dict.items()
+        }
+        self._outputs = {
+            name: NodeOutput(self, output_def)
+            for name, output_def in self.definition.output_dict.items()
+        }
 
-        self._input_handles = input_handles
+    def inputs(self) -> Iterable["NodeInput"]:
+        return self._inputs.values()
 
-        output_handles = {}
-        for name, output_def in self.definition.output_dict.items():
-            output_handles[name] = NodeOutput(self, output_def)
+    def outputs(self) -> Iterable["NodeOutput"]:
+        return self._outputs.values()
 
-        self._output_handles = output_handles
-
-    def input_handles(self):
-        return self._input_handles.values()
-
-    def output_handles(self):
-        return self._output_handles.values()
-
-    def input_handle(self, name: str) -> "NodeInput":
+    def get_input(self, name: str) -> "NodeInput":
         check.str_param(name, "name")
-        return self._input_handles[name]
+        return self._inputs[name]
 
-    def output_handle(self, name: str) -> "NodeOutput":
+    def get_output(self, name: str) -> "NodeOutput":
         check.str_param(name, "name")
-        return self._output_handles[name]
+        return self._outputs[name]
 
     def has_input(self, name: str) -> bool:
         return self.definition.has_input(name)
@@ -777,24 +775,24 @@ class DynamicCollectDependencyDefinition(
         return True
 
 
-DepTypeAndOutputHandles = Tuple[
+DepTypeAndOutputs = Tuple[
     DependencyType,
     Union[NodeOutput, List[Union[NodeOutput, Type["MappedInputPlaceholder"]]]],
 ]
 
-InputToOutputHandleDict = Dict[NodeInput, DepTypeAndOutputHandles]
+InputToOutputMap = Dict[NodeInput, DepTypeAndOutputs]
 
 
 def _create_handle_dict(
     solid_dict: Mapping[str, Node],
     dep_dict: Mapping[str, Mapping[str, IDependencyDefinition]],
-) -> InputToOutputHandleDict:
+) -> InputToOutputMap:
     from .composition import MappedInputPlaceholder
 
     check.mapping_param(solid_dict, "solid_dict", key_type=str, value_type=Node)
     check.two_dim_mapping_param(dep_dict, "dep_dict", value_type=IDependencyDefinition)
 
-    handle_dict: InputToOutputHandleDict = {}
+    handle_dict: InputToOutputMap = {}
 
     for solid_name, input_dict in dep_dict.items():
         from_solid = solid_dict[solid_name]
@@ -803,7 +801,7 @@ def _create_handle_dict(
                 handles: List[Union[NodeOutput, Type[MappedInputPlaceholder]]] = []
                 for inner_dep in dep_def.get_dependencies_and_mappings():
                     if isinstance(inner_dep, DependencyDefinition):
-                        handles.append(solid_dict[inner_dep.solid].output_handle(inner_dep.output))
+                        handles.append(solid_dict[inner_dep.solid].get_output(inner_dep.output))
                     elif inner_dep is MappedInputPlaceholder:
                         handles.append(inner_dep)
                     else:
@@ -813,17 +811,17 @@ def _create_handle_dict(
                             )
                         )
 
-                handle_dict[from_solid.input_handle(input_name)] = (DependencyType.FAN_IN, handles)
+                handle_dict[from_solid.get_input(input_name)] = (DependencyType.FAN_IN, handles)
 
             elif isinstance(dep_def, DependencyDefinition):
-                handle_dict[from_solid.input_handle(input_name)] = (
+                handle_dict[from_solid.get_input(input_name)] = (
                     DependencyType.DIRECT,
-                    solid_dict[dep_def.solid].output_handle(dep_def.output),
+                    solid_dict[dep_def.solid].get_output(dep_def.output),
                 )
             elif isinstance(dep_def, DynamicCollectDependencyDefinition):
-                handle_dict[from_solid.input_handle(input_name)] = (
+                handle_dict[from_solid.get_input(input_name)] = (
                     DependencyType.DYNAMIC_COLLECT,
-                    solid_dict[dep_def.solid_name].output_handle(dep_def.output_name),
+                    solid_dict[dep_def.solid_name].get_output(dep_def.output_name),
                 )
 
             else:
@@ -837,19 +835,19 @@ class DependencyStructure:
     def from_definitions(solids: Mapping[str, Node], dep_dict: Mapping[str, Any]):
         return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(solids, dep_dict))
 
-    def __init__(self, solid_names: Sequence[str], handle_dict: InputToOutputHandleDict):
-        self._solid_names = solid_names
-        self._handle_dict = handle_dict
+    def __init__(self, node_names: Sequence[str], input_to_output_map: InputToOutputMap):
+        self._node_names = node_names
+        self._input_to_output_map = input_to_output_map
 
         # Building up a couple indexes here so that one can look up all the upstream output handles
         # or downstream input handles in O(1). Without this, this can become O(N^2) where N is solid
         # count during the GraphQL query in particular
 
         # solid_name => input_handle => list[output_handle]
-        self._solid_input_index: dict = defaultdict(dict)
+        self._node_input_index: dict = defaultdict(dict)
 
         # solid_name => output_handle => list[input_handle]
-        self._solid_output_index: dict = defaultdict(lambda: defaultdict(list))
+        self._node_output_index: dict = defaultdict(lambda: defaultdict(list))
 
         # solid_name => dynamic output_handle that this solid will dupe for
         self._dynamic_fan_out_index: dict = {}
@@ -857,204 +855,200 @@ class DependencyStructure:
         # solid_name => set of dynamic output_handle this collects over
         self._collect_index: Dict[str, set] = defaultdict(set)
 
-        for input_handle, (dep_type, output_handle_or_list) in self._handle_dict.items():
+        for node_input, (dep_type, node_output_or_list) in self._input_to_output_map.items():
             if dep_type == DependencyType.FAN_IN:
-                output_handle_list = []
-                for handle in output_handle_or_list:
-                    if not isinstance(handle, NodeOutput):
+                node_output_list = []
+                for node_output in node_output_or_list:
+                    if not isinstance(node_output, NodeOutput):
                         continue
 
-                    if handle.is_dynamic:
+                    if node_output.is_dynamic:
                         raise DagsterInvalidDefinitionError(
                             "Currently, items in a fan-in dependency cannot be downstream of dynamic outputs. "
-                            f'Problematic dependency on dynamic output "{handle.describe()}".'
+                            f'Problematic dependency on dynamic output "{node_output.describe()}".'
                         )
-                    if self._dynamic_fan_out_index.get(handle.solid_name):
+                    if self._dynamic_fan_out_index.get(node_output.solid_name):
                         raise DagsterInvalidDefinitionError(
                             "Currently, items in a fan-in dependency cannot be downstream of dynamic outputs. "
-                            f'Problematic dependency on output "{handle.describe()}", downstream of '
-                            f'"{self._dynamic_fan_out_index[handle.solid_name].describe()}".'
+                            f'Problematic dependency on output "{node_output.describe()}", downstream of '
+                            f'"{self._dynamic_fan_out_index[node_output.solid_name].describe()}".'
                         )
 
-                    output_handle_list.append(handle)
+                    node_output_list.append(node_output)
             elif dep_type == DependencyType.DIRECT:
-                output_handle = cast(NodeOutput, output_handle_or_list)
+                node_output = cast(NodeOutput, node_output_or_list)
 
-                if output_handle.is_dynamic:
-                    self._validate_and_set_fan_out(input_handle, output_handle)
+                if node_output.is_dynamic:
+                    self._validate_and_set_fan_out(node_input, node_output)
 
-                if self._dynamic_fan_out_index.get(output_handle.solid_name):
+                if self._dynamic_fan_out_index.get(node_output.solid_name):
                     self._validate_and_set_fan_out(
-                        input_handle, self._dynamic_fan_out_index[output_handle.solid_name]
+                        node_input, self._dynamic_fan_out_index[node_output.solid_name]
                     )
 
-                output_handle_list = [output_handle]
+                node_output_list = [node_output]
             elif dep_type == DependencyType.DYNAMIC_COLLECT:
-                output_handle = cast(NodeOutput, output_handle_or_list)
+                node_output = cast(NodeOutput, node_output_or_list)
 
-                if output_handle.is_dynamic:
-                    self._validate_and_set_collect(input_handle, output_handle)
+                if node_output.is_dynamic:
+                    self._validate_and_set_collect(node_input, node_output)
 
-                elif self._dynamic_fan_out_index.get(output_handle.solid_name):
+                elif self._dynamic_fan_out_index.get(node_output.solid_name):
                     self._validate_and_set_collect(
-                        input_handle,
-                        self._dynamic_fan_out_index[output_handle.solid_name],
+                        node_input,
+                        self._dynamic_fan_out_index[node_output.solid_name],
                     )
                 else:
                     check.failed(
-                        f"Unexpected dynamic fan in dep created {output_handle} -> {input_handle}"
+                        f"Unexpected dynamic fan in dep created {node_output} -> {node_input}"
                     )
 
-                output_handle_list = [output_handle]
+                node_output_list = [node_output]
             else:
                 check.failed(f"Unexpected dep type {dep_type}")
 
-            self._solid_input_index[input_handle.solid.name][input_handle] = output_handle_list
-            for output_handle in output_handle_list:
-                self._solid_output_index[output_handle.solid.name][output_handle].append(
-                    input_handle
-                )
+            self._node_input_index[node_input.solid.name][node_input] = node_output_list
+            for node_output in node_output_list:
+                self._node_output_index[node_output.solid.name][node_output].append(node_input)
 
-    def _validate_and_set_fan_out(self, input_handle: NodeInput, output_handle: NodeOutput) -> Any:
+    def _validate_and_set_fan_out(self, node_input: NodeInput, node_output: NodeOutput) -> Any:
         """Helper function for populating _dynamic_fan_out_index"""
 
-        if not input_handle.solid.definition.input_supports_dynamic_output_dep(
-            input_handle.input_name
-        ):
+        if not node_input.solid.definition.input_supports_dynamic_output_dep(node_input.input_name):
             raise DagsterInvalidDefinitionError(
-                f"{input_handle.solid.describe_node()} cannot be downstream of dynamic output "
-                f'"{output_handle.describe()}" since input "{input_handle.input_name}" maps to a node '
+                f"{node_input.solid.describe_node()} cannot be downstream of dynamic output "
+                f'"{node_output.describe()}" since input "{node_input.input_name}" maps to a node '
                 "that is already downstream of another dynamic output. Nodes cannot be downstream of more "
                 "than one dynamic output"
             )
 
-        if self._collect_index.get(input_handle.solid_name):
+        if self._collect_index.get(node_input.solid_name):
             raise DagsterInvalidDefinitionError(
-                f"{input_handle.solid.describe_node()} cannot be both downstream of dynamic output "
-                f"{output_handle.describe()} and collect over dynamic output "
-                f"{list(self._collect_index[input_handle.solid_name])[0].describe()}."
+                f"{node_input.solid.describe_node()} cannot be both downstream of dynamic output "
+                f"{node_output.describe()} and collect over dynamic output "
+                f"{list(self._collect_index[node_input.solid_name])[0].describe()}."
             )
 
-        if self._dynamic_fan_out_index.get(input_handle.solid_name) is None:
-            self._dynamic_fan_out_index[input_handle.solid_name] = output_handle
+        if self._dynamic_fan_out_index.get(node_input.solid_name) is None:
+            self._dynamic_fan_out_index[node_input.solid_name] = node_output
             return
 
-        if self._dynamic_fan_out_index[input_handle.solid_name] != output_handle:
+        if self._dynamic_fan_out_index[node_input.solid_name] != node_output:
             raise DagsterInvalidDefinitionError(
-                f"{input_handle.solid.describe_node()} cannot be downstream of more than one dynamic output. "
-                f'It is downstream of both "{output_handle.describe()}" and '
-                f'"{self._dynamic_fan_out_index[input_handle.solid_name].describe()}"'
+                f"{node_input.solid.describe_node()} cannot be downstream of more than one dynamic output. "
+                f'It is downstream of both "{node_output.describe()}" and '
+                f'"{self._dynamic_fan_out_index[node_input.solid_name].describe()}"'
             )
 
     def _validate_and_set_collect(
         self,
-        input_handle: NodeInput,
-        output_handle: NodeOutput,
+        node_input: NodeInput,
+        node_output: NodeOutput,
     ) -> None:
-        if self._dynamic_fan_out_index.get(input_handle.solid_name):
+        if self._dynamic_fan_out_index.get(node_input.solid_name):
             raise DagsterInvalidDefinitionError(
-                f"{input_handle.solid.describe_node()} cannot both collect over dynamic output "
-                f"{output_handle.describe()} and be downstream of the dynamic output "
-                f"{self._dynamic_fan_out_index[input_handle.solid_name].describe()}."
+                f"{node_input.solid.describe_node()} cannot both collect over dynamic output "
+                f"{node_output.describe()} and be downstream of the dynamic output "
+                f"{self._dynamic_fan_out_index[node_input.solid_name].describe()}."
             )
 
-        self._collect_index[input_handle.solid_name].add(output_handle)
+        self._collect_index[node_input.solid_name].add(node_output)
 
         # if the output is already fanned out
-        if self._dynamic_fan_out_index.get(output_handle.solid_name):
+        if self._dynamic_fan_out_index.get(node_output.solid_name):
             raise DagsterInvalidDefinitionError(
-                f"{input_handle.solid.describe_node()} cannot be downstream of more than one dynamic output. "
-                f'It is downstream of both "{output_handle.describe()}" and '
-                f'"{self._dynamic_fan_out_index[output_handle.solid_name].describe()}"'
+                f"{node_input.solid.describe_node()} cannot be downstream of more than one dynamic output. "
+                f'It is downstream of both "{node_output.describe()}" and '
+                f'"{self._dynamic_fan_out_index[node_output.solid_name].describe()}"'
             )
 
-    def all_upstream_outputs_from_solid(self, solid_name: str) -> Sequence[NodeOutput]:
-        check.str_param(solid_name, "solid_name")
+    def all_upstream_outputs_from_node(self, node_name: str) -> Sequence[NodeOutput]:
+        check.str_param(node_name, "solid_name")
 
         # flatten out all outputs that feed into the inputs of this solid
         return [
             output_handle
-            for output_handle_list in self._solid_input_index[solid_name].values()
+            for output_handle_list in self._node_input_index[node_name].values()
             for output_handle in output_handle_list
         ]
 
-    def input_to_upstream_outputs_for_solid(self, solid_name: str) -> Any:
+    def input_to_upstream_outputs_for_node(self, node_name: str) -> Any:
         """
         Returns a Dict[NodeInput, List[NodeOutput]] that encodes
         where all the the inputs are sourced from upstream. Usually the
         List[NodeOutput] will be a list of one, except for the
         multi-dependency case.
         """
-        check.str_param(solid_name, "solid_name")
-        return self._solid_input_index[solid_name]
+        check.str_param(node_name, "node_name")
+        return self._node_input_index[node_name]
 
-    def output_to_downstream_inputs_for_solid(self, solid_name: str) -> Any:
+    def output_to_downstream_inputs_for_node(self, node_name: str) -> Any:
         """
         Returns a Dict[NodeOutput, List[NodeInput]] that
         represents all the downstream inputs for each output in the
         dictionary
         """
-        check.str_param(solid_name, "solid_name")
-        return self._solid_output_index[solid_name]
+        check.str_param(node_name, "node_name")
+        return self._node_output_index[node_name]
 
-    def has_direct_dep(self, solid_input_handle: NodeInput) -> bool:
-        check.inst_param(solid_input_handle, "solid_input_handle", NodeInput)
-        if solid_input_handle not in self._handle_dict:
+    def has_direct_dep(self, node_input: NodeInput) -> bool:
+        check.inst_param(node_input, "node_input", NodeInput)
+        if node_input not in self._input_to_output_map:
             return False
-        dep_type, _ = self._handle_dict[solid_input_handle]
+        dep_type, _ = self._input_to_output_map[node_input]
         return dep_type == DependencyType.DIRECT
 
-    def get_direct_dep(self, solid_input_handle: NodeInput) -> NodeOutput:
-        check.inst_param(solid_input_handle, "solid_input_handle", NodeInput)
-        dep_type, dep = self._handle_dict[solid_input_handle]
+    def get_direct_dep(self, node_input: NodeInput) -> NodeOutput:
+        check.inst_param(node_input, "node_input", NodeInput)
+        dep_type, dep = self._input_to_output_map[node_input]
         check.invariant(
             dep_type == DependencyType.DIRECT,
             f"Cannot call get_direct_dep when dep is not singular, got {dep_type}",
         )
         return cast(NodeOutput, dep)
 
-    def has_fan_in_deps(self, solid_input_handle: NodeInput) -> bool:
-        check.inst_param(solid_input_handle, "solid_input_handle", NodeInput)
-        if solid_input_handle not in self._handle_dict:
+    def has_fan_in_deps(self, node_input: NodeInput) -> bool:
+        check.inst_param(node_input, "node_input", NodeInput)
+        if node_input not in self._input_to_output_map:
             return False
-        dep_type, _ = self._handle_dict[solid_input_handle]
+        dep_type, _ = self._input_to_output_map[node_input]
         return dep_type == DependencyType.FAN_IN
 
     def get_fan_in_deps(
-        self, solid_input_handle: NodeInput
+        self, node_input: NodeInput
     ) -> Sequence[Union[NodeOutput, Type["MappedInputPlaceholder"]]]:
-        check.inst_param(solid_input_handle, "solid_input_handle", NodeInput)
-        dep_type, deps = self._handle_dict[solid_input_handle]
+        check.inst_param(node_input, "node_input", NodeInput)
+        dep_type, deps = self._input_to_output_map[node_input]
         check.invariant(
             dep_type == DependencyType.FAN_IN,
             f"Cannot call get_multi_dep when dep is not fan in, got {dep_type}",
         )
         return cast(List[Union[NodeOutput, Type["MappedInputPlaceholder"]]], deps)
 
-    def has_dynamic_fan_in_dep(self, solid_input_handle: NodeInput) -> bool:
-        check.inst_param(solid_input_handle, "solid_input_handle", NodeInput)
-        if solid_input_handle not in self._handle_dict:
+    def has_dynamic_fan_in_dep(self, node_input: NodeInput) -> bool:
+        check.inst_param(node_input, "node_input", NodeInput)
+        if node_input not in self._input_to_output_map:
             return False
-        dep_type, _ = self._handle_dict[solid_input_handle]
+        dep_type, _ = self._input_to_output_map[node_input]
         return dep_type == DependencyType.DYNAMIC_COLLECT
 
-    def get_dynamic_fan_in_dep(self, solid_input_handle: NodeInput) -> NodeOutput:
-        check.inst_param(solid_input_handle, "solid_input_handle", NodeInput)
-        dep_type, dep = self._handle_dict[solid_input_handle]
+    def get_dynamic_fan_in_dep(self, node_input: NodeInput) -> NodeOutput:
+        check.inst_param(node_input, "node_input", NodeInput)
+        dep_type, dep = self._input_to_output_map[node_input]
         check.invariant(
             dep_type == DependencyType.DYNAMIC_COLLECT,
             f"Cannot call get_dynamic_fan_in_dep when dep is not, got {dep_type}",
         )
         return cast(NodeOutput, dep)
 
-    def has_deps(self, solid_input_handle: NodeInput) -> bool:
-        check.inst_param(solid_input_handle, "solid_input_handle", NodeInput)
-        return solid_input_handle in self._handle_dict
+    def has_deps(self, node_input: NodeInput) -> bool:
+        check.inst_param(node_input, "node_input", NodeInput)
+        return node_input in self._input_to_output_map
 
-    def get_deps_list(self, solid_input_handle: NodeInput) -> Sequence[NodeOutput]:
-        check.inst_param(solid_input_handle, "solid_input_handle", NodeInput)
-        check.invariant(self.has_deps(solid_input_handle))
-        dep_type, handle_or_list = self._handle_dict[solid_input_handle]
+    def get_deps_list(self, node_input: NodeInput) -> Sequence[NodeOutput]:
+        check.inst_param(node_input, "node_input", NodeInput)
+        check.invariant(self.has_deps(node_input))
+        dep_type, handle_or_list = self._input_to_output_map[node_input]
         if dep_type == DependencyType.DIRECT:
             return [cast(NodeOutput, handle_or_list)]
         elif dep_type == DependencyType.DYNAMIC_COLLECT:
@@ -1064,25 +1058,25 @@ class DependencyStructure:
         else:
             check.failed(f"Unexpected dep type {dep_type}")
 
-    def input_handles(self) -> Sequence[NodeInput]:
-        return list(self._handle_dict.keys())
+    def inputs(self) -> Sequence[NodeInput]:
+        return list(self._input_to_output_map.keys())
 
-    def get_upstream_dynamic_handle_for_solid(self, solid_name: str) -> Any:
-        return self._dynamic_fan_out_index.get(solid_name)
+    def get_upstream_dynamic_output_for_node(self, node_name: str) -> Optional[NodeOutput]:
+        return self._dynamic_fan_out_index.get(node_name)
 
-    def get_dependency_type(self, solid_input_handle: NodeInput) -> Optional[DependencyType]:
-        result = self._handle_dict.get(solid_input_handle)
+    def get_dependency_type(self, node_input: NodeInput) -> Optional[DependencyType]:
+        result = self._input_to_output_map.get(node_input)
         if result is None:
             return None
         dep_type, _ = result
         return dep_type
 
-    def is_dynamic_mapped(self, solid_name: str) -> bool:
-        return solid_name in self._dynamic_fan_out_index
+    def is_dynamic_mapped(self, node_name: str) -> bool:
+        return node_name in self._dynamic_fan_out_index
 
-    def has_dynamic_downstreams(self, solid_name: str) -> bool:
-        for upstream_handle in self._dynamic_fan_out_index.values():
-            if upstream_handle.solid_name == solid_name:
+    def has_dynamic_downstreams(self, node_name: str) -> bool:
+        for node_output in self._dynamic_fan_out_index.values():
+            if node_output.solid_name == node_name:
                 return True
 
         return False

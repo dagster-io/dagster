@@ -135,7 +135,7 @@ class _PlanBuilder:
         )
         self._steps: Dict[str, IExecutionStep] = OrderedDict()
         self.step_output_map: Dict[
-            NodeOutput[StepOutputHandle, UnresolvedStepOutputHandle]
+            NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]
         ] = dict()
         self.known_state = check.inst_param(known_state, "known_state", KnownExecutionState)
         self._instance_ref = instance_ref
@@ -406,7 +406,7 @@ class _PlanBuilder:
             ### 3. OUTPUTS
             # Create output handles for solid outputs
             for name, output_def in solid.definition.output_dict.items():
-                output_handle = solid.output_handle(name)
+                node_output = solid.get_output(name)
 
                 # Punch through layers of composition scope to map to the output of the
                 # actual compute step
@@ -428,7 +428,7 @@ class _PlanBuilder:
                 else:
                     check.failed(f"Unexpected step type {step}")
 
-                self.set_output_handle(output_handle, step_output_handle)
+                self.set_output_handle(node_output, step_output_handle)
 
 
 def get_root_graph_input_source(
@@ -486,7 +486,7 @@ def get_step_input_source(
         of_type=(StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput),
     )
 
-    input_handle = solid.input_handle(input_name)
+    input_handle = solid.get_input(input_name)
     solid_config = plan_builder.resolved_run_config.solids.get(str(handle))
 
     input_def = solid.definition.input_def_named(input_name)
