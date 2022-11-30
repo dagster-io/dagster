@@ -14,7 +14,7 @@ def build_solid_invocation_snap(icontains_solids, solid):
 
     input_def_snaps = []
 
-    input_to_outputs_map = dep_structure.input_to_upstream_outputs_for_solid(solid.name)
+    input_to_outputs_map = dep_structure.input_to_upstream_outputs_for_node(solid.name)
 
     for input_def in solid.definition.input_defs:
         input_handle = NodeInput(solid, input_def)
