@@ -32,21 +32,13 @@ You will also need to install the `dagster-snowflake` and `dagster-snowflake-pan
 pip install dagster-snowflake dagster-snowflake-pandas
 ```
 
-### Concepts
-
-This guide assumes you are familiar with Dagster's software-defined assets and I/O managers. For more information on software-defined assets, see the [Assets tutorial](/tutorial/defining-an-asset) or the [Assets concept page](/concepts/assets/software-defined-assets). For more information on I/O managers, see the [I/O manager concept page](/concepts/io-management/io-managers)
-
 ## Step 1: Configure the Snowflake I/O manager
 
-<TabGroup>
+The Snowflake I/O manager requires some configuration to connect to your Snowflake instance. The `account`, `user` and `password` are required to connect with Snowflake. You can also provide an optional `role` for the I/O manager.
 
-<TabItem name="Connection configuration">
+To determine where data should be stored in Snowflake, the Snowflake I/O manager requires that you provide a `database`. You can also provide an optional `warehouse` and `schema` where data should be stored.
 
-### Connecting to Snowflake
-
-The Snowflake I/O manager requires some configuration to connect to your Snowflake instance. The `account`, `user` and `password` are required to connect with Snowflake. You can also provide an optional `role` for the I/O manager. These configuration values can be supplied to the Snowflake I/O manager like this:
-
-```python file=/integrations/snowflake/creds_configuration.py startafter=start_example endbefore=end_example
+```python file=/integrations/snowflake/configuration.py startafter=start_example endbefore=end_example
 from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
 from dagster import repository, with_resources
@@ -59,10 +51,13 @@ def flowers_analysis_repository():
         resource_defs={
             "io_manager": snowflake_pandas_io_manager.configured(
                 {
-                    "account": "abc1234.us-east-1",
-                    "user": {"env": "SNOWFLAKE_USER"},
-                    "password": {"env": "SNOWFLAKE_PASSWORD"},
-                    "role": "reader",
+                    "account": "abc1234.us-east-1", # required
+                    "user": {"env": "SNOWFLAKE_USER"}, # required
+                    "password": {"env": "SNOWFLAKE_PASSWORD"}, # required
+                    "role": "reader", # optional
+                    "warehouse": "PLANTS", # optional
+                    "database": "FLOWERS", # required
+                    "schema": "IRIS", # optional
                 }
             )
         },
@@ -71,40 +66,7 @@ def flowers_analysis_repository():
 
 The configuration values for the Snowflake I/O manager can be stored in environment variables and referenced in the configuration dictionary. In this example, we are storing the username and password in environment variables and telling the Snowflake I/O manager to find the values in the `SNOWFLAKE_USER` and `SNOWFLAKE_PASSWORD` variables, respectively.
 
-</TabItem>
-<TabItem name="Table location configuration">
-
-### Specifying where data is stored
-
-You can also provide configuration to the Snowflake I/O manager that will tell it where to store your data. Specifically, you can tell the Snowflake I/O manager the `warehouse`, `database`, and `schema` where you want to store your data:
-
-```python file=/integrations/snowflake/location_configuration.py startafter=start_example endbefore=end_example
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
-
-from dagster import repository, with_resources
-
-
-@repository
-def flowers_analysis_repository():
-    return with_resources(
-        [iris_dataset],
-        resource_defs={
-            "io_manager": snowflake_pandas_io_manager.configured(
-                {
-                    "warehouse": "PLANTS",
-                    "database": "FLOWERS",
-                    "schema": "IRIS",
-                }
-            )
-        },
-    )
-```
-
-With this configuration, if you materialized an asset called `iris_dataset`, Dagster would store the data in the `FLOWERS.IRIS.IRIS_DATASET` table.g
-
-Providing a `warehouse` and `schema` is optional. If you do not provide a warehouse, the default warehouse for your account will be used. If you do not provide a schema, Dagster will either infer a schema from your assets, or store the tables in the `PUBLIC` schema (see [Storing tables in multiple schemas](#storing-tables-in-multiple-schemas) for more information).
-</TabItem>
-</TabGroup>
+With this configuration, if you materialized an asset called `iris_dataset`, Dagster would store the data in the `FLOWERS.IRIS.IRIS_DATASET` table.
 
 For more documentation for each of the configuration values, see the **Config schema** dropdown in the [Snowflake API docs](#dagster_snowflake.build_snowflake_io_manager).
 
@@ -250,3 +212,10 @@ def flowers_analysis_repository():
 ```
 
 In this example, we create the `iris_dataset` as in the [Store a Dagster asset as a table in Snowflake](#store-a-dagster-asset-as-a-table-in-snowflake) example. In `iris_cleaned` the `iris_dataset` parameter tells Dagster that the value for the `iris_dataset` asset should be provided as input to `iris_cleaned` (if this feels too magical for you, see [this page](/concepts/assets/software-defined-assets#defining-explicit-dependencies) for how to explicitly specify dependencies). When materializing these assets, Dagster will use the `snowflake_pandas_io_manager` to fetch the `FLOWERS.IRIS.IRIS_DATASET` as a Pandas DataFrame and pass this DataFrame as the `iris_dataset` parameter to `iris_cleaned`. When `iris_cleaned` returns a Pandas DataFrame, Dagster will use the `snowflake_pandas_io_manager` to store the DataFrame as the `FLOWERS.IRIS.IRIS_CLEANED` table in Snowflake.
+
+
+## Related material
+
+For more information on software-defined assets, see the [Assets tutorial](/tutorial/defining-an-asset) or the [Assets concept page](/concepts/assets/software-defined-assets).
+
+For more information on I/O managers, see the [I/O manager concept page](/concepts/io-management/io-managers).
