@@ -78,6 +78,10 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def get_location_entry(self, name: str) -> Optional[WorkspaceLocationEntry]:
         pass
 
+    @abstractmethod
+    def get_location_statuses(self) -> Mapping[str, WorkspaceLocationLoadStatus]:
+        pass
+
     @property
     @abstractmethod
     def process_context(self) -> "IWorkspaceProcessContext":
@@ -286,6 +290,9 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
 
     def get_location_entry(self, name) -> Optional[WorkspaceLocationEntry]:
         return self._workspace_snapshot.get(name)
+
+    def get_location_statuses(self) -> Mapping[str, WorkspaceLocationLoadStatus]:
+        return {name: entry.load_status for name, entry in self._workspace_snapshot.items()}
 
     @property
     def process_context(self) -> "IWorkspaceProcessContext":

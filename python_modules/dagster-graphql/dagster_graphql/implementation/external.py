@@ -21,6 +21,7 @@ if TYPE_CHECKING:
         GrapheneRepository,
         GrapheneRepositoryConnection,
         GrapheneWorkspace,
+        GrapheneWorkspaceLocationStatusEntries,
     )
     from dagster_graphql.schema.util import HasContext
 
@@ -174,3 +175,27 @@ def fetch_workspace(workspace_request_context: WorkspaceRequestContext) -> Graph
     ]
 
     return GrapheneWorkspace(locationEntries=nodes)
+
+
+@capture_error
+def fetch_location_statuses(
+    workspace_request_context: WorkspaceRequestContext,
+) -> GrapheneWorkspaceLocationStatusEntries:
+    from ..schema.external import (
+        GrapheneRepositoryLocationLoadStatus,
+        GrapheneWorkspaceLocationStatusEntries,
+        GrapheneWorkspaceLocationStatusEntry,
+    )
+
+    check.inst_param(
+        workspace_request_context, "workspace_request_context", BaseWorkspaceRequestContext
+    )
+    return GrapheneWorkspaceLocationStatusEntries(
+        entries=[
+            GrapheneWorkspaceLocationStatusEntry(
+                name=name,
+                load_status=GrapheneRepositoryLocationLoadStatus.from_python_status(load_status),
+            )
+            for name, load_status in workspace_request_context.get_location_statuses().items()
+        ]
+    )

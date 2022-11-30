@@ -42,6 +42,11 @@ class BaseDaemonWorkspace(IWorkspace):
             self._location_entries = self._load_workspace()
         return self._location_entries.copy()
 
+    def get_location_statuses(self) -> Mapping[str, WorkspaceLocationLoadStatus]:
+        if self._location_entries == None:
+            self._location_entries = self._load_workspace()
+        return {name: entry.load_status for name, entry in self._location_entries.items()}
+
     @abstractmethod
     def _load_workspace(self) -> Mapping[str, WorkspaceLocationEntry]:
         pass

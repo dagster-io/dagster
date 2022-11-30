@@ -34,3 +34,7 @@ class IWorkspace(ABC):
     @abstractmethod
     def get_workspace_snapshot(self) -> Mapping[str, WorkspaceLocationEntry]:
         """Return an entry for each location in the workspace."""
+
+    @abstractmethod
+    def get_location_statuses(self) -> Mapping[str, WorkspaceLocationLoadStatus]:
+        pass

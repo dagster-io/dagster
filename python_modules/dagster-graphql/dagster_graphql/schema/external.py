@@ -107,6 +107,37 @@ class GrapheneRepositoryLocationOrLoadError(graphene.Union):
         name = "RepositoryLocationOrLoadError"
 
 
+class GrapheneWorkspaceLocationStatusEntry(graphene.ObjectType):
+    id = graphene.NonNull(graphene.ID)
+    name = graphene.NonNull(graphene.String)
+    loadStatus = graphene.NonNull(GrapheneRepositoryLocationLoadStatus)
+
+    class Meta:
+        name = "WorkspaceLocationStatusEntry"
+
+    def __init__(self, name, load_status):
+        super().__init__(name=name, loadStatus=load_status)
+
+    def resolve_id(self, _):
+        return self.name
+
+
+class GrapheneWorkspaceLocationStatusEntries(graphene.ObjectType):
+    entries = non_null_list(GrapheneWorkspaceLocationStatusEntry)
+
+    class Meta:
+        name = "WorkspaceLocationStatusEntries"
+
+
+class GrapheneWorkspaceLocationStatusEntriesOrError(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneWorkspaceLocationStatusEntries,
+            GraphenePythonError,
+        )
+        name = "WorkspaceLocationStatusEntriesOrError"
+
+
 class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     name = graphene.NonNull(graphene.String)

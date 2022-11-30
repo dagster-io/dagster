@@ -3046,6 +3046,11 @@ type DagitQuery {
   workspaceOrError: WorkspaceOrError!
 
   """
+  Retrieve location status for workspace locations
+  """
+  locationStatusesOrError: WorkspaceLocationStatusEntriesOrError!
+
+  """
   Retrieve a job by its location name, repository name, and job name.
   """
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
@@ -3248,6 +3253,18 @@ type DagitQuery {
 }
 
 union WorkspaceOrError = Workspace | PythonError
+
+union WorkspaceLocationStatusEntriesOrError = WorkspaceLocationStatusEntries | PythonError
+
+type WorkspaceLocationStatusEntries {
+  entries: [WorkspaceLocationStatusEntry!]!
+}
+
+type WorkspaceLocationStatusEntry {
+  id: ID!
+  name: String!
+  loadStatus: RepositoryLocationLoadStatus!
+}
 
 union GraphOrError = Graph | GraphNotFoundError | PythonError
 
