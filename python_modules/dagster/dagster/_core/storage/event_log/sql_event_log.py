@@ -227,7 +227,7 @@ class SqlEventLogStorage(EventLogStorage):
             and event.dagster_event.step_materialization_data.materialization.tags
         ):
 
-            if not self.has_table(AssetEventTagsTable.name):
+            if not self.has_table(table_name=AssetEventTagsTable.name):
                 # If tags table does not exist, silently exit. This is to support OSS
                 # users who have not yet run the migration to create the table.
                 # On read, we will throw an error if the table does not exist.
@@ -718,7 +718,7 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.where(SqlEventLogStorageTable.c.id.in_(event_records_filter.storage_ids))
 
         if event_records_filter.tags:
-            if not self.has_table(AssetEventTagsTable.name):
+            if not self.has_table(table_name=AssetEventTagsTable.name):
                 raise DagsterInvalidInvocationError(
                     "Cannot filter by asset event tags because AssetEventTags table does not "
                     "exist. Run `dagster instance migrate` to create the table."
@@ -1235,7 +1235,7 @@ class SqlEventLogStorage(EventLogStorage):
             filter_tags, "filter_tags", key_type=str, value_type=str
         )
 
-        if not self.has_table(AssetEventTagsTable.name):
+        if not self.has_table(table_name=AssetEventTagsTable.name):
             raise DagsterInvalidInvocationError(
                 "In order to search for asset event tags, you must run "
                 "`dagster instance migrate` to create the AssetEventTags table."
