@@ -67,13 +67,13 @@ def create_solid_compute_wrapper(solid_def: OpDefinition):
 
 async def _coerce_async_solid_to_async_gen(awaitable, context, output_defs):
     result = await awaitable
-    for event in validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
+    for event in validate_and_coerce_op_result_to_iterator(result, context, output_defs):
         yield event
 
 
 def _coerce_solid_compute_fn_to_iterator(fn, output_defs, context, context_arg_provided, kwargs):
     result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
-    for event in validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
+    for event in validate_and_coerce_op_result_to_iterator(result, context, output_defs):
         yield event
 
 
@@ -137,7 +137,7 @@ def _check_output_object_name(
         )
 
 
-def validate_and_coerce_solid_result_to_iterator(
+def validate_and_coerce_op_result_to_iterator(
     result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
 ) -> Generator[Any, None, None]:
     if inspect.isgenerator(result):

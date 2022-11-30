@@ -928,7 +928,7 @@ def _build_invocation_context_with_included_resources(
     context: "OpExecutionContext",
 ) -> "OpExecutionContext":
     from dagster._core.execution.context.invocation import (
-        UnboundSolidExecutionContext,
+        UnboundOpExecutionContext,
         build_op_context,
     )
 
@@ -943,8 +943,7 @@ def _build_invocation_context_with_included_resources(
             )
     all_resources = merge_dicts(resource_defs, invocation_resources)
 
-    if isinstance(context, UnboundSolidExecutionContext):
-        context = cast(UnboundSolidExecutionContext, context)
+    if isinstance(context, UnboundOpExecutionContext):
         # pylint: disable=protected-access
         return build_op_context(
             resources=all_resources,

@@ -336,9 +336,9 @@ class PendingNodeInvocation:
             current_context().add_pending_invocation(self)
 
     def __call__(self, *args, **kwargs):
-        from ..execution.context.invocation import UnboundSolidExecutionContext
+        from ..execution.context.invocation import UnboundOpExecutionContext
         from .decorators.solid_decorator import DecoratedSolidFunction
-        from .solid_invocation import solid_invocation_result
+        from .solid_invocation import op_invocation_result
 
         node_name = self.given_alias if self.given_alias else self.node_def.name
 
@@ -360,20 +360,20 @@ class PendingNodeInvocation:
                         f"Compute function of {node_label} '{self.given_alias}' has context argument, but no context "
                         "was provided when invoking."
                     )
-                elif args[0] is not None and not isinstance(args[0], UnboundSolidExecutionContext):
+                elif args[0] is not None and not isinstance(args[0], UnboundOpExecutionContext):
                     raise DagsterInvalidInvocationError(
                         f"Compute function of {node_label} '{self.given_alias}' has context argument, but no context "
                         "was provided when invoking."
                     )
                 context = args[0]
-                return solid_invocation_result(self, context, *args[1:], **kwargs)
+                return op_invocation_result(self, context, *args[1:], **kwargs)
             else:
-                if len(args) > 0 and isinstance(args[0], UnboundSolidExecutionContext):
+                if len(args) > 0 and isinstance(args[0], UnboundOpExecutionContext):
                     raise DagsterInvalidInvocationError(
                         f"Compute function of {node_label} '{self.given_alias}' has no context argument, but "
                         "context was provided when invoking."
                     )
-                return solid_invocation_result(self, None, *args, **kwargs)
+                return op_invocation_result(self, None, *args, **kwargs)
 
         assert_in_composition(node_name, self.node_def)
         input_bindings = {}

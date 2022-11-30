@@ -20,8 +20,8 @@ from .output import DynamicOutputDefinition
 
 if TYPE_CHECKING:
     from ..execution.context.invocation import (
-        BoundSolidExecutionContext,
-        UnboundSolidExecutionContext,
+        BoundOpExecutionContext,
+        UnboundOpExecutionContext,
     )
     from .composition import PendingNodeInvocation
     from .decorators.solid_decorator import DecoratedSolidFunction
@@ -29,9 +29,9 @@ if TYPE_CHECKING:
     from .output import OutputDefinition
 
 
-def solid_invocation_result(
-    solid_def_or_invocation: Union["OpDefinition", "PendingNodeInvocation"],
-    context: Optional["UnboundSolidExecutionContext"],
+def op_invocation_result(
+    op_def_or_invocation: Union["OpDefinition", "PendingNodeInvocation"],
+    context: Optional["UnboundOpExecutionContext"],
     *args,
     **kwargs,
 ) -> Any:
@@ -40,19 +40,19 @@ def solid_invocation_result(
 
     from .composition import PendingNodeInvocation
 
-    solid_def = (
-        solid_def_or_invocation.node_def.ensure_op_def()
-        if isinstance(solid_def_or_invocation, PendingNodeInvocation)
-        else solid_def_or_invocation
+    op_def = (
+        op_def_or_invocation.node_def.ensure_op_def()
+        if isinstance(op_def_or_invocation, PendingNodeInvocation)
+        else op_def_or_invocation
     )
 
-    _check_invocation_requirements(solid_def, context)
+    _check_invocation_requirements(op_def, context)
 
-    context = (context or build_solid_context()).bind(solid_def_or_invocation)
+    bound_context = (context or build_solid_context()).bind(op_def_or_invocation)
 
-    input_dict = _resolve_inputs(solid_def, args, kwargs, context)
+    input_dict = _resolve_inputs(op_def, args, kwargs, bound_context)
 
-    compute_fn = solid_def.compute_fn
+    compute_fn = op_def.compute_fn
     if not isinstance(compute_fn, DecoratedSolidFunction):
         check.failed("solid invocation only works with decorated solid fns")
 
@@ -63,11 +63,11 @@ def solid_invocation_result(
         else compute_fn.decorated_fn(**input_dict)
     )
 
-    return _type_check_output_wrapper(solid_def, result, context)
+    return _type_check_output_wrapper(op_def, result, bound_context)
 
 
 def _check_invocation_requirements(
-    solid_def: "OpDefinition", context: Optional["UnboundSolidExecutionContext"]
+    solid_def: "OpDefinition", context: Optional["UnboundOpExecutionContext"]
 ) -> None:
     """Ensure that provided context fulfills requirements of solid definition.
 
@@ -96,7 +96,7 @@ def _check_invocation_requirements(
         )
 
 
-def _resolve_inputs(solid_def: "OpDefinition", args, kwargs, context: "BoundSolidExecutionContext"):
+def _resolve_inputs(solid_def: "OpDefinition", args, kwargs, context: "BoundOpExecutionContext"):
     from dagster._core.execution.plan.execute_step import do_type_check
 
     nothing_input_defs = [
@@ -191,7 +191,7 @@ def _resolve_inputs(solid_def: "OpDefinition", args, kwargs, context: "BoundSoli
 
 
 def _type_check_output_wrapper(
-    solid_def: "OpDefinition", result: Any, context: "BoundSolidExecutionContext"
+    solid_def: "OpDefinition", result: Any, context: "BoundOpExecutionContext"
 ) -> Any:
     """Type checks and returns the result of a solid.
 
@@ -290,20 +290,20 @@ def _type_check_output_wrapper(
 
 
 def _type_check_function_output(
-    solid_def: "OpDefinition", result: Any, context: "BoundSolidExecutionContext"
+    op_def: "OpDefinition", result: Any, context: "BoundOpExecutionContext"
 ):
-    from ..execution.plan.compute_generator import validate_and_coerce_solid_result_to_iterator
+    from ..execution.plan.compute_generator import validate_and_coerce_op_result_to_iterator
 
-    output_defs_by_name = {output_def.name: output_def for output_def in solid_def.output_defs}
-    for event in validate_and_coerce_solid_result_to_iterator(
-        result, context, solid_def.output_defs
+    output_defs_by_name = {output_def.name: output_def for output_def in op_def.output_defs}
+    for event in validate_and_coerce_op_result_to_iterator(
+        result, context, op_def.output_defs
     ):
         _type_check_output(output_defs_by_name[event.output_name], event, context)
     return result
 
 
 def _type_check_output(
-    output_def: "OutputDefinition", output: Any, context: "BoundSolidExecutionContext"
+    output_def: "OutputDefinition", output: Any, context: "BoundOpExecutionContext"
 ) -> Any:
     """Validates and performs core type check on a provided output.
 

@@ -32,7 +32,7 @@ from dagster._core.definitions.resource_requirement import (
     OutputManagerRequirement,
     ResourceRequirement,
 )
-from dagster._core.definitions.solid_invocation import solid_invocation_result
+from dagster._core.definitions.solid_invocation import op_invocation_result
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster._utils.backcompat import experimental_arg_warning
@@ -384,7 +384,7 @@ class OpDefinition(NodeDefinition):
             )
 
     def __call__(self, *args, **kwargs) -> Any:
-        from ..execution.context.invocation import UnboundSolidExecutionContext
+        from ..execution.context.invocation import UnboundOpExecutionContext
         from .composition import is_in_composition
         from .decorators.solid_decorator import DecoratedSolidFunction
 
@@ -407,14 +407,14 @@ class OpDefinition(NodeDefinition):
                     )
                 if len(args) > 0:
                     if args[0] is not None and not isinstance(
-                        args[0], UnboundSolidExecutionContext
+                        args[0], UnboundOpExecutionContext
                     ):
                         raise DagsterInvalidInvocationError(
                             f"Compute function of {node_label} '{self.name}' has context argument, "
                             "but no context was provided when invoking."
                         )
                     context = args[0]
-                    return solid_invocation_result(self, context, *args[1:], **kwargs)
+                    return op_invocation_result(self, context, *args[1:], **kwargs)
                 # Context argument is provided under kwargs
                 else:
                     context_param_name = get_function_params(self.compute_fn.decorated_fn)[0].name
@@ -430,15 +430,15 @@ class OpDefinition(NodeDefinition):
                         for kwarg, val in kwargs.items()
                         if not kwarg == context_param_name
                     }
-                    return solid_invocation_result(self, context, *args, **kwargs_sans_context)
+                    return op_invocation_result(self, context, *args, **kwargs_sans_context)
 
             else:
-                if len(args) > 0 and isinstance(args[0], UnboundSolidExecutionContext):
+                if len(args) > 0 and isinstance(args[0], UnboundOpExecutionContext):
                     raise DagsterInvalidInvocationError(
                         f"Compute function of {node_label} '{self.name}' has no context argument, but "
                         "context was provided when invoking."
                     )
-                return solid_invocation_result(self, None, *args, **kwargs)
+                return op_invocation_result(self, None, *args, **kwargs)
 
 
 def _resolve_output_defs_from_outs(

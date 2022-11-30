@@ -265,7 +265,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
     @property
     def op_def(self) -> OpDefinition:
         """OpDefinition: The current op definition."""
-        return cast(OpDefinition, self.solid.definition)
+        return cast(OpDefinition, self.op.definition)
 
     @public  # type: ignore
     @property
