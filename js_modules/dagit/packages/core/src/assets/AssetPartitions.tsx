@@ -46,7 +46,6 @@ export const AssetPartitions: React.FC<Props> = ({
 
   const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
     PartitionState.MISSING,
-    PartitionState.SUCCESS_MISSING,
     PartitionState.SUCCESS,
   ]);
 
@@ -79,14 +78,27 @@ export const AssetPartitions: React.FC<Props> = ({
     }
     return dimensionKeysOrdered(range)
       .map((dimensionKey) => {
+        // Note: If you have clicked dimension 1, dimension 2 shows the state of each subkey. If
+        // you have not clicked dimension 1, dimension 2 shows the merged state of all the keys
+        // in that dimension (for all values of dimension 1)
         const state =
-          focusedDimensionKeys.length >= idx
+          idx > 0 && focusedDimensionKeys.length >= idx
             ? assetHealth.stateForPartialKey([...focusedDimensionKeys.slice(0, idx), dimensionKey])
-            : assetHealth.stateForSingleDimension(idx, dimensionKey, ranges[idx - 1]?.selected);
+            : assetHealth.stateForSingleDimension(
+                idx,
+                dimensionKey,
+                range !== timeRange ? timeRange?.selected : undefined,
+              );
 
         return {dimensionKey, state};
       })
-      .filter((row) => stateFilters.includes(row.state));
+      .filter(
+        (row) =>
+          stateFilters.includes(row.state) ||
+          (row.state === PartitionState.SUCCESS_MISSING &&
+            (stateFilters.includes(PartitionState.SUCCESS) ||
+              stateFilters.includes(PartitionState.MISSING))),
+      );
   };
 
   return (
@@ -126,7 +138,7 @@ export const AssetPartitions: React.FC<Props> = ({
         <div>{allSelected.length.toLocaleString()} Partitions Selected</div>
         <PartitionStateCheckboxes
           partitionKeysForCounts={allInRanges}
-          allowed={[PartitionState.MISSING, PartitionState.SUCCESS_MISSING, PartitionState.SUCCESS]}
+          allowed={[PartitionState.MISSING, PartitionState.SUCCESS]}
           value={stateFilters}
           onChange={setStateFilters}
         />

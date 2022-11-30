@@ -31,7 +31,7 @@ class HelmTemplate:
 
     def render(
         self,
-        values: Union[DagsterHelmValues, DagsterUserDeploymentsHelmValues] = None,
+        values: Optional[Union[DagsterHelmValues, DagsterUserDeploymentsHelmValues]] = None,
         values_dict: Optional[Dict[str, Any]] = None,
         chart_version: Optional[str] = None,
     ) -> List[Any]:

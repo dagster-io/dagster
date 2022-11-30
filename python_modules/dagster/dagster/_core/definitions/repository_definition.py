@@ -3,10 +3,10 @@ from inspect import isfunction
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
-    FrozenSet,
     Generic,
     Iterable,
     List,
@@ -74,7 +74,7 @@ RepositoryListDefinition = Union[
     "AssetsDefinition",
     "AssetGroup",
     GraphDefinition,
-    PartitionSetDefinition,
+    PartitionSetDefinition[object],
     PipelineDefinition,
     ScheduleDefinition,
     SensorDefinition,
@@ -715,7 +715,7 @@ class CachingRepositoryData(RepositoryData):
         pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
         coerced_graphs: Dict[str, JobDefinition] = {}
         unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition] = {}
-        partition_sets: Dict[str, PartitionSetDefinition] = {}
+        partition_sets: Dict[str, PartitionSetDefinition[object]] = {}
         schedules: Dict[str, ScheduleDefinition] = {}
         sensors: Dict[str, SensorDefinition] = {}
         assets_defs: List[AssetsDefinition] = []
@@ -1377,8 +1377,8 @@ class RepositoryDefinition:
         self,
         job_name: str,
         op_selection: Optional[Sequence[str]] = None,
-        asset_selection: Optional[FrozenSet[AssetKey]] = None,
-        solids_to_execute: Optional[FrozenSet[str]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        solids_to_execute: Optional[AbstractSet[str]] = None,
     ):
         # named job forward expecting pipeline distinction to be removed soon
         defn = self.get_pipeline(job_name)
