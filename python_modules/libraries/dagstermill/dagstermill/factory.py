@@ -365,6 +365,8 @@ def define_dagstermill_op(
     """
     check.str_param(name, "name")
     check.str_param(notebook_path, "notebook_path")
+    check.opt_bool_param(save_notebook_on_failure, "save_notebook_on_failure")
+
     required_resource_keys = set(
         check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
     )
