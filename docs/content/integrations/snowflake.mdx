@@ -51,13 +51,13 @@ def flowers_analysis_repository():
         resource_defs={
             "io_manager": snowflake_pandas_io_manager.configured(
                 {
-                    "account": "abc1234.us-east-1", # required
-                    "user": {"env": "SNOWFLAKE_USER"}, # required
-                    "password": {"env": "SNOWFLAKE_PASSWORD"}, # required
-                    "role": "reader", # optional
-                    "warehouse": "PLANTS", # optional
-                    "database": "FLOWERS", # required
-                    "schema": "IRIS", # optional
+                    "account": "abc1234.us-east-1",  # required
+                    "user": {"env": "SNOWFLAKE_USER"},  # required
+                    "password": {"env": "SNOWFLAKE_PASSWORD"},  # required
+                    "role": "reader",  # optional, defaults to the default role for the account
+                    "warehouse": "PLANTS",  # optional, defaults to default warehouse for the account
+                    "database": "FLOWERS",  # required
+                    "schema": "IRIS,",  # optional, defaults to PUBLIC
                 }
             )
         },
@@ -119,9 +119,9 @@ def flowers_analysis_repository():
     )
 ```
 
-In this example, we first define our [asset](/concepts/assets/software-defined-assets). Here, we are fetching the Iris dataset as a Pandas DataFrame and renaming the columns. The type signature of the function tells the I/O manager what data type it is working with so it is important to include the return type `pd.DataFrame`.
+In this example, we first define our [asset](/concepts/assets/software-defined-assets). Here, we are fetching the Iris dataset as a Pandas DataFrame and renaming the columns. The type signature of the function tells the I/O manager what data type it is working with, so it is important to include the return type `pd.DataFrame`.
 
-In the repository, we add configuration to the `snowflake_pandas_io_manager` to store the asset in the`FLOWERS` database as `IRIS` schema. When the `handle_output` method of the `snowflake_pandas_io_manager` will create the table `FLOWERS.IRIS.IRIS_DATASET` if it does not exist and replace the contents of the table with the value returned from the `iris_dataset` asset.
+When Dagster materializes the `iris_dataset` asset, the Snowflake I/O manager will create the table `FLOWERS.IRIS.IRIS_DATASET` if it does not exist and replace the contents of the table with the value returned from the `iris_dataset` asset.
 
 </TabItem>
 
@@ -136,18 +136,18 @@ from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
 from dagster import SourceAsset, repository, with_resources
 
-daffodil_dataset = SourceAsset(key="daffodil_dataset")
+iris_harvest_data = SourceAsset(key="iris_harvest_data")
 
 
 @repository
 def flowers_analysis_repository():
     return with_resources(
-        [daffodil_dataset],
+        [iris_harvest_data],
         resource_defs={
             "io_manager": snowflake_pandas_io_manager.configured(
                 {
                     "database": "FLOWERS",
-                    "schema": "DAFFODIL",
+                    "schema": "IRIS",
                     "account": "abc1234.us-east-1",
                     "user": {"env": "SNOWFLAKE_USER"},
                     "password": {"env": "SNOWFLAKE_PASSWORD"},
@@ -157,7 +157,7 @@ def flowers_analysis_repository():
     )
 ```
 
-In this example, we create a `SourceAsset` for a pre-existing table containing data about daffodils (perhaps this table is created by an external data ingestion tool). In order to make the data available to other Dagster assets we need to tell the Snowflake I/O manager how to find the data. Since we are supplying the database and the schema in the I/O manager configuration, we only need to provide the table name. We do this with the `key` parameter in `SourceAsset`. When the I/O manager needs to load the `daffodil_dataset` in a downstream asset, it will select the data in the `FLOWERS.DAFFODIL.DAFFODIL_DATASET` table as a Pandas DataFrame and provide it to the downstream asset.
+In this example, we create a `SourceAsset` for a pre-existing table containing data about iris harvests (perhaps this table is created by an external data ingestion tool). In order to make the data available to other Dagster assets we need to tell the Snowflake I/O manager how to find the data. Since we are supplying the database and the schema in the I/O manager configuration, we only need to provide the table name. We do this with the `key` parameter in `SourceAsset`. When the I/O manager needs to load the `iris_harvest_data` in a downstream asset, it will select the data in the `FLOWERS.IRIS.IRIS_HARVEST_DATA` table as a Pandas DataFrame and provide it to the downstream asset.
 
 </TabItem>
 
@@ -167,12 +167,36 @@ In this example, we create a `SourceAsset` for a pre-existing table containing d
 
 Once you have created an asset or source asset that represents a table in Snowflake, you will likely want to create additional assets that work with the data. Dagster and the Snowflake I/O manager allow you to load the data stored in Snowflake tables into downstream assets
 
-```python file=/integrations/snowflake/load_downstream.py
+```python file=/integrations/snowflake/load_downstream.py startafter=start_example endbefore=end_example
+import pandas as pd
+from dagster import asset
+
+# this example uses the iris_dataset asset from Step 2
+
+
+@asset
+def iris_cleaned(iris_dataset: pd.DataFrame):
+    return iris_dataset.dropna().drop_duplicates()
+```
+
+In this example, we want to provide the `iris_dataset` asset from the [Store a Dagster asset as a table in Snowflake](#store-a-dagster-asset-as-a-table-in-snowflake) example to the `iris_cleaned` asset.
+
+In `iris_cleaned` the `iris_dataset` parameter tells Dagster that the value for the `iris_dataset` asset should be provided as input to `iris_cleaned` (if this feels too magical for you, see [this page](/concepts/assets/software-defined-assets#defining-explicit-dependencies) for how to explicitly specify dependencies).
+
+When materializing these assets, Dagster will use the `snowflake_pandas_io_manager` to fetch the `FLOWERS.IRIS.IRIS_DATASET` as a Pandas DataFrame and pass this DataFrame as the `iris_dataset` parameter to `iris_cleaned`. When `iris_cleaned` returns a Pandas DataFrame, Dagster will use the `snowflake_pandas_io_manager` to store the DataFrame as the `FLOWERS.IRIS.IRIS_CLEANED` table in Snowflake.
+
+## Completed code example
+
+The code snippet below contains all of the examples from this guide:
+
+```python file=/integrations/snowflake/full_example.py
 import pandas as pd
 from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
-from dagster import asset, repository, with_resources
+from dagster import SourceAsset, asset, repository, with_resources
 
+
+iris_harvest_data = SourceAsset(key="iris_harvest_data")
 
 @asset
 def iris_dataset() -> pd.DataFrame:
@@ -196,23 +220,20 @@ def iris_cleaned(iris_dataset: pd.DataFrame):
 @repository
 def flowers_analysis_repository():
     return with_resources(
-        [iris_dataset, iris_cleaned],
+        [iris_dataset, iris_harvest_data, iris_cleaned],
         resource_defs={
             "io_manager": snowflake_pandas_io_manager.configured(
                 {
-                    "database": "FLOWERS",
-                    "schema": "IRIS",
                     "account": "abc1234.us-east-1",
                     "user": {"env": "SNOWFLAKE_USER"},
                     "password": {"env": "SNOWFLAKE_PASSWORD"},
+                    "database": "FLOWERS",
+                    "schema": "IRIS,",
                 }
             )
         },
     )
 ```
-
-In this example, we create the `iris_dataset` as in the [Store a Dagster asset as a table in Snowflake](#store-a-dagster-asset-as-a-table-in-snowflake) example. In `iris_cleaned` the `iris_dataset` parameter tells Dagster that the value for the `iris_dataset` asset should be provided as input to `iris_cleaned` (if this feels too magical for you, see [this page](/concepts/assets/software-defined-assets#defining-explicit-dependencies) for how to explicitly specify dependencies). When materializing these assets, Dagster will use the `snowflake_pandas_io_manager` to fetch the `FLOWERS.IRIS.IRIS_DATASET` as a Pandas DataFrame and pass this DataFrame as the `iris_dataset` parameter to `iris_cleaned`. When `iris_cleaned` returns a Pandas DataFrame, Dagster will use the `snowflake_pandas_io_manager` to store the DataFrame as the `FLOWERS.IRIS.IRIS_CLEANED` table in Snowflake.
-
 
 ## Related material
 
