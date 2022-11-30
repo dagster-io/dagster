@@ -82,12 +82,12 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
   // and/or b) a toast indicating that a code location is being reloaded.
   React.useEffect(() => {
     const previousEntries =
-      previousData?.workspaceOrError?.__typename === 'Workspace'
-        ? previousData?.workspaceOrError.locationEntries
+      previousData?.locationStatusesOrError?.__typename === 'WorkspaceLocationStatusEntries'
+        ? previousData?.locationStatusesOrError.entries
         : [];
     const currentEntries =
-      data?.workspaceOrError?.__typename === 'Workspace'
-        ? data?.workspaceOrError.locationEntries
+      data?.locationStatusesOrError?.__typename === 'WorkspaceLocationStatusEntries'
+        ? data?.locationStatusesOrError.entries
         : [];
 
     // At least one code location has been removed. Reload, but don't make a big deal about it
@@ -222,11 +222,10 @@ const ViewButton = styled(ButtonLink)`
 
 const CODE_LOCATION_STATUS_QUERY = gql`
   query CodeLocationStatusQuery {
-    workspaceOrError {
+    locationStatusesOrError {
       __typename
-      ... on Workspace {
-        locationEntries {
-          __typename
+      ... on WorkspaceLocationStatusEntries {
+        entries {
           id
           loadStatus
         }

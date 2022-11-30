@@ -9,23 +9,23 @@ import { RepositoryLocationLoadStatus } from "./../../types/globalTypes";
 // GraphQL query operation: CodeLocationStatusQuery
 // ====================================================
 
-export interface CodeLocationStatusQuery_workspaceOrError_PythonError {
+export interface CodeLocationStatusQuery_locationStatusesOrError_PythonError {
   __typename: "PythonError";
 }
 
-export interface CodeLocationStatusQuery_workspaceOrError_Workspace_locationEntries {
-  __typename: "WorkspaceLocationEntry";
+export interface CodeLocationStatusQuery_locationStatusesOrError_WorkspaceLocationStatusEntries_entries {
+  __typename: "WorkspaceLocationStatusEntry";
   id: string;
   loadStatus: RepositoryLocationLoadStatus;
 }
 
-export interface CodeLocationStatusQuery_workspaceOrError_Workspace {
-  __typename: "Workspace";
-  locationEntries: CodeLocationStatusQuery_workspaceOrError_Workspace_locationEntries[];
+export interface CodeLocationStatusQuery_locationStatusesOrError_WorkspaceLocationStatusEntries {
+  __typename: "WorkspaceLocationStatusEntries";
+  entries: CodeLocationStatusQuery_locationStatusesOrError_WorkspaceLocationStatusEntries_entries[];
 }
 
-export type CodeLocationStatusQuery_workspaceOrError = CodeLocationStatusQuery_workspaceOrError_PythonError | CodeLocationStatusQuery_workspaceOrError_Workspace;
+export type CodeLocationStatusQuery_locationStatusesOrError = CodeLocationStatusQuery_locationStatusesOrError_PythonError | CodeLocationStatusQuery_locationStatusesOrError_WorkspaceLocationStatusEntries;
 
 export interface CodeLocationStatusQuery {
-  workspaceOrError: CodeLocationStatusQuery_workspaceOrError;
+  locationStatusesOrError: CodeLocationStatusQuery_locationStatusesOrError;
 }
