@@ -51,6 +51,25 @@ query {
 }
 """
 
+LOCATION_STATUS_QUERY = """
+query {
+   locationStatusesOrError {
+      __typename
+      ... on WorkspaceLocationStatusEntries {
+        entries {
+          __typename
+          id
+          loadStatus
+        }
+      }
+      ... on PythonError {
+          message
+          stack
+      }
+    }
+}
+"""
+
 BaseTestSuite: Any = make_graphql_context_test_suite(
     context_variants=[GraphQLContextVariant.non_launchable_sqlite_instance_multi_location()]
 )
@@ -125,3 +144,45 @@ class TestLoadWorkspace(BaseTestSuite):
                     or "module_name" in metadata_dict
                     or "package_name" in metadata_dict
                 )
+
+    def test_load_location_statuses(self, graphql_context):
+        # Add an error origin
+        original_origins = location_origins_from_yaml_paths(
+            [file_relative_path(__file__, "multi_location.yaml")]
+        )
+        with mock.patch(
+            "dagster._core.workspace.load_target.location_origins_from_yaml_paths",
+        ) as origins_mock:
+            original_origins.append(
+                ManagedGrpcPythonEnvRepositoryLocationOrigin(
+                    location_name="error_location",
+                    loadable_target_origin=LoadableTargetOrigin(
+                        python_file="made_up_file.py", executable_path=sys.executable
+                    ),
+                )
+            )
+
+            origins_mock.return_value = original_origins
+
+            new_context = graphql_context.reload_workspace()
+
+            result = execute_dagster_graphql(new_context, LOCATION_STATUS_QUERY)
+
+            assert result
+            assert result.data
+            assert result.data["locationStatusesOrError"]
+            assert (
+                result.data["locationStatusesOrError"]["__typename"]
+                == "WorkspaceLocationStatusEntries"
+            ), str(result.data)
+
+            nodes = result.data["locationStatusesOrError"]["entries"]
+
+            assert len(nodes) == 3
+
+            assert all(
+                [node["__typename"] == "WorkspaceLocationStatusEntry" for node in nodes]
+            ), str(nodes)
+
+            for node in nodes:
+                assert node["loadStatus"] == "LOADED"
