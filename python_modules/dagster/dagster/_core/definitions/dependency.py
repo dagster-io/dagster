@@ -59,13 +59,13 @@ class NodeInvocation(
     """Identifies an instance of a node in a graph dependency structure.
 
     Args:
-        name (str): Name of the solid of which this is an instance.
-        alias (Optional[str]): Name specific to this instance of the solid. Necessary when there are
-            multiple instances of the same solid.
+        name (str): Name of the node of which this is an instance.
+        alias (Optional[str]): Name specific to this instance of the node. Necessary when there are
+            multiple instances of the same node.
         tags (Optional[Dict[str, Any]]): Optional tags values to extend or override those
-            set on the solid definition.
+            set on the node definition.
         hook_defs (Optional[AbstractSet[HookDefinition]]): A set of hook definitions applied to the
-            solid instance.
+            node instance.
 
     Examples:
 
@@ -534,7 +534,7 @@ class NodeOutput(NamedTuple("_NodeOutput", [("node", Node), ("output_def", Outpu
     def __new__(cls, node: Node, output_def: OutputDefinition):
         return super(NodeOutput, cls).__new__(
             cls,
-            check.inst_param(node, "solid", Node),
+            check.inst_param(node, "node", Node),
             check.inst_param(output_def, "output_def", OutputDefinition),
         )
 
@@ -555,7 +555,7 @@ class NodeOutput(NamedTuple("_NodeOutput", [("node", Node), ("output_def", Outpu
         return hash((self.node.name, self.output_def.name))
 
     def __eq__(self, other: Any):
-        return self.node.name == other.solid.name and self.output_def.name == other.output_def.name
+        return self.node.name == other.node.name and self.output_def.name == other.output_def.name
 
     def describe(self) -> str:
         return f"{self.node_name}:{self.output_def.name}"
@@ -582,7 +582,7 @@ class IDependencyDefinition(ABC):  # pylint: disable=no-init
 
     @abstractmethod
     def is_fan_in(self) -> bool:
-        """The result passed to the corresponding input will be a List made from different solid outputs"""
+        """The result passed to the corresponding input will be a List made from different node outputs"""
 
 
 class DependencyDefinition(
@@ -661,10 +661,6 @@ class DependencyDefinition(
 
     def is_fan_in(self) -> bool:
         return False
-
-    @property
-    def node(self) -> str:
-        return self.node
 
     def get_op_dependencies(self) -> Sequence["DependencyDefinition"]:
         return [self]
