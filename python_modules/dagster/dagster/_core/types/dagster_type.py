@@ -9,6 +9,7 @@ from typing import Optional as TypingOptional
 from typing import Sequence
 from typing import Type as TypingType
 from typing import cast
+from dagster._utils.typing_api import unpack_if_type_is_pep593_type_annotation
 
 from typing_compat import get_args, get_origin
 
@@ -880,6 +881,14 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         not (isinstance(dagster_type, type) and is_subclass(dagster_type, DagsterType)),
         "Do not pass runtime type classes. Got {}".format(dagster_type),
     )
+
+    # check if this is a PEP593 annotation wrapping a Dagster type
+    maybe_pep593_annotation_data = unpack_if_type_is_pep593_type_annotation(dagster_type)
+    if maybe_pep593_annotation_data is not None:
+        dagster_type, annotations = maybe_pep593_annotation_data
+        for annotation in annotations:
+            if isinstance(annotation, DagsterType):
+                return annotation
 
     # First, check to see if we're using Dagster's generic output type to do the type catching.
     if is_generic_output_annotation(dagster_type):

@@ -4,7 +4,7 @@ order to do metaprogramming and reflection on the built-in typing module"""
 import typing
 
 import dagster._check as check
-from dagster._seven.typing import get_args, get_origin
+from dagster._seven.typing import get_args, get_origin, Annotated
 
 
 def is_closed_python_optional_type(ttype):
@@ -128,3 +128,11 @@ def is_typing_type(ttype):
         or ttype is typing.Dict
         or ttype is typing.List
     )
+
+
+def unpack_if_type_is_pep593_type_annotation(ttype: type) -> typing.Optional[typing.Tuple[type, typing.List[typing.Any]]]:
+    origin = get_origin(ttype)
+    if origin is Annotated:
+        inner_type, *annotations = get_args(ttype)
+        return (inner_type, list(annotations))
+    return None
