@@ -186,6 +186,7 @@ def test_kitchen_sink():
     assert sink.input_defs[7].name == "x"
     assert sink.input_defs[7].dagster_type.unique_name == "Any"
 
+
 def test_composites():
     @lambda_solid
     def emit_one() -> int:
