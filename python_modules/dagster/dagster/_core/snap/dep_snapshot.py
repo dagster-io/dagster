@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Mapping, NamedTuple, Sequence
+from typing import DefaultDict, Dict, List, Mapping, NamedTuple, Sequence
 
 import dagster._check as check
 from dagster._core.definitions import GraphDefinition
@@ -7,7 +7,9 @@ from dagster._core.definitions.dependency import DependencyType, Node, NodeInput
 from dagster._serdes import whitelist_for_serdes
 
 
-def build_solid_invocation_snap(icontains_solids, solid):
+def build_solid_invocation_snap(
+    icontains_solids: GraphDefinition, solid: Node
+) -> "SolidInvocationSnap":
     check.inst_param(solid, "solid", Node)
     check.inst_param(icontains_solids, "icontains_solids", GraphDefinition)
     dep_structure = icontains_solids.dependency_structure
@@ -17,15 +19,15 @@ def build_solid_invocation_snap(icontains_solids, solid):
     input_to_outputs_map = dep_structure.input_to_upstream_outputs_for_node(solid.name)
 
     for input_def in solid.definition.input_defs:
-        input_handle = NodeInput(solid, input_def)
+        node_input = NodeInput(solid, input_def)
         input_def_snaps.append(
             InputDependencySnap(
                 input_def.name,
                 upstream_output_snaps=[
-                    OutputHandleSnap(oh.solid.name, oh.output_def.name)
-                    for oh in input_to_outputs_map.get(input_handle, [])
+                    OutputHandleSnap(node_output.node.name, node_output.output_def.name)
+                    for node_output in input_to_outputs_map.get(node_input, [])
                 ],
-                is_dynamic_collect=dep_structure.get_dependency_type(input_handle)
+                is_dynamic_collect=dep_structure.get_dependency_type(node_input)
                 == DependencyType.DYNAMIC_COLLECT,
             )
         )
@@ -39,7 +41,9 @@ def build_solid_invocation_snap(icontains_solids, solid):
     )
 
 
-def build_dep_structure_snapshot_from_icontains_solids(icontains_solids):
+def build_dep_structure_snapshot_from_icontains_solids(
+    icontains_solids: GraphDefinition,
+) -> "DependencyStructureSnapshot":
     check.inst_param(icontains_solids, "icontains_solids", GraphDefinition)
     return DependencyStructureSnapshot(
         solid_invocation_snaps=[
@@ -85,7 +89,11 @@ class InputHandle(
 # for a given "level" in a pipeline. So either the pipelines
 # or within a composite solid
 class DependencyStructureIndex:
-    def __init__(self, dep_structure_snapshot):
+
+    _invocations_dict: Dict[str, "SolidInvocationSnap"]
+    _output_to_upstream_index: Mapping[str, Mapping[str, Sequence[InputHandle]]]
+
+    def __init__(self, dep_structure_snapshot: DependencyStructureSnapshot):
         check.inst_param(
             dep_structure_snapshot, "dep_structure_snapshot", DependencyStructureSnapshot
         )
@@ -96,8 +104,12 @@ class DependencyStructureIndex:
             dep_structure_snapshot.solid_invocation_snaps
         )
 
-    def _build_index(self, solid_invocation_snaps):
-        output_to_upstream_index = defaultdict(lambda: defaultdict(list))
+    def _build_index(
+        self, solid_invocation_snaps: Sequence["SolidInvocationSnap"]
+    ) -> Mapping[str, Mapping[str, Sequence[InputHandle]]]:
+        output_to_upstream_index: DefaultDict[str, Mapping[str, List[InputHandle]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
         for invocation in solid_invocation_snaps:
             for input_dep_snap in invocation.input_dep_snaps:
                 for output_dep_snap in input_dep_snap.upstream_output_snaps:
@@ -114,21 +126,23 @@ class DependencyStructureIndex:
         return output_to_upstream_index
 
     @property
-    def solid_invocation_names(self):
+    def solid_invocation_names(self) -> Sequence[str]:
         return list(self._invocations_dict.keys())
 
     @property
-    def solid_invocations(self):
+    def solid_invocations(self) -> Sequence["SolidInvocationSnap"]:
         return list(self._invocations_dict.values())
 
-    def get_invocation(self, solid_name):
+    def get_invocation(self, solid_name: str) -> "SolidInvocationSnap":
         check.str_param(solid_name, "solid_name")
         return self._invocations_dict[solid_name]
 
-    def has_invocation(self, solid_name):
+    def has_invocation(self, solid_name: str) -> bool:
         return solid_name in self._invocations_dict
 
-    def get_upstream_outputs(self, solid_name, input_name):
+    def get_upstream_outputs(
+        self, solid_name: str, input_name: str
+    ) -> Sequence["OutputHandleSnap"]:
         check.str_param(solid_name, "solid_name")
         check.str_param(input_name, "input_name")
 
@@ -143,7 +157,7 @@ class DependencyStructureIndex:
             )
         )
 
-    def get_upstream_output(self, solid_name, input_name):
+    def get_upstream_output(self, solid_name: str, input_name: str) -> "OutputHandleSnap":
         check.str_param(solid_name, "solid_name")
         check.str_param(input_name, "input_name")
 
@@ -151,7 +165,7 @@ class DependencyStructureIndex:
         check.invariant(len(outputs) == 1)
         return outputs[0]
 
-    def get_downstream_inputs(self, solid_name, output_name):
+    def get_downstream_inputs(self, solid_name: str, output_name: str) -> Sequence[InputHandle]:
         check.str_param(solid_name, "solid_name")
         check.str_param(output_name, "output_name")
         return self._output_to_upstream_index[solid_name][output_name]

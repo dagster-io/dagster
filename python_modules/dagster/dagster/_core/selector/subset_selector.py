@@ -163,7 +163,7 @@ def generate_dep_graph(pipeline_def: "PipelineDefinition") -> DependencyGraph:
         upstream_dep = dependency_structure.input_to_upstream_outputs_for_node(item_name)
         for upstreams in upstream_dep.values():
             for up in upstreams:
-                graph["upstream"][item_name].add(up.solid_name)
+                graph["upstream"][item_name].add(up.node_name)
 
         graph["downstream"][item_name] = set()
         downstream_dep = dependency_structure.output_to_downstream_inputs_for_node(item_name)

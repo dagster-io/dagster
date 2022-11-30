@@ -62,19 +62,19 @@ def test_solid_def():
     assert len(solid_one_solid.output_dict) == 1
 
     assert str(solid_one_solid.get_input("input_one")) == (
-        "NodeInput(input_name=\"'input_one'\", solid_name=\"'op_one'\")"
+        "NodeInput(input_name=\"'input_one'\", node_name=\"'op_one'\")"
     )
 
     assert repr(solid_one_solid.get_input("input_one")) == (
-        "NodeInput(input_name=\"'input_one'\", solid_name=\"'op_one'\")"
+        "NodeInput(input_name=\"'input_one'\", node_name=\"'op_one'\")"
     )
 
     assert str(solid_one_solid.get_output("result")) == (
-        "NodeOutput(output_name=\"'result'\", solid_name=\"'op_one'\")"
+        "NodeOutput(node_name=\"'op_one'\", output_name=\"'result'\")"
     )
 
     assert repr(solid_one_solid.get_output("result")) == (
-        "NodeOutput(output_name=\"'result'\", solid_name=\"'op_one'\")"
+        "NodeOutput(node_name=\"'op_one'\", output_name=\"'result'\")"
     )
 
     assert solid_one_solid.get_output("result") == NodeOutput(

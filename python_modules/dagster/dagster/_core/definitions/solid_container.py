@@ -1,5 +1,16 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, DefaultDict, Dict, Mapping, Optional, Sequence, Set, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    DefaultDict,
+    Dict,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -209,7 +220,7 @@ def _validate_dependencies(
     for from_node, dep_by_input in dependencies.items():
         for from_input, dep_def in dep_by_input.items():
             dep_def = cast(DependencyDefinition, dep_def)
-            for dep in dep_def.get_op_dependencies():
+            for dep in dep_def.get_node_dependencies():
 
                 if from_node == dep.node:
                     raise DagsterInvalidDefinitionError(

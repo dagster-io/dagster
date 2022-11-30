@@ -5,6 +5,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    DefaultDict,
     Dict,
     Iterable,
     Iterator,
@@ -13,6 +14,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Type,
     Union,
@@ -828,6 +830,11 @@ class DependencyStructure:
     def from_definitions(solids: Mapping[str, Node], dep_dict: Mapping[str, Any]):
         return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(solids, dep_dict))
 
+    _node_input_index: DefaultDict[str, Dict[NodeInput, List[NodeOutput]]]
+    _node_output_index: Dict[str, DefaultDict[NodeOutput, List[NodeInput]]]
+    _dynamic_fan_out_index: Dict[str, NodeOutput]
+    _collect_index: Dict[str, Set[NodeOutput]]
+
     def __init__(self, node_names: Sequence[str], input_to_output_map: InputToOutputMap):
         self._node_names = node_names
         self._input_to_output_map = input_to_output_map
@@ -837,16 +844,16 @@ class DependencyStructure:
         # count during the GraphQL query in particular
 
         # solid_name => input_handle => list[output_handle]
-        self._node_input_index: dict = defaultdict(dict)
+        self._node_input_index = defaultdict(dict)
 
         # solid_name => output_handle => list[input_handle]
-        self._node_output_index: dict = defaultdict(lambda: defaultdict(list))
+        self._node_output_index = defaultdict(lambda: defaultdict(list))
 
         # solid_name => dynamic output_handle that this solid will dupe for
-        self._dynamic_fan_out_index: dict = {}
+        self._dynamic_fan_out_index = {}
 
         # solid_name => set of dynamic output_handle this collects over
-        self._collect_index: Dict[str, set] = defaultdict(set)
+        self._collect_index = defaultdict(set)
 
         for node_input, (dep_type, node_output_or_list) in self._input_to_output_map.items():
             if dep_type == DependencyType.FAN_IN:
@@ -904,7 +911,7 @@ class DependencyStructure:
             for node_output in node_output_list:
                 self._node_output_index[node_output.node.name][node_output].append(node_input)
 
-    def _validate_and_set_fan_out(self, node_input: NodeInput, node_output: NodeOutput) -> Any:
+    def _validate_and_set_fan_out(self, node_input: NodeInput, node_output: NodeOutput) -> None:
         """Helper function for populating _dynamic_fan_out_index"""
 
         if not node_input.node.definition.input_supports_dynamic_output_dep(node_input.input_name):
@@ -965,7 +972,9 @@ class DependencyStructure:
             for output_handle in output_handle_list
         ]
 
-    def input_to_upstream_outputs_for_node(self, node_name: str) -> Any:
+    def input_to_upstream_outputs_for_node(
+        self, node_name: str
+    ) -> Mapping[NodeInput, Sequence[NodeOutput]]:
         """
         Returns a Dict[NodeInput, List[NodeOutput]] that encodes
         where all the the inputs are sourced from upstream. Usually the
@@ -975,7 +984,9 @@ class DependencyStructure:
         check.str_param(node_name, "node_name")
         return self._node_input_index[node_name]
 
-    def output_to_downstream_inputs_for_node(self, node_name: str) -> Any:
+    def output_to_downstream_inputs_for_node(
+        self, node_name: str
+    ) -> Mapping[NodeOutput, Sequence[NodeInput]]:
         """
         Returns a Dict[NodeOutput, List[NodeInput]] that
         represents all the downstream inputs for each output in the
