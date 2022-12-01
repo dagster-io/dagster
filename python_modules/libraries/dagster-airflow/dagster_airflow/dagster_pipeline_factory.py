@@ -193,7 +193,9 @@ def make_dagster_repo_from_airflow_dag_bag(
             tags={**pipeline_def.tags},
             resource_defs={
                 "airflow_db": pipeline_def.mode_definitions[0].resource_defs["airflow_db"]
-            },
+            }
+            if use_ephemeral_airflow_db
+            else {},
         )
         schedule_def = make_dagster_schedule_from_airflow_dag(
             dag=dag,
