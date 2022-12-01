@@ -26,6 +26,10 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey, AssetLineageInfo
 from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.logical_version import (
+    LogicalVersion,
+    extract_logical_version_from_entry,
+)
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -35,7 +39,6 @@ from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
-from dagster._core.definitions.solid_definition import SolidDefinition
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
@@ -478,7 +481,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._output_metadata: Dict[str, Any] = {}
         self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
 
-        self._input_asset_records: Optional[Dict[AssetKey, Optional["EventLogRecord"]]] = None
+        self._input_asset_records: Dict[AssetKey, Optional["EventLogRecord"]] = {}
+        self._is_external_input_asset_records_loaded = False
+        self._generated_logical_versions: Dict[AssetKey, LogicalVersion] = {}
 
     @property
     def step(self) -> ExecutionStep:
@@ -501,8 +506,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._step_launcher
 
     @property
-    def solid_def(self) -> SolidDefinition:
-        return self.solid.definition.ensure_solid_def()
+    def solid_def(self) -> OpDefinition:
+        return self.solid.definition.ensure_op_def()
 
     @property
     def op_def(self) -> OpDefinition:
@@ -802,18 +807,31 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
             return asset_info is not None
 
+    def record_logical_version(self, asset_key: AssetKey, logical_version: LogicalVersion) -> None:
+        self._generated_logical_versions[asset_key] = logical_version
+
     @property
     def input_asset_records(self) -> Optional[Mapping[AssetKey, Optional["EventLogRecord"]]]:
         return self._input_asset_records
 
-    def fetch_input_asset_records(self) -> None:
+    @property
+    def is_external_input_asset_records_loaded(self) -> bool:
+        return self._is_external_input_asset_records_loaded
+
+    def get_input_asset_record(self, key: AssetKey) -> Optional["EventLogRecord"]:
+        if not key in self._input_asset_records:
+            self._fetch_input_asset_record(key)
+        return self._input_asset_records[key]
+
+    # "external" refers to records for inputs generated outside of this step
+    def fetch_external_input_asset_records(self) -> None:
         # pylint: disable=protected-access
         output_keys: List[AssetKey] = []
         for step_output in self.step.step_outputs:
             asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
                 self.solid_handle, step_output.name
             )
-            if asset_info is None:
+            if asset_info is None or not asset_info.is_required:
                 continue
             output_keys.append(asset_info.key)
 
@@ -828,8 +846,29 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         self._input_asset_records = {}
         for key in all_dep_keys:
-            event = self.instance.get_latest_logical_version_record(key)
+            self._fetch_input_asset_record(key)
+        self._is_external_input_asset_records_loaded = True
+
+    def _fetch_input_asset_record(self, key: AssetKey, retries: int = 0) -> None:
+        event = self.instance.get_latest_logical_version_record(key)
+        if key in self._generated_logical_versions and retries <= 5:
+            event_logical_version = (
+                None if event is None else extract_logical_version_from_entry(event.event_log_entry)
+            )
+            if event_logical_version == self._generated_logical_versions[key]:
+                self._input_asset_records[key] = event
+            else:
+                self._fetch_input_asset_record(key, retries + 1)
+        else:
             self._input_asset_records[key] = event
+
+    # Call this to clear the cache for an input asset record. This is necessary when an old
+    # materialization for an asset was loaded during `fetch_external_input_asset_records` because an
+    # intrastep asset is not required, but then that asset is materialized during the step. If we
+    # don't clear the cache for this asset, then we won't use the most up-to-date asset record.
+    def wipe_input_asset_record(self, key: AssetKey) -> None:
+        if key in self._input_asset_records:
+            del self._input_asset_records[key]
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.pipeline_def.asset_layer

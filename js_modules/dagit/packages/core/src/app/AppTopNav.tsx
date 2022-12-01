@@ -148,15 +148,17 @@ export const AppTopNavLogo: React.FC = () => {
 
   return (
     <LogoContainer>
-      <ShortcutHandler
-        onShortcut={() => onToggle()}
-        shortcutLabel="."
-        shortcutFilter={(e) => e.key === '.'}
-      >
-        <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
-          <Icon name="menu" color={Colors.White} size={24} />
-        </NavButton>
-      </ShortcutHandler>
+      {nav.canOpen ? (
+        <ShortcutHandler
+          onShortcut={() => onToggle()}
+          shortcutLabel="."
+          shortcutFilter={(e) => e.key === '.'}
+        >
+          <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
+            <Icon name="menu" color={Colors.White} size={24} />
+          </NavButton>
+        </ShortcutHandler>
+      ) : null}
       <Box flex={{display: 'inline-flex'}} margin={{left: 8}}>
         <DaggyTooltip
           content={

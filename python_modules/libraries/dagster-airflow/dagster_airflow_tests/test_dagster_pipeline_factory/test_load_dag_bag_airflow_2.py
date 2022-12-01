@@ -392,6 +392,8 @@ def test_make_repo(
             job = repo.get_job(job_name)
             result = job.execute_in_process()
             assert result.success
+            for event in result.all_events:
+                assert event.event_type_value != "STEP_FAILURE"
 
         assert set(repo.job_names) == set(expected_job_names)
 
@@ -458,6 +460,8 @@ test_airflow_example_dags_inputs = [
             # airflow.exceptions.DagNotFound: Dag id example_trigger_target_dag not found in DagModel
             "airflow_example_trigger_target_dag",
             "airflow_example_trigger_controller_dag",
+            # runs slow
+            "airflow_example_subdag_operator",
         ],
     ),
 ]

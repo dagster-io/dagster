@@ -25,12 +25,12 @@ from dagster._utils import check
 
 from .configurable import ConfigurableDefinition
 from .definition_config_schema import IDefinitionConfigSchema
-from .dependency import DependencyStructure, Node, NodeHandle, SolidInputHandle
+from .dependency import DependencyStructure, Node, NodeHandle, NodeInput
 from .graph_definition import GraphDefinition
 from .logger_definition import LoggerDefinition
 from .mode import ModeDefinition
+from .op_definition import NodeDefinition, OpDefinition
 from .resource_definition import ResourceDefinition
-from .solid_definition import NodeDefinition, SolidDefinition
 
 
 def define_resource_dictionary_cls(
@@ -219,7 +219,7 @@ def get_inputs_field(
     direct_inputs = check.opt_mapping_param(direct_inputs, "direct_inputs")
     inputs_field_fields = {}
     for name, inp in solid.definition.input_dict.items():
-        inp_handle = SolidInputHandle(solid, inp)
+        inp_handle = NodeInput(solid, inp)
         has_upstream = input_has_upstream(dependency_structure, inp_handle, solid, name)
         if inp.input_manager_key:
             input_field = get_input_manager_input_field(solid, inp, resource_defs)
@@ -258,7 +258,7 @@ def get_inputs_field(
 
 def input_has_upstream(
     dependency_structure: DependencyStructure,
-    input_handle: SolidInputHandle,
+    input_handle: NodeInput,
     solid: Node,
     input_name: str,
 ) -> bool:
@@ -457,7 +457,7 @@ def define_isolid_field(
     # 4) `configured` composite with field mapping: a 'config' key with the config_schema that was
     #    provided when `configured` was called (via CompositeSolidDefinition#config_schema)
 
-    if isinstance(solid.definition, SolidDefinition):
+    if isinstance(solid.definition, OpDefinition):
         return construct_leaf_solid_config(
             solid,
             handle,
@@ -565,7 +565,7 @@ def define_solid_dictionary_cls(
 
 
 def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigType]:
-    if isinstance(node_def, SolidDefinition):
+    if isinstance(node_def, OpDefinition):
         if node_def.has_config_field:
             yield from node_def.get_config_field().config_type.type_iterator()
     elif isinstance(node_def, GraphDefinition):

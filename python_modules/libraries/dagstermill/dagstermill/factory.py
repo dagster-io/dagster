@@ -152,6 +152,7 @@ def _dm_compute(
     output_notebook_name=None,
     asset_key_prefix=None,
     output_notebook=None,
+    save_notebook_on_failure=False,
 ):
     check.str_param(name, "name")
     check.str_param(notebook_path, "notebook_path")
@@ -217,6 +218,17 @@ def _dm_compute(
                         step_execution_context.log.warn(
                             f"Encountered raised {ex.ename} in notebook. Use dagstermill.yield_event "
                             "with RetryRequested or Failure to trigger their behavior."
+                        )
+
+                    if save_notebook_on_failure:
+                        storage_dir = step_context.instance.storage_directory()
+                        storage_path = os.path.join(storage_dir, f"{prefix}-out.ipynb")
+                        with open(storage_path, "wb") as dest_file_obj:
+                            with open(executed_notebook_path, "rb") as obj:
+                                dest_file_obj.write(obj.read())
+
+                        step_execution_context.log.info(
+                            f"Failed notebook written to {storage_path}"
                         )
 
                     raise
@@ -319,6 +331,7 @@ def define_dagstermill_op(
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
     io_manager_key: Optional[str] = None,
+    save_notebook_on_failure: bool = False,
 ):
     """Wrap a Jupyter notebook in a op.
 
@@ -343,12 +356,17 @@ def define_dagstermill_op(
         io_manager_key (Optional[str]): If using output_notebook_name, you can additionally provide
             a string key for the IO manager used to store the output notebook.
             If not provided, the default key output_notebook_io_manager will be used.
+        save_notebook_on_failure (bool): If True and the notebook fails during execution, the failed notebook will be
+            written to the Dagster storage directory. The location of the file will be printed in the Dagster logs.
+            Defaults to False.
 
     Returns:
         :py:class:`~dagster.OpDefinition`
     """
     check.str_param(name, "name")
     check.str_param(notebook_path, "notebook_path")
+    check.bool_param(save_notebook_on_failure, "save_notebook_on_failure")
+
     required_resource_keys = set(
         check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
     )
@@ -393,6 +411,7 @@ def define_dagstermill_op(
             notebook_path,
             output_notebook_name,
             asset_key_prefix=asset_key_prefix,
+            save_notebook_on_failure=save_notebook_on_failure,
         ),
         ins=ins,
         outs=outs,

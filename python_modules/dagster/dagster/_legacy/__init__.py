@@ -11,7 +11,6 @@ from dagster._core.definitions import (
     PresetDefinition,
     ScheduleExecutionContext,
     SensorExecutionContext,
-    SolidDefinition,
     SolidInvocation,
     build_assets_job,
     composite_solid,

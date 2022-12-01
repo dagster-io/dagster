@@ -27,10 +27,10 @@ from ...decorator_utils import (
     positional_arg_name_list,
 )
 from ..inference import infer_input_props, infer_output_props
-from ..input import InputDefinition
-from ..output import OutputDefinition
+from ..input import In, InputDefinition
+from ..op_definition import OpDefinition
+from ..output import Out, OutputDefinition
 from ..policy import RetryPolicy
-from ..solid_definition import SolidDefinition
 
 
 class DecoratedSolidFunction(NamedTuple):
@@ -106,7 +106,7 @@ class _Solid:
         # config will be checked within SolidDefinition
         self.config_schema = config_schema
 
-    def __call__(self, fn: Callable[..., Any]) -> SolidDefinition:
+    def __call__(self, fn: Callable[..., Any]) -> OpDefinition:
         check.callable_param(fn, "fn")
 
         if not self.name:
@@ -134,10 +134,12 @@ class _Solid:
             exclude_nothing=True,
         )
 
-        solid_def = SolidDefinition(
+        solid_def = OpDefinition(
             name=self.name,
-            input_defs=resolved_input_defs,
-            output_defs=output_defs,
+            ins={
+                input_def.name: In.from_definition(input_def) for input_def in resolved_input_defs
+            },
+            outs={output_def.name: Out.from_definition(output_def) for output_def in output_defs},
             compute_fn=compute_fn,
             config_schema=self.config_schema,
             description=self.description or format_docstring_for_description(fn),
@@ -151,7 +153,7 @@ class _Solid:
 
 
 @overload
-def solid(name: Callable[..., Any]) -> SolidDefinition:
+def solid(name: Callable[..., Any]) -> OpDefinition:
     ...
 
 
@@ -166,7 +168,7 @@ def solid(
     tags: Optional[Mapping[str, Any]] = ...,
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
-) -> Union[_Solid, SolidDefinition]:
+) -> Union[_Solid, OpDefinition]:
     ...
 
 
@@ -180,7 +182,7 @@ def solid(
     tags: Optional[Mapping[str, Any]] = None,
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
-) -> Union[_Solid, SolidDefinition]:
+) -> Union[_Solid, OpDefinition]:
     """Create a solid with the specified parameters from the decorated function.
 
     This shortcut simplifies the core :class:`SolidDefinition` API by exploding arguments into
@@ -432,7 +434,7 @@ def lambda_solid(
     description: Optional[str] = None,
     input_defs: Optional[Sequence[InputDefinition]] = None,
     output_def: Optional[OutputDefinition] = None,
-) -> Union[_Solid, SolidDefinition]:
+) -> Union[_Solid, OpDefinition]:
     """Create a simple solid from the decorated function.
 
     This shortcut allows the creation of simple solids that do not require
