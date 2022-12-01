@@ -51,6 +51,40 @@ class DagsterAirflowError(Exception):
     pass
 
 
+if os.name == "nt":
+    import msvcrt
+
+    def portable_lock(fp):
+        fp.seek(0)
+        msvcrt.locking(fp.fileno(), msvcrt.LK_LOCK, 1)
+
+    def portable_unlock(fp):
+        fp.seek(0)
+        msvcrt.locking(fp.fileno(), msvcrt.LK_UNLCK, 1)
+
+else:
+    import fcntl
+
+    def portable_lock(fp):
+        fcntl.flock(fp.fileno(), fcntl.LOCK_EX)
+
+    def portable_unlock(fp):
+        fcntl.flock(fp.fileno(), fcntl.LOCK_UN)
+
+
+class Locker:
+    def __init__(self, lock_file_path="."):
+        self.lock_file_path = lock_file_path
+
+    def __enter__(self):
+        self.fp = open(f"{self.lock_file_path}/lockfile.lck", "w+")
+        portable_lock(self.fp)
+
+    def __exit__(self, _type, value, tb):
+        portable_unlock(self.fp)
+        self.fp.close()
+
+
 def initialize_airflow_1_database():
     subprocess.run(["airflow", "initdb"], check=True)
 
@@ -434,30 +468,42 @@ def make_dagster_pipeline_from_airflow_dag(
     def airflow_db(context):
         airflow_home_path = os.path.join(tempfile.gettempdir(), f"dagster_airflow_{context.run_id}")
         os.environ["AIRFLOW_HOME"] = airflow_home_path
-        airflow_initialized = os.path.exists(airflow_home_path)
-        if not airflow_initialized:
-            os.makedirs(airflow_home_path)
-            if airflow_version >= "2.0.0":
-                initialize_airflow_2_database()
-            else:
-                initialize_airflow_1_database()
+        os.makedirs(airflow_home_path, exist_ok=True)
+        with Locker(airflow_home_path):
+            airflow_initialized = os.path.exists(f"{airflow_home_path}/airflow.db")
+            if not airflow_initialized:
+                if airflow_version >= "2.0.0":
+                    initialize_airflow_2_database()
+                else:
+                    initialize_airflow_1_database()
+            # because AIRFLOW_HOME has been overriden airflow needs to be reloaded
+            importlib.reload(airflow.configuration)
+            importlib.reload(airflow.settings)
+            importlib.reload(airflow)
+            dag_bag = airflow.models.dagbag.DagBag(
+                dag_folder=context.resource_config["dag_location"], include_examples=True
+            )
+            dag = dag_bag.get_dag(context.resource_config["dag_id"])
+            execution_date_str = context.dagster_run.tags.get(AIRFLOW_EXECUTION_DATE_STR)
+            execution_date = dateutil.parser.parse(execution_date_str)
+            dagrun = dag.get_dagrun(execution_date=execution_date)
+            if not dagrun:
+                if airflow_version >= "2.0.0":
+                    dagrun = dag.create_dagrun(
+                        state=DagRunState.RUNNING,
+                        execution_date=execution_date,
+                        run_type=DagRunType.MANUAL,
+                    )
+                else:
+                    dagrun = dag.create_dagrun(
+                        run_id=f"dagster_airflow_run_{execution_date}",
+                        state=State.RUNNING,
+                        execution_date=execution_date,
+                    )
 
-        importlib.reload(airflow.configuration)
-        importlib.reload(airflow.settings)
-        importlib.reload(airflow)
-
-        dag_bag = airflow.models.dagbag.DagBag(
-            dag_folder=context.resource_config["dag_location"],
-            include_examples=False,  # Exclude Airflow example dags
-        )
-        dag = dag_bag.get_dag(context.resource_config["dag_id"])
-        # dagrun = dag.create_dagrun(
-        #     state=DagRunState.RUNNING,
-        #     execution_date=datetime.datetime.now(),
-        #     run_type=DagRunType.MANUAL,
-        # )
         return {
             "dag": dag,
+            "dagrun": dagrun,
         }
 
     pipeline_def = PipelineDefinition(
@@ -667,13 +713,7 @@ def make_dagster_solid_from_airflow_task(
                 if airflow_version >= "2.0.0":
                     if use_ephemeral_airflow_db:
                         dag = context.resources.airflow_db["dag"]
-                        dagrun = dag.get_dagrun(execution_date=execution_date)
-                        if not dagrun:
-                            dagrun = dag.create_dagrun(
-                                state=DagRunState.RUNNING,
-                                execution_date=execution_date,
-                                run_type=DagRunType.MANUAL,
-                            )
+                        dagrun = context.resources.airflow_db["dagrun"]
                         ti = dagrun.get_task_instance(task_id=task.task_id)
                         ti.task = dag.get_task(task_id=task.task_id)
                         ti.run(ignore_ti_state=True)
@@ -693,14 +733,8 @@ def make_dagster_solid_from_airflow_task(
                         task.execute(ti_context)
                 else:
                     if use_ephemeral_airflow_db:
-                        dag = context.resources.airflow_db
-                        dagrun = dag.get_dagrun(execution_date=execution_date)
-                        if not dagrun:
-                            dagrun = dag.create_dagrun(
-                                run_id=f"dagster_airflow_run_{execution_date}",
-                                state=State.RUNNING,
-                                execution_date=execution_date,
-                            )
+                        dag = context.resources.airflow_db["dag"]
+                        dagrun = context.resources.airflow_db["dagrun"]
                         ti = dagrun.get_task_instance(task_id=task.task_id)
                         ti.task = dag.get_task(task_id=task.task_id)
                         ti.run(ignore_ti_state=True)
