@@ -1,19 +1,19 @@
 import os
 import re
-import pytest
 
+import pytest
 from click.testing import CliRunner
 
 from dagster import file_relative_path
 from dagster._cli.project import (
     from_example_command,
+    scaffold_code_location_command,
     scaffold_command,
     scaffold_repository_command,
-    scaffold_code_location_command,
 )
+from dagster._cli.workspace.cli_target import get_target_from_toml
 from dagster._generate.download import AVAILABLE_EXAMPLES, EXAMPLES_TO_IGNORE
 from dagster._generate.generate import _should_skip_file
-from dagster._cli.workspace.cli_target import get_target_from_toml
 
 
 def test_project_scaffold_command_fails_when_dir_path_exists():
@@ -106,12 +106,13 @@ def test_available_examples_in_sync_with_example_folder():
 
 
 def test_scaffold_repository_deprecation():
-    with pytest.warns(
-        DeprecationWarning, match=re.escape("use `dagster project scaffold-code-location` instead")
-    ):
-        runner = CliRunner()
-        with runner.isolated_filesystem():
-            runner.invoke(scaffold_repository_command, ["--name", "my_dagster_project"])
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(scaffold_repository_command, ["--name", "my_dagster_project"])
+        assert re.match(
+            "WARNING: This command is deprecated. Use `dagster project scaffold-code-location` instead.",
+            result.output,
+        )
 
 
 def test_scaffold_repository_scaffold_command_fails_when_dir_path_exists():

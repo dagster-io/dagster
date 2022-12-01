@@ -31,7 +31,7 @@ def generate_code_location(path: str):
 
     click.echo(f"Creating a Dagster code location at {path}.")
 
-    # Step 1: Generate files for Dagster code location
+    # Step 1: Generate files for Dagster code location including pyproject.toml, setup.py
     _generate_files_from_template(
         path=path,
         name_placeholder=CODE_LOCATION_NAME_PLACEHOLDER,
@@ -51,7 +51,7 @@ def generate_project(path: str):
     # Step 1: Generate files for Dagster code location
     generate_code_location(path)
 
-    # Step 2: Generate project-level files, e.g. README, workspace.yaml, requirements.txt
+    # Step 2: Generate project-level files, e.g. README
     _generate_files_from_template(
         path=path,
         name_placeholder=PROJECT_NAME_PLACEHOLDER,

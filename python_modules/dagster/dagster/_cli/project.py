@@ -1,15 +1,13 @@
 import os
 import sys
-import warnings
-
 from typing import Sequence
 
 import click
 
 from dagster._generate import (
     download_example_from_github,
-    generate_project,
     generate_code_location,
+    generate_project,
     generate_repository,
 )
 from dagster._generate.download import AVAILABLE_EXAMPLES
@@ -23,7 +21,8 @@ def project_cli():
 
 
 scaffold_repository_command_help_text = (
-    "(DEPRECATED) Create a folder structure with a single Dagster repository, in the current directory. "
+    "(DEPRECATED; Use `dagster project scaffold-code-location` instead) "
+    "Create a folder structure with a single Dagster repository, in the current directory. "
     "This CLI helps you to scaffold a new Dagster repository within a folder structure that "
     "includes multiple Dagster repositories"
 )
@@ -60,11 +59,6 @@ list_examples_command_help_text = "List the examples that available to bootstrap
     help="Name of the new Dagster repository",
 )
 def scaffold_repository_command(name: str):
-    warnings.warn(
-        "This command is deprecated; use `dagster project scaffold-code-location` instead.",
-        category=DeprecationWarning,
-    )
-
     dir_abspath = os.path.abspath(name)
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
         click.echo(
@@ -73,6 +67,12 @@ def scaffold_repository_command(name: str):
         )
         sys.exit(1)
 
+    click.echo(
+        click.style(
+            "WARNING: This command is deprecated. Use `dagster project scaffold-code-location` instead.",
+            fg="yellow",
+        )
+    )
     generate_repository(dir_abspath)
     click.echo(_styled_success_statement(name, dir_abspath))
 
