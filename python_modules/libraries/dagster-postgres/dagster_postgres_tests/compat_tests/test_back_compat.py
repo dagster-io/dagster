@@ -721,7 +721,9 @@ def test_add_cached_status_data_column(hostname, conn_string):
                 target_fd.write(template)
 
         with DagsterInstance.from_config(tempdir) as instance:
+            assert instance.can_cache_asset_status_data() is False
             assert {"cached_status_data"} & get_columns(instance, "asset_keys") == set()
 
             instance.upgrade()
+            assert instance.can_cache_asset_status_data() is True
             assert {"cached_status_data"} <= get_columns(instance, "asset_keys")

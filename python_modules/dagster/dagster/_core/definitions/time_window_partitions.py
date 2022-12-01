@@ -1,3 +1,4 @@
+import hashlib
 import json
 import re
 from datetime import datetime
@@ -494,6 +495,10 @@ class TimeWindowPartitionsDefinition(
 
     def deserialize_subset(self, serialized: str) -> "TimeWindowPartitionsSubset":
         return TimeWindowPartitionsSubset.from_serialized(self, serialized)
+
+    @property
+    def serializable_unique_identifier(self) -> str:
+        return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
 
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):

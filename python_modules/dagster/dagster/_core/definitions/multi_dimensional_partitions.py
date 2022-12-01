@@ -1,4 +1,5 @@
 import itertools
+import json
 from datetime import datetime
 from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple
 
@@ -10,7 +11,12 @@ from dagster._core.storage.tags import (
     get_multidimensional_partition_tag,
 )
 
-from .partition import Partition, PartitionsDefinition, StaticPartitionsDefinition
+from .partition import (
+    DefaultPartitionsSubset,
+    Partition,
+    PartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 
 INVALID_STATIC_PARTITIONS_KEY_CHARACTERS = set(["|", ",", "[", "]"])
 
@@ -160,6 +166,10 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         )
 
     @property
+    def partition_dimension_names(self) -> List[str]:
+        return [dim_def.name for dim_def in self._partitions_defs]
+
+    @property
     def partitions_defs(self) -> Sequence[PartitionDimensionDefinition]:
         return self._partitions_defs
 
@@ -220,6 +230,57 @@ class MultiPartitionsDefinition(PartitionsDefinition):
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(dimensions={[str(dim) for dim in self.partitions_defs]}"
+
+    def get_multi_partition_key_from_str(self, partition_key_str: str) -> MultiPartitionKey:
+        """
+        Given a string representation of a partition key, returns a MultiPartitionKey object.
+        """
+        check.str_param(partition_key_str, "partition_key_str")
+
+        partition_key_strs = partition_key_str.split("|")
+        check.invariant(
+            len(partition_key_strs) == len(self.partitions_defs),
+            f"Expected {len(self.partitions_defs)} partition keys in partition key string {partition_key_str}, "
+            f"but got {len(partition_key_strs)}",
+        )
+        keys_per_dimension = [
+            (dim.name, dim.partitions_def.get_partition_keys()) for dim in self._partitions_defs
+        ]
+
+        partition_key_dims_by_idx = dict(enumerate([dim.name for dim in self._partitions_defs]))
+        for idx, key in enumerate(partition_key_strs):
+            check.invariant(
+                key in keys_per_dimension[idx][1],
+                f"Partition key {key} not found in dimension {partition_key_dims_by_idx[idx][0]}",
+            )
+
+        multi_partition_key = MultiPartitionKey(
+            {partition_key_dims_by_idx[idx]: key for idx, key in enumerate(partition_key_strs)}
+        )
+        return multi_partition_key
+
+    def deserialize_subset(self, serialized: str) -> "MultiPartitionsSubset":
+        return MultiPartitionsSubset.from_serialized(self, serialized)
+
+
+class MultiPartitionsSubset(DefaultPartitionsSubset):
+    @staticmethod
+    def from_serialized(
+        partitions_def: PartitionsDefinition, serialized: str
+    ) -> "MultiPartitionsSubset":
+        if not isinstance(partitions_def, MultiPartitionsDefinition):
+            check.failed(
+                "Must pass a MultiPartitionsDefinition object to deserialize MultiPartitionsSubset."
+            )
+        return MultiPartitionsSubset(
+            subset=set(
+                [
+                    partitions_def.get_multi_partition_key_from_str(key)
+                    for key in json.loads(serialized)
+                ]
+            ),
+            partitions_def=partitions_def,
+        )
 
 
 def get_tags_from_multi_partition_key(multi_partition_key: MultiPartitionKey) -> Mapping[str, str]:
