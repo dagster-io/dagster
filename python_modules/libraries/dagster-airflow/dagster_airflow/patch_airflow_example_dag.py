@@ -11,8 +11,7 @@ def patch_airflow_example_dag(dag_bag):
         return
 
     dag = dag_bag.dags.get("example_complex")
-    if dag:
-        task = dag.get_task("search_catalog")
-        task.op_args = ["dummy"]
+    task = dag.get_task("search_catalog")
+    task.op_args = ["dummy"]
 
     return

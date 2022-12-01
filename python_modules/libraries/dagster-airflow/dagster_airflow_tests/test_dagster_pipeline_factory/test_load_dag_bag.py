@@ -438,6 +438,8 @@ test_airflow_example_dags_inputs = [
             "airflow_example_trigger_target_dag",
             # sleeps forever, not an example
             "airflow_test_utils",
+            # patching airflow.models.DAG causes this to fail
+            "airflow_example_complex",
         ],
     ),
 ]
