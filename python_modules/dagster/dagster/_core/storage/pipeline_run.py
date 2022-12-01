@@ -312,9 +312,11 @@ def pipeline_run_from_storage(
     )
 
 
-class PipelineRun(
+
+@whitelist_for_serdes(serializer=DagsterRunSerializer)
+class DagsterRun(
     NamedTuple(
-        "_PipelineRun",
+        "_DagsterRun",
         [
             ("pipeline_name", str),
             ("run_id", str),
@@ -336,7 +338,7 @@ class PipelineRun(
         ],
     )
 ):
-    """Serializable internal representation of a pipeline run, as stored in a
+    """Serializable internal representation of a dagster run, as stored in a
     :py:class:`~dagster._core.storage.runs.RunStorage`.
     """
 
@@ -398,7 +400,7 @@ class PipelineRun(
         if run_id is None:
             run_id = make_new_run_id()
 
-        return super(PipelineRun, cls).__new__(
+        return super(DagsterRun, cls).__new__(
             cls,
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             run_id=check.str_param(run_id, "run_id"),
@@ -538,15 +540,6 @@ class PipelineRun(
         return tags
 
 
-@whitelist_for_serdes(serializer=DagsterRunSerializer)
-class DagsterRun(PipelineRun):
-    """Serializable internal representation of a dagster run, as stored in a
-    :py:class:`~dagster._core.storage.runs.RunStorage`.
-
-    Subclasses PipelineRun for backcompat purposes. DagsterRun is the actual initialized class used throughout the system.
-    """
-
-
 # DagsterRun is serialized as PipelineRun so that it can be read by older (pre 0.13.x) version of
 # Dagster, but is read back in as a DagsterRun.
 register_serdes_tuple_fallbacks({"PipelineRun": DagsterRun})
@@ -660,19 +653,19 @@ class RunsFilter(
 
     @staticmethod
     def for_schedule(schedule):
-        return RunsFilter(tags=PipelineRun.tags_for_schedule(schedule))
+        return RunsFilter(tags=DagsterRun.tags_for_schedule(schedule))
 
     @staticmethod
     def for_partition(partition_set, partition):
-        return RunsFilter(tags=PipelineRun.tags_for_partition_set(partition_set, partition))
+        return RunsFilter(tags=DagsterRun.tags_for_partition_set(partition_set, partition))
 
     @staticmethod
     def for_sensor(sensor):
-        return RunsFilter(tags=PipelineRun.tags_for_sensor(sensor))
+        return RunsFilter(tags=DagsterRun.tags_for_sensor(sensor))
 
     @staticmethod
     def for_backfill(backfill_id):
-        return RunsFilter(tags=PipelineRun.tags_for_backfill_id(backfill_id))
+        return RunsFilter(tags=DagsterRun.tags_for_backfill_id(backfill_id))
 
 
 register_serdes_tuple_fallbacks({"PipelineRunsFilter": RunsFilter})
@@ -696,7 +689,7 @@ class RunRecord(
         "_RunRecord",
         [
             ("storage_id", int),
-            ("pipeline_run", PipelineRun),
+            ("pipeline_run", DagsterRun),
             ("create_timestamp", datetime),
             ("update_timestamp", datetime),
             ("start_time", Optional[float]),
@@ -722,7 +715,7 @@ class RunRecord(
         return super(RunRecord, cls).__new__(
             cls,
             storage_id=check.int_param(storage_id, "storage_id"),
-            pipeline_run=check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
+            pipeline_run=check.inst_param(pipeline_run, "pipeline_run", DagsterRun),
             create_timestamp=check.inst_param(create_timestamp, "create_timestamp", datetime),
             update_timestamp=check.inst_param(update_timestamp, "update_timestamp", datetime),
             # start_time and end_time fields will be populated once the run has started and ended, respectively, but will be None beforehand.
