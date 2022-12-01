@@ -21,7 +21,7 @@ from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import environ
-from dagster._legacy import PipelineRun
+from dagster._legacy import DagsterRun
 
 
 def test_fs_stores():
@@ -107,7 +107,7 @@ def test_get_run_by_id():
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 
         assert instance.get_runs() == []
-        pipeline_run = PipelineRun("foo_pipeline", "new_run")
+        pipeline_run = DagsterRun("foo_pipeline", "new_run")
         assert instance.get_run_by_id(pipeline_run.run_id) is None
 
         instance._run_storage.add_run(pipeline_run)  # pylint: disable=protected-access
@@ -119,14 +119,14 @@ def test_get_run_by_id():
     # Run is created after we check whether it exists
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = PipelineRun(pipeline_name="foo_pipeline", run_id="bar_run")
+        run = DagsterRun(pipeline_name="foo_pipeline", run_id="bar_run")
 
         def _has_run(self, run_id):
             # This is uglier than we would like because there is no nonlocal keyword in py2
             global MOCK_HAS_RUN_CALLED  # pylint: disable=global-variable-not-assigned
             # pylint: disable=protected-access
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(PipelineRun(pipeline_name="foo_pipeline", run_id=run_id))
+                self._run_storage.add_run(DagsterRun(pipeline_name="foo_pipeline", run_id=run_id))
                 return False
             else:
                 return self._run_storage.has_run(run_id)
@@ -140,13 +140,13 @@ def test_get_run_by_id():
     MOCK_HAS_RUN_CALLED = False
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = PipelineRun(pipeline_name="foo_pipeline", run_id="bar_run")
+        run = DagsterRun(pipeline_name="foo_pipeline", run_id="bar_run")
 
         def _has_run(self, run_id):
             global MOCK_HAS_RUN_CALLED  # pylint: disable=global-statement
             # pylint: disable=protected-access
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(PipelineRun(pipeline_name="foo_pipeline", run_id=run_id))
+                self._run_storage.add_run(DagsterRun(pipeline_name="foo_pipeline", run_id=run_id))
                 MOCK_HAS_RUN_CALLED = True
                 return False
             elif self._run_storage.has_run(run_id) and MOCK_HAS_RUN_CALLED:

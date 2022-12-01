@@ -3,7 +3,7 @@ from typing import Tuple, cast
 
 import dagster._check as check
 from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._utils import send_interrupt
 
 
@@ -15,10 +15,10 @@ def _kill_on_cancel(instance_ref: InstanceRef, run_id, shutdown_event):
         while not shutdown_event.is_set():
             shutdown_event.wait(instance.cancellation_thread_poll_interval_seconds)
             run = cast(
-                PipelineRun,
+                DagsterRun,
                 check.inst(
                     instance.get_run_by_id(run_id),
-                    PipelineRun,
+                    DagsterRun,
                     "Run not found for cancellation thread",
                 ),
             )

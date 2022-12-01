@@ -13,7 +13,7 @@ from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.plan import should_skip_step
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.utils import make_new_run_id
 from dagster._legacy import OutputDefinition, execute_pipeline, lambda_solid, pipeline, solid
 
@@ -415,7 +415,7 @@ def test_fan_out_should_skip_step():
         bar.alias("bar_3")(input_arg=foo_res.out_3)
 
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(pipeline_name="optional_outputs", run_id=make_new_run_id())
+    pipeline_run = DagsterRun(pipeline_name="optional_outputs", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(optional_outputs, step_keys_to_execute=["foo"]),
         InMemoryPipeline(optional_outputs),
@@ -468,7 +468,7 @@ def test_fan_in_should_skip_step():
         composite_one_upstream_skip()
 
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(pipeline_name="optional_outputs_composite", run_id=make_new_run_id())
+    pipeline_run = DagsterRun(pipeline_name="optional_outputs_composite", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(
             optional_outputs_composite,
@@ -535,7 +535,7 @@ def test_configured_input_should_skip_step():
 
     # ensure should_skip_step behave the same as execute_pipeline
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(pipeline_name="my_pipeline", run_id=make_new_run_id())
+    pipeline_run = DagsterRun(pipeline_name="my_pipeline", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(
             my_pipeline,

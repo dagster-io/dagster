@@ -33,7 +33,7 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.selector import parse_step_selection
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster._core.utils import str_format_set
@@ -52,20 +52,20 @@ from .execute_job_result import ExecuteJobResult
 from .results import PipelineExecutionResult
 
 ## Brief guide to the execution APIs
-# | function name               | operates over      | sync  | supports    | creates new PipelineRun |
+# | function name               | operates over      | sync  | supports    | creates new DagsterRun  |
 # |                             |                    |       | reexecution | in instance             |
 # | --------------------------- | ------------------ | ----- | ----------- | ----------------------- |
 # | execute_pipeline_iterator   | IPipeline          | async | no          | yes                     |
 # | execute_pipeline            | IPipeline          | sync  | no          | yes                     |
-# | execute_run_iterator        | PipelineRun        | async | (1)         | no                      |
-# | execute_run                 | PipelineRun        | sync  | (1)         | no                      |
+# | execute_run_iterator        | DagsterRun         | async | (1)         | no                      |
+# | execute_run                 | DagsterRun         | sync  | (1)         | no                      |
 # | execute_plan_iterator       | ExecutionPlan      | async | (2)         | no                      |
 # | execute_plan                | ExecutionPlan      | sync  | (2)         | no                      |
 # | reexecute_pipeline          | IPipeline          | sync  | yes         | yes                     |
 # | reexecute_pipeline_iterator | IPipeline          | async | yes         | yes                     |
 #
 # Notes on reexecution support:
-# (1) The appropriate bits must be set on the PipelineRun passed to this function. Specifically,
+# (1) The appropriate bits must be set on the DagsterRun passed to this function. Specifically,
 #     parent_run_id and root_run_id must be set and consistent, and if a solids_to_execute or
 #     step_keys_to_execute are set they must be consistent with the parent and root runs.
 # (2) As for (1), but the ExecutionPlan passed must also agree in all relevant bits.
@@ -73,12 +73,12 @@ from .results import PipelineExecutionResult
 
 def execute_run_iterator(
     pipeline: IPipeline,
-    pipeline_run: PipelineRun,
+    pipeline_run: DagsterRun,
     instance: DagsterInstance,
     resume_from_failure: bool = False,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(pipeline, "pipeline", IPipeline)
-    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
     if pipeline_run.status == DagsterRunStatus.CANCELED:
@@ -141,7 +141,7 @@ def execute_run_iterator(
         if isinstance(pipeline_def, PipelineSubsetDefinition):
             check.invariant(
                 pipeline_run.solids_to_execute == pipeline.solids_to_execute,
-                "Cannot execute PipelineRun with solids_to_execute {solids_to_execute} that conflicts "
+                "Cannot execute DagsterRun with solids_to_execute {solids_to_execute} that conflicts "
                 "with pipeline subset {pipeline_solids_to_execute}.".format(
                     pipeline_solids_to_execute=str_format_set(pipeline.solids_to_execute),
                     solids_to_execute=str_format_set(pipeline_run.solids_to_execute),
@@ -149,7 +149,7 @@ def execute_run_iterator(
             )
         else:
             # when `execute_run_iterator` is directly called, the sub pipeline hasn't been created
-            # note that when we receive the solids to execute via PipelineRun, it won't support
+            # note that when we receive the solids to execute via DagsterRun, it won't support
             # solid selection query syntax
             pipeline = pipeline.subset_for_execution_from_existing_pipeline(
                 frozenset(pipeline_run.solids_to_execute)
@@ -184,7 +184,7 @@ def execute_run_iterator(
 
 def execute_run(
     pipeline: IPipeline,
-    pipeline_run: PipelineRun,
+    pipeline_run: DagsterRun,
     instance: DagsterInstance,
     raise_on_error: bool = False,
 ) -> PipelineExecutionResult:
@@ -194,7 +194,7 @@ def execute_run(
 
     Args:
         pipeline (IPipeline): The pipeline to execute.
-        pipeline_run (PipelineRun): The run to execute
+        pipeline_run (DagsterRun): The run to execute
         instance (DagsterInstance): The instance in which the run has been created.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
             Defaults to ``False``.
@@ -216,7 +216,7 @@ def execute_run(
         )
 
     check.inst_param(pipeline, "pipeline", IPipeline)
-    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
     if pipeline_run.status == DagsterRunStatus.CANCELED:
@@ -239,7 +239,7 @@ def execute_run(
         if isinstance(pipeline_def, PipelineSubsetDefinition):
             check.invariant(
                 pipeline_run.solids_to_execute == pipeline.solids_to_execute,
-                "Cannot execute PipelineRun with solids_to_execute {solids_to_execute} that "
+                "Cannot execute DagsterRun with solids_to_execute {solids_to_execute} that "
                 "conflicts with pipeline subset {pipeline_solids_to_execute}.".format(
                     pipeline_solids_to_execute=str_format_set(pipeline.solids_to_execute),
                     solids_to_execute=str_format_set(pipeline_run.solids_to_execute),
@@ -247,7 +247,7 @@ def execute_run(
             )
         else:
             # when `execute_run` is directly called, the sub pipeline hasn't been created
-            # note that when we receive the solids to execute via PipelineRun, it won't support
+            # note that when we receive the solids to execute via DagsterRun, it won't support
             # solid selection query syntax
             pipeline = pipeline.subset_for_execution_from_existing_pipeline(
                 frozenset(pipeline_run.solids_to_execute)
@@ -912,14 +912,14 @@ def reexecute_pipeline_iterator(
 def execute_plan_iterator(
     execution_plan: ExecutionPlan,
     pipeline: IPipeline,
-    pipeline_run: PipelineRun,
+    pipeline_run: DagsterRun,
     instance: DagsterInstance,
     retry_mode: Optional[RetryMode] = None,
     run_config: Optional[Mapping[str, object]] = None,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(pipeline, "pipeline", IPipeline)
-    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
     retry_mode = check.opt_inst_param(retry_mode, "retry_mode", RetryMode, RetryMode.DISABLED)
     run_config = check.opt_mapping_param(run_config, "run_config")
@@ -947,7 +947,7 @@ def execute_plan(
     execution_plan: ExecutionPlan,
     pipeline: IPipeline,
     instance: DagsterInstance,
-    pipeline_run: PipelineRun,
+    pipeline_run: DagsterRun,
     run_config: Optional[Mapping[str, object]] = None,
     retry_mode: Optional[RetryMode] = None,
 ) -> Sequence[DagsterEvent]:
@@ -957,7 +957,7 @@ def execute_plan(
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     run_config = check.opt_mapping_param(run_config, "run_config")
     check.opt_inst_param(retry_mode, "retry_mode", RetryMode)
 
@@ -983,7 +983,7 @@ def _check_pipeline(pipeline: Union[PipelineDefinition, IPipeline]) -> IPipeline
 
 
 def _get_execution_plan_from_run(
-    pipeline: IPipeline, pipeline_run: PipelineRun, instance: DagsterInstance
+    pipeline: IPipeline, pipeline_run: DagsterRun, instance: DagsterInstance
 ) -> ExecutionPlan:
 
     execution_plan_snapshot = None
@@ -1287,7 +1287,7 @@ def _check_execute_pipeline_args(
                 (
                     "Pipeline {name} has multiple modes (Available modes: {modes}) and you have "
                     "attempted to execute it without specifying a mode. Set "
-                    "mode property on the PipelineRun object."
+                    "mode property on the DagsterRun object."
                 ).format(name=pipeline_def.name, modes=pipeline_def.available_modes)
             )
         mode = pipeline_def.get_default_mode_name()

@@ -5,7 +5,7 @@ from dagster import DagsterEvent, DagsterEventType, IntSource, String
 from dagster import _check as check
 from dagster._builtins import Bool
 from dagster._config import Array, Field, Noneable, ScalarUnion, Shape
-from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from .base import RunCoordinator, SubmitRunContext
@@ -120,7 +120,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             dequeue_interval_seconds=config_value.get("dequeue_interval_seconds"),
         )
 
-    def submit_run(self, context: SubmitRunContext) -> PipelineRun:
+    def submit_run(self, context: SubmitRunContext) -> DagsterRun:
         pipeline_run = context.pipeline_run
 
         if pipeline_run.status == DagsterRunStatus.NOT_STARTED:

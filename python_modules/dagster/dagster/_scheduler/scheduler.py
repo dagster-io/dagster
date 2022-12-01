@@ -30,7 +30,7 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
-from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
@@ -653,7 +653,7 @@ def _get_existing_run_for_request(
     run_request: RunRequest,
 ):
     tags = merge_dicts(
-        PipelineRun.tags_for_schedule(external_schedule),
+        DagsterRun.tags_for_schedule(external_schedule),
         {
             SCHEDULED_EXECUTION_TIME_TAG: to_timezone(schedule_time, "UTC").isoformat(),
         },

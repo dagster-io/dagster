@@ -30,7 +30,7 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
@@ -53,7 +53,7 @@ class SkippedSensorRun(
         "SkippedSensorRun",
         [
             ("run_key", Optional[str]),
-            ("existing_run", PipelineRun),
+            ("existing_run", DagsterRun),
         ],
     )
 ):
@@ -723,7 +723,7 @@ def _fetch_existing_runs(
     runs_with_run_keys = instance.get_runs(filters=RunsFilter(tags={RUN_KEY_TAG: run_keys}))
 
     # filter down to runs with run_key that match the sensor name and its namespace (repository)
-    valid_runs: List[PipelineRun] = []
+    valid_runs: List[DagsterRun] = []
     for run in runs_with_run_keys:
         # if the run doesn't have a set origin, just match on sensor name
         if (
@@ -757,7 +757,7 @@ def _get_or_create_sensor_run(
     external_pipeline: ExternalPipeline,
     run_request: RunRequest,
     target_data: ExternalTargetData,
-    existing_runs_by_key: Mapping[str, PipelineRun],
+    existing_runs_by_key: Mapping[str, DagsterRun],
 ):
 
     if not run_request.run_key:
@@ -809,7 +809,7 @@ def _create_sensor_run(
     pipeline_tags = validate_tags(external_pipeline.tags or {}, allow_reserved_tags=False)
     tags = merge_dicts(
         merge_dicts(pipeline_tags, run_request.tags),
-        PipelineRun.tags_for_sensor(external_sensor),
+        DagsterRun.tags_for_sensor(external_sensor),
     )
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key

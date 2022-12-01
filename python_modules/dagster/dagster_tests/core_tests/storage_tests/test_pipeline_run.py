@@ -18,8 +18,8 @@ from dagster._core.origin import (
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     NON_IN_PROGRESS_RUN_STATUSES,
+    DagsterRun,
     DagsterRunStatus,
-    PipelineRun,
     RunsFilter,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -50,7 +50,7 @@ def test_queued_pipeline_origin_check():
         ),
     )
 
-    PipelineRun(
+    DagsterRun(
         pipeline_name="foo",
         status=DagsterRunStatus.QUEUED,
         external_pipeline_origin=fake_pipeline_origin,
@@ -58,10 +58,10 @@ def test_queued_pipeline_origin_check():
     )
 
     with pytest.raises(check.CheckError):
-        PipelineRun(pipeline_name="foo", status=DagsterRunStatus.QUEUED)
+        DagsterRun(pipeline_name="foo", status=DagsterRunStatus.QUEUED)
 
     with pytest.raises(check.CheckError):
-        PipelineRun(pipeline_name="foo").with_status(DagsterRunStatus.QUEUED)
+        DagsterRun(pipeline_name="foo").with_status(DagsterRunStatus.QUEUED)
 
 
 def test_in_progress_statuses():

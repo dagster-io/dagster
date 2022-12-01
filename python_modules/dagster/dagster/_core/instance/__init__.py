@@ -54,7 +54,6 @@ from dagster._core.storage.pipeline_run import (
     DagsterRun,
     DagsterRunStatus,
     JobBucket,
-    PipelineRun,
     PipelineRunStatsSnapshot,
     RunPartitionData,
     RunRecord,
@@ -127,7 +126,7 @@ if TYPE_CHECKING:
 
 
 def _check_run_equality(
-    pipeline_run: PipelineRun, candidate_run: PipelineRun
+    pipeline_run: DagsterRun, candidate_run: DagsterRun
 ) -> Mapping[str, Tuple[Any, Any]]:
     field_diff = {}
     for field in pipeline_run._fields:
@@ -853,7 +852,7 @@ class DagsterInstance:
         return self._run_storage.get_run_tags()
 
     @traced
-    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[PipelineRun]]]:
+    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[DagsterRun]]]:
         return self._run_storage.get_run_group(run_id)
 
     def create_run_for_pipeline(
@@ -873,7 +872,7 @@ class DagsterInstance:
         external_pipeline_origin=None,
         pipeline_code_origin=None,
         repository_load_data=None,
-    ) -> PipelineRun:
+    ) -> DagsterRun:
         from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.execution.api import create_execution_plan
         from dagster._core.execution.plan.plan import ExecutionPlan
@@ -1129,7 +1128,7 @@ class DagsterInstance:
         solid_selection=None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
-    ) -> PipelineRun:
+    ) -> DagsterRun:
 
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
@@ -1168,7 +1167,7 @@ class DagsterInstance:
         run_config: Optional[Mapping[str, Any]] = None,
         mode: Optional[str] = None,
         use_parent_run_tags: bool = False,
-    ) -> PipelineRun:
+    ) -> DagsterRun:
         from dagster._core.execution.plan.resume_retry import (
             ReexecutionStrategy,
             get_retry_steps_from_parent_run,
@@ -1318,7 +1317,7 @@ class DagsterInstance:
             return get_run()
 
     @traced
-    def add_run(self, pipeline_run: PipelineRun) -> PipelineRun:
+    def add_run(self, pipeline_run: DagsterRun) -> DagsterRun:
         return self._run_storage.add_run(pipeline_run)
 
     @traced
@@ -1344,7 +1343,7 @@ class DagsterInstance:
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
-    ) -> Iterable[PipelineRun]:
+    ) -> Iterable[DagsterRun]:
         return self._run_storage.get_runs(filters, cursor, limit, bucket_by)
 
     @traced
@@ -1357,7 +1356,7 @@ class DagsterInstance:
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Mapping[str, Mapping[str, Union[Iterable[PipelineRun], int]]]:
+    ) -> Mapping[str, Mapping[str, Union[Iterable[DagsterRun], int]]]:
         return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
 
     @public
@@ -1613,7 +1612,7 @@ class DagsterInstance:
 
         check.opt_class_param(cls, "cls")
         check.str_param(message, "message")
-        check.opt_inst_param(pipeline_run, "pipeline_run", PipelineRun)
+        check.opt_inst_param(pipeline_run, "pipeline_run", DagsterRun)
         check.opt_str_param(run_id, "run_id")
         check.opt_str_param(pipeline_name, "pipeline_name")
 
@@ -1676,7 +1675,7 @@ class DagsterInstance:
 
         from dagster._core.events import DagsterEvent, DagsterEventType
 
-        check.inst_param(run, "run", PipelineRun)
+        check.inst_param(run, "run", DagsterRun)
         message = check.opt_str_param(
             message,
             "message",
@@ -1696,7 +1695,7 @@ class DagsterInstance:
     ):
         from dagster._core.events import DagsterEvent, DagsterEventType
 
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+        check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
 
         message = check.opt_str_param(
             message,
@@ -1717,7 +1716,7 @@ class DagsterInstance:
     def report_run_failed(self, pipeline_run, message=None):
         from dagster._core.events import DagsterEvent, DagsterEventType
 
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+        check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
 
         message = check.opt_str_param(
             message,
@@ -1748,7 +1747,7 @@ class DagsterInstance:
 
     # Runs coordinator
 
-    def submit_run(self, run_id, workspace: "IWorkspace") -> PipelineRun:
+    def submit_run(self, run_id, workspace: "IWorkspace") -> DagsterRun:
         """Submit a pipeline run to the coordinator.
 
         This method delegates to the ``RunCoordinator``, configured on the instance, and will

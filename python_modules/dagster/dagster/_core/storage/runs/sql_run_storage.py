@@ -43,9 +43,9 @@ from dagster._seven import JSONDecodeError
 from dagster._utils import merge_dicts, utc_datetime_from_timestamp
 
 from ..pipeline_run import (
+    DagsterRun,
     DagsterRunStatus,
     JobBucket,
-    PipelineRun,
     RunPartitionData,
     RunRecord,
     RunsFilter,
@@ -99,8 +99,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return row
 
-    def add_run(self, pipeline_run: PipelineRun) -> PipelineRun:
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    def add_run(self, pipeline_run: DagsterRun) -> DagsterRun:
+        check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
 
         if pipeline_run.pipeline_snapshot_id and not self.has_pipeline_snapshot(
             pipeline_run.pipeline_snapshot_id
@@ -187,15 +187,15 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
             )
 
-    def _row_to_run(self, row) -> PipelineRun:
-        run = deserialize_as(row["run_body"], PipelineRun)
+    def _row_to_run(self, row) -> DagsterRun:
+        run = deserialize_as(row["run_body"], DagsterRun)
         status = DagsterRunStatus(row["status"])
         # NOTE: the status column is more trustworthy than the status in the run body, since concurrent
         # writes (e.g.  handle_run_event and add_tags) can cause the status in the body to be out of
         # overriden with an old value.
         return run.with_status(status)
 
-    def _rows_to_runs(self, rows: Iterable[Tuple]) -> Sequence[PipelineRun]:
+    def _rows_to_runs(self, rows: Iterable[Tuple]) -> Sequence[DagsterRun]:
         return list(map(self._row_to_run, rows))
 
     def _add_cursor_limit_to_query(
@@ -429,7 +429,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
-    ) -> Sequence[PipelineRun]:
+    ) -> Sequence[DagsterRun]:
         query = self._runs_query(filters, cursor, limit, bucket_by=bucket_by)
         rows = self.fetchall(query)
         return self._rows_to_runs(rows)
@@ -446,7 +446,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         count = rows[0][0]
         return count
 
-    def get_run_by_id(self, run_id: str) -> Optional[PipelineRun]:
+    def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
         """Get a run by its id.
 
         Args:
@@ -563,7 +563,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     [dict(run_id=run_id, key=tag, value=new_tags[tag]) for tag in added_tags],
                 )
 
-    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[PipelineRun]]]:
+    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[DagsterRun]]]:
         check.str_param(run_id, "run_id")
         pipeline_run = self.get_run_by_id(run_id)
         if not pipeline_run:
@@ -616,7 +616,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Mapping[str, Mapping[str, Union[Iterable[PipelineRun], int]]]:
+    ) -> Mapping[str, Mapping[str, Union[Iterable[DagsterRun], int]]]:
         # The runs that would be returned by calling RunStorage.get_runs with the same arguments
         runs = self._runs_query(
             filters=filters, cursor=cursor, limit=limit, columns=["run_body", "status", "run_id"]
@@ -734,7 +734,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             res = conn.execute(runs_and_root_runs_with_descendant_counts).fetchall()
 
         # Postprocess: descendant runs get aggregated with their roots
-        root_run_id_to_group: Dict[str, List[PipelineRun]] = defaultdict(list)
+        root_run_id_to_group: Dict[str, List[DagsterRun]] = defaultdict(list)
         root_run_id_to_count: Dict[str, int] = defaultdict(int)
         for row in res:
             pipeline_run = self._row_to_run(row)
@@ -901,7 +901,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def _get_partition_runs(
         self, partition_set_name: str, partition_name: str
-    ) -> Sequence[PipelineRun]:
+    ) -> Sequence[DagsterRun]:
         # utility method to help test reads off of the partition column
         if not self.has_built_index(RUN_PARTITIONS):
             # query by tags
@@ -1128,7 +1128,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
 
     # Migrating run history
-    def replace_job_origin(self, run: PipelineRun, job_origin: ExternalPipelineOrigin):
+    def replace_job_origin(self, run: DagsterRun, job_origin: ExternalPipelineOrigin):
         new_label = job_origin.external_repository_origin.get_label()
         with self.connect() as conn:
             conn.execute(

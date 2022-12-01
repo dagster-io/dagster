@@ -21,7 +21,7 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._loggers import default_system_loggers
 from dagster._utils import ensure_single_item
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -78,7 +78,7 @@ def host_mode_execution_context_event_generator(
     check.inst_param(pipeline, "pipeline", ReconstructablePipeline)
 
     check.dict_param(run_config, "run_config", key_type=str)
-    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
     executor_defs = check.list_param(executor_defs, "executor_defs", of_type=ExecutorDefinition)
     check.bool_param(raise_on_error, "raise_on_error")
@@ -156,13 +156,13 @@ def host_mode_execution_context_event_generator(
 
 def execute_run_host_mode(
     pipeline: ReconstructablePipeline,
-    pipeline_run: PipelineRun,
+    pipeline_run: DagsterRun,
     instance: DagsterInstance,
     executor_defs: Optional[Sequence[ExecutorDefinition]] = None,
     raise_on_error: bool = False,
 ):
     check.inst_param(pipeline, "pipeline", ReconstructablePipeline)
-    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
     check.opt_sequence_param(executor_defs, "executor_defs", of_type=ExecutorDefinition)
     executor_defs = executor_defs if executor_defs != None else default_executors

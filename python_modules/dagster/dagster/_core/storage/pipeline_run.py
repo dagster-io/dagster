@@ -312,7 +312,6 @@ def pipeline_run_from_storage(
     )
 
 
-
 @whitelist_for_serdes(serializer=DagsterRunSerializer)
 class DagsterRun(
     NamedTuple(

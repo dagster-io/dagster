@@ -14,7 +14,7 @@ from dagster import AssetMaterialization, ResourceDefinition
 from dagster import _check as check
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
-from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
 from dagster._legacy import ModeDefinition
@@ -43,7 +43,7 @@ def in_job_manager(
             ).to_dict()
 
         pipeline_run_dict = pack_value(
-            PipelineRun(
+            DagsterRun(
                 pipeline_name=pipeline_name,
                 run_id=run_id,
                 mode=mode or "default",

@@ -18,7 +18,7 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._core.launcher.base import CheckRunHealthResult, WorkerStatus
 from dagster._core.origin import PipelinePythonOrigin
-from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import frozentags, merge_dicts
@@ -340,7 +340,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
     def supports_check_run_worker_health(self):
         return True
 
-    def check_run_worker_health(self, run: PipelineRun):
+    def check_run_worker_health(self, run: DagsterRun):
         job_namespace = _get_validated_celery_k8s_executor_config(run.run_config).get(
             "job_namespace"
         )

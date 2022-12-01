@@ -26,7 +26,7 @@ from dagster._core.errors import DagsterInvalidPropertyError, DagsterInvariantVi
 from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import DagsterRun, PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.forked_pdb import ForkedPdb
 
@@ -119,7 +119,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return self.solid_config
 
     @property
-    def pipeline_run(self) -> PipelineRun:
+    def pipeline_run(self) -> DagsterRun:
         """PipelineRun: The current pipeline run"""
         return self._step_execution_context.pipeline_run
 
