@@ -45,7 +45,7 @@ Software-defined assets provide sizeable improvements when it comes to code ergo
 
 - **You'll usually write less code**. Specifying the inputs to a software-defined asset defines the assets it depends on. This means you don't need to use `@graph` and `@job` to wire dependencies between ops.
 
-  This approach improves scalability by reducing the number of times an asset's name appears in your codebase by half. Refer to the [IO manager-based example](#materialize-two-interdependent-tables-without-an-io-manager) below to see this in action.
+  This approach improves scalability by reducing the number of times an asset's name appears in your codebase by half. Refer to the [I/O manager-based example](#materialize-two-interdependent-tables-without-an-io-manager) below to see this in action.
 
 - **You no longer have to choose between easy dependency tracking and manageable organization.** Without software-defined assets, you're often forced to:
 
@@ -85,7 +85,7 @@ Let's say you've written jobs that you want to enrich using software-defined ass
 Generally, every op output in a job that corresponds to a long-lived object in storage should have a software-defined asset. The following examples demonstrate some realistic Dagster jobs, both with and without software-defined assets:
 
 - [A job that materializes two interdependent tables](#materialize-two-interdependent-tables)
-- [A job that materializes two interdependent tables without an IO manager](#materialize-two-interdependent-tables-without-an-io-manager)
+- [A job that materializes two interdependent tables without an I/O manager](#materialize-two-interdependent-tables-without-an-io-manager)
 - [A job where only some ops produce assets](#not-all-ops-produce-assets)
 
 <Note>
@@ -109,7 +109,7 @@ Generally, every op output in a job that corresponds to a long-lived object in s
 
 #### Without software-defined assets
 
-This example is a vanilla, op-based job that follows the idiomatic practice of delegating all IO to IO managers and root input managers.
+This example is a vanilla, op-based job that follows the idiomatic practice of delegating all I/O to I/O managers and root input managers.
 
 The goal of each op in the job is to produce an asset. However, because the job doesn't use the software-defined asset APIs, Dagster is unaware of this:
 
@@ -186,14 +186,14 @@ def repo():
     ]
 ```
 
-### Materialize two interdependent tables without an IO manager
+### Materialize two interdependent tables without an I/O manager
 
 - [Without software-defined-assets](#without-software-defined-assets-1)
 - [With software-defined assets](#with-software-defined-assets-1)
 
 #### Without software-defined assets
 
-This example does the same things as the [previous example](#materialize-two-interdependent-tables), with one difference. This job performs IO inside of the ops instead of delegating it to IO managers and root input managers:
+This example does the same things as the [previous example](#materialize-two-interdependent-tables), with one difference. This job performs I/O inside of the ops instead of delegating it to I/O managers and root input managers:
 
 ```python file=/guides/dagster/enriching_with_software_defined_assets/vanilla_nothing.py
 from pandas import read_sql
@@ -364,7 +364,7 @@ Still not sure how software-defined assets fit into your current Dagster usage? 
 - [Jobs](#jobs)
 - [Dagster types](#dagster-types)
 - [Repositories](#repositories)
-- [IO managers](#io-managers)
+- [I/O managers](#io-managers)
 
 ### Ops and graphs
 
@@ -399,8 +399,8 @@ Still not sure how software-defined assets fit into your current Dagster usage? 
 | ----------------------------------------------------- | ------------------------------- |
 | Repositories can contain jobs, schedules, and sensors | Repositories can contain assets |
 
-### IO managers
+### I/O managers
 
 | Without software-defined assets                                         | With software-defined assets                             |
 | ----------------------------------------------------------------------- | -------------------------------------------------------- |
-| IO managers can control how op inputs and outputs are loaded and stored | IO managers can control how assets are loaded and stored |
+| I/O managers can control how op inputs and outputs are loaded and stored | I/O managers can control how assets are loaded and stored |
