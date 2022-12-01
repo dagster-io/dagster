@@ -90,10 +90,8 @@ Example: `$ dagit`
 
 Our project templates also create a `pyproject.toml` file with a `tool.dagster` section an assignment to the `python_package` variable in that section. This allows users to type just `dagit` without any parameters and the package name is defined in that variable. This is very convenient for local development.
 
-```
-    [tool.dagster]
-    python_package = "your_package_name"
-```
+        [tool.dagster]
+        python_package = "your_package_name"
 
 When one runs a dagster CLI in the same directory as this toml file, it is equivalent of running `dagit -m your_package_name`.
 
