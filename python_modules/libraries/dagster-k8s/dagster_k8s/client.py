@@ -8,7 +8,7 @@ import kubernetes
 
 from dagster import DagsterInstance
 from dagster import _check as check
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day
 DEFAULT_WAIT_BETWEEN_ATTEMPTS = 10.0  # 10 seconds
@@ -344,7 +344,7 @@ class DagsterKubernetesClient:
                     raise DagsterK8sPipelineStatusException()
 
                 pipeline_run_status = pipeline_run.status
-                if pipeline_run_status != PipelineRunStatus.STARTED:
+                if pipeline_run_status != DagsterRunStatus.STARTED:
                     raise DagsterK8sPipelineStatusException()
 
             self.sleeper(wait_time_between_attempts)

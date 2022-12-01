@@ -15,7 +15,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.captured_log_manager import CapturedLogManager, CapturedLogSubscription
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster._core.storage.event_log.base import EventLogCursor
-from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from ..external import ExternalPipeline, ensure_valid_config, get_external_pipeline_or_raise
@@ -83,9 +83,7 @@ def terminate_pipeline_execution(instance: DagsterInstance, run_id, terminate_po
     run = record.pipeline_run
     graphene_run = GrapheneRun(record)
 
-    can_cancel_run = (
-        run.status == PipelineRunStatus.STARTED or run.status == PipelineRunStatus.QUEUED
-    )
+    can_cancel_run = run.status == DagsterRunStatus.STARTED or run.status == DagsterRunStatus.QUEUED
 
     valid_status = not run.is_finished and (force_mark_as_canceled or can_cancel_run)
 

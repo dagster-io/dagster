@@ -9,7 +9,7 @@ from dagster._cli.api import ExecuteRunArgs
 from dagster._core.events import EngineEventData
 from dagster._core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
 from dagster._core.launcher.base import CheckRunHealthResult, WorkerStatus
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._grpc.types import ResumeRunArgs
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
@@ -289,7 +289,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         pipeline_run = self._instance.get_run_by_id(run_id)
         if not pipeline_run:
             return False
-        if pipeline_run.status != PipelineRunStatus.STARTED:
+        if pipeline_run.status != DagsterRunStatus.STARTED:
             return False
         return True
 

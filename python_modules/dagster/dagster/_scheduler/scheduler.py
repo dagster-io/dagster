@@ -30,7 +30,7 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
@@ -599,7 +599,7 @@ def _schedule_runs_at_time(
 
         run = _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request)
         if run:
-            if run.status != PipelineRunStatus.NOT_STARTED:
+            if run.status != DagsterRunStatus.NOT_STARTED:
                 # A run already exists and was launched for this time period,
                 # but the scheduler must have crashed or errored before the tick could be put
                 # into a SUCCESS state
@@ -626,7 +626,7 @@ def _schedule_runs_at_time(
 
         _check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
 
-        if run.status != PipelineRunStatus.FAILURE:
+        if run.status != DagsterRunStatus.FAILURE:
             try:
                 instance.submit_run(run.run_id, workspace_process_context.create_request_context())
                 logger.info(f"Completed scheduled launch of run {run.run_id} for {schedule_name}")
@@ -732,7 +732,7 @@ def _create_scheduler_run(
         solids_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=None,
         solid_selection=external_pipeline.solid_selection,
-        status=PipelineRunStatus.NOT_STARTED,
+        status=DagsterRunStatus.NOT_STARTED,
         root_run_id=None,
         parent_run_id=None,
         tags=tags,

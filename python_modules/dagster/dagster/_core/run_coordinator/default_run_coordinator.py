@@ -1,7 +1,7 @@
 import logging
 
 import dagster._check as check
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from .base import RunCoordinator, SubmitRunContext
@@ -30,7 +30,7 @@ class DefaultRunCoordinator(RunCoordinator, ConfigurableClass):
     def submit_run(self, context: SubmitRunContext) -> PipelineRun:
         pipeline_run = context.pipeline_run
 
-        if pipeline_run.status == PipelineRunStatus.NOT_STARTED:
+        if pipeline_run.status == DagsterRunStatus.NOT_STARTED:
             self._instance.launch_run(pipeline_run.run_id, context.workspace)
         else:
             self._logger.warning(

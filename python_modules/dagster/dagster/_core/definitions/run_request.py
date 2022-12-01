@@ -4,7 +4,7 @@ from typing import Any, Mapping, NamedTuple, Optional, Sequence
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import AssetKey
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes.serdes import register_serdes_enum_fallbacks, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
@@ -116,7 +116,7 @@ class PipelineRunReaction(
         [
             ("pipeline_run", Optional[PipelineRun]),
             ("error", Optional[SerializableErrorInfo]),
-            ("run_status", Optional[PipelineRunStatus]),
+            ("run_status", Optional[DagsterRunStatus]),
         ],
     )
 ):
@@ -134,11 +134,11 @@ class PipelineRunReaction(
         cls,
         pipeline_run: Optional[PipelineRun],
         error: Optional[SerializableErrorInfo] = None,
-        run_status: Optional[PipelineRunStatus] = None,
+        run_status: Optional[DagsterRunStatus] = None,
     ):
         return super(PipelineRunReaction, cls).__new__(
             cls,
             pipeline_run=check.opt_inst_param(pipeline_run, "pipeline_run", PipelineRun),
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
-            run_status=check.opt_inst_param(run_status, "run_status", PipelineRunStatus),
+            run_status=check.opt_inst_param(run_status, "run_status", DagsterRunStatus),
         )

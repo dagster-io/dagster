@@ -26,7 +26,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import RunLauncher
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun, RunsFilter
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._daemon.controller import create_daemon_grpc_server_registry
@@ -272,9 +272,9 @@ def poll_for_finished_run(instance, run_id=None, timeout=20, run_tags=None):
         run_ids=[run_id] if run_id else None,
         tags=run_tags,
         statuses=[
-            PipelineRunStatus.SUCCESS,
-            PipelineRunStatus.FAILURE,
-            PipelineRunStatus.CANCELED,
+            DagsterRunStatus.SUCCESS,
+            DagsterRunStatus.FAILURE,
+            DagsterRunStatus.CANCELED,
         ],
     )
 
@@ -375,7 +375,7 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
     def launch_run(self, context):
         run = context.pipeline_run
         check.inst_param(run, "run", PipelineRun)
-        check.invariant(run.status == PipelineRunStatus.STARTING)
+        check.invariant(run.status == DagsterRunStatus.STARTING)
 
         if self._bad_run_ids and run.run_id in self._bad_run_ids:
             raise Exception(f"Bad run {run.run_id}")

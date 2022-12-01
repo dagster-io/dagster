@@ -52,10 +52,10 @@ from dagster._core.errors import (
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
+    DagsterRunStatus,
     JobBucket,
     PipelineRun,
     PipelineRunStatsSnapshot,
-    PipelineRunStatus,
     RunPartitionData,
     RunRecord,
     RunsFilter,
@@ -1204,7 +1204,7 @@ class DagsterInstance:
 
         if strategy == ReexecutionStrategy.FROM_FAILURE:
             check.invariant(
-                parent_run.status == PipelineRunStatus.FAILURE,
+                parent_run.status == DagsterRunStatus.FAILURE,
                 "Cannot reexecute from failure a run that is not failed",
             )
 
@@ -1235,7 +1235,7 @@ class DagsterInstance:
             mode=mode,
             solids_to_execute=parent_run.solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
-            status=PipelineRunStatus.NOT_STARTED,
+            status=DagsterRunStatus.NOT_STARTED,
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
@@ -1284,7 +1284,7 @@ class DagsterInstance:
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
-            status=PipelineRunStatus.MANAGED,
+            status=DagsterRunStatus.MANAGED,
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,

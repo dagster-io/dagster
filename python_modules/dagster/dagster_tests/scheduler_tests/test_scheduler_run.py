@@ -37,7 +37,7 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS
-from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
@@ -584,7 +584,7 @@ def validate_run_started(
         if partition_time:
             assert run.run_config == _solid_config(partition_time)
     else:
-        assert run.status == PipelineRunStatus.FAILURE
+        assert run.status == DagsterRunStatus.FAILURE
 
 
 def wait_for_all_runs_to_start(instance, timeout=10):
@@ -595,7 +595,7 @@ def wait_for_all_runs_to_start(instance, timeout=10):
         time.sleep(0.5)
 
         not_started_runs = [
-            run for run in instance.get_runs() if run.status == PipelineRunStatus.NOT_STARTED
+            run for run in instance.get_runs() if run.status == DagsterRunStatus.NOT_STARTED
         ]
 
         if len(not_started_runs) == 0:

@@ -5,7 +5,7 @@ from dagster import DagsterEvent, DagsterEventType, IntSource, String
 from dagster import _check as check
 from dagster._builtins import Bool
 from dagster._config import Array, Field, Noneable, ScalarUnion, Shape
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from .base import RunCoordinator, SubmitRunContext
@@ -123,7 +123,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
     def submit_run(self, context: SubmitRunContext) -> PipelineRun:
         pipeline_run = context.pipeline_run
 
-        if pipeline_run.status == PipelineRunStatus.NOT_STARTED:
+        if pipeline_run.status == DagsterRunStatus.NOT_STARTED:
             enqueued_event = DagsterEvent(
                 event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
                 pipeline_name=pipeline_run.pipeline_name,
@@ -147,7 +147,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             return False
         # NOTE: possible race condition if the dequeuer acts on this run at the same time
         # https://github.com/dagster-io/dagster/issues/3323
-        if run.status == PipelineRunStatus.QUEUED:
+        if run.status == DagsterRunStatus.QUEUED:
             self._instance.report_run_canceling(
                 run,
                 message="Canceling run from the queue.",

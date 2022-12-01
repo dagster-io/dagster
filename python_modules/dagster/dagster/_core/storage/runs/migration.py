@@ -8,7 +8,7 @@ from dagster._serdes import deserialize_as
 
 from ...execution.backfill import PartitionBackfill
 from ...execution.bulk_actions import BulkActionType
-from ..pipeline_run import PipelineRun, PipelineRunStatus
+from ..pipeline_run import DagsterRunStatus, PipelineRun
 from ..runs.base import RunStorage
 from ..runs.schema import BulkActionsTable, RunTagsTable, RunsTable
 from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, REPOSITORY_LABEL_TAG
@@ -32,10 +32,10 @@ OPTIONAL_DATA_MIGRATIONS = {
 CHUNK_SIZE = 100
 
 UNSTARTED_RUN_STATUSES = {
-    PipelineRunStatus.QUEUED,
-    PipelineRunStatus.NOT_STARTED,
-    PipelineRunStatus.MANAGED,
-    PipelineRunStatus.STARTING,
+    DagsterRunStatus.QUEUED,
+    DagsterRunStatus.NOT_STARTED,
+    DagsterRunStatus.MANAGED,
+    DagsterRunStatus.STARTING,
 }
 
 

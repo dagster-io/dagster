@@ -6,7 +6,7 @@ from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.host_mode import execute_run_host_mode
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.multiprocess import MultiprocessExecutor
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import ModeDefinition, pipeline, solid
 
@@ -104,7 +104,7 @@ def test_host_run_worker():
             raise_on_error=True,
         )
 
-        assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
+        assert instance.get_run_by_id(pipeline_run.run_id).status == DagsterRunStatus.SUCCESS
 
         logs = instance.all_logs(pipeline_run.run_id)
         assert any(
@@ -152,7 +152,7 @@ def test_custom_executor_fn():
             raise_on_error=True,
         )
 
-        assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
+        assert instance.get_run_by_id(pipeline_run.run_id).status == DagsterRunStatus.SUCCESS
 
         logs = instance.all_logs(pipeline_run.run_id)
         assert any(

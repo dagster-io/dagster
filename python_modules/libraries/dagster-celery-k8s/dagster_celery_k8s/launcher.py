@@ -18,7 +18,7 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._core.launcher.base import CheckRunHealthResult, WorkerStatus
 from dagster._core.origin import PipelinePythonOrigin
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import frozentags, merge_dicts
@@ -272,7 +272,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         if not pipeline_run:
             return False
 
-        if pipeline_run.status != PipelineRunStatus.STARTED:
+        if pipeline_run.status != DagsterRunStatus.STARTED:
             return False
 
         return True

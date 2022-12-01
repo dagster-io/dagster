@@ -3,7 +3,7 @@ from typing import Tuple, cast
 
 import dagster._check as check
 from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun
 from dagster._utils import send_interrupt
 
 
@@ -23,8 +23,8 @@ def _kill_on_cancel(instance_ref: InstanceRef, run_id, shutdown_event):
                 ),
             )
             if run.status in [
-                PipelineRunStatus.CANCELING,
-                PipelineRunStatus.CANCELED,
+                DagsterRunStatus.CANCELING,
+                DagsterRunStatus.CANCELED,
             ]:
                 print(  # pylint: disable=print-call
                     f"Detected run status {run.status}, sending interrupt to main thread"

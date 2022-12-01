@@ -33,12 +33,7 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.selector import parse_step_selection
-from dagster._core.storage.pipeline_run import (
-    DagsterRun,
-    DagsterRunStatus,
-    PipelineRun,
-    PipelineRunStatus,
-)
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, PipelineRun
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster._core.utils import str_format_set
@@ -86,7 +81,7 @@ def execute_run_iterator(
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
-    if pipeline_run.status == PipelineRunStatus.CANCELED:
+    if pipeline_run.status == DagsterRunStatus.CANCELED:
         # This can happen if the run was force-terminated while it was starting
         def gen_execute_on_cancel():
             yield instance.report_engine_event(
@@ -97,7 +92,7 @@ def execute_run_iterator(
         return gen_execute_on_cancel()
 
     if not resume_from_failure:
-        if pipeline_run.status not in (PipelineRunStatus.NOT_STARTED, PipelineRunStatus.STARTING):
+        if pipeline_run.status not in (DagsterRunStatus.NOT_STARTED, DagsterRunStatus.STARTING):
             if instance.run_monitoring_enabled:
                 # This can happen if the pod was unexpectedly restarted by the cluster - ignore it since
                 # the run monitoring daemon will also spin up a new pod
@@ -133,8 +128,8 @@ def execute_run_iterator(
 
     else:
         check.invariant(
-            pipeline_run.status == PipelineRunStatus.STARTED
-            or pipeline_run.status == PipelineRunStatus.STARTING,
+            pipeline_run.status == DagsterRunStatus.STARTED
+            or pipeline_run.status == DagsterRunStatus.STARTING,
             desc="Run of {} ({}) in state {}, expected STARTED or STARTING because it's "
             "resuming from a run worker failure".format(
                 pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
@@ -224,7 +219,7 @@ def execute_run(
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
-    if pipeline_run.status == PipelineRunStatus.CANCELED:
+    if pipeline_run.status == DagsterRunStatus.CANCELED:
         message = "Not starting execution since the run was canceled before execution could start"
         instance.report_engine_event(
             message,
@@ -233,8 +228,8 @@ def execute_run(
         raise DagsterInvariantViolationError(message)
 
     check.invariant(
-        pipeline_run.status == PipelineRunStatus.NOT_STARTED
-        or pipeline_run.status == PipelineRunStatus.STARTING,
+        pipeline_run.status == DagsterRunStatus.NOT_STARTED
+        or pipeline_run.status == DagsterRunStatus.STARTING,
         desc="Run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
             pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
         ),
@@ -1116,9 +1111,9 @@ def pipeline_execution_iterator(
     finally:
         if pipeline_canceled_info:
             reloaded_run = pipeline_context.instance.get_run_by_id(pipeline_context.run_id)
-            if reloaded_run and reloaded_run.status == PipelineRunStatus.CANCELING:
+            if reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELING:
                 event = DagsterEvent.pipeline_canceled(pipeline_context, pipeline_canceled_info)
-            elif reloaded_run and reloaded_run.status == PipelineRunStatus.CANCELED:
+            elif reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELED:
                 # This happens if the run was force-terminated but was still able to send
                 # a cancellation request
                 event = DagsterEvent.engine_event(

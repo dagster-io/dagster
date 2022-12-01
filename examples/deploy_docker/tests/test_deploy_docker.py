@@ -7,7 +7,7 @@ from contextlib import contextmanager
 import requests
 
 from dagster import file_relative_path
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -188,7 +188,7 @@ def test_deploy_docker():
         run_id = run["runId"]
         assert run["status"] == "QUEUED"
 
-        _wait_for_run_status(run_id, dagit_host, PipelineRunStatus.SUCCESS)
+        _wait_for_run_status(run_id, dagit_host, DagsterRunStatus.SUCCESS)
 
         # Launch a job that uses the docker executor
 
@@ -217,7 +217,7 @@ def test_deploy_docker():
         run_id = run["runId"]
         assert run["status"] == "QUEUED"
 
-        _wait_for_run_status(run_id, dagit_host, PipelineRunStatus.SUCCESS)
+        _wait_for_run_status(run_id, dagit_host, DagsterRunStatus.SUCCESS)
 
         # Launch a hanging pipeline and terminate it
         variables = {
@@ -244,7 +244,7 @@ def test_deploy_docker():
         run = launch_res["data"]["launchPipelineExecution"]["run"]
         hanging_run_id = run["runId"]
 
-        _wait_for_run_status(hanging_run_id, dagit_host, PipelineRunStatus.STARTED)
+        _wait_for_run_status(hanging_run_id, dagit_host, DagsterRunStatus.STARTED)
 
         terminate_res = requests.post(
             "http://{dagit_host}:3000/graphql?query={query_string}&variables={variables}".format(
@@ -259,7 +259,7 @@ def test_deploy_docker():
             == "TerminateRunSuccess"
         ), str(terminate_res)
 
-        _wait_for_run_status(hanging_run_id, dagit_host, PipelineRunStatus.CANCELED)
+        _wait_for_run_status(hanging_run_id, dagit_host, DagsterRunStatus.CANCELED)
 
 
 def _wait_for_run_status(run_id, dagit_host, desired_status):
