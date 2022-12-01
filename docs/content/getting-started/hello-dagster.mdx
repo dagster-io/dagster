@@ -36,11 +36,10 @@ def hackernews_top_story_ids():
     return top_story_ids[:10]
 
 
-# asset dependencies can be inferred from inputs
+# asset dependencies can be inferred from parameter names
 @asset
 def hackernews_top_stories(hackernews_top_story_ids):
     """Get items based on story ids from the HackerNews items endpoint"""
-
     results = []
     for item_id in hackernews_top_story_ids:
         item = requests.get(
@@ -53,7 +52,7 @@ def hackernews_top_stories(hackernews_top_story_ids):
     # recorded metadata can be customized
     metadata = {
         "num_records": len(df),
-        "preview": MetadataValue.md(df.to_markdown()),
+        "preview": MetadataValue.md(df[["title", "by", "url"]].to_markdown()),
     }
 
     return Output(value=df, metadata=metadata)
@@ -90,7 +89,7 @@ Unsure? Check out the [installation guide](/getting-started/install).
 
 2. In your browser, navigate to [http://localhost:3000/](http://localhost:3000).
 
-3. Click **Materialize All** to run the pipeline and create your assets:
+3. Click **Materialize All** to run the pipeline and create your assets. Materializing an asset runs the asset function and saves the result. This pipeline uses the Dagster defaults to save the result to a pickle file on disk.
 
    <Image
    alt="HackerNews assets in Dagit's Asset Graph, unmaterialized"
@@ -116,8 +115,8 @@ But wait - there's more. Because the `hackernews_top_stories` asset specified `m
    <Image
    alt="Markdown preview of HackerNews top 10 stories"
    src="/images/getting-started/hello-dagster/hn-preview.png"
-   width={2396}
-   height={1956}
+   width={3444}
+   height={1754}
    />
 
 ---

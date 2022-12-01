@@ -16,11 +16,10 @@ def hackernews_top_story_ids():
     return top_story_ids[:10]
 
 
-# asset dependencies can be inferred from inputs
+# asset dependencies can be inferred from parameter names
 @asset
 def hackernews_top_stories(hackernews_top_story_ids):
     """Get items based on story ids from the HackerNews items endpoint"""
-
     results = []
     for item_id in hackernews_top_story_ids:
         item = requests.get(
@@ -33,7 +32,7 @@ def hackernews_top_stories(hackernews_top_story_ids):
     # recorded metadata can be customized
     metadata = {
         "num_records": len(df),
-        "preview": MetadataValue.md(df.to_markdown()),
+        "preview": MetadataValue.md(df[["title", "by", "url"]].to_markdown()),
     }
 
     return Output(value=df, metadata=metadata)
