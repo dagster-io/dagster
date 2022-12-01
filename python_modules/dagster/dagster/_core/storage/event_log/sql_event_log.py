@@ -816,15 +816,15 @@ class SqlEventLogStorage(EventLogStorage):
 
         return query
 
-    def _apply_tags_table_joins(self, table, tags):
-        multi_join = len(tags) > 1
+    def _apply_tags_table_joins(self, table, tags, asset_key):
         event_id_col = table.c.id if table == SqlEventLogStorageTable else table.c.event_id
         for key, value in tags.items():
-            tags_table = AssetEventTagsTable.alias() if multi_join else AssetEventTagsTable
+            tags_table = AssetEventTagsTable.alias()
             table = table.join(
                 tags_table,
                 db.and_(
                     event_id_col == tags_table.c.event_id,
+                    not asset_key or tags_table.c.asset_key == asset_key.to_string(),
                     tags_table.c.key == key,
                     (
                         tags_table.c.value == value
@@ -852,7 +852,9 @@ class SqlEventLogStorage(EventLogStorage):
             asset_details = None
 
         if event_records_filter.tags and not self.supports_intersect:
-            table = self._apply_tags_table_joins(SqlEventLogStorageTable, event_records_filter.tags)
+            table = self._apply_tags_table_joins(
+                SqlEventLogStorageTable, event_records_filter.tags, event_records_filter.asset_key
+            )
         else:
             table = SqlEventLogStorageTable
 
@@ -1399,7 +1401,7 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             )
         else:
-            table = self._apply_tags_table_joins(AssetEventTagsTable, filter_tags)
+            table = self._apply_tags_table_joins(AssetEventTagsTable, filter_tags, asset_key)
             tags_query = db.select(
                 [
                     AssetEventTagsTable.c.key,
@@ -1407,6 +1409,7 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetEventTagsTable.c.event_id,
                 ]
             ).select_from(table)
+
             if asset_details and asset_details.last_wipe_timestamp:
                 tags_query = tags_query.where(
                     AssetEventTagsTable.c.event_timestamp

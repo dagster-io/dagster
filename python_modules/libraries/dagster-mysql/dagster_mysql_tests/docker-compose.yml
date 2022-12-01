@@ -30,12 +30,12 @@ services:
     expose:
       - 3307
     networks:
-      - mysql-backcompat
+      - mysqlbackcompat
 
 networks:
   mysql:
     driver: bridge
     name: mysql
-  mysql-backcompat:
+  mysqlbackcompat:
     driver: bridge
-    name: mysql-backcompat
+    name: mysqlbackcompat
