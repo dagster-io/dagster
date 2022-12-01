@@ -369,7 +369,7 @@ What if you want to do additional analysis of the Iris dataset and create a new 
 
 The answer is simple: use the `iris_dataset` Dagster asset!
 
-In the Jupyter notebook, import the Dagster repository and use the <PyObject object="RepositoryDefinition" method="load_asset_value" /> function to load the data for the `iris_dataset` asset:
+In the Jupyter notebook, import the Dagster repository and use the <PyObject object="RepositoryDefinition" method="load_asset_value" /> function to load the data for the `iris_dataset` asset we created in [Step 5.1: Create the Iris dataset asset](#step-51-create-the-iris-dataset-asset):
 
 ```python
 from tutorial_template import template_tutorial
@@ -382,6 +382,8 @@ Then, whenever you run the notebook using Jupyter, you'll be able to work with t
 ```shell
 jupyter notebook /path/to/new/notebook.ipynb
 ```
+
+Behind the scenes, when `load_asset_value` is called, Dagster fetches the value of `iris_dataset` that was most recently materialized and stored by an I/O manager.
 
 To integrate the new notebook, follow the steps from [Step 5.3](#step-53-modify-the-notebook) to add the `parameters` tag to the cell that fetches the `iris_dataset` asset via `load_asset_value`.
 
