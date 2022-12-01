@@ -379,12 +379,11 @@ def test_make_repo(
 
         repo = (
             make_dagster_repo_from_airflow_dags_path(
-                tmpdir_path,
-                repo_name,
+                tmpdir_path, repo_name, use_ephemeral_airflow_db=False
             )
             if fn_arg_path is None
             else make_dagster_repo_from_airflow_dags_path(
-                os.path.join(tmpdir_path, fn_arg_path), repo_name
+                os.path.join(tmpdir_path, fn_arg_path), repo_name, use_ephemeral_airflow_db=False
             )
         )
 
