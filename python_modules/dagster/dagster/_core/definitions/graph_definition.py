@@ -623,7 +623,7 @@ class GraphDefinition(NodeDefinition):
             hook_defs=hooks,
             version_strategy=version_strategy,
             op_retry_policy=op_retry_policy,
-            asset_layer=asset_layer,
+            _asset_layer=asset_layer,
             input_values=input_values,
             _subset_selection_data=_asset_selection_data,
             _metadata_entries=_metadata_entries,
