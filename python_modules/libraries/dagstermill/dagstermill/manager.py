@@ -15,6 +15,7 @@ from dagster import (
 from dagster import _check as check
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import RetryRequested
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
@@ -31,7 +32,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, PipelineRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import Materialization, ModeDefinition, PipelineDefinition, SolidDefinition
+from dagster._legacy import Materialization, ModeDefinition, PipelineDefinition
 from dagster._loggers import colored_console_logger
 from dagster._serdes import unpack_value
 from dagster._utils import EventGenerationManager, ensure_gen
@@ -250,11 +251,9 @@ class Manager:
             resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
             mode_def = ModeDefinition(logger_defs=logger_defs, resource_defs=resource_defs)
 
-        solid_def = SolidDefinition(
+        solid_def = OpDefinition(
             name="this_solid",
-            input_defs=[],
             compute_fn=lambda *args, **kwargs: None,
-            output_defs=[],
             description="Ephemeral solid constructed by dagstermill.get_context()",
             required_resource_keys=mode_def.resource_key_set,
         )

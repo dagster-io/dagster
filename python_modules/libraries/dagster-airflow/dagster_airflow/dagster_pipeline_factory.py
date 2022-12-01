@@ -33,9 +33,10 @@ from dagster import (
 )
 from dagster import _check as check
 from dagster import op, repository, resource
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX, validate_tags
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
-from dagster._legacy import ModeDefinition, PipelineDefinition, SolidDefinition
+from dagster._legacy import ModeDefinition, PipelineDefinition
 from dagster._utils.schedules import is_valid_cron_schedule
 
 # pylint: disable=no-name-in-module,import-error
@@ -586,7 +587,7 @@ def _traverse_airflow_dag(
     check.inst_param(dag, "dag", DAG)
     check.inst_param(task, "task", BaseOperator)
     check.list_param(seen_tasks, "seen_tasks", BaseOperator)
-    check.list_param(solid_defs, "solid_defs", SolidDefinition)
+    check.list_param(solid_defs, "solid_defs", OpDefinition)
     check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     unique_id = check.opt_int_param(unique_id, "unique_id")
     mock_xcom = check.opt_bool_param(mock_xcom, "mock_xcom")

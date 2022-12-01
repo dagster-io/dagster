@@ -29,8 +29,8 @@ from .dependency import DependencyStructure, Node, NodeHandle, NodeInput
 from .graph_definition import GraphDefinition
 from .logger_definition import LoggerDefinition
 from .mode import ModeDefinition
+from .op_definition import NodeDefinition, OpDefinition
 from .resource_definition import ResourceDefinition
-from .solid_definition import NodeDefinition, SolidDefinition
 
 
 def define_resource_dictionary_cls(
@@ -457,7 +457,7 @@ def define_isolid_field(
     # 4) `configured` composite with field mapping: a 'config' key with the config_schema that was
     #    provided when `configured` was called (via CompositeSolidDefinition#config_schema)
 
-    if isinstance(solid.definition, SolidDefinition):
+    if isinstance(solid.definition, OpDefinition):
         return construct_leaf_solid_config(
             solid,
             handle,
@@ -565,7 +565,7 @@ def define_solid_dictionary_cls(
 
 
 def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigType]:
-    if isinstance(node_def, SolidDefinition):
+    if isinstance(node_def, OpDefinition):
         if node_def.has_config_field:
             yield from node_def.get_config_field().config_type.type_iterator()
     elif isinstance(node_def, GraphDefinition):

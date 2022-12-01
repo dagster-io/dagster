@@ -39,7 +39,6 @@ from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
-from dagster._core.definitions.solid_definition import SolidDefinition
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
@@ -507,8 +506,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._step_launcher
 
     @property
-    def solid_def(self) -> SolidDefinition:
-        return self.solid.definition.ensure_solid_def()
+    def solid_def(self) -> OpDefinition:
+        return self.solid.definition.ensure_op_def()
 
     @property
     def op_def(self) -> OpDefinition:

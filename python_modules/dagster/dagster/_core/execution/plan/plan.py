@@ -24,7 +24,7 @@ from dagster._core.definitions import (
     Node,
     NodeHandle,
     NodeOutput,
-    SolidDefinition,
+    OpDefinition,
 )
 from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.dependency import DependencyStructure
@@ -346,7 +346,7 @@ class _PlanBuilder:
 
             ### 2a. COMPUTE FUNCTION
             # Create and add execution plan step for the solid compute function
-            if isinstance(solid.definition, SolidDefinition):
+            if isinstance(solid.definition, OpDefinition):
                 step_outputs = create_step_outputs(
                     solid, handle, self.resolved_run_config, asset_layer
                 )

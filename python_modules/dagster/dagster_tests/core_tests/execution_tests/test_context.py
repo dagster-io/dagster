@@ -3,7 +3,6 @@ from dagster import OpExecutionContext, job, op
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
-from dagster._core.definitions.solid_definition import SolidDefinition
 from dagster._core.execution.context.compute import SolidExecutionContext
 from dagster._core.storage.pipeline_run import DagsterRun, PipelineRun
 
@@ -23,7 +22,7 @@ def test_op_execution_context():
         assert context.pipeline_def.name == "foo"
         check.inst(context.pipeline_def, PipelineDefinition)
         assert context.op_config is None
-        check.inst(context.op_def, SolidDefinition)
+        check.inst(context.op_def, OpDefinition)
 
     @job
     def foo():
@@ -49,7 +48,7 @@ def test_solid_execution_context():
         assert context.pipeline_def.name == "foo"
         check.inst(context.pipeline_def, PipelineDefinition)
         assert context.op_config is None
-        check.inst(context.op_def, SolidDefinition)
+        check.inst(context.op_def, OpDefinition)
 
     @job
     def foo():
