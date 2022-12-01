@@ -379,12 +379,11 @@ def test_make_repo(
 
         repo = (
             make_dagster_repo_from_airflow_dags_path(
-                tmpdir_path,
-                repo_name,
+                tmpdir_path, repo_name, use_ephemeral_airflow_db=False
             )
             if fn_arg_path is None
             else make_dagster_repo_from_airflow_dags_path(
-                os.path.join(tmpdir_path, fn_arg_path), repo_name
+                os.path.join(tmpdir_path, fn_arg_path), repo_name, use_ephemeral_airflow_db=False
             )
         )
 
@@ -438,6 +437,8 @@ test_airflow_example_dags_inputs = [
             "airflow_example_trigger_target_dag",
             # sleeps forever, not an example
             "airflow_test_utils",
+            # patching airflow.models.DAG causes this to fail
+            "airflow_example_complex",
         ],
     ),
 ]
@@ -463,5 +464,7 @@ def test_airflow_example_dags(
             job = repo.get_job(job_name)
             result = job.execute_in_process()
             assert result.success
+            for event in result.all_events:
+                assert event.event_type_value != "STEP_FAILURE"
 
     assert set(repo.job_names) == set(expected_job_names)

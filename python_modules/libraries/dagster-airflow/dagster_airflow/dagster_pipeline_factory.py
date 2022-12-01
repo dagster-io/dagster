@@ -1,10 +1,14 @@
 import datetime
+import importlib
 import logging
+import os
 import subprocess
 import sys
+import tempfile
 from contextlib import contextmanager, nullcontext
 from unittest.mock import patch
 
+import airflow
 import dateutil
 import lazy_object_proxy
 import pendulum
@@ -28,10 +32,10 @@ from dagster import (
     ScheduleDefinition,
 )
 from dagster import _check as check
-from dagster import op, repository
+from dagster import op, repository, resource
 from dagster._core.definitions.utils import VALID_NAME_REGEX, validate_tags
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
-from dagster._legacy import PipelineDefinition, SolidDefinition
+from dagster._legacy import ModeDefinition, PipelineDefinition, SolidDefinition
 from dagster._utils.schedules import is_valid_cron_schedule
 
 # pylint: disable=no-name-in-module,import-error
@@ -47,16 +51,47 @@ class DagsterAirflowError(Exception):
     pass
 
 
+if os.name == "nt":
+    import msvcrt  # pylint: disable=import-error
+
+    def portable_lock(fp):
+        fp.seek(0)
+        msvcrt.locking(fp.fileno(), msvcrt.LK_LOCK, 1)
+
+    def portable_unlock(fp):
+        fp.seek(0)
+        msvcrt.locking(fp.fileno(), msvcrt.LK_UNLCK, 1)
+
+else:
+    import fcntl
+
+    def portable_lock(fp):
+        fcntl.flock(fp.fileno(), fcntl.LOCK_EX)
+
+    def portable_unlock(fp):
+        fcntl.flock(fp.fileno(), fcntl.LOCK_UN)
+
+
+class Locker:
+    def __init__(self, lock_file_path="."):
+        self.lock_file_path = lock_file_path
+        self.fp = None
+
+    def __enter__(self):
+        self.fp = open(f"{self.lock_file_path}/lockfile.lck", "w+", encoding="utf-8")
+        portable_lock(self.fp)
+
+    def __exit__(self, _type, value, tb):
+        portable_unlock(self.fp)
+        self.fp.close()
+
+
 def initialize_airflow_1_database():
-    p = subprocess.run(["airflow", "checkdb"], check=True, capture_output=True)
-    if "WARNING" in p.stdout.decode("utf-8"):
-        subprocess.run(["airflow", "initdb"], check=True)
+    subprocess.run(["airflow", "initdb"], check=True)
 
 
 def initialize_airflow_2_database():
-    p = subprocess.run(["airflow", "db", "check"], check=True, capture_output=True)
-    if "WARNING" in p.stdout.decode("utf-8"):
-        subprocess.run(["airflow", "db", "init"], check=True)
+    subprocess.run(["airflow", "db", "init"], check=True)
 
 
 def contains_duplicate_task_names(dag_bag, refresh_from_airflow_db):
@@ -82,7 +117,7 @@ def make_dagster_repo_from_airflow_dag_bag(
     refresh_from_airflow_db=False,
     use_airflow_template_context=False,
     mock_xcom=False,
-    use_emphemeral_airflow_db=False,
+    use_ephemeral_airflow_db=False,
 ):
     """Construct a Dagster repository corresponding to Airflow DAGs in DagBag.
 
@@ -105,11 +140,11 @@ def make_dagster_repo_from_airflow_dag_bag(
             DagBag's dags dict without depending on Airflow DB. (default: False)
         use_airflow_template_context (bool): If True, will call get_template_context() on the
             Airflow TaskInstance model which requires and modifies the DagRun table. The use_airflow_template_context
-            setting is ignored if use_emphemeral_airflow_db is True.
+            setting is ignored if use_ephemeral_airflow_db is True.
             (default: False)
         mock_xcom (bool): If True, dagster will mock out all calls made to xcom, features that
             depend on xcom may not work as expected. (default: False)
-        use_emphemeral_airflow_db (bool): If True, dagster will create an emphemeral sqlite airflow
+        use_ephemeral_airflow_db (bool): If True, dagster will create an ephemeral sqlite airflow
             database for each run. (default: False)
 
     Returns:
@@ -120,8 +155,8 @@ def make_dagster_repo_from_airflow_dag_bag(
     check.bool_param(refresh_from_airflow_db, "refresh_from_airflow_db")
     check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     mock_xcom = check.opt_bool_param(mock_xcom, "mock_xcom")
-    use_emphemeral_airflow_db = check.opt_bool_param(
-        use_emphemeral_airflow_db, "use_emphemeral_airflow_db"
+    use_ephemeral_airflow_db = check.opt_bool_param(
+        use_ephemeral_airflow_db, "use_ephemeral_airflow_db"
     )
 
     use_unique_id = contains_duplicate_task_names(dag_bag, refresh_from_airflow_db)
@@ -141,7 +176,7 @@ def make_dagster_repo_from_airflow_dag_bag(
                 tags=None,
                 use_airflow_template_context=use_airflow_template_context,
                 mock_xcom=mock_xcom,
-                use_emphemeral_airflow_db=use_emphemeral_airflow_db,
+                use_ephemeral_airflow_db=use_ephemeral_airflow_db,
             )
         else:
             pipeline_def = make_dagster_pipeline_from_airflow_dag(
@@ -150,11 +185,18 @@ def make_dagster_repo_from_airflow_dag_bag(
                 use_airflow_template_context=use_airflow_template_context,
                 unique_id=count,
                 mock_xcom=mock_xcom,
-                use_emphemeral_airflow_db=use_emphemeral_airflow_db,
+                use_ephemeral_airflow_db=use_ephemeral_airflow_db,
             )
             count += 1
         # pass in tags manually because pipeline_def.graph doesn't have it threaded
-        job_def = pipeline_def.graph.to_job(tags={**pipeline_def.tags})
+        job_def = pipeline_def.graph.to_job(
+            tags={**pipeline_def.tags},
+            resource_defs={
+                "airflow_db": pipeline_def.mode_definitions[0].resource_defs["airflow_db"]
+            }
+            if use_ephemeral_airflow_db
+            else {},
+        )
         schedule_def = make_dagster_schedule_from_airflow_dag(
             dag=dag,
             job_def=job_def,
@@ -216,7 +258,7 @@ def make_dagster_asset_from_airflow_dag(dag, job_def):
 
 
 def make_dagster_repo_from_airflow_example_dags(
-    repo_name="airflow_example_dags_repo", use_emphemeral_airflow_db=True
+    repo_name="airflow_example_dags_repo", use_ephemeral_airflow_db=True
 ):
     """Construct a Dagster repository for Airflow's example DAGs.
 
@@ -241,7 +283,7 @@ def make_dagster_repo_from_airflow_example_dags(
 
     Args:
         repo_name (str): Name for generated RepositoryDefinition
-        use_emphemeral_airflow_db (bool): If True, dagster will create an emphemeral sqlite airflow
+        use_ephemeral_airflow_db (bool): If True, dagster will create an ephemeral sqlite airflow
             database for each run. (default: False)
 
     Returns:
@@ -257,7 +299,7 @@ def make_dagster_repo_from_airflow_example_dags(
     patch_airflow_example_dag(dag_bag)
 
     return make_dagster_repo_from_airflow_dag_bag(
-        dag_bag, repo_name, use_emphemeral_airflow_db=use_emphemeral_airflow_db
+        dag_bag, repo_name, use_ephemeral_airflow_db=use_ephemeral_airflow_db
     )
 
 
@@ -268,7 +310,7 @@ def make_dagster_repo_from_airflow_dags_path(
     store_serialized_dags=False,
     use_airflow_template_context=False,
     mock_xcom=False,
-    use_emphemeral_airflow_db=True,
+    use_ephemeral_airflow_db=True,
 ):
     """Construct a Dagster repository corresponding to Airflow DAGs in dag_path.
 
@@ -299,11 +341,11 @@ def make_dagster_repo_from_airflow_dags_path(
             from Python files. (default: False)
         use_airflow_template_context (bool): If True, will call get_template_context() on the
             Airflow TaskInstance model which requires and modifies the DagRun table. The use_airflow_template_context
-            setting is ignored if use_emphemeral_airflow_db is True.
+            setting is ignored if use_ephemeral_airflow_db is True.
             (default: False)
         mock_xcom (bool): If True, dagster will mock out all calls made to xcom, features that
             depend on xcom may not work as expected. (default: False)
-        use_emphemeral_airflow_db (bool): If True, dagster will create an emphemeral sqlite airflow
+        use_ephemeral_airflow_db (bool): If True, dagster will create an ephemeral sqlite airflow
             database for each run. (default: False)
 
     Returns:
@@ -315,16 +357,14 @@ def make_dagster_repo_from_airflow_dags_path(
     check.bool_param(store_serialized_dags, "store_serialized_dags")
     check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     mock_xcom = check.opt_bool_param(mock_xcom, "mock_xcom")
-    use_emphemeral_airflow_db = check.opt_bool_param(
-        use_emphemeral_airflow_db, "use_emphemeral_airflow_db"
+    use_ephemeral_airflow_db = check.opt_bool_param(
+        use_ephemeral_airflow_db, "use_ephemeral_airflow_db"
     )
-
     try:
         dag_bag = DagBag(
             dag_folder=dag_path,
             include_examples=False,  # Exclude Airflow example dags
             safe_mode=safe_mode,
-            store_serialized_dags=store_serialized_dags,
         )
     except Exception:
         raise DagsterAirflowError("Error initializing airflow.models.dagbag object with arguments")
@@ -334,7 +374,7 @@ def make_dagster_repo_from_airflow_dags_path(
         repo_name,
         use_airflow_template_context=use_airflow_template_context,
         mock_xcom=mock_xcom,
-        use_emphemeral_airflow_db=use_emphemeral_airflow_db,
+        use_ephemeral_airflow_db=use_ephemeral_airflow_db,
     )
 
 
@@ -344,7 +384,7 @@ def make_dagster_pipeline_from_airflow_dag(
     use_airflow_template_context=False,
     unique_id=None,
     mock_xcom=False,
-    use_emphemeral_airflow_db=False,
+    use_ephemeral_airflow_db=False,
 ):
     """Construct a Dagster pipeline corresponding to a given Airflow DAG.
 
@@ -391,13 +431,13 @@ def make_dagster_pipeline_from_airflow_dag(
             execution of Airflow Operators.
         use_airflow_template_context (bool): If True, will call get_template_context() on the
             Airflow TaskInstance model which requires and modifies the DagRun table. The use_airflow_template_context
-            setting is ignored if use_emphemeral_airflow_db is True.
+            setting is ignored if use_ephemeral_airflow_db is True.
             (default: False)
         unique_id (int): If not None, this id will be postpended to generated solid names. Used by
             framework authors to enforce unique solid names within a repo.
         mock_xcom (bool): If not None, dagster will mock out all calls made to xcom, features that
             depend on xcom may not work as expected.
-        use_emphemeral_airflow_db (bool): If True, dagster will create an emphemeral sqlite airflow
+        use_ephemeral_airflow_db (bool): If True, dagster will create an ephemeral sqlite airflow
             database for each run
 
     Returns:
@@ -409,8 +449,8 @@ def make_dagster_pipeline_from_airflow_dag(
     check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     unique_id = check.opt_int_param(unique_id, "unique_id")
     mock_xcom = check.opt_bool_param(mock_xcom, "mock_xcom")
-    use_emphemeral_airflow_db = check.opt_bool_param(
-        use_emphemeral_airflow_db, "use_emphemeral_airflow_db"
+    use_ephemeral_airflow_db = check.opt_bool_param(
+        use_ephemeral_airflow_db, "use_ephemeral_airflow_db"
     )
 
     if IS_AIRFLOW_INGEST_PIPELINE_STR not in tags:
@@ -419,12 +459,67 @@ def make_dagster_pipeline_from_airflow_dag(
     tags = validate_tags(tags)
 
     pipeline_dependencies, solid_defs = _get_pipeline_definition_args(
-        dag, use_airflow_template_context, unique_id, mock_xcom, use_emphemeral_airflow_db
+        dag, use_airflow_template_context, unique_id, mock_xcom, use_ephemeral_airflow_db
     )
+
+    @resource(
+        config_schema={
+            "dag_location": Field(str, default_value=dag.fileloc),
+            "dag_id": Field(str, default_value=dag.dag_id),
+        }
+    )
+    def airflow_db(context):
+        airflow_home_path = os.path.join(tempfile.gettempdir(), f"dagster_airflow_{context.run_id}")
+        os.environ["AIRFLOW_HOME"] = airflow_home_path
+        os.makedirs(airflow_home_path, exist_ok=True)
+        with Locker(airflow_home_path):
+            airflow_initialized = os.path.exists(f"{airflow_home_path}/airflow.db")
+            if not airflow_initialized:
+                if airflow_version >= "2.0.0":
+                    initialize_airflow_2_database()
+                else:
+                    initialize_airflow_1_database()
+            # because AIRFLOW_HOME has been overriden airflow needs to be reloaded
+            if airflow_version >= "2.0.0":
+                importlib.reload(airflow.configuration)
+                importlib.reload(airflow.settings)
+                importlib.reload(airflow)
+            else:
+                importlib.reload(airflow)
+
+            dag_bag = airflow.models.dagbag.DagBag(
+                dag_folder=context.resource_config["dag_location"], include_examples=True
+            )
+            dag = dag_bag.get_dag(context.resource_config["dag_id"])
+            execution_date_str = context.dagster_run.tags.get(AIRFLOW_EXECUTION_DATE_STR)
+            execution_date = dateutil.parser.parse(execution_date_str)
+            dagrun = dag.get_dagrun(execution_date=execution_date)
+            if not dagrun:
+                if airflow_version >= "2.0.0":
+                    dagrun = dag.create_dagrun(
+                        state=DagRunState.RUNNING,
+                        execution_date=execution_date,
+                        run_type=DagRunType.MANUAL,
+                    )
+                else:
+                    dagrun = dag.create_dagrun(
+                        run_id=f"dagster_airflow_run_{execution_date}",
+                        state=State.RUNNING,
+                        execution_date=execution_date,
+                    )
+
+        return {
+            "dag": dag,
+            "dagrun": dagrun,
+        }
+
     pipeline_def = PipelineDefinition(
-        name=normalized_name(dag.dag_id, None),
+        name=normalized_name(dag.dag_id),
         solid_defs=solid_defs,
         dependencies=pipeline_dependencies,
+        mode_defs=[ModeDefinition(resource_defs={"airflow_db": airflow_db})]
+        if use_ephemeral_airflow_db
+        else [],
         tags=tags,
     )
     return pipeline_def
@@ -433,7 +528,7 @@ def make_dagster_pipeline_from_airflow_dag(
 # Airflow DAG ids and Task ids allow a larger valid character set (alphanumeric characters,
 # dashes, dots and underscores) than Dagster's naming conventions (alphanumeric characters,
 # underscores), so Dagster will strip invalid characters and replace with '_'
-def normalized_name(name, unique_id):
+def normalized_name(name, unique_id=None):
     base_name = "airflow_" + "".join(c if VALID_NAME_REGEX.match(c) else "_" for c in name)
     if not unique_id:
         return base_name
@@ -446,14 +541,14 @@ def _get_pipeline_definition_args(
     use_airflow_template_context,
     unique_id=None,
     mock_xcom=False,
-    use_emphemeral_airflow_db=False,
+    use_ephemeral_airflow_db=False,
 ):
     check.inst_param(dag, "dag", DAG)
     check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     unique_id = check.opt_int_param(unique_id, "unique_id")
     mock_xcom = check.opt_bool_param(mock_xcom, "mock_xcom")
-    use_emphemeral_airflow_db = check.opt_bool_param(
-        use_emphemeral_airflow_db, "use_emphemeral_airflow_db"
+    use_ephemeral_airflow_db = check.opt_bool_param(
+        use_ephemeral_airflow_db, "use_ephemeral_airflow_db"
     )
 
     pipeline_dependencies = {}
@@ -472,7 +567,7 @@ def _get_pipeline_definition_args(
             use_airflow_template_context,
             unique_id,
             mock_xcom,
-            use_emphemeral_airflow_db,
+            use_ephemeral_airflow_db,
         )
     return (pipeline_dependencies, solid_defs)
 
@@ -486,7 +581,7 @@ def _traverse_airflow_dag(
     use_airflow_template_context,
     unique_id,
     mock_xcom,
-    use_emphemeral_airflow_db,
+    use_ephemeral_airflow_db,
 ):
     check.inst_param(dag, "dag", DAG)
     check.inst_param(task, "task", BaseOperator)
@@ -495,13 +590,13 @@ def _traverse_airflow_dag(
     check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     unique_id = check.opt_int_param(unique_id, "unique_id")
     mock_xcom = check.opt_bool_param(mock_xcom, "mock_xcom")
-    use_emphemeral_airflow_db = check.opt_bool_param(
-        use_emphemeral_airflow_db, "use_emphemeral_airflow_db"
+    use_ephemeral_airflow_db = check.opt_bool_param(
+        use_ephemeral_airflow_db, "use_ephemeral_airflow_db"
     )
 
     seen_tasks.append(task)
     current_solid = make_dagster_solid_from_airflow_task(
-        dag, task, use_airflow_template_context, unique_id, mock_xcom, use_emphemeral_airflow_db
+        dag, task, use_airflow_template_context, unique_id, mock_xcom, use_ephemeral_airflow_db
     )
     solid_defs.append(current_solid)
 
@@ -534,7 +629,7 @@ def _traverse_airflow_dag(
                 use_airflow_template_context,
                 unique_id,
                 mock_xcom,
-                use_emphemeral_airflow_db,
+                use_ephemeral_airflow_db,
             )
 
 
@@ -568,35 +663,30 @@ def make_dagster_solid_from_airflow_task(
     use_airflow_template_context,
     unique_id=None,
     mock_xcom=False,
-    use_emphemeral_airflow_db=False,
+    use_ephemeral_airflow_db=False,
 ):
     check.inst_param(dag, "dag", DAG)
     check.inst_param(task, "task", BaseOperator)
     check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     unique_id = check.opt_int_param(unique_id, "unique_id")
     mock_xcom = check.opt_bool_param(mock_xcom, "mock_xcom")
-    use_emphemeral_airflow_db = check.opt_bool_param(
-        use_emphemeral_airflow_db, "use_emphemeral_airflow_db"
+    use_ephemeral_airflow_db = check.opt_bool_param(
+        use_ephemeral_airflow_db, "use_ephemeral_airflow_db"
     )
 
     @op(
         name=normalized_name(task.task_id, unique_id),
+        required_resource_keys={"airflow_db"} if use_ephemeral_airflow_db else None,
         ins={"airflow_task_ready": In(Nothing)},
         out={"airflow_task_complete": Out(Nothing)},
         config_schema={
             "mock_xcom": Field(bool, default_value=mock_xcom),
-            "use_emphemeral_airflow_db": Field(bool, default_value=use_emphemeral_airflow_db),
+            "use_ephemeral_airflow_db": Field(bool, default_value=use_ephemeral_airflow_db),
         },
     )
     def _solid(context):  # pylint: disable=unused-argument
         mock_xcom = context.op_config["mock_xcom"]
-        use_emphemeral_airflow_db = context.op_config["use_emphemeral_airflow_db"]
-        if use_emphemeral_airflow_db:
-            if airflow_version >= "2.0.0":
-                initialize_airflow_2_database()
-            else:
-                initialize_airflow_1_database()
-
+        use_ephemeral_airflow_db = context.op_config["use_ephemeral_airflow_db"]
         if AIRFLOW_EXECUTION_DATE_STR not in context.pipeline_run.tags:
             raise DagsterInvariantViolationError(
                 'Could not find "{AIRFLOW_EXECUTION_DATE_STR}" in {target} tags "{tags}". Please '
@@ -627,17 +717,12 @@ def make_dagster_solid_from_airflow_task(
 
         check.inst_param(execution_date, "execution_date", datetime.datetime)
 
-        with _mock_xcom() if mock_xcom and not use_emphemeral_airflow_db else nullcontext():
+        with _mock_xcom() if mock_xcom and not use_ephemeral_airflow_db else nullcontext():
             with replace_airflow_logger_handlers():
                 if airflow_version >= "2.0.0":
-                    if use_emphemeral_airflow_db:
-                        dagrun = dag.get_dagrun(execution_date=execution_date)
-                        if not dagrun:
-                            dagrun = dag.create_dagrun(
-                                state=DagRunState.RUNNING,
-                                execution_date=execution_date,
-                                run_type=DagRunType.MANUAL,
-                            )
+                    if use_ephemeral_airflow_db:
+                        dag = context.resources.airflow_db["dag"]
+                        dagrun = context.resources.airflow_db["dagrun"]
                         ti = dagrun.get_task_instance(task_id=task.task_id)
                         ti.task = dag.get_task(task_id=task.task_id)
                         ti.run(ignore_ti_state=True)
@@ -656,14 +741,9 @@ def make_dagster_solid_from_airflow_task(
                         task.render_template_fields(ti_context)
                         task.execute(ti_context)
                 else:
-                    if use_emphemeral_airflow_db:
-                        dagrun = dag.get_dagrun(execution_date=execution_date)
-                        if not dagrun:
-                            dagrun = dag.create_dagrun(
-                                run_id=f"dagster_airflow_run_{execution_date}",
-                                state=State.RUNNING,
-                                execution_date=execution_date,
-                            )
+                    if use_ephemeral_airflow_db:
+                        dag = context.resources.airflow_db["dag"]
+                        dagrun = context.resources.airflow_db["dagrun"]
                         ti = dagrun.get_task_instance(task_id=task.task_id)
                         ti.task = dag.get_task(task_id=task.task_id)
                         ti.run(ignore_ti_state=True)
