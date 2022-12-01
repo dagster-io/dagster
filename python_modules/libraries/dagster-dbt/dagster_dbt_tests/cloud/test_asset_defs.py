@@ -1,4 +1,5 @@
 import json
+from typing import List
 
 import pytest
 import responses
@@ -57,7 +58,7 @@ def dbt_cloud_service_fixture():
     )
 
 
-def _add_dbt_cloud_job_responses(dbt_cloud_api_base_url: str, dbt_command: str):
+def _add_dbt_cloud_job_responses(dbt_cloud_api_base_url: str, dbt_commands: List[str]):
     responses.add(
         method=responses.GET,
         url=f"{dbt_cloud_api_base_url}{DBT_CLOUD_ACCOUNT_ID}/jobs/{DBT_CLOUD_JOB_ID}/",
@@ -65,7 +66,9 @@ def _add_dbt_cloud_job_responses(dbt_cloud_api_base_url: str, dbt_command: str):
             "data": {
                 "project_id": DBT_CLOUD_PROJECT_ID,
                 "generate_docs": True,
-                "execute_steps": [dbt_command],
+                "execute_steps": dbt_commands,
+                "name": "A dbt Cloud job",
+                "id": DBT_CLOUD_JOB_ID,
             }
         },
         status=200,
@@ -132,7 +135,7 @@ def test_load_assets_from_dbt_cloud_job(
 ):
     _add_dbt_cloud_job_responses(
         dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
-        dbt_command=f"{dbt_command} {dbt_command_options}",
+        dbt_commands=[f"{dbt_command} {dbt_command_options}"],
     )
 
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
@@ -176,59 +179,26 @@ def test_load_assets_from_dbt_cloud_job(
 
 
 @responses.activate
-def test_invalid_dbt_cloud_job(dbt_cloud, dbt_cloud_service):
+@pytest.mark.parametrize(
+    "invalid_dbt_commands",
+    [
+        [],
+        ["dbt deps"],
+        ["dbt deps", "dbt build"],
+        [f"dbt build --vars '{json.dumps({'static_variable': 'bad'})}'"],
+    ],
+    ids=["empty commands", "no run/build step", "multiple commands", "has static variables"],
+)
+def test_invalid_dbt_cloud_job_commands(dbt_cloud, dbt_cloud_service, invalid_dbt_commands):
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
         dbt_cloud=dbt_cloud, job_id=DBT_CLOUD_JOB_ID
     )
 
-    responses.add(
-        method=responses.GET,
-        url=f"{dbt_cloud_service.api_base_url}{DBT_CLOUD_ACCOUNT_ID}/jobs/{DBT_CLOUD_JOB_ID}/",
-        json={
-            "data": {
-                "project_id": DBT_CLOUD_PROJECT_ID,
-                "generate_docs": True,
-                "execute_steps": [],
-                "name": "A dbt Cloud job",
-                "id": "1",
-            }
-        },
-        status=200,
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_commands=invalid_dbt_commands,
     )
-    with pytest.raises(DagsterDbtCloudJobInvariantViolationError):
-        dbt_cloud_cacheable_assets.compute_cacheable_data()
 
-    responses.add(
-        method=responses.GET,
-        url=f"{dbt_cloud_service.api_base_url}{DBT_CLOUD_ACCOUNT_ID}/jobs/{DBT_CLOUD_JOB_ID}/",
-        json={
-            "data": {
-                "project_id": DBT_CLOUD_PROJECT_ID,
-                "generate_docs": True,
-                "execute_steps": ["dbt deps"],
-                "name": "A dbt Cloud job",
-                "id": "1",
-            }
-        },
-        status=200,
-    )
-    with pytest.raises(DagsterDbtCloudJobInvariantViolationError):
-        dbt_cloud_cacheable_assets.compute_cacheable_data()
-
-    responses.add(
-        method=responses.GET,
-        url=f"{dbt_cloud_service.api_base_url}{DBT_CLOUD_ACCOUNT_ID}/jobs/{DBT_CLOUD_JOB_ID}/",
-        json={
-            "data": {
-                "project_id": DBT_CLOUD_PROJECT_ID,
-                "generate_docs": True,
-                "execute_steps": ["dbt deps", "dbt build"],
-                "name": "A dbt Cloud job",
-                "id": "1",
-            }
-        },
-        status=200,
-    )
     with pytest.raises(DagsterDbtCloudJobInvariantViolationError):
         dbt_cloud_cacheable_assets.compute_cacheable_data()
 
@@ -237,7 +207,7 @@ def test_invalid_dbt_cloud_job(dbt_cloud, dbt_cloud_service):
 def test_custom_groups(dbt_cloud, dbt_cloud_service):
     _add_dbt_cloud_job_responses(
         dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
-        dbt_command="dbt build",
+        dbt_commands=["dbt build"],
     )
 
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
@@ -262,7 +232,7 @@ def test_custom_groups(dbt_cloud, dbt_cloud_service):
 def test_node_info_to_asset_key(dbt_cloud, dbt_cloud_service):
     _add_dbt_cloud_job_responses(
         dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
-        dbt_command="dbt build",
+        dbt_commands=["dbt build"],
     )
 
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
@@ -287,7 +257,7 @@ def test_node_info_to_asset_key(dbt_cloud, dbt_cloud_service):
 def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
     _add_dbt_cloud_job_responses(
         dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
-        dbt_command="dbt build",
+        dbt_commands=["dbt build"],
     )
 
     partition_def = DailyPartitionsDefinition(start_date="2022-01-01")
@@ -365,7 +335,7 @@ def test_subsetting(
 ):
     _add_dbt_cloud_job_responses(
         dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
-        dbt_command="dbt build",
+        dbt_commands=["dbt build"],
     )
 
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
