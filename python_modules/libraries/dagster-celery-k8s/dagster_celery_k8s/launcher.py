@@ -346,14 +346,12 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         )
         job_name = get_job_name_from_run_id(run.run_id)
         try:
-            job = self._api_client.batch_api.read_namespaced_job(
-                namespace=job_namespace, name=job_name
-            )
+            status = self._api_client.get_job_status(namespace=job_namespace, job_name=job_name)
         except Exception:
             return CheckRunHealthResult(
                 WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
             )
-        if job.status.failed:
+        if status.failed:
             return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
         return CheckRunHealthResult(WorkerStatus.RUNNING)
 
