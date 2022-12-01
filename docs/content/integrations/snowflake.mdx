@@ -205,9 +205,11 @@ In `iris_cleaned`, the `iris_dataset` parameter tells Dagster that the value for
 
 When materializing these assets, Dagster will use the `snowflake_pandas_io_manager` to fetch the `FLOWERS.IRIS.IRIS_DATASET` as a Pandas DataFrame and pass this DataFrame as the `iris_dataset` parameter to `iris_cleaned`. When `iris_cleaned` returns a Pandas DataFrame, Dagster will use the `snowflake_pandas_io_manager` to store the DataFrame as the `FLOWERS.IRIS.IRIS_CLEANED` table in Snowflake.
 
+---
+
 ## Completed code example
 
-The code snippet below contains all of the examples from this guide:
+When finished, your code should look like the following:
 
 ```python file=/integrations/snowflake/full_example.py
 import pandas as pd
@@ -255,8 +257,10 @@ def flowers_analysis_repository():
     )
 ```
 
-## Related material
+---
 
-For more information on software-defined assets, see the [Assets tutorial](/tutorial/defining-an-asset) or the [Assets concept page](/concepts/assets/software-defined-assets).
+## Related
 
-For more information on I/O managers, see the [I/O manager concept page](/concepts/io-management/io-managers).
+For more information on software-defined assets, refer to the [Assets tutorial](/tutorial/assets/defining-an-asset) or the [Assets concept documentation](/concepts/assets/software-defined-assets).
+
+For more information on I/O managers, refer to the [I/O manager concept documentation](/concepts/io-management/io-managers).
