@@ -83,9 +83,9 @@ The configuration values for the Snowflake I/O manager can be stored in [environ
 
 For example, with this configuration, if you materialized an asset called `iris_dataset`, the Snowflake I/O manager would be permissioned with the role `writer` and would store the data in the `FLOWERS.IRIS.IRIS_DATASET` table in the `PLANTS` warehouse.
 
-For more info about each of the configuration values, refer to the <PyObject module="dagster_snowflake" object="build_snowflake_io_manager" /> API documentation.
+Finally, in the <PyObject object="repository" decorator />, we assign the `snowflake_pandas_io_manager` to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
 
-Finally, in the <PyObject module=dagster object="repository" decorator>, we assign the `snowflake_pandas_io_manager` to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
+For more info about each of the configuration values, refer to the <PyObject module="dagster_snowflake" object="build_snowflake_io_manager" /> API documentation.
 
 ---
 
@@ -99,7 +99,7 @@ The Snowflake I/O manager can create and update tables for your Dagster defined 
 
 ### Store a Dagster asset as a table in Snowflake
 
-To store data in Snowflake using the Snowflake I/O manager, the definitions of your assets don't need to change. You can tell Dagster to use the Snowflake I/O Manager in your repository, like in [Step 1: Configure the Snowflake I/O manager](#step-1-configure-the-snowflake-io-manager) and Dagster will handle storing and loading your assets in Snowflake.
+To store data in Snowflake using the Snowflake I/O manager, the definitions of your assets don't need to change. You can tell Dagster to use the Snowflake I/O Manager in your repository, like in [Step 1: Configure the Snowflake I/O manager](#step-1-configure-the-snowflake-io-manager), and Dagster will handle storing and loading your assets in Snowflake.
 
 ```python file=/integrations/snowflake/basic_example.py
 import pandas as pd
