@@ -21,12 +21,9 @@ from dagster._core.definitions.logical_version import (
     CODE_VERSION_TAG_KEY,
     INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX,
     LOGICAL_VERSION_TAG_KEY,
-    CODE_VERSION_TAG_KEY,
-    LOGICAL_VERSION_TAG_KEY,
     LogicalVersion,
     compute_logical_version,
 )
-
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 
 # ########################
@@ -47,12 +44,10 @@ def mock_io_manager():
     return MockIOManager()
 
 
-def get_mat_from_result(
-    result: ExecuteInProcessResult, node_str: str
-) -> Sequence[AssetMaterialization]:
+def get_mat_from_result(result: ExecuteInProcessResult, node_str: str) -> AssetMaterialization:
     mats = result.asset_materializations_for_node(node_str)
     assert all(isinstance(m, AssetMaterialization) for m in mats)
-    return cast(Sequence[AssetMaterialization], mats[0])
+    return cast(AssetMaterialization, mats[0])
 
 
 def get_mats_from_result(
@@ -351,6 +346,7 @@ def test_multi_asset():
     assert_provenance_match(mat_b_2, mat_a_2)
     assert_provenance_no_match(mat_b_2, mat_a_1)
 
+
 def test_multiple_code_versions():
     @multi_asset(
         outs={
@@ -362,7 +358,9 @@ def test_multiple_code_versions():
         yield Output(1, "alpha")
         yield Output(2, "beta")
 
-    alpha_mat, beta_mat = materialize_assets([alpha_beta], DagsterInstance.ephemeral())
+    mats = materialize_assets([alpha_beta], DagsterInstance.ephemeral())
+    alpha_mat = mats[AssetKey("alpha")]
+    beta_mat = mats[AssetKey("beta")]
 
     assert_logical_version(alpha_mat, compute_logical_version("a", {}))
     assert_code_version(alpha_mat, "a")
