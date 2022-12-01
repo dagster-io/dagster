@@ -18,18 +18,18 @@ from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
 from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
 from dagster._legacy import DagsterRunStatus
 
-from .utils import foo, get_foo_pipeline_handle
+from .utils import foo, get_foo_job_handle
 
 
 def create_run(instance, **kwargs):
-    with get_foo_pipeline_handle(instance) as handle:
+    with get_foo_job_handle(instance) as handle:
         execution_plan = create_execution_plan(foo)
         return create_run_for_test(
             instance,
             mode="default",
             external_pipeline_origin=handle.get_external_origin(),
             pipeline_code_origin=handle.get_python_origin(),
-            pipeline_name=handle.pipeline_name,
+            pipeline_name=handle.job_name,
             pipeline_snapshot=foo.get_pipeline_snapshot(),
             execution_plan_snapshot=snapshot_from_execution_plan(
                 execution_plan, foo.get_pipeline_snapshot_id()
