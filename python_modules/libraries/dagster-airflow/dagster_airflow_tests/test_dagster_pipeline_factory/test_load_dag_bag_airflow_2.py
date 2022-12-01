@@ -392,6 +392,8 @@ def test_make_repo(
             job = repo.get_job(job_name)
             result = job.execute_in_process()
             assert result.success
+            for event in result.all_events:
+                assert event.event_type_value != "STEP_FAILURE"
 
         assert set(repo.job_names) == set(expected_job_names)
 
