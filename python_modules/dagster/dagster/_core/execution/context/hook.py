@@ -13,6 +13,7 @@ from ...definitions.resource_definition import IContainsGenerator, Resources
 from ...errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
 from ...log_manager import DagsterLogManager
 from ..plan.step import ExecutionStep
+from ..plan.utils import RetryRequestedFromPolicy
 from .system import StepExecutionContext
 
 
@@ -148,7 +149,12 @@ class HookContext:
     @public  # type: ignore
     @property
     def op_exception(self):
-        return self._step_execution_context.step_exception
+        exc = self._step_execution_context.step_exception
+
+        if isinstance(exc, RetryRequestedFromPolicy):
+            return exc.__cause__
+
+        return exc
 
     @property
     def solid_output_values(self) -> Mapping[str, Union[Any, Mapping[str, Any]]]:

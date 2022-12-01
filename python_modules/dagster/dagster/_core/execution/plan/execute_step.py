@@ -72,7 +72,7 @@ from dagster._utils.timing import time_execution_scope
 
 from .compute import SolidOutputUnion
 from .compute_generator import create_solid_compute_wrapper
-from .utils import solid_execution_error_boundary
+from .utils import op_execution_error_boundary
 
 
 def _step_output_error_checked_user_event_sequence(
@@ -634,7 +634,7 @@ def _store_output(
         handle_output_gen = output_manager.handle_output(output_context, output.value)
 
     for elt in iterate_with_context(
-        lambda: solid_execution_error_boundary(
+        lambda: op_execution_error_boundary(
             DagsterExecutionHandleOutputError,
             msg_fn=lambda: (
                 f'Error occurred while handling output "{output_context.name}" of '

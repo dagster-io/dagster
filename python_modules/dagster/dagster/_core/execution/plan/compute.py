@@ -25,7 +25,7 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._utils import iterate_with_context
 
 from .outputs import StepOutput, StepOutputProperties
-from .utils import solid_execution_error_boundary
+from .utils import op_execution_error_boundary
 
 SolidOutputUnion: TypeAlias = Union[
     DynamicOutput[Any],
@@ -143,7 +143,7 @@ def _yield_compute_results(
     op_label = step_context.describe_op()
 
     for event in iterate_with_context(
-        lambda: solid_execution_error_boundary(
+        lambda: op_execution_error_boundary(
             DagsterExecutionStepExecutionError,
             msg_fn=lambda: f"Error occurred while executing {op_label}:",
             step_context=step_context,
