@@ -253,3 +253,28 @@ def test_custom_groups(dbt_cloud, dbt_cloud_service):
         AssetKey(["sort_hot_cereals_by_calories"]): "bar",
         AssetKey(["subdir_schema", "least_caloric"]): "bar",
     }
+
+
+@responses.activate
+def test_node_info_to_asset_key(dbt_cloud, dbt_cloud_service):
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_command="dbt build",
+    )
+
+    dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
+        dbt_cloud=dbt_cloud,
+        job_id=DBT_CLOUD_JOB_ID,
+        node_info_to_asset_key=lambda node_info: AssetKey(["foo", node_info["name"]]),
+    )
+    dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
+    dbt_cloud_assets = dbt_cloud_cacheable_assets.build_definitions(
+        dbt_assets_definition_cacheable_data
+    )
+
+    assert dbt_cloud_assets[0].group_names_by_key.keys() == {
+        AssetKey(["foo", "sort_cold_cereals_by_calories"]),
+        AssetKey(["foo", "sort_by_calories"]),
+        AssetKey(["foo", "sort_hot_cereals_by_calories"]),
+        AssetKey(["foo", "least_caloric"]),
+    }
