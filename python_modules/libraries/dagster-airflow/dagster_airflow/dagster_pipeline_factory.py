@@ -52,7 +52,7 @@ class DagsterAirflowError(Exception):
 
 
 if os.name == "nt":
-    import msvcrt
+    import msvcrt  # pylint: disable=import-error
 
     def portable_lock(fp):
         fp.seek(0)
@@ -75,9 +75,10 @@ else:
 class Locker:
     def __init__(self, lock_file_path="."):
         self.lock_file_path = lock_file_path
+        self.fp = None
 
     def __enter__(self):
-        self.fp = open(f"{self.lock_file_path}/lockfile.lck", "w+")
+        self.fp = open(f"{self.lock_file_path}/lockfile.lck", "w+", encoding="utf-8")
         portable_lock(self.fp)
 
     def __exit__(self, _type, value, tb):
@@ -477,9 +478,13 @@ def make_dagster_pipeline_from_airflow_dag(
                 else:
                     initialize_airflow_1_database()
             # because AIRFLOW_HOME has been overriden airflow needs to be reloaded
-            importlib.reload(airflow.configuration)
-            importlib.reload(airflow.settings)
-            importlib.reload(airflow)
+            if airflow_version >= "2.0.0":
+                importlib.reload(airflow.configuration)
+                importlib.reload(airflow.settings)
+                importlib.reload(airflow)
+            else:
+                importlib.reload(airflow)
+
             dag_bag = airflow.models.dagbag.DagBag(
                 dag_folder=context.resource_config["dag_location"], include_examples=True
             )
