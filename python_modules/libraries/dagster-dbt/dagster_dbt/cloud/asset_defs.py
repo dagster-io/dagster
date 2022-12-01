@@ -209,7 +209,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             asset_ins,
             asset_outs,
             group_names_by_key,
-            _,
+            fqns_by_output_name,
             metadata_by_output_name,
         ) = _get_asset_deps(
             dbt_nodes=dbt_nodes,
@@ -243,9 +243,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             },
             # TODO: In the future, we should allow the key prefix to be specified.
             key_prefix=None,
-            # TODO: In the future, we should allow these assets to be subset, but this requires
-            # ad-hoc overrides to the job's run/build step to materialize only the subset.
-            can_subset=False,
+            can_subset=True,
             extra_metadata={
                 "job_id": self._job_id,
                 "job_command": self._dbt_cloud_job_command,
@@ -254,6 +252,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                     asset_outs[asset_key][0]: group_name
                     for asset_key, group_name in group_names_by_key.items()
                 },
+                "fqns_by_output_name": fqns_by_output_name,
             },
         )
 
@@ -286,6 +285,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         job_command = cast(str, metadata["job_command"])
         job_command_step = cast(int, metadata["job_command_step"])
         group_names_by_output_name = cast(Mapping[str, str], metadata["group_names_by_output_name"])
+        fqns_by_output_name = cast(Mapping[str, List[str]], metadata["fqns_by_output_name"])
 
         @multi_asset(
             name=f"dbt_cloud_job_{job_id}",
@@ -299,6 +299,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                     metadata=(assets_definition_cacheable_data.metadata_by_output_name or {}).get(
                         output_name
                     ),
+                    is_required=False,
                 )
                 for output_name, asset_key in (
                     assets_definition_cacheable_data.keys_by_output_name or {}
@@ -311,6 +312,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 ).items()
             },
             partitions_def=self._partitions_def,
+            can_subset=assets_definition_cacheable_data.can_subset,
             required_resource_keys={"dbt_cloud"},
             compute_kind="dbt",
         )
@@ -324,6 +326,24 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 dbt_vars = self._partition_key_to_vars_fn(context.partition_key)
 
                 dbt_options.append(f"--vars '{json.dumps(dbt_vars)}'")
+
+            # Map the selected outputs to dbt models that should be materialized.
+            #
+            # HACK: This selection filter works even if an existing `--select` is specified in the
+            # dbt Cloud job. We take advantage of the fact that the last `--select` will be used.
+            #
+            # This is not ideal, as the triggered run for the dbt Cloud job will still have both
+            # `--select` options when displayed in the UI, but parsing the command line argument
+            # to remove the initial select using argparse.
+            if len(context.selected_output_names) != len(
+                assets_definition_cacheable_data.keys_by_output_name or {}
+            ):
+                selected_models = [
+                    ".".join(fqns_by_output_name[output_name])
+                    for output_name in context.selected_output_names
+                ]
+
+                dbt_options.append(f"--select {' '.join(sorted(selected_models))}")
 
             # Run the dbt Cloud job to rematerialize the assets.
             dbt_cloud_output = dbt_cloud.run_job_and_poll(

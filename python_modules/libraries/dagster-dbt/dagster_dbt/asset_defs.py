@@ -255,7 +255,7 @@ def _get_asset_deps(
     Dict[AssetKey, Tuple[str, In]],
     Dict[AssetKey, Tuple[str, Out]],
     Dict[AssetKey, str],
-    Dict[str, str],
+    Dict[str, List[str]],
     Dict[str, Dict[str, Any]],
 ]:
     asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
@@ -265,7 +265,7 @@ def _get_asset_deps(
     # These dicts could be refactored as a single dict, mapping from output name to arbitrary
     # metadata that we need to store for reference.
     group_names_by_key: Dict[AssetKey, str] = {}
-    fqns_by_output_name: Dict[str, str] = {}
+    fqns_by_output_name: Dict[str, List[str]] = {}
     metadata_by_output_name: Dict[str, Dict[str, Any]] = {}
 
     for unique_id, parent_unique_ids in deps.items():
@@ -328,7 +328,7 @@ def _get_dbt_op(
     select: str,
     exclude: str,
     use_build_command: bool,
-    fqns_by_output_name: Mapping[str, str],
+    fqns_by_output_name: Mapping[str, List[str]],
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
     runtime_metadata_fn: Optional[
