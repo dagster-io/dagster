@@ -383,12 +383,6 @@ def multi_asset(
         group_name (Optional[str]): A string name used to organize multiple assets into groups. This
             group name will be applied to all assets produced by this multi_asset.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
-        version (Optional[Union[str, Mapping[str, str]]]): (Experimental) Version of the logic
-            encapsulated by the op. Can be either a single string or a dictionary mapping output names
-            to strings. The single string form assumes the same code version for all op outputs. The
-            dictionary form allows different ops for different outputs. In general, versions should be
-            set only for code that deterministically produces the same output when given the same
-            inputs.
         code_version (Optional[str]): (Experimental) Version of the code encapsulated by the multi-asset. If set,
             this is used as a default code version for all defined assets.
     """
