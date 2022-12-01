@@ -1,4 +1,5 @@
 import sys
+from types import ModuleType
 
 import dagster._module_alias_map as _module_alias_map
 
@@ -162,6 +163,7 @@ from dagster._core.definitions.dependency import (
     MultiDependencyDefinition as MultiDependencyDefinition,
     NodeInvocation as NodeInvocation,
 )
+from dagster._core.definitions.definitions_class import Definitions as Definitions
 from dagster._core.definitions.events import (
     AssetKey as AssetKey,
     AssetMaterialization as AssetMaterialization,
@@ -647,5 +649,5 @@ def __getattr__(name: str) -> TypingAny:
         raise AttributeError("module '{}' has no attribute '{}'".format(__name__, name))
 
 
-def __dir__(_self) -> Sequence:
+def __dir__(_self: ModuleType) -> Sequence[str]:
     return [*globals(), *_DEPRECATED.keys(), *_DEPRECATED_RENAMED.keys()]

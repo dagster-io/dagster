@@ -282,6 +282,32 @@ def test_error_notebook():
         assert not result.success
         assert result.step_event_list[1].event_type.value == "STEP_FAILURE"
 
+    result = None
+    recon_pipeline = ReconstructablePipeline.for_module(
+        "dagstermill.examples.repository", "error_job"
+    )
+
+    # test that the notebook is saved on failure
+    with instance_for_test() as instance:
+        try:
+            result = execute_pipeline(
+                recon_pipeline,
+                {"execution": {"config": {"in_process": {}}}},
+                instance=instance,
+                raise_on_error=False,
+            )
+            storage_dir = instance.storage_directory()
+            files = os.listdir(storage_dir)
+            notebook_found = (False,)
+            for f in files:
+                if "-out.ipynb" in f:
+                    notebook_found = True
+
+            assert notebook_found
+        finally:
+            if result:
+                cleanup_result_notebook(result)
+
 
 @pytest.mark.nettest
 @pytest.mark.notebook_test

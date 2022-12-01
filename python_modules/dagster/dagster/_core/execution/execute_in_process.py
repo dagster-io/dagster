@@ -28,7 +28,7 @@ def core_execute_in_process(
     instance: Optional[DagsterInstance],
     output_capturing_enabled: bool,
     raise_on_error: bool,
-    run_tags: Optional[Mapping[str, object]] = None,
+    run_tags: Optional[Mapping[str, str]] = None,
     run_id: Optional[str] = None,
     asset_selection: Optional[FrozenSet[AssetKey]] = None,
 ) -> ExecuteInProcessResult:
@@ -55,6 +55,7 @@ def core_execute_in_process(
             tags={**job_def.tags, **(run_tags or {})},
             run_id=run_id,
             asset_selection=asset_selection,
+            execution_plan=execution_plan,
         )
         run_id = pipeline_run.run_id
 

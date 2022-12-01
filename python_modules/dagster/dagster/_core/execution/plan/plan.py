@@ -10,6 +10,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Union,
     cast,
 )
@@ -22,8 +23,8 @@ from dagster._core.definitions import (
     JobDefinition,
     Node,
     NodeHandle,
+    NodeOutput,
     SolidDefinition,
-    SolidOutputHandle,
 )
 from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.dependency import DependencyStructure
@@ -78,7 +79,10 @@ from .step import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
+    from dagster._core.snap.execution_plan_snapshot import (
+        ExecutionPlanSnapshot,
+        ExecutionStepInputSnap,
+    )
 
     from .active import ActiveExecution
 
@@ -95,7 +99,7 @@ class _PlanBuilder:
 
     steps List[ExecutionStep]: a list of the execution steps that have been created.
 
-    step_output_map Dict[SolidOutputHandle, StepOutputHandle]:  maps logical solid outputs
+    step_output_map Dict[NodeOutput, StepOutputHandle]:  maps logical solid outputs
     (solid_name, output_name) to particular step outputs. This covers the case where a solid maps to
     multiple steps and one wants to be able to attach to the logical output of a solid during
     execution.
@@ -131,7 +135,7 @@ class _PlanBuilder:
         )
         self._steps: Dict[str, IExecutionStep] = OrderedDict()
         self.step_output_map: Dict[
-            SolidOutputHandle, Union[StepOutputHandle, UnresolvedStepOutputHandle]
+            NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]
         ] = dict()
         self.known_state = check.inst_param(known_state, "known_state", KnownExecutionState)
         self._instance_ref = instance_ref
@@ -162,15 +166,15 @@ class _PlanBuilder:
         return self._steps[handle.to_string()]
 
     def get_output_handle(
-        self, key: SolidOutputHandle
+        self, key: NodeOutput
     ) -> Union[StepOutputHandle, UnresolvedStepOutputHandle]:
-        check.inst_param(key, "key", SolidOutputHandle)
+        check.inst_param(key, "key", NodeOutput)
         return self.step_output_map[key]
 
     def set_output_handle(
-        self, key: SolidOutputHandle, val: Union[StepOutputHandle, UnresolvedStepOutputHandle]
+        self, key: NodeOutput, val: Union[StepOutputHandle, UnresolvedStepOutputHandle]
     ) -> None:
-        check.inst_param(key, "key", SolidOutputHandle)
+        check.inst_param(key, "key", NodeOutput)
         check.inst_param(val, "val", (StepOutputHandle, UnresolvedStepOutputHandle))
         self.step_output_map[key] = val
 
@@ -402,7 +406,7 @@ class _PlanBuilder:
             ### 3. OUTPUTS
             # Create output handles for solid outputs
             for name, output_def in solid.definition.output_dict.items():
-                output_handle = solid.output_handle(name)
+                node_output = solid.get_output(name)
 
                 # Punch through layers of composition scope to map to the output of the
                 # actual compute step
@@ -424,7 +428,7 @@ class _PlanBuilder:
                 else:
                     check.failed(f"Unexpected step type {step}")
 
-                self.set_output_handle(output_handle, step_output_handle)
+                self.set_output_handle(node_output, step_output_handle)
 
 
 def get_root_graph_input_source(
@@ -482,7 +486,7 @@ def get_step_input_source(
         of_type=(StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput),
     )
 
-    input_handle = solid.input_handle(input_name)
+    input_handle = solid.get_input(input_name)
     solid_config = plan_builder.resolved_run_config.solids.get(str(handle))
 
     input_def = solid.definition.input_def_named(input_name)
@@ -525,7 +529,7 @@ def get_step_input_source(
         sources: List[StepInputSource] = []
         deps = dependency_structure.get_fan_in_deps(input_handle)
         for idx, handle_or_placeholder in enumerate(deps):
-            if isinstance(handle_or_placeholder, SolidOutputHandle):
+            if isinstance(handle_or_placeholder, NodeOutput):
                 step_output_handle = plan_builder.get_output_handle(handle_or_placeholder)
                 if (
                     isinstance(step_output_handle, UnresolvedStepOutputHandle)
@@ -545,7 +549,7 @@ def get_step_input_source(
             else:
                 check.invariant(
                     handle_or_placeholder is MappedInputPlaceholder,
-                    f"Expected SolidOutputHandle or MappedInputPlaceholder, got {handle_or_placeholder}",
+                    f"Expected NodeOutput or MappedInputPlaceholder, got {handle_or_placeholder}",
                 )
                 if parent_step_inputs is None:
                     check.failed("unexpected error in composition descent during plan building")
@@ -620,7 +624,10 @@ class ExecutionPlan(
         [
             ("step_dict", Dict[StepHandleUnion, IExecutionStep]),
             ("executable_map", Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]]),
-            ("resolvable_map", Dict[FrozenSet[str], Sequence[UnresolvedStepHandle]]),
+            (
+                "resolvable_map",
+                Dict[FrozenSet[str], Sequence[Union[StepHandle, UnresolvedStepHandle]]],
+            ),
             ("step_handles_to_execute", Sequence[StepHandleUnion]),
             ("known_state", KnownExecutionState),
             ("artifacts_persisted", bool),
@@ -634,7 +641,7 @@ class ExecutionPlan(
         cls,
         step_dict: Dict[StepHandleUnion, IExecutionStep],
         executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
-        resolvable_map: Dict[FrozenSet[str], Sequence[UnresolvedStepHandle]],
+        resolvable_map: Dict[FrozenSet[str], Sequence[Union[StepHandle, UnresolvedStepHandle]]],
         step_handles_to_execute: Sequence[StepHandleUnion],
         known_state: KnownExecutionState,
         artifacts_persisted: bool = False,
@@ -784,10 +791,10 @@ class ExecutionPlan(
         step_keys_to_execute: Sequence[str],
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
-        step_output_versions=None,
+        step_output_versions: Optional[Mapping[StepOutputHandle, str]] = None,
     ) -> "ExecutionPlan":
         check.sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
-        step_output_versions = check.opt_dict_param(
+        step_output_versions = check.opt_mapping_param(
             step_output_versions, "step_output_versions", key_type=StepOutputHandle, value_type=str
         )
 
@@ -1049,7 +1056,7 @@ class ExecutionPlan(
         return plan_builder.build()
 
     @staticmethod
-    def rebuild_step_input(step_input_snap):
+    def rebuild_step_input(step_input_snap: "ExecutionStepInputSnap"):
         from dagster._core.snap.execution_plan_snapshot import ExecutionStepInputSnap
 
         check.inst_param(step_input_snap, "step_input_snap", ExecutionStepInputSnap)
@@ -1063,13 +1070,13 @@ class ExecutionPlan(
             return UnresolvedMappedStepInput(
                 step_input_snap.name,
                 step_input_snap.dagster_type_key,
-                step_input_snap.source,
+                step_input_source,
             )
         elif isinstance(step_input_source, FromDynamicCollect):
             return UnresolvedCollectStepInput(
                 step_input_snap.name,
                 step_input_snap.dagster_type_key,
-                step_input_snap.source,
+                step_input_source,
             )
         else:
             check.inst_param(step_input_source, "step_input_source", StepInputSource)
@@ -1083,15 +1090,15 @@ class ExecutionPlan(
     def rebuild_from_snapshot(
         pipeline_name: str,
         execution_plan_snapshot: "ExecutionPlanSnapshot",
-    ):
+    ) -> "ExecutionPlan":
         if not execution_plan_snapshot.can_reconstruct_plan:
             raise DagsterInvariantViolationError(
                 "Tried to reconstruct an old ExecutionPlanSnapshot that was created before snapshots "
                 "had enough information to fully reconstruct the ExecutionPlan"
             )
 
-        step_dict = {}
-        step_dict_by_key = {}
+        step_dict: Dict[StepHandleUnion, IExecutionStep] = {}
+        step_dict_by_key: Dict[str, IExecutionStep] = {}
 
         for step_snap in execution_plan_snapshot.steps:
             input_snaps = step_snap.inputs
@@ -1121,7 +1128,7 @@ class ExecutionPlan(
                         ttype=(StepHandle, ResolvedFromDynamicStepHandle),
                     ),
                     pipeline_name,
-                    step_inputs,
+                    step_inputs,  # type: ignore
                     step_outputs,
                     step_snap.tags,
                 )
@@ -1132,7 +1139,7 @@ class ExecutionPlan(
                         ttype=UnresolvedStepHandle,
                     ),
                     pipeline_name,
-                    step_inputs,
+                    step_inputs,  # type: ignore
                     step_outputs,
                     step_snap.tags,
                 )
@@ -1140,7 +1147,7 @@ class ExecutionPlan(
                 step = UnresolvedCollectExecutionStep(
                     check.inst(cast(StepHandle, step_snap.step_handle), ttype=StepHandle),
                     pipeline_name,
-                    step_inputs,
+                    step_inputs,  # type: ignore
                     step_outputs,
                     step_snap.tags,
                 )
@@ -1178,7 +1185,7 @@ def _update_from_resolved_dynamic_outputs(
     step_dict: Dict[StepHandleUnion, IExecutionStep],
     step_dict_by_key: Dict[str, IExecutionStep],
     executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
-    resolvable_map: Dict[FrozenSet[str], Sequence[UnresolvedStepHandle]],
+    resolvable_map: Dict[FrozenSet[str], Sequence[Union[StepHandle, UnresolvedStepHandle]]],
     step_handles_to_execute: Sequence[StepHandleUnion],
     dynamic_mappings: Mapping[str, Mapping[str, Sequence[str]]],
 ) -> None:
@@ -1214,7 +1221,7 @@ def _update_from_resolved_dynamic_outputs(
         del resolvable_map[key_set]
 
 
-def can_isolate_steps(pipeline_def: PipelineDefinition, mode_def: ModeDefinition):
+def can_isolate_steps(pipeline_def: PipelineDefinition, mode_def: ModeDefinition) -> bool:
     """Returns true if every output definition in the pipeline uses an IO manager that's not
     the mem_io_manager.
 
@@ -1305,7 +1312,7 @@ def should_skip_step(execution_plan: ExecutionPlan, instance: DagsterInstance, r
     for event_record in all_logs:
         if event_record.dagster_event and event_record.dagster_event.is_successful_output:
             yielded_step_output_handles.add(
-                event_record.dagster_event.event_specific_data.step_output_handle
+                event_record.dagster_event.event_specific_data.step_output_handle  # type: ignore
             )
 
     # If there is at least one of the step's inputs, none of whose upstream steps has
@@ -1326,13 +1333,13 @@ def should_skip_step(execution_plan: ExecutionPlan, instance: DagsterInstance, r
 
 
 def _compute_artifacts_persisted(
-    step_dict,
-    step_dict_by_key,
-    step_handles_to_execute,
-    pipeline_def,
-    resolved_run_config,
-    executable_map,
-):
+    step_dict: Dict[StepHandleUnion, IExecutionStep],
+    step_dict_by_key: Dict[str, IExecutionStep],
+    step_handles_to_execute: Sequence[StepHandleUnion],
+    pipeline_def: PipelineDefinition,
+    resolved_run_config: ResolvedRunConfig,
+    executable_map: Mapping[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
+) -> bool:
     """
     Check if all the border steps of the current run have non-in-memory IO managers for reexecution.
 
@@ -1370,7 +1377,7 @@ def _compute_artifacts_persisted(
     return True
 
 
-def _get_step_by_key(step_dict, key) -> IExecutionStep:
+def _get_step_by_key(step_dict: Dict[StepHandleUnion, IExecutionStep], key: str) -> IExecutionStep:
     check.str_param(key, "key")
     for step in step_dict.values():
         if step.key == key:
@@ -1379,8 +1386,11 @@ def _get_step_by_key(step_dict, key) -> IExecutionStep:
 
 
 def _get_steps_to_execute_by_level(
-    step_dict, step_dict_by_key, step_handles_to_execute, executable_map
-):
+    step_dict: Mapping[StepHandleUnion, IExecutionStep],
+    step_dict_by_key: Mapping[str, IExecutionStep],
+    step_handles_to_execute: Sequence[StepHandleUnion],
+    executable_map: Mapping[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
+) -> Sequence[Sequence[ExecutionStep]]:
     return [
         [cast(ExecutionStep, step_dict_by_key[step_key]) for step_key in sorted(step_key_level)]
         for step_key_level in toposort(
@@ -1390,9 +1400,9 @@ def _get_steps_to_execute_by_level(
 
 
 def _get_executable_step_deps(
-    step_dict,
-    step_handles_to_execute,
-    executable_map,
+    step_dict: Mapping[StepHandleUnion, IExecutionStep],
+    step_handles_to_execute: Sequence[StepHandleUnion],
+    executable_map: Mapping[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
 ) -> Mapping[str, Set[str]]:
     """
     Returns:
@@ -1433,7 +1443,11 @@ def _get_step_output(step_dict_by_key, step_output_handle: StepOutputHandle) -> 
     return step.step_output_named(step_output_handle.output_name)
 
 
-def _get_manager_key(step_dict_by_key, step_output_handle, pipeline_def):
+def _get_manager_key(
+    step_dict_by_key: Mapping[str, IExecutionStep],
+    step_output_handle: StepOutputHandle,
+    pipeline_def: PipelineDefinition,
+) -> str:
     step_output = _get_step_output(step_dict_by_key, step_output_handle)
     solid_handle = step_output.solid_handle
     output_def = pipeline_def.get_solid(solid_handle).output_def_named(step_output.name)
@@ -1442,8 +1456,16 @@ def _get_manager_key(step_dict_by_key, step_output_handle, pipeline_def):
 
 # computes executable_map and resolvable_map and returns them as a tuple. Also
 # may modify the passed in step_dict to include resolved step using known_state.
-def _compute_step_maps(step_dict, step_dict_by_key, step_handles_to_execute, known_state):
-    check.list_param(
+def _compute_step_maps(
+    step_dict: Dict[StepHandleUnion, IExecutionStep],
+    step_dict_by_key: Dict[str, IExecutionStep],
+    step_handles_to_execute: Sequence[StepHandleUnion],
+    known_state: Optional[KnownExecutionState],
+) -> Tuple[
+    Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
+    Dict[FrozenSet[str], Sequence[Union[StepHandle, UnresolvedStepHandle]]],
+]:
+    check.sequence_param(
         step_handles_to_execute,
         "step_handles_to_execute",
         of_type=(StepHandle, UnresolvedStepHandle, ResolvedFromDynamicStepHandle),
@@ -1464,8 +1486,10 @@ def _compute_step_maps(step_dict, step_dict_by_key, step_handles_to_execute, kno
 
     step_keys_to_execute = [step_handle.to_key() for step_handle in step_handles_to_execute]
 
-    executable_map = {}
-    resolvable_map: Dict[str, List[UnresolvedStepHandle]] = defaultdict(list)
+    executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]] = {}
+    resolvable_map: Dict[
+        FrozenSet[str], List[Union[StepHandle, UnresolvedStepHandle]]
+    ] = defaultdict(list)
     for handle in step_handles_to_execute:
         step = step_dict[handle]
         if isinstance(step, ExecutionStep):
@@ -1489,9 +1513,9 @@ def _compute_step_maps(step_dict, step_dict_by_key, step_handles_to_execute, kno
             step_dict,
             step_dict_by_key,
             executable_map,
-            resolvable_map,
+            dict(resolvable_map),
             step_handles_to_execute,
             known_state.dynamic_mappings,
         )
 
-    return (executable_map, resolvable_map)
+    return (executable_map, dict(resolvable_map))

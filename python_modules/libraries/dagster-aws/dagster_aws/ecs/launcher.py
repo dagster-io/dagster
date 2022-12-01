@@ -124,7 +124,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             use_current_ecs_task_config, "use_current_ecs_task_config"
         )
 
-        self.run_task_kwargs = check.opt_dict_param(run_task_kwargs, "run_task_kwargs")
+        self.run_task_kwargs = check.opt_mapping_param(run_task_kwargs, "run_task_kwargs")
         if run_task_kwargs:
             check.invariant(
                 "taskDefinition" not in run_task_kwargs,

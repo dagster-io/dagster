@@ -10,6 +10,7 @@ from dagster import (
 )
 from dagster._core.code_pointer import load_python_file, load_python_module
 from dagster._core.definitions import AssetGroup
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 from dagster._legacy import PipelineDefinition
 
@@ -31,7 +32,7 @@ def loadable_targets_from_python_file(
 def loadable_targets_from_python_module(
     module_name: str,
     working_directory: Optional[str],
-    remove_from_path_fn: Callable[[], Sequence[str]] = None,
+    remove_from_path_fn: Optional[Callable[[], Sequence[str]]] = None,
 ) -> Sequence[LoadableTarget]:
     module = load_python_module(
         module_name,
@@ -44,7 +45,7 @@ def loadable_targets_from_python_module(
 def loadable_targets_from_python_package(
     package_name: str,
     working_directory: Optional[str],
-    remove_from_path_fn: Callable[[], Sequence[str]] = None,
+    remove_from_path_fn: Optional[Callable[[], Sequence[str]]] = None,
 ) -> Sequence[LoadableTarget]:
     module = load_python_module(
         package_name, working_directory, remove_from_path_fn=remove_from_path_fn
@@ -53,6 +54,22 @@ def loadable_targets_from_python_package(
 
 
 def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
+    loadable_defs = _loadable_targets_of_type(module, Definitions)
+
+    if loadable_defs:
+        if len(loadable_defs) > 1:
+            raise DagsterInvariantViolationError(
+                "Cannot have more than one Definitions object defined at module scope"
+            )
+
+        # currently this is super strict and requires that it be named defs
+        symbol = loadable_defs[0].attribute
+        if symbol != "defs":
+            raise DagsterInvariantViolationError(
+                f"Found Definitions object at {symbol}. This object must be at a top-level variable named 'defs'."
+            )
+
+        return loadable_defs
 
     loadable_repos = _loadable_targets_of_type(
         module, (RepositoryDefinition, PendingRepositoryDefinition)

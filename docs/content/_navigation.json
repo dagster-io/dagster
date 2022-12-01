@@ -587,7 +587,7 @@
         "path": "/integrations/great-expectations"
       },
       {
-        "title": "Jupyter/Papermill",
+        "title": "Jupyter / Papermill",
         "path": "/integrations/dagstermill"
       },
       {
@@ -772,10 +772,6 @@
         "title": "Libraries",
         "children": [
           {
-            "title": "Dagstermill",
-            "path": "/_apidocs/libraries/dagstermill"
-          },
-          {
             "title": "Airbyte (dagster-airbyte)",
             "path": "/_apidocs/libraries/dagster-airbyte"
           },
@@ -854,6 +850,10 @@
           {
             "title": "Github (dagster-github)",
             "path": "/_apidocs/libraries/dagster-github"
+          },
+          {
+            "title": "Jupyter / Papermill (dagstermill)",
+            "path": "/_apidocs/libraries/dagstermill"
           },
           {
             "title": "Kubernetes (dagster-k8s)",

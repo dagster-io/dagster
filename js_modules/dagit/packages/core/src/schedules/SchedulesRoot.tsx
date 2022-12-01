@@ -9,6 +9,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {UnloadableSchedules} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -44,6 +45,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
       {(result) => {
         const {repositoryOrError, unloadableInstigationStatesOrError, instance} = result;
         let schedulesSection = null;
+        const repoName = repoAddressAsString(repoAddress);
 
         if (repositoryOrError.__typename === 'PythonError') {
           schedulesSection = <PythonErrorInfo error={repositoryOrError} />;
@@ -51,8 +53,8 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
           schedulesSection = (
             <NonIdealState
               icon="error"
-              title="Repository not found"
-              description="Could not load this repository."
+              title="Definitions not found"
+              description={`Could not load ${repoName}.`}
             />
           );
         } else if (!repositoryOrError.schedules.length) {
@@ -62,7 +64,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
               title="No schedules found"
               description={
                 <p>
-                  This repository does not have any schedules defined. Visit the{' '}
+                  {repoName} does not have any schedules defined. Visit the{' '}
                   <a href="https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules">
                     scheduler documentation
                   </a>{' '}

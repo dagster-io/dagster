@@ -36,6 +36,7 @@ import {
 } from '../configeditor/ConfigEditorUtils';
 import {DagsterTag} from '../runs/RunTag';
 import {PipelineSelector, RepositorySelector} from '../types/globalTypes';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -183,7 +184,8 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   const pipelineSelector: PipelineSelector = {
     ...repoAddressToSelector(repoAddress),
     pipelineName: pipeline.name,
-    solidSelection: currentSession?.solidSelection || undefined,
+    solidSelection: currentSession.solidSelection || undefined,
+    assetSelection: currentSession.assetSelection?.map(({assetKey: {path}}) => ({path})),
   };
 
   const configResult = useQuery<
@@ -656,8 +658,8 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
                 <Group direction="row" spacing={8} alignItems="center">
                   <Icon name="warning" color={Colors.Yellow500} />
                   <div>
-                    Your repository has been manually refreshed, and this configuration may now be
-                    out of date.
+                    {repoAddressAsString(repoAddress)} has been manually refreshed, and this
+                    configuration may now be out of date.
                   </div>
                   <Button
                     intent="primary"

@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 import time
+from enum import Enum
 from typing import Any, Mapping, Optional, Sequence, cast
 from urllib.parse import urlencode, urljoin
 
@@ -20,6 +21,15 @@ DBT_ACCOUNTS_PATH = "api/v2/accounts/"
 
 # default polling interval (in seconds)
 DEFAULT_POLL_INTERVAL = 10
+
+
+class DbtCloudRunStatus(str, Enum):
+    QUEUED = "Queued"
+    STARTING = "Starting"
+    RUNNING = "Running"
+    SUCCESS = "Success"
+    ERROR = "Error"
+    CANCELLED = "Cancelled"
 
 
 class DbtCloudResourceV2:
@@ -395,36 +405,50 @@ class DbtCloudResourceV2:
                 See: https://docs.getdbt.com/dbt-cloud/api-v2#operation/getRunById for schema.
         """
 
+        status: Optional[str] = None
+
         if href is None:
             href = self.get_run(run_id).get("href")
         assert isinstance(href, str), "Run must have an href"
 
         poll_start = datetime.datetime.now()
-        while True:
-            run_details = self.get_run(run_id)
-            status = run_details["status_humanized"]
-            self._log.info(f"Polled run {run_id}. Status: [{status}]")
+        try:
+            while True:
+                run_details = self.get_run(run_id)
+                status = run_details["status_humanized"]
+                self._log.info(f"Polled run {run_id}. Status: [{status}]")
 
-            # completed successfully
-            if status == "Success":
-                return self.get_run(run_id, include_related=["job", "trigger", "run_steps"])
-            elif status in ["Error", "Cancelled"]:
-                break
-            elif status not in ["Queued", "Starting", "Running"]:
-                check.failed(f"Received unexpected status '{status}'. This should never happen")
+                # completed successfully
+                if status == DbtCloudRunStatus.SUCCESS:
+                    return self.get_run(run_id, include_related=["job", "trigger", "run_steps"])
+                elif status in [DbtCloudRunStatus.ERROR, DbtCloudRunStatus.CANCELLED]:
+                    break
+                elif status not in [
+                    DbtCloudRunStatus.QUEUED,
+                    DbtCloudRunStatus.STARTING,
+                    DbtCloudRunStatus.RUNNING,
+                ]:
+                    check.failed(f"Received unexpected status '{status}'. This should never happen")
 
-            if poll_timeout and datetime.datetime.now() > poll_start + datetime.timedelta(
-                seconds=poll_timeout
+                if poll_timeout and datetime.datetime.now() > poll_start + datetime.timedelta(
+                    seconds=poll_timeout
+                ):
+                    self.cancel_run(run_id)
+                    raise Failure(
+                        f"Run {run_id} timed out after "
+                        f"{datetime.datetime.now() - poll_start}. Attempted to cancel.",
+                        metadata={"run_page_url": MetadataValue.url(href)},
+                    )
+
+                # Sleep for the configured time interval before polling again.
+                time.sleep(poll_interval)
+        finally:
+            if status not in (
+                DbtCloudRunStatus.SUCCESS,
+                DbtCloudRunStatus.ERROR,
+                DbtCloudRunStatus.CANCELLED,
             ):
                 self.cancel_run(run_id)
-                raise Failure(
-                    f"Run {run_id} timed out after "
-                    f"{datetime.datetime.now() - poll_start}. Attempted to cancel.",
-                    metadata={"run_page_url": MetadataValue.url(href)},
-                )
-
-            # Sleep for the configured time interval before polling again.
-            time.sleep(poll_interval)
 
         run_details = self.get_run(run_id, include_related=["trigger"])
         raise Failure(

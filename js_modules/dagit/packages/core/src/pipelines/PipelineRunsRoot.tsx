@@ -66,11 +66,14 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
     ].filter(Boolean) as TokenizingFieldValue[];
   }, [isJob, pipelineName, snapshotId]);
 
-  const repoToken = {
-    token: 'tag',
-    value: `${DagsterTag.RepositoryLabelTag}=${repoAddress?.name}@${repoAddress?.location}`,
-  };
-  const allTokens = [...filterTokens, ...permanentTokens, repoToken];
+  const allTokens = [...filterTokens, ...permanentTokens];
+  if (repoAddress) {
+    const repoToken = {
+      token: 'tag',
+      value: `${DagsterTag.RepositoryLabelTag}=${repoAddress.name}@${repoAddress.location}`,
+    };
+    allTokens.push(repoToken);
+  }
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     PipelineRunsRootQuery,

@@ -1,8 +1,9 @@
 import asyncio
 import os
 import sys
-from typing import TYPE_CHECKING, Any, AsyncIterator, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, AsyncIterator, Optional, Sequence, Tuple, Union
 
+from dagster_graphql.schema.util import HasContext
 from graphene import ResolveInfo
 from starlette.concurrency import (
     run_in_threadpool,  # can provide this indirectly if we dont want starlette dep in dagster-graphql
@@ -120,11 +121,11 @@ def terminate_pipeline_execution(instance: DagsterInstance, run_id, terminate_po
 
 
 @capture_error
-def delete_pipeline_run(graphene_info, run_id):
+def delete_pipeline_run(graphene_info: HasContext, run_id: str):
     from ...schema.errors import GrapheneRunNotFoundError
     from ...schema.roots.mutation import GrapheneDeletePipelineRunSuccess
 
-    instance: DagsterInstance = graphene_info.context.instance
+    instance = graphene_info.context.instance
 
     if not instance.has_run(run_id):
         return GrapheneRunNotFoundError(run_id)
@@ -257,10 +258,12 @@ async def gen_compute_logs(
         obs.dispose()
 
 
-async def gen_captured_log_data(graphene_info, log_key, cursor=None):
+async def gen_captured_log_data(
+    graphene_info: HasContext, log_key: Sequence[str], cursor: Optional[str] = None
+):
     from ...schema.logs.compute_logs import from_captured_log_data
 
-    instance: DagsterInstance = graphene_info.context.instance
+    instance = graphene_info.context.instance
 
     compute_log_manager = instance.compute_log_manager
     if not isinstance(compute_log_manager, CapturedLogManager):
@@ -279,7 +282,7 @@ async def gen_captured_log_data(graphene_info, log_key, cursor=None):
     try:
         while not is_complete:
             update = await queue.get()
-            yield from_captured_log_data(update)
+            yield from_captured_log_data(update)  # type: ignore
             is_complete = subscription.is_complete
     finally:
         subscription.dispose()

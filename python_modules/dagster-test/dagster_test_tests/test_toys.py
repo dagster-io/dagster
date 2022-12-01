@@ -1,5 +1,4 @@
 import pytest
-from dagster_test.toys.asset_lineage import asset_lineage_job
 from dagster_test.toys.branches import branch
 from dagster_test.toys.composition import composition_job
 from dagster_test.toys.dynamic import dynamic
@@ -78,7 +77,7 @@ def test_many_events_subset_job(executor_def):
 
 def test_sleepy_job(executor_def):
     assert (
-        lambda: sleepy.to_job(
+        lambda: sleepy.to_job(  # type: ignore
             config={
                 "ops": {"giver": {"config": [2, 2, 2, 2]}},
             },
@@ -254,24 +253,6 @@ def test_composition_job():
 
     assert result.success
     assert result.output_for_node("div_four") == 7.0 / 4.0
-
-
-def test_asset_lineage_job():
-    assert asset_lineage_job.execute_in_process(
-        run_config={
-            "solids": {
-                "download_data": {"outputs": {"result": {"partitions": ["2020-01-01"]}}},
-                "split_action_types": {
-                    "outputs": {
-                        "comments": {"partitions": ["2020-01-01"]},
-                        "reviews": {"partitions": ["2020-01-01"]},
-                    }
-                },
-                "top_10_comments": {"outputs": {"result": {"partitions": ["2020-01-01"]}}},
-                "top_10_reviews": {"outputs": {"result": {"partitions": ["2020-01-01"]}}},
-            }
-        },
-    ).success
 
 
 def test_retry_job(executor_def):

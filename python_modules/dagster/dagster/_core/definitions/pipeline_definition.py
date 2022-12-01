@@ -38,7 +38,7 @@ from .dependency import (
     Node,
     NodeHandle,
     NodeInvocation,
-    SolidOutputHandle,
+    NodeOutput,
 )
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
@@ -711,35 +711,35 @@ def _get_pipeline_subset_def(
         Dict[str, IDependencyDefinition],
     ] = {_dep_key_of(solid): {} for solid in solids}
 
-    for solid in solids:
-        for input_handle in solid.input_handles():
-            if graph.dependency_structure.has_direct_dep(input_handle):
-                output_handle = pipeline_def.dependency_structure.get_direct_dep(input_handle)
-                if output_handle.solid.name in solids_to_execute:
-                    deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
-                        solid=output_handle.solid.name, output=output_handle.output_def.name
+    for node in solids:
+        for node_input in node.inputs():
+            if graph.dependency_structure.has_direct_dep(node_input):
+                node_output = pipeline_def.dependency_structure.get_direct_dep(node_input)
+                if node_output.node.name in solids_to_execute:
+                    deps[_dep_key_of(node)][node_input.input_def.name] = DependencyDefinition(
+                        node=node_output.node.name, output=node_output.output_def.name
                     )
-            elif graph.dependency_structure.has_dynamic_fan_in_dep(input_handle):
-                output_handle = graph.dependency_structure.get_dynamic_fan_in_dep(input_handle)
-                if output_handle.solid.name in solids_to_execute:
-                    deps[_dep_key_of(solid)][
-                        input_handle.input_def.name
+            elif graph.dependency_structure.has_dynamic_fan_in_dep(node_input):
+                node_output = graph.dependency_structure.get_dynamic_fan_in_dep(node_input)
+                if node_output.node.name in solids_to_execute:
+                    deps[_dep_key_of(node)][
+                        node_input.input_def.name
                     ] = DynamicCollectDependencyDefinition(
-                        solid_name=output_handle.solid.name,
-                        output_name=output_handle.output_def.name,
+                        solid_name=node_output.node.name,
+                        output_name=node_output.output_def.name,
                     )
-            elif graph.dependency_structure.has_fan_in_deps(input_handle):
-                output_handles = cast(
-                    Sequence[SolidOutputHandle],
-                    graph.dependency_structure.get_fan_in_deps(input_handle),
+            elif graph.dependency_structure.has_fan_in_deps(node_input):
+                outputs = cast(
+                    Sequence[NodeOutput],
+                    graph.dependency_structure.get_fan_in_deps(node_input),
                 )
-                deps[_dep_key_of(solid)][input_handle.input_def.name] = MultiDependencyDefinition(
+                deps[_dep_key_of(node)][node_input.input_def.name] = MultiDependencyDefinition(
                     [
                         DependencyDefinition(
-                            solid=output_handle.solid.name, output=output_handle.output_def.name
+                            node=node_output.node.name, output=node_output.output_def.name
                         )
-                        for output_handle in output_handles
-                        if output_handle.solid.name in solids_to_execute
+                        for node_output in outputs
+                        if node_output.node.name in solids_to_execute
                     ]
                 )
             # else input is unconnected

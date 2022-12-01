@@ -27,7 +27,7 @@ from dagster._utils.backcompat import ExperimentalWarning
 
 from ..errors import DagsterInvalidSubsetError
 from .config import ConfigMapping
-from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle, SolidOutputHandle
+from .dependency import NodeHandle, NodeInputHandle, NodeOutput, NodeOutputHandle
 from .events import AssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
@@ -104,11 +104,13 @@ def _resolve_input_to_destinations(
     return all_destinations
 
 
-def _resolve_output_to_destinations(output_name, node_def, handle) -> Sequence[NodeInputHandle]:
-    node_input_handles: List[NodeInputHandle] = []
+def _resolve_output_to_destinations(
+    output_name: str, node_def: NodeDefinition, handle: NodeHandle
+) -> Sequence[NodeInputHandle]:
+    all_destinations: List[NodeInputHandle] = []
     if not isinstance(node_def, GraphDefinition):
         # must be in the op definition
-        return node_input_handles
+        return all_destinations
 
     for mapping in node_def.output_mappings:
         if mapping.graph_output_name != output_name:
@@ -116,7 +118,7 @@ def _resolve_output_to_destinations(output_name, node_def, handle) -> Sequence[N
         output_pointer = mapping.maps_from
         output_node = node_def.solid_named(output_pointer.solid_name)
 
-        node_input_handles.extend(
+        all_destinations.extend(
             _resolve_output_to_destinations(
                 output_pointer.output_name,
                 output_node.definition,
@@ -126,27 +128,27 @@ def _resolve_output_to_destinations(output_name, node_def, handle) -> Sequence[N
 
         output_def = output_node.definition.output_def_named(output_pointer.output_name)
         downstream_input_handles = (
-            node_def.dependency_structure.output_to_downstream_inputs_for_solid(
+            node_def.dependency_structure.output_to_downstream_inputs_for_node(
                 output_pointer.solid_name
-            ).get(SolidOutputHandle(output_node, output_def), [])
+            ).get(NodeOutput(output_node, output_def), [])
         )
         for input_handle in downstream_input_handles:
-            node_input_handles.append(
+            all_destinations.append(
                 NodeInputHandle(
                     NodeHandle(input_handle.solid_name, parent=handle), input_handle.input_name
                 )
             )
 
-    return node_input_handles
+    return all_destinations
 
 
 def _build_graph_dependencies(
     graph_def: GraphDefinition,
-    parent_handle: Union[NodeHandle, None],
+    parent_handle: Optional[NodeHandle],
     outputs_by_graph_handle: Dict[NodeHandle, Mapping[str, NodeOutputHandle]],
     non_asset_inputs_by_node_handle: Dict[NodeHandle, Sequence[NodeOutputHandle]],
     assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
-):
+) -> None:
     """
     Scans through every node in the graph, making a recursive call when a node is a graph.
 
@@ -179,11 +181,11 @@ def _build_graph_dependencies(
             }
         non_asset_inputs_by_node_handle[curr_node_handle] = [
             NodeOutputHandle(
-                NodeHandle(output_handle.solid_name, parent=parent_handle),
-                output_handle.output_def.name,
+                NodeHandle(node_output.node_name, parent=parent_handle),
+                node_output.output_def.name,
             )
-            for output_handle in dep_struct.all_upstream_outputs_from_solid(sub_node_name)
-            if NodeHandle(output_handle.solid.name, parent=parent_handle)
+            for node_output in dep_struct.all_upstream_outputs_from_node(sub_node_name)
+            if NodeHandle(node_output.node.name, parent=parent_handle)
             not in assets_defs_by_node_handle
         ]
 
@@ -256,7 +258,7 @@ def _get_dependency_node_output_handles(
 
 def get_dep_node_handles_of_graph_backed_asset(
     graph_def: GraphDefinition, assets_def: "AssetsDefinition"
-):
+) -> Mapping[AssetKey, Set[NodeHandle]]:
     """
     Given a graph-backed asset with graph_def, return a mapping of asset keys outputted by the graph
     to a list of node handles within graph_def that are the dependencies of the asset.
@@ -493,7 +495,7 @@ class AssetLayer:
             key_type=NodeInputHandle,
             value_type=AssetKey,
         )
-        self._asset_info_by_node_output_handle = check.opt_dict_param(
+        self._asset_info_by_node_output_handle = check.opt_mapping_param(
             asset_info_by_node_output_handle,
             "asset_info_by_node_output_handle",
             key_type=NodeOutputHandle,
@@ -535,7 +537,7 @@ class AssetLayer:
 
         # Used to store the asset key dependencies of op node handles within graph backed assets
         # See AssetLayer.downstream_dep_assets for more information
-        self._node_output_handle_to_dep_asset_keys = check.opt_dict_param(
+        self._node_output_handle_to_dep_asset_keys = check.opt_mapping_param(
             node_output_handles_to_dep_asset_keys,
             "node_output_handles_to_dep_asset_keys",
             key_type=NodeOutputHandle,

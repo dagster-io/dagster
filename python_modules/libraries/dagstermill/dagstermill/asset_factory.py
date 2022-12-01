@@ -1,4 +1,5 @@
 import os
+import pickle
 import sys
 import tempfile
 import uuid
@@ -14,10 +15,12 @@ import dagster._check as check
 from dagster import (
     AssetIn,
     AssetKey,
+    Failure,
     Output,
     PartitionsDefinition,
     ResourceDefinition,
     RetryPolicy,
+    RetryRequested,
     asset,
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
@@ -31,8 +34,9 @@ from .engine import DagstermillEngine
 
 
 def _dm_compute(
-    name,
-    notebook_path,
+    name: str,
+    notebook_path: str,
+    save_notebook_on_failure: bool,
 ):
     check.str_param(name, "name")
     check.str_param(notebook_path, "notebook_path")
@@ -95,13 +99,39 @@ def _dm_compute(
                             f"Encountered raised {ex.ename} in notebook. Use dagstermill.yield_event "
                             "with RetryRequested or Failure to trigger their behavior."
                         )
+
+                    if save_notebook_on_failure:
+                        storage_dir = context.instance.storage_directory()
+                        storage_path = os.path.join(storage_dir, f"{prefix}-out.ipynb")
+                        with open(storage_path, "wb") as dest_file_obj:
+                            with open(executed_notebook_path, "rb") as obj:
+                                dest_file_obj.write(obj.read())
+
+                        step_execution_context.log.info(
+                            f"Failed notebook written to {storage_path}"
+                        )
+
                     raise
 
             step_execution_context.log.debug(
                 f"Notebook execution complete for {name} at {executed_notebook_path}."
             )
             with open(executed_notebook_path, "rb") as fd:
-                return Output(fd.read())
+                yield Output(fd.read())
+
+            # deferred import for perf
+            import scrapbook
+
+            output_nb = scrapbook.read_notebook(executed_notebook_path)
+
+            for key, value in output_nb.scraps.items():
+                if key.startswith("event-"):
+                    with open(value.data, "rb") as fd:
+                        event = pickle.loads(fd.read())
+                        if isinstance(event, (Failure, RetryRequested)):
+                            raise event
+                        else:
+                            yield event
 
     return _t_fn
 
@@ -122,6 +152,7 @@ def define_dagstermill_asset(
     group_name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
+    save_notebook_on_failure: bool = False,
 ):
     """Creates a Dagster asset for a Jupyter notebook.
 
@@ -157,6 +188,9 @@ def define_dagstermill_asset(
         io_manager_key (Optional[str]): A string key for the IO manager used to store the output notebook.
             If not provided, the default key output_notebook_io_manager will be used.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
+        save_notebook_on_failure (bool): If True and the notebook fails during execution, the failed notebook will be
+            written to the Dagster storage directory. The location of the file will be printed in the Dagster logs.
+            Defaults to False.
 
     Examples:
 
@@ -188,6 +222,7 @@ def define_dagstermill_asset(
 
     check.str_param(name, "name")
     check.str_param(notebook_path, "notebook_path")
+    check.bool_param(save_notebook_on_failure, "save_notebook_on_failure")
 
     required_resource_keys = set(
         check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
@@ -238,5 +273,6 @@ def define_dagstermill_asset(
         _dm_compute(
             name=name,
             notebook_path=notebook_path,
+            save_notebook_on_failure=save_notebook_on_failure,
         )
     )

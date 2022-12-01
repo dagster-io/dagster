@@ -1,9 +1,16 @@
 import datetime
 import os
-import subprocess
 from unittest import mock
 
-from airflow.contrib.operators.spark_submit_operator import SparkSubmitOperator
+from airflow import __version__ as airflow_version
+
+# pylint: disable=no-name-in-module,import-error
+if airflow_version >= "2.0.0":
+    from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
+else:
+    from airflow.contrib.operators.spark_submit_operator import SparkSubmitOperator
+# pylint: enable=no-name-in-module,import-error
+
 from airflow.models.dag import DAG
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.dummy_operator import DummyOperator
@@ -27,11 +34,18 @@ default_args = {
 # dashes, dots and underscores) than Dagster's naming conventions (alphanumeric characters,
 # underscores), so Dagster will strip invalid characters and replace with '_'
 def test_normalize_name():
-    dag = DAG(
-        dag_id="dag-with.dot-dash",
-        default_args=default_args,
-        schedule_interval=None,
-    )
+    if airflow_version >= "2.0.0":
+        dag = DAG(
+            dag_id="dag-with.dot-dash",
+            default_args=default_args,
+            schedule=None,
+        )
+    else:
+        dag = DAG(
+            dag_id="dag-with.dot-dash",
+            default_args=default_args,
+            schedule_interval=None,
+        )
     dummy_operator = DummyOperator(
         task_id="task-with.dot-dash",
         dag=dag,
@@ -52,11 +66,18 @@ def test_normalize_name():
 # Test names with 250 characters, Airflow's max allowed length
 def test_long_name():
     dag_name = "dag-with.dot-dash-lo00ong" * 10
-    dag = DAG(
-        dag_id=dag_name,
-        default_args=default_args,
-        schedule_interval=None,
-    )
+    if airflow_version >= "2.0.0":
+        dag = DAG(
+            dag_id=dag_name,
+            default_args=default_args,
+            schedule=None,
+        )
+    else:
+        dag = DAG(
+            dag_id=dag_name,
+            default_args=default_args,
+            schedule_interval=None,
+        )
     long_name = "task-with.dot-dash2-loong" * 10  # 250 characters, Airflow's max allowed length
     dummy_operator = DummyOperator(
         task_id=long_name,
@@ -83,11 +104,18 @@ def test_long_name():
 
 
 def test_one_task_dag():
-    dag = DAG(
-        dag_id="dag",
-        default_args=default_args,
-        schedule_interval=None,
-    )
+    if airflow_version >= "2.0.0":
+        dag = DAG(
+            dag_id="dag",
+            default_args=default_args,
+            schedule=None,
+        )
+    else:
+        dag = DAG(
+            dag_id="dag",
+            default_args=default_args,
+            schedule_interval=None,
+        )
     dummy_operator = DummyOperator(
         task_id="dummy_operator",
         dag=dag,
@@ -106,11 +134,18 @@ def normalize_file_content(s):
 
 
 def test_template_task_dag():
-    dag = DAG(
-        dag_id="dag",
-        default_args=default_args,
-        schedule_interval=None,
-    )
+    if airflow_version >= "2.0.0":
+        dag = DAG(
+            dag_id="dag",
+            default_args=default_args,
+            schedule=None,
+        )
+    else:
+        dag = DAG(
+            dag_id="dag",
+            default_args=default_args,
+            schedule_interval=None,
+        )
 
     t1 = BashOperator(
         task_id="print_hello",
@@ -148,8 +183,7 @@ def test_template_task_dag():
 
         execution_date = get_current_datetime_in_utc()
         execution_date_add_one_week = execution_date + datetime.timedelta(days=7)
-        execution_date_iso = execution_date.strftime("%Y-%m-%d")
-        execution_date_add_one_week_iso = execution_date_add_one_week.strftime("%Y-%m-%d")
+        execution_date_iso = execution_date.isoformat()
 
         result = execute_pipeline(
             make_dagster_pipeline_from_airflow_dag(
@@ -178,65 +212,49 @@ def test_template_task_dag():
         file_contents = normalize_file_content(stdout_file.read())
         stdout_file.close()
 
-        assert file_contents.count("INFO - Running command: echo hello dagsir\n") == 1
-        assert file_contents.count("INFO - Running command: sleep 2\n") == 1
-        assert (
-            file_contents.count(
-                "INFO - Running command: \n    \n        "
-                "echo '{execution_date_iso}'\n        "
-                "echo '{execution_date_add_one_week_iso}'\n        "
-                "echo 'Parameter I passed in'\n    \n        "
-                "echo '{execution_date_iso}'\n        "
-                "echo '{execution_date_add_one_week_iso}'\n        "
-                "echo 'Parameter I passed in'\n    \n        "
-                "echo '{execution_date_iso}'\n        "
-                "echo '{execution_date_add_one_week_iso}'\n        "
-                "echo 'Parameter I passed in'\n    \n        "
-                "echo '{execution_date_iso}'\n        "
-                "echo '{execution_date_add_one_week_iso}'\n        "
-                "echo 'Parameter I passed in'\n    \n        "
-                "echo '{execution_date_iso}'\n        "
-                "echo '{execution_date_add_one_week_iso}'\n        "
-                "echo 'Parameter I passed in'\n    \n    \n".format(
-                    execution_date_iso=execution_date_iso,
-                    execution_date_add_one_week_iso=execution_date_add_one_week_iso,
+        if airflow_version >= "2.0.0":
+            assert (
+                file_contents.count("Running command: ['/bin/bash', '-c', 'echo hello dagsir']")
+                == 1
+            )
+            assert file_contents.count("Running command: ['/bin/bash', '-c', 'sleep 2']") == 1
+        else:
+            assert file_contents.count("INFO - Running command: echo hello dagsir\n") == 1
+            assert file_contents.count("INFO - Running command: sleep 2\n") == 1
+            assert (
+                file_contents.count(
+                    "INFO - Running command: \n    \n        "
+                    "echo '{execution_date_iso}'\n        "
+                    "echo '{execution_date_add_one_week_iso}'\n        "
+                    "echo 'Parameter I passed in'\n    \n        "
+                    "echo '{execution_date_iso}'\n        "
+                    "echo '{execution_date_add_one_week_iso}'\n        "
+                    "echo 'Parameter I passed in'\n    \n        "
+                    "echo '{execution_date_iso}'\n        "
+                    "echo '{execution_date_add_one_week_iso}'\n        "
+                    "echo 'Parameter I passed in'\n    \n        "
+                    "echo '{execution_date_iso}'\n        "
+                    "echo '{execution_date_add_one_week_iso}'\n        "
+                    "echo 'Parameter I passed in'\n    \n        "
+                    "echo '{execution_date_iso}'\n        "
+                    "echo '{execution_date_add_one_week_iso}'\n        "
+                    "echo 'Parameter I passed in'\n    \n    \n".format(
+                        execution_date_iso=execution_date.strftime("%Y-%m-%d"),
+                        execution_date_add_one_week_iso=execution_date_add_one_week.strftime(
+                            "%Y-%m-%d"
+                        ),
+                    )
                 )
+                == 1
             )
-            == 1
-        )
-        assert (
-            file_contents.count(
-                "INFO - {execution_date_iso}\n".format(execution_date_iso=execution_date_iso)
-            )
-            == 5
-        )
-        assert (
-            file_contents.count(
-                "INFO - {execution_date_add_one_week_iso}\n".format(
-                    execution_date_add_one_week_iso=execution_date_add_one_week_iso
-                )
-            )
-            == 5
-        )
-        assert file_contents.count("INFO - Parameter I passed in\n") == 5
-        assert file_contents.count("INFO - Command exited with return code 0") == 3
+        assert file_contents.count("Command exited with return code 0") == 3
 
 
-def intercept_spark_submit(*args, **kwargs):
-    if args[0] == [
-        "spark-submit",
-        "--master",
-        "",
-        "--name",
-        "airflow-spark",
-        "some_path.py",
-    ]:
-        m = mock.MagicMock()
-        m.stdout.readline.return_value = ""
-        m.wait.return_value = 0
-        return m
-    else:
-        return subprocess.Popen(*args, **kwargs)
+def intercept_spark_submit(*_args, **_kwargs):
+    m = mock.MagicMock()
+    m.stdout.readline.return_value = ""
+    m.wait.return_value = 0
+    return m
 
 
 @mock.patch("subprocess.Popen", side_effect=intercept_spark_submit)
@@ -244,13 +262,19 @@ def test_spark_dag(mock_subproc_popen):
     # Hack to get around having a Connection
     os.environ["AIRFLOW_CONN_SPARK"] = "something"
 
-    dag = DAG(
-        dag_id="spark_dag",
-        default_args=default_args,
-        schedule_interval=None,
-    )
-    # pylint: disable=unused-variable
-    clean_data = SparkSubmitOperator(
+    if airflow_version >= "2.0.0":
+        dag = DAG(
+            dag_id="spark_dag",
+            default_args=default_args,
+            schedule=None,
+        )
+    else:
+        dag = DAG(
+            dag_id="spark_dag",
+            default_args=default_args,
+            schedule_interval=None,
+        )
+    SparkSubmitOperator(
         task_id="run_spark",
         application="some_path.py",
         conn_id="SPARK",
@@ -261,8 +285,13 @@ def test_spark_dag(mock_subproc_popen):
         dag=dag,
         tags={AIRFLOW_EXECUTION_DATE_STR: get_current_datetime_in_utc().isoformat()},
     )
-    execute_pipeline(pipeline)  # , instance=instance,)
+    execute_pipeline(pipeline)
 
-    assert mock_subproc_popen.call_args_list[0][0] == (
-        ["spark-submit", "--master", "", "--name", "airflow-spark", "some_path.py"],
-    )
+    if airflow_version >= "2.0.0":
+        assert mock_subproc_popen.call_args_list[0][0] == (
+            ["spark-submit", "--master", "", "--name", "arrow-spark", "some_path.py"],
+        )
+    else:
+        assert mock_subproc_popen.call_args_list[0][0] == (
+            ["spark-submit", "--master", "", "--name", "airflow-spark", "some_path.py"],
+        )

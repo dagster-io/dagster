@@ -249,7 +249,7 @@ class ExternalJobRef(
             cls,
             name=check.str_param(name, "name"),
             snapshot_id=check.str_param(snapshot_id, "snapshot_id"),
-            active_presets=check.list_param(
+            active_presets=check.sequence_param(
                 active_presets, "active_presets", of_type=ExternalPresetData
             ),
             parent_snapshot_id=check.opt_str_param(parent_snapshot_id, "parent_snapshot_id"),
@@ -712,7 +712,7 @@ class ExternalPartitionConfigData(
 class ExternalPartitionTagsData(
     NamedTuple("_ExternalPartitionTagsData", [("name", str), ("tags", Mapping[str, object])])
 ):
-    def __new__(cls, name: str, tags: Optional[Mapping[str, object]] = None):
+    def __new__(cls, name: str, tags: Optional[Mapping[str, str]] = None):
         return super(ExternalPartitionTagsData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -727,7 +727,7 @@ class ExternalPartitionExecutionParamData(
         [("name", str), ("tags", Mapping[str, object]), ("run_config", Mapping[str, object])],
     )
 ):
-    def __new__(cls, name: str, tags: Mapping[str, object], run_config: Mapping[str, object]):
+    def __new__(cls, name: str, tags: Mapping[str, str], run_config: Mapping[str, object]):
         return super(ExternalPartitionExecutionParamData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),

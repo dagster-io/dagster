@@ -432,7 +432,7 @@ def test_infer_input_dagster_type():
 def test_infer_output_dagster_type():
     @asset
     def my_asset() -> str:
-        pass
+        return "foo"
 
     assert my_asset.op.outs["result"].dagster_type.display_name == "String"
     assert my_asset.op.outs["result"].dagster_type.typing_type == str
