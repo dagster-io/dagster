@@ -25,7 +25,7 @@ from dagster._utils import check
 
 from .configurable import ConfigurableDefinition
 from .definition_config_schema import IDefinitionConfigSchema
-from .dependency import DependencyStructure, Node, NodeHandle, SolidInputHandle
+from .dependency import DependencyStructure, Node, NodeHandle, NodeInput
 from .graph_definition import GraphDefinition
 from .logger_definition import LoggerDefinition
 from .mode import ModeDefinition
@@ -219,7 +219,7 @@ def get_inputs_field(
     direct_inputs = check.opt_mapping_param(direct_inputs, "direct_inputs")
     inputs_field_fields = {}
     for name, inp in solid.definition.input_dict.items():
-        inp_handle = SolidInputHandle(solid, inp)
+        inp_handle = NodeInput(solid, inp)
         has_upstream = input_has_upstream(dependency_structure, inp_handle, solid, name)
         if inp.input_manager_key:
             input_field = get_input_manager_input_field(solid, inp, resource_defs)
@@ -258,7 +258,7 @@ def get_inputs_field(
 
 def input_has_upstream(
     dependency_structure: DependencyStructure,
-    input_handle: SolidInputHandle,
+    input_handle: NodeInput,
     solid: Node,
     input_name: str,
 ) -> bool:
