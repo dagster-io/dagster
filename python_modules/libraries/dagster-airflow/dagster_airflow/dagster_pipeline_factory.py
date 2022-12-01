@@ -515,7 +515,7 @@ def make_dagster_pipeline_from_airflow_dag(
         name=normalized_name(dag.dag_id),
         solid_defs=solid_defs,
         dependencies=pipeline_dependencies,
-        mode_defs=[ModeDefinition(resource_defs={"airflow_db": airflow_db})],
+        mode_defs=[ModeDefinition(resource_defs={"airflow_db": airflow_db})] if use_ephemeral_airflow_db else [],
         tags=tags,
     )
     return pipeline_def
