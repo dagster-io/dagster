@@ -14,28 +14,38 @@ By the end of the tutorial, you will:
 - Make a Snowflake table available in Dagster
 - Load Snowflake tables in downstream assets
 
-To use the Snowflake I/O manager, you will need to gather the following information:
+---
 
-- **Snowflake account name**: You can find this by logging into Snowflake and getting the account name from the URL.
+## Prerequisites
 
-  <Image
-  src="/images/integrations/snowflake/snowflake-account.png"
-  width={1456}
-  height={72}
-  />
+To complete this tutorial, you'll need:
 
-- **Snowflake credentials**: This includes a username and a password. The Snowflake I/O manager can read these values from environment variables. In this guide, we store the username and password as `SNOWFLAKE_USER` and `SNOWFLAKE_PASSWORD`, respectively.
+- **To install the `dagster-snowflake` and `dagster-snowflake-pandas` libraries**:
 
   ```shell
-  export SNOWFLAKE_USER=<your username>
-  export SNOWFLAKE_PASSWORD=<your password>
+  pip install dagster-snowflake dagster-snowflake-pandas
   ```
 
-You will also need to install the `dagster-snowflake` and `dagster-snowflake-pandas` libraries:
+- **To gather the following information**, which is required to use the Snowflake I/O manager:
 
-```shell
-pip install dagster-snowflake dagster-snowflake-pandas
-```
+  - **Snowflake account name**: You can find this by logging into Snowflake and getting the account name from the URL:
+
+    <Image
+    src="/images/integrations/snowflake/snowflake-account.png"
+    width={1456}
+    height={72}
+    />
+
+  - **Snowflake credentials**: This includes a username and a password. The Snowflake I/O manager can read these values from environment variables. In this guide, we store the username and password as `SNOWFLAKE_USER` and `SNOWFLAKE_PASSWORD`, respectively.
+
+    ```shell
+    export SNOWFLAKE_USER=<your username>
+    export SNOWFLAKE_PASSWORD=<your password>
+    ```
+
+    Refer to the [Using environment variables and secrets guide](/guides/dagster/using-environment-variables-and-secrets) for more info.
+
+---
 
 ## Step 1: Configure the Snowflake I/O manager
 
