@@ -9,15 +9,15 @@ description: The Dagstermill package lets you run notebooks using the Dagster to
 
 In this tutorial, we'll walk you through integrating a Jupyter notebook with Dagster using an example project. Before we get started, let's cover some common approaches to writing and integrating Jupyter notebooks with Dagster:
 
-- **Doing standalone development in a Jupyter notebook**. You could then create two Dagster assets: one for the notebook itself and another for data fetching logic. This approach allows you to configure existing notebooks to work with Dagster and is what we'll use to start the tutorial.
+- **Doing standalone development in a Jupyter notebook**. You could then create two Dagster assets: one for the notebook itself and another for data-fetching logic. This approach, which we'll use to start the tutorial, allows you to configure existing notebooks to work with Dagster.
 
 - **Using existing Dagster assets as input to notebooks**. If the data you want to analyze is already a Dagster asset, you can directly load the asset's value into the notebook. When the notebook is complete, you can create a Dagster asset for the notebook and factor any data-fetching logic into a second asset, if applicable. This approach allows you to develop new notebooks that work with assets that are already a part of your Dagster project.
 
 By the end of this tutorial, you will:
 
-- Explore a Jupyter notebook that fetches and uses the Iris dataset
+- Explore a Jupyter notebook that fetches and explores a dataset
 - Create a Dagster asset from the notebook
-- Create a second Dagster asset that only fetches the Iris dataset
+- Create a second Dagster asset that only fetches the dataset
 - Load existing Dagster assets into a new Jupyter notebook
 
 ---
@@ -56,9 +56,7 @@ To complete this tutorial, you'll need:
 
   - **A finished version of the tutorial project**, which you can use to check out the finished project. This is the `tutorial_finished` subfolder.
 
-  - **A template version of the tutorial project**, which you can use to follow along with the tutorial. This is the `tutorial_template` subfolder.
-
-    In `tutorial_template`, you'll also find:
+  - **A template version of the tutorial project**, which you can use to follow along with the tutorial. This is the `tutorial_template` subfolder. In this folder, you'll also find:
 
     - `assets`, a subfolder containing Dagster assets. We'll use `/assets/__init__.py` to write these.
     - `notebooks`, a subfolder containing Jupyter notebooks. We'll use `/notebooks/iris-kmeans.ipynb` to write a Jupyter notebook.
@@ -321,7 +319,7 @@ The `ins` parameter tells Dagster that the `iris_dataset` asset should be mapped
 
 We need to make a small change in our Jupyter notebook to allow Dagster to supply the `iris_dataset` asset as input. Behind the scenes, Dagster uses `papermill` to inject parameters into notebooks. `papermill` works by replacing a notebook cell with the `parameters` tag with a custom cell that can fetch the desired data.
 
-To accomplish this, we need to tag the cell in the `iris-kmeans` notebook that fetches the Iris dataset. This allows us to replace the cell with the dataset-fetching logic that loads the `iris_dataset` asset and retain the ability to run the Jupyter notebook in a standalone context. We'll cover this in more detail later in the tutorial.
+To accomplish this, we need to tag the cell in the `iris-kmeans` notebook that fetches the Iris dataset. This allows us to replace the cell with the data-fetching logic that loads the `iris_dataset` asset and retain the ability to run the Jupyter notebook in a standalone context. We'll cover this in more detail later in the tutorial.
 
 To add the `parameters` tag, you may need to turn on the display of cell tags in Jupyter:
 
