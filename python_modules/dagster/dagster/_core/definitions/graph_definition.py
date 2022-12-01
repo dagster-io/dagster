@@ -37,8 +37,8 @@ from .dependency import (
     IDependencyDefinition,
     Node,
     NodeHandle,
+    NodeInput,
     NodeInvocation,
-    SolidInputHandle,
 )
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
@@ -90,28 +90,28 @@ def _check_node_defs_arg(
 
 
 def _create_adjacency_lists(
-    solids: Sequence[Node],
+    nodes: Sequence[Node],
     dep_structure: DependencyStructure,
 ) -> Tuple[Mapping[str, Set[str]], Mapping[str, Set[str]]]:
-    visit_dict = {s.name: False for s in solids}
-    forward_edges: Dict[str, Set[str]] = {s.name: set() for s in solids}
-    backward_edges: Dict[str, Set[str]] = {s.name: set() for s in solids}
+    visit_dict = {s.name: False for s in nodes}
+    forward_edges: Dict[str, Set[str]] = {s.name: set() for s in nodes}
+    backward_edges: Dict[str, Set[str]] = {s.name: set() for s in nodes}
 
-    def visit(solid_name: str) -> None:
-        if visit_dict[solid_name]:
+    def visit(node_name: str) -> None:
+        if visit_dict[node_name]:
             return
 
-        visit_dict[solid_name] = True
+        visit_dict[node_name] = True
 
-        for output_handle in dep_structure.all_upstream_outputs_from_solid(solid_name):
-            forward_node = output_handle.solid.name
-            backward_node = solid_name
+        for node_output in dep_structure.all_upstream_outputs_from_node(node_name):
+            forward_node = node_output.node.name
+            backward_node = node_name
             if forward_node in forward_edges:
                 forward_edges[forward_node].add(backward_node)
                 backward_edges[backward_node].add(forward_node)
                 visit(forward_node)
 
-    for s in solids:
+    for s in nodes:
         visit(s.name)
 
     return (forward_edges, backward_edges)
@@ -179,7 +179,7 @@ class GraphDefinition(NodeDefinition):
     _input_mappings: Sequence[InputMapping]
     _output_mappings: Sequence[OutputMapping]
     _config_mapping: Optional[ConfigMapping]
-    _solids_in_topological_order: Sequence[Node]
+    _nodes_in_topological_order: Sequence[Node]
 
     def __init__(
         self,
@@ -233,10 +233,10 @@ class GraphDefinition(NodeDefinition):
 
         # must happen after base class construction as properties are assumed to be there
         # eager computation to detect cycles
-        self._solids_in_topological_order = self._get_solids_in_topological_order()
+        self._nodes_in_topological_order = self._get_nodes_in_topological_order()
         self._dagster_type_dict = construct_dagster_type_dictionary([self])
 
-    def _get_solids_in_topological_order(self) -> Sequence[Node]:
+    def _get_nodes_in_topological_order(self) -> Sequence[Node]:
 
         _forward_edges, backward_edges = _create_adjacency_lists(
             self.solids, self.dependency_structure
@@ -258,7 +258,7 @@ class GraphDefinition(NodeDefinition):
             for input_def in node.definition.get_inputs_must_be_resolved_top_level(
                 asset_layer, cur_handle
             ):
-                if self.dependency_structure.has_deps(SolidInputHandle(node, input_def)):
+                if self.dependency_structure.has_deps(NodeInput(node, input_def)):
                     continue
                 elif not node.container_maps_input(input_def.name):
                     raise DagsterInvalidDefinitionError(
@@ -296,7 +296,7 @@ class GraphDefinition(NodeDefinition):
 
     @property
     def solids_in_topological_order(self) -> Sequence[Node]:
-        return self._solids_in_topological_order
+        return self._nodes_in_topological_order
 
     def has_solid_named(self, name: str) -> bool:
         check.str_param(name, "name")
@@ -840,17 +840,17 @@ def _validate_in_mappings(
             )
 
         target_input_def = target_node.input_def_named(mapping.maps_to.input_name)
-        solid_input_handle = SolidInputHandle(target_node, target_input_def)
+        node_input = NodeInput(target_node, target_input_def)
 
         if mapping.maps_to_fan_in:
             maps_to = cast(FanInInputPointer, mapping.maps_to)
-            if not dependency_structure.has_fan_in_deps(solid_input_handle):
+            if not dependency_structure.has_fan_in_deps(node_input):
                 raise DagsterInvalidDefinitionError(
                     f"In {class_name} '{name}' input mapping target "
                     f'"{maps_to.node_name}.{maps_to.input_name}" (index {maps_to.fan_in_index} of fan-in) '
                     f"is not a MultiDependencyDefinition."
                 )
-            inner_deps = dependency_structure.get_fan_in_deps(solid_input_handle)
+            inner_deps = dependency_structure.get_fan_in_deps(node_input)
             if (maps_to.fan_in_index >= len(inner_deps)) or (
                 inner_deps[maps_to.fan_in_index] is not MappedInputPlaceholder
             ):
@@ -864,7 +864,7 @@ def _validate_in_mappings(
                 target_input_def.dagster_type.get_inner_type_for_fan_in()
             )
         else:
-            if dependency_structure.has_deps(solid_input_handle):
+            if dependency_structure.has_deps(node_input):
                 raise DagsterInvalidDefinitionError(
                     f"In {class_name} '{name}' input mapping target "
                     f'"{mapping.maps_to.node_name}.{mapping.maps_to.input_name}" '
@@ -876,15 +876,15 @@ def _validate_in_mappings(
                 target_input_def.dagster_type
             )
 
-    for input_handle in dependency_structure.input_handles():
-        if dependency_structure.has_fan_in_deps(input_handle):
-            for idx, dep in enumerate(dependency_structure.get_fan_in_deps(input_handle)):
+    for node_input in dependency_structure.inputs():
+        if dependency_structure.has_fan_in_deps(node_input):
+            for idx, dep in enumerate(dependency_structure.get_fan_in_deps(node_input)):
                 if dep is MappedInputPlaceholder:
-                    mapping_str = f"{input_handle.node_name}.{input_handle.input_name}.{idx}"
+                    mapping_str = f"{node_input.node_name}.{node_input.input_name}.{idx}"
                     if mapping_str not in mapping_keys:
                         raise DagsterInvalidDefinitionError(
                             f"Unsatisfied MappedInputPlaceholder at index {idx} in "
-                            f"MultiDependencyDefinition for '{input_handle.node_name}.{input_handle.input_name}'"
+                            f"MultiDependencyDefinition for '{node_input.node_name}.{node_input.input_name}'"
                         )
 
     # if the dagster type on a graph input is Any and all its target inputs have the

@@ -458,6 +458,8 @@ test_airflow_example_dags_inputs = [
             # airflow.exceptions.DagNotFound: Dag id example_trigger_target_dag not found in DagModel
             "airflow_example_trigger_target_dag",
             "airflow_example_trigger_controller_dag",
+            # runs slow
+            "airflow_example_subdag_operator",
         ],
     ),
 ]

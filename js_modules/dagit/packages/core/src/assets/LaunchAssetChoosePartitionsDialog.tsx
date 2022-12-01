@@ -207,7 +207,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       );
 
       setLaunching(false);
-      if (result?.launchPipelineExecution.__typename === 'LaunchRunSuccess') {
+      if (result?.__typename === 'LaunchRunSuccess') {
         setOpen(false);
       }
     } else {

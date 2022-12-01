@@ -85,7 +85,7 @@ class GrapheneScheduleData(graphene.ObjectType):
     def __init__(self, instigator_data):
         check.inst_param(instigator_data, "instigator_data", ScheduleInstigatorData)
         super().__init__(
-            cronSchedule=instigator_data.cron_schedule,
+            cronSchedule=str(instigator_data.cron_schedule),
             startTimestamp=instigator_data.start_timestamp,
         )
 
