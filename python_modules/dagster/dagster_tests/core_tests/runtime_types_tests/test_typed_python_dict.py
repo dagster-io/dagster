@@ -38,7 +38,9 @@ def test_basic_solid_dict_int_int_input_pass():
     def emit_dict_int_int(ddict):
         return ddict
 
-    assert wrap_op_in_graph_and_execute(emit_dict_int_int, input_values={"ddict": {1: 2}}).output_value() == {1: 2}
+    assert wrap_op_in_graph_and_execute(
+        emit_dict_int_int, input_values={"ddict": {1: 2}}
+    ).output_value() == {1: 2}
 
 
 def test_basic_solid_dict_int_int_input_fails():

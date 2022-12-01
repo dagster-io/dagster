@@ -19,12 +19,13 @@ from dagster import (
     define_asset_job,
     fs_io_manager,
     graph,
+    job,
     op,
     repository,
 )
 from dagster._core.definitions import Partition, PartitionSetDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.execution.api import execute_pipeline
+from dagster._core.execution.api import execute_job
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
@@ -41,7 +42,7 @@ from dagster._seven import IS_WINDOWS, get_system_temp_directory
 from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
 
-default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
+default_resource_defs = resource_defs={"io_manager": fs_io_manager}
 
 
 def _failure_flag_file():
@@ -84,25 +85,25 @@ def after_failure(_, _input):
     return 1
 
 
-@pipeline(mode_defs=[default_mode_def])
-def the_pipeline():
+@job(resource_defs=default_resource_defs)
+def the_job():
     always_succeed()
 
 
-@pipeline(mode_defs=[default_mode_def])
-def conditional_failure_pipeline():
+@job(resource_defs=default_resource_defs)
+def conditional_failure_job():
     after_failure(conditionally_fail(always_succeed()))
 
 
-@pipeline(mode_defs=[default_mode_def])
-def partial_pipeline():
+@job(resource_defs=default_resource_defs)
+def partial_job():
     always_succeed.alias("step_one")()
     always_succeed.alias("step_two")()
     always_succeed.alias("step_three")()
 
 
-@pipeline(mode_defs=[default_mode_def])
-def parallel_failure_pipeline():
+@job(resource_defs=default_resource_defs)
+def parallel_failure_job():
     fail_solid.alias("fail_one")()
     fail_solid.alias("fail_two")()
     fail_solid.alias("fail_three")()
@@ -114,8 +115,8 @@ def config_solid(_):
     return 1
 
 
-@pipeline(mode_defs=[default_mode_def])
-def config_pipeline():
+@job(resource_defs=default_resource_defs)
+def config_job():
     config_solid()
 
 
@@ -240,17 +241,17 @@ ab2 = AssetsDefinition(
 @repository
 def the_repo():
     return [
-        the_pipeline,
-        conditional_failure_pipeline,
-        partial_pipeline,
-        config_pipeline,
+        the_job,
+        conditional_failure_job,
+        partial_job,
+        config_job,
         simple_partition_set,
         conditionally_fail_partition_set,
         partial_partition_set,
         large_partition_set,
         always_succeed_job,
         parallel_failure_partition_set,
-        parallel_failure_pipeline,
+        parallel_failure_job,
         # the lineage graph defined with these assets is such that: foo -> a1 -> bar -> b1
         # this requires ab1 to be split into two separate asset definitions using the automatic
         # subsetting capabilities. ab2 is defines similarly, so in total 4 copies of the "reusable"
@@ -726,12 +727,11 @@ def test_backfill_from_failure_for_subselection(instance, workspace_context, ext
         "parallel_failure_partition_set"
     )
 
-    execute_pipeline(
-        parallel_failure_pipeline,
+    parallel_failure_job.execute_in_process(
         run_config=run_config,
         tags=tags,
         instance=instance,
-        solid_selection=["fail_three", "success_four"],
+        op_selection=["fail_three", "success_four"],
         raise_on_error=False,
     )
 

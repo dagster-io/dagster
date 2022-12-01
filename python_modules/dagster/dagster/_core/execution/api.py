@@ -441,7 +441,7 @@ def execute_job(
     job: ReconstructableJob,
     instance: "DagsterInstance",
     run_config: Any = None,
-    tags: Optional[Mapping[str, Any]] = None,
+    tags: Optional[Mapping[str, str]] = None,
     raise_on_error: bool = False,
     op_selection: Optional[Sequence[str]] = None,
     reexecution_options: Optional[ReexecutionOptions] = None,
@@ -457,7 +457,7 @@ def execute_job(
 
     `execute_job` expects a persistent :py:class:`DagsterInstance` for
     execution, meaning the `$DAGSTER_HOME` environment variable must be set.
-    It als expects a reconstructable pointer to a :py:class:`JobDefinition` so
+    It also expects a reconstructable pointer to a :py:class:`JobDefinition` so
     that it can be reconstructed in separate processes. This can be done by
     wrapping the ``JobDefinition`` in a call to :py:func:`dagster.
     reconstructable`.

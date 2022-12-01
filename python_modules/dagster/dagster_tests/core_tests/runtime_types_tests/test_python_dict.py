@@ -3,7 +3,6 @@ import typing
 import pytest
 from dagster import (
     DagsterInvalidConfigError,
-    DagsterInvalidDefinitionError,
     DagsterTypeCheckDidNotPass,
     Dict,
     In,
@@ -29,7 +28,10 @@ def test_basic_python_dictionary_input():
         return data["key"]
 
     assert (
-        wrap_op_in_graph_and_execute(input_dict, input_values={"data": {"key": "value"}}).output_value() == "value"
+        wrap_op_in_graph_and_execute(
+            input_dict, input_values={"data": {"key": "value"}}
+        ).output_value()
+        == "value"
     )
 
 
@@ -58,8 +60,7 @@ def test_execute_dict_from_config():
 
     assert (
         wrap_op_in_graph_and_execute(
-            input_dict,
-            run_config={"inputs": {"data": {"key": "in_config"}}}
+            input_dict, run_config={"inputs": {"data": {"key": "in_config"}}}
         ).output_value()
         == "in_config"
     )
@@ -79,7 +80,10 @@ def test_basic_dagster_dictionary_input():
         return data["key"]
 
     assert (
-        wrap_op_in_graph_and_execute(input_dict, input_values={"data": {"key": "value"}}).output_value() == "value"
+        wrap_op_in_graph_and_execute(
+            input_dict, input_values={"data": {"key": "value"}}
+        ).output_value()
+        == "value"
     )
 
 
@@ -100,7 +104,10 @@ def test_basic_typing_dictionary_input():
         return data["key"]
 
     assert (
-        wrap_op_in_graph_and_execute(input_dict, input_values={"data": {"key": "value"}}).output_value() == "value"
+        wrap_op_in_graph_and_execute(
+            input_dict, input_values={"data": {"key": "value"}}
+        ).output_value()
+        == "value"
     )
 
 
@@ -133,7 +140,10 @@ def test_basic_closed_typing_dictionary_input():
         return data["key"]
 
     assert (
-        wrap_op_in_graph_and_execute(input_dict, input_values={"data": {"key": "value"}}).output_value() == "value"
+        wrap_op_in_graph_and_execute(
+            input_dict, input_values={"data": {"key": "value"}}
+        ).output_value()
+        == "value"
     )
 
 
@@ -180,8 +190,7 @@ def test_dict_type_loader():
         return dict_input
 
     result = wrap_op_in_graph_and_execute(
-        emit_dict,
-        run_config={"inputs": {"dict_input": test_input}}
+        emit_dict, run_config={"inputs": {"dict_input": test_input}}
     )
     assert result.success
     assert result.output_value() == test_input

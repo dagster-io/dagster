@@ -12,7 +12,6 @@ from dagster._core.execution.context.compute import AbstractComputeExecutionCont
 from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._legacy import JobDefinition
 from dagster._utils.backcompat import deprecation_warning
 
 

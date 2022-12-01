@@ -29,7 +29,10 @@ def test_vanilla_set_input():
     def take_set(tt):
         return tt
 
-    assert wrap_op_in_graph_and_execute(take_set, input_values={"tt": {2, 3}}).output_value() == {2, 3}
+    assert wrap_op_in_graph_and_execute(take_set, input_values={"tt": {2, 3}}).output_value() == {
+        2,
+        3,
+    }
 
 
 def test_vanilla_set_input_fail():
@@ -63,7 +66,10 @@ def test_open_typing_set_input():
     def take_set(tt):
         return tt
 
-    assert wrap_op_in_graph_and_execute(take_set, input_values={"tt": {2, 3}}).output_value() == {2, 3}
+    assert wrap_op_in_graph_and_execute(take_set, input_values={"tt": {2, 3}}).output_value() == {
+        2,
+        3,
+    }
 
 
 def test_open_typing_set_input_fail():
@@ -110,7 +116,10 @@ def test_closed_typing_set_input():
     def take_set(tt):
         return tt
 
-    assert wrap_op_in_graph_and_execute(take_set, input_values={"tt": {2, 3}}).output_value() == {2, 3}
+    assert wrap_op_in_graph_and_execute(take_set, input_values={"tt": {2, 3}}).output_value() == {
+        2,
+        3,
+    }
 
 
 def test_closed_typing_set_input_fail():

@@ -48,11 +48,11 @@ def test_run_always_finishes():  # pylint: disable=redefined-outer-name
                 external_pipeline = (
                     workspace.get_repository_location("test")
                     .get_repository("nope")
-                    .get_full_external_job("slow_pipeline")
+                    .get_full_external_job("slow_job")
                 )
 
                 pipeline_run = instance.create_run_for_pipeline(
-                    pipeline_def=slow_pipeline,
+                    pipeline_def=slow_job,
                     run_config=None,
                     external_pipeline_origin=external_pipeline.get_external_origin(),
                     pipeline_code_origin=external_pipeline.get_python_origin(),
@@ -208,11 +208,11 @@ def test_terminate_after_shutdown():
             external_pipeline = (
                 workspace.get_repository_location("test")
                 .get_repository("nope")
-                .get_full_external_job("sleepy_pipeline")
+                .get_full_external_job("sleepy_job")
             )
 
             pipeline_run = instance.create_run_for_pipeline(
-                pipeline_def=sleepy_pipeline,
+                pipeline_def=sleepy_job,
                 run_config=None,
                 external_pipeline_origin=external_pipeline.get_external_origin(),
                 pipeline_code_origin=external_pipeline.get_python_origin(),
@@ -280,11 +280,11 @@ def test_server_down():
                 external_pipeline = (
                     workspace.get_repository_location("test")
                     .get_repository("nope")
-                    .get_full_external_job("sleepy_pipeline")
+                    .get_full_external_job("sleepy_job")
                 )
 
                 pipeline_run = instance.create_run_for_pipeline(
-                    pipeline_def=sleepy_pipeline,
+                    pipeline_def=sleepy_job,
                     run_config=None,
                     external_pipeline_origin=external_pipeline.get_external_origin(),
                     pipeline_code_origin=external_pipeline.get_python_origin(),
