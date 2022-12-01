@@ -147,64 +147,6 @@ def get_sqlite3_indexes(db_path, table_name):
     return [r[1] for r in cursor.fetchall()]
 
 
-def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
-    run_id = "fb0b3905-068b-4444-8f00-76fcbaef7e8b"
-    src_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
-    with copy_directory(src_dir) as test_dir:
-        # invariant check to make sure migration has not been run yet
-
-        db_path = os.path.join(test_dir, "history", "runs.db")
-
-        assert get_current_alembic_version(db_path) == "9fe9e746268c"
-
-        assert "snapshots" not in get_sqlite3_tables(db_path)
-
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
-
-        @op
-        def noop_solid(_):
-            pass
-
-        @pipeline
-        def noop_pipeline():
-            noop_solid()
-
-        with pytest.raises(
-            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
-        ):
-            execute_pipeline(noop_pipeline, instance=instance)
-
-        assert len(instance.get_runs()) == 1
-
-        # Make sure the schema is migrated
-        instance.upgrade()
-
-        assert "snapshots" in get_sqlite3_tables(db_path)
-        assert {"id", "snapshot_id", "snapshot_body", "snapshot_type"} == set(
-            get_sqlite3_columns(db_path, "snapshots")
-        )
-
-        assert len(instance.get_runs()) == 1
-
-        run = instance.get_run_by_id(run_id)
-
-        assert run.run_id == run_id
-        assert run.pipeline_snapshot_id is None
-
-        result = execute_pipeline(noop_pipeline, instance=instance)
-
-        assert result.success
-
-        runs = instance.get_runs()
-        assert len(runs) == 2
-
-        new_run_id = result.run_id
-
-        new_run = instance.get_run_by_id(new_run_id)
-
-        assert new_run.pipeline_snapshot_id
-
-
 def test_downgrade_and_upgrade():
     src_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
     with copy_directory(src_dir) as test_dir:

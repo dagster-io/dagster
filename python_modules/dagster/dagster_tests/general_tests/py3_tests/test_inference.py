@@ -6,6 +6,7 @@ from dagster import (
     DagsterType,
     In,
     Int,
+    job,
     make_python_type_usable_as_dagster_type,
     op,
     usable_as_dagster_type,
@@ -418,17 +419,17 @@ def test_unregistered_type_annotation_output():
         pass
 
     @op
-    def my_solid(_) -> MyClass:
+    def my_op(_) -> MyClass:
         return MyClass()
 
-    assert my_solid.output_defs[0].dagster_type.display_name == "MyClass"
-    assert my_solid.output_defs[0].dagster_type.typing_type == MyClass
+    assert my_op.output_defs[0].dagster_type.display_name == "MyClass"
+    assert my_op.output_defs[0].dagster_type.typing_type == MyClass
 
-    @pipeline
-    def my_pipeline():
-        my_solid()
+    @job
+    def my_job():
+        my_op()
 
-    execute_pipeline(my_pipeline)
+    execute_pipeline(my_job)
 
 
 def test_unregistered_type_annotation_input():

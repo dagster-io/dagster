@@ -251,6 +251,7 @@ def wrap_op_in_graph_and_execute(
     raise_on_error: bool = True,
     do_input_mapping: bool = True,
     do_output_mapping: bool = True,
+    logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
 ) -> ExecuteInProcessResult:
     """Run a dagster op in an actual execution.
     For internal use.
@@ -262,6 +263,7 @@ def wrap_op_in_graph_and_execute(
         input_values=input_values,
         raise_on_error=raise_on_error,
         run_config=run_config,
+        logger_defs=logger_defs,
     )
 
 

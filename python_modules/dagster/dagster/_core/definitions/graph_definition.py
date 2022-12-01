@@ -649,6 +649,7 @@ class GraphDefinition(NodeDefinition):
         op_selection: Optional[Sequence[str]] = None,
         run_id: Optional[str] = None,
         input_values: Optional[Mapping[str, object]] = None,
+        logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute this graph in-process, collecting results in-memory.
@@ -674,6 +675,8 @@ class GraphDefinition(NodeDefinition):
                 ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
             input_values (Optional[Mapping[str, Any]]):
                 A dictionary that maps python objects to the top-level inputs of the graph.
+            logger_defs (Optional[Mapping[str, Any]]):
+                A dictionary that maps python objects to the top-level inputs of the graph.
 
         Returns:
             :py:class:`~dagster.ExecuteInProcessResult`
@@ -696,6 +699,7 @@ class GraphDefinition(NodeDefinition):
             executor_def=execute_in_process_executor,
             resource_defs=resource_defs,
             input_values=input_values,
+            logger_defs=logger_defs,
         ).get_job_def_for_subset_selection(op_selection)
 
         run_config = run_config if run_config is not None else {}

@@ -88,7 +88,7 @@ class _Pipeline:
         )
 
         pipeline_def = JobDefinition(
-            _mode_def=self.mode_definitions[0],
+            _mode_def=self.mode_definitions[0] if len(self.mode_definitions) > 0 else None,
             _preset_defs=self.preset_definitions,
             graph_def=GraphDefinition(
                 name=self.name,
