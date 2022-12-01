@@ -11,6 +11,7 @@ from dagster_dbt import (
 from dagster import (
     AssetKey,
     AssetSelection,
+    DailyPartitionsDefinition,
     MetadataValue,
     build_init_resource_context,
     define_asset_job,
@@ -108,7 +109,7 @@ def _add_dbt_cloud_job_responses(dbt_cloud_api_base_url: str, dbt_command: str):
 @responses.activate
 @pytest.mark.parametrize("dbt_command", ["dbt run", "dbt build"])
 @pytest.mark.parametrize(
-    ["dbt_command_filters", "expected_dbt_command_filters"],
+    ["dbt_command_options", "expected_dbt_command_options"],
     [
         ("-s a:b c:d *x", "--select a:b c:d *x"),
         ("--exclude e:f g:h", "--exclude e:f g:h"),
@@ -122,23 +123,22 @@ def _add_dbt_cloud_job_responses(dbt_cloud_api_base_url: str, dbt_command: str):
 def test_load_assets_from_dbt_cloud_job(
     mocker,
     dbt_command,
-    dbt_command_filters,
-    expected_dbt_command_filters,
+    dbt_command_options,
+    expected_dbt_command_options,
     dbt_cloud,
     dbt_cloud_service,
 ):
     _add_dbt_cloud_job_responses(
         dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
-        dbt_command=f"{dbt_command} {dbt_command_filters}",
+        dbt_command=f"{dbt_command} {dbt_command_options}",
     )
 
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
         dbt_cloud=dbt_cloud, job_id=DBT_CLOUD_JOB_ID
     )
 
-    mock_run_job_and_poll = mocker.patch.object(
-        dbt_cloud_cacheable_assets._dbt_cloud,  # pylint: disable=protected-access
-        "run_job_and_poll",
+    mock_run_job_and_poll = mocker.patch(
+        "dagster_dbt.cloud.resources.DbtCloudResourceV2.run_job_and_poll",
         wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # pylint: disable=protected-access
     )
 
@@ -150,7 +150,7 @@ def test_load_assets_from_dbt_cloud_job(
     mock_run_job_and_poll.assert_called_once_with(
         job_id=DBT_CLOUD_JOB_ID,
         cause="Generating software-defined assets for Dagster.",
-        steps_override=[f"dbt compile {expected_dbt_command_filters}"],
+        steps_override=[f"dbt compile {expected_dbt_command_options}"],
     )
 
     assert_assets_match_project(dbt_cloud_assets, has_non_argument_deps=True)
@@ -278,3 +278,55 @@ def test_node_info_to_asset_key(dbt_cloud, dbt_cloud_service):
         AssetKey(["foo", "sort_hot_cereals_by_calories"]),
         AssetKey(["foo", "least_caloric"]),
     }
+
+
+@responses.activate
+def test_partitions(mocker, testrun_uid, dbt_cloud, dbt_cloud_service):
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_command="dbt build",
+    )
+
+    partition_def = DailyPartitionsDefinition(start_date="2022-01-01")
+    dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
+        dbt_cloud=dbt_cloud,
+        job_id=DBT_CLOUD_JOB_ID,
+        # HACK: we should refactor to materialize_to_memory, and fix the bug regarding io managers.
+        node_info_to_asset_key=lambda node_info: AssetKey(
+            ["foo", f"{node_info['name']}-{testrun_uid}"]
+        ),
+        partitions_def=partition_def,
+        partition_key_to_vars_fn=lambda partition_key: {"run_date": partition_key},
+    )
+
+    mock_run_job_and_poll = mocker.patch(
+        "dagster_dbt.cloud.resources.DbtCloudResourceV2.run_job_and_poll",
+        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # pylint: disable=protected-access
+    )
+
+    dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
+    dbt_cloud_assets = dbt_cloud_cacheable_assets.build_definitions(
+        dbt_assets_definition_cacheable_data
+    )
+
+    mock_run_job_and_poll.assert_called_once_with(
+        job_id=DBT_CLOUD_JOB_ID,
+        cause="Generating software-defined assets for Dagster.",
+        steps_override=[
+            f"dbt compile --vars '{json.dumps({'run_date': partition_def.get_last_partition_key()})}'"
+        ],
+    )
+
+    mock_run_job_and_poll.reset_mock()
+
+    materialize_cereal_assets = define_asset_job(
+        name="materialize_partitioned_cereal_assets",
+        selection=AssetSelection.assets(*dbt_cloud_assets),
+    ).resolve(assets=dbt_cloud_assets, source_assets=[])
+
+    assert materialize_cereal_assets.execute_in_process(partition_key="2022-02-01").success
+
+    mock_run_job_and_poll.assert_called_once_with(
+        job_id=DBT_CLOUD_JOB_ID,
+        steps_override=[f"dbt build --vars '{json.dumps({'run_date': '2022-02-01'})}'"],
+    )
