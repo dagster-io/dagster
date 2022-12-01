@@ -5,10 +5,10 @@ from .dependency import (
     MultiDependencyDefinition,
     Node,
     NodeHandle,
+    NodeInput,
     NodeInvocation,
-    SolidInputHandle,
+    NodeOutput,
     SolidInvocation,
-    SolidOutputHandle,
 )
 from .events import (
     AssetKey,
