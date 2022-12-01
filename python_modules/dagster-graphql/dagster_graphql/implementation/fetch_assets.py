@@ -1,6 +1,18 @@
 import datetime
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 import dagster._seven as seven
 from dagster import (
@@ -8,9 +20,17 @@ from dagster import (
     DagsterEventType,
     EventRecordsFilter,
     _check as check,
+    DagsterInstance,
+    EventRecordsFilter,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+    PartitionsDefinition,
 )
+from dagster import _check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.external_data import (
@@ -18,6 +38,10 @@ from dagster._core.host_representation.external_data import (
     ExternalPartitionDimensionDefinition,
 )
 from dagster._core.host_representation.repository_location import RepositoryLocation
+from dagster._core.storage.partition_status_cache import (
+    get_materialized_multipartitions,
+    get_and_update_asset_status_cache_values,
+)
 from dagster._core.storage.tags import get_dimension_from_partition_tag
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -284,99 +308,128 @@ def get_unique_asset_id(
     )
 
 
-def get_materialization_ct_in_tags(
-    graphene_info,
-    asset_key: AssetKey,
-    partition_dimensions: Sequence[ExternalPartitionDimensionDefinition],
-) -> Dict[str, Dict[str, int]]:
-    # This dict will by keyed by the primary dimension partition keys.
-    # The values are dicts keyed by the secondary dimension partition keys, mapped to
-    # the number of materializations.
-    materialization_ct: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
-
-    dimension_names = [dimension.name for dimension in partition_dimensions]
-
-    for event_tags in graphene_info.context.instance.get_event_tags_for_asset(asset_key):
-        event_partition_keys_by_dimension = {
-            get_dimension_from_partition_tag(key): value for key, value in event_tags.items()
-        }
-
-        if all(
-            [
-                dimension_name in event_partition_keys_by_dimension.keys()
-                for dimension_name in dimension_names
-            ]
-        ):
-            materialization_ct[event_partition_keys_by_dimension[dimension_names[0]]][
-                event_partition_keys_by_dimension[dimension_names[1]]
-            ] += 1
-    return materialization_ct
-
-
-def get_materialization_cts_grouped_by_dimension(
-    graphene_info,
-    asset_key: AssetKey,
-    partition_dimensions: Sequence[ExternalPartitionDimensionDefinition],
-) -> List[List[int]]:
+def get_materialization_status_2d_array(
+    partitions_def: MultiPartitionsDefinition,
+    materialized_keys: Sequence[MultiPartitionKey],
+) -> List[List[bool]]:
     """
-    Get the number of materializations for each partition key.
+    Returns a 2d array of booleans representing the materialization status of each partition.
 
-    The group_by_dimensions arg represents the dimension order that the counts should be grouped by.
-    With 2-dimensional partitions, the primary dimension is the first dimension in the list,
-    and the secondary dimension is the second dimension in the list.
+    The rows represent each partition key of the first dimension, and the columns represent each
+    partition key of the second dimension. The dimensions follow the order of partitions definitions
+    defined in the MultiPartitionsDefinition, which are sorted alphabetically.
 
-    If group_by_dimensions is provided, the result will be a 2D array, where each row
-    represents a partition key in the primary dimension, and each element in that row
-    represents the number of materializations for each partition key in the secondary dimension.
-
-    For example, with partition dimensions ab: [a, b] and xy: [x, y] grouped by dimensions [ab, xy]:
-    the result would be:
+    For example, with partition dimensions ab: [a, b] and xy: [x, y], the 2d array will be:
     [
-        [a|x count, a|y count],
-        [b|x count, b|y count]
+        [a|x materialized?, a|y materialized?],
+        [b|x materialized?, b|y materialized?]
     ]
     """
-    db_materialization_counts = get_materialization_ct_in_tags(
-        graphene_info, asset_key, partition_dimensions
-    )
-    materialization_counts_grouped_by_dimension: List[List[int]] = []
 
-    primary_dim_keys = (
-        partition_dimensions[0]
-        .external_partitions_def_data.get_partitions_definition()
-        .get_partition_keys()
+    materialization_status_by_dimension: Dict[str, Dict[str, bool]] = defaultdict(
+        lambda: defaultdict(lambda: False)
     )
-    secondary_dim_keys = (
-        partition_dimensions[1]
-        .external_partitions_def_data.get_partitions_definition()
-        .get_partition_keys()
+    primary_dim, secondary_dim = (
+        partitions_def.partitions_defs[0],
+        partitions_def.partitions_defs[1],
     )
+    for partition_key in materialized_keys:
+        keys_by_dim = partition_key.keys_by_dimension
+        materialization_status_by_dimension[keys_by_dim[primary_dim.name]][
+            keys_by_dim[secondary_dim.name]
+        ] = True
 
-    for primary_dim_key in primary_dim_keys:
-        materialization_counts_grouped_by_dimension.append(
+    materialization_status_2d_arr: List[List[bool]] = []
+    secondary_dim_keys = secondary_dim.partitions_def.get_partition_keys()
+    for primary_dim_key in primary_dim.partitions_def.get_partition_keys():
+        materialization_status_2d_arr.append(
             [
-                db_materialization_counts.get(primary_dim_key, {}).get(secondary_dim_key, 0)
+                materialization_status_by_dimension[primary_dim_key][secondary_dim_key]
                 for secondary_dim_key in secondary_dim_keys
             ]
         )
-    return materialization_counts_grouped_by_dimension
+    return materialization_status_2d_arr
 
 
-def get_materialization_cts_by_partition(
-    graphene_info,
-    asset_key: AssetKey,
-    partition_keys: Sequence[str],
-) -> List[int]:
-    db_materialization_counts = (
-        graphene_info.context.instance.get_materialization_count_by_partition([asset_key])[
-            asset_key
-        ]
-    )
-    ordered_materialization_counts: List[int] = []
-    for partition_key in partition_keys:
-        ordered_materialization_counts.append(db_materialization_counts.get(partition_key, 0))
+def get_single_dimension_materialization_status(
+    partitions_def: Optional[PartitionsDefinition],
+    materialized_keys: List[str],
+) -> List[bool]:
+    """
+    Returns an an array of booleans following the order of the partition keys. For partition keys
+    ["a", "b"], the result would be [True, False] if "a" has been materialized and "b" has not.
+    """
+    if not partitions_def:
+        return []
 
+    materialization_status_by_partition: Dict[str, bool] = defaultdict(lambda: False)
+    for partition_key in materialized_keys:
+        materialization_status_by_partition[partition_key] = True
+
+    ordered_materialization_counts: List[bool] = []
+    for partition_key in partitions_def.get_partition_keys():
+        ordered_materialization_counts.append(
+            materialization_status_by_partition.get(partition_key, False)
+        )
     return ordered_materialization_counts
+
+
+def get_materialization_status_by_partition(
+    instance: DagsterInstance,
+    asset_key: AssetKey,
+    asset_graph: AssetGraph,
+) -> Union[List[bool], List[List[bool]]]:
+    """
+    Returns the materialization status for each partition key. The materialization status
+    is a boolean indicating whether the partition has been materialized: True if materialized,
+    False if not.
+    """
+    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+
+    partitions_def = asset_graph.partitions_defs_by_key.get(asset_key)
+    if not partitions_def:
+        return []
+
+    if instance.can_cache_asset_status_data():
+        # When the "cached_status_data" column exists in storage, update the column to contain
+        # the latest partition status values
+        updated_cache_value = get_and_update_asset_status_cache_values(
+            instance, asset_graph, asset_key
+        ).get(asset_key)
+        materialized_subset = (
+            updated_cache_value.deserialize_materialized_partition_subsets(partitions_def)
+            if updated_cache_value
+            else partitions_def.empty_subset()
+        )
+        materialized_keys = materialized_subset.get_partition_keys()
+
+        if isinstance(partitions_def, MultiPartitionsDefinition):
+            return get_materialization_status_2d_array(
+                partitions_def, [cast(MultiPartitionKey, key) for key in materialized_keys]
+            )
+        else:
+            return get_single_dimension_materialization_status(
+                partitions_def, list(materialized_keys)
+            )
+
+    else:
+        # If the partition status can't be cached, fetch partition status from storage
+        if isinstance(partitions_def, MultiPartitionsDefinition):
+            return get_materialization_status_2d_array(
+                partitions_def,
+                get_materialized_multipartitions(instance, asset_key, partitions_def),
+            )
+        else:
+            return get_single_dimension_materialization_status(
+                partitions_def,
+                [
+                    partition_key
+                    for partition_key, count in instance.get_materialization_count_by_partition(
+                        [asset_key]
+                    )[asset_key].items()
+                    if count > 0
+                ],
+            )
 
 
 def get_freshness_info(
