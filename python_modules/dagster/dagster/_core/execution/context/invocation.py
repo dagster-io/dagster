@@ -27,7 +27,7 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.pipeline_definition import JobDefinition
 from dagster._core.definitions.resource_definition import (
     IContainsGenerator,
     ResourceDefinition,
@@ -175,7 +175,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
         raise DagsterInvalidPropertyError(_property_msg("run_config", "property"))
 
     @property
-    def pipeline_def(self) -> PipelineDefinition:
+    def pipeline_def(self) -> JobDefinition:
         raise DagsterInvalidPropertyError(_property_msg("pipeline_def", "property"))
 
     @property
@@ -427,7 +427,7 @@ class BoundOpExecutionContext(OpExecutionContext):
         return run_config
 
     @property
-    def pipeline_def(self) -> PipelineDefinition:
+    def pipeline_def(self) -> JobDefinition:
         raise DagsterInvalidPropertyError(_property_msg("pipeline_def", "property"))
 
     @property

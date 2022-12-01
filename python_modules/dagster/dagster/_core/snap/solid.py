@@ -9,7 +9,7 @@ from dagster._core.definitions import (
     OpDefinition,
     OutputDefinition,
     OutputMapping,
-    PipelineDefinition,
+    JobDefinition,
 )
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster._serdes import whitelist_for_serdes
@@ -341,8 +341,8 @@ class SolidDefinitionsSnapshot(
         )
 
 
-def build_solid_definitions_snapshot(pipeline_def: PipelineDefinition) -> SolidDefinitionsSnapshot:
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+def build_solid_definitions_snapshot(pipeline_def: JobDefinition) -> SolidDefinitionsSnapshot:
+    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
     solid_def_snaps = []
     graph_def_snaps = []
     for node_def in pipeline_def.all_node_defs:

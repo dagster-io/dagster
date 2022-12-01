@@ -3,15 +3,15 @@ from typing import Optional
 from dagster import _check as check
 from dagster._config import ConfigType, ConfigTypeKind
 from dagster._core.definitions import create_run_config_schema
-from dagster._legacy import PipelineDefinition
+from dagster._legacy import JobDefinition
 
 
 def scaffold_pipeline_config(
-    pipeline_def: PipelineDefinition,
+    pipeline_def: JobDefinition,
     skip_non_required: bool = True,
     mode: Optional[str] = None,
 ):
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
     check.bool_param(skip_non_required, "skip_non_required")
 
     env_config_type = create_run_config_schema(pipeline_def, mode=mode).config_type

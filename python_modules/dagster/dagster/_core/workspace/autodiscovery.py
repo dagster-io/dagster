@@ -71,7 +71,7 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
     if loadable_repos:
         return loadable_repos
 
-    loadable_pipelines = _loadable_targets_of_type(module, PipelineDefinition)
+    loadable_pipelines = _loadable_targets_of_type(module, JobDefinition)
     loadable_jobs = _loadable_targets_of_type(module, JobDefinition)
 
     if len(loadable_pipelines) == 1:

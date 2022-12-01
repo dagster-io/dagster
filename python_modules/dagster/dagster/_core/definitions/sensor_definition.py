@@ -33,7 +33,7 @@ from ..decorator_utils import get_function_params, has_at_least_one_parameter
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
-from .pipeline_definition import PipelineDefinition
+from .pipeline_definition import JobDefinition
 from .run_request import PipelineRunReaction, RunRequest, SkipReason
 from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
@@ -399,7 +399,7 @@ class SensorDefinition:
 
     @public
     @property
-    def job(self) -> Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
+    def job(self) -> Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
         if self._targets:
             if len(self._targets) == 1 and isinstance(self._targets[0], DirectTarget):
                 return self._targets[0].target
@@ -488,7 +488,7 @@ class SensorDefinition:
 
     def load_targets(
         self,
-    ) -> Sequence[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
+    ) -> Sequence[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
         targets = []
         for target in self._targets:
             if isinstance(target, DirectTarget):

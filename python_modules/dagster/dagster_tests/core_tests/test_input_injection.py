@@ -3,7 +3,6 @@ from dagster import DagsterInvalidConfigError, DependencyDefinition, List, NodeI
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.input import In
 from dagster._core.definitions.output import Out
-from dagster._legacy import PipelineDefinition, execute_pipeline
 
 
 def test_string_from_inputs():
@@ -14,7 +13,7 @@ def test_string_from_inputs():
         assert string_input == "foo"
         called["yup"] = True
 
-    pipeline = PipelineDefinition(
+    pipeline = JobDefinition(
         name="test_string_from_inputs_pipeline", solid_defs=[str_as_input]
     )
 
@@ -35,7 +34,7 @@ def test_string_from_aliased_inputs():
         assert string_input == "foo"
         called["yup"] = True
 
-    pipeline = PipelineDefinition(
+    pipeline = JobDefinition(
         solid_defs=[str_as_input],
         name="test",
         dependencies={NodeInvocation("str_as_input", alias="aliased"): {}},
@@ -57,7 +56,7 @@ def test_string_missing_inputs():
     def str_as_input(_context, string_input):  # pylint: disable=W0613
         called["yup"] = True
 
-    pipeline = PipelineDefinition(name="missing_inputs", solid_defs=[str_as_input])
+    pipeline = JobDefinition(name="missing_inputs", solid_defs=[str_as_input])
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(pipeline)
 
@@ -83,7 +82,7 @@ def test_string_missing_input_collision():
     def str_as_input(_context, string_input):  # pylint: disable=W0613
         called["yup"] = True
 
-    pipeline = PipelineDefinition(
+    pipeline = JobDefinition(
         name="overlapping",
         solid_defs=[str_as_input, str_as_output],
         dependencies={"str_as_input": {"string_input": DependencyDefinition("str_as_output")}},
@@ -109,7 +108,7 @@ def test_composite_input_type():
         assert list_string_input == ["foo"]
         called["yup"] = True
 
-    pipeline = PipelineDefinition(
+    pipeline = JobDefinition(
         name="test_string_from_inputs_pipeline", solid_defs=[str_as_input]
     )
 

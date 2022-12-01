@@ -19,7 +19,7 @@ from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.pipeline_definition import JobDefinition
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
@@ -185,7 +185,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.run_config
 
     @property
-    def pipeline_def(self) -> PipelineDefinition:
+    def pipeline_def(self) -> JobDefinition:
         """PipelineDefinition: The currently executing pipeline."""
         return self._step_execution_context.pipeline_def
 

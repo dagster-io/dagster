@@ -42,7 +42,7 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 
 from ..decorator_utils import get_function_params
 from .graph_definition import GraphDefinition
-from .pipeline_definition import PipelineDefinition
+from .job_definition import JobDefinition
 from .sensor_definition import (
     DefaultSensorStatus,
     PipelineRunReaction,
@@ -252,7 +252,7 @@ def run_failure_sensor(
     monitored_jobs: Optional[
         Sequence[
             Union[
-                PipelineDefinition,
+                JobDefinition,
                 GraphDefinition,
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",
@@ -264,7 +264,7 @@ def run_failure_sensor(
     job_selection: Optional[
         Sequence[
             Union[
-                PipelineDefinition,
+                JobDefinition,
                 GraphDefinition,
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",
@@ -419,7 +419,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         monitored_jobs: Optional[
             Sequence[
                 Union[
-                    PipelineDefinition,
+                    JobDefinition,
                     GraphDefinition,
                     UnresolvedAssetJobDefinition,
                     "RepositorySelector",
@@ -450,7 +450,7 @@ class RunStatusSensorDefinition(SensorDefinition):
             monitored_jobs,
             "monitored_jobs",
             (
-                PipelineDefinition,
+                JobDefinition,
                 GraphDefinition,
                 UnresolvedAssetJobDefinition,
                 RepositorySelector,
@@ -733,7 +733,7 @@ def run_status_sensor(
     monitored_jobs: Optional[
         Sequence[
             Union[
-                PipelineDefinition,
+                JobDefinition,
                 GraphDefinition,
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",
@@ -745,7 +745,7 @@ def run_status_sensor(
     job_selection: Optional[
         Sequence[
             Union[
-                PipelineDefinition,
+                JobDefinition,
                 GraphDefinition,
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",

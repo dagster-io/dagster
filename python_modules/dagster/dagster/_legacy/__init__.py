@@ -7,7 +7,6 @@ from dagster._core.definitions import (
     NodeInvocation as NodeInvocation,
     OutputDefinition as OutputDefinition,
     PartitionSetDefinition as PartitionSetDefinition,
-    PipelineDefinition as PipelineDefinition,
     PresetDefinition as PresetDefinition,
     build_assets_job as build_assets_job,
     daily_schedule as daily_schedule,

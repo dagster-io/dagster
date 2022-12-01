@@ -34,7 +34,7 @@ from dagster._core.definitions.partition import PartitionsDefinition, Partitions
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import infer_partition_mapping
 from dagster._core.definitions.pipeline_base import IPipeline
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.pipeline_definition import JobDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
@@ -181,7 +181,7 @@ class ExecutionData(NamedTuple):
 
     scoped_resources_builder: ScopedResourcesBuilder
     resolved_run_config: ResolvedRunConfig
-    pipeline_def: PipelineDefinition
+    pipeline_def: JobDefinition
     mode_def: ModeDefinition
 
 
@@ -328,7 +328,7 @@ class PlanExecutionContext(IPlanContext):
         )
 
     @property
-    def pipeline_def(self) -> PipelineDefinition:
+    def pipeline_def(self) -> JobDefinition:
         return self._execution_data.pipeline_def
 
     @property
@@ -515,7 +515,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self.solid.definition.ensure_op_def()
 
     @property
-    def pipeline_def(self) -> PipelineDefinition:
+    def pipeline_def(self) -> JobDefinition:
         return self._execution_data.pipeline_def
 
     @property

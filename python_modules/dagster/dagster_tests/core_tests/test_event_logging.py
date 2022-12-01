@@ -5,7 +5,7 @@ from dagster import DagsterEvent
 from dagster._core.definitions.decorators import op
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry, construct_event_logger
-from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 from dagster._loggers import colored_console_logger
 from dagster._serdes import deserialize_as
 
@@ -25,7 +25,7 @@ def single_dagster_event(events, event_type):
 
 
 def define_event_logging_pipeline(name, solids, event_callback, deps=None):
-    return PipelineDefinition(
+    return JobDefinition(
         name=name,
         solid_defs=solids,
         description=deps,
@@ -41,7 +41,7 @@ def test_empty_pipeline():
         if record.is_dagster_event:
             events[record.dagster_event.event_type].append(record)
 
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         name="empty_pipeline", solid_defs=[], mode_defs=[mode_def(_event_callback)]
     )
 
@@ -70,7 +70,7 @@ def test_single_solid_pipeline_success():
         if record.is_dagster_event:
             events[record.dagster_event.event_type].append(record)
 
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         name="single_solid_pipeline",
         solid_defs=[solid_one],
         mode_defs=[mode_def(_event_callback)],
@@ -107,7 +107,7 @@ def test_single_solid_pipeline_failure():
         if record.is_dagster_event:
             events[record.dagster_event.event_type].append(record)
 
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         name="single_solid_pipeline",
         solid_defs=[solid_one],
         mode_defs=[mode_def(_event_callback)],

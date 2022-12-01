@@ -39,7 +39,7 @@ from dagster._core.utility_solids import (
 from dagster._core.workspace.load import location_origin_from_python_file
 from dagster._legacy import (
     ModeDefinition,
-    PipelineDefinition,
+    JobDefinition,
     execute_pipeline,
     execute_pipeline_iterator,
     pipeline,
@@ -163,7 +163,7 @@ def create_diamond_solids():
 
 
 def create_diamond_pipeline():
-    return PipelineDefinition(
+    return JobDefinition(
         name="diamond_pipeline",
         solid_defs=create_diamond_solids(),
         dependencies=diamond_deps(),
@@ -221,7 +221,7 @@ def assert_all_results_equivalent(expected_results, result_results):
 
 
 def test_pipeline_execution_graph_diamond():
-    pipe = PipelineDefinition(
+    pipe = JobDefinition(
         solid_defs=create_diamond_solids(), name="test", dependencies=diamond_deps()
     )
     return _do_test(pipe)
@@ -295,7 +295,7 @@ def test_two_root_solid_pipeline_with_partial_dependency_definition():
     stub_solid_a = define_stub_solid("stub_a", [{"a key": "a value"}])
     stub_solid_b = define_stub_solid("stub_b", [{"a key": "a value"}])
 
-    single_dep_pipe = PipelineDefinition(
+    single_dep_pipe = JobDefinition(
         solid_defs=[stub_solid_a, stub_solid_b],
         name="test",
         dependencies={"stub_a": {}},
@@ -340,7 +340,7 @@ def _do_test(pipe):
 
 
 def test_empty_pipeline_execution():
-    result = execute_pipeline(PipelineDefinition(solid_defs=[], name="test"))
+    result = execute_pipeline(JobDefinition(solid_defs=[], name="test"))
 
     assert result.success
 
@@ -352,7 +352,7 @@ def test_pipeline_name_threaded_through_context():
     def assert_name_solid(context):
         assert context.pipeline_name == name
 
-    result = execute_pipeline(PipelineDefinition(name="foobar", solid_defs=[assert_name_solid]))
+    result = execute_pipeline(JobDefinition(name="foobar", solid_defs=[assert_name_solid]))
 
     assert result.success
 
@@ -366,7 +366,7 @@ def test_pipeline_subset():
     def add_one(num):
         return num + 1
 
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         solid_defs=[return_one, add_one],
         name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
@@ -396,7 +396,7 @@ def test_pipeline_explicit_subset():
     def add_one(num):
         return num + 1
 
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         solid_defs=[return_one, add_one],
         name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
@@ -468,7 +468,7 @@ def test_pipeline_subset_with_multi_dependency():
     def noop():
         return 3
 
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         solid_defs=[return_one, return_two, noop],
         name="test",
         dependencies={
@@ -515,7 +515,7 @@ def test_pipeline_explicit_subset_with_multi_dependency():
     def noop():
         return 3
 
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         solid_defs=[return_one, return_two, noop],
         name="test",
         dependencies={
@@ -562,7 +562,7 @@ def define_three_part_pipeline():
     def add_three(num):
         return num + 3
 
-    return PipelineDefinition(name="three_part_pipeline", solid_defs=[add_one, add_two, add_three])
+    return JobDefinition(name="three_part_pipeline", solid_defs=[add_one, add_two, add_three])
 
 
 def define_created_disjoint_three_part_pipeline():
@@ -753,7 +753,7 @@ def test_reexecution_fs_storage():
     def add_one(num):
         return num + 1
 
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         solid_defs=[return_one, add_one],
         name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
@@ -808,7 +808,7 @@ def retry_pipeline():
     def add_one(num):
         return num + 1
 
-    return PipelineDefinition(
+    return JobDefinition(
         solid_defs=[return_one, add_one],
         name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
@@ -870,7 +870,7 @@ def test_reexecution_fs_storage_with_solid_selection():
     def add_one(num):
         return num + 1
 
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         solid_defs=[return_one, add_one],
         name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
@@ -954,7 +954,7 @@ def test_single_step_reexecution():
     def add_one(num):
         return num + 1
 
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         solid_defs=[return_one, add_one],
         name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
@@ -1050,7 +1050,7 @@ def test_selector_with_partial_dependency_dict():
     def def_two(_):
         executed["two"] = True
 
-    pipe_two = PipelineDefinition(
+    pipe_two = JobDefinition(
         name="pipe_two", solid_defs=[def_one, def_two], dependencies={"def_one": {}}
     )
 
@@ -1087,7 +1087,7 @@ def test_default_run_id():
         assert uuid.UUID(context.run_id)
         called["run_id"] = context.run_id
 
-    pipeline_def = PipelineDefinition(solid_defs=[check_run_id], name="test")
+    pipeline_def = JobDefinition(solid_defs=[check_run_id], name="test")
 
     result = execute_pipeline(pipeline_def)
     assert result.run_id == called["run_id"]
@@ -1102,7 +1102,7 @@ def test_pipeline_tags():
         assert context.get_tag("foo") == "bar"
         called["yup"] = True
 
-    pipeline_def_with_tags = PipelineDefinition(
+    pipeline_def_with_tags = JobDefinition(
         name="injected_run_id", solid_defs=[check_tags], tags={"foo": "bar"}
     )
     result = execute_pipeline(pipeline_def_with_tags)
@@ -1110,7 +1110,7 @@ def test_pipeline_tags():
     assert called["yup"]
 
     called = {}
-    pipeline_def_with_override_tags = PipelineDefinition(
+    pipeline_def_with_override_tags = JobDefinition(
         name="injected_run_id", solid_defs=[check_tags], tags={"foo": "notbar"}
     )
     result = execute_pipeline(pipeline_def_with_override_tags, tags={"foo": "bar"})

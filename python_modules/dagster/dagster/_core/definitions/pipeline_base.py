@@ -9,7 +9,7 @@ from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.selector import parse_solid_selection
 
 if TYPE_CHECKING:
-    from .pipeline_definition import PipelineDefinition
+    from .pipeline_definition import JobDefinition
 
 
 class IPipeline(ABC):
@@ -21,7 +21,7 @@ class IPipeline(ABC):
     """
 
     @abstractmethod
-    def get_definition(self) -> "PipelineDefinition":
+    def get_definition(self) -> "JobDefinition":
         pass
 
     @abstractmethod

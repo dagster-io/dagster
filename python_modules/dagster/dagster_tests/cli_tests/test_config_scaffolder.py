@@ -8,7 +8,7 @@ from dagster import (
 from dagster._cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
 from dagster._config import config_type
 from dagster._core.definitions import create_run_config_schema
-from dagster._legacy import ModeDefinition, PipelineDefinition
+from dagster._legacy import ModeDefinition, JobDefinition
 
 
 def fail_me():
@@ -23,7 +23,7 @@ def test_scalars():
 
 
 def test_basic_ops_config(snapshot):
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         name="BasicSolidsConfigPipeline",
         solid_defs=[
             OpDefinition(
@@ -64,7 +64,7 @@ def dummy_resource(config_field):
 
 
 def test_two_modes(snapshot):
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         name="TwoModePipelines",
         solid_defs=[],
         mode_defs=[

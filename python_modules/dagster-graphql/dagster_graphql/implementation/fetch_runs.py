@@ -23,7 +23,7 @@ from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster._core.storage.pipeline_run import RunRecord, RunsFilter
 from dagster._core.storage.tags import TagType, get_tag_type
-from dagster._legacy import DagsterRunStatus
+from dagster._legacy import DagsterRunStatus, JobDefinition
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import capture_error

@@ -16,7 +16,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.pipeline_definition import JobDefinition
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition,
     ScopedResourcesBuilder,
@@ -364,7 +364,7 @@ def single_resource_event_generator(
 
 def get_required_resource_keys_to_init(
     execution_plan: ExecutionPlan,
-    pipeline_def: PipelineDefinition,
+    pipeline_def: JobDefinition,
     resolved_run_config: ResolvedRunConfig,
 ) -> AbstractSet[str]:
     resource_keys: Set[str] = set()
@@ -402,7 +402,7 @@ def get_transitive_required_resource_keys(
 
 
 def get_required_resource_keys_for_step(
-    pipeline_def: PipelineDefinition, execution_step: IExecutionStep, execution_plan: ExecutionPlan
+    pipeline_def: JobDefinition, execution_step: IExecutionStep, execution_plan: ExecutionPlan
 ) -> AbstractSet[str]:
     resource_keys: Set[str] = set()
 

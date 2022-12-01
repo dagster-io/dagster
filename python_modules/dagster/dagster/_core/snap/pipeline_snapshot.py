@@ -25,7 +25,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster._core.definitions.pipeline_definition import (
-    PipelineDefinition,
+    JobDefinition,
     PipelineSubsetDefinition,
 )
 from dagster._core.utils import toposort_flatten
@@ -191,8 +191,8 @@ class PipelineSnapshot(
         )
 
     @classmethod
-    def from_pipeline_def(cls, pipeline_def: PipelineDefinition) -> "PipelineSnapshot":
-        check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    def from_pipeline_def(cls, pipeline_def: JobDefinition) -> "PipelineSnapshot":
+        check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
         lineage = None
         if isinstance(pipeline_def, PipelineSubsetDefinition):
             lineage = PipelineSnapshotLineage(

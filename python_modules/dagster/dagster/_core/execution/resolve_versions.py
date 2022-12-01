@@ -2,7 +2,7 @@ import re
 from typing import TYPE_CHECKING, Dict, Mapping, Optional
 
 import dagster._check as check
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.pipeline_definition import JobDefinition
 from dagster._core.definitions.version_strategy import OpVersionContext, ResourceVersionContext
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.outputs import StepOutputHandle
@@ -51,7 +51,7 @@ def resolve_config_version(config_value: object):
 
 
 def resolve_step_versions(
-    pipeline_def: PipelineDefinition,
+    pipeline_def: JobDefinition,
     execution_plan: "ExecutionPlan",
     resolved_run_config: ResolvedRunConfig,
 ) -> Mapping[str, Optional[str]]:
@@ -170,7 +170,7 @@ def resolve_step_versions(
 
 
 def resolve_step_output_versions(
-    pipeline_def: PipelineDefinition,
+    pipeline_def: JobDefinition,
     execution_plan: "ExecutionPlan",
     resolved_run_config: ResolvedRunConfig,
 ):

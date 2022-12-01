@@ -39,7 +39,7 @@ from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import (
-    PipelineDefinition,
+    JobDefinition,
     PipelineSubsetDefinition,
 )
 from dagster._core.errors import (
@@ -903,7 +903,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def create_run_for_pipeline(
         self,
-        pipeline_def: PipelineDefinition,
+        pipeline_def: JobDefinition,
         execution_plan: Optional["ExecutionPlan"] = None,
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
@@ -924,7 +924,7 @@ class DagsterInstance(DynamicPartitionsStore):
         from dagster._core.execution.plan.plan import ExecutionPlan
         from dagster._core.snap import snapshot_from_execution_plan
 
-        check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+        check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
         check.opt_inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
         # note that solids_to_execute is required to execute the solid subset, which is the

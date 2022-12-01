@@ -2,7 +2,7 @@ import logging
 
 from dagster._core.execution.context.logger import InitLoggerContext
 from dagster._core.log_manager import DagsterLogManager
-from dagster._legacy import PipelineDefinition
+from dagster._legacy import JobDefinition
 from dagster._utils.log import construct_single_handler_logger
 
 
@@ -31,7 +31,7 @@ def test_log_level_filtering():
             InitLoggerContext(
                 {},
                 logger_def,
-                pipeline_def=PipelineDefinition([], "test"),
+                pipeline_def=JobDefinition([], "test"),
                 run_id="",
             )
         )

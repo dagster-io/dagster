@@ -24,7 +24,6 @@ from dagster._core.definitions import (
     JobDefinition,
     PartitionsDefinition,
     PartitionSetDefinition,
-    PipelineDefinition,
     PresetDefinition,
     RepositoryDefinition,
     ScheduleDefinition,
@@ -1087,10 +1086,10 @@ def external_repository_data_from_def(
 
 
 def external_asset_graph_from_defs(
-    pipelines: Sequence[PipelineDefinition], source_assets_by_key: Mapping[AssetKey, SourceAsset]
+    pipelines: Sequence[JobDefinition], source_assets_by_key: Mapping[AssetKey, SourceAsset]
 ) -> Sequence[ExternalAssetNode]:
     node_defs_by_asset_key: Dict[
-        AssetKey, List[Tuple[NodeOutputHandle, PipelineDefinition]]
+        AssetKey, List[Tuple[NodeOutputHandle, JobDefinition]]
     ] = defaultdict(list)
     asset_info_by_asset_key: Dict[AssetKey, AssetOutputInfo] = dict()
     freshness_policy_by_asset_key: Dict[AssetKey, FreshnessPolicy] = dict()
@@ -1259,8 +1258,8 @@ def external_asset_graph_from_defs(
     return asset_nodes
 
 
-def external_pipeline_data_from_def(pipeline_def: PipelineDefinition) -> ExternalPipelineData:
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+def external_pipeline_data_from_def(pipeline_def: JobDefinition) -> ExternalPipelineData:
+    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
     return ExternalPipelineData(
         name=pipeline_def.name,
         pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
@@ -1273,8 +1272,8 @@ def external_pipeline_data_from_def(pipeline_def: PipelineDefinition) -> Externa
     )
 
 
-def external_job_ref_from_def(pipeline_def: PipelineDefinition) -> ExternalJobRef:
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+def external_job_ref_from_def(pipeline_def: JobDefinition) -> ExternalJobRef:
+    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
 
     parent = pipeline_def.parent_pipeline_def
     if parent:

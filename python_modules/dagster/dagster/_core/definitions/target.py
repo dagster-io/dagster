@@ -5,14 +5,14 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 
 from .mode import DEFAULT_MODE_NAME
-from .pipeline_definition import PipelineDefinition
+from .pipeline_definition import JobDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:
     from .graph_definition import GraphDefinition
 
 ExecutableDefinition: TypeAlias = Union[
-    PipelineDefinition, "GraphDefinition", UnresolvedAssetJobDefinition
+    JobDefinition, "GraphDefinition", UnresolvedAssetJobDefinition
 ]
 
 
@@ -44,10 +44,10 @@ class DirectTarget(
         from .graph_definition import GraphDefinition
 
         check.inst_param(
-            target, "target", (GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition)
+            target, "target", (GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition)
         )
 
-        if isinstance(target, PipelineDefinition) and not len(target.mode_definitions) == 1:
+        if isinstance(target, JobDefinition) and not len(target.mode_definitions) == 1:
             check.failed(
                 "Only graphs, jobs, and single-mode pipelines are valid "
                 "execution targets from a schedule or sensor. Please see the "
@@ -68,7 +68,7 @@ class DirectTarget(
     def mode(self) -> str:
         return (
             self.target.mode_definitions[0].name
-            if isinstance(self.target, PipelineDefinition)
+            if isinstance(self.target, JobDefinition)
             else DEFAULT_MODE_NAME
         )
 

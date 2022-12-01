@@ -5,7 +5,7 @@ from dagster import DagsterEventType, DagsterInvariantViolationError, Expectatio
 from dagster._core.definitions.decorators import op
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult
-from dagster._legacy import PipelineDefinition, execute_pipeline
+from dagster._legacy import execute_pipeline
 
 
 def expt_results_for_compute_step(
@@ -25,7 +25,7 @@ def test_successful_expectation_in_compute_step():
     def success_expectation_solid(_context):
         yield ExpectationResult(success=True, description="This is always true.")
 
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         name="success_expectation_in_compute_pipeline",
         solid_defs=[success_expectation_solid],
     )
@@ -48,7 +48,7 @@ def test_failed_expectation_in_compute_step():
     def failure_expectation_solid(_context):
         yield ExpectationResult(success=False, description="This is always false.")
 
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         name="failure_expectation_in_compute_pipeline",
         solid_defs=[failure_expectation_solid],
     )
@@ -70,7 +70,7 @@ def test_return_expectation_failure():
     def return_expectation_failure(_context):
         return ExpectationResult(success=True, description="This is always true.")
 
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         name="success_expectation_in_compute_pipeline",
         solid_defs=[return_expectation_failure],
     )

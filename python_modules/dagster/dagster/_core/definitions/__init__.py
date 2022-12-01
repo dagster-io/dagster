@@ -176,7 +176,6 @@ from .partitioned_schedule import (
     build_schedule_from_partitioned_job as build_schedule_from_partitioned_job,
     schedule_from_partitions as schedule_from_partitions,
 )
-from .pipeline_definition import PipelineDefinition as PipelineDefinition
 from .preset import PresetDefinition as PresetDefinition
 from .run_status_sensor_definition import (
     RunFailureSensorContext as RunFailureSensorContext,

@@ -18,7 +18,7 @@ from dagster._core.definitions import (
     ModeDefinition,
     OpDefinition,
     OutputMapping,
-    PipelineDefinition,
+    JobDefinition,
     op,
 )
 from dagster._core.definitions.logger_definition import LoggerDefinition
@@ -62,7 +62,7 @@ def create_test_pipeline_execution_context(
         logger_defs, "logger_defs", key_type=str, value_type=LoggerDefinition
     )
     mode_def = ModeDefinition(logger_defs=loggers)
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         name="test_legacy_context", solid_defs=[], mode_defs=[mode_def]
     )
     run_config: Dict[str, Dict[str, Dict]] = {"loggers": {key: {} for key in loggers}}
@@ -96,9 +96,9 @@ def _dep_key_of(solid):
 
 
 def build_pipeline_with_input_stubs(
-    pipeline_def: PipelineDefinition, inputs: Mapping[str, Mapping[str, object]]
-) -> PipelineDefinition:
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    pipeline_def: JobDefinition, inputs: Mapping[str, Mapping[str, object]]
+) -> JobDefinition:
+    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
     check.mapping_param(inputs, "inputs", key_type=str, value_type=dict)
 
     deps: Dict[str, Dict[str, object]] = defaultdict(dict)
@@ -128,7 +128,7 @@ def build_pipeline_with_input_stubs(
             stub_solid_defs.append(stub_solid_def)
             deps[_dep_key_of(solid)][input_name] = DependencyDefinition(stub_solid_def.name)
 
-    return PipelineDefinition(
+    return JobDefinition(
         name=pipeline_def.name + "_stubbed",
         solid_defs=[*pipeline_def.top_level_solid_defs, *stub_solid_defs],
         mode_defs=pipeline_def.mode_definitions,
@@ -137,7 +137,7 @@ def build_pipeline_with_input_stubs(
 
 
 def execute_solids_within_pipeline(
-    pipeline_def: PipelineDefinition,
+    pipeline_def: JobDefinition,
     solid_names: AbstractSet[str],
     inputs: Optional[Mapping[str, Mapping[str, object]]] = None,
     run_config: Optional[Mapping[str, object]] = None,
@@ -171,7 +171,7 @@ def execute_solids_within_pipeline(
         Dict[str, Union[CompositeSolidExecutionResult, SolidExecutionResult]]: The results of
         executing the solids, keyed by solid name.
     """
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
     check.set_param(solid_names, "solid_names", of_type=str)
     inputs = check.opt_mapping_param(inputs, "inputs", key_type=str, value_type=dict)
 
@@ -261,7 +261,7 @@ def wrap_op_in_graph_and_execute(
 
 
 def execute_solid_within_pipeline(
-    pipeline_def: PipelineDefinition,
+    pipeline_def: JobDefinition,
     solid_name: str,
     inputs: Optional[Dict[str, object]] = None,
     run_config: Optional[Dict[str, object]] = None,
@@ -381,7 +381,7 @@ def execute_solid(
         solid_defs.append(create_value_solid(input_name, input_value))
 
     result = execute_pipeline(
-        PipelineDefinition(
+        JobDefinition(
             name="ephemeral_{}_solid_pipeline".format(solid_def.name),
             solid_defs=solid_defs,
             dependencies=dependencies,  # type: ignore

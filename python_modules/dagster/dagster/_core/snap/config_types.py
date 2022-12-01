@@ -1,11 +1,11 @@
 import dagster._check as check
 from dagster._config import ConfigSchemaSnapshot, snap_from_config_type
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.pipeline_definition import JobDefinition
 from dagster._utils.merger import merge_dicts
 
 
 def build_config_schema_snapshot(pipeline_def):
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
     all_config_snaps_by_key = {}
     for mode in pipeline_def.available_modes:
         run_config_schema = pipeline_def.get_run_config_schema(mode)

@@ -5,7 +5,7 @@ from dagster._config import EvaluateValueResult, process_config
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.pipeline_definition import JobDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_config import define_solid_dictionary_cls
 from dagster._core.errors import (
@@ -30,13 +30,13 @@ class OpConfigEntry(
 
 class DescentStack(
     NamedTuple(
-        "_DescentStack", [("pipeline_def", PipelineDefinition), ("handle", Optional[NodeHandle])]
+        "_DescentStack", [("pipeline_def", JobDefinition), ("handle", Optional[NodeHandle])]
     )
 ):
-    def __new__(cls, pipeline_def: PipelineDefinition, handle: Optional[NodeHandle]):
+    def __new__(cls, pipeline_def: JobDefinition, handle: Optional[NodeHandle]):
         return super(DescentStack, cls).__new__(
             cls,
-            pipeline_def=check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition),
+            pipeline_def=check.inst_param(pipeline_def, "pipeline_def", JobDefinition),
             handle=check.opt_inst_param(handle, "handle", NodeHandle),
         )
 
@@ -75,7 +75,7 @@ def composite_descent(pipeline_def, solids_config, resource_defs):
             SolidConfig objects. It includes an entry for solids at every level of the
             composite tree - i.e. not just leaf solids, but composite solids as well
     """
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
     check.dict_param(solids_config, "solids_config")
     check.dict_param(resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition)
 

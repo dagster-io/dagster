@@ -13,7 +13,7 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.decorators import op
 from dagster._core.utils import coerce_valid_log_level
-from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 from dagster._utils.test import execute_solids_within_pipeline
 
 from dagster_tests.general_tests.test_legacy_repository import (
@@ -24,12 +24,12 @@ from dagster_tests.general_tests.test_legacy_repository import (
 
 
 def test_default_mode_definition():
-    pipeline_def = PipelineDefinition(name="takesamode", solid_defs=[])
+    pipeline_def = JobDefinition(name="takesamode", solid_defs=[])
     assert pipeline_def
 
 
 def test_mode_takes_a_name():
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         name="takesamode", solid_defs=[], mode_defs=[ModeDefinition(name="a_mode")]
     )
     assert pipeline_def
@@ -89,7 +89,7 @@ def test_wrong_single_mode():
 
 def test_mode_double_default_name():
     with pytest.raises(DagsterInvalidDefinitionError) as ide:
-        PipelineDefinition(
+        JobDefinition(
             name="double_default",
             solid_defs=[],
             mode_defs=[ModeDefinition(), ModeDefinition()],
@@ -104,7 +104,7 @@ def test_mode_double_default_name():
 
 def test_mode_double_given_name():
     with pytest.raises(DagsterInvalidDefinitionError) as ide:
-        PipelineDefinition(
+        JobDefinition(
             name="double_given",
             solid_defs=[],
             mode_defs=[ModeDefinition(name="given"), ModeDefinition(name="given")],
@@ -176,7 +176,7 @@ def test_mode_with_resource_deps():
         called["count"] += 1
         assert context.resources.a == 1
 
-    pipeline_def_good_deps = PipelineDefinition(
+    pipeline_def_good_deps = JobDefinition(
         name="mode_with_good_deps",
         solid_defs=[requires_a],
         mode_defs=[ModeDefinition(resource_defs={"a": resource_a})],
@@ -190,7 +190,7 @@ def test_mode_with_resource_deps():
         DagsterInvalidDefinitionError,
         match="resource with key 'a' required by op 'requires_a' was not provided",
     ):
-        PipelineDefinition(
+        JobDefinition(
             name="mode_with_bad_deps",
             solid_defs=[requires_a],
             mode_defs=[ModeDefinition(resource_defs={"ab": resource_a})],
@@ -201,7 +201,7 @@ def test_mode_with_resource_deps():
         called["count"] += 1
         assert context.resources.a == 1
 
-    pipeline_def_no_deps = PipelineDefinition(
+    pipeline_def_no_deps = JobDefinition(
         name="mode_with_no_deps",
         solid_defs=[no_deps],
         mode_defs=[ModeDefinition(resource_defs={"a": resource_a})],
@@ -233,7 +233,7 @@ def test_subset_with_mode_definitions():
         called["b"] += 1
         assert context.resources.b == 2
 
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         name="subset_test",
         solid_defs=[requires_a, requires_b],
         mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b})],
@@ -277,7 +277,7 @@ def define_multi_mode_with_loggers_pipeline():
         return 6
 
     return (
-        PipelineDefinition(
+        JobDefinition(
             name="multi_mode",
             solid_defs=[return_six],
             mode_defs=[

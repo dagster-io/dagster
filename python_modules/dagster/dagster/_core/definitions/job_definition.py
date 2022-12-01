@@ -39,6 +39,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.run_config_schema import RunConfigSchema
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -67,7 +68,6 @@ from .logger_definition import LoggerDefinition
 from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue
 from .mode import ModeDefinition
 from .partition import PartitionedConfig, PartitionsDefinition, PartitionSetDefinition
-from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .resource_definition import ResourceDefinition
 from .run_request import RunRequest
@@ -81,7 +81,27 @@ if TYPE_CHECKING:
     from dagster._core.snap import PipelineSnapshot
 
 
-class JobDefinition(PipelineDefinition):
+class JobDefinition:
+
+    _name: str
+    _graph_def: GraphDefinition
+    _description: Optional[str]
+    _tags: Mapping[str, str]
+    _metadata: Sequence[Union[MetadataEntry, PartitionMetadataEntry]]
+    _current_level_node_defs: Sequence[NodeDefinition]
+    _mode_definitions: Sequence[ModeDefinition]
+    _hook_defs: AbstractSet[HookDefinition]
+    _solid_retry_policy: Optional[RetryPolicy]
+    _preset_defs: Sequence[PresetDefinition]
+    _preset_dict: Dict[str, PresetDefinition]
+    _asset_layer: AssetLayer
+    _resource_requirements: Mapping[str, AbstractSet[str]]
+    _all_node_defs: Mapping[str, NodeDefinition]
+    _parent_job_def: Optional["JobDefinition"]
+    _cached_run_config_schemas: Dict[str, "RunConfigSchema"]
+    _cached_external_job: Any
+    _version_strategy: VersionStrategy
+
     _cached_partition_set: Optional["PartitionSetDefinition"]
     _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
     input_values: Mapping[str, object]
@@ -727,7 +747,7 @@ class JobDefinition(PipelineDefinition):
         )
 
 
-def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: PipelineDefinition):
+def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: JobDefinition):
     """
     Used to create the user facing experience of the default io_manager
     switching to in-memory when using execute_in_process.
@@ -852,7 +872,7 @@ def get_subselected_graph_definition(
     )
 
 
-def get_direct_input_values_from_job(target: PipelineDefinition) -> Mapping[str, Any]:
+def get_direct_input_values_from_job(target: JobDefinition) -> Mapping[str, Any]:
     if target.is_job:
         return cast(JobDefinition, target).input_values  # pylint: disable=protected-access
     else:

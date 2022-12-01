@@ -12,7 +12,7 @@ from ..hook_definition import HookDefinition
 from ..input import InputDefinition
 from ..mode import ModeDefinition
 from ..output import OutputDefinition
-from ..pipeline_definition import PipelineDefinition
+from ..pipeline_definition import JobDefinition
 from ..preset import PresetDefinition
 from ..version_strategy import VersionStrategy
 
@@ -57,7 +57,7 @@ class _Pipeline:
             version_strategy, "version_strategy", VersionStrategy
         )
 
-    def __call__(self, fn: Callable[..., Any]) -> PipelineDefinition:
+    def __call__(self, fn: Callable[..., Any]) -> JobDefinition:
         check.callable_param(fn, "fn")
 
         if not self.name:
@@ -87,7 +87,7 @@ class _Pipeline:
             ignore_output_from_composition_fn=not self.did_pass_outputs,
         )
 
-        pipeline_def = PipelineDefinition(
+        pipeline_def = JobDefinition(
             mode_defs=self.mode_definitions,
             preset_defs=self.preset_definitions,
             graph_def=GraphDefinition(
@@ -114,7 +114,7 @@ class _Pipeline:
 @overload
 def pipeline(
     name: Callable[..., Any],
-) -> PipelineDefinition:
+) -> JobDefinition:
     ...
 
 
@@ -149,7 +149,7 @@ def pipeline(
     config_fn: Optional[Callable[[Mapping[str, Any]], Mapping[str, Any]]] = None,
     solid_retry_policy: Optional[RetryPolicy] = None,
     version_strategy: Optional[VersionStrategy] = None,
-) -> Union[PipelineDefinition, _Pipeline]:
+) -> Union[JobDefinition, _Pipeline]:
     """Create a pipeline with the specified parameters from the decorated composition function.
 
     Using this decorator allows you to build up the dependency graph of the pipeline by writing a

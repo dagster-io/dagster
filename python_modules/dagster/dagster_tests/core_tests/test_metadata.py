@@ -1,6 +1,6 @@
 from dagster import NodeInvocation
 from dagster._core.definitions.decorators import op
-from dagster._legacy import PipelineDefinition, execute_pipeline
+from dagster._legacy import execute_pipeline
 
 
 def test_solid_instance_tags():
@@ -11,7 +11,7 @@ def test_solid_instance_tags():
         assert context.solid.tags == {"foo": "oof", "baz": "quux", "bip": "bop"}
         called["yup"] = True
 
-    pipeline = PipelineDefinition(
+    pipeline = JobDefinition(
         name="metadata_pipeline",
         solid_defs=[metadata_solid],
         dependencies={

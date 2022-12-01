@@ -17,7 +17,7 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import default_mode_def_for_test
-from dagster._legacy import PipelineDefinition, execute_pipeline, reexecute_pipeline
+from dagster._legacy import JobDefinition, execute_pipeline, reexecute_pipeline
 
 
 def define_addy_pipeline(using_file_system=False):
@@ -33,7 +33,7 @@ def define_addy_pipeline(using_file_system=False):
     def add_three(num):
         return num + 3
 
-    pipeline_def = PipelineDefinition(
+    pipeline_def = JobDefinition(
         name="execution_plan_reexecution",
         solid_defs=[add_one, add_two, add_three],
         dependencies={

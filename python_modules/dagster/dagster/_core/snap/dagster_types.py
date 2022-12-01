@@ -2,15 +2,15 @@ from typing import Mapping, NamedTuple, Optional, Sequence, Set
 
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataEntry
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.pipeline_definition import JobDefinition
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 
 def build_dagster_type_namespace_snapshot(
-    pipeline_def: PipelineDefinition,
+    pipeline_def: JobDefinition,
 ) -> "DagsterTypeNamespaceSnapshot":
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
     return DagsterTypeNamespaceSnapshot(
         {dt.key: build_dagster_type_snap(dt) for dt in pipeline_def.all_dagster_types()}
     )

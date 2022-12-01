@@ -4,7 +4,7 @@ import dagster._check as check
 from dagster._config import ConfigType
 
 from .config import ConfigMapping
-from .pipeline_definition import PipelineDefinition
+from .pipeline_definition import JobDefinition
 
 
 class RunConfigSchema(NamedTuple):
@@ -40,7 +40,7 @@ class RunConfigSchema(NamedTuple):
 
 
 def create_run_config_schema(
-    pipeline_def: PipelineDefinition,
+    pipeline_def: JobDefinition,
     mode: Optional[str] = None,
 ) -> RunConfigSchema:
     mode = check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name())

@@ -61,7 +61,7 @@ if TYPE_CHECKING:
     from .run_config_schema import RunConfigSchema
 
 
-class PipelineDefinition:
+class JobDefinition:
     """Defines a Dagster pipeline.
 
     A pipeline is made up of
@@ -166,7 +166,7 @@ class PipelineDefinition:
     _asset_layer: AssetLayer
     _resource_requirements: Mapping[str, AbstractSet[str]]
     _all_node_defs: Mapping[str, NodeDefinition]
-    _parent_pipeline_def: Optional["PipelineDefinition"]
+    _parent_pipeline_def: Optional["JobDefinition"]
     _cached_run_config_schemas: Dict[str, "RunConfigSchema"]
     _cached_external_pipeline: Any
     _version_strategy: VersionStrategy
@@ -187,7 +187,7 @@ class PipelineDefinition:
         solid_retry_policy: Optional[RetryPolicy] = None,
         graph_def: Optional[GraphDefinition] = None,
         _parent_pipeline_def: Optional[
-            "PipelineDefinition"
+            "JobDefinition"
         ] = None,  # https://github.com/dagster-io/dagster/issues/2115
         version_strategy: Optional[VersionStrategy] = None,
         asset_layer: Optional[AssetLayer] = None,
@@ -284,7 +284,7 @@ class PipelineDefinition:
         # Recursively explore all nodes in the this pipeline
         self._all_node_defs = _build_all_node_defs(self._current_level_node_defs)
         self._parent_pipeline_def = check.opt_inst_param(
-            _parent_pipeline_def, "_parent_pipeline_def", PipelineDefinition
+            _parent_pipeline_def, "_parent_pipeline_def", JobDefinition
         )
         self._cached_run_config_schemas = {}
         self._cached_external_pipeline = None
@@ -486,7 +486,7 @@ class PipelineDefinition:
 
     def get_pipeline_subset_def(
         self, solids_to_execute: Optional[AbstractSet[str]]
-    ) -> "PipelineDefinition":
+    ) -> "JobDefinition":
         return (
             self if solids_to_execute is None else _get_pipeline_subset_def(self, solids_to_execute)
         )
@@ -533,7 +533,7 @@ class PipelineDefinition:
         return False
 
     @property
-    def parent_pipeline_def(self) -> Optional["PipelineDefinition"]:
+    def parent_pipeline_def(self) -> Optional["JobDefinition"]:
         return None
 
     def get_parent_pipeline_snapshot(self) -> Optional["PipelineSnapshot"]:
@@ -604,11 +604,11 @@ class PipelineDefinition:
         else:
             return self._solid_retry_policy
 
-    def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PipelineDefinition":
+    def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "JobDefinition":
         """Apply a set of hooks to all solid instances within the pipeline."""
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
-        pipeline_def = PipelineDefinition(
+        pipeline_def = JobDefinition(
             name=self.name,
             graph_def=self._graph_def,
             mode_defs=self.mode_definitions,
@@ -639,7 +639,7 @@ class PipelineDefinition:
         raise DagsterInvariantViolationError(msg)
 
 
-class PipelineSubsetDefinition(PipelineDefinition):
+class PipelineSubsetDefinition(JobDefinition):
     @property
     def solids_to_execute(self) -> FrozenSet[str]:
         return frozenset(self._graph_def.node_names())
@@ -652,7 +652,7 @@ class PipelineSubsetDefinition(PipelineDefinition):
         return self._graph_def.node_names()
 
     @property
-    def parent_pipeline_def(self) -> PipelineDefinition:
+    def parent_pipeline_def(self) -> JobDefinition:
         return check.not_none(self._parent_pipeline_def)
 
     def get_parent_pipeline_snapshot(self) -> Optional["PipelineSnapshot"]:
@@ -680,14 +680,15 @@ def _dep_key_of(solid: Node) -> NodeInvocation:
 
 
 def _get_pipeline_subset_def(
-    pipeline_def: PipelineDefinition,
+    pipeline_def: JobDefinition,
     solids_to_execute: AbstractSet[str],
 ) -> "PipelineSubsetDefinition":
     """
     Build a pipeline which is a subset of another pipeline.
     Only includes the solids which are in solids_to_execute.
     """
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+
+    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
     check.set_param(solids_to_execute, "solids_to_execute", of_type=str)
     graph = pipeline_def.graph
     for solid_name in solids_to_execute:
@@ -792,7 +793,7 @@ def _build_all_node_defs(node_defs: Sequence[NodeDefinition]) -> Mapping[str, No
 
 
 def _create_run_config_schema(
-    pipeline_def: PipelineDefinition,
+    pipeline_def: JobDefinition,
     mode_definition: ModeDefinition,
     required_resources: AbstractSet[str],
 ) -> "RunConfigSchema":

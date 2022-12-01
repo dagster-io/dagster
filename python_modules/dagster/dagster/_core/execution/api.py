@@ -17,7 +17,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.definitions import IPipeline, JobDefinition, PipelineDefinition
+from dagster._core.definitions import IPipeline, JobDefinition, JobDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import PipelineSubsetDefinition
@@ -208,7 +208,7 @@ def execute_run(
     Returns:
         PipelineExecutionResult: The result of the execution.
     """
-    if isinstance(pipeline, PipelineDefinition):
+    if isinstance(pipeline, JobDefinition):
         if isinstance(pipeline, JobDefinition):
             error = (
                 "execute_run requires a reconstructable job but received job definition directly"
@@ -305,7 +305,7 @@ def execute_run(
 
 
 def execute_pipeline_iterator(
-    pipeline: Union[PipelineDefinition, IPipeline],
+    pipeline: Union[JobDefinition, IPipeline],
     run_config: Optional[Mapping[str, object]] = None,
     mode: Optional[str] = None,
     preset: Optional[str] = None,
@@ -589,7 +589,7 @@ def execute_job(
 
 
 def execute_pipeline(
-    pipeline: Union[PipelineDefinition, IPipeline],
+    pipeline: Union[JobDefinition, IPipeline],
     run_config: Optional[Mapping[str, object]] = None,
     mode: Optional[str] = None,
     preset: Optional[str] = None,
@@ -647,7 +647,7 @@ def execute_pipeline(
 
 @telemetry_wrapper
 def _logged_execute_pipeline(
-    pipeline: Union[IPipeline, PipelineDefinition],
+    pipeline: Union[IPipeline, JobDefinition],
     instance: DagsterInstance,
     run_config: Optional[Mapping[str, object]] = None,
     mode: Optional[str] = None,
@@ -702,7 +702,7 @@ def _logged_execute_pipeline(
 
 
 def reexecute_pipeline(
-    pipeline: Union[IPipeline, PipelineDefinition],
+    pipeline: Union[IPipeline, JobDefinition],
     parent_run_id: str,
     run_config: Optional[Mapping[str, object]] = None,
     step_selection: Optional[Sequence[str]] = None,
@@ -879,9 +879,9 @@ def execute_plan(
     )
 
 
-def _check_pipeline(pipeline: Union[PipelineDefinition, IPipeline]) -> IPipeline:
+def _check_pipeline(pipeline: Union[JobDefinition, IPipeline]) -> IPipeline:
     # backcompat
-    if isinstance(pipeline, PipelineDefinition):
+    if isinstance(pipeline, JobDefinition):
         pipeline = InMemoryPipeline(pipeline)
 
     check.inst_param(pipeline, "pipeline", IPipeline)
@@ -925,7 +925,7 @@ def _get_execution_plan_from_run(
 
 
 def create_execution_plan(
-    pipeline: Union[IPipeline, PipelineDefinition],
+    pipeline: Union[IPipeline, JobDefinition],
     run_config: Optional[Mapping[str, object]] = None,
     mode: Optional[str] = None,
     step_keys_to_execute: Optional[Sequence[str]] = None,
@@ -941,7 +941,7 @@ def create_execution_plan(
         pipeline = pipeline.with_repository_load_data(repository_load_data)
 
     pipeline_def = pipeline.get_definition()
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
     run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
     mode = check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name())
     check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
@@ -1116,7 +1116,7 @@ class ExecuteRunWithPlanIterable:
 
 
 def _check_execute_pipeline_args(
-    pipeline: Union[PipelineDefinition, IPipeline],
+    pipeline: Union[JobDefinition, IPipeline],
     run_config: Optional[Mapping[str, object]],
     mode: Optional[str],
     preset: Optional[str],
@@ -1132,7 +1132,7 @@ def _check_execute_pipeline_args(
 ]:
     pipeline = _check_pipeline(pipeline)
     pipeline_def = pipeline.get_definition()
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
 
     run_config = check.opt_mapping_param(run_config, "run_config")
     check.opt_str_param(mode, "mode")
@@ -1253,8 +1253,8 @@ def _resolve_reexecute_step_selection(
 
 
 def _pipeline_with_repository_load_data(
-    pipeline: Union[PipelineDefinition, IPipeline],
-) -> Tuple[Union[PipelineDefinition, IPipeline], Optional[RepositoryLoadData]]:
+    pipeline: Union[JobDefinition, IPipeline],
+) -> Tuple[Union[JobDefinition, IPipeline], Optional[RepositoryLoadData]]:
     """For ReconstructablePipeline, generate and return any required RepositoryLoadData, alongside
     a ReconstructablePipeline with this repository load data baked in.
     """

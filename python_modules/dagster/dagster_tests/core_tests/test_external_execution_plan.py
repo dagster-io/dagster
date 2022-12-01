@@ -30,7 +30,6 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.instance import DagsterInstance
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import PipelineDefinition
 
 
 def define_inty_pipeline(using_file_system=False):
@@ -46,7 +45,7 @@ def define_inty_pipeline(using_file_system=False):
     def user_throw_exception():
         raise Exception("whoops")
 
-    pipeline = PipelineDefinition(
+    pipeline = JobDefinition(
         name="basic_external_plan_execution",
         solid_defs=[return_one, add_one, user_throw_exception],
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},

@@ -43,7 +43,7 @@ from dagster._core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
-from dagster._legacy import PipelineDefinition, execute_pipeline
+from dagster._legacy import JobDefinition, execute_pipeline
 from dagster._seven import IS_WINDOWS, JSONDecodeError, json
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -669,11 +669,11 @@ def execute_scaffold_command(cli_args, print_fn):
 
 
 def do_scaffold_command(
-    pipeline_def: PipelineDefinition,
+    pipeline_def: JobDefinition,
     printer: Callable[..., Any],
     skip_non_required: bool,
 ):
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
     check.callable_param(printer, "printer")
     check.bool_param(skip_non_required, "skip_non_required")
 

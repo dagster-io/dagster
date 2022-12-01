@@ -16,7 +16,7 @@ from dagster._core.execution.api import (
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, PipelineDefinition
+from dagster._legacy import ModeDefinition
 
 
 @resource
@@ -48,7 +48,7 @@ def test_execute_pipeline_iterator():
             assert isinstance(record, EventLogEntry)
             records.append(record)
 
-        pipeline = PipelineDefinition(
+        pipeline = JobDefinition(
             name="basic_resource_pipeline",
             solid_defs=[resource_solid],
             mode_defs=[
@@ -85,7 +85,7 @@ def test_execute_run_iterator():
         records.append(record)
 
     with instance_for_test() as instance:
-        pipeline_def = PipelineDefinition(
+        pipeline_def = JobDefinition(
             name="basic_resource_pipeline",
             solid_defs=[resource_solid],
             mode_defs=[
@@ -192,7 +192,7 @@ def test_restart_running_run_worker():
         pass
 
     with instance_for_test() as instance:
-        pipeline_def = PipelineDefinition(
+        pipeline_def = JobDefinition(
             name="basic_resource_pipeline",
             solid_defs=[resource_solid],
             mode_defs=[
@@ -229,7 +229,7 @@ def test_start_run_worker_after_run_failure():
         pass
 
     with instance_for_test() as instance:
-        pipeline_def = PipelineDefinition(
+        pipeline_def = JobDefinition(
             name="basic_resource_pipeline",
             solid_defs=[resource_solid],
             mode_defs=[
@@ -259,7 +259,7 @@ def test_execute_canceled_state():
         pass
 
     with instance_for_test() as instance:
-        pipeline_def = PipelineDefinition(
+        pipeline_def = JobDefinition(
             name="basic_resource_pipeline",
             solid_defs=[resource_solid],
             mode_defs=[
@@ -315,7 +315,7 @@ def test_execute_run_bad_state():
         records.append(record)
 
     with instance_for_test() as instance:
-        pipeline_def = PipelineDefinition(
+        pipeline_def = JobDefinition(
             name="basic_resource_pipeline",
             solid_defs=[resource_solid],
             mode_defs=[
@@ -349,7 +349,7 @@ def test_execute_plan_iterator():
         records.append(record)
 
     with instance_for_test() as instance:
-        pipeline = PipelineDefinition(
+        pipeline = JobDefinition(
             name="basic_resource_pipeline",
             solid_defs=[resource_solid],
             mode_defs=[

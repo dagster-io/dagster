@@ -1,4 +1,4 @@
-from typing import Any, Callable, Mapping, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Mapping, NamedTuple, Optional, Union, cast
 
 from typing_extensions import TypeAlias
 

@@ -23,7 +23,7 @@ from ..graph_definition import GraphDefinition
 from ..logger_definition import LoggerDefinition
 from ..partition import PartitionSetDefinition
 from ..partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
-from ..pipeline_definition import PipelineDefinition
+from ..pipeline_definition import JobDefinition
 from ..repository_definition import (
     VALID_REPOSITORY_DATA_DICT_KEYS,
     CachingRepositoryData,
@@ -92,7 +92,7 @@ class _Repository:
                 elif not isinstance(
                     definition,
                     (
-                        PipelineDefinition,
+                        JobDefinition,
                         PartitionSetDefinition,
                         ScheduleDefinition,
                         UnresolvedPartitionedAssetScheduleDefinition,

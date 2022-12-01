@@ -12,7 +12,7 @@ from dagster._core.execution.resources_init import (
 from dagster._core.execution.retries import RetryMode
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._legacy import ModeDefinition, PipelineDefinition
+from dagster._legacy import ModeDefinition
 
 
 def test_generator_exit():
@@ -55,7 +55,7 @@ def gen_basic_resource_pipeline(called=None, cleaned=None):
     def resource_solid(_):
         pass
 
-    return PipelineDefinition(
+    return JobDefinition(
         name="basic_resource_pipeline",
         solid_defs=[resource_solid],
         mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b})],

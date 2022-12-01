@@ -19,7 +19,7 @@ from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,
     execute_in_process_executor,
 )
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.pipeline_definition import JobDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils import ensure_single_item
@@ -141,7 +141,7 @@ class ResolvedRunConfig(
 
     @staticmethod
     def build(
-        pipeline_def: PipelineDefinition,
+        pipeline_def: JobDefinition,
         run_config: Optional[Mapping[str, object]] = None,
         mode: Optional[str] = None,
     ) -> "ResolvedRunConfig":
@@ -154,7 +154,7 @@ class ResolvedRunConfig(
 
         from .composite_descent import composite_descent
 
-        check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+        check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
         run_config = check.opt_mapping_param(run_config, "run_config")
         check.opt_str_param(mode, "mode")
 
@@ -296,7 +296,7 @@ def config_map_resources(
 
 
 def config_map_loggers(
-    pipeline_def: PipelineDefinition,
+    pipeline_def: JobDefinition,
     config_value: Mapping[str, Any],
     mode: str,
 ) -> Mapping[str, Any]:
