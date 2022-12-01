@@ -18,7 +18,7 @@ By this point, you've [set up a dbt project](/integrations/dbt/using-dbt-with-da
 In this step, you'll:
 
 - [Create upstream Dagster assets](#step-1-create-upstream-dagster-assets)
-- [Add an I/O manager to the Dagster repository](#step-2-add-an-io-manager-to-the-dagster-repository)
+- [Add an I/O manager to the Dagster code location](#step-2-add-an-io-manager-to-the-dagster-code-location)
 - [Materialize the assets using Dagit](#step-3-materialize-the-assets-using-dagit)
 
 ---
@@ -32,6 +32,8 @@ In `/tutorial_template/tutorial_dbt_dagster/assets/__init__.py`:
 1. Replace the import section at the top of the file with the following:
 
    ```python
+   # /tutorial_template/tutorial_dbt_dagster/assets/__init__.py
+
    import pandas as pd
    from dagster_dbt import load_assets_from_dbt_project
 
@@ -62,9 +64,11 @@ Let's take a closer look at the arguments we've provided:
 
 - `group_name` - When Dagster loads the dbt models as assets, the assets will be placed in an asset group based on the name of the folder (`staging`) containing the models. Because we want the assets we add to be included in the same group, we defined this as `staging`.
 
-At this point, the `/tutorial_template/tutorial_dbt_dagster/assets__init__.py` file should look like this:
+At this point, the `/tutorial_template/tutorial_dbt_dagster/assets/__init__.py` file should look like this:
 
 ```python
+# /tutorial_template/tutorial_dbt_dagster/assets/__init__.py
+
 import pandas as pd
 from dagster_dbt import load_assets_from_dbt_project
 
@@ -93,18 +97,20 @@ dbt_assets = load_assets_from_dbt_project(
 
 ---
 
-## Step 2: Add an I/O manager to the Dagster repository
+## Step 2: Add an I/O manager to the Dagster code location
 
 To materialize the assets, we need to tell Dagster how to handle the assets' inputs and outputs. We can do this using an [I/O manager](/concepts/io-management/io-managers).
 
-In this step, we'll update the Dagster repository to supply the `duckdb_io_manager` to the assets in the repository. This resource contains an I/O manager that, when assets are materialized, allows:
+In this step, we'll update the Dagster code location to supply the `duckdb_io_manager` to our assets. This resource contains an I/O manager that, when assets are materialized, allows:
 
 - Upstream assets (`customers_raw`, `orders_raw`) to load data into DuckDB. In this example, the `duckdb_io_manager` uses <PyObject module="dagster_duckdb_pandas" object="DuckDBPandasTypeHandler" /> to store the pandas DataFrames used in our assets as CSVs and load them into DuckDB.
 - Downstream assets to read data from DuckDB. We'll add the downstream asset in the next section.
 
-In `/tutorial_template/tutorial_dbt_dagster/repository.py`, replace its contents with the following:
+In `/tutorial_template/tutorial_dbt_dagster/__init__.py`, replace its contents with the following:
 
 ```python
+# /tutorial_template/tutorial_dbt_dagster/__init__.py
+
 import os
 
 from dagster_dbt import dbt_cli_resource
@@ -113,33 +119,29 @@ from tutorial_dbt_dagster.assets import DBT_PROFILES, DBT_PROJECT_PATH
 
 from dagster_duckdb_pandas import duckdb_pandas_io_manager
 
-from dagster import load_assets_from_package_module, repository, with_resources
+from dagster import Definitions, load_assets_from_modules
 
 
-@repository
-def tutorial_dbt_dagster():
-    return with_resources(
-        load_assets_from_package_module(assets),
+resources = {
+    "dbt": dbt_cli_resource.configured(
         {
-            "dbt": dbt_cli_resource.configured(
-                {
-                    "project_dir": DBT_PROJECT_PATH,
-                    "profiles_dir": DBT_PROFILES,
-                },
-            ),
-            "io_manager": duckdb_pandas_io_manager.configured(
-                {"database": os.path.join(DBT_PROJECT_PATH, "tutorial.duckdb")}
-            ),
+            "project_dir": DBT_PROJECT_PATH,
+            "profiles_dir": DBT_PROFILES,
         },
-    )
+    ),
+    "io_manager": duckdb_pandas_io_manager.configured(
+        {"database": os.path.join(DBT_PROJECT_PATH, "tutorial.duckdb")}
+    ),
+}
 
+defs = Definitions(assets=load_assets_from_modules([assets]), resources=resources)
 ```
 
 ---
 
 ## Step 3: Materialize the assets using Dagit
 
-Now that you've created assets, resources, and a repository, it's time to materialize the assets! Materializing an asset runs the op it contains and saves the results to persistent storage. In this tutorial, we're saving asset outputs to DuckDB.
+Now that you've created assets, resources, and defined a code location, it's time to materialize the assets! Materializing an asset runs the op it contains and saves the results to persistent storage. In this tutorial, we're saving asset outputs to DuckDB.
 
 1. In Dagit, click the **Reload definitions** button. This ensures that Dagit picks up the changes you made in the previous steps.
 
