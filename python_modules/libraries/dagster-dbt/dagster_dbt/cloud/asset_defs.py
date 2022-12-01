@@ -1,4 +1,5 @@
 import json
+import shlex
 from typing import (
     Any,
     Callable,
@@ -113,12 +114,12 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 "It must one of `dbt run` or `dbt build`. Received commands: {commands}."
             )
 
-        self._dbt_cloud_job_command = commands[0]
+        self._dbt_cloud_job_command = commands[0].strip()
 
         # Retrieve the filters options from the dbt Cloud job's command.
         #
         # There are three filters: `--select`, `--exclude`, and `--selector`.
-        parsed_args = dbt_parse_args(args=commands[0].split()[1:])
+        parsed_args = dbt_parse_args(args=shlex.split(self._dbt_cloud_job_command)[1:])
         dbt_compile_options: List[str] = []
 
         selected_models = parsed_args.select or []
@@ -132,18 +133,27 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         if parsed_args.selector_name:
             dbt_compile_options.append(f"--selector {parsed_args.selector_name}")
 
-        # Pass the partition variable to the dbt Cloud job's command.
+        # Add the partition variable as a variable to the dbt Cloud job command.
+        #
+        # If existing variables passed through the dbt Cloud job's command, an error will be
+        # raised. Since these are static variables anyways, they can be moved to the
+        # `dbt_project.yml` without loss of functionality.
         #
         # Since we're only doing this to generate the dependency structure, just use an arbitrary
         # partition key (e.g. the last one) to retrieve the partition variable.
-        #
-        # TODO: Do not assume that `--vars` is empty. Instead, merge the partition variable with the
-        # existing vars passed into the dbt Cloud job's command.
+        dbt_vars = json.loads(parsed_args.vars or "{}")
+        if dbt_vars:
+            raise DagsterDbtCloudJobInvariantViolationError(
+                f"The dbt Cloud job '{job['name']}' ({job['id']}) must not have variables defined "
+                "from `--vars`. Instead, declare the variable in the `dbt_project.yml` file. "
+                f"Received commands: {commands}."
+            )
+
         if self._partitions_def and self._partition_key_to_vars_fn:
             partition_key = self._partitions_def.get_last_partition_key()
-            dbt_vars = self._partition_key_to_vars_fn(partition_key)
+            partition_var = self._partition_key_to_vars_fn(partition_key)
 
-            dbt_compile_options.append(f"--vars '{json.dumps(dbt_vars)}'")
+            dbt_compile_options.append(f"--vars '{json.dumps(partition_var)}'")
 
         # We need to retrieve the dependency structure for the assets in the dbt Cloud project.
         # However, we can't just use the dependency structure from the latest run, because
@@ -319,13 +329,12 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         def _assets(context: OpExecutionContext):
             dbt_cloud = cast(DbtCloudResourceV2, context.resources.dbt_cloud)
 
-            # TODO: Do not assume that `--vars` is empty. Instead, merge the partition variable with the
-            # existing vars passed into the dbt Cloud job's command.
+            # Add the partition variable as a variable to the dbt Cloud job command.
             dbt_options: List[str] = []
             if context.has_partition_key and self._partition_key_to_vars_fn:
-                dbt_vars = self._partition_key_to_vars_fn(context.partition_key)
+                partition_var = self._partition_key_to_vars_fn(context.partition_key)
 
-                dbt_options.append(f"--vars '{json.dumps(dbt_vars)}'")
+                dbt_options.append(f"--vars '{json.dumps(partition_var)}'")
 
             # Map the selected outputs to dbt models that should be materialized.
             #
