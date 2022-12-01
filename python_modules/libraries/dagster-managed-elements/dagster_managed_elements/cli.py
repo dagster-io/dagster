@@ -1,11 +1,16 @@
 import functools
 import importlib
+import logging
 import sys
+import warnings
 from types import ModuleType
 from typing import Optional, Sequence
 
 import click
+import click_spinner
 from dagster_managed_elements.types import ManagedElementDiff, ManagedElementReconciler
+
+from dagster._utils.backcompat import ExperimentalWarning
 
 
 def _deepgetattr(obj, attr: str):
@@ -30,7 +35,12 @@ def get_reconcilable_objects_from_module(
         sys.path.append(module_dir)
 
     try:
-        module = importlib.import_module(module_str)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+            current_level = logging.getLogger().level
+            logging.getLogger().setLevel(logging.ERROR)
+            module = importlib.import_module(module_str)
+            logging.getLogger().setLevel(current_level)
     except ModuleNotFoundError:
         raise ValueError(f"Could not import module {module_str}")
 
@@ -62,11 +72,13 @@ def get_reconcilable_objects(module: ModuleType) -> Sequence[ManagedElementRecon
 
 
 def check(module_dir: str, import_str: str, **kwargs) -> ManagedElementDiff:
-    reconcilable_objects = get_reconcilable_objects_from_module(
-        module_dir=module_dir, import_str=import_str
-    )
+    click.echo("Loading module...")
+    with click_spinner.spinner():
+        reconcilable_objects = get_reconcilable_objects_from_module(
+            module_dir=module_dir, import_str=import_str
+        )
 
-    click.echo(f"Found {len(reconcilable_objects)} managed elements, checking...")
+    click.echo(f"Found {len(reconcilable_objects)} reconcilers, checking...")
 
     diff = ManagedElementDiff()
     for obj in reconcilable_objects:
@@ -83,7 +95,7 @@ def apply(module_dir: str, import_str: str, **kwargs) -> ManagedElementDiff:
         module_dir=module_dir, import_str=import_str
     )
 
-    click.echo(f"Found {len(reconcilable_objects)} managed elements, applying...")
+    click.echo(f"Found {len(reconcilable_objects)} reconcilers, applying...")
 
     diff = ManagedElementDiff()
     for obj in reconcilable_objects:
@@ -102,7 +114,7 @@ def main():
 
 @main.command(
     name="check",
-    help="Checks whether configuration for the specified managed elements is in sync with the current state, and prints a diff if not.",
+    help="Checks whether configuration for the specified reconcilers are in sync with the current state, and prints a diff if not.",
 )
 @click.option(
     "--module",
@@ -126,12 +138,18 @@ def main():
     ),
 )
 def check_cmd(module, working_directory, include_all_secrets):
-    click.echo(check(working_directory, module, include_all_secrets=include_all_secrets))
+    diff = check(working_directory, module, include_all_secrets=include_all_secrets)
+
+    if diff.is_empty():
+        click.echo(click.style("\nNo diff found.", fg="green"))
+    else:
+        click.echo(click.style("\nChanges found:", fg="yellow"))
+        click.echo(diff)
 
 
 @main.command(
     name="apply",
-    help="Reconciles the config for the specified managed elements, updating the remote state.",
+    help="Reconciles the config for the specified reconcilers, updating the remote state.",
 )
 @click.option(
     "--module",
@@ -156,4 +174,10 @@ def check_cmd(module, working_directory, include_all_secrets):
     ),
 )
 def apply_cmd(module, working_directory, include_all_secrets):
-    click.echo(apply(working_directory, module, include_all_secrets=include_all_secrets))
+    diff = apply(working_directory, module, include_all_secrets=include_all_secrets)
+
+    if diff.is_empty():
+        click.echo(click.style("\nNo changes applied.", fg="green"))
+    else:
+        click.echo(click.style("\nChanges applied:", fg="yellow"))
+        click.echo(diff)

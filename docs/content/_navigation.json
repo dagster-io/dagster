@@ -3,7 +3,12 @@
     "title": "Getting Started",
     "icon": "Flag",
     "path": "/getting-started",
+    "isDefaultOpen": true,
     "children": [
+      {
+        "title": "Hello Dagster",
+        "path": "/getting-started/hello-dagster"
+      },
       {
         "title": "Installation",
         "path": "/getting-started/install"
@@ -71,7 +76,6 @@
     "title": "Concepts",
     "icon": "Concepts",
     "path": "/concepts",
-    "isDefaultOpen": true,
     "children": [
       {
         "title": "Assets",

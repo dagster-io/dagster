@@ -73,7 +73,7 @@ def test_from_solid_not_there():
 def test_from_non_existant_input():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='solid "B" does not have input "not_an_input"',
+        match='op "B" does not have input "not_an_input"',
     ):
         GraphDefinition(
             node_defs=solid_a_b_list(),
