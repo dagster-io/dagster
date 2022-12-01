@@ -4,6 +4,7 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -18,6 +19,7 @@ from dagster._annotations import public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._utils.backcompat import canonicalize_backcompat_args, deprecation_warning
 
 from .definition_config_schema import IDefinitionConfigSchema
 from .hook_definition import HookDefinition
@@ -66,9 +68,8 @@ class OpDefinition(SolidDefinition):
             not set metadata directly. Values that are not strings will be json encoded and must meet
             the criteria that `json.loads(json.dumps(value)) == value`.
         required_resource_keys (Optional[Set[str]]): Set of resources handles required by this op.
-        version (Optional[str]): (Experimental) The version of the op's compute_fn. Two ops should
-            have the same version if and only if they deterministically produce the same outputs
-            when provided the same inputs.
+        code_version (Optional[str]): (Experimental) Version of the code encapsulated by the op. If set,
+            this is used as a default code version for all outputs.
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
 
 
@@ -98,6 +99,7 @@ class OpDefinition(SolidDefinition):
         tags: Optional[Mapping[str, Any]] = None,
         version: Optional[str] = None,
         retry_policy: Optional[RetryPolicy] = None,
+        code_version: Optional[str] = None,
     ):
         from .decorators.solid_decorator import (
             DecoratedSolidFunction,
@@ -120,8 +122,14 @@ class OpDefinition(SolidDefinition):
         else:
             resolved_input_defs = input_defs
 
+        code_version = canonicalize_backcompat_args(
+            code_version, "code_version", version, "version", "2.0"
+        )
+
         check.opt_mapping_param(outs, "outs")
-        output_defs = _resolve_output_defs_from_outs(compute_fn=compute_fn, outs=outs)
+        output_defs = _resolve_output_defs_from_outs(
+            compute_fn=compute_fn, outs=outs, default_code_version=code_version
+        )
 
         super(OpDefinition, self).__init__(
             compute_fn=compute_fn,
@@ -130,7 +138,7 @@ class OpDefinition(SolidDefinition):
             config_schema=config_schema,
             required_resource_keys=required_resource_keys,
             tags=tags,
-            version=version,
+            version=code_version,
             retry_policy=retry_policy,
             input_defs=resolved_input_defs,
             output_defs=output_defs,
@@ -162,6 +170,7 @@ class OpDefinition(SolidDefinition):
     @public  # type: ignore
     @property
     def version(self) -> Optional[str]:
+        deprecation_warning("`version` property on OpDefinition", "2.0")
         return super(OpDefinition, self).version
 
     @public  # type: ignore
@@ -199,6 +208,7 @@ class OpDefinition(SolidDefinition):
 def _resolve_output_defs_from_outs(
     compute_fn: Union[Callable[..., Any], "DecoratedSolidFunction"],
     outs: Optional[Mapping[str, Out]],
+    default_code_version: Optional[str],
 ) -> Sequence[OutputDefinition]:
     from .decorators.solid_decorator import DecoratedSolidFunction
 
@@ -214,16 +224,16 @@ def _resolve_output_defs_from_outs(
         description = None
 
     if outs is None:
-        return [OutputDefinition.create_from_inferred(inferred_output_props)]
+        return [OutputDefinition.create_from_inferred(inferred_output_props, default_code_version)]
 
     # If only a single entry has been provided to the out dict, then slurp the
     # annotation into the entry.
     if len(outs) == 1:
         name = list(outs.keys())[0]
         only_out = outs[name]
-        return [only_out.to_definition(annotation, name, description)]
+        return [only_out.to_definition(annotation, name, description, default_code_version)]
 
-    output_defs = []
+    output_defs: List[OutputDefinition] = []
 
     # Introspection on type annotations is experimental, so checking
     # metaclass is the best we can do.
@@ -245,6 +255,10 @@ def _resolve_output_defs_from_outs(
         )
         # Don't provide description when using multiple outputs. Introspection
         # is challenging when faced with multiple inputs.
-        output_defs.append(cur_out.to_definition(annotation_type, name=name, description=None))
+        output_defs.append(
+            cur_out.to_definition(
+                annotation_type, name=name, description=None, code_version=default_code_version
+            )
+        )
 
     return output_defs

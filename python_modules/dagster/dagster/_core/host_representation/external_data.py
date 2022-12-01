@@ -31,7 +31,6 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionScheduleDefinition, ScheduleType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorDefinition
@@ -836,7 +835,7 @@ class ExternalAssetNode(
             ("compute_kind", Optional[str]),
             ("op_name", Optional[str]),
             ("op_names", Optional[Sequence[str]]),
-            ("op_version", Optional[str]),
+            ("code_version", Optional[str]),
             ("node_definition_name", Optional[str]),
             ("graph_name", Optional[str]),
             ("op_description", Optional[str]),
@@ -865,7 +864,7 @@ class ExternalAssetNode(
         compute_kind: Optional[str] = None,
         op_name: Optional[str] = None,
         op_names: Optional[Sequence[str]] = None,
-        op_version: Optional[str] = None,
+        code_version: Optional[str] = None,
         node_definition_name: Optional[str] = None,
         graph_name: Optional[str] = None,
         op_description: Optional[str] = None,
@@ -901,7 +900,7 @@ class ExternalAssetNode(
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
             op_name=check.opt_str_param(op_name, "op_name"),
             op_names=check.opt_sequence_param(op_names, "op_names"),
-            op_version=check.opt_str_param(op_version, "op_version"),
+            code_version=check.opt_str_param(code_version, "code_version"),
             node_definition_name=check.opt_str_param(node_definition_name, "node_definition_name"),
             graph_name=check.opt_str_param(graph_name, "graph_name"),
             op_description=check.opt_str_param(
@@ -984,7 +983,7 @@ def external_asset_graph_from_defs(
     dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
     all_upstream_asset_keys: Set[AssetKey] = set()
     op_names_by_asset_key: Dict[AssetKey, Sequence[str]] = {}
-    op_version_by_asset_key: Dict[AssetKey, Optional[str]] = dict()
+    code_version_by_asset_key: Dict[AssetKey, Optional[str]] = dict()
     group_name_by_asset_key: Dict[AssetKey, str] = {}
 
     for pipeline_def in pipelines:
@@ -1001,14 +1000,11 @@ def external_asset_graph_from_defs(
                         output_key, []
                     )
                 ]
+            code_version_by_asset_key[output_key] = asset_info.code_version
             upstream_asset_keys = pipeline_def.asset_layer.upstream_assets_for_asset(output_key)
             all_upstream_asset_keys.update(upstream_asset_keys)
             node_defs_by_asset_key[output_key].append((node_output_handle, pipeline_def))
             asset_info_by_asset_key[output_key] = asset_info
-
-            node_def = pipeline_def.get_solid(node_output_handle.node_handle).definition
-            if isinstance(node_def, OpDefinition):
-                op_version_by_asset_key[output_key] = node_def.version
 
             for upstream_key in upstream_asset_keys:
                 deps[output_key][upstream_key] = ExternalAssetDependency(
@@ -1035,7 +1031,7 @@ def external_asset_graph_from_defs(
             depended_by=list(dep_by[asset_key].values()),
             job_names=[],
             group_name=group_name_by_asset_key.get(asset_key),
-            op_version=op_version_by_asset_key.get(asset_key),
+            code_version=code_version_by_asset_key.get(asset_key),
         )
         for asset_key in asset_keys_without_definitions
     ]
@@ -1108,7 +1104,7 @@ def external_asset_graph_from_defs(
                 or node_def.name,
                 graph_name=graph_name,
                 op_names=op_names_by_asset_key[asset_key],
-                op_version=op_version_by_asset_key.get(asset_key),
+                code_version=code_version_by_asset_key.get(asset_key),
                 op_description=node_def.description or output_def.description,
                 node_definition_name=node_def.name,
                 job_names=job_names,
