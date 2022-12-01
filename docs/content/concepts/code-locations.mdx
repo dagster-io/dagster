@@ -70,16 +70,32 @@ defs = Definitions(
 <TabGroup>
     <TabItem name="Local Development">
 
+### Load definitions in a file
+
+Example: `$ dagit -f foo.py`
+
 `dagit` and other Dagster tools can load a file directly as a code location. The command `dagit -f foo.py` is loading a code location: it will load the definitions in `foo.py` as a code location in the same python environment where Dagit resides.
 
-Installed python packages can also be loaded directly. For Dagster projects deployed to production we recommend this style of development, as it eliminates an entire class of python import errors. Create a Dagster project with the `dagster project scaffold` command or by using one of our templates. This project can then be installed using `pip install -e .` to make it an editable install for local development.
+### Load definitions in an installed package
+
+Example: `$ dagit -m your_package_name`
+
+Installed python packages can also be loaded by Dagster tools. It will load the definitions defined as the top-level of that package, in its root `__init__.py` file. For Dagster projects deployed to production we recommend this style of development, as it eliminates an entire class of python import errors. Create a Dagster project with the `dagster project scaffold` command or by using one of our templates. This project can then be installed using `pip install -e .` to make it an editable install for local development.
 
 Once installed, this package can be loaded typing `dagit -m your_package_name`. This should be read as "load definitions in the `defs` symbol in this package (defined as its root `__init__.py` file) in the same virtual environment as Dagit itself.
 
+### Load definitions without any command line arguments
+
+Example: `$ dagit`
+
 Our project templates also create a `pyproject.toml` file with a `tool.dagster` section an assignment to the `python_package` variable in that section. This allows users to type just `dagit` without any parameters and the package name is defined in that variable. This is very convenient for local development.
 
+```
     [tool.dagster]
     python_package = "your_package_name"
+```
+
+When one runs a dagster CLI in the same directory as this toml file, it is equivalent of running `dagit -m your_package_name`.
 
 </TabItem>
 <TabItem name="Cloud Deployment">
