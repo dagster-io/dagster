@@ -67,7 +67,7 @@ To complete this tutorial, you'll need:
 
 ## Step 1: Explore the Jupyter notebook
 
-In this tutorial, we'll use the class Iris dataset, collected in 1936 by the American botanist Edgar Anderson and made famous by statistician Ronald Fisher. The Iris dataset is a basic example of machine learning because it contains three classes of observation: one class is straightforwardly linearly separable from the other two, which can only be distinguished by more sophisticated methods.
+In this tutorial, we'll analyze the Iris dataset, collected in 1936 by the American botanist Edgar Anderson and made famous by statistician Ronald Fisher. The Iris dataset is a basic example of machine learning because it contains three classes of observation: one class is straightforwardly linearly separable from the other two, which can only be distinguished by more sophisticated methods.
 
 The `/tutorial_template/notebooks/iris-kmeans.ipynb` Jupyter notebook, which is already completed for you, does some analysis on the Iris dataset.
 
@@ -88,7 +88,7 @@ iris = pd.read_csv(
 )
 ```
 
-Next, we'll do some descriptive analysis to explore the dataset. If you execute these cells, several plots of the Iris dataset will be created:
+Next, we do some descriptive analysis to explore the dataset. If you execute these cells, several plots of the Iris dataset will be created:
 
 <Image
 src="/images/integrations/dagstermill/descriptive-plots.png"
@@ -96,7 +96,7 @@ width={1310}
 height={1162}
 />
 
-Next, we'll conduct our K-means analysis:
+Next, we conduct our K-means analysis:
 
 ```python
 estimator = sklearn.cluster.KMeans(n_clusters=3)
@@ -105,7 +105,7 @@ estimator.fit(
 )
 ```
 
-Lastly, we'll plot the results of the K-means analysis. From the plots, we can see that one species of Iris is separable from the other two, but a more sophisticated model will be required to distinguish the other two species:
+Lastly, we plot the results of the K-means analysis. From the plots, we can see that one species of Iris is separable from the other two, but a more sophisticated model will be required to distinguish the other two species:
 
 <Image
 src="/images/integrations/dagstermill/kmeans-plots.png"
@@ -385,7 +385,7 @@ Then, whenever you run the notebook using Jupyter, you'll be able to work with t
 jupyter notebook /path/to/new/notebook.ipynb
 ```
 
-To integrate the notebook, follow the steps from [Step 5.3](#step-53-modify-the-notebook) to add the `parameters` tag to the cell that fetches the `iris_dataset` asset via `load_asset_value`.
+To integrate the new notebook, follow the steps from [Step 5.3](#step-53-modify-the-notebook) to add the `parameters` tag to the cell that fetches the `iris_dataset` asset via `load_asset_value`.
 
 ---
 
