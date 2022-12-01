@@ -7,12 +7,14 @@ description: Dagster comes with a convenient CLI command for creating a new proj
 
 The easiest way to start building a Dagster project is by using the `dagster project` CLI. This CLI tool helps generate files and folder structures that enable you to quickly get started with Dagster.
 
-You can scaffold a new project [using the default project skeleton](#option-1-starting-with-the-default-project-skeleton), or [start with using one of the official Dagster examples](#option-2-starting-with-an-official-example).
-
 ---
 
-## Option 1: Starting with the default project skeleton
+## Bootstrapping a new project
 
+You can scaffold a new project [using the default project skeleton](#option-1-starting-with-the-default-project-skeleton), or [start with using one of the official Dagster examples](#option-2-starting-with-an-official-example).
+
+<TabGroup>
+<TabItem name="Starting with the default project skeleton">
 To get started, you can run:
 
 ```bash
@@ -20,7 +22,7 @@ pip install dagster
 dagster project scaffold --name my-dagster-project
 ```
 
-The command `dagster project scaffold` generates a folder structure with a single Dagster repository and other boilerplate files such as [`workspace.yaml`](/concepts/repositories-workspaces/workspaces). This helps you to quickly start with an empty project with everything set up.
+The command `dagster project scaffold` generates a folder structure with a single Dagster code location and other files such as `pyproject.toml` and `setup.py`. This helps you to quickly start with an empty project with everything set up.
 
 Here's a breakdown of the files and directories that are generated:
 
@@ -45,24 +47,13 @@ Here's a breakdown of the files and directories that are generated:
   <tbody>
     <tr>
       <td>my_dagster_project/</td>
-      <td>
-        A Python package that contains code for your new Dagster repository.
-      </td>
+      <td>A Python package that contains code for your new Dagster code.</td>
     </tr>
     <tr>
       <td>my_dagster_project_tests/</td>
       <td>
         A Python package that contains tests for{" "}
         <code>my_dagster_project.</code>.
-      </td>
-    </tr>
-    <tr>
-      <td>workspace.yaml</td>
-      <td>
-        A file that specifies the location of your code for Dagit and the
-        Dagster CLI. Check out{" "}
-        <a href="/concepts/repositories-workspaces/workspaces">workspaces</a>{" "}
-        for more details.
       </td>
     </tr>
     <tr>
@@ -73,12 +64,20 @@ Here's a breakdown of the files and directories that are generated:
       <td>pyproject.toml</td>
       <td>
         A file that specifies package core metadata in static, tool-agnostic
-        way. <br />
+        way.
+        <br />
+        It includes a <code>tool.dagster</code> section which references to your
+        Dagster project as a python package. This allows you to type just
+        `dagit` without any parameters in order to load your Dagster code. Visit{" "}
+        <a href="/concepts/code-locations">Code Locations</a> to learn more.
+        <br />
         <br /> <strong>Note:</strong> <code>pyproject.toml</code> was introduced
-        in <a href="https://peps.python.org/pep-0518/https://peps.python.org/pep-0518/">
+        in{" "}
+        <a href="https://peps.python.org/pep-0518/https://peps.python.org/pep-0518/">
           PEP-518
-        </a> and meant to replace <code>setup.py</code>, but we may still include
-        a <code>setup.py</code> for compatibility with tools that do not use this
+        </a>{" "}
+        and meant to replace <code>setup.py</code>, but we may still include a{" "}
+        <code>setup.py</code> for compatibility with tools that do not use this
         spec.
       </td>
     </tr>
@@ -92,7 +91,7 @@ Here's a breakdown of the files and directories that are generated:
     <tr>
       <td>setup.cfg</td>
       <td>
-        An int file that contains option defaults for <code>setup.py</code>{" "}
+        An ini file that contains option defaults for <code>setup.py</code>{" "}
         commands.
       </td>
     </tr>
@@ -121,11 +120,12 @@ Inside of the `my_dagster_project/` directory, the following files and directori
   </thead>
   <tbody>
     <tr>
-      <td>my_dagster_project/repository.py</td>
+      <td>my_dagster_project/__init__.py</td>
       <td>
-        A Python module that contains a{" "}
-        <PyObject object="RepositoryDefinition" />, to specify which assets,
-        jobs, schedules, and sensors are available in your repository.
+        The <code>__init__.py</code> file includes a{" "}
+        <PyObject object="Definitions" /> object that contains all the definitions defined within your project. A definition can be an asset, a job, a schedule, a sensor, or a resource. This allows Dagster to load the definitions in an installed package.
+        <br />
+        Visit <a href="/concepts/code-locations#load-definitions-in-an-installed-package">Code Locations concept page</a> to learn other ways to deploy and load your Dagster code.
       </td>
     </tr>
     <tr>
@@ -135,16 +135,14 @@ Inside of the `my_dagster_project/` directory, the following files and directori
         <a href="/concepts/assets/software-defined-assets">assets</a>. It is
         helpful to include all assets in a subpackage so that you can use{" "}
         <PyObject object="load_assets_from_package_module" /> to load assets
-        into your repository, rather than needing to add assets to the
-        repository every time you define one.
+        into your project, rather than needing to add assets to the
+        project every time you define one.
       </td>
     </tr>
   </tbody>
 </table>
-
----
-
-## Option 2: Starting with an official example
+</TabItem>
+<TabItem name="Starting with an official example">
 
 Alternatively, you can start with one of the official Dagster examples.
 
@@ -154,12 +152,15 @@ To get started, you can run:
 pip install dagster
 dagster project from-example \
   --name my-dagster-project \
-  --example project_fully_featured
+  --example quickstart_etl
 ```
 
 The command `dagster project from-example` downloads one of the official Dagster examples to the current directory. This command enables you to quickly bootstrap your project with an officially maintained example.
 
 For more info about the examples, visit the [Dagster GitHub repository](https://github.com/dagster-io/dagster/tree/master/examples) or use `dagster project list-examples`.
+
+</TabItem>
+</TabGroup>
 
 ---
 
@@ -173,7 +174,7 @@ pip install -e ".[dev]"
 
 <Note>
   By using the <code>--editable</code> flag, <code>pip</code> will install your
-  repository in{" "}
+  code location as a Python package in{" "}
   <a href="https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs">
     "editable mode"
   </a>{" "}
@@ -188,7 +189,7 @@ dagit
 
 Open <http://localhost:3000> with your browser to see the project.
 
-Now, you can start writing assets in `my_dagster_project/assets/`, define your own ops or jobs, and include them in `my_dagster_project/repository.py`.
+Now, you can start writing assets in `my_dagster_project/assets/`, define your own ops or jobs, and include them in `my_dagster_project/__init__.py`.
 
 ---
 
