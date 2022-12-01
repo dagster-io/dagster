@@ -43,6 +43,11 @@ def scope_schedule_dbt_cloud_assets():
     # Materialize all assets in the repository
     run_everything_job = define_asset_job("run_everything_job", AssetSelection.all())
 
+    # Materialize only the staging assets
+    run_staging_job = define_asset_job(
+        "run_staging_job", AssetSelection.groups("staging")
+    )
+
     @repository
     def my_repo():
         return [
@@ -51,6 +56,10 @@ def scope_schedule_dbt_cloud_assets():
             ScheduleDefinition(
                 job=run_everything_job,
                 cron_schedule="@daily",
+            ),
+            ScheduleDefinition(
+                job=run_staging_job,
+                cron_schedule="@hourly",
             ),
         ]
 
