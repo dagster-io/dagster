@@ -2,13 +2,13 @@ import sys
 from typing import cast
 
 import kubernetes
+from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.job import (
     DagsterK8sJobConfig,
     construct_dagster_k8s_job,
     get_job_name_from_run_id,
     get_user_defined_k8s_config,
 )
-from dagster_k8s.utils import delete_job
 
 from dagster import DagsterInvariantViolationError, MetadataEntry
 from dagster import _check as check
@@ -93,7 +93,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             check.opt_str_param(kubeconfig_file, "kubeconfig_file")
             kubernetes.config.load_kube_config(kubeconfig_file)
 
-        self._fixed_batch_api = k8s_client_batch_api
+        self._api_client = DagsterKubernetesClient.production_client(
+            batch_api_override=k8s_client_batch_api
+        )
 
         self.instance_config_map = check.str_param(instance_config_map, "instance_config_map")
         self.dagster_home = check.str_param(dagster_home, "dagster_home")
@@ -131,10 +133,6 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         )
 
         super().__init__()
-
-    @property
-    def _batch_api(self):
-        return self._fixed_batch_api if self._fixed_batch_api else kubernetes.client.BatchV1Api()
 
     @classmethod
     def config_type(cls):
@@ -234,7 +232,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             cls=self.__class__,
         )
 
-        self._batch_api.create_namespaced_job(body=job, namespace=job_namespace)
+        self._api_client.batch_api.create_namespaced_job(body=job, namespace=job_namespace)
         self._instance.report_engine_event(
             "Kubernetes run worker job created",
             run,
@@ -302,7 +300,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         self._instance.report_run_canceling(run)
 
         try:
-            termination_result = delete_job(job_name=job_name, namespace=job_namespace)
+            termination_result = self._api_client.delete_job(
+                job_name=job_name, namespace=job_namespace
+            )
             if termination_result:
                 self._instance.report_engine_event(
                     message="Dagster Job was terminated successfully.",
@@ -346,7 +346,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         )
         job_name = get_job_name_from_run_id(run.run_id)
         try:
-            job = self._batch_api.read_namespaced_job(namespace=job_namespace, name=job_name)
+            job = self._api_client.batch_api.read_namespaced_job(
+                namespace=job_namespace, name=job_name
+            )
         except Exception:
             return CheckRunHealthResult(
                 WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))

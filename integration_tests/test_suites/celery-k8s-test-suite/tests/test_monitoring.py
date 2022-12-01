@@ -4,8 +4,8 @@
 import os
 import time
 
+from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.job import get_job_name_from_run_id
-from dagster_k8s.utils import delete_job
 from dagster_k8s_test_infra.integration_utils import image_pull_policy, launch_run_over_graphql
 from dagster_test.test_project import get_test_project_environments_path
 from marks import mark_monitoring
@@ -94,7 +94,9 @@ def test_run_monitoring_fails_on_interrupt(  # pylint: disable=redefined-outer-n
             assert run.status == DagsterRunStatus.STARTING
             time.sleep(1)
 
-        assert delete_job(get_job_name_from_run_id(run_id), helm_namespace)
+        assert DagsterKubernetesClient.production_client().delete_job(
+            get_job_name_from_run_id(run_id), helm_namespace
+        )
         poll_for_finished_run(dagster_instance, run.run_id, timeout=120)
         assert dagster_instance.get_run_by_id(run_id).status == DagsterRunStatus.FAILURE
     finally:
@@ -131,7 +133,9 @@ def test_run_monitoring_startup_fail(  # pylint: disable=redefined-outer-name
             assert run.status == DagsterRunStatus.STARTING
             time.sleep(1)
 
-        assert delete_job(get_job_name_from_run_id(run_id), helm_namespace)
+        assert DagsterKubernetesClient.production_client().delete_job(
+            get_job_name_from_run_id(run_id), helm_namespace
+        )
         poll_for_finished_run(dagster_instance, run.run_id, timeout=120)
         assert dagster_instance.get_run_by_id(run_id).status == DagsterRunStatus.FAILURE
     finally:

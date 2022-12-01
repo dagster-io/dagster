@@ -5,7 +5,6 @@ import time
 import pytest
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
-from dagster_k8s.utils import wait_for_job
 from dagster_k8s_test_infra.integration_utils import (
     can_terminate_run_over_graphql,
     image_pull_policy,
@@ -164,7 +163,7 @@ def test_k8s_run_launcher_terminate(
         dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
     )
 
-    wait_for_job(
+    DagsterKubernetesClient.production_client().wait_for_job(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
