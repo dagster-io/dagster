@@ -142,7 +142,7 @@ def test_fan_in_manual():
     # base case works
     _target_graph_manual = GraphDefinition(
         name="manual_composite",
-        solid_defs=[emit_num, collect],
+        node_defs=[emit_num, collect],
         input_mappings=[
             InputDefinition("str_in").mapping_to("collect", "stuff", 1),
             InputDefinition("none_in").mapping_to("collect", "stuff", 2),
@@ -167,7 +167,7 @@ def test_fan_in_manual():
     ):
         _missing_placeholder = GraphDefinition(
             name="manual_graph",
-            solid_defs=[emit_num, collect],
+            node_defs=[emit_num, collect],
             input_mappings=[
                 InputDefinition("str_in").mapping_to("collect", "stuff", 1),
                 InputDefinition("none_in").mapping_to("collect", "stuff", 2),
@@ -188,7 +188,7 @@ def test_fan_in_manual():
     with pytest.raises(DagsterInvalidDefinitionError, match="is not a MultiDependencyDefinition"):
         _bad_target = GraphDefinition(
             name="manual_graph",
-            solid_defs=[emit_num, collect],
+            node_defs=[emit_num, collect],
             input_mappings=[
                 InputDefinition("str_in").mapping_to("collect", "stuff", 1),
                 InputDefinition("none_in").mapping_to("collect", "stuff", 2),
@@ -203,7 +203,7 @@ def test_fan_in_manual():
     ):
         _missing_placeholder = GraphDefinition(
             name="manual_graph",
-            solid_defs=[emit_num, collect],
+            node_defs=[emit_num, collect],
             input_mappings=[
                 InputDefinition("str_in").mapping_to("collect", "stuff", 1),
                 InputDefinition("none_in").mapping_to("collect", "stuff", 2),

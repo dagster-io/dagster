@@ -843,12 +843,12 @@ def test_configuring_graph_with_no_config_mapping():
         return context.run_id
 
     @graph
-    def composite_without_config_fn():
+    def graph_without_config_fn():
         return return_run_id()
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Only composite solids utilizing config mapping can be pre-configured. The composite "
-        'solid "composite_without_config_fn"',
+        match="Only graphs utilizing config mapping can be pre-configured. The graph "
+        '"graph_without_config_fn"',
     ):
-        configured(composite_without_config_fn, name="configured_composite")({})
+        configured(graph_without_config_fn, name="configured_graph")({})

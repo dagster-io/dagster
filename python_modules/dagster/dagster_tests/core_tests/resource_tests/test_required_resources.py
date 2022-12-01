@@ -455,7 +455,7 @@ def define_composite_materialization_pipeline(
 
     wrap_solid = GraphDefinition(
         name="wrap_solid",
-        solid_defs=[output_op],
+        node_defs=[output_op],
         output_mappings=[OutputDefinition(CustomDagsterType).mapping_from("output_op")],
     )
 

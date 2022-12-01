@@ -187,7 +187,7 @@ def test_config_mapper_throws():
 
     with pytest.raises(
         DagsterConfigMappingFunctionError,
-        match="The config mapping function on composite solid 'do_stuff' "
+        match="The config mapping function on graph 'do_stuff' "
         "in pipeline 'wrap_pipeline' has thrown an unexpected error during its "
         'execution. The definition is instantiated at stack "do_stuff"',
     ):
@@ -204,7 +204,7 @@ def test_config_mapper_throws():
     # config mapping: https://github.com/dagster-io/dagster/issues/4831
     with pytest.raises(
         DagsterConfigMappingFunctionError,
-        match="The config mapping function on composite solid 'bad_wrap' "
+        match="The config mapping function on graph 'bad_wrap' "
         "in job 'wrap_invocations' has thrown an unexpected error during its "
         'execution. The definition is instantiated at stack "bad_wrap"',
     ):
@@ -243,7 +243,7 @@ def test_config_mapper_throws_nested():
         )
 
     assert (
-        "The config mapping function on composite solid 'layer1' "
+        "The config mapping function on graph 'layer1' "
         "in pipeline 'wrap_pipeline' has thrown an unexpected "
         'error during its execution. The definition is instantiated at stack "layer0:layer1".'
     ) in str(exc_info.value)

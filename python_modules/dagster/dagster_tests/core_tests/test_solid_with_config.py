@@ -117,7 +117,7 @@ def test_extra_config_ignored_no_default_input():
         execute_pipeline(
             my_pipeline,
             run_config=run_config,
-            solid_selection=["solid2"],
+            solid_selection=["op2"],
         )
 
     # works if input added, don't need to remove other stuff
@@ -132,7 +132,7 @@ def test_extra_config_ignored_no_default_input():
     assert execute_pipeline(
         my_pipeline,
         run_config=run_config,
-        solid_selection=["solid1"],
+        solid_selection=["op1"],
     ).success
 
 

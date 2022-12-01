@@ -737,9 +737,9 @@ def test_graph_invocation_out_of_composition():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Attempted to call composite solid "
-        "'composite' outside of a composition function. Invoking composite solids is only valid in a "
-        "function decorated with @pipeline or @graph.",
+        match="Attempted to call graph "
+        "'composite' outside of a composition function. Invoking graphs is only valid in a "
+        "function decorated with @job or @graph.",
     ):
         composite()
 
