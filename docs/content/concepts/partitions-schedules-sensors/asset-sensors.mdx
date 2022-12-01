@@ -190,7 +190,11 @@ def trigger_daily_asset_when_any_upstream_partitions_have_new_materializations(c
   of updating a weekly asset when upstream daily assets are materialized.
 </Note>
 
-## Asset reconciliation sensor <Experimental />
+## Asset reconciliation sensor
+
+<Note>
+  Asset reconciliation sensors are <strong>experimental</strong>.
+</Note>
 
 Dagster provides an out-of-box sensor that will monitor a provided set of assets and automatically materialize them if they're "unreconciled". An asset is considered "unreconciled" if any of:
 
