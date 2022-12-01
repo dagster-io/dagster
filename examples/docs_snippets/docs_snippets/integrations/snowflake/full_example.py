@@ -3,8 +3,8 @@ from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
 from dagster import SourceAsset, asset, repository, with_resources
 
-
 iris_harvest_data = SourceAsset(key="iris_harvest_data")
+
 
 @asset
 def iris_dataset() -> pd.DataFrame:

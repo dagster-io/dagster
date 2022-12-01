@@ -17,9 +17,9 @@ def flowers_analysis_repository():
                     "account": "abc1234.us-east-1",  # required
                     "user": {"env": "SNOWFLAKE_USER"},  # required
                     "password": {"env": "SNOWFLAKE_PASSWORD"},  # required
-                    "role": "reader",  # optional, defaults to the default role for the account
-                    "warehouse": "PLANTS",  # optional, defaults to default warehouse for the account
                     "database": "FLOWERS",  # required
+                    "role": "writer",  # optional, defaults to the default role for the account
+                    "warehouse": "PLANTS",  # optional, defaults to default warehouse for the account
                     "schema": "IRIS,",  # optional, defaults to PUBLIC
                 }
             )
