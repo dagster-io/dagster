@@ -58,6 +58,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._project_id: int
         self._has_generate_docs: bool
         self._dbt_cloud_job_command: str
+        self._job_command_step: int
         self._node_info_to_asset_key = node_info_to_asset_key
         self._node_info_to_group_fn = node_info_to_group_fn
         self._partitions_def = partitions_def
@@ -162,15 +163,19 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         # that the last step is the correct target.
         #
         # Here, we ignore the `dbt docs generate` step.
-        step = len(compile_run_dbt_output.run_details.get("run_steps", []))
-        if step > 0 and self._has_generate_docs:
-            step -= 1
+        self._job_command_step = len(compile_run_dbt_output.run_details.get("run_steps", []))
+        if self._job_command_step > 0 and self._has_generate_docs:
+            self._job_command_step -= 1
 
         # Fetch the compilation run's manifest and run results.
         compile_run_id = compile_run_dbt_output.run_id
 
-        manifest_json = self._dbt_cloud.get_manifest(run_id=compile_run_id, step=step)
-        run_results_json = self._dbt_cloud.get_run_results(run_id=compile_run_id, step=step)
+        manifest_json = self._dbt_cloud.get_manifest(
+            run_id=compile_run_id, step=self._job_command_step
+        )
+        run_results_json = self._dbt_cloud.get_run_results(
+            run_id=compile_run_id, step=self._job_command_step
+        )
 
         # Filter the manifest to only include the nodes that were executed.
         dbt_nodes: Dict[str, Any] = {
@@ -244,6 +249,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             extra_metadata={
                 "job_id": self._job_id,
                 "job_command": self._dbt_cloud_job_command,
+                "job_command_step": self._job_command_step,
                 "group_names_by_output_name": {
                     asset_outs[asset_key][0]: group_name
                     for asset_key, group_name in group_names_by_key.items()
@@ -278,6 +284,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         metadata = cast(Mapping[str, Any], assets_definition_cacheable_data.extra_metadata)
         job_id = cast(int, metadata["job_id"])
         job_command = cast(str, metadata["job_command"])
+        job_command_step = cast(int, metadata["job_command_step"])
         group_names_by_output_name = cast(Mapping[str, str], metadata["group_names_by_output_name"])
 
         @multi_asset(
@@ -326,10 +333,14 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
             # TODO: Assume the run completely fails or completely succeeds.
             # In the future, we can relax this assumption.
-            step: Optional[int] = None
-            manifest_json = dbt_cloud.get_manifest(run_id=dbt_cloud_output.run_id, step=step)
+            manifest_json = dbt_cloud.get_manifest(
+                run_id=dbt_cloud_output.run_id, step=job_command_step
+            )
+            run_results_json = self._dbt_cloud.get_run_results(
+                run_id=dbt_cloud_output.run_id, step=job_command_step
+            )
 
-            for result in dbt_cloud_output.result.get("results", []):
+            for result in run_results_json.get("results", []):
                 yield from result_to_events(
                     result=result,
                     docs_url=dbt_cloud_output.docs_url,
