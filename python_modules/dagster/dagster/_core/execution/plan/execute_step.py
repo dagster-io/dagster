@@ -506,12 +506,16 @@ def _get_output_asset_materializations(
     # materialization.
     step_context.wipe_input_asset_record(asset_key)
 
-    tags: Dict[str, str] = (
-        _build_logical_version_tags(asset_key, step_context)
-        if step_context.is_external_input_asset_records_loaded
+    tags: Dict[str, str]
+    if (
+        step_context.is_external_input_asset_records_loaded
         and asset_key in step_context.pipeline_def.asset_layer.asset_keys
-        else {}
-    )
+    ):
+        tags = _build_logical_version_tags(asset_key, step_context)
+        logical_version = LogicalVersion(tags[LOGICAL_VERSION_TAG_KEY])
+        step_context.record_logical_version(asset_key, logical_version)
+    else:
+        tags = {}
 
     if asset_partitions:
         metadata_mapping: Dict[
