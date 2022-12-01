@@ -749,10 +749,14 @@ def build_asset_reconciliation_sensor(
     "reconcile" them.
 
     An asset is considered "unreconciled" if any of:
+
     - This sensor has never tried to materialize it and it has never been materialized.
+
     - Any of its parents have been materialized more recently than it has.
+
     - Any of its parents are unreconciled.
-    - It is not currently up to date with respect to its FreshnessPolicy.
+
+    - It is not currently up to date with respect to its freshness policy.
 
     The sensor won't try to reconcile any assets before their parents are reconciled. When multiple
     FreshnessPolicies require data from the same upstream assets, this sensor will attempt to
