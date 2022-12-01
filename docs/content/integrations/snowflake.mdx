@@ -79,9 +79,7 @@ def flowers_analysis_repository():
     )
 ```
 
-The configuration values for the Snowflake I/O manager can be stored in [environment variables](/guides/dagster/using-environment-variables-and-secrets) and referenced in the configuration dictionary. In this example, we're storing the username and password in environment variables and telling the Snowflake I/O manager to find the values in the `SNOWFLAKE_USER` and `SNOWFLAKE_PASSWORD` variables, respectively.
-
-For example, with this configuration, if you materialized an asset called `iris_dataset`, the Snowflake I/O manager would be permissioned with the role `writer` and would store the data in the `FLOWERS.IRIS.IRIS_DATASET` table in the `PLANTS` warehouse.
+With this configuration, if you materialized an asset called `iris_dataset`, the Snowflake I/O manager would be permissioned with the role `writer` and would store the data in the `FLOWERS.IRIS.IRIS_DATASET` table in the `PLANTS` warehouse.
 
 Finally, in the <PyObject object="repository" decorator />, we assign the `snowflake_pandas_io_manager` to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
 
