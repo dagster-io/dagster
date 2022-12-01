@@ -1,7 +1,10 @@
+import datetime
+import re
+
 import click
 from tqdm import tqdm
 
-from dagster import __version__ as dagster_version
+from dagster import __version__ as dagster_version, RunsFilter
 from dagster._cli.workspace.cli_target import get_external_job_from_kwargs, job_target_argument
 from dagster._core.instance import DagsterInstance
 
@@ -47,6 +50,89 @@ def run_delete_command(run_id, force):
         else:
             raise click.ClickException("Exiting without deleting run.")
 
+
+@run_cli.command(
+    name="delete-range",
+    help="Delete a run and its associated event logs by date range. Warning: Cannot be undone",
+)
+@click.option(
+    "--older-than",
+    "-o",
+    is_flag=True,
+    default=False,
+    help="Deletes runs greater than the time period. Supports hours/days/weeks/months/years. For example 1 hour is 1h.",
+)
+@click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    default=False,
+    help="Skip prompt to delete run history and event logs.",
+)
+def delete_range_command(force, date_range):
+    if not date_range:
+        raise click.ClickException("Please specify a date range to delete.")
+
+    # Date range should only contain numbers, suffixed by either h, d, w, m, y
+    if not re.match(r"^[0-9]+[hdwmy]$", date_range):
+        raise click.ClickException("Please specify a valid date range to delete.")
+
+    regexed_date_range = re.match(r"^([0-9]+)([hdwmy])$", date_range)
+    date_range_value = int(regexed_date_range.group(1))
+    date_range_unit = regexed_date_range.group(2).lower() # Handle case where user enters uppercase
+    found_date = None
+    now = datetime.datetime.now()
+
+    if date_range_unit == "m":
+        found_date = now - datetime.timedelta(minutes=date_range_value)
+    elif date_range_unit == "h":
+        found_date = now - datetime.timedelta(hours=date_range_value)
+    elif date_range_unit == "d":
+        found_date = now - datetime.timedelta(days=date_range_value)
+    elif date_range_unit == "w":
+        found_date = now - datetime.timedelta(weeks=date_range_value)
+    elif date_range_unit == "y":
+        found_date = now - datetime.timedelta(days=date_range_value * 365)
+    else:
+        raise click.ClickException("Please specify a valid date range to delete.")
+
+    # So we now take the date range value and unit and convert it to a datetime object
+    # We then use that to delete all runs that are older than that datetime object
+    # We also need to delete all event logs that are older than that datetime object
+    if force:
+        should_delete_run = True
+    else:
+        confirmation = click.prompt(
+            f"Are you sure you want to delete run history and event logs from {found_date}? Type DELETE."
+        )
+        should_delete_run = confirmation == "DELETE"
+
+    if should_delete_run:
+        # delete everything from found_date onwards
+        with DagsterInstance.get() as instance:
+            # @todo get a total count here that is quick, as loading all the runs into memory
+            # is not ideal
+            run_filter = RunsFilter(created_before=found_date)
+
+            total = instance.get_runs_count(run_filter)
+            click.echo(f"Found {total} runs to delete.")
+
+            while True:
+                runs = instance.get_runs(limit=100, filters=run_filter)
+
+                if not runs:
+                    break
+                for run in tqdm(runs, desc="Deleting runs"):
+                    instance.delete_run(run.run_id)
+
+            # for run in tqdm(instance.get_runs()):
+            #     if run.timestamp < found_date:
+            #         instance.delete_run(run.run_id)
+            # click.echo(f"Deleted run history and event logs from {found_date}.")
+
+        # click.echo("Deleted all run history and event logs.")
+    else:
+        raise click.ClickException("Exiting without deleting all run history and event logs.")
 
 @run_cli.command(
     name="wipe", help="Eliminate all run history and event logs. Warning: Cannot be undone."
