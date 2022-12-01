@@ -130,14 +130,78 @@ class TimeWindowPartitionsDefinition(
             cls, start_dt, timezone or "UTC", fmt, end_offset, cron_schedule
         )
 
-    def get_partitions(
-        self, current_time: Optional[datetime] = None
-    ) -> Sequence[Partition[TimeWindow]]:
-        current_timestamp = (
+    def get_current_timestamp(self, current_time: Optional[datetime] = None) -> float:
+        # return pendulum.now(self.timezone).timestamp()
+        return (
             pendulum.instance(current_time, tz=self.timezone)
             if current_time
             else pendulum.now(self.timezone)
         ).timestamp()
+
+    def get_num_partitions(self, current_time: Optional[datetime] = None) -> int:
+        # Method added for performance reasons.
+        # Fetching partition keys requires significantly more compute time to
+        # string format datetimes.
+        current_timestamp = self.get_current_timestamp(current_time=current_time)
+
+        partitions_past_current_time = 0
+
+        num_partitions = 0
+        for time_window in self._iterate_time_windows(self.start):
+            if (
+                time_window.end.timestamp() <= current_timestamp
+                or partitions_past_current_time < self.end_offset
+            ):
+                num_partitions += 1
+
+                if time_window.end.timestamp() > current_timestamp:
+                    partitions_past_current_time += 1
+            else:
+                break
+
+        if self.end_offset < 0:
+            num_partitions += self.end_offset
+
+        return num_partitions
+
+    def get_partition_keys_between_idxs(
+        self, start_idx: int, end_idx: int, current_time: Optional[datetime] = None
+    ) -> List[str]:
+        # Fetches the partition keys between the given start and end indices.
+        # Start index is inclusive, end index is exclusive.
+        # Method added for performance reasons, to only string format
+        # partition keys included within the indices.
+        current_timestamp = self.get_current_timestamp(current_time=current_time)
+
+        partitions_past_current_time = 0
+        partition_keys = []
+        reached_end = False
+
+        for idx, time_window in enumerate(self._iterate_time_windows(self.start)):
+            if time_window.end.timestamp() >= current_timestamp:
+                reached_end = True
+            if (
+                time_window.end.timestamp() <= current_timestamp
+                or partitions_past_current_time < self.end_offset
+            ):
+                if idx >= start_idx and idx < end_idx:
+                    partition_keys.append(time_window.start.strftime(self.fmt))
+                if time_window.end.timestamp() > current_timestamp:
+                    partitions_past_current_time += 1
+            else:
+                break
+            if len(partition_keys) >= end_idx - start_idx:
+                break
+
+        if reached_end and self.end_offset < 0:
+            partition_keys = partition_keys[: self.end_offset]
+
+        return partition_keys
+
+    def get_partitions(
+        self, current_time: Optional[datetime] = None
+    ) -> Sequence[Partition[TimeWindow]]:
+        current_timestamp = self.get_current_timestamp(current_time=current_time)
 
         partitions_past_current_time = 0
         partitions: List[Partition[TimeWindow]] = []
@@ -324,6 +388,13 @@ class TimeWindowPartitionsDefinition(
                 if last_partition_key
                 else None
             )
+
+    def get_first_partition_key(self, current_time: Optional[datetime] = None) -> Optional[str]:
+        first_window = self.get_first_partition_window(current_time)
+        if first_window is None:
+            return None
+
+        return first_window.start.strftime(self.fmt)
 
     def get_last_partition_key(self, current_time: Optional[datetime] = None) -> Optional[str]:
         last_window = self.get_last_partition_window(current_time)

@@ -54,24 +54,24 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       ? data.assetNodeOrError.partitionKeysByDimension
       : [];
 
-  const counts = (data.assetNodeOrError.__typename === 'AssetNode' &&
-    data.assetNodeOrError.partitionMaterializationCounts) || {
-    __typename: 'MaterializationCountSingleDimension',
-    materializationCounts: [],
+  const materializationStatus = (data.assetNodeOrError.__typename === 'AssetNode' &&
+    data.assetNodeOrError.partitionMaterializationStatus) || {
+    __typename: 'MaterializationStatusSingleDimension',
+    materializationStatus: [],
   };
 
   const stateByKey = Object.fromEntries(
-    counts.__typename === 'MaterializationCountSingleDimension'
-      ? counts.materializationCounts.map((count, idx) => [
+    materializationStatus.__typename === 'MaterializationStatusSingleDimension'
+      ? materializationStatus.materializationStatus.map((materialized, idx) => [
           dimensions[0].partitionKeys[idx],
-          count > 0 ? PartitionState.SUCCESS : PartitionState.MISSING,
+          materialized ? PartitionState.SUCCESS : PartitionState.MISSING,
         ])
-      : counts.materializationCountsGrouped.map((dim0, idx0) => [
+      : materializationStatus.materializationStatusGrouped.map((dim0, idx0) => [
           dimensions[0].partitionKeys[idx0],
           Object.fromEntries(
-            dim0.map((count, idx1) => [
+            dim0.map((materialized, idx1) => [
               dimensions[1].partitionKeys[idx1],
-              count > 0 ? PartitionState.SUCCESS : PartitionState.MISSING,
+              materialized ? PartitionState.SUCCESS : PartitionState.MISSING,
             ]),
           ),
         ]),
@@ -132,7 +132,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
 // Note: assetLastMaterializedAt is used as a "hint" - if the input value changes, it's
 // a sign that we should invalidate and reload previously loaded health stats. We don't
 // clear them immediately to avoid an empty state.
-//
+
 export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMaterializedAt = '') {
   const [result, setResult] = React.useState<(PartitionHealthData & {fetchedAt: string})[]>([]);
   const client = useApolloClient();
@@ -183,12 +183,40 @@ const PARTITION_HEALTH_QUERY = gql`
           name
           partitionKeys
         }
-        partitionMaterializationCounts {
-          ... on MaterializationCountGroupedByDimension {
-            materializationCountsGrouped
+        materializedPartitions {
+          ... on TimePartitions {
+            ranges {
+              startTime
+              endTime
+              startKey
+              endKey
+            }
           }
-          ... on MaterializationCountSingleDimension {
-            materializationCounts
+          ... on DefaultPartitions {
+            materializedPartitions
+            unmaterializedPartitions
+          }
+          ... on MultiPartitions {
+            ranges {
+              primaryDimStartKey
+              primaryDimEndKey
+              primaryDimStartTime
+              primaryDimEndTime
+              secondaryDim {
+                ... on TimePartitions {
+                  ranges {
+                    startTime
+                    endTime
+                    startKey
+                    endKey
+                  }
+                }
+                ... on DefaultPartitions {
+                  materializedPartitions
+                  unmaterializedPartitions
+                }
+              }
+            }
           }
         }
       }
