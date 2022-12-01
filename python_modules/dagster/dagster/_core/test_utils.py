@@ -167,7 +167,10 @@ def cleanup_test_instance(instance):
     # To avoid filesystem contention when we close the temporary directory, wait for
     # all runs to reach a terminal state, and close any subprocesses or threads
     # that might be accessing the run history DB.
-    instance.run_launcher.join()
+
+    # Since launcher is lazy loaded, we don't need to do anyting if it's None
+    if instance._run_launcher:  # pylint: disable=protected-access
+        instance._run_launcher.join()  # pylint: disable=protected-access
 
 
 TEST_PIPELINE_NAME = "_test_pipeline_"

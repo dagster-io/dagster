@@ -1,8 +1,12 @@
 import {NonIdealState} from '@dagster-io/ui';
 import React from 'react';
 
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
+
 interface Props {
   isGraph: boolean;
+  repoAddress?: RepoAddress;
   result:
     | {
         __typename: 'PipelineSnapshotNotFoundError';
@@ -22,7 +26,7 @@ interface Props {
       };
 }
 
-export const NonIdealPipelineQueryResult: React.FC<Props> = ({isGraph, result}) => {
+export const NonIdealPipelineQueryResult: React.FC<Props> = ({isGraph, repoAddress, result}) => {
   if (result.__typename === 'PipelineSnapshotNotFoundError') {
     return (
       <NonIdealState
@@ -42,10 +46,16 @@ export const NonIdealPipelineQueryResult: React.FC<Props> = ({isGraph, result}) 
     );
   }
   if (result.__typename === 'RepositoryNotFoundError') {
-    return <NonIdealState icon="error" title="Repository not found" description={result.message} />;
+    return (
+      <NonIdealState
+        icon="error"
+        title={`${repoAddress ? repoAddressAsString(repoAddress) : 'Definitions'} not found`}
+        description={result.message}
+      />
+    );
   }
   if (result.__typename === 'PythonError') {
-    return <NonIdealState icon="error" title="Query Error" description={result.message} />;
+    return <NonIdealState icon="error" title="Query error" description={result.message} />;
   }
   return <span />;
 };

@@ -3,6 +3,8 @@ import warnings
 from functools import wraps
 from typing import Any, Generator, Iterator, Sequence, Tuple, Union, cast
 
+from typing_extensions import get_args
+
 from dagster._core.definitions import (
     AssetMaterialization,
     DynamicOutput,
@@ -15,7 +17,6 @@ from dagster._core.definitions import (
 from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
-from dagster._seven.typing import get_args
 
 from ..context.compute import OpExecutionContext
 

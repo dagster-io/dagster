@@ -374,6 +374,7 @@ def test_infer_output_description_from_docstring_failure():
         Returns:
             int - a number
         """
+        return 1
 
     assert google
 
@@ -388,6 +389,7 @@ def test_infer_output_description_from_docstring_numpy():
         int
             a number
         """
+        return 1
 
     props = infer_output_props(numpy.compute_fn.decorated_fn)
     assert props.description == "a number"
@@ -400,6 +402,7 @@ def test_infer_output_description_from_docstring_rest():
         """
         :return int: a number
         """
+        return 1
 
     props = infer_output_props(rest.compute_fn.decorated_fn)
     assert props.description == "a number"
@@ -413,6 +416,7 @@ def test_infer_output_description_from_docstring_google():
         Returns:
             int: a number
         """
+        return 1
 
     props = infer_output_props(google.compute_fn.decorated_fn)
 

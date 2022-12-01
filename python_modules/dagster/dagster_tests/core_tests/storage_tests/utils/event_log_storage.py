@@ -20,15 +20,18 @@ from dagster import (
     EventLogRecord,
     EventRecordsFilter,
     Field,
-    JobDefinition,
+    In,
+    Out,
     Output,
     RetryRequested,
     RunShardedEventsCursor,
     StaticPartitionsDefinition,
+    JobDefinition,
 )
 from dagster import _check as check
 from dagster import _seven as seven
 from dagster import asset, define_asset_job, op, resource
+from dagster import asset, in_process_executor, job, op, resource
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions import ExpectationResult
 from dagster._core.definitions.asset_graph import AssetGraph
@@ -52,8 +55,8 @@ from dagster._core.host_representation.origin import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
 )
-from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
 from dagster._core.storage.event_log.base import EventLogStorage
+from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
 from dagster._core.storage.event_log.migration import (
     EVENT_LOG_DATA_MIGRATIONS,
     migrate_asset_key_data,
@@ -63,15 +66,7 @@ from dagster._core.storage.partition_status_cache import update_asset_status_cac
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import (
-    AssetGroup,
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    build_assets_job,
-    pipeline,
-    solid,
-)
+from dagster._legacy import AssetGroup, build_assets_job
 from dagster._loggers import colored_console_logger
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster._utils import datetime_as_float
@@ -214,31 +209,36 @@ def _event_record(run_id, solid_name, timestamp, event_type, event_specific_data
     )
 
 
-def _mode_def(event_callback):
+def _default_resources():
     @resource
     def foo_resource():
         time.sleep(0.1)
         return "foo"
 
-    return ModeDefinition(
-        resource_defs={"foo": foo_resource},
-        logger_defs={
-            "callback": construct_event_logger(event_callback),
-            "console": colored_console_logger,
-        },
-    )
+    return {"foo": foo_resource}
+
+
+def _default_loggers(event_callback):
+    return {
+        "callback": construct_event_logger(event_callback),
+        "console": colored_console_logger,
+    }
 
 
 # This exists to create synthetic events to test the store
-def _synthesize_events(solids_fn, run_id=None, check_success=True, instance=None, run_config=None):
+def _synthesize_events(ops_fn, run_id=None, check_success=True, instance=None, run_config=None):
     events = []
 
     def _append_event(event):
         events.append(event)
 
-    @pipeline(mode_defs=[_mode_def(_append_event)])
-    def a_pipe():
-        solids_fn()
+    @job(
+        resource_defs=_default_resources(),
+        logger_defs=_default_loggers(_append_event),
+        executor_def=in_process_executor,
+    )
+    def a_job():
+        ops_fn()
 
     with ExitStack() as stack:
         if not instance:
@@ -249,10 +249,8 @@ def _synthesize_events(solids_fn, run_id=None, check_success=True, instance=None
             **(run_config if run_config else {}),
         }
 
-        pipeline_run = instance.create_run_for_pipeline(
-            a_pipe, run_id=run_id, run_config=run_config
-        )
-        result = execute_run(InMemoryPipeline(a_pipe), pipeline_run, instance)
+        pipeline_run = instance.create_run_for_pipeline(a_job, run_id=run_id, run_config=run_config)
+        result = execute_run(InMemoryPipeline(a_job), pipeline_run, instance)
 
         if check_success:
             assert result.success
@@ -275,42 +273,42 @@ def _event_types(out_events):
     )
 
 
-@solid
+@op
 def should_succeed(context):
     time.sleep(0.001)
     context.log.info("succeed")
     return "yay"
 
 
-@solid
-def asset_solid_one(_):
+@op
+def asset_op_one(_):
     yield AssetMaterialization(asset_key=AssetKey("asset_1"))
     yield Output(1)
 
 
-@solid
-def asset_solid_two(_):
+@op
+def asset_op_two(_):
     yield AssetMaterialization(asset_key=AssetKey("asset_2"))
     yield AssetMaterialization(asset_key=AssetKey(["path", "to", "asset_3"]))
     yield Output(1)
 
 
 def one_asset_solid():
-    asset_solid_one()
+    asset_op_one()
 
 
-def two_asset_solids():
-    asset_solid_one()
-    asset_solid_two()
+def two_asset_ops():
+    asset_op_one()
+    asset_op_two()
 
 
-@solid
-def return_one_solid(_):
+@op
+def return_one_op(_):
     return 1
 
 
 def return_one_solid_func():
-    return_one_solid()
+    return_one_op()
 
 
 def cursor_datetime_args():
@@ -723,8 +721,8 @@ class TestEventLogStorage:
             storage.store_event(event)
 
         assert _event_types(
-            storage.get_logs_for_run(result.run_id, of_type=DagsterEventType.PIPELINE_SUCCESS)
-        ) == [DagsterEventType.PIPELINE_SUCCESS]
+            storage.get_logs_for_run(result.run_id, of_type=DagsterEventType.RUN_SUCCESS)
+        ) == [DagsterEventType.RUN_SUCCESS]
 
         assert _event_types(
             storage.get_logs_for_run(result.run_id, of_type=DagsterEventType.STEP_SUCCESS)
@@ -735,10 +733,10 @@ class TestEventLogStorage:
                 result.run_id,
                 of_type={
                     DagsterEventType.STEP_SUCCESS,
-                    DagsterEventType.PIPELINE_SUCCESS,
+                    DagsterEventType.RUN_SUCCESS,
                 },
             )
-        ) == [DagsterEventType.STEP_SUCCESS, DagsterEventType.PIPELINE_SUCCESS]
+        ) == [DagsterEventType.STEP_SUCCESS, DagsterEventType.RUN_SUCCESS]
 
     def test_basic_get_logs_for_run_cursor(self, test_run_id, storage):
 
@@ -920,7 +918,7 @@ class TestEventLogStorage:
     def test_asset_materialization(self, storage, test_run_id):
         asset_key = AssetKey(["path", "to", "asset_one"])
 
-        @solid
+        @op
         def materialize_one(_):
             yield AssetMaterialization(
                 asset_key=asset_key,
@@ -933,16 +931,14 @@ class TestEventLogStorage:
             )
             yield Output(1)
 
-        def _solids():
+        def _ops():
             materialize_one()
 
         with instance_for_test() as created_instance:
             if not storage._instance:  # pylint: disable=protected-access
                 storage.register_instance(created_instance)
 
-            events_one, _ = _synthesize_events(
-                _solids, instance=created_instance, run_id=test_run_id
-            )
+            events_one, _ = _synthesize_events(_ops, instance=created_instance, run_id=test_run_id)
 
             for event in events_one:
                 storage.store_event(event)
@@ -970,18 +966,18 @@ class TestEventLogStorage:
 
         asset_key = AssetKey("asset_one")
 
-        @solid
+        @op
         def materialize_one(_):
             yield AssetMaterialization(asset_key=asset_key)
             yield Output(1)
 
-        def _solids():
+        def _ops():
             materialize_one()
 
         with instance_for_test() as instance:
             if not storage._instance:  # pylint: disable=protected-access
                 storage.register_instance(instance)
-            events_one, _ = _synthesize_events(_solids, instance=instance)
+            events_one, _ = _synthesize_events(_ops, instance=instance)
             for event in events_one:
                 storage.store_event(event)
 
@@ -1057,12 +1053,12 @@ class TestEventLogStorage:
         run_id_1 = make_new_run_id()
         run_id_2 = make_new_run_id()
 
-        @solid
+        @op
         def materialize_one(_):
             yield AssetMaterialization(asset_key=asset_key_one)
             yield Output(1)
 
-        @solid
+        @op
         def materialize_two(_):
             yield AssetMaterialization(asset_key=asset_key_two)
             yield Output(1)
@@ -1094,9 +1090,9 @@ class TestEventLogStorage:
             assert asset_key_two in set(asset_keys)
 
     def test_run_step_stats(self, storage, test_run_id):
-        @solid(
-            input_defs=[InputDefinition("_input", str)],
-            output_defs=[OutputDefinition(str)],
+        @op(
+            ins={"_input": In(str)},
+            out=Out(str),
         )
         def should_fail(context, _input):
             context.log.info("fail")
@@ -1123,9 +1119,9 @@ class TestEventLogStorage:
         assert len(step_stats[1].attempts_list) == 1
 
     def test_run_step_stats_with_retries(self, storage, test_run_id):
-        @solid(
-            input_defs=[InputDefinition("_input", str)],
-            output_defs=[OutputDefinition(str)],
+        @op(
+            ins={"_input": In(str)},
+            out=Out(str),
         )
         def should_retry(_, _input):
             time.sleep(0.001)
@@ -1195,12 +1191,12 @@ class TestEventLogStorage:
         assert len(step_stats[3].attempts_list) == 2
 
     def test_run_step_stats_with_resource_markers(self, storage, test_run_id):
-        @solid(required_resource_keys={"foo"})
-        def foo_solid():
+        @op(required_resource_keys={"foo"})
+        def foo_op():
             time.sleep(0.001)
 
         def _pipeline():
-            foo_solid()
+            foo_op()
 
         events, result = _synthesize_events(_pipeline, check_success=False, run_id=test_run_id)
         for event in events:
@@ -1208,7 +1204,7 @@ class TestEventLogStorage:
 
         step_stats = storage.get_step_stats_for_run(result.run_id)
         assert len(step_stats) == 1
-        assert step_stats[0].step_key == "foo_solid"
+        assert step_stats[0].step_key == "foo_op"
         assert step_stats[0].status == StepEventStatus.SUCCESS
         assert step_stats[0].end_time > step_stats[0].start_time
         assert len(step_stats[0].markers) == 1
@@ -1224,7 +1220,7 @@ class TestEventLogStorage:
 
         asset_key = AssetKey(["path", "to", "asset_one"])
 
-        @solid
+        @op
         def materialize_one(_):
             yield AssetMaterialization(
                 asset_key=asset_key,
@@ -1237,11 +1233,11 @@ class TestEventLogStorage:
             )
             yield Output(1)
 
-        def _solids():
+        def _ops():
             materialize_one()
 
         def _store_run_events(run_id):
-            events, _ = _synthesize_events(_solids, run_id=run_id)
+            events, _ = _synthesize_events(_ops, run_id=run_id)
             for event in events:
                 storage.store_event(event)
 
@@ -1308,7 +1304,7 @@ class TestEventLogStorage:
         def _append_event(event):
             events.append(event)
 
-        @solid
+        @op
         def materialize_one(_):
             yield AssetMaterialization(
                 asset_key=asset_key,
@@ -1321,8 +1317,12 @@ class TestEventLogStorage:
             )
             yield Output(1)
 
-        @pipeline(mode_defs=[_mode_def(_append_event)])
-        def a_pipe():
+        @job(
+            resource_defs=_default_resources(),
+            logger_defs=_default_loggers(_append_event),
+            executor_def=in_process_executor,
+        )
+        def a_job():
             materialize_one()
 
         with instance_for_test() as instance:
@@ -1331,9 +1331,9 @@ class TestEventLogStorage:
 
             # first run
             execute_run(
-                InMemoryPipeline(a_pipe),
+                InMemoryPipeline(a_job),
                 instance.create_run_for_pipeline(
-                    a_pipe,
+                    a_job,
                     run_id="1",
                     run_config={"loggers": {"callback": {}, "console": {}}},
                 ),
@@ -1349,9 +1349,9 @@ class TestEventLogStorage:
             # second run
             events = []
             execute_run(
-                InMemoryPipeline(a_pipe),
+                InMemoryPipeline(a_job),
                 instance.create_run_for_pipeline(
-                    a_pipe,
+                    a_job,
                     run_id="2",
                     run_config={"loggers": {"callback": {}, "console": {}}},
                 ),
@@ -1365,9 +1365,9 @@ class TestEventLogStorage:
             # third run
             events = []
             execute_run(
-                InMemoryPipeline(a_pipe),
+                InMemoryPipeline(a_job),
                 instance.create_run_for_pipeline(
-                    a_pipe,
+                    a_job,
                     run_id="3",
                     run_config={"loggers": {"callback": {}, "console": {}}},
                 ),
@@ -1384,7 +1384,7 @@ class TestEventLogStorage:
             # use tz-aware cursor
             filtered_records = storage.get_event_records(
                 EventRecordsFilter(
-                    event_type=DagsterEventType.PIPELINE_SUCCESS,
+                    event_type=DagsterEventType.RUN_SUCCESS,
                     after_cursor=RunShardedEventsCursor(
                         id=0, run_updated_after=tzaware_dt
                     ),  # events after first run
@@ -1393,15 +1393,15 @@ class TestEventLogStorage:
             )
             assert len(filtered_records) == 2
             assert _event_types([r.event_log_entry for r in filtered_records]) == [
-                DagsterEventType.PIPELINE_SUCCESS,
-                DagsterEventType.PIPELINE_SUCCESS,
+                DagsterEventType.RUN_SUCCESS,
+                DagsterEventType.RUN_SUCCESS,
             ]
             assert [r.event_log_entry.run_id for r in filtered_records] == ["2", "3"]
 
             # use tz-naive cursor
             filtered_records = storage.get_event_records(
                 EventRecordsFilter(
-                    event_type=DagsterEventType.PIPELINE_SUCCESS,
+                    event_type=DagsterEventType.RUN_SUCCESS,
                     after_cursor=RunShardedEventsCursor(
                         id=0, run_updated_after=tzaware_dt.naive()
                     ),  # events after first run
@@ -1410,8 +1410,8 @@ class TestEventLogStorage:
             )
             assert len(filtered_records) == 2
             assert _event_types([r.event_log_entry for r in filtered_records]) == [
-                DagsterEventType.PIPELINE_SUCCESS,
-                DagsterEventType.PIPELINE_SUCCESS,
+                DagsterEventType.RUN_SUCCESS,
+                DagsterEventType.RUN_SUCCESS,
             ]
             assert [r.event_log_entry.run_id for r in filtered_records] == ["2", "3"]
 
@@ -1421,7 +1421,7 @@ class TestEventLogStorage:
             ):
                 storage.get_event_records(
                     EventRecordsFilter(
-                        event_type=DagsterEventType.PIPELINE_SUCCESS,
+                        event_type=DagsterEventType.RUN_SUCCESS,
                         after_cursor=0,
                     ),
                 )
@@ -1504,12 +1504,12 @@ class TestEventLogStorage:
         assert all([isinstance(event, EventLogEntry) for event in event_list])
 
     def test_engine_event_markers(self, storage):
-        @solid
+        @op
         def return_one(_):
             return 1
 
-        @pipeline
-        def a_pipe():
+        @job
+        def a_job():
             return_one()
 
         with instance_for_test() as instance:
@@ -1517,7 +1517,7 @@ class TestEventLogStorage:
                 storage.register_instance(instance)
 
             run_id = make_new_run_id()
-            run = instance.create_run_for_pipeline(a_pipe, run_id=run_id)
+            run = instance.create_run_for_pipeline(a_job, run_id=run_id)
 
             instance.report_engine_event(
                 "blah blah",
@@ -1536,7 +1536,7 @@ class TestEventLogStorage:
                 assert entry.step_key == "return_one"
 
     def test_latest_materializations(self, storage, instance):
-        @solid
+        @op
         def one(_):
             yield AssetMaterialization(AssetKey("a"), partition="1")
             yield AssetMaterialization(AssetKey("b"), partition="1")
@@ -1545,7 +1545,7 @@ class TestEventLogStorage:
             yield AssetObservation(AssetKey("a"), metadata={"foo": "bar"})
             yield Output(1)
 
-        @solid
+        @op
         def two(_):
             yield AssetMaterialization(AssetKey("b"), partition="2")
             yield AssetMaterialization(AssetKey("c"), partition="2")
@@ -1608,7 +1608,7 @@ class TestEventLogStorage:
                 lambda: one_asset_solid(), instance=created_instance
             )
             events_two, result2 = _synthesize_events(
-                lambda: two_asset_solids(), instance=created_instance
+                lambda: two_asset_ops(), instance=created_instance
             )
 
             with create_and_delete_test_runs(instance, [result1.run_id, result2.run_id]):
@@ -1631,7 +1631,7 @@ class TestEventLogStorage:
                 lambda: one_asset_solid(), instance=created_instance
             )
             events_two, result_2 = _synthesize_events(
-                lambda: two_asset_solids(), instance=created_instance
+                lambda: two_asset_ops(), instance=created_instance
             )
 
             with create_and_delete_test_runs(instance, [result_1.run_id, result_2.run_id]):
@@ -1654,7 +1654,7 @@ class TestEventLogStorage:
                 lambda: one_asset_solid(), run_id=one_run_id, instance=created_instance
             )
             two_events, _ = _synthesize_events(
-                lambda: two_asset_solids(), run_id=two_run_id, instance=created_instance
+                lambda: two_asset_ops(), run_id=two_run_id, instance=created_instance
             )
 
             with create_and_delete_test_runs(instance, [one_run_id, two_run_id]):
@@ -1669,13 +1669,13 @@ class TestEventLogStorage:
             if not storage._instance:  # pylint: disable=protected-access
                 storage.register_instance(instance)
 
-            @solid
-            def solid_normalization(_):
+            @op
+            def op_normalization(_):
                 yield AssetMaterialization(asset_key="path/to-asset_4")
                 yield Output(1)
 
             events, _ = _synthesize_events(
-                lambda: solid_normalization(), instance=instance, run_id=test_run_id
+                lambda: op_normalization(), instance=instance, run_id=test_run_id
             )
             for event in events:
                 storage.store_event(event)
@@ -1697,7 +1697,7 @@ class TestEventLogStorage:
                 lambda: one_asset_solid(), run_id=one_run_id, instance=created_instance
             )
             events_two, _ = _synthesize_events(
-                lambda: two_asset_solids(), run_id=two_run_id, instance=created_instance
+                lambda: two_asset_ops(), run_id=two_run_id, instance=created_instance
             )
 
             with create_and_delete_test_runs(instance, [one_run_id, two_run_id]):
@@ -1758,12 +1758,12 @@ class TestEventLogStorage:
                 two_first_run_id = "first"
                 two_second_run_id = "second"
                 events_two, _ = _synthesize_events(
-                    lambda: two_asset_solids(),
+                    lambda: two_asset_ops(),
                     run_id=two_first_run_id,
                     instance=created_instance,
                 )
                 events_two_two, _ = _synthesize_events(
-                    lambda: two_asset_solids(),
+                    lambda: two_asset_ops(),
                     run_id=two_second_run_id,
                     instance=created_instance,
                 )
@@ -1784,11 +1784,11 @@ class TestEventLogStorage:
                     assert len(asset_keys) == 1
 
     def test_asset_partition_query(self, storage, instance):
-        @solid(config_schema={"partition": Field(str, is_required=False)})
-        def solid_partitioned(context):
+        @op(config_schema={"partition": Field(str, is_required=False)})
+        def op_partitioned(context):
             yield AssetMaterialization(
                 asset_key=AssetKey("asset_key"),
-                partition=context.solid_config.get("partition"),
+                partition=context.op_config.get("partition"),
             )
             yield Output(1)
 
@@ -1797,7 +1797,7 @@ class TestEventLogStorage:
                 storage.register_instance(created_instance)
 
             get_partitioned_config = lambda partition: {
-                "solids": {"solid_partitioned": {"config": {"partition": partition}}}
+                "ops": {"op_partitioned": {"config": {"partition": partition}}}
             }
 
             partitions = ["a", "a", "b", "c"]
@@ -1805,7 +1805,7 @@ class TestEventLogStorage:
             with create_and_delete_test_runs(instance, run_ids):
                 for partition, run_id in zip([f"partition_{x}" for x in partitions], run_ids):
                     run_events, _ = _synthesize_events(
-                        lambda: solid_partitioned(),
+                        lambda: op_partitioned(),
                         instance=created_instance,
                         run_config=get_partitioned_config(partition),
                         run_id=run_id,
@@ -2149,56 +2149,6 @@ class TestEventLogStorage:
                     asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
                     assert asset_entry.last_run_id is None
 
-    def test_fetch_asset_materialization_planned(self, storage, instance):
-        @asset
-        def materializes_asset():
-            return 1
-
-        @asset
-        def never_materializes_asset():
-            raise Exception("foo")
-
-        asset_job = build_assets_job("asset_job", [never_materializes_asset, materializes_asset])
-
-        run_id_1 = make_new_run_id()
-        run_id_2 = make_new_run_id()
-        with create_and_delete_test_runs(instance, [run_id_1, run_id_2]):
-
-            with instance_for_test() as created_instance:
-                if not storage._instance:  # pylint: disable=protected-access
-                    storage.register_instance(created_instance)
-
-                result = _execute_job_and_store_events(
-                    created_instance,
-                    storage,
-                    asset_job,
-                    run_id=run_id_1,
-                    asset_selection=[AssetKey("materializes_asset")],
-                )
-                assert result.success
-
-                materializations = created_instance.get_event_records(
-                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
-                )
-                assert len(materializations) == 1
-                storage_id = materializations[0].storage_id
-
-                result = _execute_job_and_store_events(
-                    created_instance,
-                    storage,
-                    asset_job,
-                    run_id=run_id_2,
-                    asset_selection=[AssetKey("never_materializes_asset")],
-                )
-
-                materialization_planned_events = created_instance.get_event_records(
-                    EventRecordsFilter(
-                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED, after_cursor=storage_id
-                    )
-                )
-
-                assert len(materialization_planned_events) == 1
-
     def test_last_run_id_updates_on_materialization_planned(self, storage, instance):
         @asset
         def never_materializes_asset():
@@ -2260,9 +2210,9 @@ class TestEventLogStorage:
 
         assert _event_types(
             storage.get_logs_for_all_runs_by_log_id(
-                dagster_event_type=DagsterEventType.PIPELINE_SUCCESS,
+                dagster_event_type=DagsterEventType.RUN_SUCCESS,
             ).values()
-        ) == [DagsterEventType.PIPELINE_SUCCESS, DagsterEventType.PIPELINE_SUCCESS]
+        ) == [DagsterEventType.RUN_SUCCESS, DagsterEventType.RUN_SUCCESS]
 
         assert _event_types(
             storage.get_logs_for_all_runs_by_log_id(
@@ -2274,14 +2224,14 @@ class TestEventLogStorage:
             storage.get_logs_for_all_runs_by_log_id(
                 dagster_event_type={
                     DagsterEventType.STEP_SUCCESS,
-                    DagsterEventType.PIPELINE_SUCCESS,
+                    DagsterEventType.RUN_SUCCESS,
                 },
             ).values()
         ) == [
             DagsterEventType.STEP_SUCCESS,
-            DagsterEventType.PIPELINE_SUCCESS,
+            DagsterEventType.RUN_SUCCESS,
             DagsterEventType.STEP_SUCCESS,
-            DagsterEventType.PIPELINE_SUCCESS,
+            DagsterEventType.RUN_SUCCESS,
         ]
 
     def test_get_logs_for_all_runs_by_log_id_cursor(self, storage):
@@ -2303,29 +2253,29 @@ class TestEventLogStorage:
         events_by_log_id = storage.get_logs_for_all_runs_by_log_id(
             dagster_event_type={
                 DagsterEventType.STEP_SUCCESS,
-                DagsterEventType.PIPELINE_SUCCESS,
+                DagsterEventType.RUN_SUCCESS,
             },
         )
 
         assert _event_types(events_by_log_id.values()) == [
             DagsterEventType.STEP_SUCCESS,
-            DagsterEventType.PIPELINE_SUCCESS,
+            DagsterEventType.RUN_SUCCESS,
             DagsterEventType.STEP_SUCCESS,
-            DagsterEventType.PIPELINE_SUCCESS,
+            DagsterEventType.RUN_SUCCESS,
         ]
 
         after_cursor_events_by_log_id = storage.get_logs_for_all_runs_by_log_id(
             after_cursor=min(events_by_log_id.keys()),
             dagster_event_type={
                 DagsterEventType.STEP_SUCCESS,
-                DagsterEventType.PIPELINE_SUCCESS,
+                DagsterEventType.RUN_SUCCESS,
             },
         )
 
         assert _event_types(after_cursor_events_by_log_id.values()) == [
-            DagsterEventType.PIPELINE_SUCCESS,
+            DagsterEventType.RUN_SUCCESS,
             DagsterEventType.STEP_SUCCESS,
-            DagsterEventType.PIPELINE_SUCCESS,
+            DagsterEventType.RUN_SUCCESS,
         ]
 
     def test_get_logs_for_all_runs_by_log_id_limit(self, storage):
@@ -2347,14 +2297,14 @@ class TestEventLogStorage:
         events_by_log_id = storage.get_logs_for_all_runs_by_log_id(
             dagster_event_type={
                 DagsterEventType.STEP_SUCCESS,
-                DagsterEventType.PIPELINE_SUCCESS,
+                DagsterEventType.RUN_SUCCESS,
             },
             limit=3,
         )
 
         assert _event_types(events_by_log_id.values()) == [
             DagsterEventType.STEP_SUCCESS,
-            DagsterEventType.PIPELINE_SUCCESS,
+            DagsterEventType.RUN_SUCCESS,
             DagsterEventType.STEP_SUCCESS,
         ]
 

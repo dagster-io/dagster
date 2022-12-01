@@ -5,6 +5,7 @@ import pytest
 
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import repository_def_from_pointer
 from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 from dagster._core.errors import DagsterImportError
@@ -198,6 +199,39 @@ def test_single_repository_in_package():
     ).load_target()
     assert isinstance(repo_def, RepositoryDefinition)
     assert repo_def.name == "single_repository"
+
+
+def test_single_defs_in_file():
+    dagster_defs_path = file_relative_path(__file__, "single_defs.py")
+    loadable_targets = loadable_targets_from_python_file(dagster_defs_path)
+
+    assert len(loadable_targets) == 1
+    symbol = loadable_targets[0].attribute
+    assert symbol == "defs"
+
+    repo_def = repository_def_from_pointer(
+        CodePointer.from_python_file(dagster_defs_path, symbol, None)
+    )
+
+    assert isinstance(repo_def, RepositoryDefinition)
+
+
+def test_single_def_wrong_variable():
+    dagster_defs_path = file_relative_path(__file__, "single_defs_wrong_name.py")
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Found Definitions object at wrong_name. This object must be at a top-level variable named 'defs'.",
+    ):
+        loadable_targets_from_python_file(dagster_defs_path)
+
+
+def test_double_defs_in_file():
+    dagster_defs_path = file_relative_path(__file__, "double_defs.py")
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Cannot have more than one Definitions object defined at module scope",
+    ):
+        loadable_targets_from_python_file(dagster_defs_path)
 
 
 def _current_test_directory_paths():

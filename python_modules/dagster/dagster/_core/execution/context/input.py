@@ -70,7 +70,7 @@ class InputContext:
     def __init__(
         self,
         name: Optional[str] = None,
-        pipeline_name: Optional[str] = None,
+        job_name: Optional[str] = None,
         solid_def: Optional["SolidDefinition"] = None,
         config: Optional[Any] = None,
         metadata: Optional[Mapping[str, Any]] = None,
@@ -88,7 +88,7 @@ class InputContext:
         from dagster._core.execution.build_resources import build_resources
 
         self._name = name
-        self._pipeline_name = pipeline_name
+        self._job_name = job_name
         check.invariant(
             solid_def is None or op_def is None, "Can't provide both a solid_def and an op_def arg"
         )
@@ -111,7 +111,7 @@ class InputContext:
             self._resources = resources
         else:
             self._resources_cm = build_resources(
-                check.opt_dict_param(resources, "resources", key_type=str)
+                check.opt_mapping_param(resources, "resources", key_type=str)
             )
             self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
             self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
@@ -153,14 +153,17 @@ class InputContext:
         return self._name
 
     @property
-    def pipeline_name(self) -> str:
-        if self._pipeline_name is None:
+    def job_name(self) -> str:
+        if self._job_name is None:
             raise DagsterInvariantViolationError(
-                "Attempting to access pipeline_name, "
+                "Attempting to access job_name, "
                 "but it was not provided when constructing the InputContext"
             )
+        return self._job_name
 
-        return self._pipeline_name
+    @property
+    def pipeline_name(self) -> str:
+        return self.job_name
 
     @property
     def solid_def(self) -> "SolidDefinition":
@@ -546,7 +549,7 @@ def build_input_context(
 
     return InputContext(
         name=name,
-        pipeline_name=None,
+        job_name=None,
         config=config,
         metadata=metadata,
         upstream_output=upstream_output,

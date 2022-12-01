@@ -434,11 +434,11 @@ class ScalarUnion(ConfigType):
         yield from super().type_iterator()
 
 
-ConfigAnyInstance = Any()
-ConfigBoolInstance = Bool()
-ConfigFloatInstance = Float()
-ConfigIntInstance = Int()
-ConfigStringInstance = String()
+ConfigAnyInstance: Any = Any()
+ConfigBoolInstance: Bool = Bool()
+ConfigFloatInstance: Float = Float()
+ConfigIntInstance: Int = Int()
+ConfigStringInstance: String = String()
 
 _CONFIG_MAP: Dict[check.TypeOrTupleOfTypes, ConfigType] = {
     BuiltinEnum.ANY: ConfigAnyInstance,

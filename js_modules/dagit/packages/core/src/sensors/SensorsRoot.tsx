@@ -11,6 +11,7 @@ import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSensors} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -29,6 +30,7 @@ export const SensorsRoot = (props: Props) => {
 
   const {repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
+  const repoName = repoAddressAsString(repoAddress);
 
   const queryResult = useQuery<SensorsRootQuery, SensorsRootQueryVariables>(SENSORS_ROOT_QUERY, {
     variables: {
@@ -56,8 +58,8 @@ export const SensorsRoot = (props: Props) => {
               <Box padding={{vertical: 64}}>
                 <NonIdealState
                   icon="error"
-                  title="Repository not found"
-                  description="Could not load this repository."
+                  title="Definitions not found"
+                  description={`Could not load definitions for ${repoName}`}
                 />
               </Box>
             );
@@ -66,10 +68,10 @@ export const SensorsRoot = (props: Props) => {
               <Box padding={{vertical: 64}}>
                 <NonIdealState
                   icon="sensors"
-                  title="No Sensors Found"
+                  title="No sensors defined"
                   description={
                     <p>
-                      This repository does not have any sensors defined. Visit the{' '}
+                      {repoName} does not have any sensors defined. Visit the{' '}
                       <a
                         href="https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors"
                         target="_blank"

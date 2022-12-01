@@ -6,8 +6,9 @@ import types
 import pytest
 import yaml
 
-from dagster import DagsterEventType, DagsterInvalidConfigError, Output
+from dagster import DagsterEventType, DagsterInvalidConfigError, In, Out, Output
 from dagster import _check as check
+from dagster import job, op
 from dagster._core.definitions.events import RetryRequested
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
@@ -19,20 +20,13 @@ from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import environ
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineRun,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
+from dagster._legacy import PipelineRun
 
 
 def test_fs_stores():
-    @pipeline
+    @job
     def simple():
-        @solid
+        @op
         def easy(context):
             context.log.info("easy")
             return "easy"
@@ -56,7 +50,7 @@ def test_fs_stores():
                 settings={"telemetry": {"enabled": False}},
             )
 
-            result = execute_pipeline(simple, instance=instance)
+            result = simple.execute_in_process(instance=instance)
 
             assert run_store.has_run(result.run_id)
             assert run_store.get_run_by_id(result.run_id).status == PipelineRunStatus.SUCCESS
@@ -167,23 +161,23 @@ def test_get_run_by_id():
 def test_run_step_stats():
     _called = None
 
-    @pipeline
+    @job
     def simple():
-        @solid
+        @op
         def should_succeed(context):
             time.sleep(0.001)
             context.log.info("succeed")
             return "yay"
 
-        @solid(
-            input_defs=[InputDefinition("_input", str)],
-            output_defs=[OutputDefinition(str)],
+        @op(
+            ins={"_input": In(str)},
+            out=Out(str),
         )
         def should_fail(context, _input):
             context.log.info("fail")
             raise Exception("booo")
 
-        @solid
+        @op
         def should_not_execute(_, x):
             _called = True
             return x
@@ -192,7 +186,7 @@ def test_run_step_stats():
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        result = execute_pipeline(simple, instance=instance, raise_on_error=False)
+        result = simple.execute_in_process(instance=instance, raise_on_error=False)
         step_stats = sorted(instance.get_run_step_stats(result.run_id), key=lambda x: x.end_time)
         assert len(step_stats) == 2
         assert step_stats[0].step_key == "should_succeed"
@@ -210,9 +204,9 @@ def test_run_step_stats_with_retries():
     _called = None
     _count = {"total": 0}
 
-    @pipeline
+    @job
     def simple():
-        @solid
+        @op
         def should_succeed(_):
             # This is to have at least one other step that retried to properly test
             # the step key filter on `get_run_step_stats`
@@ -222,14 +216,14 @@ def test_run_step_stats_with_retries():
 
             yield Output("yay")
 
-        @solid(
-            input_defs=[InputDefinition("_input", str)],
-            output_defs=[OutputDefinition(str)],
+        @op(
+            ins={"_input": In(str)},
+            out=Out(str),
         )
         def should_retry(context, _input):
             raise RetryRequested(max_retries=3)
 
-        @solid
+        @op
         def should_not_execute(_, x):
             _called = True
             return x
@@ -238,7 +232,7 @@ def test_run_step_stats_with_retries():
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        result = execute_pipeline(simple, instance=instance, raise_on_error=False)
+        result = simple.execute_in_process(instance=instance, raise_on_error=False)
         step_stats = instance.get_run_step_stats(result.run_id, step_keys=["should_retry"])
         assert len(step_stats) == 1
         assert step_stats[0].step_key == "should_retry"

@@ -13,6 +13,7 @@ from typing import (
     Set,
     Union,
 )
+from typing import Callable, Iterable, Mapping, NamedTuple, Optional, Sequence, Set, Union
 
 import dagster._check as check
 from dagster._core.assets import AssetDetails
@@ -34,7 +35,7 @@ if TYPE_CHECKING:
 
 
 class EventLogConnection(NamedTuple):
-    records: List[EventLogRecord]
+    records: Sequence[EventLogRecord]
     cursor: str
     has_more: bool
 

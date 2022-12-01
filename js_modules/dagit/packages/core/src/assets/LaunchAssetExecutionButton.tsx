@@ -9,7 +9,7 @@ import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {usePermissions} from '../app/Permissions';
 import {displayNameForAssetKey, LiveData, toGraphId} from '../asset-graph/Utils';
-import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {DagsterTag} from '../runs/RunTag';
 import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
@@ -198,7 +198,9 @@ export const LaunchAssetExecutionButton: React.FC<{
 };
 
 export const useMaterializationAction = (preferredJobName?: string) => {
+  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
+
   const client = useApolloClient();
   const confirm = useConfirmation();
 
@@ -318,6 +320,7 @@ async function stateForLaunchingAssets(
     assets[0]?.repository.name || '',
     assets[0]?.repository.location.name || '',
   );
+  const repoName = repoAddressAsString(repoAddress);
 
   if (
     !assets.every(
@@ -328,7 +331,7 @@ async function stateForLaunchingAssets(
   ) {
     return {
       type: 'error',
-      error: 'Assets must be in the same repository to be materialized together.',
+      error: `Assets must be in ${repoName} to be materialized together.`,
     };
   }
 
@@ -490,8 +493,8 @@ export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
     title: MULTIPLE_DEFINITIONS_WARNING,
     body: (
       <div style={{overflow: 'auto'}}>
-        One or more of the selected assets are defined in multiple repositories in your workspace.
-        Rename these assets to avoid collisions and then try again.
+        One or more of the selected assets are defined in multiple code locations. Rename these
+        assets to avoid collisions and then try again.
         <ul>
           {data.assetNodeDefinitionCollisions.map((collision, idx) => (
             <li key={idx}>

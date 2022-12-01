@@ -3,6 +3,7 @@ import * as React from 'react';
 
 import {PartitionPerOpStatus} from '../partitions/PartitionStepStatus';
 import {usePartitionStepQuery} from '../partitions/usePartitionStepQuery';
+import {DagsterTag} from '../runs/RunTag';
 import {RunFilterToken} from '../runs/RunsFilterInput';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
@@ -74,6 +75,7 @@ export const BackfillStepStatusDialogContent = ({
 
   const partitions = usePartitionStepQuery(
     partitionSet.name,
+    DagsterTag.Partition,
     backfill.partitionNames,
     pageSize,
     runsFilter,

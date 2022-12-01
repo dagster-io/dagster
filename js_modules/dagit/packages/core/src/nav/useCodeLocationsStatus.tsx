@@ -67,8 +67,8 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         intent: 'success',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
-            <div>Workspace ready</div>
-            <ViewButton onClick={() => history.push('/workspace')} color={Colors.White}>
+            <div>Definitions reloaded</div>
+            <ViewButton onClick={() => history.push('/locations')} color={Colors.White}>
               View
             </ViewButton>
           </Box>
@@ -138,7 +138,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
             ) : (
               <span>{addedEntries.length} code locations added</span>
             )}
-            <ViewButton onClick={() => history.push('/workspace')} color={Colors.White}>
+            <ViewButton onClick={() => history.push('/locations')} color={Colors.White}>
               View
             </ViewButton>
           </Box>
@@ -194,7 +194,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
   if (showSpinner) {
     return {
       type: 'spinner',
-      content: <div>Loading workspace…</div>,
+      content: <div>Loading definitions…</div>,
     };
   }
 

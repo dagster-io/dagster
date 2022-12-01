@@ -537,8 +537,6 @@ class FromStepOutput(
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
     ) -> Sequence[AssetLineageInfo]:
-        source_handle = self.step_output_handle
-        input_manager = step_context.get_io_manager(source_handle)
         load_context = self.get_load_context(step_context, input_def)
 
         # check input_def
@@ -547,15 +545,6 @@ class FromStepOutput(
                 load_context, input_def.get_asset_key, input_def.get_asset_partitions
             )
             return [lineage_info] if lineage_info else []
-
-        # check io manager
-        io_lineage_info = _get_asset_lineage_from_fns(
-            load_context,
-            input_manager.get_input_asset_key,
-            input_manager.get_input_asset_partitions,
-        )
-        if io_lineage_info is not None:
-            return [io_lineage_info]
 
         # check output_def
         upstream_output = step_context.execution_plan.get_step_output(self.step_output_handle)

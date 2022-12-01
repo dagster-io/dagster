@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Mapping, Optional
 
 import requests.exceptions
 from gql import Client, gql
@@ -119,7 +119,7 @@ class DagsterGraphQLClient:
         pipeline_name: str,
         repository_location_name: Optional[str] = None,
         repository_name: Optional[str] = None,
-        run_config: Optional[Any] = None,
+        run_config: Optional[Mapping[str, Any]] = None,
         mode: Optional[str] = None,
         preset: Optional[str] = None,
         tags: Optional[Dict[str, Any]] = None,
@@ -131,7 +131,7 @@ class DagsterGraphQLClient:
         check.str_param(pipeline_name, "pipeline_name")
         check.opt_str_param(mode, "mode")
         check.opt_str_param(preset, "preset")
-        run_config = check.opt_dict_param(run_config, "run_config")
+        run_config = check.opt_mapping_param(run_config, "run_config")
 
         # The following invariant will never fail when a job is executed
         check.invariant(

@@ -14,7 +14,7 @@ from dagster._legacy import ModeDefinition, default_executors
 
 from .utils import execute_eagerly_on_celery, execute_on_thread, start_celery_worker
 
-celery_mode_defs = [ModeDefinition(executor_defs=default_executors + [celery_executor])]
+celery_mode_defs = [ModeDefinition(executor_defs=[*default_executors, celery_executor])]
 
 
 def test_eager_priority_pipeline():

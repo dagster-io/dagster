@@ -13,9 +13,11 @@ from enum import Enum
 from tempfile import TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
+    FrozenSet,
     Generic,
     Iterable,
     List,
@@ -33,6 +35,7 @@ import yaml
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._config.field import Field
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import (
@@ -66,6 +69,7 @@ from dagster._seven import get_current_datetime_in_utc
 from dagster._utils import merge_dicts, traced
 from dagster._utils.backcompat import deprecation_warning, experimental_functionality_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.log import get_dagster_logger
 
 from .config import (
     DAGSTER_CONFIG_YAML_FILENAME,
@@ -90,6 +94,7 @@ if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent, DagsterEventType
     from dagster._core.events.log import EventLogEntry
     from dagster._core.execution.backfill import PartitionBackfill
+    from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.host_representation import (
@@ -98,6 +103,7 @@ if TYPE_CHECKING:
         HistoricalPipeline,
         RepositoryLocation,
     )
+    from dagster._core.host_representation.origin import ExternalPipelineOrigin
     from dagster._core.launcher import RunLauncher
     from dagster._core.run_coordinator import RunCoordinator
     from dagster._core.scheduler import Scheduler
@@ -168,7 +174,7 @@ class _EventListenerLogHandler(logging.Handler):
                 name=record.name,
                 message=record.msg,
                 level=record.levelno,
-                meta=record.dagster_meta,
+                meta=record.dagster_meta,  # type: ignore
                 record=record,
             )
         )
@@ -205,8 +211,10 @@ T_DagsterInstance = TypeVar("T_DagsterInstance", bound="DagsterInstance")
 class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
     """Mixin for classes that can have a weakref back to a Dagster instance."""
 
+    _instance_weakref: Optional[weakref.ReferenceType[T_DagsterInstance]]
+
     def __init__(self):
-        self._instance_weakref: Optional[weakref.ReferenceType[T_DagsterInstance]] = None
+        self._instance_weakref = None
 
     @property
     def _instance(self) -> T_DagsterInstance:
@@ -293,7 +301,7 @@ class DagsterInstance:
         event_storage: "EventLogStorage",
         compute_log_manager: "ComputeLogManager",
         run_coordinator: "RunCoordinator",
-        run_launcher: "RunLauncher",
+        run_launcher: Optional["RunLauncher"],
         scheduler: Optional["Scheduler"] = None,
         schedule_storage: Optional["ScheduleStorage"] = None,
         settings: Optional[Mapping[str, Any]] = None,
@@ -340,8 +348,14 @@ class DagsterInstance:
         self._run_coordinator = check.inst_param(run_coordinator, "run_coordinator", RunCoordinator)
         self._run_coordinator.register_instance(self)
 
-        self._run_launcher = check.inst_param(run_launcher, "run_launcher", RunLauncher)
-        self._run_launcher.register_instance(self)
+        if run_launcher:
+            self._run_launcher: Optional[RunLauncher] = check.inst_param(
+                run_launcher, "run_launcher", RunLauncher
+            )
+            run_launcher.register_instance(self)
+        else:
+            check.invariant(ref, "Run launcher must be provided if instance is not from a ref")
+            self._run_launcher = None
 
         self._settings = check.opt_mapping_param(settings, "settings")
 
@@ -494,7 +508,7 @@ class DagsterInstance:
             compute_log_manager=instance_ref.compute_log_manager,
             scheduler=instance_ref.scheduler,
             run_coordinator=instance_ref.run_coordinator,
-            run_launcher=instance_ref.run_launcher,
+            run_launcher=None,  # lazy load
             settings=instance_ref.settings,
             secrets_loader=instance_ref.secrets_loader,
             ref=instance_ref,
@@ -569,7 +583,7 @@ class DagsterInstance:
             "schedule_storage": self._info(self._schedule_storage),
             "scheduler": self._info(self._scheduler),
             "run_coordinator": self._info(self._run_coordinator),
-            "run_launcher": self._info(self._run_launcher),
+            "run_launcher": self._info(self.run_launcher),
         }
         ret.update(
             {
@@ -637,6 +651,16 @@ class DagsterInstance:
 
     @property
     def run_launcher(self) -> "RunLauncher":
+        from dagster._core.launcher import RunLauncher
+
+        # Lazily load in case the launcher requires dependencies that are not available everywhere
+        # that loads the instance (e.g. The EcsRunLauncher requires boto3)
+        if not self._run_launcher:
+            check.invariant(self._ref, "Run launcher not provided, and no instance ref available")
+            launcher = cast(InstanceRef, self._ref).run_launcher
+            check.invariant(launcher, "Run launcher not configured in instance ref")
+            self._run_launcher = cast(RunLauncher, launcher)
+            self._run_launcher.register_instance(self)
         return self._run_launcher
 
     # compute logs
@@ -772,7 +796,8 @@ class DagsterInstance:
     def dispose(self):
         self._run_storage.dispose()
         self.run_coordinator.dispose()
-        self._run_launcher.dispose()
+        if self._run_launcher:
+            self._run_launcher.dispose()
         self._event_storage.dispose()
         self._compute_log_manager.dispose()
         if self._secrets_loader:
@@ -834,18 +859,18 @@ class DagsterInstance:
 
     def create_run_for_pipeline(
         self,
-        pipeline_def,
-        execution_plan=None,
-        run_id=None,
-        run_config=None,
-        mode=None,
-        solids_to_execute=None,
-        status=None,
-        tags=None,
-        root_run_id=None,
-        parent_run_id=None,
-        solid_selection=None,
-        asset_selection=None,
+        pipeline_def: PipelineDefinition,
+        execution_plan: Optional["ExecutionPlan"] = None,
+        run_id: Optional[str] = None,
+        run_config: Optional[Mapping[str, object]] = None,
+        mode: Optional[str] = None,
+        solids_to_execute: Optional[AbstractSet[str]] = None,
+        status: Optional[str] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        root_run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        solid_selection: Optional[Sequence[str]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
         repository_load_data=None,
@@ -1386,8 +1411,8 @@ class DagsterInstance:
     @traced
     def logs_after(
         self,
-        run_id,
-        cursor,
+        run_id: str,
+        cursor: Optional[int] = None,
         of_type: Optional["DagsterEventType"] = None,
         limit: Optional[int] = None,
     ):
@@ -1515,7 +1540,7 @@ class DagsterInstance:
 
     @public
     @traced
-    def wipe_assets(self, asset_keys):
+    def wipe_assets(self, asset_keys: Sequence[AssetKey]):
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
         for asset_key in asset_keys:
             self._event_storage.wipe_asset(asset_key)
@@ -1723,7 +1748,7 @@ class DagsterInstance:
 
     # directories
 
-    def file_manager_directory(self, run_id):
+    def file_manager_directory(self, run_id: str):
         return self._local_artifact_storage.file_manager_dir(run_id)
 
     def storage_directory(self):
@@ -1823,7 +1848,7 @@ class DagsterInstance:
             check.failed(f"Failed to reload run {run_id}")
 
         try:
-            self._run_launcher.launch_run(LaunchRunContext(pipeline_run=run, workspace=workspace))
+            self.run_launcher.launch_run(LaunchRunContext(pipeline_run=run, workspace=workspace))
         except:
             error = serializable_error_info_from_exc_info(sys.exc_info())
             self.report_engine_event(
@@ -1865,7 +1890,7 @@ class DagsterInstance:
         )
 
         try:
-            self._run_launcher.resume_run(
+            self.run_launcher.resume_run(
                 ResumeRunContext(
                     pipeline_run=run,
                     workspace=workspace,
