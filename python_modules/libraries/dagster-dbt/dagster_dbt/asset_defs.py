@@ -329,6 +329,7 @@ def _get_dbt_op(
     exclude: str,
     use_build_command: bool,
     fqns_by_output_name: Mapping[str, List[str]],
+    dbt_resource_key: str,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
     runtime_metadata_fn: Optional[
@@ -340,13 +341,14 @@ def _get_dbt_op(
         tags={"kind": "dbt"},
         ins=ins,
         out=outs,
-        required_resource_keys={"dbt"},
+        required_resource_keys={dbt_resource_key},
     )
     def _dbt_op(context):
         dbt_output = None
 
+        dbt_resource = getattr(context.resources, dbt_resource_key)
         # clean up any run results from the last run
-        context.resources.dbt.remove_run_results_json()
+        dbt_resource.remove_run_results_json()
 
         # in the case that we're running everything, opt for the cleaner selection string
         if len(context.selected_output_names) == len(outs):
@@ -367,16 +369,16 @@ def _get_dbt_op(
                 kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
 
             if use_build_command:
-                dbt_output = context.resources.dbt.build(**kwargs)
+                dbt_output = dbt_resource.build(**kwargs)
             else:
-                dbt_output = context.resources.dbt.run(**kwargs)
+                dbt_output = dbt_resource.run(**kwargs)
         finally:
             # in the case that the project only partially runs successfully, still attempt to generate
             # events for the parts that were successful
             if dbt_output is None:
-                dbt_output = DbtOutput(result=context.resources.dbt.get_run_results_json())
+                dbt_output = DbtOutput(result=dbt_resource.get_run_results_json())
 
-            manifest_json = context.resources.dbt.get_manifest_json()
+            manifest_json = dbt_resource.get_manifest_json()
 
             for result in dbt_output.result["results"]:
                 if runtime_metadata_fn:
@@ -402,6 +404,7 @@ def _dbt_nodes_to_assets(
     exclude: str,
     selected_unique_ids: AbstractSet[str],
     project_id: str,
+    dbt_resource_key: str,
     runtime_metadata_fn: Optional[
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ] = None,
@@ -444,6 +447,7 @@ def _dbt_nodes_to_assets(
         exclude=exclude,
         use_build_command=use_build_command,
         fqns_by_output_name=fqns_by_output_name,
+        dbt_resource_key=dbt_resource_key,
         node_info_to_asset_key=node_info_to_asset_key,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         runtime_metadata_fn=runtime_metadata_fn,
@@ -482,6 +486,7 @@ def load_assets_from_dbt_project(
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
     display_raw_sql: Optional[bool] = None,
+    dbt_resource_key: str = "dbt",
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models from a dbt project into Dagster assets.
@@ -501,6 +506,7 @@ def load_assets_from_dbt_project(
             to exclude. Defaults to "".
         key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all models in the dbt
             project. Does not apply to sources.
+        dbt_resource_key (Optional[str]): The resource key that the dbt resource will be specified at. Defaults to "dbt".
         source_key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all sources in the
             dbt project. Does not apply to models.
         runtime_metadata_fn: (Optional[Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]]):
@@ -556,6 +562,7 @@ def load_assets_from_dbt_project(
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         node_info_to_group_fn=node_info_to_group_fn,
         display_raw_sql=display_raw_sql,
+        dbt_resource_key=dbt_resource_key,
     )
 
 
@@ -576,6 +583,7 @@ def load_assets_from_dbt_manifest(
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
     display_raw_sql: Optional[bool] = None,
+    dbt_resource_key: str = "dbt",
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models, described in a manifest.json, into Dagster assets.
@@ -594,6 +602,7 @@ def load_assets_from_dbt_manifest(
             project. Does not apply to sources.
         source_key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all sources in the
             dbt project. Does not apply to models.
+        dbt_resource_key (Optional[str]): The resource key that the dbt resource will be specified at. Defaults to "dbt".
         runtime_metadata_fn: (Optional[Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]]):
             A function that will be run after any of the assets are materialized and returns
             metadata entries for the asset, to be displayed in the asset catalog for that run.
@@ -630,6 +639,7 @@ def load_assets_from_dbt_manifest(
     if display_raw_sql is not None:
         experimental_arg_warning("display_raw_sql", "load_assets_from_dbt_manifest")
     display_raw_sql = check.opt_bool_param(display_raw_sql, "display_raw_sql", default=True)
+    dbt_resource_key = check.str_param(dbt_resource_key, "dbt_resource_key")
 
     dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"], **manifest_json["metrics"]}
 
@@ -653,6 +663,7 @@ def load_assets_from_dbt_manifest(
         select=select,
         exclude=exclude,
         selected_unique_ids=selected_unique_ids,
+        dbt_resource_key=dbt_resource_key,
         project_id=manifest_json["metadata"]["project_id"][:5],
         node_info_to_asset_key=node_info_to_asset_key,
         use_build_command=use_build_command,
