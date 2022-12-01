@@ -3,7 +3,7 @@ from typing import Optional
 from dagster import _check as check
 from dagster._config import ConfigType, ConfigTypeKind
 from dagster._core.definitions import create_run_config_schema
-from dagster._legacy import JobDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 
 
 def scaffold_pipeline_config(

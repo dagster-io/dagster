@@ -17,10 +17,10 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.definitions import IPipeline, JobDefinition, JobDefinition
+from dagster._core.definitions import IPipeline, JobDefinition
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.job_definition import PipelineSubsetDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
-from dagster._core.definitions.pipeline_definition import PipelineSubsetDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError

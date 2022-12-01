@@ -56,9 +56,11 @@ def gen_basic_resource_pipeline(called=None, cleaned=None):
         pass
 
     return JobDefinition(
-        name="basic_resource_pipeline",
-        solid_defs=[resource_solid],
-        mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b})],
+        graph_def=GraphDefinition(
+            name="basic_resource_pipeline",
+            node_defs=[resource_solid],
+        ),
+        _mode_def=ModeDefinition(resource_defs={"a": resource_a, "b": resource_b}),
     )
 
 

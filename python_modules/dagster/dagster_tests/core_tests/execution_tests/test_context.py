@@ -2,7 +2,8 @@ import dagster._check as check
 from dagster import job, op
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.pipeline_definition import JobDefinition
+from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.storage.pipeline_run import DagsterRun
 

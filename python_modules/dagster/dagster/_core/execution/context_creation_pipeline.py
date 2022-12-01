@@ -23,7 +23,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions import ExecutorDefinition, ModeDefinition, JobDefinition
+from dagster._core.definitions import ExecutorDefinition, JobDefinition, ModeDefinition
 from dagster._core.definitions.executor_definition import check_cross_process_constraints
 from dagster._core.definitions.pipeline_base import IPipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder

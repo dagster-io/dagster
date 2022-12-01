@@ -28,13 +28,13 @@ from dagster._core.definitions.logical_version import (
     LogicalVersion,
     extract_logical_version_from_entry,
 )
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import infer_partition_mapping
 from dagster._core.definitions.pipeline_base import IPipeline
-from dagster._core.definitions.pipeline_definition import JobDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
@@ -66,7 +66,6 @@ from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
     from dagster._core.definitions.dependency import Node, NodeHandle
-    from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.event_api import EventLogRecord
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -387,7 +386,6 @@ class PlanExecutionContext(IPlanContext):
 
     @property
     def partition_time_window(self) -> str:
-        from dagster._core.definitions.job_definition import JobDefinition
 
         pipeline_def = self._execution_data.pipeline_def
         if not isinstance(pipeline_def, JobDefinition):

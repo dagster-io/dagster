@@ -17,7 +17,6 @@ from dagster._core.definitions.output import Out
 from dagster._legacy import (
     InputDefinition,
     OutputDefinition,
-    JobDefinition,
     execute_pipeline,
     pipeline,
 )
@@ -44,19 +43,21 @@ def test_simple_values():
 
     result = execute_pipeline(
         JobDefinition(
-            name="input_test",
-            solid_defs=[emit_1, emit_2, emit_3, sum_num],
-            dependencies={
-                "sum_num": {
-                    "numbers": MultiDependencyDefinition(
-                        [
-                            DependencyDefinition("emit_1"),
-                            DependencyDefinition("emit_2"),
-                            DependencyDefinition("emit_3"),
-                        ]
-                    )
-                }
-            },
+            graph_def=GraphDefinition(
+                name="input_test",
+                solid_defs=[emit_1, emit_2, emit_3, sum_num],
+                dependencies={
+                    "sum_num": {
+                        "numbers": MultiDependencyDefinition(
+                            [
+                                DependencyDefinition("emit_1"),
+                                DependencyDefinition("emit_2"),
+                                DependencyDefinition("emit_3"),
+                            ]
+                        )
+                    }
+                },
+            )
         )
     )
     assert result.success
@@ -226,17 +227,19 @@ def test_fan_in_manual():
 
 def test_nothing_deps():
     JobDefinition(
-        name="input_test",
-        solid_defs=[emit_num, emit_nothing, emit_str, collect],
-        dependencies={
-            "collect": {
-                "stuff": MultiDependencyDefinition(
-                    [
-                        DependencyDefinition("emit_num"),
-                        DependencyDefinition("emit_nothing"),
-                        DependencyDefinition("emit_str"),
-                    ]
-                )
-            }
-        },
+        graph_def=GraphDefinition(
+            name="input_test",
+            solid_defs=[emit_num, emit_nothing, emit_str, collect],
+            dependencies={
+                "collect": {
+                    "stuff": MultiDependencyDefinition(
+                        [
+                            DependencyDefinition("emit_num"),
+                            DependencyDefinition("emit_nothing"),
+                            DependencyDefinition("emit_str"),
+                        ]
+                    )
+                }
+            },
+        )
     )

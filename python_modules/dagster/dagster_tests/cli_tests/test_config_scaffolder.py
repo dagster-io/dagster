@@ -8,7 +8,8 @@ from dagster import (
 from dagster._cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
 from dagster._config import config_type
 from dagster._core.definitions import create_run_config_schema
-from dagster._legacy import ModeDefinition, JobDefinition
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 
 
 def fail_me():
@@ -24,14 +25,16 @@ def test_scalars():
 
 def test_basic_ops_config(snapshot):
     pipeline_def = JobDefinition(
-        name="BasicSolidsConfigPipeline",
-        solid_defs=[
-            OpDefinition(
-                name="required_field_solid",
-                config_schema={"required_int": Int},
-                compute_fn=lambda *_args: fail_me(),
-            )
-        ],
+        graph_def=GraphDefinition(
+            name="BasicSolidsConfigPipeline",
+            node_defs=[
+                OpDefinition(
+                    name="required_field_solid",
+                    config_schema={"required_int": Int},
+                    compute_fn=lambda *_args: fail_me(),
+                )
+            ],
+        )
     )
 
     env_config_type = create_run_config_schema(pipeline_def).config_type
@@ -61,32 +64,3 @@ def test_basic_ops_config(snapshot):
 
 def dummy_resource(config_field):
     return ResourceDefinition(lambda _: None, config_field)
-
-
-def test_two_modes(snapshot):
-    pipeline_def = JobDefinition(
-        name="TwoModePipelines",
-        solid_defs=[],
-        mode_defs=[
-            ModeDefinition(
-                "mode_one",
-                resource_defs={"value": dummy_resource({"mode_one_field": String})},
-            ),
-            ModeDefinition(
-                "mode_two",
-                resource_defs={"value": dummy_resource({"mode_two_field": Int})},
-            ),
-        ],
-    )
-
-    snapshot.assert_match(scaffold_pipeline_config(pipeline_def, mode="mode_one"))
-
-    snapshot.assert_match(
-        scaffold_pipeline_config(pipeline_def, mode="mode_one", skip_non_required=False)
-    )
-
-    snapshot.assert_match(scaffold_pipeline_config(pipeline_def, mode="mode_two"))
-
-    snapshot.assert_match(
-        scaffold_pipeline_config(pipeline_def, mode="mode_two", skip_non_required=False)
-    )

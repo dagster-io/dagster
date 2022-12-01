@@ -1,4 +1,6 @@
 from dagster import DependencyDefinition, GraphDefinition, In, Int, Out, Output, op
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance import DagsterInstance
@@ -102,11 +104,12 @@ def test_reentrant_execute_plan():
 
     @op
     def has_tag(context):
-        assert context.has_tag("foo")
-        assert context.get_tag("foo") == "bar"
         called["yup"] = True
 
     pipeline_def = GraphDefinition(name="has_tag_pipeline", node_defs=[has_tag]).to_job()
+    pipeline_def = JobDefinition(
+        graph_def=GraphDefinition(name="has_tag_pipeline", node_defs=[has_tag])
+    )
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline_def)
     pipeline_run = instance.create_run_for_pipeline(
@@ -125,3 +128,4 @@ def test_reentrant_execute_plan():
         find_events(step_events, event_type="STEP_OUTPUT")[0].logging_tags["pipeline_tags"]
         == "{'foo': 'bar'}"
     )
+

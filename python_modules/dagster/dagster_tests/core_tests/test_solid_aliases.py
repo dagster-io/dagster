@@ -18,15 +18,19 @@ def test_aliased_solids():
         return prev + ["not_first"]
 
     pipeline = JobDefinition(
-        solid_defs=[first, not_first],
-        name="test",
-        dependencies={
-            "not_first": {"prev": DependencyDefinition("first")},
-            NodeInvocation("not_first", alias="second"): {
-                "prev": DependencyDefinition("not_first")
+        graph_def=GraphDefinition(
+            node_defs=[first, not_first],
+            name="test",
+            dependencies={
+                "not_first": {"prev": DependencyDefinition("first")},
+                NodeInvocation("not_first", alias="second"): {
+                    "prev": DependencyDefinition("not_first")
+                },
+                NodeInvocation("not_first", alias="third"): {
+                    "prev": DependencyDefinition("second")
+                },
             },
-            NodeInvocation("not_first", alias="third"): {"prev": DependencyDefinition("second")},
-        },
+        )
     )
 
     result = execute_pipeline(pipeline)
@@ -50,14 +54,16 @@ def test_only_aliased_solids():
         return prev + ["not_first"]
 
     pipeline = JobDefinition(
-        solid_defs=[first, not_first],
-        name="test",
-        dependencies={
-            NodeInvocation("first", alias="the_root"): {},
-            NodeInvocation("not_first", alias="the_consequence"): {
-                "prev": DependencyDefinition("the_root")
+        graph_def=GraphDefinition(
+            node_defs=[first, not_first],
+            name="test",
+            dependencies={
+                NodeInvocation("first", alias="the_root"): {},
+                NodeInvocation("not_first", alias="the_consequence"): {
+                    "prev": DependencyDefinition("the_root")
+                },
             },
-        },
+        )
     )
 
     result = execute_pipeline(pipeline)
@@ -72,12 +78,14 @@ def test_aliased_configs():
         return context.op_config
 
     pipeline = JobDefinition(
-        solid_defs=[load_constant],
-        name="test",
-        dependencies={
-            NodeInvocation(load_constant.name, "load_a"): {},
-            NodeInvocation(load_constant.name, "load_b"): {},
-        },
+        graph_def=GraphDefinition(
+            solid_defs=[load_constant],
+            name="test",
+            dependencies={
+                NodeInvocation(load_constant.name, "load_a"): {},
+                NodeInvocation(load_constant.name, "load_b"): {},
+            },
+        )
     )
 
     result = execute_pipeline(
@@ -99,12 +107,14 @@ def test_aliased_solids_context():
         record[op_def_value].add(solid_value)
 
     pipeline = JobDefinition(
-        solid_defs=[log_things],
-        name="test",
-        dependencies={
-            NodeInvocation("log_things", "log_a"): {},
-            NodeInvocation("log_things", "log_b"): {},
-        },
+        graph_def=GraphDefinition(
+            solid_defs=[log_things],
+            name="test",
+            dependencies={
+                NodeInvocation("log_things", "log_a"): {},
+                NodeInvocation("log_things", "log_b"): {},
+            },
+        )
     )
 
     result = execute_pipeline(pipeline)

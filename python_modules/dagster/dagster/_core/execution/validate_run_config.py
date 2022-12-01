@@ -1,7 +1,7 @@
 from typing import Any, Mapping, Optional, cast
 
 import dagster._check as check
-from dagster._core.definitions import JobDefinition, JobDefinition
+from dagster._core.definitions import JobDefinition
 from dagster._core.system_config.objects import ResolvedRunConfig
 
 

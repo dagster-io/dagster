@@ -4,7 +4,7 @@ import dagster._check as check
 from dagster._config import ConfigType
 
 from .config import ConfigMapping
-from .pipeline_definition import JobDefinition
+from .job_definition import JobDefinition
 
 
 class RunConfigSchema(NamedTuple):

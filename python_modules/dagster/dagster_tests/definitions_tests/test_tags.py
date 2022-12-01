@@ -46,4 +46,4 @@ def test_solid_subset_tags():
     def no_tags_job():
         noop_op()
 
-    assert no_tags_job.get_pipeline_subset_def({"noop_op"}).tags == {}
+    assert no_tags_job.get_job_def_for_subset_selection(["noop_op"]).tags == {}

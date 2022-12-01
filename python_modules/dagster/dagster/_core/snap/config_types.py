@@ -1,6 +1,6 @@
 import dagster._check as check
 from dagster._config import ConfigSchemaSnapshot, snap_from_config_type
-from dagster._core.definitions.pipeline_definition import JobDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._utils.merger import merge_dicts
 
 

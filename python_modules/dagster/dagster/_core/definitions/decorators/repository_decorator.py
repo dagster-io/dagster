@@ -20,6 +20,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 
 from ..executor_definition import ExecutorDefinition
 from ..graph_definition import GraphDefinition
+from ..job_definition import JobDefinition
 from ..logger_definition import LoggerDefinition
 from ..partition import PartitionSetDefinition
 from ..partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition

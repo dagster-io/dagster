@@ -2,7 +2,7 @@ import re
 from typing import TYPE_CHECKING, Dict, Mapping, Optional
 
 import dagster._check as check
-from dagster._core.definitions.pipeline_definition import JobDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.version_strategy import OpVersionContext, ResourceVersionContext
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.outputs import StepOutputHandle

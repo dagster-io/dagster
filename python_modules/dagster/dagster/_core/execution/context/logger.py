@@ -4,7 +4,6 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.pipeline_definition import JobDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 
 from .output import RUN_ID_PLACEHOLDER

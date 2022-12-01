@@ -1,8 +1,8 @@
 from typing import Mapping, NamedTuple, Optional, Sequence, Set
 
 import dagster._check as check
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataEntry
-from dagster._core.definitions.pipeline_definition import JobDefinition
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 

@@ -12,15 +12,17 @@ def test_solid_instance_tags():
         called["yup"] = True
 
     pipeline = JobDefinition(
-        name="metadata_pipeline",
-        solid_defs=[metadata_solid],
-        dependencies={
-            NodeInvocation(
-                "metadata_solid",
-                alias="aliased_metadata_solid",
-                tags={"foo": "oof", "bip": "bop"},
-            ): {}
-        },
+        graph_def=GraphDefinition(
+            name="metadata_pipeline",
+            node_defs=[metadata_solid],
+            dependencies={
+                NodeInvocation(
+                    "metadata_solid",
+                    alias="aliased_metadata_solid",
+                    tags={"foo": "oof", "bip": "bop"},
+                ): {}
+            },
+        ),
     )
 
     result = execute_pipeline(

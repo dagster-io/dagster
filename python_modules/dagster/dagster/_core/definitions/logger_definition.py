@@ -14,7 +14,7 @@ from .definition_config_schema import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import JobDefinition, JobDefinition
+    from dagster._core.definitions import JobDefinition
     from dagster._core.execution.context.logger import InitLoggerContext, UnboundInitLoggerContext
 
     InitLoggerFunction = Callable[[InitLoggerContext], logging.Logger]
@@ -180,7 +180,7 @@ def build_init_logger_context(
             context = build_init_logger_context()
             logger_to_init(context)
     """
-    from dagster._core.definitions import JobDefinition, JobDefinition
+    from dagster._core.definitions import JobDefinition
     from dagster._core.execution.context.logger import UnboundInitLoggerContext
 
     check.opt_inst_param(pipeline_def, "pipeline_def", JobDefinition)

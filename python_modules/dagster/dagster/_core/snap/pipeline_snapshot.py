@@ -22,12 +22,8 @@ from dagster._config import (
     get_builtin_scalar_by_name,
 )
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.job_definition import JobDefinition, PipelineSubsetDefinition
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
-from dagster._core.definitions.pipeline_definition import (
-    JobDefinition,
-    PipelineSubsetDefinition,
-)
 from dagster._core.utils import toposort_flatten
 from dagster._serdes import (
     DefaultNamedTupleSerializer,
@@ -197,7 +193,7 @@ class PipelineSnapshot(
         if isinstance(pipeline_def, PipelineSubsetDefinition):
             lineage = PipelineSnapshotLineage(
                 parent_snapshot_id=create_pipeline_snapshot_id(
-                    cls.from_pipeline_def(pipeline_def.parent_pipeline_def)
+                    cls.from_pipeline_def(pipeline_def.parent_job_def)
                 ),
                 solid_selection=sorted(pipeline_def.solid_selection),
                 solids_to_execute=pipeline_def.solids_to_execute,

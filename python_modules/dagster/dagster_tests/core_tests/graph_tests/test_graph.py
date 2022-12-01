@@ -27,12 +27,12 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_definition import PipelineSubsetDefinition
 from dagster._core.definitions.partition import (
     Partition,
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.pipeline_definition import PipelineSubsetDefinition
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
 from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
@@ -690,7 +690,7 @@ def test_job_subset():
 
     the_job = basic.to_job()
 
-    assert isinstance(the_job.get_pipeline_subset_def({"my_op"}), PipelineSubsetDefinition)
+    assert isinstance(the_job.get_job_def_for_subset_selection(["my_op"]), PipelineSubsetDefinition)
 
 
 def test_tags():

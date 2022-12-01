@@ -10,9 +10,9 @@ from dagster._utils.backcompat import experimental_arg_warning
 from ..graph_definition import GraphDefinition
 from ..hook_definition import HookDefinition
 from ..input import InputDefinition
+from ..job_definition import JobDefinition
 from ..mode import ModeDefinition
 from ..output import OutputDefinition
-from ..pipeline_definition import JobDefinition
 from ..preset import PresetDefinition
 from ..version_strategy import VersionStrategy
 
@@ -88,8 +88,8 @@ class _Pipeline:
         )
 
         pipeline_def = JobDefinition(
-            mode_defs=self.mode_definitions,
-            preset_defs=self.preset_definitions,
+            _mode_def=self.mode_definitions[0],
+            _preset_defs=self.preset_definitions,
             graph_def=GraphDefinition(
                 name=self.name,
                 description=None,  # put desc on the pipeline
@@ -104,7 +104,7 @@ class _Pipeline:
             tags=self.tags,
             description=self.description or format_docstring_for_description(fn),
             hook_defs=self.hook_defs,
-            solid_retry_policy=self.solid_retry_policy,
+            op_retry_policy=self.solid_retry_policy,
             version_strategy=self.version_strategy,
         )
         update_wrapper(pipeline_def, fn)

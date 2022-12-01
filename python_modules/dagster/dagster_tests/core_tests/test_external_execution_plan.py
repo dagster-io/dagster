@@ -23,6 +23,8 @@ from dagster._core.definitions.cacheable_assets import (
 )
 from dagster._core.definitions.input import In
 from dagster._core.definitions.output import Out
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster._core.execution.api import create_execution_plan, execute_plan
@@ -46,10 +48,12 @@ def define_inty_pipeline(using_file_system=False):
         raise Exception("whoops")
 
     pipeline = JobDefinition(
-        name="basic_external_plan_execution",
-        solid_defs=[return_one, add_one, user_throw_exception],
-        dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
-        mode_defs=[default_mode_def_for_test] if using_file_system else None,
+        graph_def=GraphDefinition(
+            name="basic_external_plan_execution",
+            solid_defs=[return_one, add_one, user_throw_exception],
+            dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
+        ),
+        _mode_def=default_mode_def_for_test if using_file_system else None,
     )
     return pipeline
 

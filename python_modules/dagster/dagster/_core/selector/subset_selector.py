@@ -33,7 +33,6 @@ from dagster._utils import check
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.pipeline_definition import JobDefinition
     from dagster._core.definitions.source_asset import SourceAsset
 
 MAX_NUM = sys.maxsize

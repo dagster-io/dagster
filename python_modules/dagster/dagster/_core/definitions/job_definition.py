@@ -26,7 +26,6 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
-from dagster._config.snap import ConfigSchemaSnapshot
 from dagster._config.validate import validate_config
 from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.dependency import (
@@ -45,7 +44,6 @@ from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
-from dagster._core.definitions.run_config_schema import RunConfigSchema
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -54,7 +52,6 @@ from dagster._core.errors import (
     DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
 )
-from dagster._core.host_representation.pipeline_index import PipelineIndex
 from dagster._core.selector.subset_selector import (
     AssetSelectionData,
     OpSelectionData,
@@ -86,10 +83,15 @@ from .utils import DEFAULT_IO_MANAGER_KEY, validate_tags
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
+    from dagster._config.snap import ConfigSchemaSnapshot
+    from dagster._core.definitions.run_config_schema import RunConfigSchema
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.execution.resources_init import InitResourceContext
+    from dagster._core.host_representation.pipeline_index import PipelineIndex
     from dagster._core.instance import DagsterInstance
     from dagster._core.snap import PipelineSnapshot
+
+    from .partition import PartitionSetDefinition, PartitionedConfig, PartitionsDefinition
 
 
 class JobDefinition:
@@ -192,9 +194,9 @@ class JobDefinition:
         executor_def: Optional[ExecutorDefinition] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         name: Optional[str] = None,
-        config: Optional[Union[ConfigMapping, Mapping[str, object], PartitionedConfig]] = None,
+        config: Optional[Union[ConfigMapping, Mapping[str, object], "PartitionedConfig"]] = None,
         description: Optional[str] = None,
-        partitions_def: Optional[PartitionsDefinition] = None,
+        partitions_def: Optional["PartitionsDefinition"] = None,
         tags: Optional[Mapping[str, Any]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
@@ -208,8 +210,11 @@ class JobDefinition:
         _logger_defs_specified: Optional[bool] = None,
         _preset_defs: Optional[Sequence[PresetDefinition]] = None,
         _parent_job_def: Optional["JobDefinition"] = None,
+        _mode_def: Optional["ModeDefinition"] = None,
     ):
         from dagster._loggers import default_loggers
+
+        from .partition import PartitionedConfig, PartitionsDefinition
 
         self._graph_def = check.inst_param(graph_def, "graph_def", GraphDefinition)
         self._current_level_node_defs = self._graph_def.node_defs
@@ -332,17 +337,18 @@ class JobDefinition:
         )
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
-        mode_def = ModeDefinition(
-            resource_defs=resource_defs_with_defaults,
-            logger_defs=logger_defs,
-            executor_defs=[executor_def] if executor_def else None,
-            _config_mapping=config_mapping,
-            _partitioned_config=partitioned_config,
-        )
-        self._mode_definitions = [mode_def]
+        if _mode_def is None:
+            _mode_def = ModeDefinition(
+                resource_defs=resource_defs_with_defaults,
+                logger_defs=logger_defs,
+                executor_defs=[executor_def] if executor_def else None,
+                _config_mapping=config_mapping,
+                _partitioned_config=partitioned_config,
+            )
+        self._mode_definitions = [_mode_def]
 
         resource_requirements = {}
-        resource_requirements[mode_def.name] = self._get_resource_requirements_for_mode(mode_def)
+        resource_requirements[_mode_def.name] = self._get_resource_requirements_for_mode(_mode_def)
         self._resource_requirements = resource_requirements
 
         self._preset_dict: Dict[str, PresetDefinition] = {}
@@ -354,7 +360,7 @@ class JobDefinition:
                         "PresetDefinitions must have unique names."
                     )
                 )
-            if preset.mode != mode_def.name:
+            if preset.mode != _mode_def.name:
                 raise DagsterInvalidDefinitionError(
                     (
                         f'PresetDefinition "{preset.name}" in "{self._name}" '
@@ -550,7 +556,7 @@ class JobDefinition:
 
     @public
     @property
-    def partitioned_config(self) -> Optional[PartitionedConfig]:
+    def partitioned_config(self) -> Optional["PartitionedConfig"]:
         return self.get_mode_definition().partitioned_config
 
     @public
@@ -851,7 +857,7 @@ class JobDefinition:
 
     @public
     @property
-    def partitions_def(self) -> Optional[PartitionsDefinition]:
+    def partitions_def(self) -> Optional["PartitionsDefinition"]:
         mode = self.get_mode_definition()
         if not mode.partitioned_config:
             return None
@@ -1060,13 +1066,6 @@ class JobDefinition:
     def dagster_type_named(self, name):
         return self._graph_def.dagster_type_named(name)
 
-    def get_pipeline_subset_def(
-        self, solids_to_execute: Optional[AbstractSet[str]]
-    ) -> "JobDefinition":
-        return (
-            self if solids_to_execute is None else _get_pipeline_subset_def(self, solids_to_execute)
-        )
-
     def has_preset(self, name: str) -> bool:
         check.str_param(name, "name")
         return name in self._preset_dict
@@ -1179,6 +1178,7 @@ class JobDefinition:
             )
         raise DagsterInvariantViolationError(msg)
 
+
 class PipelineSubsetDefinition(JobDefinition):
     @property
     def solids_to_execute(self) -> FrozenSet[str]:
@@ -1196,8 +1196,8 @@ class PipelineSubsetDefinition(JobDefinition):
         return check.not_none(self._parent_job_def)
 
     def get_parent_job_snapshot(self) -> Optional["PipelineSnapshot"]:
-        parent_pipeline = check.not_none(self.parent_job_def)
-        return parent_pipeline.get_pipeline_snapshot()
+        parent_job = check.not_none(self.parent_job_def)
+        return parent_job.get_pipeline_snapshot()
 
     @property
     def is_subset_pipeline(self) -> bool:
@@ -1207,6 +1207,7 @@ class PipelineSubsetDefinition(JobDefinition):
         self, _solids_to_execute: Optional[AbstractSet[str]]
     ) -> "PipelineSubsetDefinition":
         raise DagsterInvariantViolationError("Pipeline subsets may not be subset again.")
+
 
 def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: JobDefinition):
     """
@@ -1661,7 +1662,6 @@ def _create_run_config_schema(
     mode_definition: ModeDefinition,
     required_resources: AbstractSet[str],
 ) -> "RunConfigSchema":
-    from .job_definition import JobDefinition, get_direct_input_values_from_job
     from .run_config import (
         RunConfigSchemaCreationData,
         construct_config_type_dictionary,

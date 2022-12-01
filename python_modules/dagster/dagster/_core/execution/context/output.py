@@ -30,7 +30,7 @@ from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolati
 from dagster._core.execution.plan.utils import build_resources_for_manager
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import PartitionsDefinition, JobDefinition
+    from dagster._core.definitions import JobDefinition, PartitionsDefinition
     from dagster._core.definitions.op_definition import OpDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.events import DagsterEvent

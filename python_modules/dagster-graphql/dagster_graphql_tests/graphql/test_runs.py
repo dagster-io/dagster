@@ -439,11 +439,11 @@ def test_runs_over_time():
         ).run_id
         foo_run_id = execute_pipeline(repo_1.get_pipeline("foo_pipeline"), instance=instance).run_id
         evolve_a_run_id = execute_pipeline(
-            repo_1.get_pipeline("evolving_pipeline").get_pipeline_subset_def({"solid_A"}),
+            repo_1.get_pipeline("evolving_pipeline").get_job_def_for_subset_selection(["solid_A"]),
             instance=instance,
         ).run_id
         evolve_b_run_id = execute_pipeline(
-            repo_1.get_pipeline("evolving_pipeline").get_pipeline_subset_def({"solid_B"}),
+            repo_1.get_pipeline("evolving_pipeline").get_job_def_for_subset_selection(["solid_B"]),
             instance=instance,
         ).run_id
 
@@ -521,11 +521,11 @@ def test_run_groups_over_time():
         ).run_id
         foo_run_id = execute_pipeline(repo_1.get_pipeline("foo_pipeline"), instance=instance).run_id
         evolve_a_run_id = execute_pipeline(
-            repo_1.get_pipeline("evolving_pipeline").get_pipeline_subset_def({"solid_A"}),
+            repo_1.get_pipeline("evolving_pipeline").get_job_def_for_subset_selection(["solid_A"]),
             instance=instance,
         ).run_id
         evolve_b_run_id = execute_pipeline(
-            repo_1.get_pipeline("evolving_pipeline").get_pipeline_subset_def({"solid_B"}),
+            repo_1.get_pipeline("evolving_pipeline").get_job_def_for_subset_selection(["solid_B"]),
             instance=instance,
         ).run_id
 

@@ -20,6 +20,7 @@ from dagster._core.definitions import (
     JobDefinition,
     Node,
     NodeHandle,
+    OpDefinition,
 )
 from dagster._core.definitions.dependency import GraphNode, OpNode
 from dagster._core.definitions.events import (

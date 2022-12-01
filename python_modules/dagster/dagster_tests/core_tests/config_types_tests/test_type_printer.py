@@ -5,6 +5,7 @@ from dagster._config import (
     resolve_to_config_type,
     snap_from_config_type,
 )
+from dagster._core.definitions.graph_definition import GraphDefinition
 
 
 def assert_inner_types(parent_type, *dagster_types):

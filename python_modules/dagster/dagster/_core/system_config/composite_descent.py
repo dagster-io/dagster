@@ -4,8 +4,8 @@ import dagster._check as check
 from dagster._config import EvaluateValueResult, process_config
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.pipeline_definition import JobDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_config import define_solid_dictionary_cls
 from dagster._core.errors import (
@@ -29,9 +29,7 @@ class OpConfigEntry(
 
 
 class DescentStack(
-    NamedTuple(
-        "_DescentStack", [("pipeline_def", JobDefinition), ("handle", Optional[NodeHandle])]
-    )
+    NamedTuple("_DescentStack", [("pipeline_def", JobDefinition), ("handle", Optional[NodeHandle])])
 ):
     def __new__(cls, pipeline_def: JobDefinition, handle: Optional[NodeHandle]):
         return super(DescentStack, cls).__new__(

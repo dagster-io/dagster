@@ -4,8 +4,8 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 
+from .job_definition import JobDefinition
 from .mode import DEFAULT_MODE_NAME
-from .pipeline_definition import JobDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:

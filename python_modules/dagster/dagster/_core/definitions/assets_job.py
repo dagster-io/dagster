@@ -187,7 +187,7 @@ def build_assets_job(
             _metadata_entries=original_job._metadata_entries,  # pylint: disable=protected-access
             logger_defs=original_job.get_mode_definition().loggers,
             hooks=original_job.hook_defs,
-            op_retry_policy=original_job._solid_retry_policy,  # pylint: disable=protected-access
+            op_retry_policy=original_job._op_retry_policy,  # pylint: disable=protected-access
             version_strategy=original_job.version_strategy,
         )
 
@@ -286,7 +286,7 @@ def build_source_asset_observation_job(
             _metadata_entries=original_job._metadata_entries,  # pylint: disable=protected-access
             logger_defs=original_job.get_mode_definition().loggers,
             hooks=original_job.hook_defs,
-            op_retry_policy=original_job._solid_retry_policy,  # pylint: disable=protected-access
+            op_retry_policy=original_job._op_retry_policy,  # pylint: disable=protected-access
             version_strategy=original_job.version_strategy,
         )
 

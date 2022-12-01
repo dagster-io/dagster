@@ -6,10 +6,10 @@ from dagster._core.definitions import (
     GraphDefinition,
     InputDefinition,
     InputMapping,
+    JobDefinition,
     OpDefinition,
     OutputDefinition,
     OutputMapping,
-    JobDefinition,
 )
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster._serdes import whitelist_for_serdes

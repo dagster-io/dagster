@@ -24,6 +24,7 @@ from dagster._cli.workspace.cli_target import (
     python_job_config_argument,
     python_job_target_argument,
 )
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.pipeline_base import IPipeline
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.definitions.utils import validate_tags
@@ -43,7 +44,7 @@ from dagster._core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
-from dagster._legacy import JobDefinition, execute_pipeline
+from dagster._legacy import execute_pipeline
 from dagster._seven import IS_WINDOWS, JSONDecodeError, json
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster._utils.error import serializable_error_info_from_exc_info

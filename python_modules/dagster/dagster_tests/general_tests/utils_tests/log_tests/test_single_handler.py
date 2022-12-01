@@ -1,8 +1,8 @@
 import logging
 
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.execution.context.logger import InitLoggerContext
 from dagster._core.log_manager import DagsterLogManager
-from dagster._legacy import JobDefinition
 from dagster._utils.log import construct_single_handler_logger
 
 

@@ -37,11 +37,8 @@ from typing_extensions import Protocol, runtime_checkable
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.job_definition import JobDefinition, PipelineSubsetDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
-from dagster._core.definitions.pipeline_definition import (
-    JobDefinition,
-    PipelineSubsetDefinition,
-)
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
@@ -919,7 +916,6 @@ class DagsterInstance(DynamicPartitionsStore):
         pipeline_code_origin=None,
         repository_load_data=None,
     ) -> DagsterRun:
-        from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.execution.api import create_execution_plan
         from dagster._core.execution.plan.plan import ExecutionPlan
         from dagster._core.snap import snapshot_from_execution_plan
@@ -949,8 +945,8 @@ class DagsterInstance(DynamicPartitionsStore):
                 )
             else:
                 # for cases when `create_run_for_pipeline` is directly called
-                pipeline_def = pipeline_def.get_pipeline_subset_def(
-                    solids_to_execute=solids_to_execute
+                pipeline_def = pipeline_def.get_job_def_for_subset_selection(
+                    list(solids_to_execute)
                 )
         if asset_selection and isinstance(pipeline_def, JobDefinition):
             # for cases when `create_run_for_pipeline` is directly called
@@ -991,7 +987,7 @@ class DagsterInstance(DynamicPartitionsStore):
                 execution_plan,
                 pipeline_def.get_pipeline_snapshot_id(),
             ),
-            parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
+            parent_pipeline_snapshot=pipeline_def.get_parent_job_snapshot(),
             external_pipeline_origin=external_pipeline_origin,
             pipeline_code_origin=pipeline_code_origin,
         )

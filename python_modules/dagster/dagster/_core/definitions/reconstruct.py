@@ -54,7 +54,6 @@ if TYPE_CHECKING:
 
     from .asset_group import AssetGroup
     from .graph_definition import GraphDefinition
-    from .pipeline_definition import JobDefinition
     from .repository_definition import RepositoryDefinition
 
 
@@ -249,7 +248,7 @@ class ReconstructablePipeline(
                 pipeline_name=self.pipeline_name,
             )
 
-        from dagster._core.definitions import JobDefinition, JobDefinition
+        from dagster._core.definitions import JobDefinition
 
         pipeline_def = self.get_definition()
         if isinstance(pipeline_def, JobDefinition):
@@ -431,7 +430,7 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructablePi
 
             reconstructable_bar_job = reconstructable(make_bar_job)
     """
-    from dagster._core.definitions import JobDefinition, JobDefinition
+    from dagster._core.definitions import JobDefinition
 
     if not seven.is_function_or_decorator_instance_of(target, JobDefinition):
         if isinstance(target, JobDefinition):
@@ -625,7 +624,7 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
 
     from .definitions_class import Definitions
     from .graph_definition import GraphDefinition
-    from .pipeline_definition import JobDefinition
+    from .job_definition import JobDefinition
     from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
 
     if not isinstance(
@@ -674,7 +673,7 @@ def def_from_pointer(
     from dagster._core.definitions import AssetGroup
 
     from .graph_definition import GraphDefinition
-    from .pipeline_definition import JobDefinition
+    from .job_definition import JobDefinition
     from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
 
     if isinstance(
@@ -704,7 +703,7 @@ def def_from_pointer(
 
 
 def pipeline_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
-    from .pipeline_definition import JobDefinition
+    from .job_definition import JobDefinition
 
     target = def_from_pointer(pointer)
 
@@ -740,7 +739,7 @@ def repository_def_from_target_def(
 
     from .definitions_class import Definitions
     from .graph_definition import GraphDefinition
-    from .pipeline_definition import JobDefinition
+    from .job_definition import JobDefinition
     from .repository_definition import (
         SINGLETON_REPOSITORY_NAME,
         CachingRepositoryData,

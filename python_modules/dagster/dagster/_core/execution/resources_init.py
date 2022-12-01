@@ -16,7 +16,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.pipeline_definition import JobDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition,
     ScopedResourcesBuilder,
