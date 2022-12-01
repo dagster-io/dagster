@@ -26,13 +26,30 @@ def generate_repository(path: str):
     click.echo(f"Generated files for Dagster repository in {path}.")
 
 
+def generate_code_location(path: str):
+    CODE_LOCATION_NAME_PLACEHOLDER = "CODE_LOCATION_NAME_PLACEHOLDER"
+
+    click.echo(f"Creating a Dagster code location at {path}.")
+
+    # Step 1: Generate files for Dagster code location
+    _generate_files_from_template(
+        path=path,
+        name_placeholder=CODE_LOCATION_NAME_PLACEHOLDER,
+        project_template_path=os.path.join(
+            os.path.dirname(__file__), "templates", CODE_LOCATION_NAME_PLACEHOLDER
+        ),
+    )
+
+    click.echo(f"Generated files for Dagster code location in {path}.")
+
+
 def generate_project(path: str):
     PROJECT_NAME_PLACEHOLDER = "PROJECT_NAME_PLACEHOLDER"
 
     click.echo(f"Creating a Dagster project at {path}.")
 
-    # Step 1: Generate files for Dagster repository
-    generate_repository(path)
+    # Step 1: Generate files for Dagster code location
+    generate_code_location(path)
 
     # Step 2: Generate project-level files, e.g. README, workspace.yaml, requirements.txt
     _generate_files_from_template(
@@ -51,7 +68,7 @@ def _generate_files_from_template(
     path: str, name_placeholder: str, project_template_path: str, skip_mkdir: bool = False
 ):
     normalized_path = os.path.normpath(path)
-    repo_name = os.path.basename(normalized_path).replace("-", "_")
+    code_location_name = os.path.basename(normalized_path).replace("-", "_")
 
     if not skip_mkdir:  # skip if the dir is created by previous command
         os.mkdir(normalized_path)
@@ -69,7 +86,7 @@ def _generate_files_from_template(
             src_relative_dir_path = os.path.relpath(src_dir_path, project_template_path)
             dst_relative_dir_path = src_relative_dir_path.replace(
                 name_placeholder,
-                repo_name,
+                code_location_name,
                 1,
             )
             dst_dir_path = os.path.join(normalized_path, dst_relative_dir_path)
@@ -85,7 +102,7 @@ def _generate_files_from_template(
             src_relative_file_path = os.path.relpath(src_file_path, project_template_path)
             dst_relative_file_path = src_relative_file_path.replace(
                 name_placeholder,
-                repo_name,
+                code_location_name,
                 1,
             )
             dst_file_path = os.path.join(normalized_path, dst_relative_file_path)
@@ -99,7 +116,8 @@ def _generate_files_from_template(
                 template = env.get_template(name=template_name)
                 f.write(
                     template.render(
-                        repo_name=repo_name,
+                        repo_name=code_location_name,  # deprecated
+                        code_location_name=code_location_name,
                         dagster_version=dagster_version,
                     )
                 )
