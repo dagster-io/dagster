@@ -82,6 +82,73 @@ if TYPE_CHECKING:
 
 
 class JobDefinition:
+    """Defines a Dagster job.
+
+    A job is made up of
+
+    - Ops, each of which is a single functional unit of data computation.
+    - Dependencies, which determine how the values produced by solids as their outputs flow from
+      one solid to another. This tells Dagster how to arrange solids, and potentially multiple
+      aliased instances of solids, into a directed, acyclic graph (DAG) of compute.
+
+    Args:
+        graph_def (GraphDefinition): The graph containing the ops for this job.
+        resource_defs (Optional[Mapping[str, ResourceDefinition]]):
+            Resources that are required by this graph for execution.
+            If not defined, `io_manager` will default to filesystem.
+        executor_def (Optional[ExecutorDefinition]):
+            How this Job will be executed. Defaults to :py:class:`multiprocess_executor` .
+        logger_defs (Optional[Dict[str, LoggerDefinition]]):
+            A dictionary of string logger identifiers to their implementations.
+        name (str): The name of the pipeline. Must be unique within any
+            :py:class:`RepositoryDefinition` containing the pipeline.
+        name (Optional[str]):
+            The name for the Job. Defaults to the name of the this graph.
+        config:
+            Describes how the job is parameterized at runtime.
+
+            If no value is provided, then the schema for the job's run config is a standard
+            format based on its ops and resources.
+
+            If a dictionary is provided, then it must conform to the standard config schema, and
+            it will be used as the job's run config for the job whenever the job is executed.
+            The values provided will be viewable and editable in the Dagit playground, so be
+            careful with secrets.
+
+            If a :py:class:`ConfigMapping` object is provided, then the schema for the job's run config is
+            determined by the config mapping, and the ConfigMapping, which should return
+            configuration in the standard format to configure the job.
+
+            If a :py:class:`PartitionedConfig` object is provided, then it defines a discrete set of config
+            values that can parameterize the pipeline, as well as a function for mapping those
+            values to the base config. The values provided will be viewable and editable in the
+            Dagit playground, so be careful with secrets.
+        description (Optional[str]): A human-readable description of the job.
+        partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition keys
+            that can parameterize the job. If this argument is supplied, the config argument
+            can't also be supplied.
+        tags (Optional[Dict[str, Any]]):
+            Arbitrary information that will be attached to the execution of the Job.
+            Values that are not strings will be json encoded and must meet the criteria that
+            `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
+            values provided at invocation time.
+        metadata (Optional[Dict[str, RawMetadataValue]]):
+            Arbitrary information that will be attached to the JobDefinition and be viewable in Dagit.
+            Keys must be strings, and values must be python primitive types or one of the provided
+            MetadataValue types
+        hook_defs (Optional[AbstractSet[HookDefinition]]): A set of hook definitions applied to the
+            job. When a hook is applied to a job, it will be attached to all op
+            instances within the job.
+        op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops in this job.
+            Only used if retry policy is not defined on the op definition or op invocation.
+        version_strategy (Optional[VersionStrategy]):
+            Defines how each op (and optionally, resource) in the job can be versioned. If
+            provided, memoization will be enabled for this job.
+        input_values (Optional[Mapping[str, Any]]):
+            A dictionary that maps python objects to the top-level inputs of a job.
+
+
+    """
 
     _name: str
     _graph_def: GraphDefinition
@@ -101,7 +168,6 @@ class JobDefinition:
     _cached_run_config_schemas: Dict[str, "RunConfigSchema"]
     _cached_external_job: Any
     _version_strategy: VersionStrategy
-
     _cached_partition_set: Optional["PartitionSetDefinition"]
     _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
     input_values: Mapping[str, object]
@@ -122,9 +188,9 @@ class JobDefinition:
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
-        _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
-        asset_layer: Optional[AssetLayer] = None,
         input_values: Optional[Mapping[str, object]] = None,
+        _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
+        _asset_layer: Optional[AssetLayer] = None,
         _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         _executor_def_specified: Optional[bool] = None,
         _logger_defs_specified: Optional[bool] = None,
@@ -179,7 +245,7 @@ class JobDefinition:
         _subset_selection_data = check.opt_inst_param(
             _subset_selection_data, "_subset_selection_data", (OpSelectionData, AssetSelectionData)
         )
-        asset_layer = check.opt_inst_param(asset_layer, "asset_layer", AssetLayer)
+        _asset_layer = check.opt_inst_param(_asset_layer, "asset_layer", AssetLayer)
         input_values = check.opt_mapping_param(input_values, "input_values", key_type=str)
         _metadata_entries = check.opt_sequence_param(_metadata_entries, "_metadata_entries")
         _preset_defs = check.opt_sequence_param(
@@ -222,7 +288,7 @@ class JobDefinition:
                         resource_defs_with_defaults,
                         executor_def,
                         logger_defs,
-                        asset_layer,
+                        _asset_layer,
                     ),
                     config,
                     name,
@@ -385,7 +451,7 @@ class JobDefinition:
             tags=self.tags,
             op_retry_policy=self._solid_retry_policy,
             version_strategy=self.version_strategy,
-            asset_layer=self.asset_layer,
+            _asset_layer=self.asset_layer,
             input_values=input_values,
             _executor_def_specified=self._executor_def_specified,
             _logger_defs_specified=self._logger_defs_specified,
@@ -558,7 +624,7 @@ class JobDefinition:
                 ),
                 # TODO: subset this structure.
                 # https://github.com/dagster-io/dagster/issues/7541
-                asset_layer=self.asset_layer,
+                _asset_layer=self.asset_layer,
                 _preset_defs=self._preset_defs,
             )
         except DagsterInvalidDefinitionError as exc:
@@ -671,7 +737,7 @@ class JobDefinition:
             hook_defs=hook_defs | self.hook_defs,
             description=self._description,
             op_retry_policy=self._solid_retry_policy,
-            asset_layer=self.asset_layer,
+            _asset_layer=self.asset_layer,
             _subset_selection_data=self._subset_selection_data,
             _executor_def_specified=self._executor_def_specified,
             _logger_defs_specified=self._logger_defs_specified,
@@ -717,7 +783,7 @@ class JobDefinition:
             op_retry_policy=self._solid_retry_policy,
             version_strategy=self.version_strategy,
             _subset_selection_data=self._subset_selection_data,
-            asset_layer=self.asset_layer,
+            _asset_layer=self.asset_layer,
             input_values=self.input_values,
             _executor_def_specified=False,
             _logger_defs_specified=self._logger_defs_specified,
@@ -739,7 +805,7 @@ class JobDefinition:
             op_retry_policy=self._solid_retry_policy,
             version_strategy=self.version_strategy,
             _subset_selection_data=self._subset_selection_data,
-            asset_layer=self.asset_layer,
+            _asset_layer=self.asset_layer,
             input_values=self.input_values,
             _executor_def_specified=self._executor_def_specified,
             _logger_defs_specified=False,
@@ -1027,7 +1093,7 @@ def get_run_config_schema_for_job(
             resource_defs=resource_defs,
             executor_def=executor_def,
             logger_defs=logger_defs,
-            asset_layer=asset_layer,
+            _asset_layer=asset_layer,
         )
         .get_run_config_schema("default")
         .run_config_schema_type
