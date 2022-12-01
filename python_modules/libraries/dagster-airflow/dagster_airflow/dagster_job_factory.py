@@ -66,5 +66,7 @@ def make_dagster_job_from_airflow_dag(
     # pass in tags manually because pipeline_def.graph doesn't have it threaded
     return pipeline_def.graph.to_job(
         tags={**pipeline_def.tags},
-        resource_defs={"airflow_db": pipeline_def.mode_definitions[0].resource_defs["airflow_db"]} if use_emphemeral_airflow_db else {},
+        resource_defs={"airflow_db": pipeline_def.mode_definitions[0].resource_defs["airflow_db"]}
+        if use_emphemeral_airflow_db
+        else {},
     )

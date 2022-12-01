@@ -488,6 +488,7 @@ def make_dagster_pipeline_from_airflow_dag(
             dag_bag = airflow.models.dagbag.DagBag(
                 dag_folder=context.resource_config["dag_location"], include_examples=True
             )
+            patch_airflow_example_dag(dag_bag)
             dag = dag_bag.get_dag(context.resource_config["dag_id"])
             execution_date_str = context.dagster_run.tags.get(AIRFLOW_EXECUTION_DATE_STR)
             execution_date = dateutil.parser.parse(execution_date_str)
@@ -515,7 +516,9 @@ def make_dagster_pipeline_from_airflow_dag(
         name=normalized_name(dag.dag_id),
         solid_defs=solid_defs,
         dependencies=pipeline_dependencies,
-        mode_defs=[ModeDefinition(resource_defs={"airflow_db": airflow_db})] if use_ephemeral_airflow_db else [],
+        mode_defs=[ModeDefinition(resource_defs={"airflow_db": airflow_db})]
+        if use_ephemeral_airflow_db
+        else [],
         tags=tags,
     )
     return pipeline_def
