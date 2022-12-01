@@ -290,6 +290,9 @@ def _get_asset_deps(
                 metadata=_get_node_metadata(node_info),
                 is_required=False,
                 dagster_type=Nothing,
+                code_version=hashlib.sha1(
+                    (node_info.get("raw_sql") or node_info.get("raw_code", "")).encode("utf-8")
+                ).hexdigest(),
             ),
         )
 

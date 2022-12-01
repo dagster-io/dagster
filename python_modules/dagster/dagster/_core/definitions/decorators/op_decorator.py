@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Set, Union, 
 import dagster._check as check
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import format_docstring_for_description
+from dagster._utils.backcompat import canonicalize_backcompat_args
 
 from ..input import In
 from ..output import Out
@@ -23,7 +24,7 @@ class _Op:
         required_resource_keys: Optional[Set[str]] = None,
         config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
         tags: Optional[Mapping[str, Any]] = None,
-        version: Optional[str] = None,
+        code_version: Optional[str] = None,
         decorator_takes_context: Optional[bool] = True,
         retry_policy: Optional[RetryPolicy] = None,
         ins: Optional[Mapping[str, In]] = None,
@@ -39,7 +40,7 @@ class _Op:
         # these will be checked within SolidDefinition
         self.required_resource_keys = required_resource_keys
         self.tags = tags
-        self.version = version
+        self.code_version = code_version
         self.retry_policy = retry_policy
 
         # config will be checked within SolidDefinition
@@ -75,7 +76,7 @@ class _Op:
             description=self.description or format_docstring_for_description(fn),
             required_resource_keys=self.required_resource_keys,
             tags=self.tags,
-            version=self.version,
+            code_version=self.code_version,
             retry_policy=self.retry_policy,
         )
         update_wrapper(op_def, compute_fn.decorated_fn)
@@ -99,6 +100,7 @@ def op(
     tags: Optional[Mapping[str, Any]] = ...,
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
+    code_version: Optional[str] = ...,
 ) -> _Op:
     ...
 
@@ -115,6 +117,7 @@ def op(
     tags: Optional[Mapping[str, Any]] = None,
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
+    code_version: Optional[str] = None,
 ) -> Union["OpDefinition", _Op]:
     """
     Create an op with the specified parameters from the decorated function.
@@ -155,9 +158,8 @@ def op(
         tags (Optional[Dict[str, Any]]): Arbitrary metadata for the op. Frameworks may
             expect and require certain metadata to be attached to a op. Values that are not strings
             will be json encoded and must meet the criteria that `json.loads(json.dumps(value)) == value`.
-        version (Optional[str]): (Experimental) The version of the op's compute_fn. Two ops should have
-            the same version if and only if they deterministically produce the same outputs when
-            provided the same inputs.
+        code_version (Optional[str]): (Experimental) Version of the logic encapsulated by the op. If set,
+            this is used as a default version for all outputs.
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
 
     Examples:
@@ -186,6 +188,10 @@ def op(
                 return 'cool', 4
     """
 
+    code_version = canonicalize_backcompat_args(
+        code_version, "code_version", version, "version", "2.0"
+    )
+
     if compute_fn is not None:
         check.invariant(description is None)
         check.invariant(config_schema is None)
@@ -201,7 +207,7 @@ def op(
         config_schema=config_schema,
         required_resource_keys=required_resource_keys,
         tags=tags,
-        version=version,
+        code_version=code_version,
         retry_policy=retry_policy,
         ins=ins,
         out=out,

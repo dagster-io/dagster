@@ -574,7 +574,7 @@ def _build_logical_version_tags(
     asset_key: AssetKey, step_context: StepExecutionContext
 ) -> Dict[str, str]:
     asset_layer = step_context.pipeline_def.asset_layer
-    code_version = asset_layer.op_version_for_asset(asset_key) or step_context.pipeline_run.run_id
+    code_version = asset_layer.code_version_for_asset(asset_key) or step_context.pipeline_run.run_id
     input_logical_versions: Dict[AssetKey, LogicalVersion] = {}
     tags: Dict[str, str] = {}
     tags[CODE_VERSION_TAG_KEY] = code_version

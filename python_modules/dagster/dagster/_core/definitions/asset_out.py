@@ -26,6 +26,7 @@ class AssetOut(
             ("is_required", PublicAttr[bool]),
             ("dagster_type", PublicAttr[Union[DagsterType, Type[NoValueSentinel]]]),
             ("group_name", PublicAttr[Optional[str]]),
+            ("code_version", PublicAttr[Optional[str]]),
         ],
     )
 ):
@@ -52,6 +53,7 @@ class AssetOut(
             into the table.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If
             not provided, the name "default" is used.
+        code_version (Optional[str]): The version of the code that generates this asset.
     """
 
     def __new__(
@@ -64,6 +66,7 @@ class AssetOut(
         io_manager_key: Optional[str] = None,
         metadata: Optional[MetadataUserInput] = None,
         group_name: Optional[str] = None,
+        code_version: Optional[str] = None,
     ):
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
@@ -82,6 +85,7 @@ class AssetOut(
             ),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
             group_name=check.opt_str_param(group_name, "group_name"),
+            code_version=check.opt_str_param(code_version, "code_version"),
         )
 
     def to_out(self) -> Out:
@@ -91,4 +95,5 @@ class AssetOut(
             metadata=self.metadata,
             is_required=self.is_required,
             io_manager_key=self.io_manager_key,
+            code_version=self.code_version,
         )

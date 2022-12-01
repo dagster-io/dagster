@@ -486,7 +486,7 @@ class ProjectedLogicalVersionLoader:
                 )
             else:
                 version = DEFAULT_LOGICAL_VERSION
-        elif node.op_version is not None:
+        elif node.code_version is not None:
             version = self._compute_projected_new_materialization_logical_version(node)
         else:
             materialization = self._instance.get_latest_materialization_event(key)
@@ -519,7 +519,7 @@ class ProjectedLogicalVersionLoader:
     ) -> LogicalVersion:
         dep_keys = {dep.upstream_asset_key for dep in node.dependencies}
         return compute_logical_version(
-            node.op_version or UNKNOWN_VALUE,
+            node.code_version or UNKNOWN_VALUE,
             {dep_key: self._get_version(key=dep_key) for dep_key in dep_keys},
         )
 
