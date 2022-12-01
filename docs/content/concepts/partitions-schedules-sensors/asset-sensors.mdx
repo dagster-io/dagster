@@ -206,23 +206,24 @@ You can create this sensor using the <PyObject object="build_asset_reconciliatio
 @repository
 def repository_1():
     return [
-        asset_a,
-        asset_b,
-        asset_c,
+        asset1,
+        asset2,
+        asset3,
+        asset4,
         build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(asset_b, asset_c),
+            asset_selection=AssetSelection.assets(asset1, asset3, asset4),
             name="asset_reconciliation_sensor",
         ),
     ]
 ```
 
-This sensor will materialize `asset_b` whenever any of its parents materialize, and it will materialize `asset_c` whenever any of its parents materialize.
+This sensor will materialize each selected asset `asset1`, `asset3`, and `asset4` whenever any of its parents materialize.
 
 ### With partitioned assets
 
-The asset reconciliation sensor automatically materializes any "unreconciled" partitions, following the same conditions for reconciliation as un-partitioned assets. When upstream partitions have not been materialized for a given partition, the asset reconciliation sensor will not trigger a materialization.
+The asset reconciliation sensor automatically materializes any "unreconciled" partitions, following the same conditions for reconciliation as un-partitioned assets. When all upstream partition dependencies are materialized for a given partition, the asset reconciliation sensor will trigger materializations for any downstream asset partitions. Upstream partition materializations thereafter will trigger materializations downstream for all dependencies.
 
-In the following asset graph, each asset has partitions `["a", "b", "c"]`. Say that `asset1`, `asset3`, and `asset4` are selected in the asset reconciliation sensor, and are currently unreconciled:
+In the following asset graph, each asset has partitions `[a, b, c]`. Say that `asset1`, `asset3`, and `asset4` are selected in the asset reconciliation sensor, and are currently unreconciled:
 
 <Image
 alt="Partitioned asset graph"
