@@ -1,13 +1,21 @@
 ---
-title: Hello Dagster | Dagster
+title: Hello Dagster | Dagster Docs
 description: Run dagster for the first time
 ---
 
 # Hello Dagster
 
-This guide helps you build a simple data pipeline in dagster that downloads the top 10 HackerNews stories. In less than 5 minutes you will be able to develop functional code and explore dagster's user interface.
+Welcome to Dagster! In this guide, you'll build a simple data pipeline in Dagster that downloads the top 10 HackerNews stories. In three quick steps, you'll have functional code and begin exploring Dagster's user interface.
 
-Start by creating a file called `hello-dagster.py` and copying the following:
+**Note**: Before you dive in, make sure you have [Python 3.7+ installed](https://www.python.org/).
+
+Let's get started!
+
+---
+
+## Step 1: Create hello-dagster.py
+
+Create a file named `hello-dagster.py` that contains the following code:
 
 ```python file=/getting-started/hello-dagster/hello-dagster.py
 import pandas as pd
@@ -56,21 +64,42 @@ def hello_dagster():
     return [hackernews_top_story_ids, hackernews_top_stories]
 ```
 
-Install the Python packages you'll need to run `hello-dagster.py` in your favorite Python environment. Unsure? Follow our [installation guide](/getting-started/install).
+---
+
+## Step 2: Install Python packages
+
+Next, install the Python packages you'll need to run your code in your favorite Python environment:
 
 ```bash
 # run in a terminal in your favorite python environment
 pip install dagster dagit pandas
 ```
 
-Next, run `dagit` in your terminal in the same directory as `hello-dagster.py`. This command starts Dagster's user interface.
+Unsure? Check out the [installation guide](/getting-started/install).
 
-```bash
-# run in a terminal in your favorite python environment
-dagit -f hello-dagster.py
-```
+---
 
-In your browser, navigate to [http://localhost:3000/](http://localhost:3000). Click **Materialize All** to run the pipeline and create your assets.
+## Step 3: Start Dagit and materialize assets
+
+1. In the same directory as `hello-dagster.py`, run `dagit`. This command starts Dagster's user interface:
+
+   ```bash
+   # run in a terminal in your favorite python environment
+   dagit -f hello-dagster.py
+   ```
+
+2. In your browser, navigate to [http://localhost:3000/](http://localhost:3000).
+
+3. Click **Materialize All** to run the pipeline and create your assets:
+
+   <Image
+   alt="HackerNews assets in Dagit's Asset Graph, unmaterialized"
+   src="/images/getting-started/hello-dagster/hello-dagster-unmaterialized.png"
+   width={1000}
+   height={816}
+   />
+
+That's it! You now have two materialized Dagster assets:
 
 <Image
 alt="HackerNews asset graph"
@@ -79,24 +108,23 @@ width={1331}
 height={874}
 />
 
-That's it! You now have two materialized Dagster assets.
+But wait - there's more. Because the `hackernews_top_stories` asset specified `metadata`, you can view the metadata right in Dagit:
 
-But wait - there's more. Because the `hackernews_top_stories` asset specified `metadata`, you can view the metadata right in Dagit.
+1. Click the asset.
+2. In the sidebar that displays, click the **Show Markdown** link in the **Materialization in Last Run** section. This opens a preview of the pipeline result, allowing you to view the top 10 HackerNews stories:
 
-Click the asset. In the sidebar that displays, click the **Show Markdown** link in the **Materialization in Last Run** section. This opens a preview of the pipeline result, allowing you to view the top 10 HackerNews stories:
-
-<Image
-alt="HackerNews Preview"
-src="/images/getting-started/hello-dagster/hn-preview.png"
-width={1331}
-height={874}
-/>
+   <Image
+   alt="Markdown preview of HackerNews top 10 stories"
+   src="/images/getting-started/hello-dagster/hn-preview.png"
+   width={2396}
+   height={1956}
+   />
 
 ---
 
 ## Next steps
 
-This example uses [assets](/tutorial#assets). Most new Dagster projects use assets because they let data engineers:
+Congrats on your first Dagster pipeline! This example used [assets](/tutorial#assets), which most Dagster projects utilize because they let data engineers:
 
 - Think in the same terms as stakeholders
 - Answer questions about data quality and lineage
