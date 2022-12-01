@@ -174,11 +174,14 @@ def flowers_analysis_repository():
     )
 ```
 
-In this example, we create a `SourceAsset` for a pre-existing table containing data about iris harvests (perhaps this table is created by an external data ingestion tool). In order to make the data available to other Dagster assets we need to tell the Snowflake I/O manager how to find the data. Since we are supplying the database and the schema in the I/O manager configuration, we only need to provide the table name. We do this with the `key` parameter in `SourceAsset`. When the I/O manager needs to load the `iris_harvest_data` in a downstream asset, it will select the data in the `FLOWERS.IRIS.IRIS_HARVEST_DATA` table as a Pandas DataFrame and provide it to the downstream asset.
+In this example, we create a <PyObject object="SourceAsset" /> for a pre-existing table - perhaps created by an external data ingestion tool - that contains data about iris harvests. To make the data available to other Dagster assets, we need to tell the Snowflake I/O manager how to find the data.
+
+Because we are supplying the database and the schema in the I/O manager configuration, we only need to provide the table name. We do this with the `key` parameter in `SourceAsset`. When the I/O manager needs to load the `iris_harvest_data` in a downstream asset, it will select the data in the `FLOWERS.IRIS.IRIS_HARVEST_DATA` table as a Pandas DataFrame and provide it to the downstream asset.
 
 </TabItem>
-
 </TabGroup>
+
+---
 
 ## Step 3: Load Snowflake tables in downstream assets
 
