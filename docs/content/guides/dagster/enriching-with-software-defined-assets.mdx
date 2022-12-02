@@ -181,7 +181,7 @@ The goal of each op in the job is to produce an asset. However, because the job 
 ```python file=/guides/dagster/enriching_with_software_defined_assets/vanilla_io_manager.py
 from pandas import DataFrame
 
-from dagster import In, Out, job, op, Definitions
+from dagster import Definitions, In, Out, job, op
 
 from .mylib import s3_io_manager, snowflake_io_manager, train_recommender_model
 
@@ -219,7 +219,7 @@ Here's what an equivalent job looks like using software-defined assets:
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_io_manager.py
 from pandas import DataFrame
 
-from dagster import SourceAsset, asset, define_asset_job, Definitions
+from dagster import Definitions, SourceAsset, asset, define_asset_job
 
 from .mylib import s3_io_manager, snowflake_io_manager, train_recommender_model
 
@@ -264,7 +264,7 @@ This example does the same things as the [previous example](#materialize-two-int
 ```python file=/guides/dagster/enriching_with_software_defined_assets/vanilla_nothing.py
 from pandas import read_sql
 
-from dagster import In, Nothing, job, op, Definitions
+from dagster import Definitions, In, Nothing, job, op
 
 from .mylib import create_db_connection, pickle_to_s3, train_recommender_model
 
@@ -301,7 +301,7 @@ Here's an example of an equivalent job that uses software-defined assets:
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_nothing.py
 from pandas import read_sql
 
-from dagster import asset, define_asset_job, Definitions
+from dagster import Definitions, asset, define_asset_job
 
 from .mylib import create_db_connection, pickle_to_s3, train_recommender_model
 
@@ -342,7 +342,7 @@ This example demonstrates a job where some of the ops (`extract_products` and `g
 ```python file=/guides/dagster/enriching_with_software_defined_assets/vanilla_graph.py
 from pandas import DataFrame
 
-from dagster import job, op, Definitions
+from dagster import Definitions, job, op
 
 from .mylib import create_db_connection, fetch_products
 
@@ -389,7 +389,7 @@ Here's an equivalent job using software-defined assets.
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_graph.py
 from pandas import DataFrame
 
-from dagster import AssetsDefinition, GraphOut, define_asset_job, graph, op, Definitions
+from dagster import AssetsDefinition, Definitions, GraphOut, define_asset_job, graph, op
 
 from .mylib import create_db_connection, fetch_products
 
