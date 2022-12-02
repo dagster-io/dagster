@@ -21,7 +21,7 @@ from .output import DynamicOutputDefinition
 if TYPE_CHECKING:
     from ..execution.context.invocation import BoundOpExecutionContext, UnboundOpExecutionContext
     from .composition import PendingNodeInvocation
-    from .decorators.solid_decorator import DecoratedSolidFunction
+    from .decorators.solid_decorator import DecoratedOpFunction
     from .op_definition import OpDefinition
     from .output import OutputDefinition
 
@@ -32,7 +32,7 @@ def op_invocation_result(
     *args,
     **kwargs,
 ) -> Any:
-    from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
+    from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
     from dagster._core.execution.context.invocation import build_solid_context
 
     from .composition import PendingNodeInvocation
@@ -50,10 +50,10 @@ def op_invocation_result(
     input_dict = _resolve_inputs(op_def, args, kwargs, bound_context)
 
     compute_fn = op_def.compute_fn
-    if not isinstance(compute_fn, DecoratedSolidFunction):
+    if not isinstance(compute_fn, DecoratedOpFunction):
         check.failed("solid invocation only works with decorated solid fns")
 
-    compute_fn = cast(DecoratedSolidFunction, compute_fn)
+    compute_fn = cast(DecoratedOpFunction, compute_fn)
     result = (
         compute_fn.decorated_fn(bound_context, **input_dict)
         if compute_fn.has_context_arg()

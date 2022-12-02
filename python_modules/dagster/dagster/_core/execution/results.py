@@ -125,7 +125,7 @@ class GraphExecutionResult:
                     if event.solid_handle.is_or_descends_from(handle.with_ancestor(self.handle)):
                         events_by_kind[event.step_kind].append(event)
 
-            return SolidExecutionResult(
+            return OpExecutionResult(
                 solid,
                 events_by_kind,
                 self.reconstruct_context,
@@ -284,7 +284,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
         ).output_value(output_mapping.maps_from.output_name)
 
 
-class SolidExecutionResult:
+class OpExecutionResult:
     """Execution result for a leaf solid in a pipeline.
 
     Users should not instantiate this class.

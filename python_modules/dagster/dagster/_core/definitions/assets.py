@@ -197,7 +197,7 @@ class AssetsDefinition(ResourceAddable):
         )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
-        from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
+        from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
         from dagster._core.execution.context.compute import OpExecutionContext
 
         from .graph_definition import GraphDefinition
@@ -211,7 +211,7 @@ class AssetsDefinition(ResourceAddable):
             new_args = [provided_context, *args[1:]]
             return solid_def(*new_args, **kwargs)
         elif (
-            isinstance(solid_def.compute_fn, DecoratedSolidFunction)
+            isinstance(solid_def.compute_fn, DecoratedOpFunction)
             and solid_def.compute_fn.has_context_arg()
         ):
             context_param_name = get_function_params(solid_def.compute_fn.decorated_fn)[0].name

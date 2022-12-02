@@ -22,7 +22,7 @@ from dagster._core.definitions.run_config import (
     RunConfigSchemaCreationData,
     define_solid_dictionary_cls,
 )
-from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig, SolidConfig
+from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig, OpConfig
 from dagster._loggers import default_loggers
 
 
@@ -146,8 +146,8 @@ def test_solid_dictionary_type():
 
     assert set(["int_config_op", "string_config_op"]) == set(value.keys())
     assert value == {
-        "int_config_op": SolidConfig.from_dict({"config": 1}),
-        "string_config_op": SolidConfig.from_dict({"config": "bar"}),
+        "int_config_op": OpConfig.from_dict({"config": 1}),
+        "string_config_op": OpConfig.from_dict({"config": "bar"}),
     }
 
 
@@ -222,8 +222,8 @@ def test_solid_dictionary_some_no_config():
 
     assert {"int_config_op", "no_config_op"} == set(env.solids.keys())
     assert env.solids == {
-        "int_config_op": SolidConfig.from_dict({"config": 1}),
-        "no_config_op": SolidConfig.from_dict({}),
+        "int_config_op": OpConfig.from_dict({"config": 1}),
+        "no_config_op": OpConfig.from_dict({}),
     }
 
 
@@ -262,8 +262,8 @@ def test_whole_environment():
 
     assert isinstance(env, ResolvedRunConfig)
     assert env.solids == {
-        "int_config_op": SolidConfig.from_dict({"config": 123}),
-        "no_config_op": SolidConfig.from_dict({}),
+        "int_config_op": OpConfig.from_dict({"config": 123}),
+        "no_config_op": OpConfig.from_dict({}),
     }
     assert env.resources == {
         "test_resource": ResourceConfig(1),

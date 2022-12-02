@@ -26,7 +26,7 @@ from dagster._core.definitions import (
     OutputDefinition,
     TypeCheck,
 )
-from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
+from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
 from dagster._core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster._core.definitions.logical_version import (
     CODE_VERSION_TAG_KEY,
@@ -369,7 +369,7 @@ def core_dagster_event_sequence_for_step(
     # was generated from the @solid or @lambda_solid decorator, then compute_fn needs to be coerced
     # into this format. If the solid definition was created directly, then it is expected that the
     # compute_fn is already in this format.
-    if isinstance(step_context.solid_def.compute_fn, DecoratedSolidFunction):
+    if isinstance(step_context.solid_def.compute_fn, DecoratedOpFunction):
         core_gen = create_solid_compute_wrapper(step_context.solid_def)
     else:
         core_gen = step_context.solid_def.compute_fn

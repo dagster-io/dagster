@@ -10,7 +10,7 @@ from ..input import In
 from ..output import Out
 from ..policy import RetryPolicy
 from ..utils import DEFAULT_OUTPUT
-from .solid_decorator import DecoratedSolidFunction, NoContextDecoratedSolidFunction
+from .solid_decorator import DecoratedOpFunction, NoContextDecoratedOpFunction
 
 if TYPE_CHECKING:
     from ..op_definition import OpDefinition
@@ -56,9 +56,9 @@ class _Op:
             self.name = fn.__name__
 
         compute_fn = (
-            DecoratedSolidFunction(decorated_fn=fn)
+            DecoratedOpFunction(decorated_fn=fn)
             if self.decorator_takes_context
-            else NoContextDecoratedSolidFunction(decorated_fn=fn)
+            else NoContextDecoratedOpFunction(decorated_fn=fn)
         )
 
         outs: Optional[Mapping[str, Out]] = None

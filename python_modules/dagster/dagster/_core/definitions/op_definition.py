@@ -48,7 +48,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.asset_layer import AssetLayer
 
     from .composition import PendingNodeInvocation
-    from .decorators.solid_decorator import DecoratedSolidFunction
+    from .decorators.solid_decorator import DecoratedOpFunction
 
 OpComputeFunction: TypeAlias = Callable[..., Any]
 
@@ -105,7 +105,7 @@ class OpDefinition(NodeDefinition):
             )
     """
 
-    _compute_fn: Union[Callable[..., Any], "DecoratedSolidFunction"]
+    _compute_fn: Union[Callable[..., Any], "DecoratedOpFunction"]
     _config_schema: IDefinitionConfigSchema
     _required_resource_keys: AbstractSet[str]
     _version: Optional[str]
@@ -113,7 +113,7 @@ class OpDefinition(NodeDefinition):
 
     def __init__(
         self,
-        compute_fn: Union[Callable[..., Any], "DecoratedSolidFunction"],
+        compute_fn: Union[Callable[..., Any], "DecoratedOpFunction"],
         name: str,
         ins: Optional[Mapping[str, In]] = None,
         outs: Optional[Mapping[str, Out]] = None,
@@ -126,7 +126,7 @@ class OpDefinition(NodeDefinition):
         code_version: Optional[str] = None,
     ):
         from .decorators.solid_decorator import (
-            DecoratedSolidFunction,
+            DecoratedOpFunction,
             resolve_checked_solid_fn_inputs,
         )
 
@@ -135,11 +135,11 @@ class OpDefinition(NodeDefinition):
             inp.to_definition(name) for name, inp in sorted(ins.items(), key=lambda input: input[0])
         ]  # sort so that input definition order is deterministic
 
-        if isinstance(compute_fn, DecoratedSolidFunction):
+        if isinstance(compute_fn, DecoratedOpFunction):
             resolved_input_defs: Sequence[InputDefinition] = resolve_checked_solid_fn_inputs(
                 decorator_name="@op",
                 fn_name=name,
-                compute_fn=cast(DecoratedSolidFunction, compute_fn),
+                compute_fn=cast(DecoratedOpFunction, compute_fn),
                 explicit_input_defs=input_defs,
                 exclude_nothing=True,
             )
@@ -166,7 +166,7 @@ class OpDefinition(NodeDefinition):
 
         positional_inputs = (
             self._compute_fn.positional_inputs()
-            if isinstance(self._compute_fn, DecoratedSolidFunction)
+            if isinstance(self._compute_fn, DecoratedOpFunction)
             else None
         )
 
@@ -203,7 +203,7 @@ class OpDefinition(NodeDefinition):
         return {output_def.name: Out.from_definition(output_def) for output_def in self.output_defs}
 
     @property
-    def compute_fn(self) -> Union[Callable[..., Any], "DecoratedSolidFunction"]:
+    def compute_fn(self) -> Union[Callable[..., Any], "DecoratedOpFunction"]:
         return self._compute_fn
 
     @public  # type: ignore
@@ -249,9 +249,9 @@ class OpDefinition(NodeDefinition):
         return super(OpDefinition, self).with_retry_policy(retry_policy)
 
     def is_from_decorator(self) -> bool:
-        from .decorators.solid_decorator import DecoratedSolidFunction
+        from .decorators.solid_decorator import DecoratedOpFunction
 
-        return isinstance(self._compute_fn, DecoratedSolidFunction)
+        return isinstance(self._compute_fn, DecoratedOpFunction)
 
     def get_output_annotation(self) -> Any:
         if not self.is_from_decorator():
@@ -384,14 +384,14 @@ class OpDefinition(NodeDefinition):
     def __call__(self, *args, **kwargs) -> Any:
         from ..execution.context.invocation import UnboundOpExecutionContext
         from .composition import is_in_composition
-        from .decorators.solid_decorator import DecoratedSolidFunction
+        from .decorators.solid_decorator import DecoratedOpFunction
 
         if is_in_composition():
             return super(OpDefinition, self).__call__(*args, **kwargs)
         else:
             node_label = self.node_type_str  # string "solid" for solids, "op" for ops
 
-            if not isinstance(self.compute_fn, DecoratedSolidFunction):
+            if not isinstance(self.compute_fn, DecoratedOpFunction):
                 raise DagsterInvalidInvocationError(
                     f"Attemped to invoke {node_label} that was not constructed using the `@{node_label}` "
                     f"decorator. Only {node_label}s constructed using the `@{node_label}` decorator can be "
@@ -438,15 +438,15 @@ class OpDefinition(NodeDefinition):
 
 
 def _resolve_output_defs_from_outs(
-    compute_fn: Union[Callable[..., Any], "DecoratedSolidFunction"],
+    compute_fn: Union[Callable[..., Any], "DecoratedOpFunction"],
     outs: Optional[Mapping[str, Out]],
     default_code_version: Optional[str],
 ) -> Sequence[OutputDefinition]:
-    from .decorators.solid_decorator import DecoratedSolidFunction
+    from .decorators.solid_decorator import DecoratedOpFunction
 
-    if isinstance(compute_fn, DecoratedSolidFunction):
+    if isinstance(compute_fn, DecoratedOpFunction):
         inferred_output_props = infer_output_props(
-            cast(DecoratedSolidFunction, compute_fn).decorated_fn
+            cast(DecoratedOpFunction, compute_fn).decorated_fn
         )
         annotation = inferred_output_props.annotation
         description = inferred_output_props.description

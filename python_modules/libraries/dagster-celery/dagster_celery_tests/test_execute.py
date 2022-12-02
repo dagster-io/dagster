@@ -14,7 +14,7 @@ from dagster._core.events import DagsterEventType
 from dagster._legacy import (
     CompositeSolidExecutionResult,
     PipelineExecutionResult,
-    SolidExecutionResult,
+    OpExecutionResult,
     execute_pipeline,
     execute_pipeline_iterator,
 )
@@ -87,7 +87,7 @@ def test_execute_composite_pipeline_on_celery(dagster_celery_worker):
             composite_solid_results = next_level
         assert len(composite_solid_results) == pow(2, COMPOSITE_DEPTH + 1)
         assert all(
-            (isinstance(r, SolidExecutionResult) and r.success for r in composite_solid_results)
+            (isinstance(r, OpExecutionResult) and r.success for r in composite_solid_results)
         )
 
 
@@ -245,7 +245,7 @@ def test_execute_eagerly_composite_pipeline_on_celery():
             composite_solid_results = next_level
         assert len(composite_solid_results) == pow(2, COMPOSITE_DEPTH + 1)
         assert all(
-            (isinstance(r, SolidExecutionResult) and r.success for r in composite_solid_results)
+            (isinstance(r, OpExecutionResult) and r.success for r in composite_solid_results)
         )
 
 

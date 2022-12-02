@@ -11,7 +11,7 @@ from dagster._core.definitions import (
     PresetDefinition,
     ScheduleExecutionContext,
     SensorExecutionContext,
-    SolidInvocation,
+    NodeInvocation,
     build_assets_job,
     daily_schedule,
     default_executors,
@@ -34,7 +34,7 @@ from dagster._core.execution.context.invocation import build_solid_context
 from dagster._core.execution.results import (
     CompositeSolidExecutionResult,
     PipelineExecutionResult,
-    SolidExecutionResult,
+    OpExecutionResult,
 )
 from dagster._core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus

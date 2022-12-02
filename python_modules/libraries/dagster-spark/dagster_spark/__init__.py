@@ -3,7 +3,7 @@ from dagster._core.utils import check_dagster_package_version
 from .configs import define_spark_config
 from .ops import create_spark_op
 from .resources import spark_resource
-from .types import SparkOpError, SparkSolidError
+from .types import SparkOpError, SparkOpError
 from .utils import construct_spark_shell_command
 from .version import __version__
 
