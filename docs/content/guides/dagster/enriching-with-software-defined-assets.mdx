@@ -104,10 +104,8 @@ Generally, every op output in a job that corresponds to a long-lived object in s
 
 ### Materialize two interdependent tables
 
-- [Without software-defined-assets](#without-software-defined-assets)
-- [With software-defined assets](#with-software-defined-assets)
-
-#### Without software-defined assets
+<TabGroup>
+<TabItem name="Without software-defined assets">
 
 This example is a vanilla, op-based job that follows the idiomatic practice of delegating all I/O to I/O managers and root input managers.
 
@@ -146,7 +144,8 @@ def repo():
     return [users_recommender_job]
 ```
 
-#### With software-defined assets
+</TabItem>
+<TabItem name="With software-defined assets">
 
 Here's what an equivalent job looks like using software-defined assets:
 
@@ -186,12 +185,13 @@ def repo():
     ]
 ```
 
+</TabItem>
+</TabGroup>
+
 ### Materialize two interdependent tables without an I/O manager
 
-- [Without software-defined-assets](#without-software-defined-assets-1)
-- [With software-defined assets](#with-software-defined-assets-1)
-
-#### Without software-defined assets
+<TabGroup>
+<TabItem name="Without software-defined assets">
 
 This example does the same things as the [previous example](#materialize-two-interdependent-tables), with one difference. This job performs I/O inside of the ops instead of delegating it to I/O managers and root input managers:
 
@@ -227,6 +227,9 @@ def repo():
     return [users_recommender_job]
 ```
 
+</TabItem>
+<TabItem name="With software-defined assets">
+
 #### With software-defined assets
 
 Here's an example of an equivalent job that uses software-defined assets:
@@ -258,12 +261,13 @@ def repo():
     return [users, user_recommender_model, define_asset_job("users_recommender_job")]
 ```
 
+</TabItem>
+</TabGroup>
+
 ### Not all ops produce assets
 
-- [Without software-defined-assets](#without-software-defined-assets-2)
-- [With software-defined assets](#with-software-defined-assets-2)
-
-#### Without software-defined assets
+<TabGroup>
+<TabItem name="Without software-defined assets">
 
 This example demonstrates a job where some of the ops (`extract_products` and `get_categories`) don't produce assets of their own. Instead, they produce transient data that downstream ops will use to produce assets:
 
@@ -307,7 +311,8 @@ def repo():
     return [ingest_products_and_categories]
 ```
 
-#### With software-defined assets
+</TabItem>
+<TabItem name="With software-defined assets">
 
 Here's an equivalent job using software-defined assets. Note: Because some ops don't correspond to assets, this job uses `@op` and `@graph` APIs and `from_graph` to wrap a graph in a software-defined asset:
 
@@ -353,6 +358,9 @@ two_tables = AssetsDefinition.from_graph(ingest_graph)
 def repo():
     return [two_tables, define_asset_job("products_and_categories_job")]
 ```
+
+</TabItem>
+</TabGroup>
 
 ---
 
