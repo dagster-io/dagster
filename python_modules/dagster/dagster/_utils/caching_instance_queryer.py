@@ -119,6 +119,15 @@ class CachingInstanceQueryer:
         )
         return next(iter(records), None)
 
+    @cached_method
+    def get_expected_runtime(self, asset_key: AssetKey) -> Optional[float]:
+        latest_record = self.get_latest_materialization_record(asset_key)
+        # this asset has never been executed before
+        if latest_record is None:
+            return None
+
+        pass
+
     def get_latest_materialization_record(
         self,
         asset: Union[AssetKey, AssetKeyPartitionKey],
