@@ -74,13 +74,13 @@ def core_execute_in_process(
                 raise_on_error=raise_on_error,
             ),
         )
-
         event_list = list(execute_run_iterable)
+        pipeline_run = execute_instance.get_run_by_id(run_id)
 
     return ExecuteInProcessResult(
         job_def=ephemeral_pipeline,
         event_list=event_list,
-        dagster_run=cast(DagsterRun, execute_instance.get_run_by_id(run_id)),
+        dagster_run=cast(DagsterRun, pipeline_run),
         output_capture=output_capture,
     )
 
