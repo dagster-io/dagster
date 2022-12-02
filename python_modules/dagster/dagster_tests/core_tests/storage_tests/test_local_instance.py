@@ -245,8 +245,9 @@ def test_run_step_stats_with_retries():
 
 def test_threaded_ephemeral_instance(caplog):
     def _instantiate_ephemeral_instance():
-        with DagsterInstance.ephemeral():
-            pass
+        with DagsterInstance.ephemeral() as instance:
+            instance.get_runs_count()  # call run storage
+            instance.all_asset_keys()  # call event log storage
 
     with ThreadPoolExecutor(max_workers=2, thread_name_prefix="ephemeral_worker") as executor:
         executor.submit(_instantiate_ephemeral_instance)
