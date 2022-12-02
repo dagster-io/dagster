@@ -41,7 +41,6 @@ from ..implementation.fetch_assets import (
     get_materialization_cts_by_partition,
     get_materialization_cts_grouped_by_dimension,
 )
-from ..implementation.fetch_runs import AssetComputeStatus
 from ..implementation.loader import (
     BatchMaterializationLoader,
     CrossRepoAssetDependedByLoader,
@@ -114,7 +113,6 @@ class GrapheneAssetDependency(graphene.ObjectType):
 class GrapheneAssetLatestInfo(graphene.ObjectType):
     assetKey = graphene.NonNull(GrapheneAssetKey)
     latestMaterialization = graphene.Field(GrapheneMaterializationEvent)
-    computeStatus = graphene.NonNull(graphene.Enum.from_enum(AssetComputeStatus))
     unstartedRunIds = non_null_list(graphene.String)
     inProgressRunIds = non_null_list(graphene.String)
     latestRun = graphene.Field(GrapheneRun)
@@ -169,6 +167,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     groupName = graphene.String()
     id = graphene.NonNull(graphene.ID)
     isObservable = graphene.NonNull(graphene.Boolean)
+    isPartitioned = graphene.NonNull(graphene.Boolean)
     isSource = graphene.NonNull(graphene.Boolean)
     jobNames = non_null_list(graphene.String)
     jobs = non_null_list(GraphenePipeline)
@@ -236,7 +235,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             assetKey=external_asset_node.asset_key,
             description=external_asset_node.op_description,
             opName=external_asset_node.op_name,
-            opVersion=external_asset_node.op_version,
+            opVersion=external_asset_node.code_version,
             groupName=external_asset_node.group_name,
         )
 
@@ -546,6 +545,9 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_isSource(self, _graphene_info) -> bool:
         return self.is_source_asset()
+
+    def resolve_isPartitioned(self, _graphene_info) -> bool:
+        return self._external_asset_node.partitions_def_data is not None
 
     def resolve_isObservable(self, _graphene_info) -> bool:
         return self._external_asset_node.is_observable

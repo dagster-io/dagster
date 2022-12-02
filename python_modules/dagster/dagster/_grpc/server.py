@@ -60,6 +60,7 @@ from .types import (
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
     GetCurrentImageResult,
+    GetCurrentRunsResult,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
     PartitionArgs,
@@ -221,7 +222,7 @@ class DagsterApiServer(DagsterApiServicer):
         self._serializable_load_error = None
 
         self._entry_point = (
-            frozenlist(check.list_param(entry_point, "entry_point", of_type=str))
+            frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))  # type: ignore
             if entry_point != None
             else DEFAULT_DAGSTER_ENTRY_POINT
         )
@@ -777,6 +778,16 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
         )
+
+    def GetCurrentRuns(self, request, context):
+        with self._execution_lock:
+            return api_pb2.GetCurrentRunsReply(
+                serialized_current_runs=serialize_dagster_namedtuple(
+                    GetCurrentRunsResult(
+                        current_runs=list(self._executions.keys()), serializable_error_info=None
+                    )
+                )
+            )
 
 
 @whitelist_for_serdes

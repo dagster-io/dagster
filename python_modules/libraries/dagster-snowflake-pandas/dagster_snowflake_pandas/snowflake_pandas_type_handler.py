@@ -144,7 +144,7 @@ def snowflake_pandas_io_manager():
 
         .. code-block:: python
 
-            from dagster_snowflake_pandas import build_snowflake_pandas_io_manager()
+            from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
             @asset(
                 key_prefix=["my_schema"]  # will be used as the schema in snowflake
@@ -152,13 +152,11 @@ def snowflake_pandas_io_manager():
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            snowflake_io_manager = build_snowflake_pandas_io_manager()
-
             @repository
             def my_repo():
                 return with_resources(
                     [my_table],
-                    {"io_manager": snowflake_io_manager.configured({
+                    {"io_manager": snowflake_pandas_io_manager.configured({
                         "database": "my_database",
                         "account" : {"env": "SNOWFLAKE_ACCOUNT"}
                         ...

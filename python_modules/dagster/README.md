@@ -96,6 +96,7 @@ our [Dagster Community](https://dagster.io/community) page.
 Join our community here:
 
 - 🌟 [Star us on Github](https://github.com/dagster-io/dagster)
+- 📥 [Subscribe to our Newsletter](https://dagster.io/newsletter-signup)
 - 🐦 [Follow us on Twitter](https://twitter.com/dagster)
 - 📺 [Subscribe to our YouTube channel](https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q)
 - 📚 [Read our blog posts](https://dagster.io/blog)

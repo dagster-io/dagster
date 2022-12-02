@@ -1,8 +1,74 @@
 # Changelog
 
-# 1.1.0 (core) / 0.17.0 (libraries)
+# 1.1.5 (core) / 0.17.5 (libraries)
 
-## Major Changes since 1.0.0 (core) / 0.17.0 (libraries)
+### Bugfixes
+
+- [dagit] Fixed an issue where the Partitions tab sometimes failed to load for asset jobs.
+
+# 1.1.4 (core) / 0.17.4 (libraries)
+
+### Community Contributions
+
+- Fixed a typo in GCSComputeLogManager docstring (thanks [reidab](https://github.com/reidab))!
+- [dagster-airbyte] job cancellation on run termination is now optional. (Thanks [adam-bloom](https://github.com/adam-bloom))!
+- [dagster-snowflake] Can now specify snowflake role in config to snowflake io manager (Thanks [binhnefits](https://github.com/binhnefits))!
+- [dagster-aws] A new AWS systems manager resource (thanks [zyd14](https://github.com/zyd14))!
+- [dagstermill] Retry policy can now be set on dagstermill assets (thanks [nickvazz](https://github.com/nickvazz))!
+- Corrected typo in docs on metadata (thanks [C0DK](https://github.com/C0dk))!
+
+### New
+
+- Added a `job_name` parameter to `InputContext`
+- Fixed inconsistent io manager behavior when using `execute_in_process` on a `GraphDefinition` (it would use the `fs_io_manager` instead of the in-memory io manager)
+- Compute logs will now load in Dagit even when websocket connections are not supported.
+- [dagit] A handful of changes have been made to our URLs:
+    - The `/instance` URL path prefix has been removed. E.g. `/instance/runs` can now be found at `/runs`.
+    - The `/workspace` URL path prefix has been changed to `/locations`. E.g. the URL for job `my_job` in repository `foo@bar` can now be found at `/locations/foo@bar/jobs/my_job`.
+- [dagit] The “Workspace” navigation item in the top nav has been moved to be a tab under the “Deployment” section of the app, and is renamed to “Definitions”.
+- [dagstermill] Dagster events can now be yielded from asset notebooks using `dagstermill.yield_event`.
+- [dagstermill] Failed notebooks can be saved for inspection and debugging using the new `save_on_notebook_failure` parameter.
+- [dagster-airflow] Added a new option `use_ephemeral_airflow_db` which will create a job run scoped airflow db for airflow dags running in dagster
+- [dagster-dbt] Materializing software-defined assets using dbt Cloud jobs now supports partitions.
+- [dagster-dbt] Materializing software-defined assets using dbt Cloud jobs now supports subsetting. Individual dbt Cloud models can be materialized, and the proper filters will be passed down to the dbt Cloud job.
+- [dagster-dbt] Software-defined assets from dbt Cloud jobs now support configurable group names.
+- [dagster-dbt] Software-defined assets from dbt Cloud jobs now support configurable `AssetKey`s.
+
+### Bugfixes
+
+- Fixed regression starting in `1.0.16` for some compute log managers where an exception in the compute log manager setup/teardown would cause runs to fail.
+- The S3 / GCS / Azure compute log managers now sanitize the optional `prefix` argument to prevent badly constructed paths.
+- [dagit] The run filter typeahead no longer surfaces key-value pairs when searching for `tag:`. This resolves an issue where retrieving the available tags could cause significant performance problems. Tags can still be searched with freeform text, and by adding them via click on individual run rows.
+- [dagit] Fixed an issue in the Runs tab for job snapshots, where the query would fail and no runs were shown.
+- [dagit] Schedules defined with cron unions displayed “Invalid cron string” in Dagit. This has been resolved, and human-readable versions of all members of the union will now be shown.
+### Breaking Changes
+
+- You can no longer set an output’s asset key by overriding `get_output_asset_key` on the `IOManager` handling the output. Previously, this was experimental and undocumented.
+
+### Experimental
+
+- Sensor and schedule evaluation contexts now have an experimental `log` property, which log events that can later be viewed in Dagit.  To enable these log views in dagit, navigate to the user settings and enable the `Experimental schedule/sensor logging view` option.  Log links will now be available for sensor/schedule ticks where logs were emitted.  Note: this feature is not available for users using the `NoOpComputeLogManager`.
+
+# 1.1.3 (core) / 0.17.3 (libraries)
+
+### Bugfixes
+
+- Fixed a bug with the asset reconciliation sensor that caused duplicate runs to be submitted in situations where an asset has a different partitioning than its parents.
+- Fixed a bug with the asset reconciliation sensor that caused it to error on time-partitioned assets.
+- [dagster-snowflake] Fixed a bug when materializing partitions with the Snowflake I/O manager where sql `BETWEEN` was used to determine the section of the table to replace. `BETWEEN` included values from the next partition causing the I/O manager to erroneously delete those entries.
+- [dagster-duckdb] Fixed a bug when materializing partitions with the DuckDB I/O manager where sql `BETWEEN` was used to determine the section of the table to replace. `BETWEEN` included values from the next partition causing the I/O manager to erroneously delete those entries.
+
+# 1.1.2 (core) / 0.17.2 (libraries)
+
+### Bugfixes
+
+- In Dagit, assets that had been materialized prior to upgrading to 1.1.1 were showing as "Stale". This is now fixed.
+- Schedules that were constructed with a list of cron strings previously rendered with an error in Dagit. This is now fixed.
+- For users running dagit version >= 1.0.17 (or dagster-cloud) with dagster version < 1.0.17, errors could occur when hitting "Materialize All" and some other asset-related interactions. This has been fixed.
+
+# 1.1.1 (core) / 0.17.1 (libraries)
+
+## Major Changes since 1.0.0 (core) / 0.16.0 (libraries)
 
 ### Core
 
@@ -30,10 +96,9 @@
 
 ### Database migration
 
-- This release requires a database schema migration, which can be run via `dagster instance migrate`. The schema migration does the following:
-  - Improves Dagit performance by adding database indexes which speed up the run view as well as a range of asset-based queries.
-  - Enables multi-dimensional asset partitions,
-  - Enables accurately marking assets as stale / fresh, when using versioning and in some situations where they were incorrectly not marked "Upstream Changed" in the past.
+- Optional database schema migration, which can be run via `dagster instance migrate`:
+    - Improves Dagit performance by adding database indexes which should speed up the run view as well as a range of asset-based queries.
+    - Enables multi-dimensional asset partitions and asset versioning.
 
 ### Breaking Changes and Deprecations
 
@@ -42,12 +107,14 @@
 
 ### Dependency Changes
 
-- `dagster-graphql` and `dagit` now use version 3 of `graphene`.
+- `dagster-graphql` and `dagit` now use version 3 of `graphene`
 
 ## Since 1.0.17
 
 ### New
 
+- The new `UPathIOManager` base class is now a top-level Dagster export. This enables you to write a custom I/O manager that plugs stores data in any filesystem supported by `universal-pathlib` and uses different serialization format than `pickle` (Thanks Daniel Gafni!).
+- The default `fs_io_manager` now inherits from the `UPathIOManager`, which means that its `base_dir` can be a path on any filesystem supported by `universal-pathlib` (Thanks Daniel Gafni!).
 - `build_asset_reconciliation_sensor` now works with support partitioned assets.
 - `build_asset_reconciliation_sensor` now launches runs to keep assets in line with their defined FreshnessPolicies.
 - The `FreshnessPolicy` object is now exported from the top level dagster package.

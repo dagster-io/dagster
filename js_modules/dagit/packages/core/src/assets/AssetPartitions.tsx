@@ -12,7 +12,7 @@ import {AssetPartitionList} from './AssetPartitionList';
 import {AssetViewParams} from './AssetView';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunsSinceMaterializationBanner} from './FailedRunsSinceMaterializationBanner';
-import {explodePartitionKeysInRanges, isTimeseriesPartition} from './MultipartitioningSupport';
+import {explodePartitionKeysInRanges, isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
 import {usePartitionDimensionRanges} from './usePartitionDimensionRanges';
 import {PartitionHealthDimensionRange, usePartitionHealthData} from './usePartitionHealthData';
@@ -36,20 +36,20 @@ interface Props {
 export const AssetPartitions: React.FC<Props> = ({
   assetKey,
   assetPartitionNames,
+  assetLastMaterializedAt,
   params,
   setParams,
   liveData,
 }) => {
-  const [assetHealth] = usePartitionHealthData([assetKey]);
-  const [ranges, setRanges] = usePartitionDimensionRanges(assetHealth, assetPartitionNames, 'view');
+  const [assetHealth] = usePartitionHealthData([assetKey], assetLastMaterializedAt);
+  const [ranges, setRanges] = usePartitionDimensionRanges(assetHealth, assetPartitionNames);
 
   const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
     PartitionState.MISSING,
-    PartitionState.SUCCESS_MISSING,
     PartitionState.SUCCESS,
   ]);
 
-  const timeRangeIdx = ranges.findIndex((r) => isTimeseriesPartition(r.dimension.partitionKeys[0]));
+  const timeRangeIdx = ranges.findIndex((r) => isTimeseriesDimension(r.dimension));
   const timeRange = timeRangeIdx !== -1 ? ranges[timeRangeIdx] : null;
 
   const allInRanges = React.useMemo(() => {
@@ -68,9 +68,7 @@ export const AssetPartitions: React.FC<Props> = ({
     : [];
 
   const dimensionKeysOrdered = (range: PartitionHealthDimensionRange) => {
-    return isTimeseriesPartition(range.selected[0])
-      ? [...range.selected].reverse()
-      : range.selected;
+    return isTimeseriesDimension(range.dimension) ? [...range.selected].reverse() : range.selected;
   };
   const dimensionRowsForRange = (range: PartitionHealthDimensionRange, idx: number) => {
     if (timeRange && timeRange.selected.length === 0) {
@@ -78,14 +76,27 @@ export const AssetPartitions: React.FC<Props> = ({
     }
     return dimensionKeysOrdered(range)
       .map((dimensionKey) => {
+        // Note: If you have clicked dimension 1, dimension 2 shows the state of each subkey. If
+        // you have not clicked dimension 1, dimension 2 shows the merged state of all the keys
+        // in that dimension (for all values of dimension 1)
         const state =
-          focusedDimensionKeys.length >= idx
+          idx > 0 && focusedDimensionKeys.length >= idx
             ? assetHealth.stateForPartialKey([...focusedDimensionKeys.slice(0, idx), dimensionKey])
-            : assetHealth.stateForSingleDimension(idx, dimensionKey, ranges[idx - 1]?.selected);
+            : assetHealth.stateForSingleDimension(
+                idx,
+                dimensionKey,
+                range !== timeRange ? timeRange?.selected : undefined,
+              );
 
         return {dimensionKey, state};
       })
-      .filter((row) => stateFilters.includes(row.state));
+      .filter(
+        (row) =>
+          stateFilters.includes(row.state) ||
+          (row.state === PartitionState.SUCCESS_MISSING &&
+            (stateFilters.includes(PartitionState.SUCCESS) ||
+              stateFilters.includes(PartitionState.MISSING))),
+      );
   };
 
   return (
@@ -125,7 +136,7 @@ export const AssetPartitions: React.FC<Props> = ({
         <div>{allSelected.length.toLocaleString()} Partitions Selected</div>
         <PartitionStateCheckboxes
           partitionKeysForCounts={allInRanges}
-          allowed={[PartitionState.MISSING, PartitionState.SUCCESS_MISSING, PartitionState.SUCCESS]}
+          allowed={[PartitionState.MISSING, PartitionState.SUCCESS]}
           value={stateFilters}
           onChange={setStateFilters}
         />
@@ -134,7 +145,7 @@ export const AssetPartitions: React.FC<Props> = ({
         {ranges.map((range, idx) => (
           <Box
             key={range.dimension.name}
-            style={{display: 'flex', flex: 1, paddingRight: 1}}
+            style={{display: 'flex', flex: 1, paddingRight: 1, minWidth: 200}}
             flex={{direction: 'column'}}
             border={{side: 'right', color: Colors.KeylineGray, width: 1}}
             background={Colors.Gray50}
@@ -179,7 +190,7 @@ export const AssetPartitions: React.FC<Props> = ({
           </Box>
         ))}
 
-        <Box style={{flex: 3}} flex={{direction: 'column'}}>
+        <Box style={{flex: 3, minWidth: 0}} flex={{direction: 'column'}}>
           {params.partition && focusedDimensionKeys.length === ranges.length ? (
             <AssetPartitionDetailLoader assetKey={assetKey} partitionKey={params.partition} />
           ) : (

@@ -8,8 +8,8 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {usePermissions} from '../app/Permissions';
-import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
+import {displayNameForAssetKey, LiveData, toGraphId} from '../asset-graph/Utils';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {DagsterTag} from '../runs/RunTag';
 import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
@@ -21,6 +21,7 @@ import {RepoAddress} from '../workspace/types';
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
+import {isAssetMissing, isAssetStale} from './StaleTag';
 import {AssetKey} from './types';
 import {
   LaunchAssetCheckUpstreamQuery,
@@ -60,39 +61,72 @@ type LaunchAssetsState =
 
 const countOrBlank = (k: unknown[]) => (k.length > 1 ? ` (${k.length})` : '');
 
+type Asset =
+  | {assetKey: AssetKey; partitionDefinition: {__typename: string} | null; isSource: boolean}
+  | {assetKey: AssetKey; isPartitioned: boolean; isSource: boolean};
+
+type AssetsInScope = {all: Asset[]; skipAllTerm?: boolean} | {selected: Asset[]};
+
+type LaunchOption = {assetKeys: AssetKey[]; label: string};
+
+const isAnyPartitioned = (assets: Asset[]) =>
+  assets.some(
+    (a) =>
+      ('partitionDefinition' in a && !!a.partitionDefinition) ||
+      ('isPartitioned' in a && a.isPartitioned),
+  );
+
+function optionsForButton(scope: AssetsInScope, liveDataForStale?: LiveData): LaunchOption[] {
+  // If you pass a set of selected assets, we always show just one option
+  // to materialize that selection.
+  if ('selected' in scope) {
+    const assets = scope.selected.filter((a) => !a.isSource);
+    return [
+      {
+        assetKeys: assets.map((a) => a.assetKey),
+        label: `Materialize selected${countOrBlank(assets)}${isAnyPartitioned(assets) ? '…' : ''}`,
+      },
+    ];
+  }
+
+  const options: LaunchOption[] = [];
+  const assets = scope.all.filter((a) => !a.isSource);
+
+  options.push({
+    assetKeys: assets.map((a) => a.assetKey),
+    label:
+      assets.length > 1 && !scope.skipAllTerm
+        ? `Materialize all${isAnyPartitioned(assets) ? '…' : ''}`
+        : `Materialize${isAnyPartitioned(assets) ? '…' : ''}`,
+  });
+
+  if (liveDataForStale) {
+    const missingOrStale = assets.filter(
+      (a) =>
+        isAssetMissing(liveDataForStale[toGraphId(a.assetKey)]) ||
+        isAssetStale(liveDataForStale[toGraphId(a.assetKey)]),
+    );
+
+    options.push({
+      assetKeys: missingOrStale.map((a) => a.assetKey),
+      label: `Materialize stale and missing${countOrBlank(missingOrStale)}`,
+    });
+  }
+
+  return options;
+}
+
 export const LaunchAssetExecutionButton: React.FC<{
-  allAssetKeys?: AssetKey[]; // Memoization not required
-  selectedAssetKeys?: AssetKey[]; // Memoization not required
-  staleAssetKeys?: AssetKey[]; // Memoization not required
+  scope: AssetsInScope;
+  liveDataForStale?: LiveData; // For "stale" dropdown options
   intent?: 'primary' | 'none';
   preferredJobName?: string;
-}> = ({staleAssetKeys, allAssetKeys, selectedAssetKeys, preferredJobName, intent = 'primary'}) => {
+}> = ({scope, liveDataForStale, preferredJobName, intent = 'primary'}) => {
   const {canLaunchPipelineExecution} = usePermissions();
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
 
-  const options: {assetKeys: AssetKey[]; label: string}[] = [];
-
-  if (selectedAssetKeys?.length) {
-    options.push({
-      assetKeys: selectedAssetKeys,
-      label: `Materialize selected${countOrBlank(selectedAssetKeys)}`,
-    });
-  } else {
-    if (allAssetKeys) {
-      options.push({
-        assetKeys: allAssetKeys,
-        label: allAssetKeys.length > 1 ? `Materialize all` : `Materialize`,
-      });
-    }
-    if (staleAssetKeys) {
-      options.push({
-        assetKeys: staleAssetKeys,
-        label: `Materialize stale and missing${countOrBlank(staleAssetKeys)}`,
-      });
-    }
-  }
-
+  const options = optionsForButton(scope, liveDataForStale);
   const firstOption = options[0];
   if (!firstOption) {
     return <span />;
@@ -164,7 +198,9 @@ export const LaunchAssetExecutionButton: React.FC<{
 };
 
 export const useMaterializationAction = (preferredJobName?: string) => {
+  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
+
   const client = useApolloClient();
   const confirm = useConfirmation();
 
@@ -284,6 +320,7 @@ async function stateForLaunchingAssets(
     assets[0]?.repository.name || '',
     assets[0]?.repository.location.name || '',
   );
+  const repoName = repoAddressAsString(repoAddress);
 
   if (
     !assets.every(
@@ -294,7 +331,7 @@ async function stateForLaunchingAssets(
   ) {
     return {
       type: 'error',
-      error: 'Assets must be in the same repository to be materialized together.',
+      error: `Assets must be in ${repoName} to be materialized together.`,
     };
   }
 
@@ -456,8 +493,8 @@ export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
     title: MULTIPLE_DEFINITIONS_WARNING,
     body: (
       <div style={{overflow: 'auto'}}>
-        One or more of the selected assets are defined in multiple repositories in your workspace.
-        Rename these assets to avoid collisions and then try again.
+        One or more of the selected assets are defined in multiple code locations. Rename these
+        assets to avoid collisions and then try again.
         <ul>
           {data.assetNodeDefinitionCollisions.map((collision, idx) => (
             <li key={idx}>

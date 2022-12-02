@@ -84,7 +84,7 @@ export const LastRunSummary: React.FC<Props> = React.memo(
             <StepSummaryForRun runId={run.id} />
           ) : undefined}
         </Box>
-        {showButton ? <AnchorButton to={`/instance/runs/${run.id}`}>View run</AnchorButton> : null}
+        {showButton ? <AnchorButton to={`/runs/${run.id}`}>View run</AnchorButton> : null}
       </Box>
     );
   },

@@ -42,7 +42,7 @@ export const PipelineExplorerSnapshotRoot = () => {
     <PipelineExplorerContainer
       explorerPath={explorerPath}
       onChangeExplorerPath={(path, mode) => {
-        history[mode](`/instance/snapshots/${explorerPathToString(path)}`);
+        history[mode](`/snapshots/${explorerPathToString(path)}`);
       }}
       onNavigateToSourceAssetNode={({assetKey}) => {
         history.push(assetDetailsPathForKey(assetKey));
@@ -88,7 +88,13 @@ export const PipelineExplorerContainer: React.FC<{
     <Loading<PipelineExplorerRootQuery> queryResult={pipelineResult}>
       {({pipelineSnapshotOrError: result}) => {
         if (result.__typename !== 'PipelineSnapshot') {
-          return <NonIdealPipelineQueryResult isGraph={isGraph} result={result} />;
+          return (
+            <NonIdealPipelineQueryResult
+              isGraph={isGraph}
+              result={result}
+              repoAddress={repoAddress}
+            />
+          );
         }
 
         const parentHandle = result.solidHandle;

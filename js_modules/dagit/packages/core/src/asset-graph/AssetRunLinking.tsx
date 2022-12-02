@@ -108,7 +108,7 @@ export const AssetRunLink: React.FC<{
 }> = ({runId, children, event, color}) => (
   <Caption>
     <Link
-      to={event ? linkToRunEvent({runId}, event) : `/instance/runs/${runId}`}
+      to={event ? linkToRunEvent({runId}, event) : `/runs/${runId}`}
       style={{color}}
       target="_blank"
       rel="noreferrer"

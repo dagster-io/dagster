@@ -3,17 +3,24 @@ import React from 'react';
 
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
-import {mergedAssetHealth, explodePartitionKeysInRanges} from '../assets/MultipartitioningSupport';
+import {
+  mergedAssetHealth,
+  explodePartitionKeysInRanges,
+  isTimeseriesDimension,
+} from '../assets/MultipartitioningSupport';
 import {usePartitionHealthData} from '../assets/usePartitionHealthData';
 import {useViewport} from '../gantt/useViewport';
+import {DagsterTag} from '../runs/RunTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {JobBackfillsTable} from './JobBackfillsTable';
-import {CountBox} from './OpJobPartitionsView';
+import {CountBox, usePartitionDurations} from './OpJobPartitionsView';
+import {PartitionGraph} from './PartitionGraph';
 import {PartitionState, PartitionStatus} from './PartitionStatus';
 import {getVisibleItemCount, PartitionPerAssetStatus} from './PartitionStepStatus';
 import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
+import {usePartitionStepQuery} from './usePartitionStepQuery';
 
 export const AssetJobPartitionsView: React.FC<{
   pipelineName: string;
@@ -50,25 +57,27 @@ export const AssetJobPartitionsView: React.FC<{
   const [showAssets, setShowAssets] = React.useState(false);
 
   React.useEffect(() => {
-    if (viewport.width && !showAssets) {
+    if (viewport.width) {
       // magical numbers to approximate the size of the window, which is calculated in the step
       // status component.  This approximation is to make sure that the window does not jump as
       // the pageSize gets recalculated
       const approxPageSize = getVisibleItemCount(viewport.width - GRID_FLOATING_CONTAINER_WIDTH);
       setPageSize(approxPageSize);
     }
-  }, [viewport.width, showAssets, setPageSize]);
+  }, [viewport.width, setPageSize]);
 
-  const rangeDimension = merged.dimensions[0];
-  const rangePartitionKeys = rangeDimension?.partitionKeys || [];
+  let dimensionIdx = merged.dimensions.findIndex(isTimeseriesDimension);
+  if (dimensionIdx === -1) {
+    dimensionIdx = 0; // may as well show something
+  }
 
-  const selectedPartitions = showAssets
-    ? rangePartitionKeys.slice(
-        Math.max(0, rangePartitionKeys.length - 1 - offset - pageSize),
-        rangePartitionKeys.length - offset,
-      )
-    : rangePartitionKeys;
+  const dimension = merged.dimensions[dimensionIdx] ? merged.dimensions[dimensionIdx] : null;
+  const dimensionKeys = dimension?.partitionKeys || [];
 
+  const selectedDimensionKeys = dimensionKeys.slice(
+    Math.max(0, dimensionKeys.length - 1 - offset - pageSize),
+    dimensionKeys.length - offset,
+  );
   return (
     <div>
       <Box
@@ -82,7 +91,7 @@ export const AssetJobPartitionsView: React.FC<{
             {showAssets ? 'Hide per-asset status' : 'Show per-asset status'}
           </Button>
           <LaunchAssetExecutionButton
-            allAssetKeys={assetGraph.graphAssetKeys}
+            scope={{all: assetGraph.graphQueryItems.map((g) => g.node), skipAllTerm: true}}
             preferredJobName={pipelineName}
           />
         </Box>
@@ -98,29 +107,28 @@ export const AssetJobPartitionsView: React.FC<{
       <Box padding={{vertical: 16, horizontal: 24}}>
         <div {...containerProps}>
           <PartitionStatus
-            partitionNames={rangePartitionKeys}
-            partitionStateForKey={(key) => merged.stateForSingleDimension(0, key)}
-            selected={showAssets ? selectedPartitions : undefined}
+            partitionNames={dimensionKeys}
+            splitPartitions={dimension ? !isTimeseriesDimension(dimension) : false}
+            partitionStateForKey={(key) => merged.stateForSingleDimension(dimensionIdx, key)}
+            selected={selectedDimensionKeys}
             selectionWindowSize={pageSize}
+            tooltipMessage="Click to view per-asset status"
             onClick={(partitionName) => {
-              const maxIdx = rangePartitionKeys.length - 1;
-              const selectedIdx = rangePartitionKeys.indexOf(partitionName);
+              const maxIdx = dimensionKeys.length - 1;
+              const selectedIdx = dimensionKeys.indexOf(partitionName);
               const nextOffset = Math.min(
                 maxIdx,
                 Math.max(0, maxIdx - selectedIdx - 0.5 * pageSize),
               );
               setOffset(nextOffset);
-              if (!showAssets) {
-                setShowAssets(true);
-              }
             }}
-            tooltipMessage="Click to view per-asset status"
           />
         </div>
-        {showAssets && (
+        {showAssets && dimension && (
           <Box margin={{top: 16}}>
             <PartitionPerAssetStatus
-              partitionNames={rangePartitionKeys}
+              rangeDimensionIdx={dimensionIdx}
+              rangeDimension={dimension}
               assetHealth={assetHealth}
               assetQueryItems={assetGraph.graphQueryItems}
               pipelineName={pipelineName}
@@ -131,6 +139,16 @@ export const AssetJobPartitionsView: React.FC<{
           </Box>
         )}
       </Box>
+      <AssetJobPartitionGraphs
+        pipelineName={pipelineName}
+        partitionSetName={partitionSetName}
+        multidimensional={(merged?.dimensions.length || 0) > 1}
+        dimensionName={dimension ? dimension.name : null}
+        dimensionKeys={dimensionKeys}
+        selected={selectedDimensionKeys}
+        offset={offset}
+        pageSize={pageSize}
+      />
       <Box
         padding={{horizontal: 24, vertical: 16}}
         border={{side: 'horizontal', color: Colors.KeylineGray, width: 1}}
@@ -142,10 +160,79 @@ export const AssetJobPartitionsView: React.FC<{
         <JobBackfillsTable
           partitionSetName={partitionSetName}
           repositorySelector={repositorySelector}
-          partitionNames={rangePartitionKeys}
+          partitionNames={dimensionKeys}
           refetchCounter={1}
         />
       </Box>
     </div>
+  );
+};
+
+export const AssetJobPartitionGraphs: React.FC<{
+  pipelineName: string;
+  partitionSetName: string;
+  multidimensional: boolean;
+  dimensionName: string | null;
+  dimensionKeys: string[];
+  selected: string[];
+  pageSize: number;
+  offset: number;
+}> = ({
+  dimensionKeys,
+  dimensionName,
+  selected,
+  pageSize,
+  partitionSetName,
+  multidimensional,
+  pipelineName,
+  offset,
+}) => {
+  const partitions = usePartitionStepQuery(
+    partitionSetName,
+    multidimensional ? `${DagsterTag.Partition}/${dimensionName}` : DagsterTag.Partition,
+    dimensionKeys,
+    pageSize,
+    [],
+    pipelineName,
+    offset,
+    !dimensionName,
+  );
+
+  const {stepDurationData, runDurationData} = usePartitionDurations(partitions);
+
+  return (
+    <>
+      <Box
+        padding={{horizontal: 24, vertical: 16}}
+        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      >
+        <Subheading>Run duration</Subheading>
+      </Box>
+
+      <Box margin={24}>
+        <PartitionGraph
+          isJob={true}
+          title="Execution time by partition"
+          yLabel="Execution time (secs)"
+          partitionNames={selected}
+          jobDataByPartition={runDurationData}
+        />
+      </Box>
+      <Box
+        padding={{horizontal: 24, vertical: 16}}
+        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+      >
+        <Subheading>Step durations</Subheading>
+      </Box>
+      <Box margin={24}>
+        <PartitionGraph
+          isJob={true}
+          title="Execution time by partition"
+          yLabel="Execution time (secs)"
+          partitionNames={selected}
+          stepDataByPartition={stepDurationData}
+        />
+      </Box>
+    </>
   );
 };

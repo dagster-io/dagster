@@ -9,13 +9,13 @@ type Props = {assetKey: {path: string[]}} & Partial<React.ComponentProps<typeof 
 
 export const AssetPageHeader: React.FC<Props> = ({assetKey, ...extra}) => {
   const breadcrumbs = React.useMemo(() => {
-    const list: BreadcrumbProps[] = [{text: 'Assets', href: '/instance/assets'}];
+    const list: BreadcrumbProps[] = [{text: 'Assets', href: '/assets'}];
 
     assetKey.path.reduce((accum: string, elem: string) => {
       const href = `${accum}/${encodeURIComponent(elem)}`;
       list.push({text: elem, href});
       return href;
-    }, '/instance/assets');
+    }, '/assets');
 
     return list;
   }, [assetKey.path]);
@@ -44,7 +44,7 @@ export const AssetPageHeader: React.FC<Props> = ({assetKey, ...extra}) => {
 };
 
 export const AssetGlobalLineageLink = () => (
-  <Link to="/instance/asset-groups">
+  <Link to="/asset-groups">
     <Box flex={{gap: 4}}>
       <Icon color={Colors.Link} name="schema" />
       View global asset lineage

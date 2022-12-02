@@ -68,7 +68,7 @@ class DagsterGrpcClient:
 
         self._ssl_creds = grpc.ssl_channel_credentials() if use_ssl else None
 
-        self._metadata = check.opt_list_param(metadata, "metadata")
+        self._metadata = check.opt_sequence_param(metadata, "metadata")
 
         check.invariant(
             port is not None if seven.IS_WINDOWS else True,
@@ -453,6 +453,10 @@ class DagsterGrpcClient:
     def get_current_image(self):
         res = self._query("GetCurrentImage", api_pb2.Empty)
         return res.serialized_current_image
+
+    def get_current_runs(self):
+        res = self._query("GetCurrentRuns", api_pb2.Empty)
+        return res.serialized_current_runs
 
     def health_check_query(self):
         try:

@@ -1,6 +1,6 @@
 import enum
 from abc import ABC, abstractmethod
-from typing import Any, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
+from typing import Any, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
 
 import click
 
@@ -12,6 +12,7 @@ class ManagedElementError(enum.Enum):
 
 
 SANITIZE_KEY_KEYWORDS = ["password", "token", "secret", "ssh_key"]
+SANITIZE_KEY_EXACT_MATCHES = ["pat"]
 
 SECRET_MASK_VALUE = "**********"
 
@@ -20,7 +21,9 @@ def is_key_secret(key: str):
     """
     Rudamentary check to see if a config key is a secret value.
     """
-    return any(keyword in key for keyword in SANITIZE_KEY_KEYWORDS)
+    return any(keyword in key for keyword in SANITIZE_KEY_KEYWORDS) or any(
+        match == key for match in SANITIZE_KEY_EXACT_MATCHES
+    )
 
 
 def _sanitize(key: str, value: str):
@@ -62,9 +65,9 @@ class ManagedElementDiff(
     NamedTuple(
         "_ManagedElementDiff",
         [
-            ("additions", List[DiffData]),
-            ("deletions", List[DiffData]),
-            ("modifications", List[ModifiedDiffData]),
+            ("additions", Sequence[DiffData]),
+            ("deletions", Sequence[DiffData]),
+            ("modifications", Sequence[ModifiedDiffData]),
             ("nested", OrderedDict[str, "ManagedElementDiff"]),
         ],
     )
@@ -80,9 +83,9 @@ class ManagedElementDiff(
         deletions: Optional[Sequence[DiffData]] = None,
         modifications: Optional[Sequence[ModifiedDiffData]] = None,
     ):
-        additions = check.opt_list_param(additions, "additions", of_type=DiffData)
-        deletions = check.opt_list_param(deletions, "deletions", of_type=DiffData)
-        modifications = check.opt_list_param(
+        additions = check.opt_sequence_param(additions, "additions", of_type=DiffData)
+        deletions = check.opt_sequence_param(deletions, "deletions", of_type=DiffData)
+        modifications = check.opt_sequence_param(
             modifications, "modifications", of_type=ModifiedDiffData
         )
 
@@ -100,7 +103,7 @@ class ManagedElementDiff(
         """
         check.str_param(name, "name")
 
-        return self._replace(additions=self.additions + [DiffData(name, value)])
+        return self._replace(additions=[*self.additions, DiffData(name, value)])
 
     def delete(self, name: str, value: Any) -> "ManagedElementDiff":
         """
@@ -108,7 +111,7 @@ class ManagedElementDiff(
         """
         check.str_param(name, "name")
 
-        return self._replace(deletions=self.deletions + [DiffData(name, value)])
+        return self._replace(deletions=[*self.deletions, DiffData(name, value)])
 
     def modify(self, name: str, old_value: Any, new_value: Any) -> "ManagedElementDiff":
         """
@@ -117,7 +120,7 @@ class ManagedElementDiff(
         check.str_param(name, "name")
 
         return self._replace(
-            modifications=self.modifications + [ModifiedDiffData(name, old_value, new_value)]
+            modifications=[*self.modifications, ModifiedDiffData(name, old_value, new_value)]
         )
 
     def with_nested(self, name: str, nested: "ManagedElementDiff") -> "ManagedElementDiff":
@@ -136,9 +139,9 @@ class ManagedElementDiff(
         check.inst_param(other, "other", ManagedElementDiff)
 
         return self._replace(
-            additions=self.additions + other.additions,
-            deletions=self.deletions + other.deletions,
-            modifications=self.modifications + other.modifications,
+            additions=[*self.additions, *other.additions],
+            deletions=[*self.deletions, *other.deletions],
+            modifications=[*self.modifications, *other.modifications],
             nested=OrderedDict(list(self.nested.items()) + list(other.nested.items())),
         )
 

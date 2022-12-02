@@ -6,10 +6,10 @@ from dagster._core.definitions import (
     GraphDefinition,
     InputDefinition,
     InputMapping,
+    OpDefinition,
     OutputDefinition,
     OutputMapping,
     PipelineDefinition,
-    SolidDefinition,
 )
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster._serdes import whitelist_for_serdes
@@ -190,7 +190,7 @@ def _check_solid_def_header_args(
     input_def_snaps: Sequence[InputDefSnap],
     output_def_snaps: Sequence[OutputDefSnap],
     description: Optional[str],
-    tags: Mapping[str, object],
+    tags: Mapping[str, str],
     config_field_snap: Optional[ConfigFieldSnap],
 ):
     return dict(
@@ -228,7 +228,7 @@ class CompositeSolidDefSnap(
         input_def_snaps: Sequence[InputDefSnap],
         output_def_snaps: Sequence[OutputDefSnap],
         description: Optional[str],
-        tags: Mapping[str, object],
+        tags: Mapping[str, str],
         config_field_snap: Optional[ConfigFieldSnap],
         dep_structure_snapshot: DependencyStructureSnapshot,
         input_mapping_snaps: Sequence[InputMappingSnap],
@@ -283,7 +283,7 @@ class SolidDefSnap(
         input_def_snaps: Sequence[InputDefSnap],
         output_def_snaps: Sequence[OutputDefSnap],
         description: Optional[str],
-        tags: Mapping[str, object],
+        tags: Mapping[str, str],
         required_resource_keys: Sequence[str],
         config_field_snap: Optional[ConfigFieldSnap],
     ):
@@ -346,7 +346,7 @@ def build_solid_definitions_snapshot(pipeline_def: PipelineDefinition) -> SolidD
     solid_def_snaps = []
     graph_def_snaps = []
     for node_def in pipeline_def.all_node_defs:
-        if isinstance(node_def, SolidDefinition):
+        if isinstance(node_def, OpDefinition):
             solid_def_snaps.append(build_core_solid_def_snap(node_def))
         elif isinstance(node_def, GraphDefinition):
             graph_def_snaps.append(build_composite_solid_def_snap(node_def))
@@ -382,7 +382,7 @@ def build_composite_solid_def_snap(comp_solid_def):
 
 
 def build_core_solid_def_snap(solid_def):
-    check.inst_param(solid_def, "solid_def", SolidDefinition)
+    check.inst_param(solid_def, "solid_def", OpDefinition)
     return SolidDefSnap(
         name=solid_def.name,
         input_def_snaps=list(map(build_input_def_snap, solid_def.input_defs)),

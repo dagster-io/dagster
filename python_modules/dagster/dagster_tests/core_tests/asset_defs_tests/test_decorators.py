@@ -266,13 +266,13 @@ def test_asset_with_dagster_type():
     assert my_asset.op.output_defs[0].dagster_type.display_name == "String"
 
 
-def test_asset_with_op_version():
-    @asset(op_version="foo")
+def test_asset_with_code_version():
+    @asset(code_version="foo")
     def my_asset(arg1):
         return arg1
 
-    assert my_asset.is_versioned
     assert my_asset.op.version == "foo"
+    assert my_asset.op.output_def_named("result").code_version == "foo"
 
 
 def test_asset_with_key_prefix():
@@ -432,7 +432,7 @@ def test_infer_input_dagster_type():
 def test_infer_output_dagster_type():
     @asset
     def my_asset() -> str:
-        pass
+        return "foo"
 
     assert my_asset.op.outs["result"].dagster_type.display_name == "String"
     assert my_asset.op.outs["result"].dagster_type.typing_type == str
@@ -571,6 +571,22 @@ def test_multi_asset_resource_defs():
     ensure_requirements_satisfied(
         my_asset.resource_defs, list(my_asset.get_resource_requirements())
     )
+
+
+def test_multi_asset_code_versions():
+    @multi_asset(
+        outs={
+            "key1": AssetOut(key=AssetKey("key1"), code_version="foo"),
+            "key2": AssetOut(key=AssetKey("key2"), code_version="bar"),
+        },
+    )
+    def my_asset():
+        pass
+
+    assert my_asset.code_versions_by_key == {
+        AssetKey("key1"): "foo",
+        AssetKey("key2"): "bar",
+    }
 
 
 def test_asset_io_manager_def():

@@ -4,10 +4,10 @@ import dagster._check as check
 from dagster._config import EvaluateValueResult, process_config
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_config import define_solid_dictionary_cls
-from dagster._core.definitions.solid_definition import SolidDefinition
 from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
@@ -125,7 +125,7 @@ def _composite_descent(
         current_solid_config = solids_config_dict.get(solid.name, {})
 
         # the base case
-        if isinstance(solid.definition, SolidDefinition):
+        if isinstance(solid.definition, OpDefinition):
             config_mapped_solid_config = solid.definition.apply_config_mapping(
                 {"config": current_solid_config.get("config")}
             )

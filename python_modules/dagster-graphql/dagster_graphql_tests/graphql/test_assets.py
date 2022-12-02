@@ -118,7 +118,6 @@ GET_ASSET_LATEST_RUN_STATS = """
             assetKey {
                 path
             }
-            computeStatus
             latestMaterialization {
                 timestamp
                 runId
@@ -913,7 +912,6 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result["asset_1"]["latestRun"] is None
         assert result["asset_1"]["latestMaterialization"] is None
-        assert result["asset_1"]["computeStatus"] == "NONE"
 
         # Test with 1 run on all assets
         first_run_id = _create_run(graphql_context, "failure_assets_job")
@@ -936,13 +934,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result["asset_1"]["latestRun"]["id"] == first_run_id
         assert result["asset_1"]["latestMaterialization"]["runId"] == first_run_id
-        assert result["asset_1"]["computeStatus"] == "UP_TO_DATE"
         assert result["asset_2"]["latestRun"]["id"] == first_run_id
         assert result["asset_2"]["latestMaterialization"] is None
-        assert result["asset_2"]["computeStatus"] == "NONE"
         assert result["asset_3"]["latestRun"]["id"] == first_run_id
         assert result["asset_3"]["latestMaterialization"] is None
-        assert result["asset_3"]["computeStatus"] == "NONE"
 
         # Confirm that asset selection is respected
         run_id = _create_run(
@@ -967,11 +962,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data["assetsLatestInfo"]
         result = get_response_by_asset(result.data["assetsLatestInfo"])
         assert result["asset_1"]["latestRun"]["id"] == first_run_id
-        assert result["asset_1"]["computeStatus"] == "UP_TO_DATE"
         assert result["asset_2"]["latestRun"]["id"] == first_run_id
-        assert result["asset_2"]["computeStatus"] == "NONE"
         assert result["asset_3"]["latestRun"]["id"] == run_id
-        assert result["asset_3"]["computeStatus"] == "OUT_OF_DATE"
 
     def test_get_run_materialization(self, graphql_context, snapshot):
         _create_run(graphql_context, "single_asset_pipeline")

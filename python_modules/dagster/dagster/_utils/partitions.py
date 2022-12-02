@@ -1,5 +1,5 @@
-import datetime
-from typing import Callable, Union
+from datetime import datetime
+from typing import Callable, Optional, Sequence, Union
 
 import pendulum
 
@@ -17,13 +17,13 @@ DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE = DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE + "
 
 
 def date_partition_range(
-    start,
-    end=None,
-    delta_range="days",
-    fmt=None,
-    inclusive=False,
-    timezone=None,
-):
+    start: datetime,
+    end: Optional[datetime] = None,
+    delta_range: str = "days",
+    fmt: Optional[str] = None,
+    inclusive: bool = False,
+    timezone: Optional[str] = None,
+) -> Callable[[], Sequence[Partition]]:
     """Utility function that returns a partition generating function to be used in creating a
     `PartitionSet` definition.
 
@@ -46,8 +46,8 @@ def date_partition_range(
         Callable[[], List[Partition]]
     """
 
-    check.inst_param(start, "start", datetime.datetime)
-    check.opt_inst_param(end, "end", datetime.datetime)
+    check.inst_param(start, "start", datetime)
+    check.opt_inst_param(end, "end", datetime)
     check.str_param(delta_range, "delta_range")
     fmt = check.opt_str_param(fmt, "fmt", default=DEFAULT_DATE_FORMAT)
     check.opt_str_param(timezone, "timezone")
@@ -63,7 +63,7 @@ def date_partition_range(
         )
 
     def get_date_range_partitions(current_time=None):
-        check.opt_inst_param(current_time, "current_time", datetime.datetime)
+        check.opt_inst_param(current_time, "current_time", datetime)
         tz = timezone if timezone else "UTC"
         _start = (
             to_timezone(start, tz)
@@ -101,7 +101,9 @@ def date_partition_range(
     return get_date_range_partitions
 
 
-def identity_partition_selector(context, partition_set_def):
+def identity_partition_selector(
+    context: ScheduleEvaluationContext, partition_set_def: PartitionSetDefinition[object]
+) -> Union[Partition[object], SkipReason]:
     """Utility function for supplying a partition selector when creating a schedule from a
     partition set made of ``datetime`` objects that assumes the schedule always executes at the
     partition time.
@@ -116,7 +118,7 @@ def identity_partition_selector(context, partition_set_def):
             name='hello_world_partition_set',
             pipeline_name='hello_world_pipeline',
             partition_fn= date_partition_range(
-                start=datetime.datetime(2021, 1, 1),
+                start=datetime(2021, 1, 1),
                 delta_range="days",
                 timezone="US/Central",
             )
@@ -135,7 +137,7 @@ def identity_partition_selector(context, partition_set_def):
 
 
 def create_offset_partition_selector(
-    execution_time_to_partition_fn,
+    execution_time_to_partition_fn: Callable[[datetime], datetime],
 ) -> Callable[[ScheduleEvaluationContext, PartitionSetDefinition], Union[Partition, SkipReason]]:
     """Utility function for supplying a partition selector when creating a schedule from a
     partition set made of ``datetime`` objects that assumes a fixed time offset between the
@@ -153,7 +155,7 @@ def create_offset_partition_selector(
             name='hello_world_partition_set',
             pipeline_name='hello_world_pipeline',
             partition_fn= date_partition_range(
-                start=datetime.datetime(2021, 1, 1),
+                start=datetime(2021, 1, 1),
                 delta_range="days",
                 timezone="US/Central",
             )
@@ -168,7 +170,7 @@ def create_offset_partition_selector(
         )
 
     Args:
-        execution_time_to_partition_fn (Callable[[datetime.datetime], datetime.datetime]): A
+        execution_time_to_partition_fn (Callable[[datetime], datetime]): A
             function that maps the execution time of the schedule to the partition time.
     """
 

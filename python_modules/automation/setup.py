@@ -29,6 +29,11 @@ setup(
         "wheel==0.33.6",
         "urllib3",
     ],
+    extras_require={
+        "buildkite": [
+            "dagster==0+dev",  # Support buildkite conditional running of tests
+        ]
+    },
     entry_points={
         "console_scripts": [
             "dagster-image = automation.docker.cli:main",

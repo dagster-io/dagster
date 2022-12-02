@@ -380,9 +380,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-airflow",
-        # omit python 3.9 until we add support
+        # omit python 3.10 until we add support
         unsupported_python_versions=[
-            AvailablePythonVersion.V3_9,
             AvailablePythonVersion.V3_10,
         ],
         env_vars=[
@@ -395,7 +394,12 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
         pytest_extra_cmds=airflow_extra_cmds,
         pytest_step_dependencies=test_project_depends_fn,
-        pytest_tox_factors=["default", "requiresairflowdb"],
+        pytest_tox_factors=[
+            "default-airflow1",
+            "requiresairflowdb-airflow1",
+            "default-airflow2",
+            "requiresairflowdb-airflow2",
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-aws",

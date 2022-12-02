@@ -2,68 +2,65 @@
 # pylint: disable=unused-variable
 
 
-def scope_dbt_cloud_job():
-    # start_dbt_cloud_job
-    from dagster import job
-    from dagster_dbt import dbt_cloud_resource, dbt_cloud_run_op
+def scope_define_instance():
+    # start_define_dbt_cloud_instance
+    from dagster_dbt import dbt_cloud_resource
 
-    # configure an operation to run the specific job
-    run_dbt_nightly_sync = dbt_cloud_run_op.configured(
-        {"job_id": 33333}, name="run_dbt_nightly_sync"
+    dbt_cloud_instance = dbt_cloud_resource.configured(
+        {
+            "auth_token": {"env": "DBT_CLOUD_API_TOKEN"},
+            "account_id": {"env": "DBT_CLOUD_ACCOUNT_ID"},
+        }
     )
+    # end_define_dbt_cloud_instance
 
-    # configure a resource to connect to your dbt Cloud instance
-    my_dbt_cloud_resource = dbt_cloud_resource.configured(
-        {"auth_token": {"env": "DBT_CLOUD_AUTH_TOKEN"}, "account_id": 11111}
+
+def scope_load_assets_from_dbt_cloud_job():
+    from dagster_dbt import dbt_cloud_resource
+
+    dbt_cloud_instance = dbt_cloud_resource.configured(
+        {
+            "auth_token": {"env": "DBT_CLOUD_API_TOKEN"},
+            "account_id": {"env": "DBT_CLOUD_ACCOUNT_ID"},
+        }
     )
+    # start_load_assets_from_dbt_cloud_job
+    from dagster_dbt import load_assets_from_dbt_cloud_job
 
-    # create a job that uses your op and resource
-    @job(resource_defs={"dbt_cloud": my_dbt_cloud_resource})
-    def my_dbt_cloud_job():
-        run_dbt_nightly_sync()
-
-    # end_dbt_cloud_job
-
-
-def scope_dbt_cloud_job2():
-    from dagster import ResourceDefinition, job, op
-
-    @op
-    def another_op():
-        return 1
-
-    run_dbt_nightly_sync = another_op
-    my_dbt_cloud_resource = ResourceDefinition.none_resource()
-
-    # start_dbt_cloud_job2
-    @job(resource_defs={"dbt_cloud": my_dbt_cloud_resource})
-    def my_two_op_job():
-        run_dbt_nightly_sync(start_after=another_op())
-
-    # end_dbt_cloud_job2
+    # Use the dbt_cloud_instance resource we defined in Step 1, and the job_id from Prerequisites
+    dbt_cloud_assets = load_assets_from_dbt_cloud_job(
+        dbt_cloud=dbt_cloud_instance,
+        job_id=33333,
+    )
+    # end_load_assets_from_dbt_cloud_job
 
 
-def scope_schedule_dbt_cloud():
-    from dagster import job, op
+def scope_schedule_dbt_cloud_assets():
+    dbt_cloud_assets = []
+    # start_schedule_dbt_cloud_assets
+    from dagster import ScheduleDefinition, define_asset_job, repository, AssetSelection
 
-    @op
-    def foo():
-        pass
+    # Materialize all assets in the repository
+    run_everything_job = define_asset_job("run_everything_job", AssetSelection.all())
 
-    @job
-    def my_dbt_cloud_job():
-        foo()
-
-    # start_schedule_dbt_cloud
-    from dagster import ScheduleDefinition, repository
+    # Materialize only the staging assets
+    run_staging_job = define_asset_job(
+        "run_staging_job", AssetSelection.groups("staging")
+    )
 
     @repository
     def my_repo():
         return [
+            # Use the dbt_cloud_assets defined in Step 2
+            dbt_cloud_assets,
             ScheduleDefinition(
-                job=my_dbt_cloud_job,
+                job=run_everything_job,
                 cron_schedule="@daily",
+            ),
+            ScheduleDefinition(
+                job=run_staging_job,
+                cron_schedule="@hourly",
             ),
         ]
 
-    # end_schedule_dbt_cloud
+    # end_schedule_dbt_cloud_assets

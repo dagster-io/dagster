@@ -198,9 +198,9 @@ def test_memoization_no_code_version_for_solid():
 
         with pytest.raises(
             DagsterInvariantViolationError,
-            match="While using memoization, version for solid 'solid_takes_input' was None. Please "
+            match="While using memoization, version for op 'solid_takes_input' was None. Please "
             "either provide a versioning strategy for your job, or provide a version using the "
-            "solid decorator.",
+            "op decorator.",
         ):
             create_execution_plan(partially_versioned_pipeline, instance_ref=instance.get_ref())
 
@@ -436,9 +436,9 @@ def test_unmemoized_inner_solid():
     with instance_for_test() as instance:
         with pytest.raises(
             DagsterInvariantViolationError,
-            match="While using memoization, version for solid 'solid_no_version' was None. Please "
+            match="While using memoization, version for op 'solid_no_version' was None. Please "
             "either provide a versioning strategy for your job, or provide a version using the "
-            "solid decorator.",
+            "op decorator.",
         ):
             create_execution_plan(wrap_pipeline, instance_ref=instance.get_ref())
 

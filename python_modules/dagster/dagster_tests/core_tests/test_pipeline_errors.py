@@ -10,11 +10,11 @@ from dagster import (
     Output,
 )
 from dagster import _check as check
+from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.output import Out
 from dagster._legacy import (
     InputDefinition,
-    OutputDefinition,
     PipelineDefinition,
-    SolidDefinition,
     execute_pipeline,
     execute_solid,
     lambda_solid,
@@ -152,16 +152,15 @@ def test_failure_propagation():
 
 
 def test_do_not_yield_result():
-    solid_inst = SolidDefinition(
+    solid_inst = OpDefinition(
         name="do_not_yield_result",
-        input_defs=[],
-        output_defs=[OutputDefinition()],
+        outs={"result": Out()},
         compute_fn=lambda *_args, **_kwargs: Output("foo"),
     )
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match='Compute function for solid "do_not_yield_result" returned an Output',
+        match='Compute function for op "do_not_yield_result" returned an Output',
     ):
         execute_solid(solid_inst)
 
@@ -173,7 +172,7 @@ def test_yield_non_result():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape('Compute function for solid "yield_wrong_thing" yielded a value of type <')
+        match=re.escape('Compute function for op "yield_wrong_thing" yielded a value of type <')
         + r"(class|type)"
         + re.escape(
             " 'str'> rather than an instance of Output, AssetMaterialization, or ExpectationResult."
@@ -183,11 +182,10 @@ def test_yield_non_result():
 
 
 def test_single_compute_fn_returning_result():
-    test_return_result = SolidDefinition(
+    test_return_result = OpDefinition(
         name="test_return_result",
-        input_defs=[],
         compute_fn=lambda *args, **kwargs: Output(None),
-        output_defs=[OutputDefinition()],
+        outs={"result": Out()},
     )
 
     with pytest.raises(DagsterInvariantViolationError):

@@ -28,16 +28,12 @@ export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TDa
         <TabLink
           id="code-locations"
           title="Code locations"
-          to="/instance/code-locations"
+          to="/code-locations"
           icon={<WorkspaceStatus placeholder={false} />}
         />
-        <TabLink
-          id="health"
-          title={healthTitle}
-          to="/instance/health"
-          icon={<InstanceWarningIcon />}
-        />
-        {canSeeConfig ? <TabLink id="config" title="Configuration" to="/instance/config" /> : null}
+        <TabLink id="definitions" title="Definitions" to="/definitions" />
+        <TabLink id="health" title={healthTitle} to="/health" icon={<InstanceWarningIcon />} />
+        {canSeeConfig ? <TabLink id="config" title="Configuration" to="/config" /> : null}
       </Tabs>
       {refreshState ? (
         <Box padding={{bottom: 8}}>

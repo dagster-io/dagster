@@ -5,6 +5,8 @@ import React from 'react';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
+import {isAssetLate} from '../assets/CurrentMinutesLateTag';
+import {isAssetStale} from '../assets/StaleTag';
 import {OpTags} from '../graph/OpTags';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
@@ -147,14 +149,8 @@ export const AssetNodeStatusRow: React.FC<{
     );
   }
 
-  const {
-    currentLogicalVersion,
-    projectedLogicalVersion,
-    lastMaterialization,
-    runWhichFailedToMaterialize,
-    freshnessInfo,
-  } = liveData;
-  const late = freshnessInfo && (freshnessInfo.currentMinutesLate || 0) > 0;
+  const {lastMaterialization, runWhichFailedToMaterialize} = liveData;
+  const late = isAssetLate(liveData);
 
   if (runWhichFailedToMaterialize || late) {
     return (
@@ -184,7 +180,7 @@ export const AssetNodeStatusRow: React.FC<{
     );
   }
 
-  if (currentLogicalVersion !== projectedLogicalVersion) {
+  if (isAssetStale(liveData)) {
     return (
       <Box
         padding={{horizontal: 8}}
@@ -200,7 +196,7 @@ export const AssetNodeStatusRow: React.FC<{
   return (
     <Box
       padding={{horizontal: 8}}
-      style={{borderBottomLeftRadius: 4, borderBottomRightRadius: 4, height: 24}}
+      style={{borderBottomLeftRadius: 7, borderBottomRightRadius: 7, height: 24}}
       flex={{justifyContent: 'space-between', alignItems: 'center'}}
       background={Colors.Green50}
     >
@@ -236,20 +232,20 @@ export const AssetNodeMinimal: React.FC<{
           $selected={selected}
           $isSource={isSource}
           $background={
-            liveData?.runWhichFailedToMaterialize
+            liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
               ? Colors.Red50
               : !liveData?.lastMaterialization
               ? Colors.Gray100
-              : liveData?.currentLogicalVersion !== liveData?.projectedLogicalVersion
+              : isAssetStale(liveData)
               ? Colors.Yellow50
               : Colors.Green50
           }
           $border={
-            liveData?.runWhichFailedToMaterialize
+            liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
               ? Colors.Red500
               : !liveData?.lastMaterialization
               ? Colors.Gray500
-              : liveData?.currentLogicalVersion !== liveData?.projectedLogicalVersion
+              : isAssetStale(liveData)
               ? Colors.Yellow500
               : Colors.Green500
           }
@@ -310,11 +306,12 @@ export const ASSET_NODE_FRAGMENT = gql`
     opVersion
     description
     computeKind
+    isPartitioned
+    isObservable
     isSource
     assetKey {
       path
     }
-    isObservable
   }
 `;
 
@@ -343,7 +340,7 @@ export const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>
       : `outline: 3px solid ${p.$selected ? Colors.Blue200 : 'transparent'}`};
 
   background: ${Colors.White};
-  border-radius: 5px;
+  border-radius: 8px;
   position: relative;
   &:hover {
     box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
@@ -358,8 +355,8 @@ const Name = styled.div<{$isSource: boolean}>`
   padding: 3px 6px;
   background: ${(p) => (p.$isSource ? Colors.Gray100 : Colors.Blue50)};
   font-family: ${FontFamily.monospace};
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;
+  border-top-left-radius: 7px;
+  border-top-right-radius: 7px;
   font-weight: 600;
   gap: 4px;
 `;
@@ -412,12 +409,14 @@ const Description = styled.div`
   text-overflow: ellipsis;
   color: ${Colors.Gray700};
   border-top: 1px solid ${Colors.Blue50};
+  background: ${Colors.White};
   font-size: 12px;
 `;
 
 const Stats = styled.div`
   padding: 4px 8px;
   border-top: 1px solid ${Colors.Blue50};
+  background: ${Colors.White};
   font-size: 12px;
   line-height: 20px;
 `;

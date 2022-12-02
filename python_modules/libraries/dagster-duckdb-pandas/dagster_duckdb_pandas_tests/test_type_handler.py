@@ -3,8 +3,7 @@ import os
 import duckdb
 import pandas as pd
 import pytest
-from dagster_duckdb.io_manager import build_duckdb_io_manager
-from dagster_duckdb_pandas import DuckDBPandasTypeHandler
+from dagster_duckdb_pandas import duckdb_pandas_io_manager
 
 from dagster import AssetIn, DailyPartitionsDefinition, Out, asset, graph, materialize, op
 from dagster._check import CheckError
@@ -26,9 +25,8 @@ def add_one_to_dataframe():
 
 
 def test_duckdb_io_manager_with_ops(tmp_path):
-    duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
     resource_defs = {
-        "io_manager": duckdb_io_manager.configured(
+        "io_manager": duckdb_pandas_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
@@ -62,9 +60,8 @@ def b_plus_one(b_df: pd.DataFrame):
 
 
 def test_duckdb_io_manager_with_assets(tmp_path):
-    duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
     resource_defs = {
-        "io_manager": duckdb_io_manager.configured(
+        "io_manager": duckdb_pandas_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
@@ -91,9 +88,8 @@ def b_plus_one_columns(b_df: pd.DataFrame):
 
 
 def test_loading_columns(tmp_path):
-    duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
     resource_defs = {
-        "io_manager": duckdb_io_manager.configured(
+        "io_manager": duckdb_pandas_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
@@ -127,9 +123,8 @@ def not_supported():
 
 
 def test_not_supported_type(tmp_path):
-    duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
     resource_defs = {
-        "io_manager": duckdb_io_manager.configured(
+        "io_manager": duckdb_pandas_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
@@ -147,37 +142,59 @@ def test_not_supported_type(tmp_path):
     partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
     key_prefix=["my_schema"],
     metadata={"partition_expr": "time"},
+    config_schema={"value": str},
 )
 def daily_partitioned(context):
     partition = pd.Timestamp(context.asset_partition_key_for_output())
-    partition_final = context.asset_partition_key_for_output()[-1]
+    value = context.op_config["value"]
 
     return pd.DataFrame(
         {
             "time": [partition, partition, partition],
-            "a": [partition_final, partition_final, partition_final],
+            "a": [value, value, value],
             "b": [4, 5, 6],
         }
     )
 
 
 def test_partitioned_asset(tmp_path):
-    duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()]).configured(
+    duckdb_io_manager = duckdb_pandas_io_manager.configured(
         {"database": os.path.join(tmp_path, "unit_test.duckdb")}
     )
     resource_defs = {"io_manager": duckdb_io_manager}
 
-    for _ in range(2):
-        materialize([daily_partitioned], partition_key="2022-01-01", resources=resource_defs)
+    materialize(
+        [daily_partitioned],
+        partition_key="2022-01-01",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "1"}}}},
+    )
 
-        duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-        out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
-        assert out_df["a"].tolist() == ["1", "1", "1"]
-        duckdb_conn.close()
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
+    assert out_df["a"].tolist() == ["1", "1", "1"]
+    duckdb_conn.close()
 
-        materialize([daily_partitioned], partition_key="2022-01-02", resources=resource_defs)
+    materialize(
+        [daily_partitioned],
+        partition_key="2022-01-02",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "2"}}}},
+    )
 
-        duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-        out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
-        assert out_df["a"].tolist() == ["1", "1", "1", "2", "2", "2"]
-        duckdb_conn.close()
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
+    assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+    duckdb_conn.close()
+
+    materialize(
+        [daily_partitioned],
+        partition_key="2022-01-01",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "3"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
+    assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+    duckdb_conn.close()

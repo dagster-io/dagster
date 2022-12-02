@@ -66,9 +66,9 @@ export const RepositoryLocationStateObserver = () => {
           <Icon name="warning" color={Colors.Gray700} />
           <Caption color={Colors.Gray800}>
             {updatedLocations.length === 1
-              ? `Repository location ${updatedLocations[0]} has been updated,` // Be specific when there's only one repository location updated
-              : 'One or more repository locations have been updated,'}{' '}
-            and new data is available.{' '}
+              ? `Code location ${updatedLocations[0]} has been updated,` // Be specific when there's only one code location updated
+              : 'One or more code locations have been updated,'}
+            {' and new data is available. '}
             <ButtonLink
               color={{
                 link: Colors.Gray800,

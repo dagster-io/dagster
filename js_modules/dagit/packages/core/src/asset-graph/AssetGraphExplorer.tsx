@@ -5,7 +5,6 @@ import without from 'lodash/without';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
@@ -37,14 +36,7 @@ import {AssetGroupNode} from './AssetGroupNode';
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import {AssetNodeLink} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
-import {
-  GraphData,
-  graphHasCycles,
-  LiveData,
-  GraphNode,
-  tokenForAssetKey,
-  LiveDataForNode,
-} from './Utils';
+import {GraphData, graphHasCycles, LiveData, GraphNode, tokenForAssetKey} from './Utils';
 import {AssetGraphLayout} from './layout';
 import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
 import {AssetGraphFetchScope, useAssetGraphData} from './useAssetGraphData';
@@ -65,11 +57,8 @@ interface Props {
   onNavigateToSourceAssetNode: (node: AssetLocation) => void;
 }
 
-export const MINIMAL_SCALE = 0.5;
-export const EXPERIMENTAL_SCALE = 0.1;
-
-const includeInMaterializeAll = (liveData?: LiveDataForNode) =>
-  liveData && liveData.currentLogicalVersion !== liveData.projectedLogicalVersion;
+export const MINIMAL_SCALE = 0.6;
+export const GROUPS_ONLY_SCALE = 0.15;
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {
@@ -148,7 +137,6 @@ export const AssetGraphExplorerWithData: React.FC<
   } = props;
 
   const findAssetLocation = useFindAssetLocation();
-  const flags = useFeatureFlags();
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
@@ -276,8 +264,7 @@ export const AssetGraphExplorerWithData: React.FC<
     }
   };
 
-  const allowExperimentalZoom =
-    flags.flagAssetGraphExperimentalZoom && layout && Object.keys(layout.groups).length;
+  const allowGroupsOnlyZoomLevel = !!(layout && Object.keys(layout.groups).length);
 
   return (
     <SplitPanelContainer
@@ -301,6 +288,7 @@ export const AssetGraphExplorerWithData: React.FC<
               interactor={SVGViewport.Interactors.PanAndZoom}
               graphWidth={layout.width}
               graphHeight={layout.height}
+              graphHasNoMinimumZoom={allowGroupsOnlyZoomLevel}
               onClick={onClickBackground}
               onArrowKeyDown={onArrowKeyDown}
               onDoubleClick={(e) => {
@@ -308,7 +296,6 @@ export const AssetGraphExplorerWithData: React.FC<
                 e.stopPropagation();
               }}
               maxZoom={1.2}
-              minZoom={allowExperimentalZoom ? 0.01 : undefined}
               maxAutocenterZoom={1.0}
             >
               {({scale}) => (
@@ -316,9 +303,9 @@ export const AssetGraphExplorerWithData: React.FC<
                   <AssetEdges
                     highlighted={highlighted}
                     edges={layout.edges}
-                    strokeWidth={allowExperimentalZoom ? Math.max(4, 3 / scale) : 4}
+                    strokeWidth={allowGroupsOnlyZoomLevel ? Math.max(4, 3 / scale) : 4}
                     baseColor={
-                      allowExperimentalZoom && scale < EXPERIMENTAL_SCALE
+                      allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE
                         ? Colors.Gray400
                         : Colors.KeylineGray
                     }
@@ -349,7 +336,7 @@ export const AssetGraphExplorerWithData: React.FC<
                   {Object.values(layout.nodes).map(({id, bounds}) => {
                     const graphNode = assetGraphData.nodes[id];
                     const path = JSON.parse(id);
-                    if (allowExperimentalZoom && scale < EXPERIMENTAL_SCALE) {
+                    if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
                       return;
                     }
                     return (
@@ -423,30 +410,22 @@ export const AssetGraphExplorerWithData: React.FC<
                 dataDescription="materializations"
               />
               <LaunchAssetObservationButton
-                intent="none"
-                context={selectedGraphNodes.length > 0 ? 'selected' : 'all'}
+                preferredJobName={explorerPath.pipelineName}
                 assetKeys={(selectedGraphNodes.length
-                  ? selectedGraphNodes.filter((a) => a.definition.isObservable)
-                  : Object.values(assetGraphData.nodes).filter((a) => a.definition.isObservable)
-                ).map((n) => n.assetKey)}
-                preferredJobName={explorerPath.pipelineName}
-              />
-              <LaunchAssetExecutionButton
-                preferredJobName={explorerPath.pipelineName}
-                selectedAssetKeys={selectedGraphNodes
-                  .filter((a) => !a.definition.isSource)
-                  .map((n) => n.assetKey)}
-                allAssetKeys={Object.values(assetGraphData.nodes)
-                  .filter((a) => !a.definition.isSource)
-                  .map((n) => n.assetKey)}
-                staleAssetKeys={(selectedGraphNodes.length
                   ? selectedGraphNodes
                   : Object.values(assetGraphData.nodes)
                 )
-                  .filter(
-                    (a) => !a.definition.isSource && includeInMaterializeAll(liveDataByNode[a.id]),
-                  )
+                  .filter((a) => a.definition.isObservable)
                   .map((n) => n.assetKey)}
+              />
+              <LaunchAssetExecutionButton
+                preferredJobName={explorerPath.pipelineName}
+                liveDataForStale={liveDataByNode}
+                scope={
+                  selectedGraphNodes.length
+                    ? {selected: selectedGraphNodes.map((a) => a.definition)}
+                    : {all: Object.values(assetGraphData.nodes).map((a) => a.definition)}
+                }
               />
             </Box>
           </Box>

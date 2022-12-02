@@ -126,16 +126,6 @@ export function getFeatureFlagRows(
       ),
     },
     {
-      key: 'Experimental "groups-only" asset graph zoom level',
-      value: (
-        <Checkbox
-          format="switch"
-          checked={flags.includes(FeatureFlag.flagAssetGraphExperimentalZoom)}
-          onChange={() => toggleFlag(FeatureFlag.flagAssetGraphExperimentalZoom)}
-        />
-      ),
-    },
-    {
       key: 'Experimental schedule/sensor logging view',
       value: (
         <Checkbox

@@ -1,4 +1,4 @@
-# type: ignore[return-value]
+# mypy: disable-error-code=return-value
 import time
 from typing import Dict, Generator, List, Tuple
 
@@ -145,7 +145,12 @@ def test_out_dagster_types():
 
 
 def test_multi_out():
-    @op(out={"a": Out(metadata={"x": 1}), "b": Out(metadata={"y": 2})})
+    @op(
+        out={
+            "a": Out(metadata={"x": 1}, code_version="foo"),
+            "b": Out(metadata={"y": 2}, code_version="bar"),
+        }
+    )
     def my_op() -> Tuple[int, str]:
         """
         Returns:
@@ -162,18 +167,22 @@ def test_multi_out():
             dagster_type=Int,
             is_required=True,
             io_manager_key="io_manager",
+            code_version="foo",
         ),
         "b": Out(
             metadata={"y": 2},
             dagster_type=String,
             is_required=True,
             io_manager_key="io_manager",
+            code_version="bar",
         ),
     }
     assert my_op.output_defs[0].metadata == {"x": 1}
     assert my_op.output_defs[0].name == "a"
+    assert my_op.output_defs[0].code_version == "foo"
     assert my_op.output_defs[1].metadata == {"y": 2}
     assert my_op.output_defs[1].name == "b"
+    assert my_op.output_defs[1].code_version == "bar"
 
     assert my_op() == (1, "q")
 
@@ -369,7 +378,7 @@ def test_op_multiout_incorrect_annotation():
 
         @op(out={"a": Out(), "b": Out()})
         def _incorrect_annotation_op() -> int:
-            pass
+            return 1
 
 
 def test_op_typing_annotations():
@@ -413,7 +422,7 @@ def test_op_multiout_size_mismatch():
 
         @op(out={"a": Out(), "b": Out()})
         def _basic_multiout_wrong_annotation() -> Tuple[int, int, int]:
-            pass
+            return (5, 5, 5)
 
 
 # Document what happens when someone tries to use type annotations with Output
@@ -737,7 +746,7 @@ def test_generic_output_op():
 
     @op
     def the_op_bad_type_match() -> Output[int]:
-        return Output("foo")
+        return Output("foo")  # type: ignore
 
     with pytest.raises(
         DagsterTypeCheckDidNotPass,
@@ -807,7 +816,7 @@ def test_generic_output_tuple_op():
 
     @op(out={"out1": Out(), "out2": Out()})
     def the_op_bad_type_match() -> Tuple[Output[str], Output[int]]:
-        return (Output("foo"), Output("foo"))
+        return (Output("foo"), Output("foo"))  # type: ignore
 
     with pytest.raises(
         DagsterTypeCheckDidNotPass,
@@ -844,7 +853,7 @@ def test_generic_output_tuple_complex_types():
 def test_generic_output_name_mismatch():
     @op(out={"out1": Out(), "out2": Out()})
     def the_op() -> Tuple[Output[int], Output[str]]:
-        return (Output("foo", output_name="out2"), Output(42, output_name="out1"))
+        return Output(42, output_name="out2"), Output("foo", output_name="out1")
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -885,7 +894,7 @@ def test_generic_dynamic_output_type_mismatch():
     def basic() -> List[DynamicOutput[int]]:
         return [
             DynamicOutput(mapping_key="1", value=1),
-            DynamicOutput(mapping_key="2", value="2"),
+            DynamicOutput(mapping_key="2", value="2"),  # type: ignore
         ]
 
     with pytest.raises(
@@ -936,7 +945,7 @@ def test_generic_dynamic_output_mix_with_regular_type_mismatch():
             Output(5),
             [
                 DynamicOutput(mapping_key="1", value="foo"),
-                DynamicOutput(mapping_key="2", value=5),
+                DynamicOutput(mapping_key="2", value=5),  # type: ignore
             ],
         )
 
@@ -1019,7 +1028,7 @@ def test_generic_dynamic_output_bare():
     ):
 
         @op
-        def basic() -> DynamicOutput:
+        def basic() -> DynamicOutput:  # type: ignore
             pass
 
     with pytest.raises(
@@ -1030,7 +1039,7 @@ def test_generic_dynamic_output_bare():
     ):
 
         @op
-        def another_basic() -> DynamicOutput[int]:
+        def another_basic() -> DynamicOutput[int]:  # type: ignore
             pass
 
 
@@ -1166,7 +1175,7 @@ def test_required_io_manager_op_access():
 def test_dynamic_output_bad_list_entry():
     @op
     def basic() -> List[DynamicOutput[int]]:
-        return ["foo"]
+        return ["foo"]  # type: ignore
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -1182,7 +1191,7 @@ def test_dynamic_output_bad_list_entry():
 
     @op(out={"out1": Out(), "out2": DynamicOut()})
     def basic_multi_output() -> Tuple[Output[int], List[DynamicOutput[str]]]:
-        return (5, ["foo"])
+        return (5, ["foo"])  # type: ignore
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -1251,3 +1260,13 @@ def test_none_annotated_input():
         @op
         def op1(input1: None):
             ...
+
+
+def test_default_code_version():
+    @op(code_version="foo", out={"a": Out(), "b": Out(code_version="bar")})
+    def alpha():
+        yield Output(1, "a")
+        yield Output(1, "b")
+
+    assert alpha.output_def_named("a").code_version == "foo"
+    assert alpha.output_def_named("b").code_version == "bar"

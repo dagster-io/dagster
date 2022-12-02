@@ -666,6 +666,7 @@ type AssetNode {
   groupName: String
   id: ID!
   isObservable: Boolean!
+  isPartitioned: Boolean!
   isSource: Boolean!
   jobNames: [String!]!
   jobs: [Pipeline!]!
@@ -2281,6 +2282,7 @@ input PipelineSelector {
   repositoryName: String!
   repositoryLocationName: String!
   solidSelection: [String!]
+  assetSelection: [AssetKeyInput!]
 }
 
 """
@@ -3238,6 +3240,11 @@ type DagitQuery {
   Retrieve the captured log metadata for a given log key.
   """
   capturedLogsMetadata(logKey: [String!]!): CapturedLogsMetadata!
+
+  """
+  Captured logs are the stdout/stderr logs for a given log key
+  """
+  capturedLogs(logKey: [String!]!, cursor: String, limit: Int): CapturedLogs!
 }
 
 union WorkspaceOrError = Workspace | PythonError
@@ -3305,19 +3312,9 @@ type Permission {
 type AssetLatestInfo {
   assetKey: AssetKey!
   latestMaterialization: MaterializationEvent
-  computeStatus: AssetComputeStatus!
   unstartedRunIds: [String!]!
   inProgressRunIds: [String!]!
   latestRun: Run
-}
-
-"""
-An enumeration.
-"""
-enum AssetComputeStatus {
-  NONE
-  UP_TO_DATE
-  OUT_OF_DATE
 }
 
 union EventConnectionOrError = EventConnection | RunNotFoundError | PythonError
