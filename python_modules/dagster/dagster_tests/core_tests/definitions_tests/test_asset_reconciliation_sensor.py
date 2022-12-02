@@ -9,12 +9,14 @@ import pytest
 from dagster import (
     AssetIn,
     AssetKey,
+    AssetOut,
     AssetSelection,
     AssetsDefinition,
     DagsterInstance,
     DailyPartitionsDefinition,
     Field,
     Nothing,
+    Output,
     PartitionKeyRange,
     PartitionMapping,
     PartitionsDefinition,
@@ -25,6 +27,7 @@ from dagster import (
     build_asset_reconciliation_sensor,
     build_sensor_context,
     materialize_to_memory,
+    multi_asset,
     repository,
 )
 from dagster._core.definitions.asset_reconciliation_sensor import (
@@ -70,14 +73,22 @@ class AssetReconciliationScenario(NamedTuple):
                 cursor = AssetReconciliationCursor.empty()
 
             for run in self.unevaluated_runs:
-                assets_in_run = [
-                    asset
-                    if asset.key in run.asset_keys
-                    else (
-                        asset.to_source_assets()[0] if not isinstance(asset, SourceAsset) else asset
-                    )
-                    for asset in self.assets
-                ]
+                assets_in_run = []
+                run_keys = set(run.asset_keys)
+                for asset in self.assets:
+                    if isinstance(asset, SourceAsset):
+                        assets_in_run.append(asset)
+                    else:
+                        selected_keys = run_keys.intersection(asset.keys)
+                        if selected_keys == asset.keys:
+                            assets_in_run.append(asset)
+                        elif not selected_keys:
+                            assets_in_run.extend(asset.to_source_assets())
+                        else:
+                            assets_in_run.append(asset.subset_for(run_keys))
+                            assets_in_run.extend(
+                                asset.subset_for(asset.keys - selected_keys).to_source_assets()
+                            )
                 materialize_to_memory(
                     instance=instance,
                     partition_key=run.partition_key,
@@ -169,6 +180,38 @@ def asset_def(
             raise ValueError("")
 
     return _asset
+
+
+def multi_asset_def(
+    keys: List[str],
+    deps: Optional[Union[List[str], Mapping[str, PartitionMapping]]] = None,
+    can_subset: bool = False,
+) -> AssetsDefinition:
+    if deps is None:
+        non_argument_deps = set()
+        ins = None
+    elif isinstance(deps, list):
+        non_argument_deps = set(deps)
+        ins = None
+    else:
+        non_argument_deps = None
+        ins = {
+            dep: AssetIn(partition_mapping=partition_mapping, dagster_type=Nothing)  # type: ignore
+            for dep, partition_mapping in deps.items()
+        }
+
+    @multi_asset(
+        ins=ins,
+        outs={key: AssetOut(is_required=not can_subset) for key in keys},
+        name="_".join(keys),
+        non_argument_deps=non_argument_deps,
+        can_subset=can_subset,
+    )
+    def _assets(context):
+        for output in context.selected_output_names:
+            yield Output(output, output)
+
+    return _assets
 
 
 ######################################################################
@@ -282,6 +325,15 @@ overlapping_freshness_none = diamond + [
     asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
     asset_def("asset6", ["asset4"], freshness_policy=None),
 ]
+
+non_subsettable_multi_asset_on_top = [
+    multi_asset_def(["asset1", "asset2", "asset3"], can_subset=False),
+    asset_def("asset4", ["asset1"]),
+    asset_def("asset5", ["asset2"], freshness_policy=freshness_30m),
+]
+subsettable_multi_asset_on_top = [
+    multi_asset_def(["asset1", "asset2", "asset3"], can_subset=True)
+] + non_subsettable_multi_asset_on_top[1:]
 
 # partitions
 one_asset_one_partition = [asset_def("asset1", partitions_def=one_partition_partitions_def)]
@@ -701,6 +753,19 @@ scenarios = {
         # same as above
         unevaluated_runs=[run(["asset1"])],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
+    ),
+    "freshness_non_subsettable_multi_asset_on_top": AssetReconciliationScenario(
+        assets=non_subsettable_multi_asset_on_top,
+        unevaluated_runs=[run([f"asset{i}" for i in range(1, 6)])],
+        evaluation_delta=datetime.timedelta(minutes=35),
+        # need to run assets 1, 2 and 3 as they're all part of the same non-subsettable multi asset
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset5"])],
+    ),
+    "freshness_subsettable_multi_asset_on_top": AssetReconciliationScenario(
+        assets=subsettable_multi_asset_on_top,
+        unevaluated_runs=[run([f"asset{i}" for i in range(1, 6)])],
+        evaluation_delta=datetime.timedelta(minutes=35),
+        expected_run_requests=[run_request(asset_keys=["asset2", "asset5"])],
     ),
 }
 

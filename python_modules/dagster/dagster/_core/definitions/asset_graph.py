@@ -5,6 +5,7 @@ from typing import (
     AbstractSet,
     Dict,
     Iterator,
+    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -32,40 +33,14 @@ if TYPE_CHECKING:
     from dagster._core.host_representation.external_data import ExternalAssetNode
 
 
-class AssetGraph(
-    NamedTuple(
-        "_AssetGraph",
-        [
-            ("asset_dep_graph", DependencyGraph),
-            ("source_asset_keys", AbstractSet[AssetKey]),
-            ("partitions_defs_by_key", Mapping[AssetKey, Optional[PartitionsDefinition]]),
-            (
-                "partition_mappings_by_key",
-                Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
-            ),
-            ("group_names_by_key", Mapping[AssetKey, Optional[str]]),
-            ("freshness_policies_by_key", Mapping[AssetKey, Optional[FreshnessPolicy]]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        asset_dep_graph: DependencyGraph,
-        source_asset_keys: AbstractSet[AssetKey],
-        partitions_defs_by_key: Mapping[AssetKey, Optional[PartitionsDefinition]],
-        partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
-        group_names_by_key: Mapping[AssetKey, Optional[str]],
-        freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
-    ):
-        return super(AssetGraph, cls).__new__(
-            cls,
-            asset_dep_graph=asset_dep_graph,
-            source_asset_keys=source_asset_keys,
-            partitions_defs_by_key=partitions_defs_by_key,
-            partition_mappings_by_key=partition_mappings_by_key,
-            group_names_by_key=group_names_by_key,
-            freshness_policies_by_key=freshness_policies_by_key,
-        )
+class AssetGraph(NamedTuple):
+    asset_dep_graph: DependencyGraph
+    source_asset_keys: AbstractSet[AssetKey]
+    partitions_defs_by_key: Mapping[AssetKey, Optional[PartitionsDefinition]]
+    partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]]
+    group_names_by_key: Mapping[AssetKey, Optional[str]]
+    freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]]
+    required_neighbor_sets: Optional[Sequence[AbstractSet[AssetKey]]]
 
     @staticmethod
     def from_assets(all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]) -> "AssetGraph":
@@ -77,6 +52,7 @@ class AssetGraph(
         ] = {}
         group_names_by_key: Dict[AssetKey, Optional[str]] = {}
         freshness_policies_by_key: Dict[AssetKey, Optional[FreshnessPolicy]] = {}
+        required_neighbor_sets: List[AbstractSet[AssetKey]] = []
 
         for asset in all_assets:
             if isinstance(asset, SourceAsset):
@@ -92,6 +68,9 @@ class AssetGraph(
                 partitions_defs_by_key.update({key: asset.partitions_def for key in asset.keys})
                 group_names_by_key.update(asset.group_names_by_key)
                 freshness_policies_by_key.update(asset.freshness_policies_by_key)
+                if len(asset.keys) > 1 and not asset.can_subset:
+                    required_neighbor_sets.append(asset.keys)
+
             else:
                 check.failed(f"Expected SourceAsset or AssetsDefinition, got {type(asset)}")
         return AssetGraph(
@@ -101,6 +80,7 @@ class AssetGraph(
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
+            required_neighbor_sets=required_neighbor_sets,
         )
 
     @staticmethod
@@ -140,6 +120,7 @@ class AssetGraph(
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
+            required_neighbor_sets=None,
         )
 
     @property
@@ -345,6 +326,17 @@ class AssetGraph(
                     yield parent_key
                     queue.append(parent_key)
                     visited.add(parent_key)
+
+    def get_required_neighbors(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
+        """For a given asset_key, return the set of asset keys that must be materialized at the same time."""
+        if self.required_neighbor_sets is None:
+            raise DagsterInvariantViolationError(
+                "Required neighbor information not set when creating this AssetGraph"
+            )
+        for required_assets in self.required_neighbor_sets:
+            if asset_key in required_assets:
+                return required_assets
+        return set()
 
     def toposort_asset_keys(self) -> Sequence[AbstractSet[AssetKey]]:
         return [
