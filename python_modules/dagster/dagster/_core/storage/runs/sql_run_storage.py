@@ -221,6 +221,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return query
 
+    @property
+    def supports_intersect(self):
+        return True
+
     def _add_filters_to_query(self, query, filters: RunsFilter):
         check.inst_param(filters, "filters", RunsFilter)
 
@@ -247,7 +251,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         if filters.created_before:
             query = query.where(RunsTable.c.create_timestamp < filters.created_before)
 
-        if filters.tags:
+        if filters.tags and self.supports_intersect:
             intersections = [
                 db.select([RunTagsTable.c.run_id]).where(
                     db.and_(
@@ -290,8 +294,13 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 check.failed("cannot specify bucket_by and limit/cursor at the same time")
             return self._bucketed_runs_query(bucket_by, filters, columns, order_by, ascending)
 
+        if filters.tags and not self.supports_intersect:
+            table = self._apply_tags_table_joins(RunsTable, filters.tags)
+        else:
+            table = RunsTable
+
         base_query = db.select([getattr(RunsTable.c, column) for column in columns]).select_from(
-            RunsTable
+            table
         )
         base_query = self._add_filters_to_query(base_query, filters)
         return self._add_cursor_limit_to_query(base_query, cursor, limit, order_by, ascending)
@@ -324,14 +333,18 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         query_columns = [getattr(RunsTable.c, column) for column in columns] + [bucket_rank]
 
         if isinstance(bucket_by, JobBucket):
-            base_query = db.select(query_columns).select_from(RunsTable)
+            if filters.tags and not self.supports_intersect:
+                table = self._apply_tags_table_joins(RunsTable, filters.tags)
+            else:
+                table = RunsTable
+            base_query = db.select(query_columns).select_from(table)
             base_query = base_query.where(RunsTable.c.pipeline_name.in_(bucket_by.job_names))
             base_query = self._add_filters_to_query(base_query, filters)
 
         elif not filters.tags:
             # bucketing by tag, no tag filters
-            base_query = db.select(query_columns).select_from(
-                RunsTable.join(
+            if self.supports_intersect:
+                table = RunsTable.join(
                     RunTagsTable,
                     db.and_(
                         RunsTable.c.run_id == RunTagsTable.c.run_id,
@@ -339,23 +352,42 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                         RunTagsTable.c.value.in_(bucket_by.tag_values),
                     ),
                 )
-            )
+            else:
+                table = self._apply_tags_table_joins(
+                    RunsTable,
+                    {bucket_by.tag_key: bucket_by.tag_values},
+                )
+
+            base_query = db.select(query_columns).select_from(table)
             base_query = self._add_filters_to_query(base_query, filters)
         else:
             # there are tag filters as well as tag buckets, so we have to apply the tag filters in
             # a separate join
-            filtered_query = db.select([RunsTable.c.run_id])
+            if self.supports_intersect:
+                filtered_query = db.select([RunsTable.c.run_id])
+            else:
+                filtered_query = db.select([RunsTable.c.run_id]).select_from(
+                    self._apply_tags_table_joins(RunsTable, filters.tags)
+                )
+
             filtered_query = self._add_filters_to_query(filtered_query, filters)
             filtered_query = filtered_query.alias("filtered_query")
-            base_query = db.select(query_columns).select_from(
-                RunsTable.join(
+            if self.supports_intersect:
+                table = RunsTable.join(
                     RunTagsTable,
                     db.and_(
                         RunsTable.c.run_id == RunTagsTable.c.run_id,
                         RunTagsTable.c.key == bucket_by.tag_key,
                         RunTagsTable.c.value.in_(bucket_by.tag_values),
                     ),
-                ).join(filtered_query, RunsTable.c.run_id == filtered_query.c.run_id)
+                )
+            else:
+                table = self._apply_tags_table_joins(
+                    RunsTable, {bucket_by.tag_key: bucket_by.tag_values}
+                )
+
+            base_query = db.select(query_columns).select_from(
+                table.join(filtered_query, RunsTable.c.run_id == filtered_query.c.run_id)
             )
 
         subquery = base_query.alias("subquery")
@@ -368,6 +400,28 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             query = query.where(subquery.c.rank <= bucket_by.bucket_limit)
 
         return query
+
+    def _apply_tags_table_joins(
+        self,
+        table: db.Table,
+        tags: Mapping[str, Union[str, Sequence[str]]],
+    ):
+        multi_join = len(tags) > 1
+        for key, value in tags.items():
+            tags_table = RunTagsTable.alias() if multi_join else RunTagsTable
+            table = table.join(
+                tags_table,
+                db.and_(
+                    RunsTable.c.run_id == tags_table.c.run_id,
+                    tags_table.c.key == key,
+                    (
+                        tags_table.c.value == value
+                        if isinstance(value, str)
+                        else tags_table.c.value.in_(value)
+                    ),
+                ),
+            )
+        return table
 
     def get_runs(
         self,
