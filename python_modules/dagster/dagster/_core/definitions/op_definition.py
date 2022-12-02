@@ -125,10 +125,7 @@ class OpDefinition(NodeDefinition):
         retry_policy: Optional[RetryPolicy] = None,
         code_version: Optional[str] = None,
     ):
-        from .decorators.solid_decorator import (
-            DecoratedOpFunction,
-            resolve_checked_solid_fn_inputs,
-        )
+        from .decorators.solid_decorator import DecoratedOpFunction, resolve_checked_solid_fn_inputs
 
         ins = check.opt_mapping_param(ins, "ins")
         input_defs = [
@@ -259,7 +256,7 @@ class OpDefinition(NodeDefinition):
                 f"Attempted to get output annotation for {self.node_type_str} '{self.name}', "
                 "which was not constructed from a decorated function."
             )
-        return cast("DecoratedSolidFunction", self.compute_fn).get_output_annotation()
+        return cast("DecoratedOpFunction", self.compute_fn).get_output_annotation()
 
     def all_dagster_types(self) -> Iterator[DagsterType]:
         yield from self.all_input_output_types()

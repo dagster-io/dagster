@@ -29,7 +29,7 @@ from dagster import (
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.utils import validate_tags
-from dagster._core.execution.context.compute import SolidExecutionContext
+from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._utils import safe_tempfile_path
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -46,7 +46,7 @@ def _dm_compute(
     check.str_param(notebook_path, "notebook_path")
 
     def _t_fn(context, **inputs):
-        check.inst_param(context, "context", SolidExecutionContext)
+        check.inst_param(context, "context", OpExecutionContext)
         check.param_invariant(
             isinstance(context.run_config, dict),
             "context",

@@ -22,7 +22,7 @@ from dagster._core.definitions.run_config import (
     RunConfigSchemaCreationData,
     define_solid_dictionary_cls,
 )
-from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig, OpConfig
+from dagster._core.system_config.objects import OpConfig, ResolvedRunConfig, ResourceConfig
 from dagster._loggers import default_loggers
 
 

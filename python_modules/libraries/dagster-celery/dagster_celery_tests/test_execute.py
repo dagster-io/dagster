@@ -13,8 +13,8 @@ from dagster._core.errors import DagsterSubprocessError
 from dagster._core.events import DagsterEventType
 from dagster._legacy import (
     CompositeSolidExecutionResult,
-    PipelineExecutionResult,
     OpExecutionResult,
+    PipelineExecutionResult,
     execute_pipeline,
     execute_pipeline_iterator,
 )

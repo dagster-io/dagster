@@ -74,7 +74,7 @@ def _check_invocation_requirements(
     # Check resource requirements
     if (
         solid_def.required_resource_keys
-        and cast("DecoratedSolidFunction", solid_def.compute_fn).has_context_arg()
+        and cast("DecoratedOpFunction", solid_def.compute_fn).has_context_arg()
         and context is None
     ):
         node_label = solid_def.node_type_str  # string "solid" for solids, "op" for ops
@@ -136,7 +136,7 @@ def _resolve_inputs(solid_def: "OpDefinition", args, kwargs, context: "BoundOpEx
         )
 
     # If more args were provided than the function has positional args, then fail early.
-    positional_inputs = cast("DecoratedSolidFunction", solid_def.compute_fn).positional_inputs()
+    positional_inputs = cast("DecoratedOpFunction", solid_def.compute_fn).positional_inputs()
     if len(args) > len(positional_inputs):
         raise DagsterInvalidInvocationError(
             f"{solid_def.node_type_str} '{solid_def.name}' has {len(positional_inputs)} positional inputs, but {len(args)} positional inputs were provided."
@@ -161,7 +161,7 @@ def _resolve_inputs(solid_def: "OpDefinition", args, kwargs, context: "BoundOpEx
 
     unassigned_kwargs = {k: v for k, v in kwargs.items() if k not in input_dict}
     # If there are unassigned inputs, then they may be intended for use with a variadic keyword argument.
-    if unassigned_kwargs and cast("DecoratedSolidFunction", solid_def.compute_fn).has_var_kwargs():
+    if unassigned_kwargs and cast("DecoratedOpFunction", solid_def.compute_fn).has_var_kwargs():
         for k, v in unassigned_kwargs.items():
             input_dict[k] = v
 

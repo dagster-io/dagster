@@ -80,19 +80,23 @@ class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
         """The parsed config specific to this op."""
 
 
-class SolidExecutionContext(AbstractComputeExecutionContext):
-    """The ``context`` object that can be made available as the first argument to a solid's compute
+class OpExecutionContext(AbstractComputeExecutionContext):
+    """The ``context`` object that can be made available as the first argument to an op's compute
     function.
 
-    The context object provides system information such as resources, config, and logging to a
-    solid's compute function. Users should not instantiate this object directly.
+    The context object provides system information such as resources, config,
+    and logging to an op's compute function. Users should not instantiate this
+    object directly. To construct an `OpExecutionContext` for testing
+    purposes, use :py:func:`dagster.build_op_context`.
 
     Example:
 
     .. code-block:: python
 
-        @solid
-        def hello_world(context: SolidExecutionContext):
+        from dagster import op
+
+        @op
+        def hello_world(context: OpExecutionContext):
             context.log.info("Hello, world!")
 
     """
@@ -596,28 +600,6 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
         """
         return self._step_execution_context.step.get_mapping_key()
-
-
-class OpExecutionContext(SolidExecutionContext):
-    """The ``context`` object that can be made available as the first argument to an op's compute
-    function.
-
-    The context object provides system information such as resources, config,
-    and logging to an op's compute function. Users should not instantiate this
-    object directly. To construct an `OpExecutionContext` for testing
-    purposes, use :py:func:`dagster.build_op_context`.
-
-    Example:
-
-    .. code-block:: python
-
-        from dagster import op
-
-        @op
-        def hello_world(context: OpExecutionContext):
-            context.log.info("Hello, world!")
-
-    """
 
 
 SourceAssetObserveContext: TypeAlias = OpExecutionContext

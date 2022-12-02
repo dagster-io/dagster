@@ -5,13 +5,13 @@ from dagster._core.definitions import (
     InputDefinition,
     Materialization,
     ModeDefinition,
+    NodeInvocation,
     OutputDefinition,
     PartitionSetDefinition,
     PipelineDefinition,
     PresetDefinition,
     ScheduleExecutionContext,
     SensorExecutionContext,
-    NodeInvocation,
     build_assets_job,
     daily_schedule,
     default_executors,
@@ -29,12 +29,12 @@ from dagster._core.execution.api import (
     reexecute_pipeline,
     reexecute_pipeline_iterator,
 )
-from dagster._core.execution.context.compute import SolidExecutionContext
+from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.invocation import build_solid_context
 from dagster._core.execution.results import (
     CompositeSolidExecutionResult,
-    PipelineExecutionResult,
     OpExecutionResult,
+    PipelineExecutionResult,
 )
 from dagster._core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
