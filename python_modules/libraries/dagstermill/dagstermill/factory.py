@@ -32,14 +32,12 @@ from .engine import DagstermillEngine
 from .errors import DagstermillError
 from .translator import DagsterTranslator
 
-IS_WINDOWS = os.name == "nt"
-
 
 def _clean_path_for_windows(notebook_path):
-    """In windows, the notebook cant render in dagit unless the C: prefix is removed"""
-    if IS_WINDOWS and ("c:" in notebook_path or "C:" in notebook_path):
-        return notebook_path[2:]
-    return notebook_path
+    """In windows, the notebook cant render in dagit unless the C: prefix is removed.
+    os.path.splitdrive will split the path into (drive, tail), so just return the tail
+    """
+    return os.path.splitdrive(notebook_path)[1]
 
 
 # https://github.com/nteract/papermill/blob/17d4bbb3960c30c263bca835e48baf34322a3530/papermill/parameterize.py

@@ -52,7 +52,11 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
         with open(output_notebook_path, self.write_mode) as dest_file_obj:
             dest_file_obj.write(obj)
 
-        metadata = {"Executed notebook": MetadataValue.notebook(_clean_path_for_windows(output_notebook_path))}
+        metadata = {
+            "Executed notebook": MetadataValue.notebook(
+                _clean_path_for_windows(output_notebook_path)
+            )
+        }
 
         if context.has_asset_key:
             context.add_output_metadata(metadata)
