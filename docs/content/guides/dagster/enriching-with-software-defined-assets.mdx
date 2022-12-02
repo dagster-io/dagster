@@ -181,7 +181,7 @@ The goal of each op in the job is to produce an asset. However, because the job 
 ```python file=/guides/dagster/enriching_with_software_defined_assets/vanilla_io_manager.py
 from pandas import DataFrame
 
-from dagster import In, Out, job, op, repository
+from dagster import In, Out, job, op, Definitions
 
 from .mylib import s3_io_manager, snowflake_io_manager, train_recommender_model
 
@@ -206,9 +206,9 @@ def users_recommender_job():
     build_user_recommender_model(build_users())
 
 
-@repository
-def repo():
-    return [users_recommender_job]
+defs = Definitions(
+    jobs=[users_recommender_job],
+)
 ```
 
 </TabItem>
@@ -219,7 +219,7 @@ Here's what an equivalent job looks like using software-defined assets:
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_io_manager.py
 from pandas import DataFrame
 
-from dagster import SourceAsset, asset, define_asset_job, repository, with_resources
+from dagster import SourceAsset, asset, define_asset_job, Definitions
 
 from .mylib import s3_io_manager, snowflake_io_manager, train_recommender_model
 
@@ -238,18 +238,17 @@ def user_recommender_model(users: DataFrame):
     return users_recommender_model
 
 
-@repository
-def repo():
-    return [
-        *with_resources(
-            [raw_users, users, user_recommender_model],
-            resource_defs={
-                "warehouse": snowflake_io_manager,
-                "object_store": s3_io_manager,
-            },
-        ),
-        define_asset_job("users_recommender_job"),
-    ]
+users_recommender_job = define_asset_job(name="users_recommender_job")
+
+
+defs = Definitions(
+    assets=[raw_users, users, user_recommender_model],
+    jobs=[users_recommender_job],
+    resources={
+        "warehouse": snowflake_io_manager,
+        "object_store": s3_io_manager,
+    },
+)
 ```
 
 </TabItem>
@@ -265,7 +264,7 @@ This example does the same things as the [previous example](#materialize-two-int
 ```python file=/guides/dagster/enriching_with_software_defined_assets/vanilla_nothing.py
 from pandas import read_sql
 
-from dagster import In, Nothing, job, op, repository
+from dagster import In, Nothing, job, op, Definitions
 
 from .mylib import create_db_connection, pickle_to_s3, train_recommender_model
 
@@ -289,9 +288,9 @@ def users_recommender_job():
     build_user_recommender_model(build_users())
 
 
-@repository
-def repo():
-    return [users_recommender_job]
+defs = Definitions(
+    jobs=[users_recommender_job],
+)
 ```
 
 </TabItem>
@@ -302,7 +301,7 @@ Here's an example of an equivalent job that uses software-defined assets:
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_nothing.py
 from pandas import read_sql
 
-from dagster import asset, define_asset_job, repository
+from dagster import asset, define_asset_job, Definitions
 
 from .mylib import create_db_connection, pickle_to_s3, train_recommender_model
 
@@ -321,9 +320,13 @@ def user_recommender_model():
     pickle_to_s3(users_recommender_model, key="users_recommender_model")
 
 
-@repository
-def repo():
-    return [users, user_recommender_model, define_asset_job("users_recommender_job")]
+users_recommender_job = define_asset_job(name="users_recommender_job")
+
+
+defs = Definitions(
+    assets=[users, user_recommender_model],
+    jobs=[users_recommender_job],
+)
 ```
 
 </TabItem>
@@ -339,7 +342,7 @@ This example demonstrates a job where some of the ops (`extract_products` and `g
 ```python file=/guides/dagster/enriching_with_software_defined_assets/vanilla_graph.py
 from pandas import DataFrame
 
-from dagster import job, op, repository
+from dagster import job, op, Definitions
 
 from .mylib import create_db_connection, fetch_products
 
@@ -371,9 +374,9 @@ def ingest_products_and_categories():
     return write_products_table(products), write_categories_table(product_categories)
 
 
-@repository
-def repo():
-    return [ingest_products_and_categories]
+defs = Definitions(
+    jobs=[ingest_products_and_categories],
+)
 ```
 
 </TabItem>
@@ -386,7 +389,7 @@ Here's an equivalent job using software-defined assets.
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_graph.py
 from pandas import DataFrame
 
-from dagster import AssetsDefinition, GraphOut, define_asset_job, graph, op, repository
+from dagster import AssetsDefinition, GraphOut, define_asset_job, graph, op, Definitions
 
 from .mylib import create_db_connection, fetch_products
 
@@ -421,9 +424,13 @@ def ingest_graph():
 two_tables = AssetsDefinition.from_graph(ingest_graph)
 
 
-@repository
-def repo():
-    return [two_tables, define_asset_job("products_and_categories_job")]
+products_and_categories_job = define_asset_job(name="products_and_categories_job")
+
+
+defs = Definitions(
+    assets=[two_tables],
+    jobs=[products_and_categories_job],
+)
 ```
 
 </TabItem>
