@@ -19,7 +19,10 @@ def user_recommender_model():
     pickle_to_s3(users_recommender_model, key="users_recommender_model")
 
 
+users_recommender_job = define_asset_job("users_recommenders_job", selection="*")
+
+
 defs = Definitions(
     assets=[users, user_recommender_model],
-    jobs=define_asset_job(name="users_recommender_job", selection="*"),
+    jobs=[users_recommender_job],
 )
