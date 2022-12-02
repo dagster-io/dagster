@@ -20,7 +20,7 @@ Before we jump in, here's a quick refresher:
 
 ## Why use software-defined assets?
 
-Using software-defined assets means building Dagster jobs in a way that declares _ahead of time_ the assets they produce and consume. This is different than using the `AssetMaterialization` API, which only informs Dagster at runtime about the assets a job interacted with.
+Using software-defined assets means building Dagster jobs in a way that declares _ahead of time_ the assets they produce and consume. This is different than using the <PyObject object="AssetMaterialization" /> API, which only informs Dagster at runtime about the assets a job interacted with.
 
 Preemptively declaring assets offers distinct advantages, including:
 
@@ -43,7 +43,7 @@ Using software-defined assets enables you to directly operate them in Dagit. On 
 
 Software-defined assets provide sizeable improvements when it comes to code ergonomics:
 
-- **You'll usually write less code**. Specifying the inputs to a software-defined asset defines the assets it depends on. This means you don't need to use `@graph` and `@job` to wire dependencies between ops.
+- **You'll usually write less code**. Specifying the inputs to a software-defined asset defines the assets it depends on. This means you don't need to use <PyObject object="graph" decorator /> and <PyObject object="job" decorator /> to wire dependencies between ops.
 
   This approach improves scalability by reducing the number of times an asset's name appears in your codebase by half. Refer to the [I/O manager-based example](#materialize-two-interdependent-tables-without-an-io-manager) below to see this in action.
 
@@ -312,7 +312,9 @@ def repo():
 </TabItem>
 <TabItem name="With software-defined assets">
 
-Here's an equivalent job using software-defined assets. Note: Because some ops don't correspond to assets, this job uses `@op` and `@graph` APIs and `from_graph` to wrap a graph in a software-defined asset:
+Here's an equivalent job using software-defined assets.
+
+**Note:** Because some ops don't correspond to assets, this job uses <PyObject object="op" decorator /> and <PyObject object="graph" decorator /> APIs and <PyObject object="AssetsDefinition" method="from_graph" /> to wrap a graph in a software-defined asset:
 
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_graph.py
 from pandas import DataFrame
