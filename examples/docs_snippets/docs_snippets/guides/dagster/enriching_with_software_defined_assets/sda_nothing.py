@@ -1,6 +1,6 @@
 from pandas import read_sql
 
-from dagster import asset, define_asset_job, Definitions
+from dagster import Definitions, asset, define_asset_job
 
 from .mylib import create_db_connection, pickle_to_s3, train_recommender_model
 

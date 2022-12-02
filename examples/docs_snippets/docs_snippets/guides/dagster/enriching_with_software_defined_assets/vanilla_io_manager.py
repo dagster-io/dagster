@@ -1,6 +1,6 @@
 from pandas import DataFrame
 
-from dagster import In, Out, job, op, Definitions
+from dagster import Definitions, In, Out, job, op
 
 from .mylib import s3_io_manager, snowflake_io_manager, train_recommender_model
 

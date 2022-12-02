@@ -1,6 +1,6 @@
 from pandas import DataFrame
 
-from dagster import job, op, Definitions
+from dagster import Definitions, job, op
 
 from .mylib import create_db_connection, fetch_products
 

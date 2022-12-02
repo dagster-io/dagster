@@ -1,6 +1,6 @@
 from pandas import DataFrame
 
-from dagster import AssetsDefinition, GraphOut, define_asset_job, graph, op, Definitions
+from dagster import AssetsDefinition, Definitions, GraphOut, define_asset_job, graph, op
 
 from .mylib import create_db_connection, fetch_products
 
