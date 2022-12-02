@@ -586,6 +586,9 @@ class AssetLayer:
         )
         return self._asset_deps[asset_key]
 
+    def downstream_assets_for_asset(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
+        return {k for k, v in self._asset_deps.items() if asset_key in v}
+
     @property
     def dependency_node_handles_by_asset_key(self) -> Mapping[AssetKey, AbstractSet[NodeHandle]]:
         return self._dependency_node_handles_by_asset_key
@@ -605,6 +608,9 @@ class AssetLayer:
     @property
     def has_assets_defs(self) -> bool:
         return len(self.assets_defs_by_key) > 0
+
+    def has_assets_def_for_asset(self, asset_key: AssetKey) -> bool:
+        return asset_key in self.assets_defs_by_key
 
     def assets_def_for_asset(self, asset_key: AssetKey) -> "AssetsDefinition":
         return self._assets_defs_by_key[asset_key]
