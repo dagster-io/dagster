@@ -67,14 +67,77 @@ Note that using software-defined assets in one job doesn’t mean they need to b
 
 Still not sure? Check out these examples to see what's a good fit and what isn't:
 
-| Use case                                                                                                 | Good fit? | Explanation                                                      |
-| -------------------------------------------------------------------------------------------------------- | --------- | ---------------------------------------------------------------- |
-| Every day, drop and recreate the `users` table and the `user_recommender_model` model that depends on it | Yes       | Assets are known before a run and are being updated              |
-| Every hour, add a partition to the `events` table                                                        | Yes       | Assets are known before a run and are being updated              |
-| Clicking a button refreshes the `recommender` model                                                      | Yes       | Assets are known before a run and are being updated              |
-| Every day, send emails to a set of users                                                                 | No        | No assets are being updated                                      |
-| Every day, read a file of user IDs and change the value of a particular attribute for each user          | No        | The set of assets to update is not known before running the job. |
-| Every day, scan my warehouse for tables that haven't been used in months and delete them                 | No        | The set of assets to update is not known before running the job. |
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "45%",
+        }}
+      >
+        Use case
+      </th>
+      <th>Good fit?</th>
+      <th
+        style={{
+          width: "45%",
+        }}
+      >
+        Explanation
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        Every day, drop and recreate the <code>users</code> table and the{" "}
+        <code>user_recommender_model</code> model that depends on it
+      </td>
+      <td>Yes</td>
+      <td>Assets are known before a run and are being updated</td>
+    </tr>
+    <tr>
+      <td>
+        Every hour, add a partition to the <code>events</code> table
+      </td>
+      <td>Yes</td>
+      <td>Assets are known before a run and are being updated</td>
+    </tr>
+    <tr>
+      <td>
+        Clicking a button refreshes the <code>recommender</code> model
+      </td>
+      <td>Yes</td>
+      <td>Assets are known before a run and are being updated</td>
+    </tr>
+    <tr>
+      <td>Every day, send emails to a set of users</td>
+      <td>No</td>
+      <td>No assets are being updated</td>
+    </tr>
+    <tr>
+      <td>
+        Every day, read a file of user IDs and change the value of a particular
+        attribute for each user
+      </td>
+      <td>No</td>
+      <td>The set of assets to update is not known before running the job.</td>
+    </tr>
+    <tr>
+      <td>
+        Every day, scan my warehouse for tables that haven't been used in months
+        and delete them
+      </td>
+      <td>No</td>
+      <td>The set of assets to update is not known before running the job.</td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 
