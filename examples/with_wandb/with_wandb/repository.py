@@ -33,7 +33,7 @@ def dagster_with_wandb():
                 "wandb_resource": wandb_resource.configured(
                     {"api_key": {"env": "WANDB_API_KEY"}}
                 ),
-                "wandb_artifacts_manager": wandb_artifacts_io_manager.configured(
+                "io_manager": wandb_artifacts_io_manager.configured(
                     {"cache_duration_in_minutes": 60}
                 ),
             },

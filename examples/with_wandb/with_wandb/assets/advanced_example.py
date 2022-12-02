@@ -32,7 +32,6 @@ MY_TABLE = "my_table"
     name=MY_ASSET,
     compute_kind="Python",
     metadata={"wandb_artifact_configuration": wandb_artifact_configuration},
-    io_manager_key="wandb_artifacts_manager",
 )
 def write_advanced_artifact() -> wandb.sdk.wandb_artifacts.Artifact:
     """Example that writes an advanced Artifact.
@@ -77,7 +76,6 @@ def write_advanced_artifact() -> wandb.sdk.wandb_artifacts.Artifact:
                     "get": MY_TABLE,
                 }
             },
-            input_manager_key="wandb_artifacts_manager",
         )
     },
     output_required=False,
@@ -107,7 +105,6 @@ def get_table(context: OpExecutionContext, table: wandb.Table) -> None:
                     "get_path": "my_training_script",
                 }
             },
-            input_manager_key="wandb_artifacts_manager",
         )
     },
     output_required=False,
@@ -132,7 +129,6 @@ def get_path(context: OpExecutionContext, path: str) -> None:
     ins={
         "artifact": AssetIn(
             asset_key=MY_ASSET,
-            input_manager_key="wandb_artifacts_manager",
         )
     },
     output_required=False,

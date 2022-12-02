@@ -8,7 +8,6 @@ MODEL_NAME = "my_model"
 @asset(
     name=MODEL_NAME,
     compute_kind="Python",
-    io_manager_key="wandb_artifacts_manager",
 )
 def write_model() -> wandb.sdk.wandb_artifacts.Artifact:
     """Write your model.
@@ -26,12 +25,7 @@ def write_model() -> wandb.sdk.wandb_artifacts.Artifact:
 @asset(
     compute_kind="Python",
     name="registered-model",
-    ins={
-        "artifact": AssetIn(
-            asset_key=MODEL_NAME,
-            input_manager_key="wandb_artifacts_manager",
-        )
-    },
+    ins={"artifact": AssetIn(asset_key=MODEL_NAME)},
     output_required=False,
     config_schema={"model_registry": str},
 )

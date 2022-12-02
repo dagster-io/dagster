@@ -12,11 +12,14 @@ from wandb.sdk.data_types.base_types.wb_value import WBValue
 from wandb.sdk.wandb_artifacts import Artifact
 
 from dagster import (
+    Field,
     IOManager,
     InitResourceContext,
     InputContext,
+    Int,
     MetadataValue,
     OutputContext,
+    String,
     io_manager,
 )
 
@@ -70,6 +73,7 @@ class Config(TypedDict):
     wandb_run_name: Optional[str]
     wandb_run_id: Optional[str]
     wandb_run_tags: Optional[List[str]]
+    base_dir: str
     cache_duration_in_minutes: Optional[int]
 
 
@@ -104,6 +108,7 @@ class ArtifactsIOManager(IOManager):
             wandb_run_tags.append("dagster_wandb")
         self.wandb_run_tags = wandb_run_tags
 
+        self.base_dir = config["base_dir"]
         cache_duration_in_minutes = config["cache_duration_in_minutes"]
         default_cache_expiration_in_minutes = 60 * 24 * 30  # 60 minutes * 24 hours * 30 days
         self.cache_duration_in_minutes = (
@@ -113,19 +118,19 @@ class ArtifactsIOManager(IOManager):
         )
 
     def _get_local_storage_path(self):
-        dagster_home = os.environ["DAGSTER_HOME"]
-        path = f"{dagster_home}/storage/wandb_artifacts_manager"
+        path = os.path.join(self.base_dir, "storage", "wandb_artifacts_manager")
+        os.makedirs(path, exist_ok=True)
         return path
 
     def _get_artifacts_path(self, name, version):
         local_storage_path = self._get_local_storage_path()
-        path = f"{local_storage_path}/artifacts/{name}:{version}"
+        path = os.path.join(local_storage_path, "artifacts", f"{name}:{version}")
         os.makedirs(path, exist_ok=True)
         return path
 
     def _get_wandb_logs_path(self):
         local_storage_path = self._get_local_storage_path()
-        path = f"{local_storage_path}/runs/{self.dagster_run_id}"
+        path = os.path.join(local_storage_path, "runs", self.dagster_run_id)
         os.makedirs(path, exist_ok=True)
         return path
 
@@ -530,6 +535,33 @@ class ArtifactsIOManager(IOManager):
 @io_manager(
     required_resource_keys={"wandb_resource", "wandb_config"},
     description="IO manager to read and write W&B Artifacts",
+    config_schema={
+        "run_name": Field(
+            String,
+            is_required=False,
+            description="Short display name for this run, which is how you'll identify this run in the UI. By default, it’s set to a string with the following format dagster-run-[8 first characters of the Dagster Run ID] e.g. dagster-run-7e4df022.",
+        ),
+        "run_id": Field(
+            String,
+            is_required=False,
+            description="Unique ID for this run, used for resuming. It must be unique in the project, and if you delete a run you can't reuse the ID. Use the name field for a short descriptive name, or config for saving hyperparameters to compare across runs. The ID cannot contain the following special characters: /\#?%:.. You need to set the Run ID when you are doing experiment tracking inside Dagster to allow the IO Manager to resume the run. By default it’s set to the Dagster Run ID e.g  7e4df022-1bf2-44b5-a383-bb852df4077e.",
+        ),
+        "run_tags": Field(
+            [String],
+            is_required=False,
+            description="A list of strings, which will populate the list of tags on this run in the UI. Tags are useful for organizing runs together, or applying temporary labels like 'baseline' or 'production'. It's easy to add and remove tags in the UI, or filter down to just runs with a specific tag. Any W&B Run used by the integration will have the dagster_wandb tag.",
+        ),
+        "base_dir": Field(
+            String,
+            is_required=False,
+            description="Base directory used for local storage and caching. W&B Artifacts and W&B Run logs will be written and read from that directory. By default, it’s using the DAGSTER_HOME directory.",
+        ),
+        "cache_duration_in_minutes": Field(
+            Int,
+            is_required=False,
+            description="Defines the amount of time W&B Artifacts and W&B Run logs should be kept in the local storage. Only files and directories that were not opened for that amount of time are removed from the cache. Cache purging happens at the end of an IO Manager execution. You can set it to 0, if you want to disable caching completely. Caching improves speed when an Artifact is reused between jobs running on the same machine. It defaults to 30 days.",
+        ),
+    },
 )
 def wandb_artifacts_io_manager(context: InitResourceContext):
     wandb_client = context.resources.wandb_resource["sdk"]
@@ -545,6 +577,12 @@ def wandb_artifacts_io_manager(context: InitResourceContext):
         wandb_run_name = context.resource_config.get("run_name")
         wandb_run_id = context.resource_config.get("run_id")
         wandb_run_tags = context.resource_config.get("run_tags")
+        base_dir = context.resource_config.get(
+            "base_dir",
+            context.instance.storage_directory()
+            if context.instance
+            else os.environ["DAGSTER_HOME"],
+        )
         cache_duration_in_minutes = context.resource_config.get("cache_duration_in_minutes")
 
     if "PYTEST_CURRENT_TEST" in os.environ:
@@ -560,6 +598,7 @@ def wandb_artifacts_io_manager(context: InitResourceContext):
         "wandb_run_name": wandb_run_name,
         "wandb_run_id": wandb_run_id,
         "wandb_run_tags": wandb_run_tags,
+        "base_dir": base_dir,
         "cache_duration_in_minutes": cache_duration_in_minutes,
     }
     return ArtifactsIOManager(wandb_client, config)

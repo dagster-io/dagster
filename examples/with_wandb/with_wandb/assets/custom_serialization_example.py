@@ -21,7 +21,6 @@ from dagster import AssetIn, AssetOut, OpExecutionContext, asset, multi_asset
             },
         }
     },
-    io_manager_key="wandb_artifacts_manager",
 )
 def create_model_serialized_with_joblib():
     # This is not a real ML model but this would not be possible with the pickle module
@@ -31,17 +30,12 @@ def create_model_serialized_with_joblib():
 @asset(
     name="inference_result_from_joblib_serialized_model",
     compute_kind="Python",
-    ins={
-        "my_joblib_serialized_model": AssetIn(
-            input_manager_key="wandb_artifacts_manager",
-        )
-    },
+    ins={"my_joblib_serialized_model": AssetIn()},
     metadata={
         "wandb_artifact_configuration": {
             "type": "results",
         }
     },
-    io_manager_key="wandb_artifacts_manager",
 )
 def use_model_serialized_with_joblib(
     context: OpExecutionContext, my_joblib_serialized_model
@@ -60,7 +54,6 @@ def use_model_serialized_with_joblib(
                     "type": "model",
                 }
             },
-            io_manager_key="wandb_artifacts_manager",
         ),
         "my_test_set": AssetOut(
             metadata={
@@ -68,7 +61,6 @@ def use_model_serialized_with_joblib(
                     "type": "test_set",
                 }
             },
-            io_manager_key="wandb_artifacts_manager",
         ),
     },
     group_name="onnx_example",
@@ -95,12 +87,8 @@ def create_onnx_model():
     name="experiment_results",
     compute_kind="Python",
     ins={
-        "my_onnx_model": AssetIn(
-            input_manager_key="wandb_artifacts_manager",
-        ),
-        "my_test_set": AssetIn(
-            input_manager_key="wandb_artifacts_manager",
-        ),
+        "my_onnx_model": AssetIn(),
+        "my_test_set": AssetIn(),
     },
     group_name="onnx_example",
 )

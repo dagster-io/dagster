@@ -9,7 +9,6 @@ from dagster import AssetIn, asset
             "type": "dataset",
         }
     },
-    io_manager_key="wandb_artifacts_manager",
 )
 def create_my_first_list() -> list[int]:
     """Example writing a simple Python list into an W&B Artifact.
@@ -26,17 +25,12 @@ def create_my_first_list() -> list[int]:
 @asset(
     name="my_final_list",
     compute_kind="Python",
-    ins={
-        "my_first_list": AssetIn(
-            input_manager_key="wandb_artifacts_manager",
-        )
-    },
+    ins={"my_first_list": AssetIn()},
     metadata={
         "wandb_artifact_configuration": {
             "type": "dataset",
         }
     },
-    io_manager_key="wandb_artifacts_manager",
 )
 def create_my_final_list(my_first_list: list[int]) -> list[int]:
     """Example downloading an Artifact and creating a new one.

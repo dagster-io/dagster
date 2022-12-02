@@ -14,7 +14,6 @@ from dagster import AssetOut, multi_asset
                     "type": "training_dataset",
                 }
             },
-            io_manager_key="wandb_artifacts_manager",
         ),
         "second_table": AssetOut(
             metadata={
@@ -22,7 +21,6 @@ from dagster import AssetOut, multi_asset
                     "type": "validation_dataset",
                 }
             },
-            io_manager_key="wandb_artifacts_manager",
         ),
     },
     group_name="my_multi_asset_group",

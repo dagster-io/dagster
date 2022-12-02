@@ -1,8 +1,9 @@
-from wandb.sdk.internal.internal_api import Api
+from typing import Any, Dict
 
 import wandb
-from dagster import Field, InitResourceContext, StringSource, resource
-from typing import Any, Dict
+from wandb.sdk.internal.internal_api import Api
+
+from dagster import Field, InitResourceContext, String, StringSource, resource
 
 WANDB_CLOUD_HOST: str = "https://api.wandb.ai"
 
@@ -11,7 +12,7 @@ WANDB_CLOUD_HOST: str = "https://api.wandb.ai"
     config_schema={
         "api_key": Field(StringSource, description="Weights & Biases API key", is_required=True),
         "host": Field(
-            StringSource,
+            String,
             description="The Weights & Biases host server to connect to",
             is_required=False,
             default_value=WANDB_CLOUD_HOST,
