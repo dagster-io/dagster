@@ -373,36 +373,36 @@ Still not sure how software-defined assets fit into your current Dagster usage? 
 
 ### Ops and graphs
 
-| Without software-defined assets                                                                           | With software-defined assets                                                                   |
-| --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| An [op](/concepts/ops-jobs-graphs/ops) is the basic unit of computation                                   | Every software-defined asset includes a graph or an op                                         |
-| A [graph](/concepts/ops-jobs-graphs/graphs) is a composite unit of computation that connects multiple ops | Every software-defined asset includes a graph or an op                                         |
-| Ops can have multiple outputs                                                                             | Multiple assets can be produced by a single op when defined using the `@multi_asset` decorator |
-| Ops can use [config](/concepts/ops-jobs-graphs/ops#op-configuration)                                      | Assets can use [config](/concepts/assets/software-defined-assets)                              |
-| Ops can access <PyObject object="OpExecutionContext" />                                                   | Assets can access <PyObject object="OpExecutionContext" />                                     |
-| Ops can require resources                                                                                 | Software-defined assets can require resources                                                  |
-| Ops can be tested by directly invoking them                                                               | Assets can be tested by directly invoking them                                                 |
+| Without software-defined assets                                                                           | With software-defined assets                                                                                                |
+| --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| An [op](/concepts/ops-jobs-graphs/ops) is the basic unit of computation                                   | Every software-defined asset includes a graph or an op                                                                      |
+| A [graph](/concepts/ops-jobs-graphs/graphs) is a composite unit of computation that connects multiple ops | Every software-defined asset includes a graph or an op                                                                      |
+| Ops can have multiple outputs                                                                             | Multiple assets can be produced by a single op when defined using the <PyObject object="multi_asset" decorator /> decorator |
+| Ops can use [config](/concepts/ops-jobs-graphs/ops#op-configuration)                                      | Assets can use [config](/concepts/assets/software-defined-assets)                                                           |
+| Ops can access <PyObject object="OpExecutionContext" />                                                   | Assets can access <PyObject object="OpExecutionContext" />                                                                  |
+| Ops can require [resources](/concepts/resources)                                                          | Software-defined assets can require [resources](/concepts/resources)                                                        |
+| Ops can be tested by directly invoking them                                                               | Assets can be tested by directly invoking them                                                                              |
 
 </TabItem>
 <TabItem name="Jobs">
 
 ### Jobs
 
-| Without software-defined assets         | With software-defined assets                                |
-| --------------------------------------- | ----------------------------------------------------------- |
-| A job targets a graph of ops            | An asset job targets a selection of software-defined assets |
-| Jobs can be partitioned                 | Assets can be partitioned                                   |
-| Jobs can be put on schedules or sensors | Asset jobs can be put on schedules or sensors               |
+| Without software-defined assets                                                                                                               | With software-defined assets                                                                                                                        |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A job targets a graph of ops                                                                                                                  | An asset job targets a selection of software-defined assets                                                                                         |
+| Jobs can be [partitioned](/concepts/partitions-schedules-sensors/partitions)                                                                  | Assets can be [partitioned](/concepts/partitions-schedules-sensors/partitions)                                                                      |
+| Jobs can be put on [schedules](/concepts/partitions-schedules-sensors/schedules) or [sensors](/concepts/partitions-schedules-sensors/sensors) | Asset jobs can be put on [schedules](/concepts/partitions-schedules-sensors/schedules) or [sensors](/concepts/partitions-schedules-sensors/sensors) |
 
 </TabItem>
 <TabItem name="Dagster types">
 
 ### Dagster types
 
-| Without software-defined assets                                                                                                           | With software-defined assets                                                                                                                                                 |
-| ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Op outputs and inputs can have Dagster types                                                                                              | Software-defined assets can have Dagster types                                                                                                                               |
-| The `Nothing` Dagster type enables declaring that Dagster doesn't need to store or load the object corresponding to an op output or input | The `non_argument_deps` argument when defining an asset enables specifying dependencies without relying on Dagster to store or load objects corresponding to that dependency |
+| Without software-defined assets                                                                                                           | With software-defined assets                                                                                                                                                                                                                       |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Op outputs and inputs can have [Dagster types](/concepts/types)                                                                           | Software-defined assets can have [Dagster types](/concepts/types)                                                                                                                                                                                  |
+| The `Nothing` Dagster type enables declaring that Dagster doesn't need to store or load the object corresponding to an op output or input | The [`non_argument_deps`](/concepts/assets/software-defined-assets#non-argument-dependencies) argument when defining an asset enables specifying dependencies without relying on Dagster to store or load objects corresponding to that dependency |
 
 </TabItem>
 <TabItem name="Code locations">
@@ -418,9 +418,9 @@ Still not sure how software-defined assets fit into your current Dagster usage? 
 
 ### I/O managers
 
-| Without software-defined assets                                          | With software-defined assets                              |
-| ------------------------------------------------------------------------ | --------------------------------------------------------- |
-| I/O managers can control how op inputs and outputs are loaded and stored | I/O managers can control how assets are loaded and stored |
+| Without software-defined assets                                                                                 | With software-defined assets                                                                     |
+| --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| [I/O managers](/concepts/io-management/io-managers) can control how op inputs and outputs are loaded and stored | [I/O managers](/concepts/io-management/io-managers) can control how assets are loaded and stored |
 
 </TabItem>
 </TabGroup>
