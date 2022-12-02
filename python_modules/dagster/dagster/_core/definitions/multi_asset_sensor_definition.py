@@ -713,8 +713,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             )
 
         partition_mapping = to_asset.get_partition_mapping(from_asset_key)
-        downstream_partition_key_range = (
-            partition_mapping.get_downstream_partitions_for_partition_range(
+        downstream_partition_key_subset = (
+            partition_mapping.get_downstream_partitions_for_partition_subset(
                 PartitionKeyRange(partition_key, partition_key),
                 downstream_partitions_def=to_partitions_def,
                 upstream_partitions_def=from_asset.partitions_def,
@@ -722,30 +722,42 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         )
 
         partition_keys = to_partitions_def.get_partition_keys()
-        if (
-            downstream_partition_key_range.start not in partition_keys
-            or downstream_partition_key_range.end not in partition_keys
+        if not all(
+            [key in partition_keys for key in downstream_partition_key_subset.get_partition_keys()]
         ):
-            error_msg = f"""Mapped partition key {partition_key} to downstream partition key range
-            [{downstream_partition_key_range.start}...{downstream_partition_key_range.end}] which
-            is not a valid range in the downstream partitions definition."""
+            missing_keys = [
+                key
+                for key in downstream_partition_key_subset.get_partition_keys()
+                if key not in partition_keys
+            ]
+            raise DagsterInvalidInvocationError(
+                f"Partition keys {missing_keys} not found in upstream asset."
+            )
+        # if (
+        #     downstream_partition_key_subset.start not in partition_keys
+        #     or downstream_partition_key_subset.end not in partition_keys
+        # ):
+        #     error_msg = f"""Mapped partition key {partition_key} to downstream partition key range
+        #     [{downstream_partition_key_subset.start}...{downstream_partition_key_subset.end}] which
+        #     is not a valid range in the downstream partitions definition."""
 
-            if not isinstance(to_partitions_def, TimeWindowPartitionsDefinition):
-                raise DagsterInvalidInvocationError(error_msg)
-            else:
-                warnings.warn(error_msg)
+        #     if not isinstance(to_partitions_def, TimeWindowPartitionsDefinition):
+        #         raise DagsterInvalidInvocationError(error_msg)
+        #     else:
+        #         warnings.warn(error_msg)
 
         if isinstance(to_partitions_def, TimeWindowPartitionsDefinition):
-            return to_partitions_def.get_partition_keys_in_range(downstream_partition_key_range)  # type: ignore[attr-defined]
+            return to_partitions_def.get_partition_keys_in_range(downstream_partition_key_subset)  # type: ignore[attr-defined]
 
         # Not a time-window partition definition
-        downstream_partitions = partition_keys[
-            partition_keys.index(downstream_partition_key_range.start) : partition_keys.index(
-                downstream_partition_key_range.end
-            )
-            + 1
-        ]
-        return downstream_partitions
+        # downstream_partitions = partition_keys[
+        #     partition_keys.index(downstream_partition_key_subset.start) : partition_keys.index(
+        #         downstream_partition_key_subset.end
+        #     )
+        #     + 1
+        # ]
+        return list(downstream_partition_key_subset.get_partition_keys())
+        # return downstream_partitions
 
     @public
     def advance_cursor(

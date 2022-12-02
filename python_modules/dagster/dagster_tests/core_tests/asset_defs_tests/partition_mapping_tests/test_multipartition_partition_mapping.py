@@ -66,8 +66,8 @@ def test_get_downstream_partitions_multiple_keys_in_range():
 
     result = SingleDimensionToMultiPartitionMapping(
         partition_dimension_name="abc"
-    ).get_downstream_partitions_for_partition_range(
-        upstream_partition_key_range=PartitionKeyRange("a", "b"),
+    ).get_downstream_partitions_for_partition_subset(
+        upstream_partition_key_subset=PartitionKeyRange("a", "b"),
         downstream_partitions_def=downstream_partitions_def,
         upstream_partitions_def=upstream_partitions_def,
     )
@@ -93,8 +93,25 @@ def test_get_upstream_single_dimension_to_multi_partition_mapping():
     result = SingleDimensionToMultiPartitionMapping(
         partition_dimension_name="abc"
     ).get_upstream_partitions_for_partition_subset(
-        PartitionKeyRange(MultiPartitionKey({"abc": "a", "123": "1"}), "a"),
+        PartitionKeyRange(
+            MultiPartitionKey({"abc": "a", "123": "1"}), MultiPartitionKey({"abc": "a", "123": "1"})
+        ),
         downstream_partitions_def,
         upstream_partitions_def,
     )
     assert result == DefaultPartitionsSubset(upstream_partitions_def, {"a"})
+
+    result = SingleDimensionToMultiPartitionMapping(
+        partition_dimension_name="abc"
+    ).get_upstream_partitions_for_partition_subset(
+        DefaultPartitionsSubset(
+            downstream_partitions_def,
+            {
+                MultiPartitionKey({"abc": "b", "123": "2"}),
+                MultiPartitionKey({"abc": "a", "123": "2"}),
+            },
+        ),
+        downstream_partitions_def,
+        upstream_partitions_def,
+    )
+    assert result == DefaultPartitionsSubset(upstream_partitions_def, {"a", "b"})
