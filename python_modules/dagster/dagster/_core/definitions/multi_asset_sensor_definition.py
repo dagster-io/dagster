@@ -712,7 +712,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 f"Asset key {from_asset_key} is not partitioned. Cannot get partition keys."
             )
 
-        partition_mapping = to_asset.get_partition_mapping(from_asset_key)
+        partition_mapping = to_asset.infer_partition_mapping(from_asset_key)
         downstream_partition_key_range = (
             partition_mapping.get_downstream_partitions_for_partition_range(
                 PartitionKeyRange(partition_key, partition_key),
