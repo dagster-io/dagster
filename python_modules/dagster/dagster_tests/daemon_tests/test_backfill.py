@@ -42,7 +42,7 @@ from dagster._seven import IS_WINDOWS, get_system_temp_directory
 from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
 
-default_resource_defs = resource_defs={"io_manager": fs_io_manager}
+default_resource_defs = resource_defs = {"io_manager": fs_io_manager}
 
 
 def _failure_flag_file():

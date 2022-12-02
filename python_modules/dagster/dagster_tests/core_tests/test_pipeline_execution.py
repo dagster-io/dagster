@@ -42,7 +42,6 @@ from dagster._legacy import (
     OutputDefinition,
     execute_pipeline,
     execute_pipeline_iterator,
-    pipeline,
     reexecute_pipeline,
 )
 from dagster._utils.test import execute_solid_within_pipeline
@@ -73,7 +72,7 @@ def make_compute_fn():
 
         result = []
         result.extend(passed_rows)
-        result.append({context.solid.name: "compute_called"})
+        result.append({context.op.name: "compute_called"})
         return result
 
     return compute
@@ -89,8 +88,8 @@ def _do_construct(ops, dependencies):
 
 
 def test_empty_adjacency_lists():
-    solids = [create_root_solid("a_node")]
-    forward_edges, backwards_edges = _do_construct(solids, {})
+    ops = [create_root_solid("a_node")]
+    forward_edges, backwards_edges = _do_construct(ops, {})
     assert forward_edges == {"a_node": set()}
     assert backwards_edges == {"a_node": set()}
 
@@ -162,10 +161,10 @@ def create_diamond_solids():
     return [node_d, node_c, node_b, node_a, a_source]
 
 
-def create_diamond_pipeline():
+def create_diamond_job():
     return JobDefinition(
         graph_def=GraphDefinition(
-            name="diamond_pipeline",
+            name="diamond_job",
             node_defs=create_diamond_solids(),
             dependencies=diamond_deps(),
         )
@@ -173,7 +172,7 @@ def create_diamond_pipeline():
 
 
 def test_diamond_toposort():
-    assert [s.name for s in create_diamond_pipeline().solids_in_topological_order] == [
+    assert [s.name for s in create_diamond_job().solids_in_topological_order] == [
         "A_source",
         "A",
         "B",
@@ -186,12 +185,12 @@ def test_external_diamond_toposort():
     with instance_for_test() as instance:
         with location_origin_from_python_file(
             python_file=__file__,
-            attribute="create_diamond_pipeline",
+            attribute="create_diamond_job",
             working_directory=None,
         ).create_single_location(instance) as repo_location:
             external_repo = next(iter(repo_location.get_repositories().values()))
-            external_pipeline = next(iter(external_repo.get_all_external_jobs()))
-            assert external_pipeline.solid_names_in_topological_order == [
+            external_job = next(iter(external_repo.get_all_external_jobs()))
+            assert external_job.solid_names_in_topological_order == [
                 "A_source",
                 "A",
                 "B",
@@ -210,7 +209,7 @@ def assert_equivalent_results(left, right):
 
     assert left.success == right.success
     assert left.name == right.name
-    assert left.solid.name == right.solid.name
+    assert left.op.name == right.op.name
     assert left.output_value() == right.output_value()
 
 
@@ -222,7 +221,7 @@ def assert_all_results_equivalent(expected_results, result_results):
         assert_equivalent_results(expected, result)
 
 
-def test_pipeline_execution_graph_diamond():
+def test_job_execution_graph_diamond():
     pipe = JobDefinition(
         graph_def=GraphDefinition(
             node_defs=create_diamond_solids(), name="test", dependencies=diamond_deps()
@@ -231,87 +230,87 @@ def test_pipeline_execution_graph_diamond():
     return _do_test(pipe)
 
 
-def test_execute_solid_in_diamond():
-    solid_result = execute_solid_within_pipeline(
-        create_diamond_pipeline(), "A", inputs={"A_input": [{"a key": "a value"}]}
+def test_execute_op_in_diamond():
+    op_result = execute_solid_within_pipeline(
+        create_diamond_job(), "A", inputs={"A_input": [{"a key": "a value"}]}
     )
 
-    assert solid_result.success
-    assert solid_result.output_value() == [
+    assert op_result.success
+    assert op_result.output_value() == [
         {"a key": "a value"},
         {"A": "compute_called"},
     ]
 
 
-def test_execute_aliased_solid_in_diamond():
+def test_execute_aliased_op_in_diamond():
     a_source = define_stub_solid("A_source", [input_set("A_input")])
 
-    @pipeline
-    def aliased_pipeline():
+    @job
+    def aliased_job():
         create_root_solid("A").alias("aliased")(a_source())
 
-    solid_result = execute_solid_within_pipeline(
-        aliased_pipeline, "aliased", inputs={"A_input": [{"a key": "a value"}]}
+    op_result = execute_solid_within_pipeline(
+        aliased_job, "aliased", inputs={"A_input": [{"a key": "a value"}]}
     )
 
-    assert solid_result.success
-    assert solid_result.output_value() == [
+    assert op_result.success
+    assert op_result.output_value() == [
         {"a key": "a value"},
         {"aliased": "compute_called"},
     ]
 
 
-def test_create_pipeline_with_empty_solids_list():
-    @pipeline
-    def empty_pipe():
+def test_create_job_with_empty_solids_list():
+    @job
+    def empty_job():
         pass
 
-    assert execute_pipeline(empty_pipe).success
+    assert empty_job.execute_in_process().success
 
 
-def test_singleton_pipeline():
-    stub_solid = define_stub_solid("stub", [{"a key": "a value"}])
+def test_singleton_job():
+    stub_op = define_stub_solid("stub", [{"a key": "a value"}])
 
     # will fail if any warning is emitted
     with warnings.catch_warnings():
         warnings.simplefilter("error")
 
-        @pipeline
-        def single_solid_pipeline():
-            stub_solid()
+        @job
+        def single_op_job():
+            stub_op()
 
-        assert execute_pipeline(single_solid_pipeline).success
-
-
-def test_two_root_solid_pipeline_with_empty_dependency_definition():
-    stub_solid_a = define_stub_solid("stub_a", [{"a key": "a value"}])
-    stub_solid_b = define_stub_solid("stub_b", [{"a key": "a value"}])
-
-    @pipeline
-    def pipe():
-        stub_solid_a()
-        stub_solid_b()
-
-    assert execute_pipeline(pipe).success
+        assert single_op_job.execute_in_process().success
 
 
-def test_two_root_solid_pipeline_with_partial_dependency_definition():
-    stub_solid_a = define_stub_solid("stub_a", [{"a key": "a value"}])
-    stub_solid_b = define_stub_solid("stub_b", [{"a key": "a value"}])
+def test_two_root_op_job_with_empty_dependency_definition():
+    stub_op_a = define_stub_solid("stub_a", [{"a key": "a value"}])
+    stub_op_b = define_stub_solid("stub_b", [{"a key": "a value"}])
 
-    single_dep_pipe = JobDefinition(
+    @job
+    def job_def():
+        stub_op_a()
+        stub_op_b()
+
+    assert job_def.execute_in_process().success
+
+
+def test_two_root_op_pipeline_with_partial_dependency_definition():
+    stub_op_a = define_stub_solid("stub_a", [{"a key": "a value"}])
+    stub_op_b = define_stub_solid("stub_b", [{"a key": "a value"}])
+
+    single_dep_job = JobDefinition(
         graph_def=GraphDefinition(
-            node_defs=[stub_solid_a, stub_solid_b],
+            node_defs=[stub_op_a, stub_op_b],
             name="test",
             dependencies={"stub_a": {}},
         )
     )
 
-    assert execute_pipeline(single_dep_pipe).success
+    assert single_dep_job.execute_in_process().success
 
 
-def _do_test(pipe):
-    result = execute_pipeline(pipe)
+def _do_test(job_def):
+    result = job_def.execute_in_process()
 
     assert result.result_for_node("A").output_value() == [
         input_set("A_input"),
@@ -345,27 +344,27 @@ def _do_test(pipe):
     ]
 
 
-def test_empty_pipeline_execution():
-    result = execute_pipeline(JobDefinition(graph_def=GraphDefinition(node_defs=[], name="test")))
+def test_empty_job_execution():
+    result = JobDefinition(graph_def=GraphDefinition(node_defs=[], name="test")).execute_in_process()
 
     assert result.success
 
 
-def test_pipeline_name_threaded_through_context():
+def test_job_name_threaded_through_context():
     name = "foobar"
 
-    @op()
-    def assert_name_solid(context):
+    @op
+    def assert_name_op(context):
         assert context.pipeline_name == name
 
-    result = execute_pipeline(
-        JobDefinition(graph_def=GraphDefinition(name="foobar", solid_defs=[assert_name_solid]))
-    )
+    result = JobDefinition(
+        graph_def=GraphDefinition(name="foobar", node_defs=[assert_name_op])
+    ).execute_in_process()
 
     assert result.success
 
 
-def test_pipeline_subset():
+def test_job_subset():
     @op
     def return_one():
         return 1
@@ -374,22 +373,22 @@ def test_pipeline_subset():
     def add_one(num):
         return num + 1
 
-    pipeline_def = JobDefinition(
+    job_def = JobDefinition(
         graph_def=GraphDefinition(
-            solid_defs=[return_one, add_one],
+            node_defs=[return_one, add_one],
             name="test",
             dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
         )
     )
 
-    pipeline_result = execute_pipeline(pipeline_def)
-    assert pipeline_result.success
-    assert pipeline_result.result_for_node("add_one").output_value() == 2
+    result = job_def.execute_in_process()
+    assert result.success
+    assert result.result_for_node("add_one").output_value() == 2
 
-    env_config = {"solids": {"add_one": {"inputs": {"num": {"value": 3}}}}}
+    env_config = {"ops": {"add_one": {"inputs": {"num": {"value": 3}}}}}
 
     subset_result = execute_pipeline(
-        pipeline_def.get_job_def_for_subset_selection(["add_one"]), run_config=env_config
+        job_def.get_job_def_for_subset_selection(["add_one"]), run_config=env_config
     )
 
     assert subset_result.success
@@ -397,7 +396,7 @@ def test_pipeline_subset():
     assert subset_result.result_for_node("add_one").output_value() == 4
 
 
-def test_pipeline_explicit_subset():
+def test_job_explicit_subset():
     @op
     def return_one():
         return 1
@@ -406,30 +405,28 @@ def test_pipeline_explicit_subset():
     def add_one(num):
         return num + 1
 
-    pipeline_def = JobDefinition(
+    job_def = JobDefinition(
         graph_def=GraphDefinition(
-            solid_defs=[return_one, add_one],
+            op_defs=[return_one, add_one],
             name="test",
             dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
         )
     )
 
-    pipeline_result = execute_pipeline(pipeline_def)
-    assert pipeline_result.success
-    assert pipeline_result.result_for_node("add_one").output_value() == 2
+    result = job_def.execute_in_process()
+    assert result.success
+    assert result.result_for_node("add_one").output_value() == 2
 
-    env_config = {"solids": {"add_one": {"inputs": {"num": {"value": 3}}}}}
+    env_config = {"ops": {"add_one": {"inputs": {"num": {"value": 3}}}}}
 
-    subset_result = execute_pipeline(
-        pipeline_def, run_config=env_config, solid_selection=["add_one"]
-    )
+    subset_result = execute_pipeline(job_def, run_config=env_config, solid_selection=["add_one"])
 
     assert subset_result.success
     assert len(subset_result.node_result_list) == 1
     assert subset_result.result_for_node("add_one").output_value() == 4
 
 
-def test_pipeline_subset_of_subset():
+def test_job_subset_of_subset():
     @op
     def return_one():
         return 1
@@ -438,36 +435,36 @@ def test_pipeline_subset_of_subset():
     def add_one(num):
         return num + 1
 
-    @pipeline
-    def pipeline_def():
+    @job
+    def job_def():
         add_one.alias("add_one_a")(return_one.alias("return_one_a")())
         add_one.alias("add_one_b")(return_one.alias("return_one_b")())
 
-    pipeline_result = execute_pipeline(pipeline_def)
-    assert pipeline_result.success
-    assert len(pipeline_result.node_result_list) == 4
-    assert pipeline_result.result_for_node("add_one_a").output_value() == 2
+    result = job_def.execute_in_process()
+    assert result.success
+    assert len(result.node_result_list) == 4
+    assert result.result_for_node("add_one_a").output_value() == 2
 
-    subset_pipeline = pipeline_def.get_job_def_for_subset_selection(["add_one_a", "return_one_a"])
-    subset_result = execute_pipeline(subset_pipeline)
+    subset_job = job_def.get_job_def_for_subset_selection(["add_one_a", "return_one_a"])
+    subset_result = subset_job.execute_in_process()
     assert subset_result.success
     assert len(subset_result.node_result_list) == 2
     assert subset_result.result_for_node("add_one_a").output_value() == 2
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Pipeline subsets may not be subset again.",
+        match="Job subsets may not be subset again.",
     ):
-        subset_pipeline.get_job_def_for_subset_selection(["add_one_a"])
+        subset_job.get_job_def_for_subset_selection(["add_one_a"])
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Pipeline subsets may not be subset again.",
+        match="Job subsets may not be subset again.",
     ):
-        subset_pipeline.get_job_def_for_subset_selection(["add_one_a", "return_one_a"])
+        subset_job.get_job_def_for_subset_selection(["add_one_a", "return_one_a"])
 
 
-def test_pipeline_subset_with_multi_dependency():
+def test_job_subset_with_multi_dependency():
     @op
     def return_one():
         return 1
@@ -481,29 +478,29 @@ def test_pipeline_subset_with_multi_dependency():
         return 3
 
     @job(name="test")
-    def pipeline_def():
+    def job_def():
         noop(return_one(), return_two())
 
-    pipeline_result = execute_pipeline(pipeline_def)
-    assert pipeline_result.success
-    assert pipeline_result.result_for_node("noop").output_value() == 3
+    result = job_def.execute_in_process()
+    assert result.success
+    assert result.result_for_node("noop").output_value() == 3
 
-    subset_result = execute_pipeline(pipeline_def.get_job_def_for_subset_selection(["noop"]))
+    subset_result = execute_pipeline(job_def.get_job_def_for_subset_selection(["noop"]))
 
     assert subset_result.success
     assert len(subset_result.node_result_list) == 1
-    assert pipeline_result.result_for_node("noop").output_value() == 3
+    assert result.result_for_node("noop").output_value() == 3
 
     subset_result = execute_pipeline(
-        pipeline_def.get_job_def_for_subset_selection(["return_one", "return_two", "noop"])
+        job_def.get_job_def_for_subset_selection(["return_one", "return_two", "noop"])
     )
 
     assert subset_result.success
     assert len(subset_result.node_result_list) == 3
-    assert pipeline_result.result_for_node("noop").output_value() == 3
+    assert result.result_for_node("noop").output_value() == 3
 
 
-def test_pipeline_explicit_subset_with_multi_dependency():
+def test_job_explicit_subset_with_multi_dependency():
     @op
     def return_one():
         return 1
@@ -517,29 +514,27 @@ def test_pipeline_explicit_subset_with_multi_dependency():
         return 3
 
     @job(name="test")
-    def pipeline_def(return_one, return_two):
+    def job_def(return_one, return_two):
         noop(return_one(), return_two())
 
-    pipeline_result = execute_pipeline(pipeline_def)
-    assert pipeline_result.success
-    assert pipeline_result.result_for_node("noop").output_value() == 3
+    result = job_def.execute_in_process()
+    assert result.success
+    assert result.result_for_node("noop").output_value() == 3
 
-    subset_result = execute_pipeline(pipeline_def, solid_selection=["noop"])
+    subset_result = execute_pipeline(job_def, solid_selection=["noop"])
 
     assert subset_result.success
     assert len(subset_result.node_result_list) == 1
-    assert pipeline_result.result_for_node("noop").output_value() == 3
+    assert result.result_for_node("noop").output_value() == 3
 
-    subset_result = execute_pipeline(
-        pipeline_def, solid_selection=["return_one", "return_two", "noop"]
-    )
+    subset_result = execute_pipeline(job_def, op_selection=["return_one", "return_two", "noop"])
 
     assert subset_result.success
     assert len(subset_result.node_result_list) == 3
-    assert pipeline_result.result_for_node("noop").output_value() == 3
+    assert result.result_for_node("noop").output_value() == 3
 
 
-def define_three_part_pipeline():
+def define_three_part_job():
     @op(ins={"num": In(Int)}, out=Out(Int))
     def add_one(num):
         return num + 1
@@ -553,38 +548,38 @@ def define_three_part_pipeline():
         return num + 3
 
     @job
-    def three_part_pipeline(num):
+    def three_part_job(num):
         add_one(num)
         add_two(num)
         add_three(num)
 
-    return three_part_pipeline
+    return three_part_job
 
 
-def define_created_disjoint_three_part_pipeline():
-    return define_three_part_pipeline().get_job_def_for_subset_selection(["add_one", "add_three"])
+def define_created_disjoint_three_part_job():
+    return define_three_part_job().get_job_def_for_subset_selection(["add_one", "add_three"])
 
 
-def test_pipeline_disjoint_subset():
-    disjoint_pipeline = define_three_part_pipeline().get_job_def_for_subset_selection(
+def test_job_disjoint_subset():
+    disjoint_job = define_three_part_job().get_job_def_for_subset_selection(
         ["add_one", "add_three"]
     )
-    assert len(disjoint_pipeline.solids) == 2
+    assert len(disjoint_job.solids) == 2
 
 
-def test_pipeline_execution_explicit_disjoint_subset():
+def test_job_execution_explicit_disjoint_subset():
     env_config = {
-        "solids": {
+        "ops": {
             "add_one": {"inputs": {"num": {"value": 2}}},
             "add_three": {"inputs": {"num": {"value": 5}}},
         },
         "loggers": {"console": {"config": {"log_level": "ERROR"}}},
     }
 
-    pipeline_def = define_created_disjoint_three_part_pipeline()
+    job_def = define_created_disjoint_three_part_job()
 
     result = execute_pipeline(
-        pipeline_def, solid_selection=["add_one", "add_three"], run_config=env_config
+        job_def, solid_selection=["add_one", "add_three"], run_config=env_config
     )
 
     assert result.success
@@ -593,7 +588,7 @@ def test_pipeline_execution_explicit_disjoint_subset():
     assert result.result_for_node("add_three").output_value() == 8
 
 
-def test_pipeline_wrapping_types():
+def test_job_wrapping_types():
     @op(
         ins={"value": In(Optional[List[Optional[String]]])},
         out=Out(Optional[List[Optional[String]]]),
@@ -607,34 +602,34 @@ def test_pipeline_wrapping_types():
             output.append(None if item is None else item + item)
         return output
 
-    @pipeline
+    @job
     def wrapping_test():
         double_string_for_all()
 
     assert execute_pipeline(
         wrapping_test,
-        run_config={"solids": {"double_string_for_all": {"inputs": {"value": None}}}},
+        run_config={"op": {"double_string_for_all": {"inputs": {"value": None}}}},
     ).success
 
     assert execute_pipeline(
         wrapping_test,
-        run_config={"solids": {"double_string_for_all": {"inputs": {"value": []}}}},
+        run_config={"op": {"double_string_for_all": {"inputs": {"value": []}}}},
     ).success
 
     assert execute_pipeline(
         wrapping_test,
-        run_config={"solids": {"double_string_for_all": {"inputs": {"value": [{"value": "foo"}]}}}},
+        run_config={"op": {"double_string_for_all": {"inputs": {"value": [{"value": "foo"}]}}}},
     ).success
 
     assert execute_pipeline(
         wrapping_test,
         run_config={
-            "solids": {"double_string_for_all": {"inputs": {"value": [{"value": "bar"}, None]}}}
+            "op": {"double_string_for_all": {"inputs": {"value": [{"value": "bar"}, None]}}}
         },
     ).success
 
 
-def test_pipeline_streaming_iterator():
+def test_job_streaming_iterator():
     events = []
 
     @op
@@ -647,7 +642,7 @@ def test_pipeline_streaming_iterator():
         events.append(num + 1)
         return num + 1
 
-    @pipeline
+    @job
     def test_streaming_iterator():
         add_one(push_one())
 
@@ -664,7 +659,7 @@ def test_pipeline_streaming_iterator():
     assert events == [1, 2]
 
 
-def test_pipeline_streaming_multiple_outputs():
+def test_job_streaming_multiple_outputs():
     events = []
 
     @op(out={"one": Out(Int), "two": Out(Int)})
@@ -674,7 +669,7 @@ def test_pipeline_streaming_multiple_outputs():
         events.append(2)
         yield Output(2, "two")
 
-    @pipeline
+    @job
     def test_streaming_iterator_multiple_outputs():
         push_one_two()
 
@@ -693,9 +688,9 @@ def test_pipeline_streaming_multiple_outputs():
     assert events == [1, 2]
 
 
-def test_pipeline_init_failure():
+def test_job_init_failure():
     @op(required_resource_keys={"failing"})
-    def stub_solid(_):
+    def stub_op(_):
         return None
 
     env_config = {}
@@ -703,19 +698,17 @@ def test_pipeline_init_failure():
     def failing_resource_fn(*args, **kwargs):
         raise Exception()
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"failing": ResourceDefinition(resource_fn=failing_resource_fn)}
-            )
-        ]
+    @job(
+        _mode_def=ModeDefinition(
+            resource_defs={"failing": ResourceDefinition(resource_fn=failing_resource_fn)}
+        )
     )
-    def failing_init_pipeline():
-        stub_solid()
+    def failing_init_job():
+        stub_op()
 
     mem_instance = DagsterInstance.ephemeral()
     result = execute_pipeline(
-        failing_init_pipeline,
+        failing_init_job,
         run_config=dict(env_config),
         raise_on_error=False,
         instance=mem_instance,
@@ -728,7 +721,7 @@ def test_pipeline_init_failure():
 
     with instance_for_test() as fs_instance:
         result = execute_pipeline(
-            failing_init_pipeline,
+            failing_init_job,
             run_config=dict(env_config),
             raise_on_error=False,
             instance=fs_instance,
@@ -749,7 +742,7 @@ def test_reexecution_fs_storage():
     def add_one(num):
         return num + 1
 
-    pipeline_def = JobDefinition(
+    job_def = JobDefinition(
         graph_def=GraphDefinition(
             node_defs=[return_one, add_one],
             name="test",
@@ -758,13 +751,13 @@ def test_reexecution_fs_storage():
         _mode_def=default_mode_def_for_test,
     )
     instance = DagsterInstance.ephemeral()
-    pipeline_result = execute_pipeline(pipeline_def, instance=instance)
-    assert pipeline_result.success
-    assert pipeline_result.result_for_node("add_one").output_value() == 2
+    result = execute_pipeline(job_def, instance=instance)
+    assert result.success
+    assert result.result_for_node("add_one").output_value() == 2
 
     reexecution_result = reexecute_pipeline(
-        pipeline_def,
-        pipeline_result.run_id,
+        job_def,
+        result.run_id,
         instance=instance,
     )
 
@@ -773,11 +766,11 @@ def test_reexecution_fs_storage():
     assert reexecution_result.result_for_node("return_one").output_value() == 1
     assert reexecution_result.result_for_node("add_one").output_value() == 2
     reexecution_run = instance.get_run_by_id(reexecution_result.run_id)
-    assert reexecution_run.parent_run_id == pipeline_result.run_id
-    assert reexecution_run.root_run_id == pipeline_result.run_id
+    assert reexecution_run.parent_run_id == result.run_id
+    assert reexecution_run.root_run_id == result.run_id
 
     grandchild_result = reexecute_pipeline(
-        pipeline_def,
+        job_def,
         reexecution_result.run_id,
         instance=instance,
     )
@@ -788,10 +781,10 @@ def test_reexecution_fs_storage():
     assert grandchild_result.result_for_node("add_one").output_value() == 2
     grandchild_run = instance.get_run_by_id(grandchild_result.run_id)
     assert grandchild_run.parent_run_id == reexecution_result.run_id
-    assert grandchild_run.root_run_id == pipeline_result.run_id
+    assert grandchild_run.root_run_id == result.run_id
 
 
-def retry_pipeline():
+def retry_job():
     @op(
         config_schema={
             "fail": Field(bool, is_required=False, default_value=False),
@@ -819,20 +812,20 @@ def retry_pipeline():
 def test_multiproc_reexecution_fs_storage_after_fail():
     with instance_for_test() as instance:
         run_config = {"execution": {"multiprocess": {}}}
-        pipeline_result = execute_pipeline(
-            reconstructable(retry_pipeline),
+        result = execute_pipeline(
+            reconstructable(retry_job),
             run_config={
                 "execution": {"multiprocess": {}},
-                "solids": {"return_one": {"config": {"fail": True}}},
+                "ops": {"return_one": {"config": {"fail": True}}},
             },
             instance=instance,
             raise_on_error=False,
         )
-        assert not pipeline_result.success
+        assert not result.success
 
         reexecution_result = reexecute_pipeline(
-            reconstructable(retry_pipeline),
-            pipeline_result.run_id,
+            reconstructable(retry_job),
+            result.run_id,
             run_config=run_config,
             instance=instance,
         )
@@ -842,11 +835,11 @@ def test_multiproc_reexecution_fs_storage_after_fail():
         assert reexecution_result.result_for_node("return_one").output_value() == 1
         assert reexecution_result.result_for_node("add_one").output_value() == 2
         reexecution_run = instance.get_run_by_id(reexecution_result.run_id)
-        assert reexecution_run.parent_run_id == pipeline_result.run_id
-        assert reexecution_run.root_run_id == pipeline_result.run_id
+        assert reexecution_run.parent_run_id == result.run_id
+        assert reexecution_run.root_run_id == result.run_id
 
         grandchild_result = reexecute_pipeline(
-            reconstructable(retry_pipeline),
+            reconstructable(retry_job),
             reexecution_result.run_id,
             run_config=run_config,
             instance=instance,
@@ -858,10 +851,10 @@ def test_multiproc_reexecution_fs_storage_after_fail():
         assert grandchild_result.result_for_node("add_one").output_value() == 2
         grandchild_run = instance.get_run_by_id(grandchild_result.run_id)
         assert grandchild_run.parent_run_id == reexecution_result.run_id
-        assert grandchild_run.root_run_id == pipeline_result.run_id
+        assert grandchild_run.root_run_id == result.run_id
 
 
-def test_reexecution_fs_storage_with_solid_selection():
+def test_reexecution_fs_storage_with_op_selection():
     @op
     def return_one():
         return 1
@@ -870,7 +863,7 @@ def test_reexecution_fs_storage_with_solid_selection():
     def add_one(num):
         return num + 1
 
-    pipeline_def = JobDefinition(
+    job_def = JobDefinition(
         graph_def=GraphDefinition(
             node_defs=[return_one, add_one],
             name="test",
@@ -879,65 +872,65 @@ def test_reexecution_fs_storage_with_solid_selection():
         _mode_def=default_mode_def_for_test,
     )
     instance = DagsterInstance.ephemeral()
-    # Case 1: re-execute a part of a pipeline when the original pipeline doesn't have solid selection
-    pipeline_result = execute_pipeline(pipeline_def, instance=instance)
-    assert pipeline_result.success
-    assert pipeline_result.result_for_node("add_one").output_value() == 2
+    # Case 1: re-execute a part of a job when the original job doesn't have op selection
+    result = execute_pipeline(job_def, instance=instance)
+    assert result.success
+    assert result.result_for_node("add_one").output_value() == 2
 
     # This is how this is actually done in dagster_graphql.implementation.pipeline_execution_manager
-    reexecution_result_no_solid_selection = reexecute_pipeline(
-        pipeline_def,
-        parent_run_id=pipeline_result.run_id,
+    reexecution_result_no_op_selection = reexecute_pipeline(
+        job_def,
+        parent_run_id=result.run_id,
         step_selection=["return_one"],
         instance=instance,
     )
-    assert reexecution_result_no_solid_selection.success
-    assert len(reexecution_result_no_solid_selection.node_result_list) == 2
-    assert reexecution_result_no_solid_selection.result_for_node("add_one").skipped
-    assert reexecution_result_no_solid_selection.result_for_node("return_one").output_value() == 1
+    assert reexecution_result_no_op_selection.success
+    assert len(reexecution_result_no_op_selection.node_result_list) == 2
+    assert reexecution_result_no_op_selection.result_for_node("add_one").skipped
+    assert reexecution_result_no_op_selection.result_for_node("return_one").output_value() == 1
 
     # Case 2: re-execute a pipeline when the original pipeline has solid selection
-    pipeline_result_solid_selection = execute_pipeline(
-        pipeline_def,
+    job_result_op_selection = execute_pipeline(
+        job_def,
         instance=instance,
         solid_selection=["return_one"],
     )
-    assert pipeline_result_solid_selection.success
-    assert len(pipeline_result_solid_selection.node_result_list) == 1
+    assert job_result_op_selection.success
+    assert len(job_result_op_selection.node_result_list) == 1
     with pytest.raises(DagsterInvariantViolationError):
-        pipeline_result_solid_selection.result_for_node("add_one")
-    assert pipeline_result_solid_selection.result_for_node("return_one").output_value() == 1
+        job_result_op_selection.result_for_node("add_one")
+    assert job_result_op_selection.result_for_node("return_one").output_value() == 1
 
-    reexecution_result_solid_selection = reexecute_pipeline(
-        pipeline_def,
-        parent_run_id=pipeline_result_solid_selection.run_id,
+    reexecution_result_op_selection = reexecute_pipeline(
+        job_def,
+        parent_run_id=job_result_op_selection.run_id,
         instance=instance,
     )
 
-    assert reexecution_result_solid_selection.success
-    assert len(reexecution_result_solid_selection.node_result_list) == 1
+    assert reexecution_result_op_selection.success
+    assert len(reexecution_result_op_selection.node_result_list) == 1
     with pytest.raises(DagsterInvariantViolationError):
-        pipeline_result_solid_selection.result_for_node("add_one")
-    assert reexecution_result_solid_selection.result_for_node("return_one").output_value() == 1
+        job_result_op_selection.result_for_node("add_one")
+    assert reexecution_result_op_selection.result_for_node("return_one").output_value() == 1
 
-    # Case 3: re-execute a pipeline partially when the original pipeline has solid selection and
-    #   re-exeucte a step which hasn't been included in the original pipeline
+    # Case 3: re-execute a job partially when the original job has op selection and
+    #   re-exeucte a step which hasn't been included in the original job
     with pytest.raises(
         DagsterExecutionStepNotFoundError,
         match="Step selection refers to unknown step: add_one",
     ):
         reexecute_pipeline(
-            pipeline_def,
-            parent_run_id=pipeline_result_solid_selection.run_id,
+            job_def,
+            parent_run_id=job_result_op_selection.run_id,
             step_selection=["add_one"],
             instance=instance,
         )
 
-    # Case 4: re-execute a pipeline partially when the original pipeline has solid selection and
-    #   re-exeucte a step which has been included in the original pipeline
+    # Case 4: re-execute a job partially when the original job has op selection and
+    #   re-exeucte a step which has been included in the original job
     re_reexecution_result = reexecute_pipeline(
-        pipeline_def,
-        parent_run_id=reexecution_result_solid_selection.run_id,
+        job_def,
+        parent_run_id=reexecution_result_op_selection.run_id,
         instance=instance,
         step_selection=["return_one"],
     )
@@ -956,7 +949,7 @@ def test_single_step_reexecution():
     def add_one(num):
         return num + 1
 
-    pipeline_def = JobDefinition(
+    job_def = JobDefinition(
         graph_def=GraphDefinition(
             node_defs=[return_one, add_one],
             name="test",
@@ -965,14 +958,14 @@ def test_single_step_reexecution():
         _mode_def=default_mode_def_for_test,
     )
     instance = DagsterInstance.ephemeral()
-    pipeline_result = execute_pipeline(pipeline_def, instance=instance)
-    assert pipeline_result.success
-    assert pipeline_result.result_for_node("add_one").output_value() == 2
+    result = execute_pipeline(job_def, instance=instance)
+    assert result.success
+    assert result.result_for_node("add_one").output_value() == 2
 
     # This is how this is actually done in dagster_graphql.implementation.pipeline_execution_manager
     reexecution_result = reexecute_pipeline(
-        pipeline_def,
-        parent_run_id=pipeline_result.run_id,
+        job_def,
+        parent_run_id=result.run_id,
         instance=instance,
         step_selection=["add_one"],
     )
@@ -991,19 +984,19 @@ def test_two_step_reexecution():
     def add_one(num):
         return num + 1
 
-    @pipeline(mode_defs=[default_mode_def_for_test])
+    @job(_mode_def=default_mode_def_for_test)
     def two_step_reexec():
         add_one(add_one(return_one()))
 
     instance = DagsterInstance.ephemeral()
 
-    pipeline_result = execute_pipeline(two_step_reexec, instance=instance)
-    assert pipeline_result.success
-    assert pipeline_result.result_for_node("add_one_2").output_value() == 3
+    result = execute_pipeline(two_step_reexec, instance=instance)
+    assert result.success
+    assert result.result_for_node("add_one_2").output_value() == 3
 
     reexecution_result = reexecute_pipeline(
         two_step_reexec,
-        parent_run_id=pipeline_result.run_id,
+        parent_run_id=result.run_id,
         instance=instance,
         step_selection=["add_one", "add_one_2"],
     )
@@ -1026,19 +1019,19 @@ def test_optional():
     def echo(x):
         return x
 
-    @pipeline
-    def opt_pipeline():
+    @job
+    def opt_job():
         x, y = return_optional()
         echo.alias("echo_x")(x)
         echo.alias("echo_y")(y)
 
-    pipeline_result = execute_pipeline(opt_pipeline)
-    assert pipeline_result.success
+    result = opt_job.execute_in_process()
+    assert result.success
 
-    result_required = pipeline_result.result_for_node("echo_x")
+    result_required = result.result_for_node("echo_x")
     assert result_required.success
 
-    result_optional = pipeline_result.result_for_node("echo_y")
+    result_optional = result.result_for_node("echo_y")
     assert not result_optional.success
     assert result_optional.skipped
 
@@ -1060,9 +1053,9 @@ def test_selector_with_partial_dependency_dict():
         )
     )
 
-    execute_pipeline(pipe_two)
+    pipe_two.execute_in_process()
 
-    # if it is in solid defs it will execute even if it is not in dependencies dictionary
+    # if it is in op defs it will execute even if it is not in dependencies dictionary
     assert set(executed.keys()) == {"one", "two"}
 
 
@@ -1076,7 +1069,7 @@ def test_selector_with_subset_for_execution():
         pass
 
     # dsl subsets the definitions appropriately
-    @pipeline
+    @job
     def pipe():
         def_one()
         def_two()
@@ -1093,14 +1086,14 @@ def test_default_run_id():
         assert uuid.UUID(context.run_id)
         called["run_id"] = context.run_id
 
-    pipeline_def = JobDefinition(graph_def=GraphDefinition(node_defs=[check_run_id], name="test"))
+    job_def = JobDefinition(graph_def=GraphDefinition(node_defs=[check_run_id], name="test"))
 
-    result = execute_pipeline(pipeline_def)
+    result = job_def.execute_in_process()
     assert result.run_id == called["run_id"]
     assert called["yes"]
 
 
-def test_pipeline_tags():
+def test_job_tags():
     called = {}
 
     @op
@@ -1108,26 +1101,26 @@ def test_pipeline_tags():
         assert context.get_tag("foo") == "bar"
         called["yup"] = True
 
-    pipeline_def_with_tags = JobDefinition(
+    job_def_with_tags = JobDefinition(
         graph_def=GraphDefinition(
             name="injected_run_id",
             node_defs=[check_tags],
         ),
         tags={"foo": "bar"},
     )
-    result = execute_pipeline(pipeline_def_with_tags)
+    result = job_def_with_tags.execute_in_process()
     assert result.success
     assert called["yup"]
 
     called = {}
-    pipeline_def_with_override_tags = JobDefinition(
+    job_def_with_override_tags = JobDefinition(
         graph_def=GraphDefinition(
             name="injected_run_id",
             node_defs=[check_tags],
         ),
         tags={"foo": "notbar"},
     )
-    result = execute_pipeline(pipeline_def_with_override_tags, tags={"foo": "bar"})
+    result = execute_pipeline(job_def_with_override_tags, tags={"foo": "bar"})
     assert result.success
     assert called["yup"]
 
@@ -1154,67 +1147,66 @@ def test_multi_dep_optional():
     def collect_and(_, items, other):
         return items + [other]
 
-    @pipeline
+    @job
     def test_remaining():
         collect([ret_one(), skip()])
 
-    result = execute_pipeline(test_remaining)
+    result = test_remaining.execute_in_process()
     assert result.success
     assert result.result_for_node("collect").output_value() == [1]
 
-    @pipeline
+    @job
     def test_all_skip():
         collect([skip(), skip(), skip()])
 
-    result = execute_pipeline(test_all_skip)
+    result = test_all_skip.execute_in_process()
     assert result.success
     assert result.result_for_node("collect").skipped
 
-    @pipeline
+    @job
     def test_skipped_upstream():
         collect([ret_one(), echo(echo(skip()))])
 
-    result = execute_pipeline(test_skipped_upstream)
+    result = test_skipped_upstream.execute_in_process()
     assert result.success
     assert result.result_for_node("collect").output_value() == [1]
 
-    @pipeline
+    @job
     def test_all_upstream_skip():
         collect([echo(skip()), echo(skip()), echo(skip())])
 
-    result = execute_pipeline(test_all_upstream_skip)
+    result = test_all_upstream_skip.execute_in_process()
     assert result.success
     assert result.result_for_node("collect").skipped
 
-    @pipeline
+    @job
     def test_all_upstream_skip_with_other():
         collect_and([echo(skip()), echo(skip()), echo(skip())], ret_one())
 
-    result = execute_pipeline(test_all_upstream_skip_with_other)
+    result = test_all_upstream_skip_with_other.execute_in_process()
     assert result.success
     assert result.result_for_node("collect_and").skipped
 
-    @pipeline
+    @job
     def test_all_skip_with_other():
         collect_and([skip(), skip(), skip()], ret_one())
 
-    result = execute_pipeline(test_all_skip_with_other)
+    result = test_all_skip_with_other.execute_in_process()
     assert result.success
     assert result.result_for_node("collect_and").skipped
 
-    @pipeline
+    @job
     def test_other_skip():
         collect_and([ret_one(), skip(), skip()], skip())
 
-    result = execute_pipeline(test_other_skip)
+    result = test_other_skip.execute_in_process()
     assert result.success
     assert result.result_for_node("collect_and").skipped
 
-    @pipeline
+    @job
     def test_other_skip_upstream():
         collect_and([ret_one(), skip(), skip()], echo(skip()))
 
-    result = execute_pipeline(test_other_skip_upstream)
+    result = test_other_skip_upstream.execute_in_process()
     assert result.success
     assert result.result_for_node("collect_and").skipped
-

@@ -16,7 +16,8 @@ from .execution_result import ExecutionResult
 class ExecuteInProcessResult(ExecutionResult):
     """Result object returned by in-process testing APIs.
 
-    Users should not instantiate this object directly. Used for retrieving run success, events, and outputs from execution methods that return this object.
+    Users should not instantiate this object directly. Used for retrieving run success, events, and
+    outputs from execution methods that return this object.
 
     This object is returned by:
     - :py:meth:`dagster.GraphDefinition.execute_in_process`

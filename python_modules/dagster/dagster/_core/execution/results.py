@@ -15,13 +15,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._core.definitions import (
-    GraphDefinition,
-    JobDefinition,
-    Node,
-    NodeHandle,
-    OpDefinition,
-)
+from dagster._core.definitions import GraphDefinition, JobDefinition, Node, NodeHandle
 from dagster._core.definitions.dependency import GraphNode, OpNode
 from dagster._core.definitions.events import (
     AssetMaterialization,

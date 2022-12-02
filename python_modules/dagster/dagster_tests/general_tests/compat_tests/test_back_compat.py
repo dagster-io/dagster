@@ -406,14 +406,14 @@ def test_0_12_0_extract_asset_index_cols():
     src_dir = file_relative_path(__file__, "snapshot_0_12_0_pre_asset_index_cols/sqlite")
 
     @op
-    def asset_solid(_):
+    def asset_op(_):
         yield AssetMaterialization(asset_key=AssetKey(["a"]), partition="partition_1")
         yield AssetMaterialization(asset_key=AssetKey(["b"]))
         yield Output(1)
 
-    @pipeline
-    def asset_pipeline():
-        asset_solid()
+    @job
+    def asset_job():
+        asset_op()
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "history", "runs", "index.db")
@@ -426,8 +426,8 @@ def test_0_12_0_extract_asset_index_cols():
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             storage = instance._event_storage
 
-            # make sure that executing the pipeline works
-            execute_pipeline(asset_pipeline, instance=instance)
+            # make sure that executing the job works
+            asset_job.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
             assert storage.has_asset_key(AssetKey(["b"]))
 
@@ -436,7 +436,7 @@ def test_0_12_0_extract_asset_index_cols():
             assert not storage.has_asset_key(AssetKey(["a"]))
             assert storage.has_asset_key(AssetKey(["b"]))
 
-            execute_pipeline(asset_pipeline, instance=instance)
+            asset_job.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
 
             # wipe and leave asset wiped
@@ -460,7 +460,7 @@ def test_0_12_0_extract_asset_index_cols():
             assert set(old_keys) == set(new_keys)
 
             # make sure that storing assets still works
-            execute_pipeline(asset_pipeline, instance=instance)
+            asset_job.execute_in_process(instance=instance)
 
             # make sure that wiping still works
             storage.wipe_asset(AssetKey(["a"]))

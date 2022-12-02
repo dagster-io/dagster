@@ -13,13 +13,12 @@ def test_string_from_inputs():
         assert string_input == "foo"
         called["yup"] = True
 
-    pipeline = JobDefinition(
-        graph_def=GraphDefinition(name="test_string_from_inputs_pipeline", node_defs=[str_as_input])
+    foo_job = JobDefinition(
+        graph_def=GraphDefinition(name="test_string_from_inputs_job", node_defs=[str_as_input])
     )
 
-    result = execute_pipeline(
-        pipeline,
-        {"solids": {"str_as_input": {"inputs": {"string_input": {"value": "foo"}}}}},
+    result = foo_job.execute_in_process(
+        run_config={"ops": {"str_as_input": {"inputs": {"string_input": {"value": "foo"}}}}},
     )
 
     assert result.success
@@ -34,7 +33,7 @@ def test_string_from_aliased_inputs():
         assert string_input == "foo"
         called["yup"] = True
 
-    pipeline = JobDefinition(
+    foo_job = JobDefinition(
         graph_def=GraphDefinition(
             node_defs=[str_as_input],
             name="test",
@@ -42,9 +41,8 @@ def test_string_from_aliased_inputs():
         )
     )
 
-    result = execute_pipeline(
-        pipeline,
-        {"solids": {"aliased": {"inputs": {"string_input": {"value": "foo"}}}}},
+    result = foo_job.execute_in_process(
+        run_config={"ops": {"aliased": {"inputs": {"string_input": {"value": "foo"}}}}},
     )
 
     assert result.success
@@ -55,20 +53,20 @@ def test_string_missing_inputs():
     called = {}
 
     @op(ins={"string_input": In(String)})
-    def str_as_input(_context, string_input):  # pylint: disable=W0613
+    def str_as_input(_context, string_input):
         called["yup"] = True
 
-    pipeline = JobDefinition(
+    foo_job = JobDefinition(
         graph_def=GraphDefinition(name="missing_inputs", node_defs=[str_as_input])
     )
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
-        execute_pipeline(pipeline)
+        execute_pipeline(foo_job)
 
     assert len(exc_info.value.errors) == 1
 
-    expected_suggested_config = {"solids": {"str_as_input": {"inputs": {"string_input": "..."}}}}
+    expected_suggested_config = {"ops": {"str_as_input": {"inputs": {"string_input": "..."}}}}
     assert exc_info.value.errors[0].message.startswith(
-        'Missing required config entry "solids" at the root.'
+        'Missing required config entry "ops" at the root.'
     )
     assert str(expected_suggested_config) in exc_info.value.errors[0].message
 
@@ -83,10 +81,10 @@ def test_string_missing_input_collision():
         return "bar"
 
     @op(ins={"string_input": In(String)})
-    def str_as_input(_context, string_input):  # pylint: disable=W0613
+    def str_as_input(_context, string_input):  # pylint: disable=unused-argument
         called["yup"] = True
 
-    pipeline = JobDefinition(
+    foo_job = JobDefinition(
         graph_def=GraphDefinition(
             name="overlapping",
             node_defs=[str_as_input, str_as_output],
@@ -94,12 +92,12 @@ def test_string_missing_input_collision():
         )
     )
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
-        execute_pipeline(
-            pipeline, {"solids": {"str_as_input": {"inputs": {"string_input": "bar"}}}}
+        foo_job.execute_in_process(
+            run_config={"ops": {"str_as_input": {"inputs": {"string_input": "bar"}}}}
         )
 
     assert (
-        'Error 1: Received unexpected config entry "inputs" at path root:solids:str_as_input.'
+        'Error 1: Received unexpected config entry "inputs" at path root:ops:str_as_input.'
         in str(exc_info.value)
     )
 
@@ -114,13 +112,12 @@ def test_composite_input_type():
         assert list_string_input == ["foo"]
         called["yup"] = True
 
-    pipeline = JobDefinition(
+    foo_job = JobDefinition(
         graph_def=GraphDefinition(name="test_string_from_inputs_pipeline", node_defs=[str_as_input])
     )
 
-    result = execute_pipeline(
-        pipeline,
-        {"solids": {"str_as_input": {"inputs": {"list_string_input": [{"value": "foo"}]}}}},
+    result = foo_job.execute_in_process(
+        run_config={"ops": {"str_as_input": {"inputs": {"list_string_input": [{"value": "foo"}]}}}},
     )
 
     assert result.success

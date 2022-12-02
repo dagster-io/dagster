@@ -20,38 +20,39 @@ from dagster._legacy import (
     execute_solid,
     pipeline,
 )
+from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
-def create_root_success_solid(name):
+def create_root_success_op(name):
     @op(name=name)
-    def root_solid(_context):
+    def root_op(_context):
         passed_rows = []
         passed_rows.append({name: "compute_called"})
         return passed_rows
 
-    return root_solid
+    return root_op
 
 
-def create_root_fn_failure_solid(name):
+def create_root_fn_failure_op(name):
     @op(name=name)
-    def failed_solid(_):
+    def failed_op(_):
         raise Exception("Compute failed")
 
-    return failed_solid
+    return failed_op
 
 
-def test_compute_failure_pipeline():
-    pipeline_def = JobDefinition(
+def test_compute_failure_job():
+    job_def = JobDefinition(
         graph_def=GraphDefinition(
-            solid_defs=[create_root_fn_failure_solid("failing")],
+            node_defs=[create_root_fn_failure_op("failing")],
             name="test",
         )
     )
-    pipeline_result = execute_pipeline(pipeline_def, raise_on_error=False)
+    result = job_def.execute_in_process(raise_on_error=False)
 
-    assert not pipeline_result.success
+    assert not result.success
 
-    result_list = pipeline_result.node_result_list
+    result_list = result.node_result_list
 
     assert len(result_list) == 1
     assert not result_list[0].success
@@ -66,36 +67,37 @@ def test_failure_midstream():
      //
     B.
     """
-    solid_a = create_root_success_solid("solid_a")
-    solid_b = create_root_success_solid("solid_b")
+
+    op_a = create_root_success_op("op_a")
+    op_b = create_root_success_op("op_b")
 
     @op
-    def solid_c(_, a, b):
+    def op_c(_, a, b):
         check.failed("user error")
         return [a, b, {"C": "compute_called"}]
 
     @op
-    def solid_d(_, c):
+    def op_d(_, c):
         return [c, {"D": "compute_called"}]
 
-    @pipeline
-    def pipeline_def():
-        solid_d(solid_c(solid_a(), solid_b()))
+    @job
+    def job_def():
+        op_d(op_c(op_a(), op_b()))
 
-    pipeline_result = execute_pipeline(pipeline_def, raise_on_error=False)
+    result = job_def.execute_in_process(raise_on_error=False)
 
-    assert pipeline_result.result_for_node("solid_a").success
-    assert pipeline_result.result_for_node("solid_b").success
-    assert not pipeline_result.result_for_node("solid_c").success
+    assert result.output_for_node("op_a").success
+    assert result.output_for_node("op_b").success
+    assert not result.output_for_node("op_c").success
     assert (
-        pipeline_result.result_for_node("solid_c").failure_data.error.cls_name
+        result.output_for_node("op_c").failure_data.error.cls_name
         == "DagsterExecutionStepExecutionError"
     )
     assert (
-        pipeline_result.result_for_node("solid_c").failure_data.error.cause.cls_name == "CheckError"
+        result.output_for_node("op_c").failure_data.error.cause.cls_name == "CheckError"
     )
-    assert not pipeline_result.result_for_node("solid_d").success
-    assert pipeline_result.result_for_node("solid_d").skipped
+    assert not result.output_for_node("op_d").success
+    assert result.output_for_node("op_d").skipped
 
 
 def test_failure_propagation():
@@ -106,50 +108,51 @@ def test_failure_propagation():
      \\             //
       D (fails) == E (skipped).
     """
-    solid_a = create_root_success_solid("solid_a")
+
+    op_a = create_root_success_op("op_a")
 
     @op
-    def solid_b(_, in_):
+    def op_b(_, in_):
         return in_
 
     @op
-    def solid_c(_, in_):
+    def op_c(_, in_):
         return in_
 
     @op
-    def solid_d(_, _in):
+    def op_d(_, _in):
         check.failed("user error")
 
     @op
-    def solid_e(_, in_):
+    def op_e(_, in_):
         return in_
 
     @op
-    def solid_f(_, in_, _in2):
+    def op_f(_, in_, _in2):
         return in_
 
-    @pipeline
-    def pipeline_def():
-        a_result = solid_a()
-        solid_f(solid_c(solid_b(a_result)), solid_e(solid_d(a_result)))
+    @job
+    def job_def():
+        a_result = op_a()
+        op_f(op_c(op_b(a_result)), op_e(op_d(a_result)))
 
-    pipeline_result = execute_pipeline(pipeline_def, raise_on_error=False)
+    result = job_def.execute_in_process(raise_on_error=False)
 
-    assert pipeline_result.result_for_node("solid_a").success
-    assert pipeline_result.result_for_node("solid_b").success
-    assert pipeline_result.result_for_node("solid_c").success
-    assert not pipeline_result.result_for_node("solid_d").success
+    assert result.output_for_node("op_a").success
+    assert result.output_for_node("op_b").success
+    assert result.output_for_node("op_c").success
+    assert not result.output_for_node("op_d").success
     assert (
-        pipeline_result.result_for_node("solid_d").failure_data.error.cause.cls_name == "CheckError"
+        result.output_for_node("op_d").failure_data.error.cause.cls_name == "CheckError"
     )
-    assert not pipeline_result.result_for_node("solid_e").success
-    assert pipeline_result.result_for_node("solid_e").skipped
-    assert not pipeline_result.result_for_node("solid_f").success
-    assert pipeline_result.result_for_node("solid_f").skipped
+    assert not result.output_for_node("op_e").success
+    assert result.output_for_node("op_e").skipped
+    assert not result.output_for_node("op_f").success
+    assert result.output_for_node("op_f").skipped
 
 
 def test_do_not_yield_result():
-    solid_inst = OpDefinition(
+    op_inst = OpDefinition(
         name="do_not_yield_result",
         outs={"result": Out()},
         compute_fn=lambda *_args, **_kwargs: Output("foo"),
@@ -159,7 +162,7 @@ def test_do_not_yield_result():
         DagsterInvariantViolationError,
         match='Compute function for op "do_not_yield_result" returned an Output',
     ):
-        execute_solid(solid_inst)
+        wrap_op_in_graph_and_execute(op_inst)
 
 
 def test_yield_non_result():
@@ -175,7 +178,7 @@ def test_yield_non_result():
             " 'str'> rather than an instance of Output, AssetMaterialization, or ExpectationResult."
         ),
     ):
-        execute_solid(yield_wrong_thing)
+        wrap_op_in_graph_and_execute(yield_wrong_thing)
 
 
 def test_single_compute_fn_returning_result():
@@ -186,7 +189,7 @@ def test_single_compute_fn_returning_result():
     )
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_solid(test_return_result)
+        wrap_op_in_graph_and_execute(test_return_result)
 
 
 def test_user_error_propogation():
@@ -207,7 +210,7 @@ def test_user_error_propogation():
     def add_one(num):
         return num + 1
 
-    pipeline_def = JobDefinition(
+    job_def = JobDefinition(
         graph_def=GraphDefinition(
             name="test_user_error_propogation",
             node_defs=[throws_user_error, return_one, add_one],
@@ -216,7 +219,7 @@ def test_user_error_propogation():
     )
 
     with pytest.raises(UserError) as e_info:
-        execute_pipeline(pipeline_def)
+        job_def.execute_in_process()
 
     assert isinstance(e_info.value, UserError)
 
@@ -229,12 +232,12 @@ def test_explicit_failure():
             metadata_entries=[MetadataEntry("always_fails", value="why")],
         )
 
-    @pipeline
+    @job
     def pipe():
         throws_failure()
 
     with pytest.raises(DagsterTypeCheckDidNotPass) as exc_info:
-        execute_pipeline(pipe)
+        pipe.execute_in_process()
 
     assert exc_info.value.description == "Always fails."
     assert exc_info.value.metadata_entries == [MetadataEntry("always_fails", value="why")]

@@ -203,7 +203,7 @@ def construct_event_record(logger_message: StructuredLoggerMessage) -> EventLogE
     )
 
 
-def construct_event_logger(event_record_callback):
+def construct_event_logger(event_record_callback: Callable[[EventLogEntry], None]) -> LoggerDefinition:
     """
     Callback receives a stream of event_records. Piggybacks on the logging machinery.
     """
