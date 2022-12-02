@@ -17,10 +17,7 @@ export const NotebookButton: React.FC<{
     return () => document.removeEventListener('show-kind-info', onOpen);
   }, []);
 
-  var value = path || '';
-  if (value.includes("c:") || value.includes("C:")) {
-    value = value.substr(2, value.length)
-  }
+  const value = path || '';
   const url = React.useMemo(() => {
     try {
       const url = new URL(value);

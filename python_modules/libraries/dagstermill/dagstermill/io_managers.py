@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
+from dagstermill.factory import _clean_path_for_windows
+
 import dagster._check as check
 from dagster._config import Field
 from dagster._core.definitions.events import AssetKey
@@ -54,7 +56,10 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
         mkdir_p(os.path.dirname(output_notebook_path))
         with open(output_notebook_path, self.write_mode) as dest_file_obj:
             dest_file_obj.write(obj)
-        yield MetadataEntry("Executed notebook", value=MetadataValue.notebook(output_notebook_path))
+        yield MetadataEntry(
+            "Executed notebook",
+            value=MetadataValue.notebook(_clean_path_for_windows(output_notebook_path)),
+        )
 
     def load_input(self, context) -> bytes:
         check.inst_param(context, "context", InputContext)

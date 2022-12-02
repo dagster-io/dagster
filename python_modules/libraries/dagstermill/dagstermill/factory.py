@@ -32,6 +32,15 @@ from .engine import DagstermillEngine
 from .errors import DagstermillError
 from .translator import DagsterTranslator
 
+IS_WINDOWS = os.name == "nt"
+
+
+def _clean_path_for_windows(notebook_path):
+    """In windows, the notebook cant render in dagit unless the C: prefix is removed"""
+    if IS_WINDOWS and ("c:" in notebook_path or "C:" in notebook_path):
+        return notebook_path[2:]
+    return notebook_path
+
 
 # https://github.com/nteract/papermill/blob/17d4bbb3960c30c263bca835e48baf34322a3530/papermill/parameterize.py
 def _find_first_tagged_cell_index(nb, tag):
@@ -383,7 +392,7 @@ def define_dagstermill_op(
             "kind" not in tags,
             "user-defined op tags contains the `kind` key, but the `kind` key is reserved for use by Dagster",
         )
-    default_tags = {"notebook_path": notebook_path, "kind": "ipynb"}
+    default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}
 
     return OpDefinition(
         name=name,
