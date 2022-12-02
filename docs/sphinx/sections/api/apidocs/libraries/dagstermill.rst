@@ -1,7 +1,7 @@
 Dagstermill
+===========
 
 `Using Jupyter notebooks with Papermill and Dagster guide </integrations/dagstermill>`_.
-===========
 
 .. currentmodule:: dagstermill
 

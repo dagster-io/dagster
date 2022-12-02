@@ -157,6 +157,7 @@ autodoc_mock_imports = [
     "sshtunnel",
     "toposort",
     "twilio",
+    "tomli",
 ]
 
 autodoc_typehints = "none"
