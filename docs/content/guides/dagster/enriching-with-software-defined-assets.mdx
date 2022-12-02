@@ -230,8 +230,6 @@ def repo():
 </TabItem>
 <TabItem name="With software-defined assets">
 
-#### With software-defined assets
-
 Here's an example of an equivalent job that uses software-defined assets:
 
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_nothing.py
@@ -366,13 +364,10 @@ def repo():
 
 ## How do software-defined assets work with other Dagster concepts?
 
-Still not sure how software-defined assets fit into your current Dagster usage? In this section, we'll touch on how software-defined assets work with some of Dagster's core concepts:
+Still not sure how software-defined assets fit into your current Dagster usage? In this section, we'll touch on how software-defined assets work with some of Dagster's core concepts.
 
-- [Ops and graphs](#ops-and-graphs)
-- [Jobs](#jobs)
-- [Dagster types](#dagster-types)
-- [Repositories](#repositories)
-- [I/O managers](#io-managers)
+<TabGroup>
+<TabItem name="Ops and graphs">
 
 ### Ops and graphs
 
@@ -386,6 +381,9 @@ Still not sure how software-defined assets fit into your current Dagster usage? 
 | Ops can require resources                                                                                 | Software-defined assets can require resources                                                  |
 | Ops can be tested by directly invoking them                                                               | Assets can be tested by directly invoking them                                                 |
 
+</TabItem>
+<TabItem name="Jobs">
+
 ### Jobs
 
 | Without software-defined assets         | With software-defined assets                                |
@@ -394,6 +392,9 @@ Still not sure how software-defined assets fit into your current Dagster usage? 
 | Jobs can be partitioned                 | Assets can be partitioned                                   |
 | Jobs can be put on schedules or sensors | Asset jobs can be put on schedules or sensors               |
 
+</TabItem>
+<TabItem name="Dagster types">
+
 ### Dagster types
 
 | Without software-defined assets                                                                                                           | With software-defined assets                                                                                                                                                 |
@@ -401,14 +402,23 @@ Still not sure how software-defined assets fit into your current Dagster usage? 
 | Op outputs and inputs can have Dagster types                                                                                              | Software-defined assets can have Dagster types                                                                                                                               |
 | The `Nothing` Dagster type enables declaring that Dagster doesn't need to store or load the object corresponding to an op output or input | The `non_argument_deps` argument when defining an asset enables specifying dependencies without relying on Dagster to store or load objects corresponding to that dependency |
 
+</TabItem>
+<TabItem name="Code locations">
+
 ### Repositories
 
 | Without software-defined assets                       | With software-defined assets    |
 | ----------------------------------------------------- | ------------------------------- |
 | Repositories can contain jobs, schedules, and sensors | Repositories can contain assets |
 
+</TabItem>
+<TabItem name="I/O managers">
+
 ### I/O managers
 
-| Without software-defined assets                                         | With software-defined assets                             |
-| ----------------------------------------------------------------------- | -------------------------------------------------------- |
+| Without software-defined assets                                          | With software-defined assets                              |
+| ------------------------------------------------------------------------ | --------------------------------------------------------- |
 | I/O managers can control how op inputs and outputs are loaded and stored | I/O managers can control how assets are loaded and stored |
+
+</TabItem>
+</TabGroup>
