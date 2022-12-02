@@ -147,13 +147,13 @@ class TestLoadWorkspace(BaseTestSuite):
                 )
 
     def test_load_location_statuses(self, graphql_context):
-        # Add an error origin
         original_origins = location_origins_from_yaml_paths(
             [file_relative_path(__file__, "multi_location.yaml")]
         )
         with mock.patch(
             "dagster._core.workspace.load_target.location_origins_from_yaml_paths",
         ) as origins_mock:
+            # Add an error origin
             original_origins.append(
                 ManagedGrpcPythonEnvRepositoryLocationOrigin(
                     location_name="error_location",
