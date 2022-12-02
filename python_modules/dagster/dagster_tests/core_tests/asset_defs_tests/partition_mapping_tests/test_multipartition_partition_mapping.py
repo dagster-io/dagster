@@ -15,7 +15,7 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import SingleDimensionToMultiPartitionMapping
 
 
-def test_get_downstream_single_dimension_to_multi_partition_mapping():
+def test_get_downstream_partitions_single_key_in_range():
     upstream_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
     downstream_partitions_def = MultiPartitionsDefinition(
         {"abc": upstream_partitions_def, "123": StaticPartitionsDefinition(["1", "2", "3"])}
@@ -23,13 +23,11 @@ def test_get_downstream_single_dimension_to_multi_partition_mapping():
 
     result = SingleDimensionToMultiPartitionMapping(
         partition_dimension_name="abc"
-    ).get_downstream_partitions_for_partition_range(
-        upstream_partition_key_range=PartitionKeyRange("a", "a"),
+    ).get_downstream_partitions_for_partition_subset(
+        upstream_partition_key_subset=PartitionKeyRange("a", "a"),
         downstream_partitions_def=downstream_partitions_def,
         upstream_partitions_def=upstream_partitions_def,
     )
-    print(result)
-    print(result.get_partition_keys())
     assert result == DefaultPartitionsSubset(
         downstream_partitions_def,
         {
@@ -38,7 +36,6 @@ def test_get_downstream_single_dimension_to_multi_partition_mapping():
             MultiPartitionKey({"abc": "a", "123": "3"}),
         },
     )
-    assert len(downstream_partitions_def.get_partition_keys_in_range(result)) == 3
 
     downstream_partitions_def = MultiPartitionsDefinition(
         {"abc": upstream_partitions_def, "xyz": StaticPartitionsDefinition(["x", "y", "z"])}
@@ -46,8 +43,8 @@ def test_get_downstream_single_dimension_to_multi_partition_mapping():
 
     result = SingleDimensionToMultiPartitionMapping(
         partition_dimension_name="abc"
-    ).get_downstream_partitions_for_partition_range(
-        upstream_partition_key_range=PartitionKeyRange("b", "b"),
+    ).get_downstream_partitions_for_partition_subset(
+        upstream_partition_key_subset=PartitionKeyRange("b", "b"),
         downstream_partitions_def=downstream_partitions_def,
         upstream_partitions_def=upstream_partitions_def,
     )
@@ -59,3 +56,45 @@ def test_get_downstream_single_dimension_to_multi_partition_mapping():
             MultiPartitionKey({"abc": "b", "xyz": "z"}),
         },
     )
+
+
+def test_get_downstream_partitions_multiple_keys_in_range():
+    upstream_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+    downstream_partitions_def = MultiPartitionsDefinition(
+        {"abc": upstream_partitions_def, "123": StaticPartitionsDefinition(["1", "2", "3"])}
+    )
+
+    result = SingleDimensionToMultiPartitionMapping(
+        partition_dimension_name="abc"
+    ).get_downstream_partitions_for_partition_range(
+        upstream_partition_key_range=PartitionKeyRange("a", "b"),
+        downstream_partitions_def=downstream_partitions_def,
+        upstream_partitions_def=upstream_partitions_def,
+    )
+    assert result == DefaultPartitionsSubset(
+        downstream_partitions_def,
+        {
+            MultiPartitionKey({"abc": "a", "123": "1"}),
+            MultiPartitionKey({"abc": "a", "123": "2"}),
+            MultiPartitionKey({"abc": "a", "123": "3"}),
+            MultiPartitionKey({"abc": "b", "123": "1"}),
+            MultiPartitionKey({"abc": "b", "123": "2"}),
+            MultiPartitionKey({"abc": "b", "123": "3"}),
+        },
+    )
+
+
+def test_get_upstream_single_dimension_to_multi_partition_mapping():
+    upstream_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+    downstream_partitions_def = MultiPartitionsDefinition(
+        {"abc": upstream_partitions_def, "123": StaticPartitionsDefinition(["1", "2", "3"])}
+    )
+
+    result = SingleDimensionToMultiPartitionMapping(
+        partition_dimension_name="abc"
+    ).get_upstream_partitions_for_partition_subset(
+        PartitionKeyRange(MultiPartitionKey({"abc": "a", "123": "1"}), "a"),
+        downstream_partitions_def,
+        upstream_partitions_def,
+    )
+    assert result == DefaultPartitionsSubset(upstream_partitions_def, {"a"})
