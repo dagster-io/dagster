@@ -33,8 +33,8 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_pyspark_tests*"]),
     install_requires=[
-        "dagster==1.1.4",
-        "dagster_spark==0.17.4",
+        "dagster==1.1.5",
+        "dagster_spark==0.17.5",
         # Pyspark 2.x is incompatible with Python 3.8+
         'pyspark>=3.0.0; python_version >= "3.8"',
         'pyspark>=2.0.2; python_version < "3.8"',
