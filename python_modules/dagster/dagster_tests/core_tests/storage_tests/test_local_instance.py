@@ -2,6 +2,7 @@ import os
 import tempfile
 import time
 import types
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 import yaml
@@ -240,3 +241,19 @@ def test_run_step_stats_with_retries():
         assert step_stats[0].end_time > step_stats[0].start_time
         assert step_stats[0].attempts == 4
         assert not _called
+
+
+def test_threaded_ephemeral_instance(caplog):
+    def _instantiate_ephemeral_instance():
+        with DagsterInstance.ephemeral():
+            pass
+
+    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="ephemeral_worker") as executor:
+        executor.submit(_instantiate_ephemeral_instance)
+        executor.submit(_instantiate_ephemeral_instance)
+        executor.submit(_instantiate_ephemeral_instance)
+
+    assert (
+        "SQLite objects created in a thread can only be used in that same thread."
+        not in caplog.text
+    )
