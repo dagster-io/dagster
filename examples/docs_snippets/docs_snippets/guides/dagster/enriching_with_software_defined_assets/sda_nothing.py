@@ -1,6 +1,6 @@
 from pandas import read_sql
 
-from dagster import asset, define_asset_job, repository
+from dagster import asset, define_asset_job, Definitions
 
 from .mylib import create_db_connection, pickle_to_s3, train_recommender_model
 
@@ -19,6 +19,10 @@ def user_recommender_model():
     pickle_to_s3(users_recommender_model, key="users_recommender_model")
 
 
-@repository
-def repo():
-    return [users, user_recommender_model, define_asset_job("users_recommender_job")]
+users_recommender_job = define_asset_job(name="users_recommender_job")
+
+
+defs = Definitions(
+    assets=[users, user_recommender_model],
+    jobs=[users_recommender_job],
+)

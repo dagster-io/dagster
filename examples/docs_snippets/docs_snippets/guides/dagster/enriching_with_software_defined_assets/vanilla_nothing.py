@@ -1,6 +1,6 @@
 from pandas import read_sql
 
-from dagster import In, Nothing, job, op, repository
+from dagster import In, Nothing, job, op, Definitions
 
 from .mylib import create_db_connection, pickle_to_s3, train_recommender_model
 
@@ -24,6 +24,6 @@ def users_recommender_job():
     build_user_recommender_model(build_users())
 
 
-@repository
-def repo():
-    return [users_recommender_job]
+defs = Definitions(
+    jobs=[users_recommender_job],
+)

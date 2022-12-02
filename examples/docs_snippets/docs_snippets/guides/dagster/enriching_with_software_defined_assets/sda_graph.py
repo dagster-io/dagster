@@ -1,6 +1,6 @@
 from pandas import DataFrame
 
-from dagster import AssetsDefinition, GraphOut, define_asset_job, graph, op, repository
+from dagster import AssetsDefinition, GraphOut, define_asset_job, graph, op, Definitions
 
 from .mylib import create_db_connection, fetch_products
 
@@ -35,6 +35,10 @@ def ingest_graph():
 two_tables = AssetsDefinition.from_graph(ingest_graph)
 
 
-@repository
-def repo():
-    return [two_tables, define_asset_job("products_and_categories_job")]
+products_and_categories_job = define_asset_job(name="products_and_categories_job")
+
+
+defs = Definitions(
+    assets=[two_tables],
+    jobs=[products_and_categories_job],
+)
