@@ -17,6 +17,7 @@ export interface CodeLocationStatusQuery_locationStatusesOrError_WorkspaceLocati
   __typename: "WorkspaceLocationStatusEntry";
   id: string;
   loadStatus: RepositoryLocationLoadStatus;
+  updateTimestamp: number;
 }
 
 export interface CodeLocationStatusQuery_locationStatusesOrError_WorkspaceLocationStatusEntries {

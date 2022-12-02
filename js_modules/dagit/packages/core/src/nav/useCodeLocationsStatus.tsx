@@ -10,9 +10,14 @@ import {StatusAndMessage} from '../instance/DeploymentStatusType';
 import {RepositoryLocationLoadStatus} from '../types/globalTypes';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
-import {CodeLocationStatusQuery} from './types/CodeLocationStatusQuery';
+import {
+  CodeLocationStatusQuery,
+  CodeLocationStatusQuery_locationStatusesOrError_WorkspaceLocationStatusEntries_entries,
+} from './types/CodeLocationStatusQuery';
 
-const POLL_INTERVAL = 3 * 1000;
+type LocationStatusEntry = CodeLocationStatusQuery_locationStatusesOrError_WorkspaceLocationStatusEntries_entries;
+
+const POLL_INTERVAL = 5 * 1000;
 
 export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null => {
   const {locationEntries, refetch} = React.useContext(WorkspaceContext);
@@ -90,9 +95,27 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         ? data?.locationStatusesOrError.entries
         : [];
 
+    const _build_entries_by_name = (
+      entries: LocationStatusEntry[],
+    ): {[key: string]: LocationStatusEntry} => {
+      const entries_by_name = {};
+      entries.forEach((entry) => {
+        entries_by_name[entry.id] = entry;
+      });
+      return entries_by_name;
+    };
+    const previousEntriesByName = _build_entries_by_name(previousEntries);
+    const currentEntriesByName = _build_entries_by_name(currentEntries);
+    const hasUpdatedEntries = currentEntries.every(
+      (entry) =>
+        !(entry.id in previousEntriesByName) ||
+        previousEntriesByName[entry.id].updateTimestamp <
+          currentEntriesByName[entry.id].updateTimestamp,
+    );
+
     // At least one code location has been removed. Reload, but don't make a big deal about it
     // since this was probably done manually.
-    if (previousEntries.length > currentEntries.length) {
+    if (previousEntries.length > currentEntries.length && !hasUpdatedEntries) {
       reloadWorkspaceQuietly();
       return;
     }
@@ -184,6 +207,12 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     // A location was previously loading, and no longer is. Our workspace is ready. Refetch it.
     if (anyPreviouslyLoading && !anyCurrentlyLoading) {
       reloadWorkspaceLoudly();
+      return;
+    }
+
+    if (hasUpdatedEntries) {
+      reloadWorkspaceLoudly();
+      return;
     }
 
     // It's unlikely that we've made it to this point, since being inside this effect should
@@ -228,6 +257,7 @@ const CODE_LOCATION_STATUS_QUERY = gql`
         entries {
           id
           loadStatus
+          updateTimestamp
         }
       }
     }
