@@ -20,6 +20,6 @@ def user_recommender_model():
 
 
 defs = Definitions(
-    assets=[raw_users, users, user_recommender_model],
-    jobs=define_asset_job(name="users_recommender_job"),
+    assets=[users, user_recommender_model],
+    jobs=define_asset_job(name="users_recommender_job", selection="*"),
 )
