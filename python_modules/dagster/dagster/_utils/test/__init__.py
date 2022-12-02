@@ -217,34 +217,44 @@ def execute_solids_within_pipeline(
 
 
 def wrap_op_in_graph(
-    op_def: OpDefinition, tags: Optional[Mapping[str, Any]] = None
+    op_def: OpDefinition,
+    tags: Optional[Mapping[str, Any]] = None,
+    do_input_mapping: bool = True,
+    do_output_mapping: bool = True,
 ) -> GraphDefinition:
     """Wraps op in a graph with the same inputs/outputs as the original op."""
     check.inst_param(op_def, "op_def", OpDefinition)
     check.opt_mapping_param(tags, "tags", key_type=str)
 
-    input_mappings = []
-    for input_name in op_def.ins.keys():
-        # create an input mapping to the inner node with the same name.
-        input_mappings.append(
-            InputMapping(
-                graph_input_name=input_name,
-                mapped_node_name=op_def.name,
-                mapped_node_input_name=input_name,
+    if do_input_mapping:
+        input_mappings = []
+        for input_name in op_def.ins.keys():
+            # create an input mapping to the inner node with the same name.
+            input_mappings.append(
+                InputMapping(
+                    graph_input_name=input_name,
+                    mapped_node_name=op_def.name,
+                    mapped_node_input_name=input_name,
+                )
             )
-        )
+    else:
+        input_mappings = None
 
-    output_mappings = []
-    for output_name in op_def.outs.keys():
-        out = op_def.outs[output_name]
-        output_mappings.append(
-            OutputMapping(
-                graph_output_name=output_name,
-                mapped_node_name=op_def.name,
-                mapped_node_output_name=output_name,
-                from_dynamic_mapping=out.is_dynamic,
+    if do_output_mapping:
+        output_mappings = []
+        for output_name in op_def.outs.keys():
+            out = op_def.outs[output_name]
+            output_mappings.append(
+                OutputMapping(
+                    graph_output_name=output_name,
+                    mapped_node_name=op_def.name,
+                    mapped_node_output_name=output_name,
+                    from_dynamic_mapping=out.is_dynamic,
+                )
             )
-        )
+    else:
+        output_mappings = None
+
     return GraphDefinition(
         name=f"wraps_{op_def.name}",
         node_defs=[op_def],
@@ -261,10 +271,14 @@ def wrap_op_in_graph_and_execute(
     tags: Optional[Mapping[str, Any]] = None,
     run_config: Optional[Mapping[str, object]] = None,
     raise_on_error: bool = True,
+    do_input_mapping: bool = True,
+    do_output_mapping: bool = True,
 ) -> ExecuteInProcessResult:
     """Run a dagster op in an actual execution.
     For internal use."""
-    return wrap_op_in_graph(op_def, tags).execute_in_process(
+    return wrap_op_in_graph(
+        op_def, tags, do_input_mapping=do_input_mapping, do_output_mapping=do_output_mapping
+    ).execute_in_process(
         resources=resources,
         input_values=input_values,
         raise_on_error=raise_on_error,
