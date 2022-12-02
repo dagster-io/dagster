@@ -33,7 +33,7 @@ from .errors import DagstermillError
 from .translator import DagsterTranslator
 
 
-def _clean_path_for_windows(notebook_path):
+def _clean_path_for_windows(notebook_path: str) -> str:
     """In windows, the notebook cant render in dagit unless the C: prefix is removed.
     os.path.splitdrive will split the path into (drive, tail), so just return the tail
     """
