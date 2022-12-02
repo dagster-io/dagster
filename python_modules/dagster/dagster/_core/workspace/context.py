@@ -38,7 +38,13 @@ from dagster._utils.error import SerializableErrorInfo, serializable_error_info_
 
 from .load_target import WorkspaceLoadTarget
 from .permissions import PermissionResult, get_user_permissions
-from .workspace import IWorkspace, WorkspaceLocationEntry, WorkspaceLocationLoadStatus
+from .workspace import (
+    IWorkspace,
+    WorkspaceLocationEntry,
+    WorkspaceLocationLoadStatus,
+    WorkspaceLocationStatusEntry,
+    location_status_from_location_entry,
+)
 
 if TYPE_CHECKING:
     from dagster._core.host_representation import (
@@ -79,7 +85,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         pass
 
     @abstractmethod
-    def get_location_statuses(self) -> Mapping[str, WorkspaceLocationLoadStatus]:
+    def get_location_statuses(self) -> Sequence[WorkspaceLocationStatusEntry]:
         pass
 
     @property
@@ -291,8 +297,11 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def get_location_entry(self, name) -> Optional[WorkspaceLocationEntry]:
         return self._workspace_snapshot.get(name)
 
-    def get_location_statuses(self) -> Mapping[str, WorkspaceLocationLoadStatus]:
-        return {name: entry.load_status for name, entry in self._workspace_snapshot.items()}
+    def get_location_statuses(self) -> Sequence[WorkspaceLocationStatusEntry]:
+        return [
+            location_status_from_location_entry(entry)
+            for entry in self._workspace_snapshot.values()
+        ]
 
     @property
     def process_context(self) -> "IWorkspaceProcessContext":

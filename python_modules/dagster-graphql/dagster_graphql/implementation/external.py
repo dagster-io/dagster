@@ -193,9 +193,12 @@ def fetch_location_statuses(
     return GrapheneWorkspaceLocationStatusEntries(
         entries=[
             GrapheneWorkspaceLocationStatusEntry(
-                name=name,
-                load_status=GrapheneRepositoryLocationLoadStatus.from_python_status(load_status),
+                name=status_entry.location_name,
+                load_status=GrapheneRepositoryLocationLoadStatus.from_python_status(
+                    status_entry.load_status
+                ),
+                update_timestamp=status_entry.update_timestamp,
             )
-            for name, load_status in workspace_request_context.get_location_statuses().items()
+            for status_entry in workspace_request_context.get_location_statuses()
         ]
     )

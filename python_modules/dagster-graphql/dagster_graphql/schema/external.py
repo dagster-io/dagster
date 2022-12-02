@@ -111,15 +111,16 @@ class GrapheneWorkspaceLocationStatusEntry(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     name = graphene.NonNull(graphene.String)
     loadStatus = graphene.NonNull(GrapheneRepositoryLocationLoadStatus)
+    updateTimestamp = graphene.NonNull(graphene.Float)
 
     class Meta:
         name = "WorkspaceLocationStatusEntry"
 
-    def __init__(self, name, load_status):
-        super().__init__(name=name, loadStatus=load_status)
+    def __init__(self, name, load_status, update_timestamp):
+        super().__init__(name=name, loadStatus=load_status, updateTimestamp=update_timestamp)
 
     def resolve_id(self, _):
-        return self.name
+        return f"location_status:{self.name}"
 
 
 class GrapheneWorkspaceLocationStatusEntries(graphene.ObjectType):

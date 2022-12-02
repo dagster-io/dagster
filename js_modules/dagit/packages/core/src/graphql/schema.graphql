@@ -3264,6 +3264,7 @@ type WorkspaceLocationStatusEntry {
   id: ID!
   name: String!
   loadStatus: RepositoryLocationLoadStatus!
+  updateTimestamp: Float!
 }
 
 union GraphOrError = Graph | GraphNotFoundError | PythonError

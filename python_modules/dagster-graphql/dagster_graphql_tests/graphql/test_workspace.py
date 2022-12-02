@@ -60,6 +60,7 @@ query {
           __typename
           id
           loadStatus
+          updateTimestamp
         }
       }
       ... on PythonError {
@@ -164,6 +165,8 @@ class TestLoadWorkspace(BaseTestSuite):
 
             origins_mock.return_value = original_origins
 
+            reload_timestamp = time.time()
+
             new_context = graphql_context.reload_workspace()
 
             result = execute_dagster_graphql(new_context, LOCATION_STATUS_QUERY)
@@ -186,3 +189,4 @@ class TestLoadWorkspace(BaseTestSuite):
 
             for node in nodes:
                 assert node["loadStatus"] == "LOADED"
+                assert float(node["updateTimestamp"]) > reload_timestamp
