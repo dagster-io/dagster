@@ -655,17 +655,19 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                     key,
                 )
 
-            # this key should be updated on this tick, as we are within the allowable window
-            if (
+            # a key may already be in to_materialize by the time we get here if a required
+            # neighbor was selected to be updated
+            asset_key_partition_key = AssetKeyPartitionKey(key, None)
+            if asset_key_partition_key in to_materialize:
+                expected_data_times_by_key[key] = expected_data_times
+            elif (
+                # this key should be updated on this tick, as we are within the allowable window
                 execution_window_start is not None
                 and execution_window_start <= current_time
-                # a key may already be in to_materialize by the time we get here if a required
-                # neighbor has been selected to be updated
-                or AssetKeyPartitionKey(key, None) in to_materialize
             ):
-                to_materialize.add(AssetKeyPartitionKey(key, None))
+                to_materialize.add(asset_key_partition_key)
                 expected_data_times_by_key[key] = expected_data_times
-                # all required neighbors must be updated on the same tick
+                # all required neighbors will be updated on the same tick
                 for neighbor_key in asset_graph.get_required_neighbors(key):
                     to_materialize.add(AssetKeyPartitionKey(neighbor_key, None))
             else:
