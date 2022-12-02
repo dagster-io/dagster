@@ -302,16 +302,16 @@ class CachingInstanceQueryer:
 
                 input_event_pointer_tag = get_input_event_pointer_tag_key(parent_key)
                 if input_event_pointer_tag in record_tags:
-                    # get the asset materialization record that was calculated using the logical
-                    # version machinery
+                    # get the upstream materialization event which was consumed when producing this
+                    # materialization event
                     input_record_id = int(record_tags[input_event_pointer_tag])
                     parent_record = self.get_latest_materialization_record(
                         parent_key, before_cursor=input_record_id + 1
                     )
                 else:
-                    # if logical version information was not recorded for this record, get the most
-                    # recent asset materialization for this parent which happened before the
-                    # current record
+                    # if the input event id was not recorded (materialized pre-1.1.0), just grab
+                    # the most recent asset materialization for this parent which happened before
+                    # the current record
                     parent_record = self.get_latest_materialization_record(
                         parent_key, before_cursor=record_id
                     )
@@ -324,7 +324,14 @@ class CachingInstanceQueryer:
                     record_timestamp=parent_record.event_log_entry.timestamp
                     if parent_record
                     else None,
-                    record_tags=_extract_tags(parent_record),
+                    record_tags=frozendict(
+                        (
+                            parent_record.asset_materialization.tags
+                            if parent_record and parent_record.asset_materialization
+                            else None
+                        )
+                        or {}
+                    ),
                     required_keys=frozenset(upstream_required_keys),
                 ).items():
                     # if root data is missing, this overrides other values
@@ -349,9 +356,9 @@ class CachingInstanceQueryer:
         and finds the most recent materialization of each of its parents which happened *before* that
         given materialization event.
         """
-        if record.asset_key is None:
+        if record.asset_key is None or record.asset_materialization is None:
             raise DagsterInvariantViolationError(
-                "Can only calculate data times for records with an `asset_key`."
+                "Can only calculate data times for records with a materialization event and an asset_key."
             )
         if upstream_keys is None:
             upstream_keys = asset_graph.get_non_source_roots(record.asset_key)
@@ -361,7 +368,7 @@ class CachingInstanceQueryer:
             asset_key=record.asset_key,
             record_id=record.storage_id,
             record_timestamp=record.event_log_entry.timestamp,
-            record_tags=_extract_tags(record),
+            record_tags=frozendict(record.asset_materialization.tags or {}),
             required_keys=frozenset(upstream_keys),
         )
         self.set_known_used_data(record, new_known_data=data)
@@ -396,19 +403,3 @@ class CachingInstanceQueryer:
             used_data_times=used_data_times,
             available_data_times={key: evaluation_time for key in used_data_times},
         )
-
-
-def _extract_tags(record: Optional[EventLogRecord]) -> Mapping[str, str]:
-    if record is None:
-        return frozendict()
-    dagster_event = record.event_log_entry.dagster_event
-    if dagster_event is None:
-        raise DagsterInvariantViolationError(
-            "Attempted to extract tags from record with no dagster event."
-        )
-    if dagster_event.event_type_value != DagsterEventType.ASSET_MATERIALIZATION:
-        raise DagsterInvariantViolationError(
-            "Attempted to extract tags from record with dagster event of type "
-            f"{dagster_event.event_type_value}."
-        )
-    return frozendict(dagster_event.step_materialization_data.materialization.tags or {})
