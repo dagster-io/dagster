@@ -128,8 +128,8 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         except ImportError:
             return HTMLResponse(
                 "Notebook support requires nbconvert, which is not installed. You can install "
-                "nbconvert via "
-                "<code>pip install nbconvert</code>"
+                "nbconvert using Dagit's 'notebook' extra via "
+                "<code>pip install dagit[notebook]</code>"
             )
 
         context = self.make_request_context(request)
