@@ -102,5 +102,9 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return False
 
     def dispose(self):
-        self._engine = None
-        self._conn = None
+        if self._conn:
+            self._conn.close()
+            self._conn = None
+
+        if self._engine:
+            self._engine.dispose()

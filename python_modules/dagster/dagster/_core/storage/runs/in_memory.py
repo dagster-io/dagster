@@ -18,6 +18,7 @@ class InMemoryRunStorage(SqlRunStorage):
     """
 
     def __init__(self, preload=None):
+        self._engine = None
         self._conn = None
         if preload:
             for payload in preload:
@@ -42,7 +43,9 @@ class InMemoryRunStorage(SqlRunStorage):
         if "instance_info" not in table_names:
             InstanceInfo.create(conn)
 
+        self._engine = engine
         self._conn = conn
+
         self.migrate()
         self.optimize()
 
@@ -57,4 +60,9 @@ class InMemoryRunStorage(SqlRunStorage):
         pass
 
     def dispose(self):
-        self._conn = None
+        if self._conn:
+            self._conn.close()
+            self._conn = None
+
+        if self._engine:
+            self._engine.dispose()
