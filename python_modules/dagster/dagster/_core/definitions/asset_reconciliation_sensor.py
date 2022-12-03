@@ -385,6 +385,10 @@ def determine_asset_partitions_to_reconcile(
             )
         ):
             to_reconcile.add(candidate)
+            # add in all of the neighbor keys which must be materialized alongside this one
+            for neighbor_key in asset_graph.get_required_neighbors(candidate.asset_key):
+                to_reconcile.add(AssetKeyPartitionKey(neighbor_key, candidate.partition_key))
+
             for child in asset_graph.get_children_partitions(
                 candidate.asset_key, candidate.partition_key
             ):
