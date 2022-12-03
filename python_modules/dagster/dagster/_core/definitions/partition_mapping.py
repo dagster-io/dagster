@@ -14,6 +14,7 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     PartitionDimensionDefinition,
 )
+from dagster._core.errors import DagsterInvalidInvocationError
 
 
 @experimental
@@ -72,7 +73,11 @@ class PartitionMapping(ABC):
         """
         TODO add docstring
         """
-        if isinstance(downstream_partition_key_subset, PartitionKeyRange):
+        if isinstance(downstream_partition_key_subset, PartitionsSubset):
+            raise NotImplementedError(
+                "Must be implemented by subclass if passing a PartitionsSubset"
+            )
+        else:
             upstream_key_range = self.get_upstream_partitions_for_partition_range(
                 downstream_partition_key_subset,
                 downstream_partitions_def,
@@ -81,33 +86,33 @@ class PartitionMapping(ABC):
             return upstream_partitions_def.empty_subset().with_partition_keys(
                 upstream_partitions_def.get_partition_keys_in_range(upstream_key_range)
             )
-        else:
-            raise NotImplementedError(
-                "Must be implemented by subclass if passing a PartitionsSubset"
-            )
 
     @public
     def get_downstream_partitions_for_partition_subset(
         self,
-        downstream_partition_key_subset: Optional[Union[PartitionKeyRange, PartitionsSubset]],
+        upstream_partition_key_subset: Union[PartitionKeyRange, PartitionsSubset],
         downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionsSubset:
         """
         TODO add docstring
         """
-        if isinstance(downstream_partition_key_subset, PartitionKeyRange):
+        if isinstance(upstream_partition_key_subset, PartitionsSubset):
+            raise NotImplementedError(
+                "Must be implemented by subclass if passing a PartitionsSubset"
+            )
+        else:
             downstream_range = self.get_downstream_partitions_for_partition_range(
-                downstream_partition_key_subset,
+                upstream_partition_key_subset,
                 downstream_partitions_def,
                 upstream_partitions_def,
             )
-            return upstream_partitions_def.empty_subset().with_partition_keys(
-                upstream_partitions_def.get_partition_keys_in_range(downstream_range)
-            )
-        else:
-            raise NotImplementedError(
-                "Must be implemented by subclass if passing a PartitionsSubset"
+            if downstream_partitions_def is None:
+                raise DagsterInvalidInvocationError(
+                    "downstream partitions definition must be defined"
+                )
+            return downstream_partitions_def.empty_subset().with_partition_keys(
+                downstream_partitions_def.get_partition_keys_in_range(downstream_range)
             )
 
 

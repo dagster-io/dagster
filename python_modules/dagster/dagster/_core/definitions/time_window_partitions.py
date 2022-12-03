@@ -979,6 +979,14 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
 
         return result
 
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
+        partition_keys_not_in_subset = set(self.get_partition_keys_not_in_subset())
+        return [
+            key
+            for key in self._partitions_def.get_partition_keys(current_time=current_time)
+            if key not in partition_keys_not_in_subset
+        ]
+
     @property
     def key_ranges(self) -> Sequence[PartitionKeyRange]:
         return self._key_ranges
