@@ -404,7 +404,7 @@ def define_custom_dict(name, permitted_key_names):
                 ),
             )
         for key in value:
-            if not key in permitted_key_names:
+            if key not in permitted_key_names:
                 return TypeCheck(
                     False,
                     description=(

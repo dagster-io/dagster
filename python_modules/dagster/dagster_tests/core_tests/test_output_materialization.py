@@ -361,15 +361,7 @@ def test_basic_yield_multiple_materializations():
     assert result.success
 
     event_types = [event.event_type_value for event in result.event_list]
-    assert 2 == (
-        sum(
-            [
-                True
-                for event_type in event_types
-                if event_type == DagsterEventType.ASSET_MATERIALIZATION.value
-            ]
-        )
-    )
+    assert sum([True for event_type in event_types if event_type == DagsterEventType.ASSET_MATERIALIZATION.value]) == 2
 
 
 @dagster_type_materializer(Int)

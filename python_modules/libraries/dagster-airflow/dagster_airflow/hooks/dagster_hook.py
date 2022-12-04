@@ -151,7 +151,7 @@ fragment PythonErrorFragment on PythonError {
         """
         variables = {
             "executionParams": {
-                "runConfigData": json.dumps({} if run_config == None else run_config),
+                "runConfigData": json.dumps({} if run_config is None else run_config),
                 "selector": {
                     "repositoryName": repository_name,
                     "repositoryLocationName": repostitory_location_name,

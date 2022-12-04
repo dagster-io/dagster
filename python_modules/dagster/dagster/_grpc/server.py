@@ -223,7 +223,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         self._entry_point = (
             frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))  # type: ignore
-            if entry_point != None
+            if entry_point is not None
             else DEFAULT_DAGSTER_ENTRY_POINT
         )
 
@@ -1017,7 +1017,7 @@ def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
                 f" \"{' '.join(subprocess_args)}\". Most recent connection error: {str(last_error)}"
             )
 
-        if server_process.poll() != None:
+        if server_process.poll() is not None:
             raise Exception(
                 f"gRPC server exited with return code {server_process.returncode} while starting up"
                 f" with the command: \"{' '.join(subprocess_args)}\""

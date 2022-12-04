@@ -516,7 +516,7 @@ def get_job_python_origin_from_kwargs(kwargs):
             "Must provide --job as there is more than one job "
             f"in {repo_definition.name}. Options are: {_sorted_quoted(job_names)}."
         )
-    elif not provided_name in job_names:
+    elif provided_name not in job_names:
         raise click.UsageError(
             f'Job "{provided_name}" not found in repository "{repo_definition.name}" '
             f"Found {_sorted_quoted(job_names)} instead."
@@ -659,7 +659,7 @@ def get_repository_python_origin_from_kwargs(kwargs: ClickArgMapping) -> Reposit
             "Must provide --repository as there is more than one repository. "
             f"Options are: {found_repo_names}."
         )
-    elif not provided_repo_name in code_pointer_dict:
+    elif provided_repo_name not in code_pointer_dict:
         raise click.UsageError(
             f'Repository "{provided_repo_name}" not found. Found {found_repo_names} instead.'
         )
@@ -784,7 +784,7 @@ def get_external_job_from_external_repo(
             f"in {external_repo.name}. Options are: {_sorted_quoted(external_pipelines.keys())}."
         )
 
-    if not provided_name in external_pipelines:
+    if provided_name not in external_pipelines:
         raise click.UsageError(
             f'Job "{provided_name}" not found in repository "{external_repo.name}". '
             f"Found {_sorted_quoted(external_pipelines.keys())} instead."

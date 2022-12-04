@@ -23,8 +23,8 @@ from dagster import (
     AssetMaterialization,
     AssetObservation,
     AssetOut,
-    AssetSelection,
     AssetsDefinition,
+    AssetSelection,
     Bool,
     DagsterInstance,
     DefaultScheduleStatus,
@@ -35,9 +35,9 @@ from dagster import (
     ExpectationResult,
     Field,
     HourlyPartitionsDefinition,
+    Int,
     IOManager,
     IOManagerDefinition,
-    Int,
     Map,
     MetadataEntry,
     Noneable,
@@ -56,9 +56,7 @@ from dagster import (
     TableConstraints,
     TableRecord,
     TableSchema,
-)
-from dagster import _check as check
-from dagster import (
+    _check as check,
     asset,
     dagster_type_loader,
     dagster_type_materializer,
@@ -1181,7 +1179,7 @@ def define_schedules():
     @daily_schedule(
         pipeline_name="no_config_pipeline",
         start_date=today_at_midnight().subtract(days=1),
-        should_execute=lambda _: asdf,  # pylint: disable=undefined-variable
+        should_execute=lambda _: asdf,  # noqa: F821
     )
     def should_execute_error_schedule(_date):
         return {}
@@ -1189,7 +1187,7 @@ def define_schedules():
     @daily_schedule(
         pipeline_name="no_config_pipeline",
         start_date=today_at_midnight().subtract(days=1),
-        tags_fn_for_date=lambda _: asdf,  # pylint: disable=undefined-variable
+        tags_fn_for_date=lambda _: asdf,  # noqa: F821
     )
     def tags_error_schedule(_date):
         return {}
@@ -1199,7 +1197,7 @@ def define_schedules():
         start_date=today_at_midnight().subtract(days=1),
     )
     def run_config_error_schedule(_date):
-        return asdf  # pylint: disable=undefined-variable
+        return asdf  # noqa: F821
 
     @daily_schedule(
         pipeline_name="no_config_pipeline",
@@ -1685,31 +1683,31 @@ failure_assets_job = build_assets_job(
 
 @asset
 def foo(context):
-    assert context.pipeline_def.asset_selection_data != None
+    assert context.pipeline_def.asset_selection_data is not None
     return 5
 
 
 @asset
 def bar(context):
-    assert context.pipeline_def.asset_selection_data != None
+    assert context.pipeline_def.asset_selection_data is not None
     return 10
 
 
 @asset
 def foo_bar(context, foo, bar):
-    assert context.pipeline_def.asset_selection_data != None
+    assert context.pipeline_def.asset_selection_data is not None
     return foo + bar
 
 
 @asset
 def baz(context, foo_bar):
-    assert context.pipeline_def.asset_selection_data != None
+    assert context.pipeline_def.asset_selection_data is not None
     return foo_bar
 
 
 @asset
 def unconnected(context):
-    assert context.pipeline_def.asset_selection_data != None
+    assert context.pipeline_def.asset_selection_data is not None
 
 
 asset_group_job = AssetGroup([foo, bar, foo_bar, baz, unconnected]).build_job("foo_job")

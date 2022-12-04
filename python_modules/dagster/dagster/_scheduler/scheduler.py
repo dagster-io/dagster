@@ -35,9 +35,9 @@ from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._seven.compat.pendulum import to_timezone
-from dagster._utils import merge_dicts
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import default_date_format_string
+from dagster._utils.merger import merge_dicts
 
 
 class _ScheduleLaunchContext:

@@ -38,7 +38,7 @@ def check_for_worker(name, args=None, present=True):
     assert result.exit_code == 0, str(result.exception)
     retry_count = 0
     while retry_count < 10 and (
-        not "{name}@".format(name=name) in result.output
+        "{name}@".format(name=name) not in result.output
         if present
         else "{name}@".format(name=name) in result.output
     ):

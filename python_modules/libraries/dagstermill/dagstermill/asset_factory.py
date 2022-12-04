@@ -91,7 +91,7 @@ def _dm_compute(
                     )
                 except Exception as ex:
                     step_execution_context.log.warn(
-                        f"Error when attempting to materialize executed notebook: {serializable_error_info_from_exc_info(sys.exc_info())}"  # noqa: E501
+                        f"Error when attempting to materialize executed notebook: {serializable_error_info_from_exc_info(sys.exc_info())}"
                     )
                     # pylint: disable=no-member
                     # compat:
@@ -249,7 +249,7 @@ def define_dagstermill_asset(
     if op_tags is not None:
         check.invariant(
             "notebook_path" not in op_tags,
-            (  # noqa: E501
+            (
                 "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key"
                 " is reserved for use by Dagster"
             ),

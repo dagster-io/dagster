@@ -254,7 +254,7 @@ def test_parse_step_selection_invalid():
 
 @asset
 def my_asset(context):
-    assert context.pipeline_def.asset_selection_data != None
+    assert context.pipeline_def.asset_selection_data is not None
     return 1
 
 

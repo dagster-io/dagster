@@ -1,7 +1,7 @@
 """isort:skip_file"""
 from docs_snippets.guides.dagster.asset_tutorial.complex_asset_graph import (
-    cereals,
     cereal_protein_fractions,
+    cereals,
     highest_protein_nabisco_cereal,
     nabisco_cereals,
 )

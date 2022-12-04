@@ -46,7 +46,7 @@ def test_normalize_name():
             default_args=default_args,
             schedule_interval=None,
         )
-    dummy_operator = DummyOperator(
+    _dummy_operator = DummyOperator(
         task_id="task-with.dot-dash",
         dag=dag,
     )
@@ -79,7 +79,7 @@ def test_long_name():
             schedule_interval=None,
         )
     long_name = "task-with.dot-dash2-loong" * 10  # 250 characters, Airflow's max allowed length
-    dummy_operator = DummyOperator(
+    _dummy_operator = DummyOperator(
         task_id=long_name,
         dag=dag,
     )
@@ -116,7 +116,7 @@ def test_one_task_dag():
             default_args=default_args,
             schedule_interval=None,
         )
-    dummy_operator = DummyOperator(
+    _dummy_operator = DummyOperator(
         task_id="dummy_operator",
         dag=dag,
     )

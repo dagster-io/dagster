@@ -3,8 +3,8 @@ import pytest
 import dagster._check as check
 from dagster import (
     AssetKey,
-    AssetSelection,
     AssetsDefinition,
+    AssetSelection,
     DagsterInvalidDefinitionError,
     JobDefinition,
     RepositoryDefinition,

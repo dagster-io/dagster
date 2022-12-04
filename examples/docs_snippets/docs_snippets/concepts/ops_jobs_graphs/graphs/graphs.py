@@ -2,7 +2,7 @@
 
 # pylint: disable=unused-argument,reimported
 
-from dagster import DependencyDefinition, GraphDefinition, graph, op
+from dagster import graph, op
 
 
 @op

@@ -97,8 +97,8 @@ class DagsterDockerOperator(DockerOperator):
 
         if self.force_pull or len(self.cli.images(name=self.image)) == 0:
             self.log.info("Pulling docker image %s", self.image)
-            for l in self.cli.pull(self.image, stream=True):
-                output = seven.json.loads(l.decode("utf-8").strip())
+            for ln in self.cli.pull(self.image, stream=True):
+                output = seven.json.loads(ln.decode("utf-8").strip())
                 if "status" in output:
                     self.log.info("%s", output["status"])
 

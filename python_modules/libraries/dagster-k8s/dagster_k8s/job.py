@@ -9,13 +9,20 @@ from typing import Any, List, Mapping, Optional, Sequence
 import kubernetes
 
 import dagster._check as check
-from dagster import Array, BoolSource, Field, Noneable, StringSource
-from dagster import __version__ as dagster_version
+from dagster import (
+    Array,
+    BoolSource,
+    Field,
+    Noneable,
+    StringSource,
+    __version__ as dagster_version,
+)
 from dagster._config import Permissive, Shape, validate_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.utils import parse_env_var
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import frozentags, merge_dicts
+from dagster._utils import frozentags
+from dagster._utils.merger import merge_dicts
 
 from .models import k8s_model_from_dict, k8s_snake_case_dict
 from .utils import sanitize_k8s_label
@@ -697,7 +704,7 @@ def construct_dagster_k8s_job(
 
     container_config = copy.deepcopy(user_defined_k8s_config.container_config)
 
-    if args != None:
+    if args is not None:
         container_config["args"] = args
 
     user_defined_env_vars = container_config.pop("env", [])

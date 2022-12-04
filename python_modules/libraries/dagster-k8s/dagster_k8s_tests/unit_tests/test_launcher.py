@@ -19,8 +19,8 @@ from dagster._core.test_utils import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ExecuteRunArgs
 from dagster._legacy import pipeline
-from dagster._utils import merge_dicts
 from dagster._utils.hosted_user_process import external_pipeline_from_recon_pipeline
+from dagster._utils.merger import merge_dicts
 
 
 def test_launcher_from_config(kubeconfig_file):
@@ -53,7 +53,7 @@ def test_launcher_from_config(kubeconfig_file):
         assert isinstance(run_launcher, K8sRunLauncher)
         assert run_launcher.fail_pod_on_run_failure is None
         assert run_launcher.resources == resources
-        assert run_launcher.scheduler_name == None
+        assert run_launcher.scheduler_name is None
 
     with instance_for_test(
         overrides={

@@ -1,11 +1,8 @@
 import os
 import shutil
 
-import pytest
-
 import docs_snippets.guides.dagster.dagster_type_factories as example_root
-from dagster import check_dagster_type
-from dagster._core.errors import DagsterTypeCheckDidNotPass
+import pytest
 from docs_snippets.guides.dagster.dagster_type_factories.job_1 import (
     generate_trip_distribution_plot as job_1,
 )
@@ -16,6 +13,9 @@ from docs_snippets.guides.dagster.dagster_type_factories.simple_example import (
     set_containing_1,
     set_has_element_type_factory,
 )
+
+from dagster import check_dagster_type
+from dagster._core.errors import DagsterTypeCheckDidNotPass
 
 EBIKE_TRIPS_PATH = os.path.join(example_root.__path__[0], "ebike_trips.csv")
 

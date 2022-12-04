@@ -22,7 +22,7 @@ from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.utils import parse_env_var
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._serdes.utils import hash_str
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .container_context import DockerContainerContext
 

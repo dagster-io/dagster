@@ -2,8 +2,12 @@ import warnings
 from abc import ABC
 from typing import Any, Mapping, Optional, Sequence
 
-from dagster import DagsterInvariantViolationError, Failure, MetadataValue
-from dagster import _check as check
+from dagster import (
+    DagsterInvariantViolationError,
+    Failure,
+    MetadataValue,
+    _check as check,
+)
 
 
 class DagsterDbtError(Failure, ABC):

@@ -18,8 +18,10 @@ from dagster_graphql.schema.solids import (
     GrapheneSolidDefinition,
 )
 
-from dagster import AssetKey
-from dagster import _check as check
+from dagster import (
+    AssetKey,
+    _check as check,
+)
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.logical_version import (
     DEFAULT_LOGICAL_VERSION,
@@ -280,9 +282,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         partitions_def_data = self._external_asset_node.partitions_def_data
         if partitions_def_data:
             if (
-                isinstance(partitions_def_data, ExternalStaticPartitionsDefinitionData)
-                or isinstance(partitions_def_data, ExternalTimeWindowPartitionsDefinitionData)
-                or isinstance(partitions_def_data, ExternalMultiPartitionsDefinitionData)
+                isinstance(partitions_def_data, (ExternalStaticPartitionsDefinitionData, ExternalTimeWindowPartitionsDefinitionData, ExternalMultiPartitionsDefinitionData))
             ):
                 return [
                     partition.name

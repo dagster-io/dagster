@@ -3,8 +3,8 @@ import pytest
 from dagster import (
     AssetKey,
     AssetOut,
-    AssetSelection,
     AssetsDefinition,
+    AssetSelection,
     DagsterEventType,
     DailyPartitionsDefinition,
     EventRecordsFilter,

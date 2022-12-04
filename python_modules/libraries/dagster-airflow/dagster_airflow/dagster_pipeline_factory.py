@@ -32,9 +32,11 @@ from dagster import (
     Nothing,
     Out,
     ScheduleDefinition,
+    _check as check,
+    op,
+    repository,
+    resource,
 )
-from dagster import _check as check
-from dagster import op, repository, resource
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX, validate_tags
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR

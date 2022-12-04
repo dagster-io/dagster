@@ -1,9 +1,10 @@
-from dagster import build_op_context
 from docs_snippets.concepts.assets.observations import (
     observation_op,
     observes_dataset_op,
     partitioned_dataset_op,
 )
+
+from dagster import build_op_context
 
 
 def test_ops_compile_and_execute():

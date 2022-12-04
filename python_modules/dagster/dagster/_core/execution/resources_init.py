@@ -164,7 +164,7 @@ def _core_resource_initialization_event_generator(
         for level in toposort(resource_dependencies):
             for resource_name in level:
                 resource_def = resource_defs[resource_name]
-                if not resource_name in resource_keys_to_init:
+                if resource_name not in resource_keys_to_init:
                     continue
 
                 resource_fn = cast(Callable[[InitResourceContext], Any], resource_def.resource_fn)

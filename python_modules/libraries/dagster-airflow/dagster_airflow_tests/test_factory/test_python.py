@@ -9,15 +9,15 @@ from dagster_airflow.factory import (
     make_airflow_dag_for_recon_repo,
 )
 from dagster_airflow_tests.marks import nettest, requires_airflow_db
-from dagster_airflow_tests.test_fixtures import (  # pylint: disable=unused-import
-    dagster_airflow_python_operator_pipeline,
+from dagster_airflow_tests.test_fixtures import (
+    dagster_airflow_python_operator_pipeline,  # noqa: F401
     execute_tasks_in_dag,
 )
 from dagster_test.test_project import get_test_project_environments_path
 
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.utils import make_new_run_id
-from dagster._utils import load_yaml_from_glob_list
+from dagster._utils.yaml_utils import load_yaml_from_glob_list
 
 from .utils import validate_pipeline_execution, validate_skip_pipeline_execution
 

@@ -32,8 +32,8 @@ from dagster._core.definitions.utils import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.storage.io_manager import IOManagerDefinition
-from dagster._utils import merge_dicts
 from dagster._utils.backcompat import ExperimentalWarning, experimental_arg_warning
+from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.compute import (

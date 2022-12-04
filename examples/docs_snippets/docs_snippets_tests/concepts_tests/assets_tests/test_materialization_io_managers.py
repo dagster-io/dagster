@@ -1,11 +1,11 @@
 import pandas as pd
-
-from dagster import io_manager
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
 from docs_snippets.concepts.assets.materialization_io_managers import (
     PandasCsvIOManager,
     PandasCsvIOManagerWithAsset,
 )
+
+from dagster import io_manager
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
 
 
 class DummyClass(pd.DataFrame):

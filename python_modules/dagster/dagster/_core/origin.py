@@ -54,12 +54,12 @@ class RepositoryPythonOrigin(
             check.opt_str_param(container_image, "container_image"),
             (
                 frozenlist(check.list_param(entry_point, "entry_point", of_type=str))
-                if entry_point != None
+                if entry_point is not None
                 else None
             ),
             (
                 check.opt_dict_param(container_context, "container_context")
-                if container_context != None
+                if container_context is not None
                 else None
             ),
         )

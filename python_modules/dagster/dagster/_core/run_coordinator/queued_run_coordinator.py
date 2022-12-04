@@ -1,8 +1,13 @@
 import logging
 from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
-from dagster import DagsterEvent, DagsterEventType, IntSource, String
-from dagster import _check as check
+from dagster import (
+    DagsterEvent,
+    DagsterEventType,
+    IntSource,
+    String,
+    _check as check,
+)
 from dagster._builtins import Bool
 from dagster._config import Array, Field, Noneable, ScalarUnion, Shape
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus

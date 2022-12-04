@@ -46,8 +46,8 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterType
-from dagster._utils import merge_dicts
 from dagster._utils.forked_pdb import ForkedPdb
+from dagster._utils.merger import merge_dicts
 
 from .compute import OpExecutionContext
 from .system import StepExecutionContext, TypeCheckContext
@@ -594,7 +594,7 @@ class BoundOpExecutionContext(OpExecutionContext):
                     f" metadata for output '{output_name}' more than once."
                 )
         if mapping_key:
-            if not output_name in self._output_metadata:
+            if output_name not in self._output_metadata:
                 self._output_metadata[output_name] = {}
             self._output_metadata[output_name][mapping_key] = metadata
 

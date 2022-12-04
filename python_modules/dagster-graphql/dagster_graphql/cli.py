@@ -6,7 +6,6 @@ import requests
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster import __version__ as dagster_version
 from dagster._cli.workspace import workspace_target_argument
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,

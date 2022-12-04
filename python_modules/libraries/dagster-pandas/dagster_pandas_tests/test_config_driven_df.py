@@ -11,14 +11,14 @@ from dagster._utils.test import get_temp_file_name
 
 def check_parquet_support():
     try:
-        import pyarrow  # pylint: disable=unused-import
+        import pyarrow  # noqa: F401
 
         return
     except ImportError:
         pass
 
     try:
-        import fastparquet  # pylint: disable=unused-import
+        import fastparquet  # noqa: F401
 
         return
     except ImportError:

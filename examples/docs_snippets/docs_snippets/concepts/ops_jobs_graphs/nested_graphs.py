@@ -3,12 +3,8 @@
 # pylint: disable=print-call
 
 from dagster import graph, job, op
-from .unnested_ops import (
-    return_fifty,
-    add_thirty_two,
-    multiply_by_one_point_eight,
-    log_number,
-)
+
+from .unnested_ops import add_thirty_two, log_number, multiply_by_one_point_eight, return_fifty
 
 # start_composite_solid_example_marker
 

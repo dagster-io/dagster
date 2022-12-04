@@ -10,19 +10,23 @@ from starlette.concurrency import (
 import dagster._check as check
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.captured_log_manager import CapturedLogManager, CapturedLogSubscription
+from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
-from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._utils.error import serializable_error_info_from_exc_info
 
-from ..external import ExternalPipeline, ensure_valid_config, get_external_pipeline_or_raise
-from ..fetch_runs import is_config_valid
-from ..utils import ExecutionParams, UserFacingGraphQLError, capture_error
+from ..utils import capture_error
+
+# re-exports
 from .backfill import (
-    cancel_partition_backfill,
-    create_and_launch_partition_backfill,
-    resume_partition_backfill,
+    cancel_partition_backfill as cancel_partition_backfill,
+    create_and_launch_partition_backfill as create_and_launch_partition_backfill,
+    resume_partition_backfill as resume_partition_backfill,
+)
+from .launch_execution import (
+    launch_pipeline_execution as launch_pipeline_execution,
+    launch_pipeline_reexecution as launch_pipeline_reexecution,
+    launch_reexecution_from_parent_run as launch_reexecution_from_parent_run,
 )
 from .launch_execution import (
     launch_pipeline_execution,

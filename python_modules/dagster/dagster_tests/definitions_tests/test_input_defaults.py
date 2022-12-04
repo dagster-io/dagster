@@ -88,7 +88,7 @@ def bad_default(x):
 
 def test_mismatch():
     result = execute_in_graph(bad_default, raise_on_error=False)
-    assert result.success == False
+    assert result.success is False
     input_event = result.filter_events(
         lambda event: event.event_type == DagsterEventType.STEP_INPUT
     )[0]
@@ -101,7 +101,7 @@ def test_env_precedence():
         run_config={"ops": {"bad_default": {"inputs": {"x": 1}}}},
         raise_on_error=False,
     )
-    assert result.success == True
+    assert result.success is True
     assert result.output_for_node("bad_default") == 1
 
 

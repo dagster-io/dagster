@@ -8,8 +8,12 @@ from dagster_graphql.implementation.loader import (
 )
 
 import dagster._seven as seven
-from dagster import AssetKey, DagsterEventType, EventRecordsFilter
-from dagster import _check as check
+from dagster import (
+    AssetKey,
+    DagsterEventType,
+    EventRecordsFilter,
+    _check as check,
+)
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.events import ASSET_EVENTS
@@ -422,7 +426,7 @@ def unique_repos(external_repositories):
             external_repository.handle.location_name,
             external_repository.name,
         )
-        if not repo_id in used:
+        if repo_id not in used:
             used.add(repo_id)
             repos.append(external_repository)
 

@@ -11,6 +11,7 @@ from dagster import (
     IOManagerDefinition,
     In,
     InputManager,
+    IOManager,
     MetadataEntry,
     Out,
     PythonObjectDagsterType,
@@ -29,6 +30,7 @@ from dagster._core.definitions.events import Failure, RetryRequested
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.instance import InstanceRef
 from dagster._utils.test import wrap_op_in_graph_and_execute
+
 
 ### input manager tests
 

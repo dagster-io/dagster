@@ -6,8 +6,10 @@ from dagster_ge.factory import (
     ge_validation_op_factory,
     ge_validation_op_factory_v3,
 )
-from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
-from dagster_pyspark import pyspark_resource
+from dagster_pyspark import (
+    DataFrame as DagsterPySparkDataFrame,
+    pyspark_resource,
+)
 from pandas import read_csv
 
 from dagster import In, Output, job, op

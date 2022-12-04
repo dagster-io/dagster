@@ -682,11 +682,11 @@ def def_from_pointer(
     if isinstance(
         target,
         (
-            PipelineDefinition,
-            RepositoryDefinition,
-            PendingRepositoryDefinition,
-            GraphDefinition,
             AssetGroup,
+            GraphDefinition,
+            PipelineDefinition,
+            PendingRepositoryDefinition,
+            RepositoryDefinition,
         ),
     ) or not callable(target):
         return _check_is_loadable(target)  # type: ignore

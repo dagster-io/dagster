@@ -200,7 +200,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             conn_string = self.conn_string_for_shard(shard)
             engine = create_engine(conn_string, poolclass=NullPool)
 
-            if not shard in self._initialized_dbs:
+            if shard not in self._initialized_dbs:
                 self._initdb(engine)
                 self._initialized_dbs.add(shard)
 
@@ -287,7 +287,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         else:
             asset_details = None
 
-        if event_records_filter.after_cursor != None and not isinstance(
+        if event_records_filter.after_cursor is not None and not isinstance(
             event_records_filter.after_cursor, RunShardedEventsCursor
         ):
             raise Exception(

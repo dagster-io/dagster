@@ -13,9 +13,12 @@ from typing import Any, Generator, Mapping, NamedTuple, Optional, Sequence, Type
 import pendulum
 import yaml
 
-from dagster import Permissive, Shape
-from dagster import _check as check
-from dagster import fs_io_manager
+from dagster import (
+    Permissive,
+    Shape,
+    _check as check,
+    fs_io_manager,
+)
 from dagster._config import Array, Field
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.errors import DagsterUserCodeUnreachableError
@@ -33,9 +36,10 @@ from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._legacy import ModeDefinition, pipeline, solid
 from dagster._serdes import ConfigurableClass
 from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
-from dagster._utils import Counter, merge_dicts, traced, traced_counter
+from dagster._utils import Counter, traced, traced_counter
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import configure_loggers
+from dagster._utils.merger import merge_dicts
 
 T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
 
@@ -54,7 +58,7 @@ def assert_namedtuples_equal(
 ) -> None:
     exclude_fields = exclude_fields or []
     for field in type(t1)._fields:
-        if not field in exclude_fields:
+        if field not in exclude_fields:
             assert getattr(t1, field) == getattr(t2, field)
 
 

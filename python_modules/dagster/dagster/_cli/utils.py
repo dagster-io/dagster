@@ -4,7 +4,8 @@ from contextlib import contextmanager
 
 import click
 
-from dagster._core.instance import DagsterInstance, is_dagster_home_set
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.config import is_dagster_home_set
 
 
 @contextmanager

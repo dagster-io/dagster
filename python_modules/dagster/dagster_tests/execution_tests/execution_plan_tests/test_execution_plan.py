@@ -1,8 +1,14 @@
 import pytest
 
-from dagster import DagsterInstance, Int, Out, Output
-from dagster import _check as check
-from dagster import job, op
+from dagster import (
+    DagsterInstance,
+    Int,
+    Out,
+    Output,
+    _check as check,
+    job,
+    op,
+)
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import (

@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from dagster import IOManager, In, InputManager, input_manager, io_manager, job, op
+from dagster import In, InputManager, IOManager, input_manager, io_manager, job, op
 
 
 class PandasIOManager(IOManager):

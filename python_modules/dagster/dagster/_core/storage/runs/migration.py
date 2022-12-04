@@ -9,7 +9,7 @@ from dagster._serdes import deserialize_as
 from ...execution.job_backfill import PartitionBackfill
 from ..pipeline_run import DagsterRun, DagsterRunStatus
 from ..runs.base import RunStorage
-from ..runs.schema import BulkActionsTable, RunTagsTable, RunsTable
+from ..runs.schema import BulkActionsTable, RunsTable, RunTagsTable
 from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, REPOSITORY_LABEL_TAG
 
 RUN_PARTITIONS = "run_partitions"

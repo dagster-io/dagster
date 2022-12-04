@@ -10,12 +10,14 @@ from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tup
 
 import pendulum
 
-from dagster import StaticPartitionsDefinition
-from dagster import _check as check
+from dagster import (
+    StaticPartitionsDefinition,
+    _check as check,
+)
 from dagster._core.definitions import (
     JobDefinition,
-    PartitionSetDefinition,
     PartitionsDefinition,
+    PartitionSetDefinition,
     PipelineDefinition,
     PresetDefinition,
     RepositoryDefinition,
@@ -1249,10 +1251,7 @@ def external_multi_partitions_definition_from_def(
 
     if any(
         [
-            not (
-                isinstance(dimension.partitions_def, TimeWindowPartitionsDefinition)
-                or isinstance(dimension.partitions_def, StaticPartitionsDefinition)
-            )
+            not isinstance(dimension.partitions_def, (TimeWindowPartitionsDefinition, StaticPartitionsDefinition))
             for dimension in partitions_def.partitions_defs
         ]
     ):

@@ -174,7 +174,7 @@ def test_prefix_filter(mock_create_blob_client, storage_account, container, cred
 
         adls2_object = fake_client.get_blob_client(
             container=container,
-            blob=f"foo/bar/storage/arbitrary/log/key.err",
+            blob="foo/bar/storage/arbitrary/log/key.err",
         )
         logs = adls2_object.download_blob().readall().decode("utf-8")
         assert logs == "hello hello"

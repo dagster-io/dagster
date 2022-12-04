@@ -11,6 +11,7 @@ from dagster._core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster._core.definitions.output import OutputDefinition
 from dagster._core.types.dagster_type import DagsterType
 
+
 # ########################
 # ##### METADATA ARGUMENTS
 # ########################

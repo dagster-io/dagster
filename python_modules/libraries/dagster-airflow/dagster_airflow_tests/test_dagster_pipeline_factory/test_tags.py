@@ -74,8 +74,7 @@ def get_dag():
     echo 'command for dt {{ ds }}'
     """
 
-    # pylint: disable=unused-variable
-    t1 = BashOperator(
+    _t1 = BashOperator(
         task_id="templated",
         depends_on_past=False,
         bash_command=templated_command,

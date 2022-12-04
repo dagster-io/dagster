@@ -13,6 +13,7 @@ from dagster import (
     AssetOut,
     AssetSelection,
     AssetsDefinition,
+    AssetSelection,
     DagsterInstance,
     DailyPartitionsDefinition,
     Field,

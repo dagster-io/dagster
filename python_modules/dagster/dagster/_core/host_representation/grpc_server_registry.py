@@ -205,7 +205,7 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
                 f" {repository_location_origin.location_name}"
             )
 
-        if not origin_id in self._active_entries:
+        if origin_id not in self._active_entries:
             refresh_server = True
         else:
             active_entry = self._active_entries[origin_id]
@@ -278,7 +278,7 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
                 dead_process_indexes = []
                 for index in range(len(self._all_processes)):
                     process = self._all_processes[index]
-                    if not process.server_process.poll() is None:
+                    if process.server_process.poll() is not None:
                         dead_process_indexes.append(index)
 
                 for index in reversed(dead_process_indexes):

@@ -44,7 +44,7 @@ except ImportError:
     SKLEARN_PRESENT = False
 
 try:
-    import matplotlib as _
+    import matplotlib as _  # noqa: F401
 
     MATPLOTLIB_PRESENT = True
 except ImportError:

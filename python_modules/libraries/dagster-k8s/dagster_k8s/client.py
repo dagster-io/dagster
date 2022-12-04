@@ -7,8 +7,10 @@ from typing import Optional
 import kubernetes
 from kubernetes.client.models import V1JobStatus
 
-from dagster import DagsterInstance
-from dagster import _check as check
+from dagster import (
+    DagsterInstance,
+    _check as check,
+)
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day

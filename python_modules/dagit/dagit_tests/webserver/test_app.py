@@ -7,8 +7,11 @@ from dagit.webserver import ROOT_ADDRESS_STATIC_RESOURCES
 from dagster_graphql.version import __version__ as dagster_graphql_version
 from starlette.testclient import TestClient
 
-from dagster import __version__ as dagster_version
-from dagster import job, op
+from dagster import (
+    __version__ as dagster_version,
+    job,
+    op,
+)
 from dagster._core.events import DagsterEventType
 from dagster._seven import json
 

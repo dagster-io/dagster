@@ -1,5 +1,5 @@
 import datetime
-import logging  # pylint: disable=unused-import; used by mock in string form
+import logging  # noqa: F401; used by mock in string form
 import re
 import sys
 import time
@@ -24,10 +24,14 @@ from dagster import (
     Output,
     RetryRequested,
     RunShardedEventsCursor,
+    _check as check,
+    _seven as seven,
+    asset,
+    in_process_executor,
+    job,
+    op,
+    resource,
 )
-from dagster import _check as check
-from dagster import _seven as seven
-from dagster import asset, in_process_executor, job, op, resource
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions import ExpectationResult
 from dagster._core.definitions.dependency import NodeHandle
@@ -2040,7 +2044,7 @@ class TestEventLogStorage:
                 storage.register_instance(created_instance)
 
             my_asset_key = AssetKey("my_asset")
-            second_asset_key = AssetKey("second_asset")  # pylint: disable=unused-variable
+            second_asset_key = AssetKey("second_asset")
             # storage.get_asset_records([my_asset_key, second_asset_key])
 
             assert len(storage.get_asset_records()) == 0

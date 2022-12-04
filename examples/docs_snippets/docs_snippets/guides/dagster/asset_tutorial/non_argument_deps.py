@@ -1,5 +1,6 @@
 """isort:skip_file"""
 import csv
+
 import requests
 
 from dagster import asset

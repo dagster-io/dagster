@@ -1,10 +1,9 @@
 from unittest.mock import patch
 
-from pandas import DataFrame
-
 from docs_snippets.guides.dagster.enriching_with_software_defined_assets.vanilla_io_manager import (
     users_recommender_job,
 )
+from pandas import DataFrame
 
 
 def test_users_recommender_job():

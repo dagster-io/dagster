@@ -1,5 +1,3 @@
-# type: ignore
-
 # NOTE: This file has been factored out from "resource_definition" and type-ignored due to a mypy bug
 # when processing dynamically generated namedtuples. This code corrupts the mypy cache and causes
 # mypy to fail. When mypy fixes this bug, the type-ignore can be removed and the file contents

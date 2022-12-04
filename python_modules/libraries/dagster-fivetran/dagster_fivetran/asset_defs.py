@@ -11,9 +11,14 @@ from dagster_fivetran.utils import (
     metadata_for_table,
 )
 
-from dagster import AssetKey, AssetOut, AssetsDefinition, Output
-from dagster import _check as check
-from dagster import multi_asset
+from dagster import (
+    AssetKey,
+    AssetOut,
+    AssetsDefinition,
+    Output,
+    _check as check,
+    multi_asset,
+)
 from dagster._annotations import experimental
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,

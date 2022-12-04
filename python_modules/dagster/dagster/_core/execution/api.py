@@ -37,9 +37,9 @@ from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster._core.utils import str_format_set
-from dagster._utils import merge_dicts
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
+from dagster._utils.merger import merge_dicts
 
 from .context_creation_pipeline import (
     ExecutionContextManager,
@@ -50,6 +50,7 @@ from .context_creation_pipeline import (
 )
 from .execute_job_result import ExecuteJobResult
 from .results import PipelineExecutionResult
+
 
 ## Brief guide to the execution APIs
 # | function name               | operates over      | sync  | supports    | creates new DagsterRun  |

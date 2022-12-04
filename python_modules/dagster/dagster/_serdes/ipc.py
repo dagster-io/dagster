@@ -136,7 +136,7 @@ def _process_line(file_pointer, sleep_interval=0.1):
 def _poll_process(ipc_process):
     if not ipc_process:
         return
-    if ipc_process.poll() != None:
+    if ipc_process.poll() is not None:
         raise DagsterIPCProtocolError(
             "Process exited with return code {return_code} while waiting for events".format(
                 return_code=ipc_process.returncode

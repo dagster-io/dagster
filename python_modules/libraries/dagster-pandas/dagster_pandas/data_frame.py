@@ -14,9 +14,10 @@ from dagster import (
     MetadataEntry,
     StringSource,
     TypeCheck,
+    _check as check,
+    dagster_type_loader,
+    dagster_type_materializer,
 )
-from dagster import _check as check
-from dagster import dagster_type_loader, dagster_type_materializer
 from dagster._annotations import experimental
 from dagster._check import CheckError
 from dagster._config import Selector

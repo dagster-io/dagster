@@ -10,9 +10,14 @@ import requests
 from dagster_airbyte.types import AirbyteOutput
 from requests.exceptions import RequestException
 
-from dagster import Failure, Field, StringSource
-from dagster import _check as check
-from dagster import get_dagster_logger, resource
+from dagster import (
+    Failure,
+    Field,
+    StringSource,
+    _check as check,
+    get_dagster_logger,
+    resource,
+)
 from dagster._config.field_utils import Permissive
 from dagster._utils.merger import deep_merge_dicts
 

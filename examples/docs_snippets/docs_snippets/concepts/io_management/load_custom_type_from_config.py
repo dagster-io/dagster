@@ -1,4 +1,3 @@
-# isort: split
 # def_start_marker
 from typing import Dict, Union
 
@@ -44,7 +43,6 @@ def my_job():
 
 
 # def_end_marker
-# isort: split
 
 
 def execute_with_config():

@@ -9,9 +9,17 @@ from urllib.parse import urlencode, urljoin
 import requests
 from requests.exceptions import RequestException
 
-from dagster import Failure, Field, IntSource, MetadataValue, StringSource, __version__
-from dagster import _check as check
-from dagster import get_dagster_logger, resource
+from dagster import (
+    Failure,
+    Field,
+    IntSource,
+    MetadataValue,
+    StringSource,
+    __version__,
+    _check as check,
+    get_dagster_logger,
+    resource,
+)
 from dagster._utils.merger import deep_merge_dicts
 
 from .types import DbtCloudOutput
@@ -495,7 +503,7 @@ class DbtCloudResourceV2:
         try:
             run_results = self.get_run_results(run_id)
         # if you fail to get run_results for this job, just leave it empty
-        except Failure as _:
+        except Failure:
             self._log.info(
                 "run_results.json not available for this run. Defaulting to empty value."
             )

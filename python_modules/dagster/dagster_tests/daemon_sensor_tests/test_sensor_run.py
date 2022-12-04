@@ -3,7 +3,6 @@ import string
 import sys
 import tempfile
 import time
-import warnings
 from contextlib import ExitStack, contextmanager
 
 import pendulum
@@ -17,7 +16,6 @@ from dagster import (
     AssetSelection,
     CodeLocationSelector,
     DagsterRunStatus,
-    ExperimentalWarning,
     Field,
     HourlyPartitionsDefinition,
     JobSelector,
@@ -35,12 +33,8 @@ from dagster import (
     repository,
     run_failure_sensor,
 )
-from dagster._core.definitions.instigation_logger import get_instigation_log_records
-from dagster._core.log_manager import DAGSTER_META_KEY
-
-warnings.filterwarnings("ignore", category=ExperimentalWarning)
-
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
+from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.run_status_sensor_definition import run_status_sensor
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, RunRequest, SkipReason
@@ -48,6 +42,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_pipeline
 from dagster._core.host_representation import ExternalInstigatorOrigin, ExternalRepositoryOrigin
 from dagster._core.instance import DagsterInstance
+from dagster._core.log_manager import DAGSTER_META_KEY
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import (

@@ -156,7 +156,7 @@ class TestCapturedLogManager:
         captured_log_manager.delete_logs(log_key=log_key)
 
         log_data = captured_log_manager.get_log_data(log_key)
-        assert log_data.stdout == None
+        assert log_data.stdout is None
         other_log_data = captured_log_manager.get_log_data(other_log_key)
         assert other_log_data.stdout == b"hello hello"
 
@@ -178,6 +178,6 @@ class TestCapturedLogManager:
         captured_log_manager.delete_logs(prefix=["some", "log"])
 
         log_data = captured_log_manager.get_log_data(log_key)
-        assert log_data.stdout == None
+        assert log_data.stdout is None
         other_log_data = captured_log_manager.get_log_data(other_log_key)
-        assert other_log_data.stdout == None
+        assert other_log_data.stdout is None

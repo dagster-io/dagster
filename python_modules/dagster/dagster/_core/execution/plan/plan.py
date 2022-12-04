@@ -19,8 +19,8 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions import (
     GraphDefinition,
-    IPipeline,
     InputDefinition,
+    IPipeline,
     JobDefinition,
     Node,
     NodeHandle,
@@ -726,7 +726,7 @@ class ExecutionPlan(
 
     def get_step_by_key(self, key: str) -> IExecutionStep:
         check.str_param(key, "key")
-        if not key in self.step_dict_by_key:
+        if key not in self.step_dict_by_key:
             check.failed(f"plan has no step with key {key}")
         return self.step_dict_by_key[key]
 

@@ -41,7 +41,8 @@ from dagster._legacy import (
     pipeline,
     solid,
 )
-from dagster._utils import merge_dicts, segfault
+from dagster._utils import segfault
+from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import merge_yamls
 
 IS_BUILDKITE = bool(os.getenv("BUILDKITE"))

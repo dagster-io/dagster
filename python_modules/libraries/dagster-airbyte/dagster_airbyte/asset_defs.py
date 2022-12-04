@@ -29,8 +29,14 @@ from dagster_airbyte.utils import (
     is_basic_normalization_operation,
 )
 
-from dagster import AssetKey, AssetOut, FreshnessPolicy, Output, ResourceDefinition
-from dagster import _check as check
+from dagster import (
+    AssetKey,
+    AssetOut,
+    FreshnessPolicy,
+    Output,
+    ResourceDefinition,
+    _check as check,
+)
 from dagster._annotations import experimental
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.cacheable_assets import (
@@ -41,7 +47,7 @@ from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import MetadataValue, TableSchemaMetadataValue
 from dagster._core.definitions.metadata.table import TableSchema
 from dagster._core.execution.context.init import build_init_resource_context
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 
 def _build_airbyte_asset_defn_metadata(

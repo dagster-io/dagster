@@ -6,8 +6,12 @@ from functools import wraps
 import pandas as pd
 from pandas import DataFrame
 
-from dagster import DagsterType, MetadataEntry, TypeCheck
-from dagster import _check as check
+from dagster import (
+    DagsterType,
+    MetadataEntry,
+    TypeCheck,
+    _check as check,
+)
 from dagster._utils.backcompat import experimental_class_warning
 
 
@@ -430,7 +434,7 @@ class ColumnAggregateConstraintWithMetadata(ConstraintWithMetadata):
             res = self.validation_fn(relevant_data[column])
             if not res[0]:
                 offending_columns.add(column)
-                if not res[1].get("actual") is None:
+                if res[1].get("actual") is not None:
                     offending_values[column] = [x.item() for x in res[1].get("actual").to_numpy()]
                 else:
                     offending_values[column] = [x.item() for x in relevant_data[column].to_numpy()]

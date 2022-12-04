@@ -1,4 +1,5 @@
 from typing import Optional
+
 import yaml
 from dagit_screenshot.utils import load_spec_db
 

@@ -1,13 +1,3 @@
-from dagster import (
-    AssetKey,
-    DagsterInstance,
-    RunRequest,
-    asset,
-    build_multi_asset_sensor_context,
-    materialize,
-    repository,
-)
-from dagster._core.test_utils import instance_for_test
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.asset_sensors import (
     asset_a_and_b_sensor,
     asset_a_and_b_sensor_with_skip_reason,
@@ -19,6 +9,17 @@ from docs_snippets.concepts.partitions_schedules_sensors.sensors.asset_sensors i
     upstream_daily_1,
     upstream_daily_2,
 )
+
+from dagster import (
+    AssetKey,
+    DagsterInstance,
+    RunRequest,
+    asset,
+    build_multi_asset_sensor_context,
+    materialize,
+    repository,
+)
+from dagster._core.test_utils import instance_for_test
 
 
 def test_asset_sensors():

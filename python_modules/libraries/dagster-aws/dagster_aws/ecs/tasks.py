@@ -4,8 +4,8 @@ from typing import Any, Mapping, NamedTuple, Optional, Sequence
 import requests
 
 import dagster._check as check
-from dagster._utils import merge_dicts
 from dagster._utils.backoff import backoff
+from dagster._utils.merger import merge_dicts
 
 
 class DagsterEcsTaskDefinitionConfig(

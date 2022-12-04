@@ -10,6 +10,7 @@ from .composites_query import (
 )
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 
+
 # 10 total solids in the composite pipeline:
 #
 # (+1) \

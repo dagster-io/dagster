@@ -1,6 +1,5 @@
 from typing import Any, Dict, Optional
 
-from dagster import resource
 
 # start_mock
 # resources.py

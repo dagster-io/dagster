@@ -69,7 +69,7 @@ def infer_output_props(fn: Callable) -> InferredOutputProps:
 
 def has_explicit_return_type(fn: Callable) -> bool:
     signature = funcsigs.signature(fn)
-    return not signature.return_annotation is funcsigs.Signature.empty
+    return signature.return_annotation is not funcsigs.Signature.empty
 
 
 def _infer_inputs_from_params(

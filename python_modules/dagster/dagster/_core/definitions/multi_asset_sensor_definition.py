@@ -348,7 +348,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             self, self._unpacked_cursor
         )
 
-        if new_cursor != None:
+        if new_cursor is not None:
             # Cursor was not updated by this context object, so we do not need to update it
             self._cursor = new_cursor
             self._unpacked_cursor = MultiAssetSensorContextCursor(new_cursor, self)
@@ -863,7 +863,7 @@ class MultiAssetSensorCursorAdvances:
             for event in unconsumed_events:
                 partition = event.partition_key
                 if partition is not None:  # Ignore unpartitioned events
-                    if not event.storage_id in advanced_records:
+                    if event.storage_id not in advanced_records:
                         latest_unconsumed_record_by_partition[partition] = event.storage_id
                     elif partition in latest_unconsumed_record_by_partition:
                         latest_unconsumed_record_by_partition.pop(partition)

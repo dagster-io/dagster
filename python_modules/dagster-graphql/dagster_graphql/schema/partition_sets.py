@@ -19,7 +19,7 @@ from dagster._core.host_representation.external_data import (
 )
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .backfill import GraphenePartitionBackfill
 from .errors import (

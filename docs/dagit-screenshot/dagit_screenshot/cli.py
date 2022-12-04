@@ -1,11 +1,11 @@
 from typing import Optional
-import click
 
+import click
 from dagit_screenshot.commands.audit import audit as _audit
 from dagit_screenshot.commands.capture import capture as _capture
 from dagit_screenshot.commands.show import show as _show
-from dagit_screenshot.utils import load_spec, normalize_output_path, spec_id_to_relative_path
 from dagit_screenshot.defaults import DEFAULT_OUTPUT_ROOT, DEFAULT_SPEC_DB, DEFAULT_WORKSPACE_ROOT
+from dagit_screenshot.utils import load_spec, normalize_output_path, spec_id_to_relative_path
 
 
 @click.group(

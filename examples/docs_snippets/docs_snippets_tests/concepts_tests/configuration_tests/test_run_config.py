@@ -1,9 +1,7 @@
 import tempfile
 
 from docs_snippets.concepts.configuration.make_values_resource_any import file_dir_job
-from docs_snippets.concepts.configuration.make_values_resource_config_schema import (
-    file_dirs_job,
-)
+from docs_snippets.concepts.configuration.make_values_resource_config_schema import file_dirs_job
 
 
 def test_make_values_resource_any():

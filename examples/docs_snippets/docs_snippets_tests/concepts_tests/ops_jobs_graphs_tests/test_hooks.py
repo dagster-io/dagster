@@ -1,6 +1,5 @@
 from unittest import mock
 
-from dagster import DagsterEventType, ResourceDefinition, job, op
 from docs_snippets.concepts.ops_jobs_graphs.op_hooks import (
     a,
     notif_all,
@@ -12,6 +11,8 @@ from docs_snippets.concepts.ops_jobs_graphs.op_hooks import (
     test_my_success_hook,
 )
 from docs_snippets.concepts.ops_jobs_graphs.op_hooks_context import my_failure_hook
+
+from dagster import DagsterEventType, ResourceDefinition, job, op
 
 
 def test_notif_all():

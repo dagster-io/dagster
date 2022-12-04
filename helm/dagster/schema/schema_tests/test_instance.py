@@ -10,16 +10,10 @@ from dagster_k8s import K8sRunLauncher
 from kubernetes.client import models
 from schema.charts.dagster.subschema.compute_log_manager import (
     AzureBlobComputeLogManager as AzureBlobComputeLogManagerModel,
-)
-from schema.charts.dagster.subschema.compute_log_manager import (
     ComputeLogManager,
     ComputeLogManagerConfig,
     ComputeLogManagerType,
-)
-from schema.charts.dagster.subschema.compute_log_manager import (
     GCSComputeLogManager as GCSComputeLogManagerModel,
-)
-from schema.charts.dagster.subschema.compute_log_manager import (
     S3ComputeLogManager as S3ComputeLogManagerModel,
 )
 from schema.charts.dagster.subschema.daemon import (
@@ -179,7 +173,7 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
     assert run_launcher_config["config"]["volumes"] == volumes
     assert run_launcher_config["config"]["labels"] == labels
 
-    assert not "fail_pod_on_run_failure" in run_launcher_config["config"]
+    assert "fail_pod_on_run_failure" not in run_launcher_config["config"]
 
 
 def test_k8s_run_launcher_fail_pod_on_run_failure(template: HelmTemplate):
@@ -441,7 +435,7 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
 
     assert run_launcher_config["config"]["service_account_name"] == "release-name-dagster"
 
-    assert not "fail_pod_on_run_failure" in run_launcher_config["config"]
+    assert "fail_pod_on_run_failure" not in run_launcher_config["config"]
 
     helm_values_with_image_pull_policy = DagsterHelmValues.construct(
         runLauncher=RunLauncher.construct(

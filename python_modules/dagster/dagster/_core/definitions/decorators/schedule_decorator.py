@@ -30,8 +30,8 @@ from dagster._core.errors import (
 from dagster._utils import ensure_gen
 from dagster._utils.partitions import (
     DEFAULT_DATE_FORMAT,
-    DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
     DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,
+    DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
     DEFAULT_MONTHLY_FORMAT,
     create_offset_partition_selector,
 )

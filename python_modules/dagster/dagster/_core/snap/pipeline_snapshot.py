@@ -46,8 +46,8 @@ from .dep_snapshot import (
 from .mode import ModeDefSnap, build_mode_def_snap
 from .solid import (
     CompositeSolidDefSnap,
-    SolidDefSnap,
     SolidDefinitionsSnapshot,
+    SolidDefSnap,
     build_solid_definitions_snapshot,
 )
 

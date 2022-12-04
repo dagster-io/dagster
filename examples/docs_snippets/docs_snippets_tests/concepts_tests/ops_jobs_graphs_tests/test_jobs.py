@@ -21,13 +21,8 @@ from docs_snippets.concepts.ops_jobs_graphs.jobs import (
 from docs_snippets.concepts.ops_jobs_graphs.jobs_from_graphs import local_job, prod_job
 from docs_snippets.concepts.ops_jobs_graphs.linear_job import linear
 from docs_snippets.concepts.ops_jobs_graphs.multiple_io_job import inputs_and_outputs
-from docs_snippets.concepts.ops_jobs_graphs.order_based_dependency_job import (
-    nothing_dependency,
-)
-from docs_snippets.concepts.ops_jobs_graphs.retries import (
-    default_and_override_job,
-    retry_job,
-)
+from docs_snippets.concepts.ops_jobs_graphs.order_based_dependency_job import nothing_dependency
+from docs_snippets.concepts.ops_jobs_graphs.retries import default_and_override_job, retry_job
 
 
 def test_one_plus_one():

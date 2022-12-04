@@ -1,20 +1,16 @@
 import graphene
 
-import dagster._check as check
-from dagster._core.host_representation import ExternalSchedule, ScheduleSelector
-from dagster._core.host_representation.selector import RepositorySelector
+from dagster._core.host_representation import ScheduleSelector
 from dagster._core.workspace.permissions import Permissions
 
 from ...implementation.fetch_schedules import start_schedule, stop_schedule
 from ...implementation.utils import capture_error, check_permission
 from ..errors import (
     GraphenePythonError,
-    GrapheneRepositoryNotFoundError,
-    GrapheneScheduleNotFoundError,
     GrapheneSchedulerNotDefinedError,
     GrapheneUnauthorizedError,
 )
-from ..inputs import GrapheneRepositorySelector, GrapheneScheduleSelector
+from ..inputs import GrapheneScheduleSelector
 from ..instigation import GrapheneInstigationState
 from .schedules import (
     GrapheneSchedule,

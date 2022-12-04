@@ -5,9 +5,13 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack
 from typing import Dict, List, Optional
 
-from dagster import _check as check
+from dagster import (
+    DagsterEvent,
+    DagsterEventType,
+    EngineEventData,
+    _check as check,
+)
 from dagster._core.errors import DagsterRepositoryLocationLoadError, DagsterUserCodeUnreachableError
-from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import LaunchRunContext
 from dagster._core.run_coordinator.queued_run_coordinator import (

@@ -16,7 +16,8 @@ from dagster import (
     schedule,
     validate_run_config,
 )
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
+
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
 # pylint: disable=unused-variable, unused-argument, redefined-outer-name
@@ -204,8 +205,6 @@ def test_scheduled_jobs():
     my_schedule = ScheduleDefinition(name="my_schedule", cron_schedule="* * * * *", job=foo_job)
 
     context_without_time = build_schedule_context()
-    execution_time = datetime(year=2019, month=2, day=27)
-    context_with_time = build_schedule_context(scheduled_execution_time=execution_time)
     execution_data = my_schedule.evaluate_tick(context_without_time)
     assert execution_data.run_requests
     assert len(execution_data.run_requests) == 1
@@ -217,8 +216,6 @@ def test_request_based_schedule():
     from dagster import Field, String
 
     context_without_time = build_schedule_context()
-
-    start_date = datetime(year=2019, month=1, day=1)
 
     @op(config_schema={"foo": Field(String)})
     def foo_op(context):
@@ -256,8 +253,6 @@ def test_request_based_schedule_no_context():
 
     context_without_time = build_schedule_context()
 
-    start_date = datetime(year=2019, month=1, day=1)
-
     @op(config_schema={"foo": Field(String)})
     def foo_op(context):
         pass
@@ -293,8 +288,6 @@ def test_config_based_schedule():
     from dagster import Field, String
 
     context_without_time = build_schedule_context()
-
-    start_date = datetime(year=2019, month=1, day=1)
 
     @op(config_schema={"foo": Field(String)})
     def foo_op(context):
@@ -332,8 +325,6 @@ def test_config_based_schedule_no_context():
 
     context_without_time = build_schedule_context()
 
-    start_date = datetime(year=2019, month=1, day=1)
-
     @op(config_schema={"foo": Field(String)})
     def foo_op(context):
         pass
@@ -369,8 +360,6 @@ def test_request_based_schedule_generator():
     from dagster import Field, String
 
     context_without_time = build_schedule_context()
-
-    start_date = datetime(year=2019, month=1, day=1)
 
     @op(config_schema={"foo": Field(String)})
     def foo_op(context):
@@ -410,8 +399,6 @@ def test_request_based_schedule_generator_no_context():
 
     context_without_time = build_schedule_context()
 
-    start_date = datetime(year=2019, month=1, day=1)
-
     @op(config_schema={"foo": Field(String)})
     def foo_op(context):
         pass
@@ -447,7 +434,6 @@ def test_request_based_schedule_generator_no_context():
 
 def test_vixie_cronstring_schedule():
     context_without_time = build_schedule_context()
-    start_date = datetime(year=2019, month=1, day=1)
 
     @op
     def foo_op(context):

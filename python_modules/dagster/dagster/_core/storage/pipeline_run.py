@@ -44,7 +44,6 @@ from .tags import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.repository_definition import RepositoryLoadData
     from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
 

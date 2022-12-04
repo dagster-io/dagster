@@ -15,9 +15,10 @@ from dagster import (
     Out,
     Output,
     StringSource,
+    _check as check,
+    op,
+    resource,
 )
-from dagster import _check as check
-from dagster import op, resource
 
 try:
     # ge < v0.13.0

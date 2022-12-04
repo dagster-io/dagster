@@ -40,12 +40,10 @@ from .resource_requirement import (
     ResourceDependencyRequirement,
     ResourceRequirement,
 )
-
-# pylint: disable=unused-import
-from .scoped_resources_builder import (  # type: ignore
-    IContainsGenerator,
-    Resources,
-    ScopedResourcesBuilder,
+from .scoped_resources_builder import (  # re-exported
+    IContainsGenerator as IContainsGenerator,
+    Resources as Resources,
+    ScopedResourcesBuilder as ScopedResourcesBuilder,
 )
 
 if TYPE_CHECKING:

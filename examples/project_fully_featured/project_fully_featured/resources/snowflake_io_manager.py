@@ -2,8 +2,10 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
-from pandas import DataFrame as PandasDataFrame
-from pandas import read_sql
+from pandas import (
+    DataFrame as PandasDataFrame,
+    read_sql,
+)
 from pyspark.sql import DataFrame as SparkDataFrame
 from snowflake.connector.pandas_tools import pd_writer
 from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error

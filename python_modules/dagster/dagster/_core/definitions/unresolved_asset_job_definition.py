@@ -12,13 +12,13 @@ from .config import ConfigMapping
 
 if TYPE_CHECKING:
     from dagster._core.definitions import (
-        AssetSelection,
         AssetsDefinition,
+        AssetSelection,
         ExecutorDefinition,
         JobDefinition,
-        PartitionSetDefinition,
         PartitionedConfig,
         PartitionsDefinition,
+        PartitionSetDefinition,
         SourceAsset,
     )
 
@@ -67,7 +67,7 @@ class UnresolvedAssetJobDefinition(
         )
 
     def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
-        from dagster._core.definitions import PartitionSetDefinition, PartitionedConfig
+        from dagster._core.definitions import PartitionedConfig, PartitionSetDefinition
 
         if self.partitions_def is None:
             return None

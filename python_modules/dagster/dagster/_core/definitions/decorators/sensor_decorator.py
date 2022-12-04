@@ -1,6 +1,6 @@
 import inspect
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Callable, Optional, Sequence
+from typing import Callable, Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import experimental
@@ -23,9 +23,6 @@ from ..sensor_definition import (
     SkipReason,
 )
 from ..target import ExecutableDefinition
-
-if TYPE_CHECKING:
-    from ...events.log import EventLogEntry
 
 
 def sensor(

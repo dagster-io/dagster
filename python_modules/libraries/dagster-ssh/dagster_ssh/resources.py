@@ -6,10 +6,16 @@ import paramiko
 from paramiko.config import SSH_PORT
 from sshtunnel import SSHTunnelForwarder
 
-from dagster import BoolSource, Field, IntSource, StringSource
-from dagster import _check as check
-from dagster import resource
-from dagster._utils import merge_dicts, mkdir_p
+from dagster import (
+    BoolSource,
+    Field,
+    IntSource,
+    StringSource,
+    _check as check,
+    resource,
+)
+from dagster._utils import mkdir_p
+from dagster._utils.merger import merge_dicts
 
 
 def key_from_str(key_str):

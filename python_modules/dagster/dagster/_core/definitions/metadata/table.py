@@ -5,6 +5,7 @@ from dagster._annotations import PublicAttr, experimental, public
 from dagster._serdes.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster._utils import frozenlist
 
+
 # ########################
 # ##### TABLE RECORD
 # ########################

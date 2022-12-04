@@ -13,7 +13,8 @@ from dagster_aws_tests.aws_credential_test_utils import get_aws_creds
 from dagster_k8s.client import DagsterKubernetesClient
 
 import dagster._check as check
-from dagster._utils import find_free_port, git_repository_root, merge_dicts
+from dagster._utils import find_free_port, git_repository_root
+from dagster._utils.merger import merge_dicts
 
 from .integration_utils import IS_BUILDKITE, check_output, get_test_namespace, image_pull_policy
 

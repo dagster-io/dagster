@@ -1,11 +1,11 @@
 from unittest.mock import MagicMock, patch
 
-from pandas import DataFrame
-
-from dagster import materialize_to_memory
 from docs_snippets.concepts.partitions_schedules_sensors.partitioned_asset_uses_io_manager import (
     my_daily_partitioned_asset,
 )
+from pandas import DataFrame
+
+from dagster import materialize_to_memory
 
 
 @patch(

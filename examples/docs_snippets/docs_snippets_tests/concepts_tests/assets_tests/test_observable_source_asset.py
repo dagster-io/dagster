@@ -1,6 +1,7 @@
+from docs_snippets.concepts.assets.observable_source_assets import foo_source_asset
+
 from dagster import repository
 from dagster._core.definitions.assets_job import build_assets_job
-from docs_snippets.concepts.assets.observable_source_assets import foo_source_asset
 
 
 def test_observable_source_asset():

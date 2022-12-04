@@ -11,8 +11,8 @@ from dagster import (
     LoggerDefinition,
     ResourceDefinition,
     TypeCheck,
+    _check as check,
 )
-from dagster import _check as check
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import RetryRequested
 from dagster._core.definitions.op_definition import OpDefinition

@@ -7,9 +7,16 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 import yaml
 
-from dagster import DagsterEventType, DagsterInvalidConfigError, In, Out, Output
-from dagster import _check as check
-from dagster import job, op
+from dagster import (
+    DagsterEventType,
+    DagsterInvalidConfigError,
+    In,
+    Out,
+    Output,
+    _check as check,
+    job,
+    op,
+)
 from dagster._core.definitions.events import RetryRequested
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType

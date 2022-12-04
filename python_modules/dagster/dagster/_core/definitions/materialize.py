@@ -2,8 +2,8 @@ import warnings
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
-from dagster._utils import merge_dicts
 from dagster._utils.backcompat import ExperimentalWarning
+from dagster._utils.merger import merge_dicts
 
 from ..errors import DagsterInvariantViolationError
 from ..instance import DagsterInstance

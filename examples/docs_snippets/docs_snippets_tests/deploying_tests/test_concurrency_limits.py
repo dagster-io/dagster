@@ -1,11 +1,12 @@
 import os
 
-from dagster._core.instance.ref import InstanceRef
-from dagster._core.run_coordinator import QueuedRunCoordinator
 from docs_snippets.deploying.concurrency_limits.concurrency_limits import (
     important_job,
     less_important_schedule,
 )
+
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.run_coordinator import QueuedRunCoordinator
 
 
 def test_inclusion():

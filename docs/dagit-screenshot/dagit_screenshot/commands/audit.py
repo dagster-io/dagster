@@ -1,6 +1,7 @@
 # pylint: disable=print-call
 
 import os
+import sys
 from typing import Optional
 
 from dagit_screenshot.utils import (
@@ -39,7 +40,7 @@ def audit(
         print(f"{len(error_results)} errors:")
         for result in error_results:
             print(f'  {result["id"]}: {result["error"]}')
-        exit(1)
+        sys.exit(1)
 
 
 def _validate_spec(
@@ -50,7 +51,7 @@ def _validate_spec(
 
     try:
         if spec["base_url"].startswith("http://localhost"):
-            if not "workspace" in spec:
+            if 'workspace' not in spec:
                 raise Exception("No workspace defined. Workspace required for local dagit.")
             workspace = spec["workspace"]
             workspace_path = normalize_workspace_path(workspace, workspace_root)

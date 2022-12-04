@@ -1,18 +1,21 @@
 # isort: skip_file
-import yaml
 from unittest import mock
+
+import yaml
 from dagster_slack import slack_resource
+
+# start_repo_marker_0
 from dagster import (
+    HookContext,
     ResourceDefinition,
+    failure_hook,
     file_relative_path,
     graph,
     job,
     op,
     repository,
+    success_hook,
 )
-
-# start_repo_marker_0
-from dagster import HookContext, failure_hook, success_hook
 
 
 @success_hook(required_resource_keys={"slack"})

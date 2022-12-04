@@ -2,7 +2,6 @@ import base64
 import os
 import subprocess
 import sys
-from collections import namedtuple
 from contextlib import contextmanager
 
 import dagster._check as check
@@ -17,7 +16,6 @@ from dagster._core.host_representation import (
     GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
     InstigatorSelector,
-    RepositoryLocation,
 )
 from dagster._core.host_representation.origin import (
     ExternalInstigatorOrigin,
@@ -31,7 +29,7 @@ from dagster._core.origin import (
 )
 from dagster._core.test_utils import in_process_test_workspace
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._serdes import create_snapshot_id, whitelist_for_serdes
+from dagster._serdes import create_snapshot_id
 from dagster._utils import file_relative_path, git_repository_root
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None

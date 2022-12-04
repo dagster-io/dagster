@@ -13,7 +13,7 @@ from dagster_test.test_project import (
 )
 
 from dagster._legacy import execute_pipeline
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 from dagster._utils.test.postgres_instance import postgres_instance_for_test
 from dagster._utils.yaml_utils import merge_yamls
 

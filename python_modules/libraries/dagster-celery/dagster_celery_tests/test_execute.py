@@ -21,10 +21,10 @@ from dagster._legacy import (
 from dagster._utils import send_interrupt
 
 from .utils import (  # isort:skip
+    REPO_FILE,
+    events_of_type,
     execute_eagerly_on_celery,
     execute_pipeline_on_celery,
-    events_of_type,
-    REPO_FILE,
 )
 
 

@@ -42,7 +42,6 @@ from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition import RepositoryDefinition
-    from dagster._core.storage.event_log.base import EventLogRecord
 
 
 @whitelist_for_serdes

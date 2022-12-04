@@ -19,7 +19,7 @@ class _CanRemoveImplicitResolver:
     @classmethod
     def remove_implicit_resolver(cls, tag):
         # See https://github.com/yaml/pyyaml/blob/master/lib/yaml/resolver.py#L26 for inspiration
-        if not "yaml_implicit_resolvers" in cls.__dict__:
+        if "yaml_implicit_resolvers" not in cls.__dict__:
             implicit_resolvers = {}
             for key in cls.yaml_implicit_resolvers:
                 implicit_resolvers[key] = cls.yaml_implicit_resolvers[key][:]

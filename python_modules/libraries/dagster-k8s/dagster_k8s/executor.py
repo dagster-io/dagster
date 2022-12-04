@@ -3,9 +3,13 @@ from typing import Iterator, List, Optional, cast
 import kubernetes
 from dagster_k8s.launcher import K8sRunLauncher
 
-from dagster import Field, IntSource, StringSource
-from dagster import _check as check
-from dagster import executor
+from dagster import (
+    Field,
+    IntSource,
+    StringSource,
+    _check as check,
+    executor,
+)
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.events import DagsterEvent, EngineEventData, MetadataEntry
@@ -19,7 +23,8 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
     StepHandlerContext,
 )
-from dagster._utils import frozentags, merge_dicts
+from dagster._utils import frozentags
+from dagster._utils.merger import merge_dicts
 
 from .client import DagsterKubernetesClient
 from .container_context import K8sContainerContext

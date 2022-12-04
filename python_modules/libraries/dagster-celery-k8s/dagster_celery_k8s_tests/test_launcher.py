@@ -26,8 +26,8 @@ from dagster._core.test_utils import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ExecuteRunArgs
 from dagster._legacy import pipeline
-from dagster._utils import merge_dicts
 from dagster._utils.hosted_user_process import external_pipeline_from_recon_pipeline
+from dagster._utils.merger import merge_dicts
 
 
 def test_empty_celery_config():

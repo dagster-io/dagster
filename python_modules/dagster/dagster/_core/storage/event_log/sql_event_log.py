@@ -390,8 +390,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         check.invariant(
             not of_type
-            or isinstance(of_type, DagsterEventType)
-            or isinstance(of_type, (frozenset, set))
+            or isinstance(of_type, (DagsterEventType, frozenset, set))
         )
 
         dagster_event_types = (
@@ -472,7 +471,7 @@ class SqlEventLogStorage(EventLogStorage):
             .where(
                 db.and_(
                     SqlEventLogStorageTable.c.run_id == run_id,
-                    SqlEventLogStorageTable.c.dagster_event_type != None,
+                    SqlEventLogStorageTable.c.dagster_event_type != None,  # noqa: E711
                 )
             )
             .group_by("dagster_event_type")
@@ -534,7 +533,7 @@ class SqlEventLogStorage(EventLogStorage):
         raw_event_query = (
             db.select([SqlEventLogStorageTable.c.event])
             .where(SqlEventLogStorageTable.c.run_id == run_id)
-            .where(SqlEventLogStorageTable.c.step_key != None)
+            .where(SqlEventLogStorageTable.c.step_key != None)  # noqa: E711
             .where(
                 SqlEventLogStorageTable.c.dagster_event_type.in_(
                     [
@@ -626,7 +625,7 @@ class SqlEventLogStorage(EventLogStorage):
         removed_asset_key_query = (
             db.select([SqlEventLogStorageTable.c.asset_key])
             .where(SqlEventLogStorageTable.c.run_id == run_id)
-            .where(SqlEventLogStorageTable.c.asset_key != None)
+            .where(SqlEventLogStorageTable.c.asset_key != None)  # noqa: E711
             .group_by(SqlEventLogStorageTable.c.asset_key)
         )
 
@@ -707,7 +706,7 @@ class SqlEventLogStorage(EventLogStorage):
         query = (
             db.select([1])
             .where(SecondaryIndexMigrationTable.c.name == name)
-            .where(SecondaryIndexMigrationTable.c.migration_completed != None)
+            .where(SecondaryIndexMigrationTable.c.migration_completed != None)  # noqa: E711
             .limit(1)
         )
         with self.index_connection() as conn:
@@ -1590,7 +1589,7 @@ class SqlEventLogStorage(EventLogStorage):
                             [asset_key.to_string(legacy=True) for asset_key in asset_keys]
                         ),
                     ),
-                    SqlEventLogStorageTable.c.partition != None,
+                    SqlEventLogStorageTable.c.partition != None,  # noqa: E711
                     SqlEventLogStorageTable.c.dagster_event_type
                     == DagsterEventType.ASSET_MATERIALIZATION.value,
                 )

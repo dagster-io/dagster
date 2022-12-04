@@ -1,5 +1,4 @@
 # pylint: disable=protected-access
-# pylint: disable=unused-variable
 
 import copy
 from concurrent.futures import ThreadPoolExecutor
@@ -201,7 +200,7 @@ def test_task_definition_registration(
     ecs, instance, workspace, run, other_workspace, other_run, secrets_manager, monkeypatch
 ):
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
-    initial_tasks = ecs.list_tasks()["taskArns"]
+    _initial_tasks = ecs.list_tasks()["taskArns"]
 
     instance.launch_run(run.run_id, workspace)
 

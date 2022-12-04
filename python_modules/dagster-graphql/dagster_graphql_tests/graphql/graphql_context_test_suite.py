@@ -28,7 +28,7 @@ from dagster._core.workspace.load_target import (
     WorkspaceFileTarget,
 )
 from dagster._grpc.server import GrpcServerProcess
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 from dagster._utils.test import FilesystemTestScheduler
 from dagster._utils.test.postgres_instance import TestPostgresInstance
 
@@ -290,7 +290,9 @@ class EnvironmentManagers:
         @contextmanager
         def _mgr_fn(instance, read_only):
             """Goes out of process via grpc"""
-            loadable_target_origin = target if target != None else get_main_loadable_target_origin()
+            loadable_target_origin = (
+                target if target is not None else get_main_loadable_target_origin()
+            )
             with WorkspaceProcessContext(
                 instance,
                 (
@@ -323,7 +325,7 @@ class EnvironmentManagers:
                 instance_ref=instance.get_ref(),
                 location_name=location_name,
                 loadable_target_origin=target
-                if target != None
+                if target is not None
                 else get_main_loadable_target_origin(),
             )
             try:

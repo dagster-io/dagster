@@ -51,7 +51,7 @@ def validate_dependency_dict(
         )
 
     for key, dep_dict in dependencies.items():
-        if not (isinstance(key, str) or isinstance(key, NodeInvocation)):
+        if not isinstance(key, (str, NodeInvocation)):
             raise DagsterInvalidDefinitionError(
                 prelude
                 + "Expected str or NodeInvocation key in the top level dict. "
@@ -240,7 +240,7 @@ def _validate_dependencies(
                         f'"{from_node}" input "{from_input}"'
                     )
 
-                if not from_node in node_dict:
+                if from_node not in node_dict:
                     aliased_node = alias_to_name.get(from_node)
                     if aliased_node == from_node:
                         raise DagsterInvalidDefinitionError(
@@ -266,7 +266,7 @@ def _validate_dependencies(
                         f'"{from_input}". Available inputs: {list(input_list)}'
                     )
 
-                if not dep.node in node_dict:
+                if dep.node not in node_dict:
                     raise DagsterInvalidDefinitionError(
                         f'Invalid dependencies: node "{dep.node}" not found in node list. '
                         f'Listed as dependency for node "{from_node}" input "{from_input}" '

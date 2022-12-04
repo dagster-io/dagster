@@ -1,21 +1,21 @@
 import importlib.util
+import itertools
 import json
 import os
 import re
 import subprocess
 import sys
+import textwrap
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import click
 import yaml
 
-import itertools
 import dagster._check as check
 from dagster._utils import file_relative_path, mkdir_p
 from dagster._utils.merger import deep_merge_dicts
-import textwrap
 
 
 def _remove_invalid_chars(name: str) -> str:

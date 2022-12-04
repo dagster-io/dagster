@@ -2,21 +2,26 @@ import typing as t
 from abc import abstractmethod
 from enum import Enum as PythonEnum
 from functools import partial
-from typing import AbstractSet as TypingAbstractSet
-from typing import Iterator as TypingIterator
-from typing import Mapping
-from typing import Optional as TypingOptional
-from typing import Sequence
-from typing import Type as TypingType
-from typing import cast
+from typing import (
+    AbstractSet as TypingAbstractSet,
+    Iterator as TypingIterator,
+    Mapping,
+    Optional as TypingOptional,
+    Sequence,
+    Type as TypingType,
+    cast,
+)
 
 from typing_extensions import get_args, get_origin
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._builtins import BuiltinEnum
-from dagster._config import Array, ConfigType
-from dagster._config import Noneable as ConfigNoneable
+from dagster._config import (
+    Array,
+    ConfigType,
+    Noneable as ConfigNoneable,
+)
 from dagster._core.definitions.events import DynamicOutput, Output, TypeCheck
 from dagster._core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
@@ -32,13 +37,8 @@ from .builtin_config_schemas import BuiltinSchemas
 from .config_schema import DagsterTypeLoader, DagsterTypeMaterializer
 
 if t.TYPE_CHECKING:
-    from dagster._core.definitions.node_definition import (  # pylint: disable=unused-import
-        NodeDefinition,
-    )
-    from dagster._core.execution.context.system import (  # pylint: disable=unused-import
-        DagsterTypeLoaderContext,
-        TypeCheckContext,
-    )
+    from dagster._core.definitions.node_definition import NodeDefinition
+    from dagster._core.execution.context.system import DagsterTypeLoaderContext, TypeCheckContext
 
 TypeCheckFn = t.Callable[["TypeCheckContext", object], t.Union[TypeCheck, bool]]
 
@@ -868,8 +868,10 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
     )
-    from .python_dict import Dict as DDict
-    from .python_dict import PythonDict
+    from .python_dict import (
+        Dict as DDict,
+        PythonDict,
+    )
     from .python_set import DagsterSetApi, PythonSet
     from .python_tuple import DagsterTupleApi, PythonTuple
     from .transform_typing import transform_typing_type
