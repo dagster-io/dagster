@@ -68,7 +68,6 @@ def test_active_execution_plan():
     plan = create_execution_plan(define_diamond_job())
 
     with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
-
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
         step_1 = steps[0]
@@ -120,7 +119,6 @@ def test_failing_execution_plan():
     plan = create_execution_plan(job_def)
 
     with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
-
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
         step_1 = steps[0]
@@ -173,7 +171,6 @@ def test_retries_active_execution():
     plan = create_execution_plan(job_def)
 
     with plan.start(retry_mode=(RetryMode.ENABLED)) as active_execution:
-
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
         step_1 = steps[0]
@@ -238,7 +235,6 @@ def test_retries_disabled_active_execution():
 
     with pytest.raises(check.CheckError):
         with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
-
             steps = active_execution.get_steps_to_execute()
             assert len(steps) == 1
             step_1 = steps[0]
@@ -256,7 +252,6 @@ def test_retries_deferred_active_execution():
     plan = create_execution_plan(job_def)
 
     with plan.start(retry_mode=(RetryMode.DEFERRED)) as active_execution:
-
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
         step_1 = steps[0]
@@ -427,7 +422,6 @@ def test_incomplete_execution_plan():
         match="Execution finished without completing the execution plan.",
     ):
         with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
-
             steps = active_execution.get_steps_to_execute()
             assert len(steps) == 1
             step_1 = steps[0]
@@ -442,7 +436,6 @@ def test_lost_steps():
     # run to completion - but step was in unknown state so exception thrown
     with pytest.raises(DagsterUnknownStepStateError):
         with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
-
             steps = active_execution.get_steps_to_execute()
             assert len(steps) == 1
             step_1 = steps[0]

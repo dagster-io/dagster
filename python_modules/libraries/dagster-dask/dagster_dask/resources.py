@@ -100,12 +100,17 @@ class DaskResource:
                         ),
                         "asynchronous": Field(
                             Bool,
-                            description="Set to True if using this client within async/await functions.",
+                            description=(
+                                "Set to True if using this client within async/await functions."
+                            ),
                             is_required=False,
                         ),
                         "name": Field(
                             String,
-                            description="Name of client that will be included in logs generated on the scheduler.",
+                            description=(
+                                "Name of client that will be included in logs generated on the"
+                                " scheduler."
+                            ),
                             is_required=False,
                         ),
                         "direct_to_workers": Field(
@@ -129,7 +134,9 @@ class DaskResource:
                         key: Field(
                             Permissive(),
                             is_required=False,
-                            description=f"{meta['name']} cluster config. Requires {meta['module']}.",
+                            description=(
+                                f"{meta['name']} cluster config. Requires {meta['module']}."
+                            ),
                         )
                         for key, meta in DaskClusterTypes.items()
                     }

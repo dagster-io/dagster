@@ -208,7 +208,10 @@ def test_mem_storage_error_pipeline_multiprocess():
     with instance_for_test() as instance:
         with pytest.raises(
             DagsterUnmetExecutorRequirementsError,
-            match="your pipeline includes solid outputs that will not be stored somewhere where other processes can retrieve them.",
+            match=(
+                "your pipeline includes solid outputs that will not be stored somewhere where other"
+                " processes can retrieve them."
+            ),
         ):
             execute_pipeline(
                 reconstructable(define_in_mem_pipeline),

@@ -520,7 +520,6 @@ def test_memoization_on_celery_k8s(  # pylint: disable=redefined-outer-name
     )
 
     try:
-
         run_ids = []
         for _ in range(2):
             run_id = launch_run_over_graphql(

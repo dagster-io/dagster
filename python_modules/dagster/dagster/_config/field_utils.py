@@ -75,7 +75,6 @@ def _add_hash(m, string):
 
 
 def compute_fields_hash(fields, description, field_aliases=None):
-
     m = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
     if description:
         _add_hash(m, ":description: " + description)
@@ -371,7 +370,6 @@ def _expand_fields_dict(
 
 
 def expand_list(original_root: object, the_list: Sequence[object], stack: List[str]) -> Array:
-
     if len(the_list) != 1:
         raise DagsterInvalidConfigDefinitionError(
             original_root, the_list, stack, "List must be of length 1"
@@ -392,7 +390,6 @@ def expand_list(original_root: object, the_list: Sequence[object], stack: List[s
 
 
 def expand_map(original_root: object, the_dict: Mapping[object, object], stack: List[str]) -> Map:
-
     if len(the_dict) != 1:
         raise DagsterInvalidConfigDefinitionError(
             original_root, the_dict, stack, "Map dict must be of length 1"
@@ -414,9 +411,8 @@ def expand_map(original_root: object, the_dict: Mapping[object, object], stack: 
             original_root,
             the_dict,
             stack,
-            "Map must have a single value and contain a valid type i.e. {{str: int}}. Got item {}".format(
-                repr(the_dict[key])
-            ),
+            "Map must have a single value and contain a valid type i.e. {{str: int}}. Got item {}"
+            .format(repr(the_dict[key])),
         )
 
     return Map(key_type, inner_type)

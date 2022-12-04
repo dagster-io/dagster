@@ -56,7 +56,11 @@ def test_basic_repositories():
 
 
 def test_basic_repository_locations():
-    query = "{ workspaceOrError { ... on Workspace { locationEntries { __typename, name, locationOrLoadError { __typename, ... on RepositoryLocation { __typename, name } ... on PythonError { message } } } } } }"
+    query = (
+        "{ workspaceOrError { ... on Workspace { locationEntries { __typename, name,"
+        " locationOrLoadError { __typename, ... on RepositoryLocation { __typename, name } ... on"
+        " PythonError { message } } } } } }"
+    )
 
     workspace_path = file_relative_path(__file__, "./cli_test_error_workspace.yaml")
 
@@ -85,7 +89,10 @@ def test_basic_variables():
         { ... on Pipeline { name } }
     }
     """
-    variables = '{"pipelineName": "math", "repositoryName": "test", "repositoryLocationName": "test_cli_location"}'
+    variables = (
+        '{"pipelineName": "math", "repositoryName": "test", "repositoryLocationName":'
+        ' "test_cli_location"}'
+    )
     workspace_path = file_relative_path(__file__, "./cli_test_workspace.yaml")
 
     with dagster_cli_runner() as runner:

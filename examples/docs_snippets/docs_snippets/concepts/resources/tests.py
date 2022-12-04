@@ -54,7 +54,6 @@ download_job = download.to_job(resource_defs={"api": api_client})
 
 
 def test_local():
-
     # Since we have access to the computation graph independent of the set of resources, we can
     # test it locally.
     result = download.execute_in_process(

@@ -10,17 +10,21 @@ from dagster import Array, AssetKey, Bool, Field, In, Noneable, Nothing, Out, Ou
     ins={"start_after": In(Nothing)},
     out=Out(
         FivetranOutput,
-        description="Parsed json dictionary representing the details of the Fivetran connector after "
-        "the sync successfully completes. "
-        "See the [Fivetran API Docs](https://fivetran.com/docs/rest-api/connectors#retrieveconnectordetails) "
-        "to see detailed information on this response.",
+        description=(
+            "Parsed json dictionary representing the details of the Fivetran connector after the"
+            " sync successfully completes. See the [Fivetran API"
+            " Docs](https://fivetran.com/docs/rest-api/connectors#retrieveconnectordetails) to see"
+            " detailed information on this response."
+        ),
     ),
     config_schema={
         "connector_id": Field(
             str,
             is_required=True,
-            description="The Fivetran Connector ID that this op will sync. You can retrieve this "
-            'value from the "Setup" tab of a given connector in the Fivetran UI.',
+            description=(
+                "The Fivetran Connector ID that this op will sync. You can retrieve this "
+                'value from the "Setup" tab of a given connector in the Fivetran UI.'
+            ),
         ),
         "poll_interval": Field(
             float,
@@ -30,8 +34,10 @@ from dagster import Array, AssetKey, Bool, Field, In, Noneable, Nothing, Out, Ou
         "poll_timeout": Field(
             Noneable(float),
             default_value=None,
-            description="The maximum time that will waited before this operation is timed out. By "
-            "default, this will never time out.",
+            description=(
+                "The maximum time that will waited before this operation is timed out. By "
+                "default, this will never time out."
+            ),
         ),
         "yield_materializations": Field(
             config=Bool,
@@ -105,23 +111,30 @@ def fivetran_sync_op(context):
     ins={"start_after": In(Nothing)},
     out=Out(
         FivetranOutput,
-        description="Parsed json dictionary representing the details of the Fivetran connector after "
-        "the resync successfully completes. "
-        "See the [Fivetran API Docs](https://fivetran.com/docs/rest-api/connectors#retrieveconnectordetails) "
-        "to see detailed information on this response.",
+        description=(
+            "Parsed json dictionary representing the details of the Fivetran connector after the"
+            " resync successfully completes. See the [Fivetran API"
+            " Docs](https://fivetran.com/docs/rest-api/connectors#retrieveconnectordetails) to see"
+            " detailed information on this response."
+        ),
     ),
     config_schema={
         "connector_id": Field(
             str,
             is_required=True,
-            description="The Fivetran Connector ID that this op will sync. You can retrieve this "
-            'value from the "Setup" tab of a given connector in the Fivetran UI.',
+            description=(
+                "The Fivetran Connector ID that this op will sync. You can retrieve this "
+                'value from the "Setup" tab of a given connector in the Fivetran UI.'
+            ),
         ),
         "resync_parameters": Field(
             Noneable(Permissive()),
             default_value=None,
-            description="Optional resync parameters to send in the payload to the Fivetran API. You "
-            "can find an example resync payload here: https://fivetran.com/docs/rest-api/connectors#request_7",
+            description=(
+                "Optional resync parameters to send in the payload to the Fivetran API. You can"
+                " find an example resync payload here:"
+                " https://fivetran.com/docs/rest-api/connectors#request_7"
+            ),
         ),
         "poll_interval": Field(
             float,
@@ -131,8 +144,10 @@ def fivetran_sync_op(context):
         "poll_timeout": Field(
             Noneable(float),
             default_value=None,
-            description="The maximum time that will waited before this operation is timed out. By "
-            "default, this will never time out.",
+            description=(
+                "The maximum time that will waited before this operation is timed out. By "
+                "default, this will never time out."
+            ),
         ),
         "yield_materializations": Field(
             config=Bool,

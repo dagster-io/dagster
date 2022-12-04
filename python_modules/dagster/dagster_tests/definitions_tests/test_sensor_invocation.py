@@ -54,7 +54,6 @@ def test_sensor_context_backcompat():
 
 
 def test_sensor_invocation_args():
-
     # Test no arg invocation
     @sensor(job_name="foo_pipeline")
     def basic_sensor_no_arg():
@@ -95,16 +94,20 @@ def test_sensor_invocation_args():
     # pass context with no args
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Sensor evaluation function expected context argument, but no context argument was "
-        "provided when invoking.",
+        match=(
+            "Sensor evaluation function expected context argument, but no context argument was "
+            "provided when invoking."
+        ),
     ):
         basic_sensor_with_context()  # pylint: disable=no-value-for-parameter
 
     # pass context with too many args
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Sensor invocation received multiple arguments. Only a first positional context "
-        "parameter should be provided when invoking.",
+        match=(
+            "Sensor invocation received multiple arguments. Only a first positional context "
+            "parameter should be provided when invoking."
+        ),
     ):
         basic_sensor_with_context(  # pylint: disable=redundant-keyword-arg
             context, _arbitrary_context=None

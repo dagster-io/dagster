@@ -42,7 +42,8 @@ def test_construct_log_string_for_event():
 
     assert (
         construct_log_string(logging_metadata=logging_metadata, message_props=dagster_message_props)
-        == 'my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_OUTPUT - Yielded output "result" of type "Any" for step "solid2". (Type check passed).'
+        == "my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_OUTPUT - Yielded"
+        ' output "result" of type "Any" for step "solid2". (Type check passed).'
     )
 
 

@@ -145,7 +145,6 @@ def test_parse_solid_selection_multi():
 
 
 def test_parse_solid_selection_invalid():
-
     with pytest.raises(
         DagsterInvalidSubsetError,
         match="No qualified ops to execute found for op_selection",
@@ -246,7 +245,6 @@ def test_parse_step_selection_multi():
 
 
 def test_parse_step_selection_invalid():
-
     with pytest.raises(
         DagsterInvalidSubsetError,
         match="No qualified steps to execute found for step_selection",

@@ -6,7 +6,6 @@ from dagster_buildkite.utils import is_release_branch, safe_getenv
 
 
 class AvailablePythonVersion(str, Enum):
-
     # Ordering is important here, because some steps will take the highest/lowest available version.
     V3_7 = "3.7.13"
     V3_8 = "3.8.13"
@@ -23,13 +22,11 @@ class AvailablePythonVersion(str, Enum):
 
     @classmethod
     def get_pytest_defaults(cls) -> List["AvailablePythonVersion"]:
-
         branch_name = safe_getenv("BUILDKITE_BRANCH")
         commit_message = safe_getenv("BUILDKITE_MESSAGE")
         if branch_name == "master" or is_release_branch(branch_name):
             return cls.get_all()
         else:
-
             # environment variable-specified defaults
             # branch name or commit message-specified defaults
             test_pythons = os.environ.get("TEST_PYTHON_VERSIONS", "")

@@ -51,7 +51,6 @@ class ScopedResourcesBuilder(
         )
 
     def build(self, required_resource_keys: Optional[AbstractSet[str]]) -> Resources:
-
         """We dynamically create a type that has the resource keys as properties, to enable dotting into
         the resources from a context.
 

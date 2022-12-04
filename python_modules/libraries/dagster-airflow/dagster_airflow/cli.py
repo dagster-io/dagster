@@ -130,8 +130,10 @@ def main():
     "-p",
     "--preset",
     type=click.STRING,
-    help="Specify a preset to use for this pipeline. Presets are defined on pipelines under "
-    "preset_defs.",
+    help=(
+        "Specify a preset to use for this pipeline. Presets are defined on pipelines under "
+        "preset_defs."
+    ),
 )
 @click.option("--job-name", type=click.STRING, help="The name of the job")
 def scaffold(module_name, pipeline_name, output_path, config, preset, job_name):

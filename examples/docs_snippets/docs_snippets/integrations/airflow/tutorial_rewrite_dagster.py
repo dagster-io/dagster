@@ -36,6 +36,7 @@ def templated(context, ds: datetime):
 
 # end_ops
 
+
 # start_job
 @job(tags={"dagster/max_retries": 1, "dag_name": "example"})
 def tutorial_job():
@@ -49,6 +50,7 @@ def tutorial_job():
 # start_schedule
 schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
 # end_schedule
+
 
 # start_repo
 defs = Definitions(

@@ -140,10 +140,8 @@ class _Table(ConfigScalar):
     def post_process(self, value):
         if not _is_valid_table(value):
             raise PostProcessingError(
-                (
-                    'Tables must be of the form "project.dataset.table" or "dataset.table" '
-                    "with optional date-partition suffix"
-                )
+                'Tables must be of the form "project.dataset.table" or "dataset.table" '
+                "with optional date-partition suffix"
             )
 
         return value

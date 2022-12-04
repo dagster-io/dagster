@@ -385,7 +385,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         asset_event_records = {}
         for a in asset_keys:
-
             event_records = self.instance.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -642,7 +641,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             partitions_def = self._partitions_def_by_asset_key.get(asset_key)
             if not partitions_def:
                 raise DagsterInvariantViolationError(
-                    f"Asset key {asset_key} is not partitioned. Cannot check if partitions have been materialized."
+                    f"Asset key {asset_key} is not partitioned. Cannot check if partitions have"
+                    " been materialized."
                 )
             partitions = partitions_def.get_partition_keys()
 
@@ -659,9 +659,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             asset_def = self._assets_by_key[asset_key]
             if asset_def is None:
                 raise DagsterInvalidInvocationError(
-                    f"Asset key {asset_key} does not have an AssetDefinition in this repository (likely "
-                    f"because it is a SourceAsset). fn context.{fn_name} can only be called for assets "
-                    "with AssetDefinitions in the repository."
+                    f"Asset key {asset_key} does not have an AssetDefinition in this repository"
+                    f" (likely because it is a SourceAsset). fn context.{fn_name} can only be"
+                    " called for assets with AssetDefinitions in the repository."
                 )
             else:
                 return asset_def
@@ -770,7 +770,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
 
 class MultiAssetSensorCursorAdvances:
-
     _advanced_record_ids_by_key: Dict[AssetKey, Set[int]]
     _partition_key_by_record_id: Dict[int, Optional[str]]
     advance_all_cursors_called: bool
@@ -988,12 +987,14 @@ def build_multi_asset_sensor_context(
     if cursor_from_latest_materializations:
         if cursor:
             raise DagsterInvalidInvocationError(
-                "Cannot provide both cursor and cursor_from_latest_materializations objects. Dagster will override "
-                "the provided cursor based on the cursor_from_latest_materializations object."
+                "Cannot provide both cursor and cursor_from_latest_materializations objects."
+                " Dagster will override the provided cursor based on the"
+                " cursor_from_latest_materializations object."
             )
         if not instance:
             raise DagsterInvalidInvocationError(
-                "Cannot provide cursor_from_latest_materializations object without a Dagster instance."
+                "Cannot provide cursor_from_latest_materializations object without a Dagster"
+                " instance."
             )
 
         if asset_selection:
@@ -1084,7 +1085,6 @@ class MultiAssetSensorDefinition(SensorDefinition):
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
-
         check.invariant(asset_keys or asset_selection, "Must provide asset_keys or asset_selection")
         self._monitored_asset_selection: Optional[AssetSelection] = None
         self._monitored_asset_keys: Optional[Sequence[AssetKey]] = None
@@ -1135,10 +1135,10 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     and not multi_asset_sensor_context._cursor_has_been_updated  # pylint: disable=protected-access
                 ):
                     raise DagsterInvalidDefinitionError(
-                        "Asset materializations have been handled in this sensor, "
-                        "but the cursor was not updated. This means the same materialization events "
-                        "will be handled in the next sensor tick. Use context.advance_cursor or "
-                        "context.advance_all_cursors to update the cursor."
+                        "Asset materializations have been handled in this sensor, but the cursor"
+                        " was not updated. This means the same materialization events will be"
+                        " handled in the next sensor tick. Use context.advance_cursor or"
+                        " context.advance_all_cursors to update the cursor."
                     )
 
                 multi_asset_sensor_context.update_cursor_after_evaluation()
@@ -1162,7 +1162,6 @@ class MultiAssetSensorDefinition(SensorDefinition):
         )
 
     def __call__(self, *args, **kwargs):
-
         if is_context_provided(self._raw_asset_materialization_fn):
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(

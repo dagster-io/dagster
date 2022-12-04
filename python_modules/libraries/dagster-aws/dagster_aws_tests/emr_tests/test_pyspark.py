@@ -196,7 +196,13 @@ def sync_code():
         raise DagsterSubprocessError("Failed to sync code to EMR")
 
     # Install dagster packages on remote node
-    remote_install_dagster_packages_command = ["sudo", "python3", "-m", "pip", "install",] + [
+    remote_install_dagster_packages_command = [
+        "sudo",
+        "python3",
+        "-m",
+        "pip",
+        "install",
+    ] + [
         token
         for package_subpath in ["dagster", "libraries/dagster-pyspark"]
         for token in ["-e", "/home/hadoop/dagster/python_modules/" + package_subpath]

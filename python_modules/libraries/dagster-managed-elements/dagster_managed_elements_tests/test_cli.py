@@ -12,7 +12,6 @@ TEST_ROOT_DIR = file_relative_path(__file__, ".")
     ["check", "apply"],
 )
 def test_commands(command):
-
     runner = CliRunner()
 
     is_check = command == "check"

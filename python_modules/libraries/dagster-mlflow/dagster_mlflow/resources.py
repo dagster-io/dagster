@@ -63,7 +63,6 @@ class MlFlow(metaclass=MlflowMeta):
     """
 
     def __init__(self, context):
-
         # Context associated attributes
         self.log = context.log
         self.run_name = context.dagster_run.pipeline_name

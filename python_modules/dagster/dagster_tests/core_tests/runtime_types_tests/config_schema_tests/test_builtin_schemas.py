@@ -385,7 +385,8 @@ def test_nullable_string_input_with_none_value():
 
     assert (
         "Value at path root:ops:take_nullable_string:inputs:nullable_string:value must not be None"
-    ) in str(exc_info.value)
+        in str(exc_info.value)
+    )
 
 
 def test_nullable_string_input_without_value():

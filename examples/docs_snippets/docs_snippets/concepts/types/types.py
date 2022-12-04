@@ -32,6 +32,7 @@ def even_asset(num):
 
 # end_asset_type
 
+
 # start_basic_even_type_with_annotations
 @op(
     ins={"num": In(EvenDagsterType)},
@@ -64,7 +65,6 @@ from dagster import check_dagster_type, Dict, Any
 
 
 def test_dagster_type():
-
     assert check_dagster_type(Dict[Any, Any], {"foo": "bar"}).success
 
 

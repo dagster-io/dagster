@@ -70,8 +70,8 @@ def define_cluster_provider_fixture(additional_kind_images=None):
                         client = docker.from_env()
                         client.images.get(docker_image)
                         print(  # pylint: disable=print-call
-                            "Found existing image tagged {image}, skipping image build. To rebuild, first run: "
-                            "docker rmi {image}".format(image=docker_image)
+                            "Found existing image tagged {image}, skipping image build. To rebuild,"
+                            " first run: docker rmi {image}".format(image=docker_image)
                         )
                     except docker.errors.ImageNotFound:
                         build_and_tag_test_image(docker_image)
@@ -283,10 +283,8 @@ def helm_postgres_url(helm_namespace):
 
 @pytest.fixture(scope="function")
 def dagster_instance(helm_postgres_url):  # pylint: disable=redefined-outer-name
-
     with tempfile.TemporaryDirectory() as tempdir:
         with environ({"DAGSTER_HOME": tempdir}):
-
             with DagsterInstance(
                 instance_type=InstanceType.PERSISTENT,
                 local_artifact_storage=LocalArtifactStorage(tempdir),

@@ -45,7 +45,6 @@ class GrapheneTableMetadataEntry(graphene.ObjectType):
 
 
 class GrapheneTableSchemaMetadataEntry(graphene.ObjectType):
-
     schema = graphene.NonNull(GrapheneTableSchema)
 
     class Meta:

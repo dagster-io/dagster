@@ -46,8 +46,7 @@ def check():
     ]
     if missing_query_history_subdirs:
         raise Exception(
-            "Missing some query history (sub)directories:"
-            f"\n\t{missing_query_history_subdirs}"
+            f"Missing some query history (sub)directories:\n\t{missing_query_history_subdirs}"
             + f"\n\t at {legacy_query_info.directory}"
             + "\n\t Please run `dagster-graphql-client query snapshot` on the command line "
             + "or manually resolve these issues"
@@ -82,11 +81,12 @@ def snapshot():
     """
     DATE_FORMAT_STRING = "%Y_%m_%d"
     legacy_query_info = LegacyQueryHistoryInfo.get()
-    for (current_query_name, current_query_body) in get_queries().items():
+    for current_query_name, current_query_body in get_queries().items():
         query_dir = os.path.join(legacy_query_info.directory, current_query_name)
         if current_query_name not in legacy_query_info.legacy_queries:
             click.echo(
-                f"Couldn't find query history subdirectory for query {current_query_name}, so making a new one"
+                f"Couldn't find query history subdirectory for query {current_query_name}, so"
+                " making a new one"
                 + f"\n\t at {query_dir}"
             )
             os.mkdir(query_dir)

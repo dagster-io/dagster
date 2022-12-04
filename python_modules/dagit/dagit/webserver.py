@@ -51,7 +51,6 @@ T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorksp
 
 
 class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
-
     _process_context: T_IWorkspaceProcessContext
 
     def __init__(self, process_context: T_IWorkspaceProcessContext, app_path_prefix: str = ""):

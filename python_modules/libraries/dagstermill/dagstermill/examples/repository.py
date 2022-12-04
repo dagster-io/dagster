@@ -261,7 +261,6 @@ def error_job():
 
 
 if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
-
     clean_data = test_nb_op("clean_data", outs={DEFAULT_OUTPUT: Out(DataFrame)})
 
     # FIXME add an output to this

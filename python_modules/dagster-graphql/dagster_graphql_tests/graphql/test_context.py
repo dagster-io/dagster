@@ -156,7 +156,6 @@ def test_handle_cleanup_by_workspace_context_exit():
 
 
 def test_handle_cleaup_by_gc_without_request_context():
-
     called = {"yup": False}
 
     def call_me():

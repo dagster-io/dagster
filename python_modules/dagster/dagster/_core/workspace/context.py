@@ -528,8 +528,10 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 LocationStateChangeEvent(
                     LocationStateChangeEventType.LOCATION_ERROR,
                     location_name=location_name,
-                    message="Unable to reconnect to server. You can reload the server once it is "
-                    "reachable again",
+                    message=(
+                        "Unable to reconnect to server. You can reload the server once it is "
+                        "reachable again"
+                    ),
                 )
             ),
         )

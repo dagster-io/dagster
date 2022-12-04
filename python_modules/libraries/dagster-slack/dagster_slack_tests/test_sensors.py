@@ -21,7 +21,6 @@ from dagster._core.test_utils import environ
 
 def test_slack_run_failure_sensor_def():
     with environ({"SLACK_TOKEN": "blah"}):
-
         sensor_name = "my_failure_sensor"
 
         my_sensor = make_slack_on_run_failure_sensor(
@@ -69,7 +68,6 @@ def test_slack_freshness_polciy_status(
     notify_when_back_on_time: bool,
     should_output: bool,
 ):
-
     with patch.object(WebClient, "chat_postMessage", return_value=None) as mocked_post:
         my_sensor = make_slack_on_freshness_policy_status_change_sensor(
             channel="#foo",

@@ -104,7 +104,6 @@ def test_get_validated_celery_k8s_executor_config():
             "TEST_SECRET": "config-secret-env",
         }
     ):
-
         cfg = {
             "execution": {
                 "config": {
@@ -214,7 +213,6 @@ def test_get_validated_celery_k8s_executor_config_for_job():
             "TEST_SECRET": "config-secret-env",
         }
     ):
-
         cfg = {
             "execution": {
                 CELERY_K8S_CONFIG_KEY: {
@@ -307,7 +305,6 @@ def test_launcher_from_config(kubeconfig_file):
 
 
 def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
-
     labels = {"foo_label_key": "bar_label_value"}
 
     # Construct a K8s run launcher in a fake k8s environment.
@@ -477,7 +474,6 @@ def test_k8s_executor_config_override(kubeconfig_file):
         with get_test_project_workspace_and_external_pipeline(
             instance, pipeline_name, "my_image:tag"
         ) as (workspace, external_pipeline):
-
             # Launch the run in a fake Dagster instance.
             celery_k8s_run_launcher.register_instance(instance)
 

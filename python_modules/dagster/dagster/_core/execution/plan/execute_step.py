@@ -239,10 +239,7 @@ def _type_checked_event_sequence_for_input(
 
     with user_code_error_boundary(
         DagsterTypeCheckError,
-        lambda: (
-            f'Error occurred while type-checking input "{input_name}" of {op_label}, with Python '
-            f"type {input_type} and Dagster type {dagster_type.display_name}"
-        ),
+        lambda: f'Error occurred while type-checking input "{input_name}" of {op_label}, with Python type {input_type} and Dagster type {dagster_type.display_name}',
         log_manager=type_check_context.log,
     ):
         type_check = do_type_check(type_check_context, dagster_type, input_value)
@@ -282,10 +279,7 @@ def _type_check_output(
 
     with user_code_error_boundary(
         DagsterTypeCheckError,
-        lambda: (
-            f'Error occurred while type-checking output "{output.output_name}" of {op_label}, with '
-            f"Python type {output_type} and Dagster type {dagster_type.display_name}"
-        ),
+        lambda: f'Error occurred while type-checking output "{output.output_name}" of {op_label}, with Python type {output_type} and Dagster type {dagster_type.display_name}',
         log_manager=type_check_context.log,
     ):
         type_check = do_type_check(type_check_context, dagster_type, output.value)
@@ -418,7 +412,6 @@ def _type_check_and_store_output(
     output: Union[DynamicOutput, Output],
     input_lineage: Sequence[AssetLineageInfo],
 ) -> Iterator[DagsterEvent]:
-
     check.inst_param(step_context, "step_context", StepExecutionContext)
     check.inst_param(output, "output", (Output, DynamicOutput))
     check.sequence_param(input_lineage, "input_lineage", AssetLineageInfo)
@@ -458,7 +451,6 @@ def _type_check_and_store_output(
 def _asset_key_and_partitions_for_output(
     output_context: OutputContext,
 ) -> Tuple[Optional[AssetKey], AbstractSet[str]]:
-
     output_asset_info = output_context.asset_info
 
     if output_asset_info:
@@ -499,7 +491,6 @@ def _get_output_asset_materializations(
     io_manager_metadata_entries: Sequence[Union[MetadataEntry, PartitionMetadataEntry]],
     step_context: StepExecutionContext,
 ) -> Iterator[AssetMaterialization]:
-
     all_metadata = [*output.metadata_entries, *io_manager_metadata_entries]
 
     # Clear any cached record associated with this asset, since we are about to generate a new
@@ -535,8 +526,9 @@ def _get_output_asset_materializations(
             if isinstance(entry, PartitionMetadataEntry):
                 if entry.partition not in asset_partitions:
                     raise DagsterInvariantViolationError(
-                        f"Output {output_def.name} associated a metadata entry ({entry}) with the partition "
-                        f"`{entry.partition}`, which is not one of the declared partition mappings ({asset_partitions})."
+                        f"Output {output_def.name} associated a metadata entry ({entry}) with the"
+                        f" partition `{entry.partition}`, which is not one of the declared"
+                        f" partition mappings ({asset_partitions})."
                     )
                 metadata_mapping[entry.partition].append(entry.entry)
             else:
@@ -611,7 +603,6 @@ def _store_output(
     output: Union[Output, DynamicOutput],
     input_lineage: Sequence[AssetLineageInfo],
 ) -> Iterator[DagsterEvent]:
-
     output_def = step_context.solid_def.output_def_named(step_output_handle.output_name)
     output_manager = step_context.get_io_manager(step_output_handle)
     output_context = step_context.get_output_context(step_output_handle)
@@ -640,10 +631,7 @@ def _store_output(
     for elt in iterate_with_context(
         lambda: op_execution_error_boundary(
             DagsterExecutionHandleOutputError,
-            msg_fn=lambda: (
-                f'Error occurred while handling output "{output_context.name}" of '
-                f'step "{step_context.step.key}":'
-            ),
+            msg_fn=lambda: f'Error occurred while handling output "{output_context.name}" of step "{step_context.step.key}":',
             step_context=step_context,
             step_key=step_context.step.key,
             output_name=output_context.name,
@@ -678,7 +666,11 @@ def _store_output(
     for materialization in manager_materializations:
         if materialization.metadata_entries and manager_metadata_entries:
             raise DagsterInvariantViolationError(
-                f"When handling output '{output_context.name}' of {output_context.op_def.node_type_str} '{output_context.op_def.name}', received a materialization with metadata, while context.add_output_metadata was used within the same call to handle_output. Due to potential conflicts, this is not allowed. Please specify metadata in one place within the `handle_output` function."
+                f"When handling output '{output_context.name}' of"
+                f" {output_context.op_def.node_type_str} '{output_context.op_def.name}', received a"
+                " materialization with metadata, while context.add_output_metadata was used within"
+                " the same call to handle_output. Due to potential conflicts, this is not allowed."
+                " Please specify metadata in one place within the `handle_output` function."
             )
 
         if manager_metadata_entries:
@@ -743,12 +735,7 @@ def _create_type_materializations(
                 step_output = step.step_output_named(output_name)
                 with user_code_error_boundary(
                     DagsterTypeMaterializationError,
-                    msg_fn=lambda: (
-                        "Error occurred during output materialization:"
-                        f'\n    output name: "{output_name}"'
-                        f'\n    solid invocation: "{step_context.solid.name}"'
-                        f'\n    solid definition: "{step_context.solid_def.name}"'
-                    ),
+                    msg_fn=lambda: f'Error occurred during output materialization:\n    output name: "{output_name}"\n    solid invocation: "{step_context.solid.name}"\n    solid definition: "{step_context.solid_def.name}"',
                     log_manager=step_context.log,
                 ):
                     output_def = step_context.solid_def.output_def_named(step_output.name)
@@ -756,7 +743,8 @@ def _create_type_materializations(
                     materializer = dagster_type.materializer
                     if materializer is None:
                         check.failed(
-                            "Unexpected attempt to materialize with no materializer available on dagster_type"
+                            "Unexpected attempt to materialize with no materializer available on"
+                            " dagster_type"
                         )
                     materializations = materializer.materialize_runtime_values(
                         step_context.get_type_materializer_context(), output_spec, value

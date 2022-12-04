@@ -28,6 +28,7 @@ IS_WINDOWS = os.name == "nt"
 
 # TODO implement a generic import by name -- see https://stackoverflow.com/questions/301134/how-to-import-a-module-given-its-name
 
+
 # https://stackoverflow.com/a/67692/324449
 def import_module_from_path(module_name: str, path_to_file: str) -> ModuleType:
     import importlib.util
@@ -35,9 +36,8 @@ def import_module_from_path(module_name: str, path_to_file: str) -> ModuleType:
     spec = importlib.util.spec_from_file_location(module_name, path_to_file)
     if spec is None:
         raise Exception(
-            "Can not import module {module_name} from path {path_to_file}, unable to load spec.".format(
-                module_name=module_name, path_to_file=path_to_file
-            )
+            "Can not import module {module_name} from path {path_to_file}, unable to load spec."
+            .format(module_name=module_name, path_to_file=path_to_file)
         )
 
     if sys.modules.get(spec.name) and spec.origin:
@@ -132,7 +132,6 @@ def get_current_datetime_in_utc() -> Any:
 
 
 def get_timestamp_from_utc_datetime(utc_datetime):
-
     if isinstance(utc_datetime, PendulumDateTime):
         return utc_datetime.timestamp()
 

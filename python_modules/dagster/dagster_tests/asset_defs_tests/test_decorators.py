@@ -244,7 +244,6 @@ def test_multi_asset_internal_asset_deps_metadata():
 
 
 def test_multi_asset_internal_asset_deps_invalid():
-
     with pytest.raises(check.CheckError, match="Invalid out key"):
 
         @multi_asset(

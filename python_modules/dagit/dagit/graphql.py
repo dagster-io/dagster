@@ -120,7 +120,10 @@ class GraphQLServer(ABC):
                 variables = cast(Dict[str, Any], json.loads(variables))
             except json.JSONDecodeError:
                 return PlainTextResponse(
-                    f"Malformed GraphQL variables. Passed as string but not valid JSON:\n{variables}",
+                    (
+                        "Malformed GraphQL variables. Passed as string but not valid"
+                        f" JSON:\n{variables}"
+                    ),
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
 

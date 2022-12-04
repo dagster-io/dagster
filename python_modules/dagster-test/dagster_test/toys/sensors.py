@@ -35,7 +35,6 @@ def get_directory_files(directory_name, since=None):
 
 
 def get_toys_sensors():
-
     directory_name = os.environ.get("DAGSTER_TOY_SENSOR_DIRECTORY")
 
     @sensor(job=log_file_job)
@@ -91,7 +90,6 @@ def get_toys_sensors():
 
     @run_failure_sensor(monitored_jobs=[error_monster_failing_job])
     def custom_slack_on_job_failure(context: RunFailureSensorContext):
-
         base_url = "http://localhost:3000"
 
         slack_client = WebClient(token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"))

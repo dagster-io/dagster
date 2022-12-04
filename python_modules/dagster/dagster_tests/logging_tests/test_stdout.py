@@ -58,7 +58,6 @@ def normalize_file_content(s):
 )
 def test_compute_log_to_disk():
     with instance_for_test() as instance:
-
         spew_pipeline = define_pipeline()
         manager = instance.compute_log_manager
         result = execute_pipeline(spew_pipeline, instance=instance)

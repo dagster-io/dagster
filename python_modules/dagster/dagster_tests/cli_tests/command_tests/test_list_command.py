@@ -19,8 +19,9 @@ def no_print(_):
 
 def assert_correct_bar_repository_output(result):
     assert result.exit_code == 0
-    assert result.output == (
-        "Repository bar\n"
+    assert (
+        result.output
+        == "Repository bar\n"
         "**************\n"
         "Job: baz\n"
         "Description:\n"
@@ -58,8 +59,9 @@ def assert_correct_bar_repository_output(result):
 
 def assert_correct_extra_repository_output(result):
     assert result.exit_code == 0
-    assert result.output == (
-        "Repository extra\n"
+    assert (
+        result.output
+        == "Repository extra\n"
         "****************\n"
         "Job: extra\n"
         "Ops: (Execution Order)\n"
@@ -157,7 +159,6 @@ def test_list_command_deployed_grpc():
 
 def test_list_command_cli():
     with instance_for_test():
-
         runner = CliRunner()
 
         result = runner.invoke(

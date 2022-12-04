@@ -10,6 +10,7 @@ def test_get_total_size():
 
 # end_op_test
 
+
 # start_job_test
 def test_diamond():
     res = diamond.execute_in_process()

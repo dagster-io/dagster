@@ -69,13 +69,13 @@ class ExecutionResult(ABC):
         return self.filter_events(_is_event_from_node)
 
     def output_value(self, output_name: str = DEFAULT_OUTPUT) -> object:
-
         check.str_param(output_name, "output_name")
 
         graph_def = self.job_def.graph
         if not graph_def.has_output(output_name) and len(graph_def.output_mappings) == 0:
             raise DagsterInvariantViolationError(
-                f"Attempted to retrieve top-level outputs for '{graph_def.name}', which has no outputs."
+                f"Attempted to retrieve top-level outputs for '{graph_def.name}', which has no"
+                " outputs."
             )
         elif not graph_def.has_output(output_name):
             raise DagsterInvariantViolationError(
@@ -93,7 +93,6 @@ class ExecutionResult(ABC):
         return self._get_output_for_handle(check.not_none(origin_handle), origin_output_def.name)
 
     def output_for_node(self, node_str: str, output_name: str = DEFAULT_OUTPUT) -> object:
-
         # resolve handle of node that node_str is referring to
         target_handle = NodeHandle.from_string(node_str)
         target_node_def = self.job_def.graph.get_solid(target_handle).definition

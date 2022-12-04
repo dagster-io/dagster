@@ -119,9 +119,11 @@ class _PlanBuilder:
         if isinstance(pipeline, ReconstructablePipeline) and repository_load_data is not None:
             check.invariant(
                 pipeline.repository.repository_load_data == repository_load_data,
-                "When building an ExecutionPlan with explicit repository_load_data and a "
-                "ReconstructablePipeline, the repository_load_data on the pipeline must be identical "
-                "to passed-in repository_load_data.",
+                (
+                    "When building an ExecutionPlan with explicit repository_load_data and a"
+                    " ReconstructablePipeline, the repository_load_data on the pipeline must be"
+                    " identical to passed-in repository_load_data."
+                ),
             )
         self.pipeline = check.inst_param(pipeline, "pipeline", IPipeline)
         self.resolved_run_config = check.inst_param(
@@ -806,7 +808,6 @@ class ExecutionPlan(
         bad_keys = []
 
         for handle in step_handles_to_validate_set:
-
             if handle not in self.step_dict:
                 # Ok if the entire dynamic step is selected to execute.
                 # https://github.com/dagster-io/dagster/issues/8000
@@ -835,7 +836,10 @@ class ExecutionPlan(
 
         if bad_keys:
             raise DagsterExecutionStepNotFoundError(
-                f"Can not build subset plan from unknown step{'s' if len(bad_keys)> 1 else ''}: {', '.join(bad_keys)}",
+                (
+                    f"Can not build subset plan from unknown step{'s' if len(bad_keys)> 1 else ''}:"
+                    f" {', '.join(bad_keys)}"
+                ),
                 step_keys=bad_keys,
             )
 
@@ -947,7 +951,8 @@ class ExecutionPlan(
                 io_manager = getattr(resources, io_manager_key)
                 if not isinstance(io_manager, MemoizableIOManager):
                     raise DagsterInvariantViolationError(
-                        f"{pipeline_def.describe_target().capitalize()} uses memoization, but IO manager "
+                        f"{pipeline_def.describe_target().capitalize()} uses memoization, but IO"
+                        " manager "
                         f"'{io_manager_key}' is not a MemoizableIOManager. In order to use "
                         "memoization, all io managers need to subclass MemoizableIOManager. "
                         "Learn more about MemoizableIOManagers here: "
@@ -1098,8 +1103,8 @@ class ExecutionPlan(
     ) -> "ExecutionPlan":
         if not execution_plan_snapshot.can_reconstruct_plan:
             raise DagsterInvariantViolationError(
-                "Tried to reconstruct an old ExecutionPlanSnapshot that was created before snapshots "
-                "had enough information to fully reconstruct the ExecutionPlan"
+                "Tried to reconstruct an old ExecutionPlanSnapshot that was created before"
+                " snapshots had enough information to fully reconstruct the ExecutionPlan"
             )
 
         step_dict: Dict[StepHandleUnion, IExecutionStep] = {}
@@ -1274,10 +1279,10 @@ def _check_persistent_storage_requirement(
                 '@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])'
             )
         raise DagsterUnmetExecutorRequirementsError(
-            f"You have attempted to use an executor that uses multiple processes, but your {target} "
-            f"includes {node} outputs that will not be stored somewhere where other processes can "
-            "retrieve them. Please use a persistent IO manager for these outputs. E.g. with\n"
-            f"    {suggestion}"
+            "You have attempted to use an executor that uses multiple processes, but your"
+            f" {target} includes {node} outputs that will not be stored somewhere where other"
+            " processes can retrieve them. Please use a persistent IO manager for these outputs."
+            f" E.g. with\n    {suggestion}"
         )
 
 

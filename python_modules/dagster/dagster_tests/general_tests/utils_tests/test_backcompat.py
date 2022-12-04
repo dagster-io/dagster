@@ -71,8 +71,10 @@ def test_experimental_fn_warning():
 
     with pytest.warns(
         ExperimentalWarning,
-        match='"my_experimental_function" is an experimental function. It may break in future'
-        " versions, even between dot releases. ",
+        match=(
+            '"my_experimental_function" is an experimental function. It may break in future'
+            " versions, even between dot releases. "
+        ),
     ) as warning:
         my_experimental_function()
 
@@ -87,8 +89,10 @@ def test_experimental_class_warning():
 
     with pytest.warns(
         ExperimentalWarning,
-        match='"MyExperimentalClass" is an experimental class. It may break in future'
-        " versions, even between dot releases. ",
+        match=(
+            '"MyExperimentalClass" is an experimental class. It may break in future'
+            " versions, even between dot releases. "
+        ),
     ) as warning:
         MyExperimentalClass()
 
@@ -116,7 +120,10 @@ def test_experimental_class_with_methods():
 
     with pytest.warns(
         ExperimentalWarning,
-        match='"ExperimentalClass" is an experimental class. It may break in future versions, even between dot releases.',
+        match=(
+            '"ExperimentalClass" is an experimental class. It may break in future versions, even'
+            " between dot releases."
+        ),
     ):
         experimental_class = ExperimentalClass(salutation="howdy")
 
@@ -125,7 +132,10 @@ def test_experimental_class_with_methods():
 
     with pytest.warns(
         ExperimentalWarning,
-        match='"ExperimentalClassWithExperimentalFunction" is an experimental class. It may break in future versions, even between dot releases.',
+        match=(
+            '"ExperimentalClassWithExperimentalFunction" is an experimental class. It may break in'
+            " future versions, even between dot releases."
+        ),
     ):
         experimental_class_with_experimental_function = ExperimentalClassWithExperimentalFunction()
 
@@ -134,7 +144,10 @@ def test_experimental_class_with_methods():
 
     with pytest.warns(
         ExperimentalWarning,
-        match='"goodbye" is an experimental function. It may break in future versions, even between dot releases.',
+        match=(
+            '"goodbye" is an experimental function. It may break in future versions, even between'
+            " dot releases."
+        ),
     ):
         assert experimental_class_with_experimental_function.goodbye("dagster") == "goodbye dagster"
 
@@ -144,7 +157,10 @@ def test_experimental_class_with_methods():
 
     with pytest.warns(
         ExperimentalWarning,
-        match='"ExperimentalNamedTupleClass" is an experimental class. It may break in future versions, even between dot releases.',
+        match=(
+            '"ExperimentalNamedTupleClass" is an experimental class. It may break in future'
+            " versions, even between dot releases."
+        ),
     ):
         assert ExperimentalNamedTupleClass(salutation="howdy").salutation == "howdy"
 
@@ -155,8 +171,10 @@ def test_experimental_arg_warning():
 
     with pytest.warns(
         ExperimentalWarning,
-        match='"experimental_arg" is an experimental argument to function "stable_function". '
-        "It may break in future versions, even between dot releases. ",
+        match=(
+            '"experimental_arg" is an experimental argument to function "stable_function". '
+            "It may break in future versions, even between dot releases. "
+        ),
     ) as warning:
         stable_function(1, 2)
 

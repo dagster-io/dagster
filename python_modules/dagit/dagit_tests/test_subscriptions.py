@@ -92,7 +92,6 @@ def test_event_log_subscription():
         with create_asgi_client(instance) as client:
             # pylint: disable=not-context-manager
             with client.websocket_connect("/graphql", GraphQLWS.PROTOCOL) as ws:
-
                 start_subscription(ws, EVENT_LOG_SUBSCRIPTION, {"runId": run.run_id})
                 gc.collect()
                 assert len(objgraph.by_type("async_generator")) == 1
@@ -115,7 +114,6 @@ def test_event_log_subscription_chunked():
         with create_asgi_client(instance) as client:
             # pylint: disable=not-context-manager
             with client.websocket_connect("/graphql", GraphQLWS.PROTOCOL) as ws:
-
                 start_subscription(ws, EVENT_LOG_SUBSCRIPTION, {"runId": run.run_id})
                 gc.collect()
                 assert len(objgraph.by_type("async_generator")) == 1
@@ -140,7 +138,6 @@ def test_compute_log_subscription(mock_watch_completed):
         with create_asgi_client(instance) as client:
             # pylint: disable=not-context-manager
             with client.websocket_connect("/graphql", GraphQLWS.PROTOCOL) as ws:
-
                 start_subscription(
                     ws,
                     COMPUTE_LOG_SUBSCRIPTION,

@@ -161,7 +161,6 @@ def test_dask():
         }
     }
     with instance_for_test() as instance:
-
         result = execute_pipeline(
             ReconstructablePipeline.for_file(__file__, dask_pipeline.name),
             run_config={

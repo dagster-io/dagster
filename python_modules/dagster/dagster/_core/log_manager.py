@@ -136,7 +136,6 @@ class DagsterLoggingMetadata(
 def construct_log_string(
     logging_metadata: DagsterLoggingMetadata, message_props: DagsterMessageProps
 ) -> str:
-
     from dagster._core.events import EVENT_TYPE_VALUE_TO_DISPLAY_STRING
 
     event_type_str = (

@@ -88,10 +88,8 @@ def replace_parameters(context, nb, parameters):
     else:
         # Inject to the top of the notebook, presumably first cell includes dagstermill import
         context.log.debug(
-            (
-                "Executing notebook with no tagged parameters cell: injecting boilerplate in first "
-                "cell."
-            )
+            "Executing notebook with no tagged parameters cell: injecting boilerplate in first "
+            "cell."
         )
         before = []
         after = nb.cells
@@ -179,7 +177,6 @@ def _dm_compute(
 
         with tempfile.TemporaryDirectory() as output_notebook_dir:
             with safe_tempfile_path() as output_log_path:
-
                 prefix = str(uuid.uuid4())
                 parameterized_notebook_path = os.path.join(
                     output_notebook_dir, f"{prefix}-inter.ipynb"
@@ -223,8 +220,9 @@ def _dm_compute(
                         ex.ename == "RetryRequested" or ex.ename == "Failure"
                     ):
                         step_execution_context.log.warn(
-                            f"Encountered raised {ex.ename} in notebook. Use dagstermill.yield_event "
-                            "with RetryRequested or Failure to trigger their behavior."
+                            f"Encountered raised {ex.ename} in notebook. Use"
+                            " dagstermill.yield_event with RetryRequested or Failure to trigger"
+                            " their behavior."
                         )
 
                     if save_notebook_on_failure:
@@ -277,12 +275,14 @@ def _dm_compute(
                     # if file manager writing errors, e.g. file manager is not provided, we throw a warning
                     # and fall back to the previously stored temp executed notebook.
                     step_context.log.warning(
-                        "Error when attempting to materialize executed notebook using file manager: "
-                        f"{str(serializable_error_info_from_exc_info(sys.exc_info()))}"
-                        f"\nNow falling back to local: notebook execution was temporarily materialized at {executed_notebook_path}"
-                        "\nIf you have supplied a file manager and expect to use it for materializing the "
-                        'notebook, please include "file_manager" in the `required_resource_keys` argument '
-                        f"to `{dagster_factory_name}`"
+                        "Error when attempting to materialize executed notebook using file"
+                        " manager:"
+                        f" {str(serializable_error_info_from_exc_info(sys.exc_info()))}\nNow"
+                        " falling back to local: notebook execution was temporarily materialized"
+                        f" at {executed_notebook_path}\nIf you have supplied a file manager and"
+                        " expect to use it for materializing the notebook, please include"
+                        ' "file_manager" in the `required_resource_keys` argument to'
+                        f" `{dagster_factory_name}`"
                     )
 
                 if output_notebook is not None:
@@ -402,11 +402,17 @@ def define_dagstermill_op(
     if tags is not None:
         check.invariant(
             "notebook_path" not in tags,
-            "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key is reserved for use by Dagster",
+            (
+                "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key"
+                " is reserved for use by Dagster"
+            ),
         )
         check.invariant(
             "kind" not in tags,
-            "user-defined op tags contains the `kind` key, but the `kind` key is reserved for use by Dagster",
+            (
+                "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
+                " use by Dagster"
+            ),
         )
     default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}
 

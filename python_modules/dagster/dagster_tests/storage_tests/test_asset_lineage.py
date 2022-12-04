@@ -18,7 +18,6 @@ def check_materialization(materialization, asset_key, parent_assets=None, metada
 
 @pytest.mark.skip(reason="no longer supporting lineage feature")
 def test_input_definition_multiple_partition_lineage():
-
     entry1 = MetadataEntry("nrows", value=123)
     entry2 = MetadataEntry("some value", value=3.21)
 
@@ -92,7 +91,6 @@ def test_input_definition_multiple_partition_lineage():
 
 @pytest.mark.skip(reason="no longer supporting dynamic output asset keys")
 def test_dynamic_output_definition_single_partition_materialization():
-
     entry1 = MetadataEntry("nrows", value=123)
     entry2 = MetadataEntry("some value", value=3.21)
 

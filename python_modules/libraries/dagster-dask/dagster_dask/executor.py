@@ -224,7 +224,8 @@ class DaskExecutor(Executor):
             cluster = KubeCluster(**self.build_dict(pipeline_name))
         else:
             raise ValueError(
-                f"Must be providing one of the following ('existing', 'local', 'yarn', 'ssh', 'pbs', 'moab', 'sge', 'lsf', 'slurm', 'oar', 'kube') not {cluster_type}"
+                "Must be providing one of the following ('existing', 'local', 'yarn', 'ssh',"
+                f" 'pbs', 'moab', 'sge', 'lsf', 'slurm', 'oar', 'kube') not {cluster_type}"
             )
 
         with dask.distributed.Client(cluster) as client:

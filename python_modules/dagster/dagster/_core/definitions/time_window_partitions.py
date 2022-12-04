@@ -107,8 +107,10 @@ class TimeWindowPartitionsDefinition(
         if cron_schedule is not None:
             check.invariant(
                 schedule_type is None and not minute_offset and not hour_offset and not day_offset,
-                "If cron_schedule argument is provided, then schedule_type, minute_offset, "
-                "hour_offset, and day_offset can't also be provided",
+                (
+                    "If cron_schedule argument is provided, then schedule_type, minute_offset, "
+                    "hour_offset, and day_offset can't also be provided"
+                ),
             )
         else:
             if schedule_type is None:
@@ -163,7 +165,10 @@ class TimeWindowPartitionsDefinition(
             f"{schedule_str}, starting {self.start.strftime(self.fmt)} {self.timezone}."
         )
         if self.end_offset != 0:
-            partition_def_str += f" End offsetted by {self.end_offset} partition{'' if self.end_offset == 1 else 's'}."
+            partition_def_str += (
+                " End offsetted by"
+                f" {self.end_offset} partition{'' if self.end_offset == 1 else 's'}."
+            )
         return partition_def_str
 
     def __eq__(self, other):
@@ -384,7 +389,8 @@ class TimeWindowPartitionsDefinition(
         schedule_type = self.schedule_type
         if schedule_type is None:
             check.failed(
-                f"{self.cron_schedule} does not support minute_of_hour/hour_of_day/day_of_week/day_of_month arguments"
+                f"{self.cron_schedule} does not support"
+                " minute_of_hour/hour_of_day/day_of_week/day_of_month arguments"
             )
 
         minute_of_hour = cast(

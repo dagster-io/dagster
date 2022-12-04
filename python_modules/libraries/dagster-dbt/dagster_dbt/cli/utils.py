@@ -22,7 +22,6 @@ def _create_command_list(
     command: str,
     flags_dict: Mapping[str, Any],
 ) -> Sequence[str]:
-
     prefix = [executable]
     if warn_error:
         prefix += ["--warn-error"]

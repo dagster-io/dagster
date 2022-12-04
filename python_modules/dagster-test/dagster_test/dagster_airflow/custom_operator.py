@@ -10,7 +10,6 @@ from dagster_airflow.vendor.python_operator import PythonOperator
 class CustomOperator(PythonOperator):
     def __init__(self, dagster_operator_parameters, *args, **kwargs):
         def python_callable(ts, dag_run, **kwargs):  # pylint: disable=unused-argument
-
             # Add custom logic here
             logger = logging.getLogger("CustomOperatorLogger")
             logger.setLevel(logging.INFO)

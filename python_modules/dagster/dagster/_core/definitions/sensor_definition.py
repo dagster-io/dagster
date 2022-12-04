@@ -132,7 +132,8 @@ class SensorEvaluationContext:
         if not self._instance:
             if not self._instance_ref:
                 raise DagsterInvariantViolationError(
-                    "Attempted to initialize dagster instance, but no instance reference was provided."
+                    "Attempted to initialize dagster instance, but no instance reference was"
+                    " provided."
                 )
             self._instance = self._exit_stack.enter_context(
                 DagsterInstance.from_ref(self._instance_ref)
@@ -340,7 +341,6 @@ class SensorDefinition:
         )
 
     def __call__(self, *args, **kwargs):
-
         if is_context_provided(self._raw_fn):
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
@@ -525,7 +525,8 @@ class SensorDefinition:
     def job_name(self) -> Optional[str]:
         if len(self._targets) > 1:
             raise DagsterInvalidInvocationError(
-                f"Cannot use `job_name` property for sensor {self.name}, which targets multiple jobs."
+                f"Cannot use `job_name` property for sensor {self.name}, which targets multiple"
+                " jobs."
             )
         return self._targets[0].pipeline_name
 
@@ -669,7 +670,8 @@ def _run_requests_with_base_asset_jobs(
             ).resolve(asset_graph)
             if unexpected_asset_keys:
                 raise DagsterInvalidSubsetError(
-                    f"RunRequest includes asset keys that are not part of sensor's asset_selection: {unexpected_asset_keys}"
+                    "RunRequest includes asset keys that are not part of sensor's asset_selection:"
+                    f" {unexpected_asset_keys}"
                 )
         else:
             asset_keys = outer_asset_selection.resolve(asset_graph)

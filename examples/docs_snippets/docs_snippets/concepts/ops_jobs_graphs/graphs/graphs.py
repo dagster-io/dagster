@@ -28,6 +28,7 @@ def one_plus_one():
 
 # end_graph_two
 
+
 # start_multiple_usage_graph
 @graph
 def multiple_usage():
@@ -35,6 +36,7 @@ def multiple_usage():
 
 
 # end_multiple_usage_graph
+
 
 # start_alias_graph
 @graph

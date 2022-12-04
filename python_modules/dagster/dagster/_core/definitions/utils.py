@@ -51,7 +51,6 @@ def has_valid_name_chars(name: str) -> bool:
 
 
 def check_valid_name(name: str, allow_list: Optional[List[str]] = None) -> str:
-
     check.str_param(name, "name")
 
     if allow_list and name in allow_list:
@@ -59,7 +58,8 @@ def check_valid_name(name: str, allow_list: Optional[List[str]] = None) -> str:
 
     if name in DISALLOWED_NAMES:
         raise DagsterInvalidDefinitionError(
-            f'"{name}" is not a valid name in Dagster. It conflicts with a Dagster or python reserved keyword.'
+            f'"{name}" is not a valid name in Dagster. It conflicts with a Dagster or python'
+            " reserved keyword."
         )
 
     check_valid_chars(name)
@@ -71,7 +71,8 @@ def check_valid_name(name: str, allow_list: Optional[List[str]] = None) -> str:
 def check_valid_chars(name: str):
     if not has_valid_name_chars(name):
         raise DagsterInvalidDefinitionError(
-            f'"{name}" is not a valid name in Dagster. Names must be in regex {VALID_NAME_REGEX_STR}.'
+            f'"{name}" is not a valid name in Dagster. Names must be in regex'
+            f" {VALID_NAME_REGEX_STR}."
         )
 
 
@@ -100,8 +101,9 @@ def validate_tags(tags: Optional[Mapping[str, Any]], allow_reserved_tags=True) -
             str_val = None
             try:
                 str_val = seven.json.dumps(value)
-                err_reason = 'JSON encoding "{json}" of value "{val}" is not equivalent to original value'.format(
-                    json=str_val, val=value
+                err_reason = (
+                    'JSON encoding "{json}" of value "{val}" is not equivalent to original value'
+                    .format(json=str_val, val=value)
                 )
 
                 valid = seven.json.loads(str_val) == value
@@ -156,8 +158,9 @@ def config_from_files(config_files: Sequence[str]) -> Mapping[str, Any]:
         globbed_files = glob(file_glob)
         if not globbed_files:
             raise DagsterInvariantViolationError(
-                'File or glob pattern "{file_glob}" for "config_files" '
-                "produced no results.".format(file_glob=file_glob)
+                'File or glob pattern "{file_glob}" for "config_files" produced no results.'.format(
+                    file_glob=file_glob
+                )
             )
 
         filenames += [os.path.realpath(globbed_file) for globbed_file in globbed_files]

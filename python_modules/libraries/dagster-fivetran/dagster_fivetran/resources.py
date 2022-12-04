@@ -249,7 +249,8 @@ class FivetranResource:
         )
         connector_details = self.get_connector_details(connector_id)
         self._log.info(
-            f"Sync initialized for connector_id={connector_id}. View this resync in the Fivetran UI: "
+            f"Sync initialized for connector_id={connector_id}. View this resync in the Fivetran"
+            " UI: "
             + get_fivetran_connector_url(connector_details)
         )
         return connector_details
@@ -386,26 +387,34 @@ class FivetranResource:
         "api_key": Field(
             StringSource,
             is_required=True,
-            description="Fivetran API Key. You can find this value on the Fivetran settings page: "
-            "https://fivetran.com/account/settings",
+            description=(
+                "Fivetran API Key. You can find this value on the Fivetran settings page: "
+                "https://fivetran.com/account/settings"
+            ),
         ),
         "api_secret": Field(
             StringSource,
             is_required=True,
-            description="Fivetran API Secret. You can find this value on the Fivetran settings page: "
-            "https://fivetran.com/account/settings",
+            description=(
+                "Fivetran API Secret. You can find this value on the Fivetran settings page: "
+                "https://fivetran.com/account/settings"
+            ),
         ),
         "disable_schedule_on_trigger": Field(
             bool,
             default_value=True,
-            description="Specifies if you would like any connector that is sync'd using this "
-            "resource to be automatically taken off its Fivetran schedule.",
+            description=(
+                "Specifies if you would like any connector that is sync'd using this "
+                "resource to be automatically taken off its Fivetran schedule."
+            ),
         ),
         "request_max_retries": Field(
             int,
             default_value=3,
-            description="The maximum number of times requests to the Fivetran API should be retried "
-            "before failing.",
+            description=(
+                "The maximum number of times requests to the Fivetran API should be retried "
+                "before failing."
+            ),
         ),
         "request_retry_delay": Field(
             float,

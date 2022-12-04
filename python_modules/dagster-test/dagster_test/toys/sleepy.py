@@ -53,7 +53,7 @@ def will_fail(i):
 
 
 @graph(
-    description=("Demo diamond-shaped graph that has four-path parallel structure of ops."),
+    description="Demo diamond-shaped graph that has four-path parallel structure of ops.",
 )
 def sleepy():
     giver_res = giver()

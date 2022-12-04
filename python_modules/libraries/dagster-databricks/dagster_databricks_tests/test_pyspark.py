@@ -269,7 +269,8 @@ def test_pyspark_databricks(
         )
         assert (
             str(excinfo.value)
-            == "Attempting to update permissions of an existing cluster. This is dangerous and thus unsupported."
+            == "Attempting to update permissions of an existing cluster. This is dangerous and thus"
+            " unsupported."
         )
 
 

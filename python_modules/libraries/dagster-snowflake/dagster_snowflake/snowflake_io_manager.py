@@ -85,7 +85,9 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
             "database": Field(StringSource, description="Name of the database to use."),
             "account": Field(
                 StringSource,
-                description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
+                description=(
+                    "Your Snowflake account name. For more details, see  https://bit.ly/2FBL320."
+                ),
             ),
             "user": Field(StringSource, description="User login name."),
             "password": Field(StringSource, description="User password."),
@@ -132,7 +134,8 @@ class SnowflakeDbClient(DbClient):
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
         if table_slice.partition:
             return (
-                f"SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}\n"
+                f"SELECT {col_str} FROM"
+                f" {table_slice.database}.{table_slice.schema}.{table_slice.table}\n"
                 + _time_window_where_clause(table_slice.partition)
             )
         else:

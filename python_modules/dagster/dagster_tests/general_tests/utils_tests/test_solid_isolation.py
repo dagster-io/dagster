@@ -165,7 +165,7 @@ def test_graphs():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            "Tried to get result for solid 'goodbye' in 'hello_graph'. No such top level " "solid"
+            "Tried to get result for solid 'goodbye' in 'hello_graph'. No such top level solid"
         ),
     ):
         _ = result.result_for_node("goodbye")

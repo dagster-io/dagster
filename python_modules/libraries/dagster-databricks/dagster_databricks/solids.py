@@ -71,8 +71,10 @@ def create_databricks_job_op(
         config_schema={
             "job": Field(
                 Permissive(),
-                description="Databricks job run configuration, in the form described in "
-                "Databricks' job API: https://docs.databricks.com/dev-tools/api/latest/jobs.html",
+                description=(
+                    "Databricks job run configuration, in the form described in Databricks' job"
+                    " API: https://docs.databricks.com/dev-tools/api/latest/jobs.html"
+                ),
             ),
             "poll_interval_sec": Field(
                 float,
@@ -96,7 +98,8 @@ def create_databricks_job_op(
         run_id = databricks_client.submit_run(**job_config)
 
         context.log.info(
-            "Launched databricks job with run id {run_id}. UI: {url}. Waiting to run to completion...".format(
+            "Launched databricks job with run id {run_id}. UI: {url}. Waiting to run to"
+            " completion...".format(
                 run_id=run_id, url=create_ui_url(databricks_client, context.op_config)
             )
         )

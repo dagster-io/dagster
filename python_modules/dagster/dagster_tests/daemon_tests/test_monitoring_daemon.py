@@ -140,7 +140,6 @@ def test_monitor_starting(instance, logger):
 
 
 def test_monitor_started(instance, workspace, logger):
-
     run = create_run_for_test(instance, pipeline_name="foo", status=DagsterRunStatus.STARTED)
     with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "healthy"}):
         monitor_started_run(instance, workspace, run, logger)

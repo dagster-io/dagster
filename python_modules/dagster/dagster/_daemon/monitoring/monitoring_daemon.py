@@ -27,9 +27,9 @@ def monitor_starting_run(instance: DagsterInstance, run, logger):
     )
     if time.time() - launch_time >= instance.run_monitoring_start_timeout_seconds:
         msg = (
-            f"Run {run.run_id} has been running for {time.time() - launch_time} seconds, "
-            f"which is longer than the timeout of {instance.run_monitoring_start_timeout_seconds} seconds to start. "
-            "Marking run failed"
+            f"Run {run.run_id} has been running for {time.time() - launch_time} seconds, which is"
+            f" longer than the timeout of {instance.run_monitoring_start_timeout_seconds} seconds"
+            " to start. Marking run failed"
         )
         logger.info(msg)
         instance.report_run_failed(run, msg)
@@ -56,7 +56,7 @@ def monitor_started_run(
         status_changed = run.status != recheck_run.status
         if status_changed:
             msg = (
-                f"Detected run status changed during monitoring loop: "
+                "Detected run status changed during monitoring loop: "
                 f"{run.status} -> {recheck_run.status}, disregarding for now"
             )
             logger.info(msg)
@@ -77,14 +77,14 @@ def monitor_started_run(
         else:
             if instance.run_launcher.supports_resume_run:
                 msg = (
-                    f"Detected run worker status {check_health_result}. Marking run {run.run_id} as "
-                    "failed, because it has surpassed the configured maximum attempts to resume the "
-                    f"run: {instance.run_monitoring_max_resume_run_attempts}."
+                    f"Detected run worker status {check_health_result}. Marking run {run.run_id} as"
+                    " failed, because it has surpassed the configured maximum attempts to resume"
+                    f" the run: {instance.run_monitoring_max_resume_run_attempts}."
                 )
             else:
                 msg = (
-                    f"Detected run worker status {check_health_result}. Marking run {run.run_id} as "
-                    "failed."
+                    f"Detected run worker status {check_health_result}. Marking run {run.run_id} as"
+                    " failed."
                 )
             logger.info(msg)
             instance.report_run_failed(run, msg)
@@ -115,7 +115,6 @@ def execute_monitoring_iteration(
             if run.status == DagsterRunStatus.STARTING:
                 monitor_starting_run(instance, run, logger)
             elif run.status == DagsterRunStatus.STARTED:
-
                 monitor_started_run(instance, workspace, run, logger)
             elif run.status == DagsterRunStatus.CANCELING:
                 # TODO: implement canceling timeouts
@@ -124,7 +123,7 @@ def execute_monitoring_iteration(
                 check.invariant(False, f"Unexpected run status: {run.status}")
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            logger.error(f"Hit error while monitoring run {run.run_id}: " f"{str(error_info)}")
+            logger.error(f"Hit error while monitoring run {run.run_id}: {str(error_info)}")
             yield error_info
         else:
             yield

@@ -432,7 +432,6 @@ def get_asset_repo():
 
 def test_runs_over_time():
     with instance_for_test() as instance:
-
         repo_1 = get_repo_at_time_1()
 
         full_evolve_run_id = execute_pipeline(
@@ -533,7 +532,6 @@ def test_run_groups_over_time():
         with define_out_of_process_context(
             __file__, "get_repo_at_time_1", instance
         ) as context_at_time_1:
-
             result = execute_dagster_graphql(context_at_time_1, ALL_RUN_GROUPS_QUERY)
             assert result.data
             assert "runGroupsOrError" in result.data
@@ -829,7 +827,6 @@ def test_run_group_not_found():
         with define_out_of_process_context(
             __file__, "get_repo_at_time_1", instance
         ) as context_at_time_1:
-
             result = execute_dagster_graphql(
                 context_at_time_1,
                 RUN_GROUP_QUERY,

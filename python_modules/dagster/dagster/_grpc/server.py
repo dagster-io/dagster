@@ -862,8 +862,10 @@ class DagsterGrpcServer:
         check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
         check.invariant(
             max_workers is None or max_workers > 1 if heartbeat else True,
-            "max_workers must be greater than 1 or set to None if heartbeat is True. "
-            "If set to None, the server will use the gRPC default.",
+            (
+                "max_workers must be greater than 1 or set to None if heartbeat is True. "
+                "If set to None, the server will use the gRPC default."
+            ),
         )
 
         check.opt_bool_param(inject_env_vars_from_instance, "inject_env_vars_from_instance")
@@ -1011,12 +1013,14 @@ def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
 
         if timeout > 0 and (time.time() - start_time > timeout):
             raise Exception(
-                f"Timed out waiting for gRPC server to start after {timeout}s with arguments: \"{' '.join(subprocess_args)}\". Most recent connection error: {str(last_error)}"
+                f"Timed out waiting for gRPC server to start after {timeout}s with arguments:"
+                f" \"{' '.join(subprocess_args)}\". Most recent connection error: {str(last_error)}"
             )
 
         if server_process.poll() != None:
             raise Exception(
-                f"gRPC server exited with return code {server_process.returncode} while starting up with the command: \"{' '.join(subprocess_args)}\""
+                f"gRPC server exited with return code {server_process.returncode} while starting up"
+                f" with the command: \"{' '.join(subprocess_args)}\""
             )
 
         sleep(0.1)
@@ -1165,8 +1169,10 @@ class GrpcServerProcess:
         check.int_param(startup_timeout, "startup_timeout")
         check.invariant(
             max_workers is None or max_workers > 1 if heartbeat else True,
-            "max_workers must be greater than 1 or set to None if heartbeat is True. "
-            "If set to None, the server will use the gRPC default.",
+            (
+                "max_workers must be greater than 1 or set to None if heartbeat is True. "
+                "If set to None, the server will use the gRPC default."
+            ),
         )
 
         if seven.IS_WINDOWS or force_port:

@@ -69,7 +69,6 @@ def test_execute_celery_docker_image_on_executor_config(aws_creds):
     )
 
     with celery_docker_postgres_instance() as instance:
-
         result = execute_pipeline(
             get_test_project_recon_pipeline("docker_celery_pipeline"),
             run_config=run_config,

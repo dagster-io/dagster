@@ -89,7 +89,6 @@ def test_http_task():
 
 
 def test_capture_op_logs():
-
     env_bash_task = BashOperator(
         task_id="capture_logs_task",
         bash_command="echo $foo",

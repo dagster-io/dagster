@@ -150,7 +150,10 @@ def test_hook_resource_error():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="resource with key 'resource_b' required by hook 'a_hook' attached to op 'a_op_with_hook' was not provided",
+        match=(
+            "resource with key 'resource_b' required by hook 'a_hook' attached to op"
+            " 'a_op_with_hook' was not provided"
+        ),
     ):
         GraphDefinition(
             node_defs=[a_op],
@@ -160,7 +163,6 @@ def test_hook_resource_error():
 
 
 def test_success_hook():
-
     called_hook_to_solids = defaultdict(list)
 
     @success_hook
@@ -214,7 +216,6 @@ def test_success_hook():
 
 
 def test_failure_hook():
-
     called_hook_to_solids = defaultdict(list)
 
     @failure_hook
@@ -267,7 +268,6 @@ def test_failure_hook():
 
 
 def test_failure_hook_framework_exception():
-
     called_hook_to_solids = defaultdict(list)
 
     @failure_hook

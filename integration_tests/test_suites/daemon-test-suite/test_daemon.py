@@ -13,7 +13,6 @@ from dagster._daemon.controller import (
 
 def test_heartbeat():
     with instance_for_test() as instance:
-
         assert all_daemons_healthy(instance) is False
 
         with start_daemon():

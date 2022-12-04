@@ -147,7 +147,6 @@ def test_list_dependencies():
 
 
 def test_pass_unrelated_type_to_field_error_solid_definition():
-
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
         @op(config_schema="nope")
@@ -185,8 +184,9 @@ def test_pass_incorrect_thing_to_field():
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
         Field("nope")
 
-    assert str(exc_info.value) == (
-        "Attempted to pass 'nope' to a Field that expects a valid dagster type "
+    assert (
+        str(exc_info.value)
+        == "Attempted to pass 'nope' to a Field that expects a valid dagster type "
         "usable in config (e.g. Dict, Int, String et al)."
     )
 

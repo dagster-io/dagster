@@ -191,9 +191,11 @@ def test_memoization_no_code_version_for_solid():
 
         with pytest.raises(
             DagsterInvariantViolationError,
-            match="While using memoization, version for op 'solid_takes_input' was None. Please "
-            "either provide a versioning strategy for your job, or provide a version using the "
-            "op decorator.",
+            match=(
+                "While using memoization, version for op 'solid_takes_input' was None. Please "
+                "either provide a versioning strategy for your job, or provide a version using the "
+                "op decorator."
+            ),
         ):
             create_execution_plan(partially_versioned_pipeline, instance_ref=instance.get_ref())
 
@@ -224,7 +226,6 @@ def test_externally_loaded_inputs():
 
 
 def run_test_with_builtin_type(type_to_test, type_values):
-
     first_type_val, second_type_val = type_values
     manager = VersionedInMemoryIOManager()
 
@@ -388,7 +389,6 @@ def test_memoized_plan_custom_io_manager_key():
         solid_requires_io_manager()
 
     with instance_for_test() as instance:
-
         unmemoized_plan = create_execution_plan(io_mgr_pipeline, instance_ref=instance.get_ref())
 
         assert unmemoized_plan.step_keys_to_execute == ["solid_requires_io_manager"]
@@ -429,9 +429,11 @@ def test_unmemoized_inner_op():
     with instance_for_test() as instance:
         with pytest.raises(
             DagsterInvariantViolationError,
-            match="While using memoization, version for op 'solid_no_version' was None. Please "
-            "either provide a versioning strategy for your job, or provide a version using the "
-            "op decorator.",
+            match=(
+                "While using memoization, version for op 'solid_no_version' was None. Please "
+                "either provide a versioning strategy for your job, or provide a version using the "
+                "op decorator."
+            ),
         ):
             create_execution_plan(wrap_pipeline, instance_ref=instance.get_ref())
 
@@ -863,7 +865,6 @@ def get_version_strategy_pipeline():
 
 
 def test_version_strategy_on_pipeline():
-
     ten_pipeline = get_version_strategy_pipeline()
 
     with instance_for_test() as instance:
@@ -927,7 +928,6 @@ def test_code_versioning_strategy():
 
 
 def test_memoization_multiprocess_execution():
-
     with instance_for_test() as instance:
         result = execute_pipeline(
             reconstructable(get_version_strategy_pipeline),

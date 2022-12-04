@@ -129,7 +129,6 @@ class TestReloadWorkspace(MultiLocationTestSuite):
         with mock.patch(
             "dagster._core.workspace.load_target.location_origins_from_yaml_paths",
         ) as origins_mock:
-
             # simulate removing an origin, reload
 
             origins_mock.return_value = original_origins[0:1]
@@ -288,7 +287,6 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
             # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
             "dagster._core.host_representation.repository_location.sync_list_repositories_grpc"
         ) as cli_command_mock:
-
             with mock.patch(
                 # note it where the function is *used* that needs to mocked, not
                 # where it is defined.

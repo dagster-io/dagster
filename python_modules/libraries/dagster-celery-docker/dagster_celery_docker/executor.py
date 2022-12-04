@@ -41,12 +41,17 @@ def celery_docker_config():
                 "env_vars": Field(
                     [str],
                     is_required=False,
-                    description="The list of environment variables names to forward from the celery worker in to the docker container",
+                    description=(
+                        "The list of environment variables names to forward from the celery worker"
+                        " in to the docker container"
+                    ),
                 ),
                 "network": Field(
                     str,
                     is_required=False,
-                    description="Name of the network this container will be connected to at creation time",
+                    description=(
+                        "Name of the network this container will be connected to at creation time"
+                    ),
                 ),
                 "container_kwargs": Field(
                     Permissive(),
@@ -165,7 +170,6 @@ class CeleryDockerExecutor(Executor):
         return self._retries
 
     def execute(self, plan_context, execution_plan):
-
         return core_celery_execution_loop(
             plan_context, execution_plan, step_execution_fn=_submit_task_docker
         )

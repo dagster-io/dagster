@@ -8,7 +8,6 @@ from dagster._core.test_utils import environ
 
 def test_teams_run_failure_sensor_def():
     with environ({"TEAMS_WEBHOOK_URL": "https://some_url_here/"}):
-
         sensor_name = "my_failure_sensor"
 
         my_sensor = make_teams_on_run_failure_sensor(

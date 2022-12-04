@@ -24,7 +24,6 @@ from dagster._utils.hosted_user_process import external_pipeline_from_recon_pipe
 
 
 def test_launcher_from_config(kubeconfig_file):
-
     resources = {
         "requests": {"memory": "64Mi", "cpu": "250m"},
         "limits": {"memory": "128Mi", "cpu": "500m"},
@@ -276,7 +275,6 @@ def test_launcher_with_k8s_config(kubeconfig_file):
 
 
 def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
-
     labels = {"foo_label_key": "bar_label_value"}
 
     # Construct a K8s run launcher in a fake k8s environment.
@@ -498,7 +496,6 @@ def fake_pipeline():
 
 
 def test_check_run_health(kubeconfig_file):
-
     labels = {"foo_label_key": "bar_label_value"}
 
     # Construct a K8s run launcher in a fake k8s environment.

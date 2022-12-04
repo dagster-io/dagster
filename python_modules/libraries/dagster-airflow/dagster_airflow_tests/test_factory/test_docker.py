@@ -144,7 +144,6 @@ def test_error_dag_containerized(dagster_docker_image):  # pylint: disable=redef
     execution_date = timezone.utcnow()
 
     with postgres_instance() as instance:
-
         dag, tasks = make_airflow_dag_containerized_for_recon_repo(
             recon_repo,
             pipeline_name,

@@ -138,6 +138,7 @@ def run_migrations_online(context, config, target_metadata):
 MYSQL_DATE_PRECISION: int = 6
 MYSQL_FLOAT_PRECISION: int = 32
 
+
 # datetime issue fix from here: https://stackoverflow.com/questions/29711102/sqlalchemy-mysql-millisecond-or-microsecond-precision/29723278
 @compiles(db.DateTime, "mysql")
 def compile_datetime_and_add_precision_mysql(_element, _compiler, **_kw):

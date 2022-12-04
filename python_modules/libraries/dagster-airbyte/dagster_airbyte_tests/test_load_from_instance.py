@@ -44,7 +44,6 @@ def test_load_from_instance(
     connection_to_asset_key_fn,
     connection_to_freshness_policy_fn,
 ):
-
     load_calls = []
 
     @io_manager

@@ -118,7 +118,6 @@ This is extremely helpful when it comes to testing. We can execute the computati
 
 ```python file=/concepts/resources/tests.py startafter=start_execution_marker endbefore=end_execution_marker
 def test_local():
-
     # Since we have access to the computation graph independent of the set of resources, we can
     # test it locally.
     result = download.execute_in_process(

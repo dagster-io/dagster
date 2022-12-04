@@ -150,7 +150,9 @@ def _pandera_schema_to_type_check_fn(
         else:
             return TypeCheck(
                 success=False,
-                description=f"Must be one of {VALID_DATAFRAME_CLASSES}, not {type(value).__name__}.",
+                description=(
+                    f"Must be one of {VALID_DATAFRAME_CLASSES}, not {type(value).__name__}."
+                ),
             )
 
         return TypeCheck(success=True)

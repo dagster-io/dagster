@@ -64,6 +64,7 @@ def a_job():
 
 # start_plain_input_manager
 
+
 # in this case PandasIOManager is an existing IO Manager
 class MyNumpyLoader(PandasIOManager):
     def load_input(self, context):
@@ -92,6 +93,7 @@ def my_job():
 
 
 # start_better_input_manager
+
 
 # this IO Manager is owned by a different team
 class BetterPandasIOManager(IOManager):
@@ -183,6 +185,7 @@ def load_table_job():
 
 
 # end_load_unconnected_input
+
 
 # start_load_unconnected_io
 # in this example, TableIOManager is defined elsewhere and we just want to override load_input

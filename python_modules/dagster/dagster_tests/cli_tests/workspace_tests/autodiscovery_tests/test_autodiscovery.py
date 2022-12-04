@@ -65,8 +65,9 @@ def test_double_pipeline():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         loadable_targets_from_python_file(double_pipeline_path)
 
-    assert str(exc_info.value) == (
-        'No repository and more than one pipeline found in "double_pipeline". '
+    assert (
+        str(exc_info.value)
+        == 'No repository and more than one pipeline found in "double_pipeline". '
         "If you load a file or module directly it must have only one pipeline "
         "in scope. Found pipelines defined in variables or decorated "
         "functions: ['pipe_one', 'pipe_two']."
@@ -94,8 +95,9 @@ def test_double_graph():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         loadable_targets_from_python_file(double_pipeline_path)
 
-    assert str(exc_info.value) == (
-        'More than one graph found in "double_graph". '
+    assert (
+        str(exc_info.value)
+        == 'More than one graph found in "double_graph". '
         "If you load a file or module directly and it has no repositories, jobs, or "
         "pipelines in scope, it must have no more than one graph in scope. "
         "Found graphs defined in variables or decorated functions: ['graph_one', 'graph_two']."
@@ -122,8 +124,9 @@ def test_double_asset_group():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         loadable_targets_from_python_file(path)
 
-    assert str(exc_info.value) == (
-        'More than one asset group found in "double_asset_group". '
+    assert (
+        str(exc_info.value)
+        == 'More than one asset group found in "double_asset_group". '
         "If you load a file or module directly and it has no repositories, jobs, "
         "pipeline, or graphs in scope, it must have no more than one asset group in scope. "
         "Found asset groups defined in variables: ['ac1', 'ac2']."
@@ -151,7 +154,8 @@ def test_no_loadable_targets():
 
     assert (
         str(exc_info.value)
-        == 'No repositories, jobs, pipelines, graphs, asset groups, or asset definitions found in "nada".'
+        == "No repositories, jobs, pipelines, graphs, asset groups, or asset definitions found in"
+        ' "nada".'
     )
 
 

@@ -129,7 +129,6 @@ def test_graphql_view_at_path_prefix():
 
 def test_successful_host_dagit_ui_from_workspace():
     with mock.patch("uvicorn.run"), tempfile.TemporaryDirectory() as temp_dir:
-
         instance = DagsterInstance.local_temp(temp_dir)
 
         with load_workspace_process_context_from_yaml_paths(

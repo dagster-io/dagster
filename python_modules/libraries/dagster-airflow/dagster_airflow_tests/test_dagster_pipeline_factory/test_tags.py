@@ -57,7 +57,6 @@ def check_captured_logs(manager, result, execution_date_fmt):
 
 
 def get_dag():
-
     if airflow_version >= "2.0.0":
         dag = DAG(
             dag_id="dag",

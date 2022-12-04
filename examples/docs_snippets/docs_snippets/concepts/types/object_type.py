@@ -11,6 +11,7 @@ class EvenType:
 EvenDagsterType = PythonObjectDagsterType(EvenType, name="EvenDagsterType")
 # end_object_type
 
+
 # start_use_object_type
 @op
 def double_even(even_num: EvenDagsterType) -> EvenDagsterType:

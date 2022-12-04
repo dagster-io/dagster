@@ -53,7 +53,8 @@ def validate_dependency_dict(
     for key, dep_dict in dependencies.items():
         if not (isinstance(key, str) or isinstance(key, NodeInvocation)):
             raise DagsterInvalidDefinitionError(
-                prelude + "Expected str or NodeInvocation key in the top level dict. "
+                prelude
+                + "Expected str or NodeInvocation key in the top level dict. "
                 "Received value {key} of type {type(key)}"
             )
         if not isinstance(dep_dict, dict):
@@ -74,7 +75,8 @@ def validate_dependency_dict(
         for input_key, dep in dep_dict.items():
             if not isinstance(input_key, str):
                 raise DagsterInvalidDefinitionError(
-                    prelude + f"Received non-string key in the inner dict for key {key}. "
+                    prelude
+                    + f"Received non-string key in the inner dict for key {key}. "
                     f"Unexpected inner dict key type: {type(input_key)}"
                 )
             if not isinstance(dep, IDependencyDefinition):
@@ -232,28 +234,23 @@ def _validate_dependencies(
         for from_input, dep_def in dep_by_input.items():
             dep_def = cast(DependencyDefinition, dep_def)
             for dep in dep_def.get_node_dependencies():
-
                 if from_node == dep.node:
                     raise DagsterInvalidDefinitionError(
-                        (
-                            "Invalid dependencies: circular reference detected in node "
-                            f'"{from_node}" input "{from_input}"'
-                        )
+                        "Invalid dependencies: circular reference detected in node "
+                        f'"{from_node}" input "{from_input}"'
                     )
 
                 if not from_node in node_dict:
                     aliased_node = alias_to_name.get(from_node)
                     if aliased_node == from_node:
                         raise DagsterInvalidDefinitionError(
-                            f'Invalid dependencies: node "{from_node}" in dependency dictionary not '
-                            "found in node list"
+                            f'Invalid dependencies: node "{from_node}" in dependency dictionary not'
+                            " found in node list"
                         )
                     else:
                         raise DagsterInvalidDefinitionError(
-                            (
-                                f'Invalid dependencies: node "{aliased_node}" (aliased by '
-                                f'"{from_node}" in dependency dictionary) not found in node list'
-                            )
+                            f'Invalid dependencies: node "{aliased_node}" (aliased by '
+                            f'"{from_node}" in dependency dictionary) not found in node list'
                         )
                 if not node_dict[from_node].definition.has_input(from_input):
                     from .graph_definition import GraphDefinition
@@ -286,7 +283,8 @@ def _validate_dependencies(
 
                 if dep_def.is_fan_in() and not input_def.dagster_type.supports_fan_in:
                     raise DagsterInvalidDefinitionError(
-                        f'Invalid dependencies: for node "{dep.node}" input "{input_def.name}", the '
-                        f'DagsterType "{input_def.dagster_type.display_name}" does not support fanning in '
-                        "(MultiDependencyDefinition). Use the List type, since fanning in will result in a list."
+                        f'Invalid dependencies: for node "{dep.node}" input "{input_def.name}", the'
+                        f' DagsterType "{input_def.dagster_type.display_name}" does not support'
+                        " fanning in (MultiDependencyDefinition). Use the List type, since fanning"
+                        " in will result in a list."
                     )

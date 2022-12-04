@@ -19,7 +19,6 @@ from .types import (
 
 
 def bq_resource_config():
-
     project = Field(
         StringSource,
         description="""Project ID for the project which the client acts on behalf of. Will be passed

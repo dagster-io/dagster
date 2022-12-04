@@ -116,7 +116,6 @@ class AssetReconciliationScenario(NamedTuple):
         if self.evaluation_delta is not None:
             test_time += self.evaluation_delta
         with pendulum.test(test_time):
-
             run_requests, cursor = reconcile(
                 repository_def=repo,
                 instance=instance,

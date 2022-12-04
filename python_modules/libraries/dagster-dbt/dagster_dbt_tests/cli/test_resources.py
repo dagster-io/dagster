@@ -158,7 +158,6 @@ def test_models_removed_for_run_operation(
 def test_extra_args_run(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir
 ):  # pylint: disable=unused-argument
-
     my_vars = {"foo": 1, "bar": "baz"}
 
     @solid(required_resource_keys={"dbt"})
@@ -174,7 +173,6 @@ def test_extra_args_run(
 def test_models_and_extra_run(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir
 ):  # pylint: disable=unused-argument
-
     my_vars = {"foo": 1, "bar": "baz"}
 
     @solid(required_resource_keys={"dbt"})
@@ -191,7 +189,6 @@ def test_models_and_extra_run(
 def test_exclude_run(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir
 ):  # pylint: disable=unused-argument
-
     my_vars = {"foo": 1, "bar": "baz"}
 
     @solid(required_resource_keys={"dbt"})
@@ -208,7 +205,6 @@ def test_exclude_run(
 def test_merged_extra_flags_run(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir
 ):  # pylint: disable=unused-argument
-
     configured_vars = {"hello": "world"}
     my_vars = {"foo": 1, "bar": "baz"}
 

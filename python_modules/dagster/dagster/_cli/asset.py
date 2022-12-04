@@ -41,12 +41,15 @@ def asset_wipe_command(key, **cli_args):
         if len(key) > 0:
             asset_keys = [AssetKey.from_db_string(key_string) for key_string in key]
             prompt = (
-                "Are you sure you want to remove the asset key indexes for these keys from the event "
-                "logs? Type DELETE"
+                "Are you sure you want to remove the asset key indexes for these keys from the"
+                " event logs? Type DELETE"
             )
         else:
             asset_keys = instance.all_asset_keys()
-            prompt = "Are you sure you want to remove all asset key indexes from the event logs? Type DELETE"
+            prompt = (
+                "Are you sure you want to remove all asset key indexes from the event logs? Type"
+                " DELETE"
+            )
 
         if noprompt:
             confirmation = "DELETE"

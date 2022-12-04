@@ -61,7 +61,6 @@ class FakeADLS2ServiceClient:
     """
 
     def __init__(self, account_name, credential="fake-creds"):
-
         self._account_name = account_name
         self._credential = mock.MagicMock()
         self._credential.account_key = credential

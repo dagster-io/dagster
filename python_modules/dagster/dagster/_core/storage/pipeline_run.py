@@ -226,7 +226,6 @@ def pipeline_run_from_storage(
     has_repository_load_data=None,
     **kwargs,
 ):
-
     # serdes log
     # * removed reexecution_config - serdes logic expected to strip unknown keys so no need to preserve
     # * added pipeline_snapshot_id
@@ -257,11 +256,9 @@ def pipeline_run_from_storage(
     if selector:
         check.invariant(
             pipeline_name is None or selector.name == pipeline_name,
-            (
-                "Conflicting pipeline name {pipeline_name} in arguments to PipelineRun: "
-                "selector was passed with pipeline {selector_pipeline}".format(
-                    pipeline_name=pipeline_name, selector_pipeline=selector.name
-                )
+            "Conflicting pipeline name {pipeline_name} in arguments to PipelineRun: "
+            "selector was passed with pipeline {selector_pipeline}".format(
+                pipeline_name=pipeline_name, selector_pipeline=selector.name
             ),
         )
         if pipeline_name is None:
@@ -269,11 +266,9 @@ def pipeline_run_from_storage(
 
         check.invariant(
             solids_to_execute is None or set(selector.solid_subset) == solids_to_execute,
-            (
-                "Conflicting solids_to_execute {solids_to_execute} in arguments to PipelineRun: "
-                "selector was passed with subset {selector_subset}".format(
-                    solids_to_execute=solids_to_execute, selector_subset=selector.solid_subset
-                )
+            "Conflicting solids_to_execute {solids_to_execute} in arguments to PipelineRun: "
+            "selector was passed with subset {selector_subset}".format(
+                solids_to_execute=solids_to_execute, selector_subset=selector.solid_subset
             ),
         )
         # for old runs that only have selector but no solids_to_execute

@@ -296,7 +296,6 @@ def execute_solid_within_pipeline(
     tags: Optional[Dict[str, str]] = None,
     instance: Optional[DagsterInstance] = None,
 ) -> Union["CompositeSolidExecutionResult", "OpExecutionResult"]:
-
     """Execute a single solid within an existing pipeline.
 
     Intended to support tests. Input values may be passed directly.

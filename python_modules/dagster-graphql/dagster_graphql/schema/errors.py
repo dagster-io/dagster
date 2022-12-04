@@ -318,7 +318,10 @@ class GrapheneNoModeProvidedError(graphene.ObjectType):
         super().__init__()
         mode_list = check.list_param(mode_list, "mode_list", of_type=str)
         pipeline_name = check.str_param(pipeline_name, "pipeline_name")
-        self.message = f"No mode provided for pipeline '{pipeline_name}', which has multiple modes. Available modes: {mode_list}"
+        self.message = (
+            f"No mode provided for pipeline '{pipeline_name}', which has multiple modes. Available"
+            f" modes: {mode_list}"
+        )
 
 
 class GrapheneInvalidStepError(graphene.ObjectType):

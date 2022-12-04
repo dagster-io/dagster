@@ -56,7 +56,6 @@ def _build_airbyte_asset_defn_metadata(
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
 ) -> AssetsDefinitionCacheableData:
-
     asset_key_prefix = (
         check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str) or []
     )
@@ -124,7 +123,6 @@ def _build_airbyte_assets_from_metadata(
     assets_defn_meta: AssetsDefinitionCacheableData,
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
 ) -> AssetsDefinition:
-
     metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
     connection_id = cast(str, metadata["connection_id"])
     group_name = cast(Optional[str], metadata["group_name"])
@@ -447,7 +445,6 @@ class AirbyteConnectionMetadata(
 def _get_schema_by_table_name(
     stream_table_metadata: Mapping[str, AirbyteTableMetadata]
 ) -> Mapping[str, TableSchema]:
-
     schema_by_base_table_name = [(k, v.schema) for k, v in stream_table_metadata.items()]
     schema_by_normalization_table_name = list(
         chain.from_iterable(
@@ -479,7 +476,6 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
             Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
         ],
     ):
-
         self._key_prefix = key_prefix
         self._create_assets_for_normalization_tables = create_assets_for_normalization_tables
         self._connection_to_group_fn = connection_to_group_fn
@@ -505,10 +501,8 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         pass
 
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
-
         asset_defn_data: List[AssetsDefinitionCacheableData] = []
-        for (connection_id, connection) in self._get_connections():
-
+        for connection_id, connection in self._get_connections():
             stream_table_metadata = connection.parse_stream_tables(
                 self._create_assets_for_normalization_tables
             )
@@ -671,7 +665,6 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
 
         connection_directories = self._connection_directories or os.listdir(connections_dir)
         for connection_name in connection_directories:
-
             connection_dir = os.path.join(connections_dir, connection_name)
             with open(os.path.join(connection_dir, "configuration.yaml"), encoding="utf-8") as f:
                 connection = AirbyteConnectionMetadata.from_config(yaml.safe_load(f.read()))
@@ -700,9 +693,8 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
                 )
                 check.invariant(
                     len(state_files) <= 1,
-                    "More than one state file found for connection {} in {}, specify a workspace_id to disambiguate".format(
-                        connection_name, connection_dir
-                    ),
+                    "More than one state file found for connection {} in {}, specify a workspace_id"
+                    " to disambiguate".format(connection_name, connection_dir),
                 )
                 state_file = state_files[0]
 

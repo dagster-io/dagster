@@ -10,17 +10,21 @@ from dagster import Array, Bool, Field, In, Noneable, Nothing, Out, Output, op
     ins={"start_after": In(Nothing)},
     out=Out(
         AirbyteOutput,
-        description="Parsed json dictionary representing the details of the Airbyte connector after "
-        "the sync successfully completes. "
-        "See the [Airbyte API Docs](https://airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs.html#overview) "
-        "to see detailed information on this response.",
+        description=(
+            "Parsed json dictionary representing the details of the Airbyte connector after the"
+            " sync successfully completes. See the [Airbyte API"
+            " Docs](https://airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs.html#overview)"
+            " to see detailed information on this response."
+        ),
     ),
     config_schema={
         "connection_id": Field(
             str,
             is_required=True,
-            description="The Airbyte Connection ID that this op will sync. You can retrieve this "
-            'value from the "Connections" tab of a given connector in the Airbyte UI.',
+            description=(
+                "The Airbyte Connection ID that this op will sync. You can retrieve this "
+                'value from the "Connections" tab of a given connector in the Airbyte UI.'
+            ),
         ),
         "poll_interval": Field(
             float,
@@ -30,8 +34,10 @@ from dagster import Array, Bool, Field, In, Noneable, Nothing, Out, Output, op
         "poll_timeout": Field(
             Noneable(float),
             default_value=None,
-            description="The maximum time that will waited before this operation is timed out. By "
-            "default, this will never time out.",
+            description=(
+                "The maximum time that will waited before this operation is timed out. By "
+                "default, this will never time out."
+            ),
         ),
         "yield_materializations": Field(
             config=Bool,

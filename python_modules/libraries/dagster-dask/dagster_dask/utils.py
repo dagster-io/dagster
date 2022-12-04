@@ -123,7 +123,9 @@ DataFrameUtilities = {
                     "divisions": Field(
                         Any,
                         is_required=False,
-                        description="Known values on which to separate index values of the partitions.",
+                        description=(
+                            "Known values on which to separate index values of the partitions."
+                        ),
                     ),
                 }
             ),

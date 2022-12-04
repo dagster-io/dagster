@@ -261,8 +261,9 @@ def test_incorrect_order():
             def __new__(cls, field_two, field_one):
                 return super(WrongOrder, cls).__new__(field_one, field_two)
 
-    assert str(exc_info.value) == (
-        "For namedtuple WrongOrder: "
+    assert (
+        str(exc_info.value)
+        == "For namedtuple WrongOrder: "
         "Params to __new__ must match the order of field declaration "
         "in the namedtuple. Declared field number 1 in the namedtuple "
         'is "field_one". Parameter 1 in __new__ method is "field_two".'
@@ -277,8 +278,9 @@ def test_missing_one_parameter():
             def __new__(cls, field_one, field_two):
                 return super(MissingFieldInNew, cls).__new__(field_one, field_two, None)
 
-    assert str(exc_info.value) == (
-        "For namedtuple MissingFieldInNew: "
+    assert (
+        str(exc_info.value)
+        == "For namedtuple MissingFieldInNew: "
         "Missing parameters to __new__. You have declared fields in "
         "the named tuple that are not present as parameters to the "
         "to the __new__ method. In order for both serdes serialization "
@@ -296,8 +298,9 @@ def test_missing_many_parameters():
             def __new__(cls, field_one, field_two):
                 return super(MissingFieldsInNew, cls).__new__(field_one, field_two, None, None)
 
-    assert str(exc_info.value) == (
-        "For namedtuple MissingFieldsInNew: "
+    assert (
+        str(exc_info.value)
+        == "For namedtuple MissingFieldsInNew: "
         "Missing parameters to __new__. You have declared fields in "
         "the named tuple that are not present as parameters to the "
         "to the __new__ method. In order for both serdes serialization "
@@ -323,8 +326,9 @@ def test_extra_parameters_must_have_defaults():
             ):
                 return super(OldFieldsWithoutDefaults, cls).__new__(field_three, field_four)
 
-    assert str(exc_info.value) == (
-        "For namedtuple OldFieldsWithoutDefaults: "
+    assert (
+        str(exc_info.value)
+        == "For namedtuple OldFieldsWithoutDefaults: "
         'Parameter "field_one" is a parameter to the __new__ '
         "method but is not a field in this namedtuple. "
         "The only reason why this should exist is that "
@@ -578,8 +582,8 @@ def test_enum_backcompat():
         def value_to_storage_str(cls, value, whitelist_map, descent_path):
             val_as_str = str(value)
             actual_enum_val = val_as_str.split(".")[1:]
-            backcompat_name = (
-                "OldEnum"  # Simulate changing the storage name to some legacy backcompat name
+            backcompat_name = (  # Simulate changing the storage name to some legacy backcompat name
+                "OldEnum"
             )
             return ".".join([backcompat_name, *actual_enum_val])
 
@@ -690,7 +694,6 @@ def test_namedtuple_backcompat():
 
 
 def test_namedtuple_name_map():
-
     wmap = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=wmap)
@@ -711,7 +714,6 @@ def test_namedtuple_name_map():
 
 
 def test_whitelist_storage_name():
-
     wmap = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=wmap, storage_name="SerializedThing")

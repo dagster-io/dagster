@@ -82,7 +82,7 @@ def secretsmanager_resource(context):
                 Array(str),
                 is_required=False,
                 default_value=[],
-                description=("An array of AWS Secrets Manager secrets arns to fetch."),
+                description="An array of AWS Secrets Manager secrets arns to fetch.",
             ),
             "secrets_tag": Field(
                 Noneable(str),
@@ -96,7 +96,7 @@ def secretsmanager_resource(context):
                 bool,
                 is_required=False,
                 default_value=False,
-                description=("Whether to mount the secrets as environment variables."),
+                description="Whether to mount the secrets as environment variables.",
             ),
         },
     )

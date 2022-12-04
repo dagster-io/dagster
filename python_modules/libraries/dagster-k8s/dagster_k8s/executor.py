@@ -41,8 +41,10 @@ from .job import (
             "max_concurrent": Field(
                 IntSource,
                 is_required=False,
-                description="Limit on the number of pods that will run concurrently within the scope "
-                "of a Dagster run. Note that this limit is per run, not global.",
+                description=(
+                    "Limit on the number of pods that will run concurrently within the scope "
+                    "of a Dagster run. Note that this limit is per run, not global."
+                ),
             ),
             "tag_concurrency_limits": get_tag_concurrency_limits_config(),
         },
@@ -90,8 +92,10 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
     run_launcher = init_context.instance.run_launcher
     if not isinstance(run_launcher, K8sRunLauncher):
         raise DagsterUnmetExecutorRequirementsError(
-            "This engine is only compatible with a K8sRunLauncher; configure the "
-            "K8sRunLauncher on your instance to use it.",
+            (
+                "This engine is only compatible with a K8sRunLauncher; configure the "
+                "K8sRunLauncher on your instance to use it."
+            ),
         )
 
     exc_cfg = init_context.executor_config

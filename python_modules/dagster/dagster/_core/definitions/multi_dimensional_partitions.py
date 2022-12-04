@@ -136,8 +136,9 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     def __init__(self, partitions_defs: Mapping[str, PartitionsDefinition]):
         if not len(partitions_defs.keys()) == 2:
             raise DagsterInvalidInvocationError(
-                "Dagster currently only supports multi-partitions definitions with 2 partitions definitions. "
-                f"Your multi-partitions definition has {len(partitions_defs.keys())} partitions definitions."
+                "Dagster currently only supports multi-partitions definitions with 2 partitions"
+                " definitions. Your multi-partitions definition has"
+                f" {len(partitions_defs.keys())} partitions definitions."
             )
         check.mapping_param(
             partitions_defs, "partitions_defs", key_type=str, value_type=PartitionsDefinition

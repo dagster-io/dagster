@@ -24,6 +24,7 @@ def my_partitioned_config(start: datetime, _end: datetime):
 
 # end_partitioned_config
 
+
 # start_partitioned_job
 @job(config=my_partitioned_config)
 def do_stuff_partitioned():

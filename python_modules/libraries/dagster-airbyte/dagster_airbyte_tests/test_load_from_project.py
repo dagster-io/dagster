@@ -19,7 +19,6 @@ from .utils import get_project_connection_json, get_project_job_json
 def test_load_from_project(
     use_normalization_tables, connection_to_group_fn, filter_connection, connection_to_asset_key_fn
 ):
-
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={

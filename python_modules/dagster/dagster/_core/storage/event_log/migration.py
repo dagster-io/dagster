@@ -175,7 +175,7 @@ def sql_asset_event_generator(conn, cursor=None, batch_size=1000):
         query = query.order_by(SqlEventLogStorageTable.c.id.desc()).limit(batch_size)
         fetched = conn.execute(query).fetchall()
 
-        for (record_id, event_json) in fetched:
+        for record_id, event_json in fetched:
             cursor = record_id
             event_record = deserialize_json_to_dagster_namedtuple(event_json)
             if not isinstance(event_record, EventLogEntry):

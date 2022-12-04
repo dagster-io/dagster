@@ -51,7 +51,8 @@ class ResourceRequirement(ABC):
     ) -> Sequence[str]:
         """Get resource keys that correspond to resource definitions of expected type.
 
-        For example, if this particular ResourceRequirement subclass required an ``IOManagerDefinition``, this method would vend all keys that corresponded to ``IOManagerDefinition``s."""
+        For example, if this particular ResourceRequirement subclass required an ``IOManagerDefinition``, this method would vend all keys that corresponded to ``IOManagerDefinition``s.
+        """
         return [
             resource_key
             for resource_key, resource_def in resource_defs.items()
@@ -99,7 +100,10 @@ class InputManagerRequirement(
         return IInputManagerDefinition
 
     def describe_requirement(self) -> str:
-        return f"input manager with key '{self.key}' required by input '{self.input_name}' of {self.node_description}"
+        return (
+            f"input manager with key '{self.key}' required by input '{self.input_name}' of"
+            f" {self.node_description}"
+        )
 
 
 class SourceAssetIOManagerRequirement(
@@ -138,7 +142,10 @@ class OutputManagerRequirement(
         return IOManagerDefinition
 
     def describe_requirement(self) -> str:
-        return f"io manager with key '{self.key}' required by output '{self.output_name}' of {self.node_description}'"
+        return (
+            f"io manager with key '{self.key}' required by output '{self.output_name}' of"
+            f" {self.node_description}'"
+        )
 
 
 class HookResourceRequirement(
@@ -168,7 +175,10 @@ class TypeLoaderResourceRequirement(
     ResourceRequirement,
 ):
     def describe_requirement(self) -> str:
-        return f"resource with key '{self.key}' required by the loader on type '{self.type_display_name}'"
+        return (
+            f"resource with key '{self.key}' required by the loader on type"
+            f" '{self.type_display_name}'"
+        )
 
 
 class TypeMaterializerResourceRequirement(
@@ -176,7 +186,10 @@ class TypeMaterializerResourceRequirement(
     ResourceRequirement,
 ):
     def describe_requirement(self) -> str:
-        return f"resource with key '{self.key}' required by the materializer on type '{self.type_display_name}'"
+        return (
+            f"resource with key '{self.key}' required by the materializer on type"
+            f" '{self.type_display_name}'"
+        )
 
 
 class ResourceDependencyRequirement(
@@ -212,7 +225,8 @@ def ensure_resources_of_expected_type(
             resource_defs
         ) and not requirement.resource_is_expected_type(resource_defs):
             raise DagsterInvalidDefinitionError(
-                f"{requirement.describe_requirement()}, but received {type(resource_defs[requirement.key])}{mode_descriptor}."
+                f"{requirement.describe_requirement()}, but received"
+                f" {type(resource_defs[requirement.key])}{mode_descriptor}."
             )
 
 
@@ -229,7 +243,11 @@ def ensure_requirements_satisfied(
     for requirement in requirements:
         if not requirement.resources_contain_key(resource_defs):
             raise DagsterInvalidDefinitionError(
-                f"{requirement.describe_requirement()} was not provided{mode_descriptor}. Please provide a {str(requirement.expected_type)} to key '{requirement.key}', or change the required key to one of the following keys which points to an {str(requirement.expected_type)}: {requirement.keys_of_expected_type(resource_defs)}"
+                f"{requirement.describe_requirement()} was not provided{mode_descriptor}. Please"
+                f" provide a {str(requirement.expected_type)} to key '{requirement.key}', or change"
+                " the required key to one of the following keys which points to an"
+                f" {str(requirement.expected_type)}:"
+                f" {requirement.keys_of_expected_type(resource_defs)}"
             )
 
 

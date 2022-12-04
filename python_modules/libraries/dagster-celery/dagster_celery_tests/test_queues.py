@@ -13,7 +13,6 @@ celery_mode_defs = [ModeDefinition(executor_defs=[*default_executors, celery_exe
 
 def test_multiqueue(rabbitmq):  # pylint: disable=unused-argument
     with instance_for_test() as instance:
-
         done = threading.Event()
         with start_celery_worker():
             execute_thread = threading.Thread(

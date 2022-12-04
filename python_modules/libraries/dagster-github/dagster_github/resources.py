@@ -156,21 +156,32 @@ class GithubResource:
     config_schema={
         "github_app_id": Field(
             IntSource,
-            description="Github Application ID, for more info see https://developer.github.com/apps/",
+            description=(
+                "Github Application ID, for more info see https://developer.github.com/apps/"
+            ),
         ),
         "github_app_private_rsa_key": Field(
             StringSource,
-            description="Github Application Private RSA key text, for more info see https://developer.github.com/apps/",
+            description=(
+                "Github Application Private RSA key text, for more info see"
+                " https://developer.github.com/apps/"
+            ),
         ),
         "github_installation_id": Field(
             IntSource,
             is_required=False,
-            description="Github Application Installation ID, for more info see https://developer.github.com/apps/",
+            description=(
+                "Github Application Installation ID, for more info see"
+                " https://developer.github.com/apps/"
+            ),
         ),
         "github_hostname": Field(
             StringSource,
             is_required=False,
-            description="Github hostname. Defaults to `api.github.com`, for more info see https://developer.github.com/apps/",
+            description=(
+                "Github hostname. Defaults to `api.github.com`, for more info see"
+                " https://developer.github.com/apps/"
+            ),
         ),
     },
     description="This resource is for connecting to Github",

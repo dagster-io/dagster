@@ -81,23 +81,30 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 )
 @click.option(
     "--db-statement-timeout",
-    help="The timeout in milliseconds to set on database statements sent "
-    "to the DagsterInstance. Not respected in all configurations.",
+    help=(
+        "The timeout in milliseconds to set on database statements sent "
+        "to the DagsterInstance. Not respected in all configurations."
+    ),
     default=DEFAULT_DB_STATEMENT_TIMEOUT,
     type=click.INT,
     show_default=True,
 )
 @click.option(
     "--db-pool-recycle",
-    help="The maximum age of a connection to use from the sqlalchemy pool without connection recycling. Set to -1 to disable. Not respected in all configurations.",
+    help=(
+        "The maximum age of a connection to use from the sqlalchemy pool without connection"
+        " recycling. Set to -1 to disable. Not respected in all configurations."
+    ),
     default=DEFAULT_POOL_RECYCLE,
     type=click.INT,
     show_default=True,
 )
 @click.option(
     "--read-only",
-    help="Start Dagit in read-only mode, where all mutations such as launching runs and "
-    "turning schedules on/off are turned off.",
+    help=(
+        "Start Dagit in read-only mode, where all mutations such as launching runs and "
+        "turning schedules on/off are turned off."
+    ),
     is_flag=True,
 )
 @click.option(

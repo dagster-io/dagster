@@ -263,7 +263,6 @@ def test_deploy_docker():
 
 
 def _wait_for_run_status(run_id, dagit_host, desired_status):
-
     start_time = time.time()
 
     while True:

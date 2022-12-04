@@ -316,7 +316,6 @@ class InitializedAirbyteConnection:
         init_sources: Mapping[str, InitializedAirbyteSource],
         init_dests: Mapping[str, InitializedAirbyteDestination],
     ):
-
         source = next(
             (
                 source.source

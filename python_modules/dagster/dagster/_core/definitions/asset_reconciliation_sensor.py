@@ -405,7 +405,6 @@ def get_current_data_times_for_key(
     relevant_upstream_keys: AbstractSet[AssetKey],
     asset_key: AssetKey,
 ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
-
     # calculate the data time for this record in relation to the upstream keys which are
     # set to be updated this tick and are involved in some constraint
     latest_record = instance_queryer.get_latest_materialization_record(asset_key)

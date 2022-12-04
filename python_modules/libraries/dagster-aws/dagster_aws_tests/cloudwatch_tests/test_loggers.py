@@ -48,7 +48,10 @@ def log_stream(cloudwatch_client, log_group):
 def test_cloudwatch_logging_bad_log_group_name(region, log_stream):
     with pytest.raises(
         Exception,
-        match="Failed to initialize Cloudwatch logger: Could not find log group with name fake-log-group",
+        match=(
+            "Failed to initialize Cloudwatch logger: Could not find log group with name"
+            " fake-log-group"
+        ),
     ):
         hello_cloudwatch.execute_in_process(
             {
@@ -68,7 +71,10 @@ def test_cloudwatch_logging_bad_log_group_name(region, log_stream):
 def test_cloudwatch_logging_bad_log_stream_name(region, log_group):
     with pytest.raises(
         Exception,
-        match="Failed to initialize Cloudwatch logger: Could not find log stream with name fake-log-stream",
+        match=(
+            "Failed to initialize Cloudwatch logger: Could not find log stream with name"
+            " fake-log-stream"
+        ),
     ):
         hello_cloudwatch.execute_in_process(
             {
@@ -88,8 +94,9 @@ def test_cloudwatch_logging_bad_log_stream_name(region, log_group):
 def test_cloudwatch_logging_bad_region(log_group, log_stream):
     with pytest.raises(
         Exception,
-        match="Failed to initialize Cloudwatch logger: Could not find log group with name {log_group}".format(
-            log_group=log_group
+        match=(
+            "Failed to initialize Cloudwatch logger: Could not find log group with name {log_group}"
+            .format(log_group=log_group)
         ),
     ):
         hello_cloudwatch.execute_in_process(

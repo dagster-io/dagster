@@ -89,25 +89,40 @@ def test_bad_config():
         (
             # Create disposition must match enum values
             {"create_disposition": "this is not a valid create disposition"},
-            "Value at path root:ops:test:config:query_job_config:create_disposition not in enum type BQCreateDisposition",
+            (
+                "Value at path root:ops:test:config:query_job_config:create_disposition not in enum"
+                " type BQCreateDisposition"
+            ),
         ),
         (
             # Priority must match enum values
             {"priority": "this is not a valid priority"},
-            "Value at path root:ops:test:config:query_job_config:priority not in enum type BQPriority got this is not a valid priority",
+            (
+                "Value at path root:ops:test:config:query_job_config:priority not in enum type"
+                " BQPriority got this is not a valid priority"
+            ),
         ),
         (
             # Schema update options must be a list
             {"schema_update_options": "this is not valid schema update options"},
-            'Value at path root:ops:test:config:query_job_config:schema_update_options must be list. Expected: "[BQSchemaUpdateOption]"',
+            (
+                "Value at path root:ops:test:config:query_job_config:schema_update_options must be"
+                ' list. Expected: "[BQSchemaUpdateOption]"'
+            ),
         ),
         (
             {"schema_update_options": ["this is not valid schema update options"]},
-            "Value at path root:ops:test:config:query_job_config:schema_update_options[0] not in enum type BQSchemaUpdateOption",
+            (
+                "Value at path root:ops:test:config:query_job_config:schema_update_options[0] not"
+                " in enum type BQSchemaUpdateOption"
+            ),
         ),
         (
             {"write_disposition": "this is not a valid write disposition"},
-            "Value at path root:ops:test:config:query_job_config:write_disposition not in enum type BQWriteDisposition",
+            (
+                "Value at path root:ops:test:config:query_job_config:write_disposition not in enum"
+                " type BQWriteDisposition"
+            ),
         ),
     ]
 
@@ -241,7 +256,8 @@ def test_pd_df_load():
             )
         assert (
             "loading data to BigQuery from pandas DataFrames requires either pyarrow or fastparquet"
-            " to be installed" in str(exc_info.value.user_exception)
+            " to be installed"
+            in str(exc_info.value.user_exception)
         )
 
         @job(resource_defs={"bigquery": bigquery_resource})

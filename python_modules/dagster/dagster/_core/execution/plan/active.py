@@ -143,10 +143,9 @@ class ActiveExecution:
                 )
             else:
                 raise DagsterUnknownStepStateError(
-                    "Execution exited with steps {step_list} in an unknown state to this process.\n"
-                    "This was likely caused by losing communication with the process performing step execution.".format(
-                        step_list=self._unknown_state
-                    )
+                    "Execution exited with steps {step_list} in an unknown state to this"
+                    " process.\nThis was likely caused by losing communication with the process"
+                    " performing step execution.".format(step_list=self._unknown_state)
                 )
 
     def _update(self) -> None:
@@ -467,12 +466,12 @@ class ActiveExecution:
                 ].append(dagster_event.step_output_data.step_output_handle.mapping_key)
 
     def verify_complete(self, pipeline_context: PlanOrchestrationContext, step_key: str) -> None:
-        """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure"""
+        """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure
+        """
         if step_key in self._in_flight:
             pipeline_context.log.error(
-                "Step {key} finished without success or failure event. Downstream steps will not execute.".format(
-                    key=step_key
-                )
+                "Step {key} finished without success or failure event. Downstream steps will not"
+                " execute.".format(key=step_key)
             )
             self.mark_unknown_state(step_key)
 

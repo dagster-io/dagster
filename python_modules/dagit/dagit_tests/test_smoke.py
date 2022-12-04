@@ -36,7 +36,6 @@ def test_smoke_app(gen_instance):
             read_only=False,
             kwargs=dict(module_name=("dagit_tests.toy.bar_repo",), definition="bar"),
         ) as workspace_process_context:
-
             asgi_app = app.create_app_from_workspace_process_context(workspace_process_context)
             client = TestClient(asgi_app)
 

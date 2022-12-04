@@ -128,16 +128,14 @@ def check_repo_and_scheduler(repository: ExternalRepository, instance: DagsterIn
 
     if not os.getenv("DAGSTER_HOME"):
         raise click.UsageError(
-            (
-                "The environment variable $DAGSTER_HOME is not set. Dagster requires this "
-                "environment variable to be set to an existing directory in your filesystem "
-                "that contains your dagster instance configuration file (dagster.yaml).\n"
-                "You can resolve this error by exporting the environment variable."
-                "For example, you can run the following command in your shell or "
-                "include it in your shell configuration file:\n"
-                '\texport DAGSTER_HOME="~/dagster_home"'
-                "\n\n"
-            )
+            "The environment variable $DAGSTER_HOME is not set. Dagster requires this "
+            "environment variable to be set to an existing directory in your filesystem "
+            "that contains your dagster instance configuration file (dagster.yaml).\n"
+            "You can resolve this error by exporting the environment variable."
+            "For example, you can run the following command in your shell or "
+            "include it in your shell configuration file:\n"
+            '\texport DAGSTER_HOME="~/dagster_home"'
+            "\n\n"
         )
 
 
@@ -273,7 +271,6 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
                 )
             else:
                 try:
-
                     instance.start_schedule(external_repo.get_external_schedule(schedule_name))
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
@@ -457,7 +454,8 @@ def schedule_wipe_command():
 def execute_wipe_command(print_fn):
     with DagsterInstance.get() as instance:
         confirmation = click.prompt(
-            "Are you sure you want to turn off all schedules and delete all schedule history? Type DELETE"
+            "Are you sure you want to turn off all schedules and delete all schedule history? Type"
+            " DELETE"
         )
         if confirmation == "DELETE":
             instance.wipe_all_schedules()

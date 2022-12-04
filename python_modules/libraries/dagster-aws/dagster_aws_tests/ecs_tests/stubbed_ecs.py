@@ -295,7 +295,9 @@ class StubbedEcs:
         if not self.storage.register_task_definition_locks[family].acquire(blocking=False):
             self.stubber.add_client_error(
                 method="register_task_definition",
-                service_message="Too many concurrent attempts to create a new revision of the specified family.",
+                service_message=(
+                    "Too many concurrent attempts to create a new revision of the specified family."
+                ),
                 expected_params={**kwargs},
             )
         else:

@@ -48,7 +48,6 @@ def op_execution_error_boundary(
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
     with raise_execution_interrupts():
-
         step_context.log.begin_python_log_capture()
         retry_policy = step_context.solid_retry_policy
 

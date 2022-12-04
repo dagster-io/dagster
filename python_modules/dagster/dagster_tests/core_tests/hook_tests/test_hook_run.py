@@ -19,7 +19,6 @@ def resource_a(_init_context):
 
 
 def test_hook_on_op_instance():
-
     called_hook_to_ops = defaultdict(set)
 
     @event_list_hook(required_resource_keys={"resource_a"})
@@ -44,7 +43,6 @@ def test_hook_on_op_instance():
 
 
 def test_hook_accumulation():
-
     called_hook_to_step_keys = defaultdict(set)
 
     @event_list_hook
@@ -107,7 +105,6 @@ def test_hook_accumulation():
 
 
 def test_hook_on_graph_instance():
-
     called_hook_to_step_keys = defaultdict(set)
 
     @event_list_hook
@@ -143,7 +140,6 @@ def test_hook_on_graph_instance():
 
 
 def test_success_hook_on_op_instance():
-
     called_hook_to_ops = defaultdict(set)
 
     @success_hook(required_resource_keys={"resource_a"})
@@ -172,7 +168,6 @@ def test_success_hook_on_op_instance():
 
 
 def test_success_hook_on_op_instance_subset():
-
     called_hook_to_ops = defaultdict(set)
 
     @success_hook(required_resource_keys={"resource_a"})
@@ -201,7 +196,6 @@ def test_success_hook_on_op_instance_subset():
 
 
 def test_failure_hook_on_op_instance():
-
     called_hook_to_ops = defaultdict(set)
 
     @failure_hook(required_resource_keys={"resource_a"})
@@ -333,7 +327,6 @@ def test_op_outputs_access():
 
 
 def test_hook_on_job_def():
-
     called_hook_to_ops = defaultdict(set)
 
     @event_list_hook
@@ -374,7 +367,6 @@ def test_hook_on_job_def():
 
 
 def test_hook_on_job_def_with_graphs():
-
     called_hook_to_step_keys = defaultdict(set)
 
     @event_list_hook
@@ -414,7 +406,6 @@ def test_hook_on_job_def_with_graphs():
 
 
 def test_hook_decorate_job_def():
-
     called_hook_to_ops = defaultdict(set)
 
     @event_list_hook
@@ -466,7 +457,6 @@ def test_hook_decorate_job_def():
 
 
 def test_hook_on_job_def_and_op_instance():
-
     called_hook_to_ops = defaultdict(set)
 
     @event_list_hook
@@ -520,7 +510,6 @@ def test_hook_on_job_def_and_op_instance():
 
 
 def test_hook_context_config_schema():
-
     called_hook_to_ops = defaultdict(set)
 
     @event_list_hook
@@ -554,7 +543,9 @@ def test_hook_resource_mismatch():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="resource with key 'b' required by hook 'a_hook' attached to job '_' was not provided",
+        match=(
+            "resource with key 'b' required by hook 'a_hook' attached to job '_' was not provided"
+        ),
     ):
 
         @a_hook
@@ -564,7 +555,9 @@ def test_hook_resource_mismatch():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="resource with key 'b' required by hook 'a_hook' attached to op 'a_op' was not provided",
+        match=(
+            "resource with key 'b' required by hook 'a_hook' attached to op 'a_op' was not provided"
+        ),
     ):
 
         @job(resource_defs={"a": resource_a})
@@ -573,7 +566,6 @@ def test_hook_resource_mismatch():
 
 
 def test_hook_subjob():
-
     called_hook_to_ops = defaultdict(set)
 
     @event_list_hook

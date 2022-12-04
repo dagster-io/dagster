@@ -77,7 +77,6 @@ def test_python_object_type_with_custom_type_check():
 
 
 def test_tuple_union_typing_type():
-
     UnionType = PythonObjectDagsterType(python_type=(str, int, float))
 
     assert UnionType.typing_type == typing.Union[str, int, float]
@@ -305,8 +304,8 @@ def test_input_type_returns_wrong_thing():
         match=re.escape("You have returned 'foo' of type <")
         + "(class|type)"
         + re.escape(
-            " 'str'> from the type check function of type \"BadType\". Return value must be instance of "
-            "TypeCheck or a bool."
+            " 'str'> from the type check function of type \"BadType\". Return value must be"
+            " instance of TypeCheck or a bool."
         ),
     ):
         pipe.execute_in_process()
@@ -409,7 +408,7 @@ def define_custom_dict(name, permitted_key_names):
                 return TypeCheck(
                     False,
                     description=(
-                        "Key {name} is not a permitted value, values can only be of: " "{name_list}"
+                        "Key {name} is not a permitted value, values can only be of: {name_list}"
                     ).format(name=value.name, name_list=permitted_key_names),
                 )
         return TypeCheck(

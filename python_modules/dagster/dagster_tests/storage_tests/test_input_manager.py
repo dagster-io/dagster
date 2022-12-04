@@ -563,7 +563,6 @@ def test_input_manager_with_failure():
         fail_on_input()
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
-
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 
         result = simple.execute_in_process(instance=instance, raise_on_error=False)
@@ -615,7 +614,6 @@ def test_input_manager_with_retries():
         take_input_3(take_input_2(), take_input_1())
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
-
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 
         result = simple.execute_in_process(instance=instance, raise_on_error=False)
@@ -697,7 +695,11 @@ def test_resource_not_input_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="input manager with key 'not_manager' required by input '_input' of op 'op_requires_manager', but received <class 'dagster._core.definitions.resource_definition.ResourceDefinition'>",
+        match=(
+            "input manager with key 'not_manager' required by input '_input' of op"
+            " 'op_requires_manager', but received <class"
+            " 'dagster._core.definitions.resource_definition.ResourceDefinition'>"
+        ),
     ):
 
         @job(resource_defs={"not_manager": resource_not_manager})

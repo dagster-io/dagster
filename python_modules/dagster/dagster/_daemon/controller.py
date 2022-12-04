@@ -120,7 +120,6 @@ class DagsterDaemonController(AbstractContextManager):
         error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
         handler: str = "default",
     ):
-
         self._daemon_uuid = str(uuid.uuid4())
 
         self._daemons = {}
@@ -221,7 +220,8 @@ class DagsterDaemonController(AbstractContextManager):
 
         if failed_daemons:
             self._logger.error(
-                f"Stopping dagster-daemon process since the following threads are no longer running: {failed_daemons}"
+                "Stopping dagster-daemon process since the following threads are no longer"
+                f" running: {failed_daemons}"
             )
             raise Exception("Stopped dagster-daemon process due to threads no longer running")
 
@@ -234,7 +234,8 @@ class DagsterDaemonController(AbstractContextManager):
 
         if failed_daemons:
             self._logger.error(
-                f"Stopping dagster-daemon process since the following threads are no longer sending heartbeats: {failed_daemons}"
+                "Stopping dagster-daemon process since the following threads are no longer sending"
+                f" heartbeats: {failed_daemons}"
             )
             raise Exception("Stopped dagster-daemon process due to thread heartbeat failure")
 

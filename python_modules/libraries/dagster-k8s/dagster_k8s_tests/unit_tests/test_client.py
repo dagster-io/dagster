@@ -387,7 +387,6 @@ def test_wait_for_pod_success():
 
 
 def test_wait_for_launch_then_success():
-
     mock_client = create_mocked_client()
 
     no_pods = V1PodList(items=[])
@@ -476,7 +475,6 @@ def test_initial_timeout_with_no_pod():
 
 
 def test_running_but_not_ready():
-
     mock_client = create_mocked_client()
 
     single_not_ready_running_pod = _pod_list_for_container_status(
@@ -561,8 +559,9 @@ def test_wait_for_ready_but_terminated_unsuccessfully():
     with pytest.raises(DagsterK8sError) as exc_info:
         mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
 
-    assert str(exc_info.value) == (
-        'Pod did not exit successfully. Failed with message: "error_message" '
+    assert (
+        str(exc_info.value)
+        == 'Pod did not exit successfully. Failed with message: "error_message" '
         'and pod logs: "raw_logs_ret_val"'
     )
 
@@ -709,7 +708,6 @@ def test_bad_waiting_state():
 
 
 def test_get_names_in_job():
-
     pod_list = V1PodList(
         items=[V1Pod(metadata=V1ObjectMeta(name="foo")), V1Pod(metadata=V1ObjectMeta(name="bar"))]
     )

@@ -39,7 +39,6 @@ def check_materialization(materialization, asset_key, parent_assets=None, metada
 
 @pytest.mark.skip(reason="no longer supporting dynamic asset key")
 def test_output_definition_single_partition_materialization():
-
     entry1 = MetadataEntry("nrows", value=123)
     entry2 = MetadataEntry("some value", value=3.21)
 
@@ -76,7 +75,6 @@ def test_output_definition_single_partition_materialization():
 
 
 def test_output_definition_multiple_partition_materialization():
-
     entry1 = MetadataEntry("nrows", value=123)
     entry2 = MetadataEntry("some value", value=3.21)
 
@@ -331,13 +329,10 @@ def test_fail_fast_with_nonesense_metadata():
 
 
 def test_def_only_asset_partitions_fails():
-
     with pytest.raises(CheckError):
-
         OutputDefinition(asset_partitions=set(["1"]))
 
     with pytest.raises(CheckError):
-
         InputDefinition("name", asset_partitions=set(["1"]))
 
 

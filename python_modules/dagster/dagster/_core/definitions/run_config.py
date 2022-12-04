@@ -249,8 +249,10 @@ def get_inputs_field(
         return Field(
             Shape(inputs_field_fields),
             is_required=False,
-            description=f"This {node_type} is not present in the current {node_type} selection, "
-            "the input config values are allowed but ignored.",
+            description=(
+                f"This {node_type} is not present in the current {node_type} selection, "
+                "the input config values are allowed but ignored."
+            ),
         )
     else:
         return Field(Shape(inputs_field_fields))
@@ -273,9 +275,9 @@ def get_input_manager_input_field(
     if input_def.root_manager_key:
         if input_def.root_manager_key not in resource_defs:
             raise DagsterInvalidDefinitionError(
-                f"Input '{input_def.name}' for {solid.describe_node()} requires root_manager_key "
-                f"'{input_def.root_manager_key}', but no resource has been provided. Please include a "
-                f"resource definition for that key in the provided resource_defs."
+                f"Input '{input_def.name}' for {solid.describe_node()} requires root_manager_key"
+                f" '{input_def.root_manager_key}', but no resource has been provided. Please"
+                " include a resource definition for that key in the provided resource_defs."
             )
 
         root_manager = resource_defs[input_def.root_manager_key]
@@ -293,9 +295,9 @@ def get_input_manager_input_field(
     elif input_def.input_manager_key:
         if input_def.input_manager_key not in resource_defs:
             raise DagsterInvalidDefinitionError(
-                f"Input '{input_def.name}' for {solid.describe_node()} requires input_manager_key "
-                f"'{input_def.input_manager_key}', but no resource has been provided. Please include a "
-                f"resource definition for that key in the provided resource_defs."
+                f"Input '{input_def.name}' for {solid.describe_node()} requires input_manager_key"
+                f" '{input_def.input_manager_key}', but no resource has been provided. Please"
+                " include a resource definition for that key in the provided resource_defs."
             )
 
         input_manager = resource_defs[input_def.input_manager_key]
@@ -328,7 +330,6 @@ def get_outputs_field(
     solid: Node,
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> Optional[Field]:
-
     # if any outputs have configurable output managers, use those for the schema and ignore all type
     # materializers
     output_manager_fields = {}
@@ -362,7 +363,7 @@ def get_output_manager_output_field(
         raise DagsterInvalidDefinitionError(
             f'Output "{output_def.name}" for {solid.describe_node()} requires io_manager_key '
             f'"{output_def.io_manager_key}", but no resource has been provided. Please include a '
-            f"resource definition for that key in the provided resource_defs."
+            "resource definition for that key in the provided resource_defs."
         )
     if not isinstance(resource_defs[output_def.io_manager_key], IOutputManagerDefinition):
         raise DagsterInvalidDefinitionError(
@@ -399,8 +400,10 @@ def solid_config_field(
             return Field(
                 Shape(trimmed_fields, field_aliases=field_aliases),
                 is_required=False,
-                description=f"This {node_type} is not present in the current {node_type} selection, "
-                "the config values are allowed but ignored.",
+                description=(
+                    f"This {node_type} is not present in the current {node_type} selection, "
+                    "the config values are allowed but ignored."
+                ),
             )
         else:
             return Field(Shape(trimmed_fields, field_aliases=field_aliases))
@@ -446,7 +449,6 @@ def define_isolid_field(
     is_using_graph_job_op_apis: bool,
     asset_layer: AssetLayer,
 ) -> Optional[Field]:
-
     # All solids regardless of compositing status get the same inputs and outputs
     # config. The only thing the varies is on extra element of configuration
     # 1) Vanilla solid definition: a 'config' key with the config_schema as the value

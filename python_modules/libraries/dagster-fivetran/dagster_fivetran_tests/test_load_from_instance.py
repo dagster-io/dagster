@@ -33,7 +33,6 @@ from dagster._core.execution.with_resources import with_resources
     ],
 )
 def test_load_from_instance(connector_to_group_fn, filter_connector, connector_to_asset_key_fn):
-
     load_calls = []
 
     @io_manager

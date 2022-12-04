@@ -105,23 +105,23 @@ def execute_list_command(cli_args, print_fn):
 
 def get_job_in_same_python_env_instructions(command_name):
     return (
-        "This commands targets a job. The job can be specified in a number of ways:"
-        "\n\n1. dagster job {command_name} -f /path/to/file.py -a define_some_job"
-        "\n\n2. dagster job {command_name} -m a_module.submodule -a define_some_job"
-        "\n\n3. dagster job {command_name} -f /path/to/file.py -a define_some_repo -j <<job_name>>"
-        "\n\n4. dagster job {command_name} -m a_module.submodule -a define_some_repo -j <<job_name>>"
+        "This commands targets a job. The job can be specified in a number of ways:\n\n1. dagster"
+        " job {command_name} -f /path/to/file.py -a define_some_job\n\n2. dagster job"
+        " {command_name} -m a_module.submodule -a define_some_job\n\n3. dagster job {command_name}"
+        " -f /path/to/file.py -a define_some_repo -j <<job_name>>\n\n4. dagster job {command_name}"
+        " -m a_module.submodule -a define_some_repo -j <<job_name>>"
     ).format(command_name=command_name)
 
 
 def get_job_instructions(command_name):
     return (
-        "This commands targets a job. The job can be specified in a number of ways:"
-        "\n\n1. dagster job {command_name} -j <<job_name>> (works if .{default_filename} exists)"
-        "\n\n2. dagster job {command_name} -j <<job_name>> -w path/to/{default_filename}"
-        "\n\n3. dagster job {command_name} -f /path/to/file.py -a define_some_job"
-        "\n\n4. dagster job {command_name} -m a_module.submodule -a define_some_job"
-        "\n\n5. dagster job {command_name} -f /path/to/file.py -a define_some_repo -j <<job_name>>"
-        "\n\n6. dagster job {command_name} -m a_module.submodule -a define_some_repo -j <<job_name>>"
+        "This commands targets a job. The job can be specified in a number of ways:\n\n1. dagster"
+        " job {command_name} -j <<job_name>> (works if .{default_filename} exists)\n\n2. dagster"
+        " job {command_name} -j <<job_name>> -w path/to/{default_filename}\n\n3. dagster job"
+        " {command_name} -f /path/to/file.py -a define_some_job\n\n4. dagster job {command_name} -m"
+        " a_module.submodule -a define_some_job\n\n5. dagster job {command_name} -f"
+        " /path/to/file.py -a define_some_repo -j <<job_name>>\n\n6. dagster job {command_name} -m"
+        " a_module.submodule -a define_some_repo -j <<job_name>>"
     ).format(command_name=command_name, default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
 
 
@@ -349,7 +349,6 @@ def get_tags_from_args(kwargs):
 
 
 def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
-
     config = cast(Tuple[str, ...], kwargs.get("config"))  # files
     config_json = kwargs.get("config_json")
 
@@ -414,8 +413,9 @@ def do_execute_command(
 
 @job_cli.command(
     name="launch",
-    help="Launch a job using the run launcher configured on the Dagster instance.\n\n{instructions}".format(
-        instructions=get_job_instructions("launch")
+    help=(
+        "Launch a job using the run launcher configured on the Dagster instance.\n\n{instructions}"
+        .format(instructions=get_job_instructions("launch"))
     ),
 )
 @job_target_argument
@@ -596,8 +596,8 @@ def _check_execute_external_pipeline_args(
         if pipeline_preset.solid_selection is not None:
             check.invariant(
                 solid_selection is None or solid_selection == pipeline_preset.solid_selection,
-                "The solid_selection set in preset '{preset}', {preset_subset}, does not agree with "
-                "the `solid_selection` argument: {solid_selection}".format(
+                "The solid_selection set in preset '{preset}', {preset_subset}, does not agree with"
+                " the `solid_selection` argument: {solid_selection}".format(
                     preset=preset,
                     preset_subset=pipeline_preset.solid_selection,
                     solid_selection=solid_selection,
@@ -806,7 +806,6 @@ def _execute_backfill_command_at_location(
     if noprompt or click.confirm(
         "Do you want to proceed with the backfill ({} partitions)?".format(len(partition_names))
     ):
-
         print_fn("Launching runs... ")
 
         backfill_id = make_new_backfill_id()

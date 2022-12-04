@@ -275,7 +275,6 @@ def _check_telemetry_instance_param(args, kwargs, instance_index):
 
 
 def _get_telemetry_logger():
-
     # If a concurrently running process deleted the logging directory since the
     # last action, we need to make sure to re-create the directory
     # (the logger does not do this itself.)

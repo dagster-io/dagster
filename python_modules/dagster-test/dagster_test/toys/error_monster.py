@@ -146,8 +146,10 @@ def str_to_num(context, string):
 
 
 @graph(
-    description="Demo graph that enables configurable types of errors thrown during job execution, "
-    "including op execution errors, type errors, and resource initialization errors."
+    description=(
+        "Demo graph that enables configurable types of errors thrown during job execution, "
+        "including op execution errors, type errors, and resource initialization errors."
+    )
 )
 def error_monster():
     start = emit_num.alias("start")()

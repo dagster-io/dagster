@@ -64,6 +64,7 @@ def my_metadata_output(context) -> Output:
 from dagster import Output, op
 from typing import Tuple
 
+
 # Using Output as type annotation without inner type
 @op
 def my_output_op() -> Output:

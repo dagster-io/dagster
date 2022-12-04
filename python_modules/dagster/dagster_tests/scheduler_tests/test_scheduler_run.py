@@ -672,7 +672,6 @@ def test_simple_schedule(instance, workspace_context, external_repo, executor):
 
     freeze_datetime = freeze_datetime.add(days=2)
     with pendulum.test(freeze_datetime):
-
         # Traveling two more days in the future before running results in two new ticks
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 3
@@ -1062,7 +1061,10 @@ def test_bad_should_execute(instance, workspace_context, external_repo, executor
             initial_datetime,
             TickStatus.FAILURE,
             [run.run_id for run in instance.get_runs()],
-            "Error occurred during the execution of should_execute for schedule bad_should_execute_schedule",
+            (
+                "Error occurred during the execution of should_execute for schedule"
+                " bad_should_execute_schedule"
+            ),
             expected_failure_count=1,
         )
 
@@ -1227,7 +1229,8 @@ def test_bad_schedules_mixed_with_good_schedule(
         assert bad_ticks[0].status == TickStatus.FAILURE
 
         assert (
-            "Error occurred during the execution of should_execute for schedule bad_should_execute_schedule"
+            "Error occurred during the execution of should_execute for schedule"
+            " bad_should_execute_schedule"
             in bad_ticks[0].error.message
         )
 
@@ -1347,7 +1350,8 @@ def test_bad_load_repository(instance, workspace_context, external_repo, caplog,
         assert len(ticks) == 0
 
         assert (
-            "Could not find repository invalid_repo_name in location test_location to run schedule simple_schedule"
+            "Could not find repository invalid_repo_name in location test_location to run schedule"
+            " simple_schedule"
             in caplog.text
         )
 
@@ -1473,7 +1477,8 @@ def test_load_repository_location_not_in_workspace(
         assert len(ticks) == 0
 
         assert (
-            "Schedule simple_schedule was started from a location missing_location that can no longer be found in the workspace"
+            "Schedule simple_schedule was started from a location missing_location that can no"
+            " longer be found in the workspace"
             in caplog.text
         )
 
@@ -1831,7 +1836,6 @@ def test_multi_runs(instance, workspace_context, external_repo, executor):
 
     freeze_datetime = freeze_datetime.add(days=1)
     with pendulum.test(freeze_datetime):
-
         # Traveling one more day in the future before running results in a tick
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 4
@@ -1902,7 +1906,6 @@ def test_multi_run_list(instance, workspace_context, external_repo, executor):
 
     freeze_datetime = freeze_datetime.add(days=1)
     with pendulum.test(freeze_datetime):
-
         # Traveling one more day in the future before running results in a tick
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 4
@@ -1935,8 +1938,10 @@ def test_multi_runs_missing_run_key(instance, workspace_context, external_repo, 
             freeze_datetime,
             TickStatus.FAILURE,
             [],
-            "Error occurred during the execution function for schedule "
-            "multi_run_schedule_with_missing_run_key",
+            (
+                "Error occurred during the execution function for schedule "
+                "multi_run_schedule_with_missing_run_key"
+            ),
             expected_failure_count=1,
         )
 
@@ -2062,7 +2067,10 @@ def test_grpc_server_down(instance, executor):
                 initial_datetime,
                 TickStatus.FAILURE,
                 [],
-                "Unable to reach the user code server for schedule simple_schedule. Schedule will resume execution once the server is available.",
+                (
+                    "Unable to reach the user code server for schedule simple_schedule. Schedule"
+                    " will resume execution once the server is available."
+                ),
                 expected_failure_count=0,
             )
 
@@ -2329,7 +2337,6 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
         workspace_load_target=workspace_load_target(attribute=None),  # load all repos
         instance=instance,
     ) as full_workspace_context:
-
         with pendulum.test(freeze_datetime):
             full_location = next(
                 iter(

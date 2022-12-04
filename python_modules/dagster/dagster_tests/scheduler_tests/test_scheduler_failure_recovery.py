@@ -195,7 +195,6 @@ def test_failure_recovery_after_run_created(
 
     frozen_datetime = frozen_datetime.add(minutes=5)
     with pendulum.test(frozen_datetime):
-
         # Running again just launches the existing run and marks the tick as success
         scheduler_process = spawn_ctx.Process(
             target=_test_launch_scheduled_runs_in_subprocess,

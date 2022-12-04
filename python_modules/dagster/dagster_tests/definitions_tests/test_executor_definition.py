@@ -190,7 +190,6 @@ def configured_executor_job():
 
 
 def test_in_process_executor_dict_config_configured():
-
     with instance_for_test() as instance:
         assert execute_job(reconstructable(configured_executor_job), instance=instance).success
 
@@ -206,9 +205,7 @@ def multiproc_test():
 
 
 def test_multiproc():
-
     with instance_for_test() as instance:
-
         result = execute_job(
             reconstructable(multiproc_test),
             run_config={
@@ -239,7 +236,6 @@ def one_but_needs_config():
 
 
 def test_defaulting_behavior():
-
     with instance_for_test() as instance:
         with pytest.raises(DagsterInvalidConfigError):
             execute_job(reconstructable(one_but_needs_config), instance=instance)
@@ -257,7 +253,6 @@ def job_executor_failing():
 
 def test_failing_executor_initialization():
     with instance_for_test() as instance:
-
         result = execute_job(
             reconstructable(job_executor_failing), instance=instance, raise_on_error=False
         )
@@ -271,7 +266,6 @@ def test_failing_executor_initialization():
 
 
 def test_multiprocess_executor_default():
-
     executor = MultiprocessExecutor(
         max_concurrent=2,
         retries=RetryMode.DISABLED,

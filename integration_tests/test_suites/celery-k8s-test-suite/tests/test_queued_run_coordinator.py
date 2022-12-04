@@ -24,7 +24,6 @@ def get_celery_engine_config(dagster_docker_image, job_namespace):
 
 
 def assert_events_in_order(logs, expected_events):
-
     logged_events = [log.dagster_event.event_type_value for log in logs if log.is_dagster_event]
     filtered_logged_events = [event for event in logged_events if event in expected_events]
 

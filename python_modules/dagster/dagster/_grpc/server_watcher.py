@@ -20,7 +20,6 @@ def watch_grpc_server_thread(
     watch_interval=None,
     max_reconnect_attempts=None,
 ):
-
     """
     This thread watches the state of the unmanaged gRPC server and calls the appropriate handler
     functions in case of a change.

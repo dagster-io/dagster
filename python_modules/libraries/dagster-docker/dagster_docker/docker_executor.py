@@ -265,7 +265,8 @@ class DockerStepHandler(StepHandler):
             container_info = container.wait(timeout=0.1)
         except Exception as e:
             raise Exception(
-                f"Container status is {container.status}. Raised exception attempting to get its return code."
+                f"Container status is {container.status}. Raised exception attempting to get its"
+                " return code."
             ) from e
 
         ret_code = container_info.get("StatusCode")

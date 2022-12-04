@@ -43,7 +43,8 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
 
         conn.execute(f"create schema if not exists {table_slice.schema};")
         conn.execute(
-            f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from pd_df;"
+            f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
+            " pd_df;"
         )
         if not conn.fetchall():
             # table was not created, therefore already exists. Insert the data

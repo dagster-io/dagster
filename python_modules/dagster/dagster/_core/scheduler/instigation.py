@@ -115,7 +115,8 @@ def check_instigator_data(
         check.opt_inst_param(instigator_data, "instigator_data", SensorInstigatorData)
     else:
         check.failed(
-            f"Unexpected instigator type {instigator_type}, expected one of InstigatorType.SENSOR, InstigatorType.SCHEDULE"
+            f"Unexpected instigator type {instigator_type}, expected one of InstigatorType.SENSOR,"
+            " InstigatorType.SCHEDULE"
         )
 
     return instigator_data

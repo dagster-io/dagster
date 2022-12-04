@@ -156,7 +156,6 @@ def test_reexecute_job_with_step_selection_single_clause():
                 instance=instance,
                 reexecution_options=ReexecutionOptions(parent_run_id=pipeline_result_full.run_id),
             ) as reexecution_result_full:
-
                 assert reexecution_result_full.success
                 assert len(reexecution_result_full.get_step_success_events()) == 5
                 assert reexecution_result_full.output_for_node("add_one") == 7
@@ -169,7 +168,6 @@ def test_reexecute_job_with_step_selection_single_clause():
                     step_selection=["*add_nums"],
                 ),
             ) as reexecution_result_up:
-
                 assert reexecution_result_up.success
                 assert reexecution_result_up.output_for_node("add_nums") == 3
 

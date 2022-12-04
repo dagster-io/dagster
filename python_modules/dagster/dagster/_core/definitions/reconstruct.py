@@ -642,10 +642,8 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
         ),
     ):
         raise DagsterInvariantViolationError(
-            (
-                "Loadable attributes must be either a JobDefinition, GraphDefinition, "
-                f"PipelineDefinition, AssetGroup, or RepositoryDefinition. Got {repr(definition)}."
-            )
+            "Loadable attributes must be either a JobDefinition, GraphDefinition, "
+            f"PipelineDefinition, AssetGroup, or RepositoryDefinition. Got {repr(definition)}."
         )
     return definition  # type: ignore
 
@@ -716,8 +714,8 @@ def pipeline_def_from_pointer(pointer: CodePointer) -> "PipelineDefinition":
         return target
 
     raise DagsterInvariantViolationError(
-        "CodePointer ({str}) must resolve to a JobDefinition (or PipelineDefinition for legacy code). "
-        "Received a {type}".format(str=pointer.describe(), type=type(target))
+        "CodePointer ({str}) must resolve to a JobDefinition (or PipelineDefinition for legacy"
+        " code). Received a {type}".format(str=pointer.describe(), type=type(target))
     )
 
 

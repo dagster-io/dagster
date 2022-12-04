@@ -165,7 +165,8 @@ def test_live_redshift(s3_bucket):
         def error_callback(error, cursor, _log):
             assert (
                 str(error).strip()
-                == "Load into table 'venue1' failed.  Check 'stl_load_errors' system table for details."
+                == "Load into table 'venue1' failed.  Check 'stl_load_errors' system table for"
+                " details."
             )
             cursor.execute(REDSHIFT_FAILED_LOAD_QUERY)
             res = cursor.fetchall()

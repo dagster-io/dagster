@@ -10,7 +10,6 @@ default_args = {"start_date": days_ago(1)}
 with models.DAG(
     dag_id="kubernetes_dag", default_args=default_args, schedule_interval=None
 ) as kubernetes_dag:
-
     run_this_last = DummyOperator(
         task_id="sink_task_1",
         dag=kubernetes_dag,

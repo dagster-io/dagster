@@ -98,7 +98,10 @@ def execute_run_iterator(
                 # the run monitoring daemon will also spin up a new pod
                 def gen_ignore_duplicate_run_worker():
                     yield instance.report_engine_event(
-                        "Ignoring a duplicate run that was started from somewhere other than the run monitor daemon",
+                        (
+                            "Ignoring a duplicate run that was started from somewhere other than"
+                            " the run monitor daemon"
+                        ),
                         pipeline_run,
                     )
 
@@ -116,10 +119,12 @@ def execute_run_iterator(
 
                 def gen_fail_restarted_run_worker():
                     yield instance.report_engine_event(
-                        f"{pipeline_run.pipeline_name} ({pipeline_run.run_id}) started "
-                        f"a new run worker while the run was already in state {pipeline_run.status}. "
-                        "This most frequently happens when the run worker unexpectedly stops and is "
-                        "restarted by the cluster. Marking the run as failed.",
+                        (
+                            f"{pipeline_run.pipeline_name} ({pipeline_run.run_id}) started a new"
+                            f" run worker while the run was already in state {pipeline_run.status}."
+                            " This most frequently happens when the run worker unexpectedly stops"
+                            " and is restarted by the cluster. Marking the run as failed."
+                        ),
                         pipeline_run,
                     )
                     yield instance.report_run_failed(pipeline_run)
@@ -130,9 +135,11 @@ def execute_run_iterator(
         check.invariant(
             pipeline_run.status == DagsterRunStatus.STARTED
             or pipeline_run.status == DagsterRunStatus.STARTING,
-            desc="Run of {} ({}) in state {}, expected STARTED or STARTING because it's "
-            "resuming from a run worker failure".format(
-                pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
+            desc=(
+                "Run of {} ({}) in state {}, expected STARTED or STARTING because it's "
+                "resuming from a run worker failure".format(
+                    pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
+                )
             ),
         )
 
@@ -141,8 +148,8 @@ def execute_run_iterator(
         if isinstance(pipeline_def, PipelineSubsetDefinition):
             check.invariant(
                 pipeline_run.solids_to_execute == pipeline.solids_to_execute,
-                "Cannot execute DagsterRun with solids_to_execute {solids_to_execute} that conflicts "
-                "with pipeline subset {pipeline_solids_to_execute}.".format(
+                "Cannot execute DagsterRun with solids_to_execute {solids_to_execute} that"
+                " conflicts with pipeline subset {pipeline_solids_to_execute}.".format(
                     pipeline_solids_to_execute=str_format_set(pipeline.solids_to_execute),
                     solids_to_execute=str_format_set(pipeline_run.solids_to_execute),
                 ),
@@ -204,15 +211,19 @@ def execute_run(
     """
     if isinstance(pipeline, PipelineDefinition):
         if isinstance(pipeline, JobDefinition):
-            error = "execute_run requires a reconstructable job but received job definition directly instead."
+            error = (
+                "execute_run requires a reconstructable job but received job definition directly"
+                " instead."
+            )
         else:
             error = (
                 "execute_run requires a reconstructable pipeline but received pipeline definition "
                 "directly instead."
             )
         raise DagsterInvariantViolationError(
-            f"{error} To support hand-off to other processes please wrap your definition in "
-            "a call to reconstructable(). Learn more about reconstructable here: https://docs.dagster.io/_apidocs/execution#dagster.reconstructable"
+            f"{error} To support hand-off to other processes please wrap your definition in a call"
+            " to reconstructable(). Learn more about reconstructable here:"
+            " https://docs.dagster.io/_apidocs/execution#dagster.reconstructable"
         )
 
     check.inst_param(pipeline, "pipeline", IPipeline)
@@ -985,7 +996,6 @@ def _check_pipeline(pipeline: Union[PipelineDefinition, IPipeline]) -> IPipeline
 def _get_execution_plan_from_run(
     pipeline: IPipeline, pipeline_run: DagsterRun, instance: DagsterInstance
 ) -> ExecutionPlan:
-
     execution_plan_snapshot = None
     if (
         pipeline.solids_to_execute is None
@@ -1029,7 +1039,6 @@ def create_execution_plan(
     tags: Optional[Mapping[str, str]] = None,
     repository_load_data: Optional[RepositoryLoadData] = None,
 ) -> ExecutionPlan:
-
     pipeline = _check_pipeline(pipeline)
 
     # If you have repository_load_data, make sure to use it when building plan
@@ -1118,21 +1127,28 @@ def pipeline_execution_iterator(
                 # a cancellation request
                 event = DagsterEvent.engine_event(
                     pipeline_context,
-                    "Computational resources were cleaned up after the run was forcibly marked as canceled.",
+                    (
+                        "Computational resources were cleaned up after the run was forcibly marked"
+                        " as canceled."
+                    ),
                     EngineEventData(),
                 )
             elif pipeline_context.instance.run_will_resume(pipeline_context.run_id):
                 event = DagsterEvent.engine_event(
                     pipeline_context,
-                    "Execution was interrupted unexpectedly. "
-                    "No user initiated termination request was found, not treating as failure because run will be resumed.",
+                    (
+                        "Execution was interrupted unexpectedly. No user initiated termination"
+                        " request was found, not treating as failure because run will be resumed."
+                    ),
                     EngineEventData(),
                 )
             else:
                 event = DagsterEvent.pipeline_failure(
                     pipeline_context,
-                    "Execution was interrupted unexpectedly. "
-                    "No user initiated termination request was found, treating as failure.",
+                    (
+                        "Execution was interrupted unexpectedly. "
+                        "No user initiated termination request was found, treating as failure."
+                    ),
                     pipeline_canceled_info,
                 )
         elif pipeline_exception_info:
@@ -1250,8 +1266,8 @@ def _check_execute_pipeline_args(
         if pipeline_preset.solid_selection is not None:
             check.invariant(
                 solid_selection is None or solid_selection == pipeline_preset.solid_selection,
-                "The solid_selection set in preset '{preset}', {preset_subset}, does not agree with "
-                "the `solid_selection` argument: {solid_selection}".format(
+                "The solid_selection set in preset '{preset}', {preset_subset}, does not agree with"
+                " the `solid_selection` argument: {solid_selection}".format(
                     preset=preset,
                     preset_subset=pipeline_preset.solid_selection,
                     solid_selection=solid_selection,

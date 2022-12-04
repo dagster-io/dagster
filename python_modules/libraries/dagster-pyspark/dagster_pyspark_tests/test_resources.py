@@ -87,7 +87,6 @@ def test_multiproc_preload():
     # don't have defenses in place.
 
     with instance_for_test() as instance:
-
         # "smart" module preload
         result = execute_pipeline(reconstructable(multiproc_job), instance=instance)
         assert result.success

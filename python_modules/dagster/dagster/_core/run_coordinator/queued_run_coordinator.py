@@ -61,7 +61,10 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         )
         check.invariant(
             self._max_concurrent_runs >= -1,
-            "Negative values other than -1 (which disables the limit) for max_concurrent_runs are disallowed.",
+            (
+                "Negative values other than -1 (which disables the limit) for max_concurrent_runs"
+                " are disallowed."
+            ),
         )
         self._tag_concurrency_limits = check.opt_list_param(
             tag_concurrency_limits,
@@ -113,9 +116,11 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             "max_concurrent_runs": Field(
                 config=IntSource,
                 is_required=False,
-                description="The maximum number of runs that are allowed to be in progress at once. "
-                "Defaults to 10. Set to -1 to disable the limit. Set to 0 to stop any runs from launching. "
-                "Any other negative values are disallowed.",
+                description=(
+                    "The maximum number of runs that are allowed to be in progress at once."
+                    " Defaults to 10. Set to -1 to disable the limit. Set to 0 to stop any runs"
+                    " from launching. Any other negative values are disallowed."
+                ),
             ),
             "tag_concurrency_limits": Field(
                 config=Noneable(
@@ -136,27 +141,35 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
                     )
                 ),
                 is_required=False,
-                description="A set of limits that are applied to runs with particular tags. "
-                "If a value is set, the limit is applied to only that key-value pair. "
-                "If no value is set, the limit is applied across all values of that key. "
-                "If the value is set to a dict with `applyLimitPerUniqueValue: true`, the limit "
-                "will apply to the number of unique values for that key.",
+                description=(
+                    "A set of limits that are applied to runs with particular tags. If a value is"
+                    " set, the limit is applied to only that key-value pair. If no value is set,"
+                    " the limit is applied across all values of that key. If the value is set to a"
+                    " dict with `applyLimitPerUniqueValue: true`, the limit will apply to the"
+                    " number of unique values for that key."
+                ),
             ),
             "dequeue_interval_seconds": Field(
                 config=IntSource,
                 is_required=False,
-                description="The interval in seconds at which the Dagster Daemon "
-                "should periodically check the run queue for new runs to launch.",
+                description=(
+                    "The interval in seconds at which the Dagster Daemon "
+                    "should periodically check the run queue for new runs to launch."
+                ),
             ),
             "dequeue_use_threads": Field(
                 config=bool,
                 is_required=False,
-                description="Whether or not to use threads for concurrency when launching dequeued runs.",
+                description=(
+                    "Whether or not to use threads for concurrency when launching dequeued runs."
+                ),
             ),
             "dequeue_num_workers": Field(
                 config=IntSource,
                 is_required=False,
-                description="If dequeue_use_threads is true, limit the number of concurrent worker threads.",
+                description=(
+                    "If dequeue_use_threads is true, limit the number of concurrent worker threads."
+                ),
             ),
             "max_user_code_failure_retries": Field(
                 config=IntSource,

@@ -207,7 +207,6 @@ def dagster_airflow_docker_operator_pipeline():
         op_kwargs["network_mode"] = "container:test-postgres-db-airflow"
 
         with postgres_instance() as instance:
-
             dag, tasks = make_airflow_dag_containerized_for_recon_repo(
                 recon_repo=recon_repo,
                 job_name=pipeline_name,

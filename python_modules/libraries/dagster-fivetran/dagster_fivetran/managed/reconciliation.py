@@ -93,7 +93,6 @@ def reconcile_connectors(
     should_delete: bool,
     ignore_secrets: bool,
 ) -> ManagedElementCheckResult:
-
     diff = ManagedElementDiff()
 
     for connector_name in set(config_connectors.keys()).union(existing_connectors.keys()):
@@ -222,7 +221,6 @@ def reconcile_destinations(
             existing_destination = None
 
         if configured_destination:
-
             base_destination_dict = {
                 "region": configured_destination.region,
                 "time_zone_offset": configured_destination.time_zone_offset,
