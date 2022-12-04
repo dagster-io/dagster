@@ -61,8 +61,8 @@ sys.meta_path.insert(
 #     ### some_user_code.py
 #     # from dagster import BAR  # linter error even though `BAR` is in `dagster.__all__`!
 #
-# We could get around this by always remembering to use the `from .foo import X as X` form in containers, but
-# it is simpler to just import directly from the defining module.
+# We could get around this by always remembering to use the `from .foo import X as X` form in
+# containers, but it is simpler to just import directly from the defining module.
 
 # Turn off isort here so that we keep nice one-import-per-line formatting
 # isort: off
@@ -582,9 +582,12 @@ from dagster._utils.dagster_type import (
     check_dagster_type as check_dagster_type,
 )
 
+from dagster.version import (
+    __version__ as __version__,
+)
+
 # isort: on
 
-from dagster.version import __version__
 
 # ########################
 # ##### DYNAMIC IMPORTS
@@ -606,11 +609,16 @@ from dagster._utils.backcompat import deprecation_warning, rename_warning
 # in `_DEPRECATED` is required  for us to generate the deprecation warning.
 
 if TYPE_CHECKING:
-    # pylint:disable=reimported
-    from dagster._core.execution.context.system import DagsterTypeMaterializerContext
-    from dagster._core.types.config_schema import DagsterTypeMaterializer, dagster_type_materializer
+    # isort: off
+    from dagster._core.execution.context.system import (
+        DagsterTypeMaterializerContext as DagsterTypeMaterializerContext,
+    )
+    from dagster._core.types.config_schema import (
+        DagsterTypeMaterializer as DagsterTypeMaterializer,
+        dagster_type_materializer as dagster_type_materializer,
+    )
+    # isort: on
 
-    # pylint:enable=reimported
 
 _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
     "dagster_type_materializer": (

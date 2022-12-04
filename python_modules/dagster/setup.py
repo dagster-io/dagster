@@ -20,7 +20,7 @@ def get_description() -> str:
 def get_version() -> str:
     version: Dict[str, str] = {}
     with open(Path(__file__).parent / "dagster/version.py", encoding="utf8") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
+        exec(fp.read(), version)
 
     return version["__version__"]
 
@@ -119,14 +119,9 @@ setup(
             "snapshottest==0.6.0",
             "tox==3.25.0",
             "yamllint",
-            "astroid",  # let pylint determine the version
-            "pylint==2.13.7",
         ],
         "black": [
             "black[jupyter]==22.12.0",
-        ],
-        "isort": [
-            "isort==5.10.1",
         ],
         "mypy": [
             "mypy==0.991",
@@ -149,6 +144,9 @@ setup(
             "types-tabulate",  # version will be resolved against tabulate
             "types-tzlocal",  # version will be resolved against tzlocal
             "types-toml",  # version will be resolved against toml
+        ],
+        "ruff": [
+            "ruff==0.0.212",
         ],
     },
     entry_points={
