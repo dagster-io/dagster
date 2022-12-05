@@ -129,7 +129,7 @@ class ConfigurableDocumenter(DataDocumenter):
 
     def add_content(self, more_content) -> None:
         source_name = self.get_sourcename()
-        if "dagster_snowflake_pandas" in source_name:
+        if "dagster_snowflake" in source_name:
             print("SOURCE NAME")
             print(source_name)
             print("MORE CONTENT")
