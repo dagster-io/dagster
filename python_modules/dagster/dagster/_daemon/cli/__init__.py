@@ -95,7 +95,7 @@ def debug_heartbeat_dump_command():
     commands={"heartbeat": debug_heartbeat_command, "heartbeat-dump": debug_heartbeat_dump_command}
 )
 def debug_group():
-    "Daemon debugging utils"
+    """Daemon debugging utils"""
 
 
 def create_dagster_daemon_cli():
@@ -109,7 +109,7 @@ def create_dagster_daemon_cli():
     @click.group(commands=commands)
     @click.version_option(version=dagster_version)
     def group():
-        "CLI tools for working with the dagster daemon process."
+        """CLI tools for working with the dagster daemon process."""
 
     return group
 

@@ -31,7 +31,7 @@ def create_dagster_cli():
     )
     @click.version_option(__version__, "--version", "-v")
     def group():
-        "CLI tools for working with Dagster."
+        """CLI tools for working with Dagster."""
 
     return group
 
