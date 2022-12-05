@@ -461,7 +461,7 @@ def make_dagster_pipeline_from_airflow_dag(
 
     pipeline_dependencies, solid_defs = _get_pipeline_definition_args(
         dag=dag,
-        use_airflow_template_contex=use_airflow_template_context,
+        use_airflow_template_context=use_airflow_template_context,
         unique_id=unique_id,
         mock_xcom=mock_xcom,
         use_ephemeral_airflow_db=use_ephemeral_airflow_db,
