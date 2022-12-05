@@ -43,7 +43,7 @@ def get_test_namespace(prefix="dagster-test"):
 
 
 def within_docker():
-    """detect if we're running inside of a docker container
+    """Detect if we're running inside of a docker container.
 
     from: https://stackoverflow.com/a/48710609/11295366
     """

@@ -127,7 +127,7 @@ def generate_asset_dep_graph(
 
 
 def generate_dep_graph(pipeline_def: "PipelineDefinition") -> DependencyGraph:
-    """'pipeline to dependency graph. It currently only supports top-level solids.
+    """Pipeline to dependency graph. It currently only supports top-level solids.
 
     Args:
         pipeline (PipelineDefinition): The pipeline to execute.

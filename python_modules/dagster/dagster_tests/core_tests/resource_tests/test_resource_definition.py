@@ -775,7 +775,7 @@ def test_solid_failure_resource_teardown():
 
 
 def test_solid_failure_resource_teardown_raise():
-    """test that teardown is invoked in resources for tests that raise_on_error"""
+    """Test that teardown is invoked in resources for tests that raise_on_error."""
     called = []
     cleaned = []
 

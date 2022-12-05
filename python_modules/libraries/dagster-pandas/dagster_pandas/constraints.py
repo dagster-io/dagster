@@ -152,7 +152,7 @@ class ConstraintWithMetadata:
     """
     This class defines a base constraint over pandas DFs with organized metadata
 
-    args:
+    Args:
         description (str): description of the constraint
         validation_fn (Callable[[DataFrame], Tuple[bool, dict[str, Union[dict,list, str, set]]]]:
                     the validation function to run over inputted data
@@ -217,7 +217,7 @@ class MultiConstraintWithMetadata(ConstraintWithMetadata):
     """
     Use this class if you have multiple constraints to check over the entire dataframe
 
-    args:
+    Args:
         description (str): description of the constraint
         validation_fn_arr(List[Callable[[DataFrame], Tuple[bool, dict[str, Union[dict,list, str, set]]]]]):
                     a list of the validation functions to run over inputted data
@@ -407,7 +407,7 @@ def apply_ignore_missing_data_to_mask(mask, column):
 class ColumnAggregateConstraintWithMetadata(ConstraintWithMetadata):
     """
     Similar to the base class, but now your validation functions should take in columns (pd.Series) not Dataframes.
-    args:
+    Args:
         description (str): description of the constraint
         validation_fn (Callable[[pd.Series], Tuple[bool, dict[str, Union[dict,list, str, set]]]]:
                     the validation function to run over inputted data
@@ -461,7 +461,7 @@ class ColumnConstraintWithMetadata(ConstraintWithMetadata):
     you want to apply to multiple columns of your dataframe
     The main difference from the base class in terms of construction is that now, your validation_fns should operate on
     individual values.
-    args:
+    Args:
         description (str): description of the constraint
         validation_fn (Callable[[Any], Tuple[bool, dict[str, Union[dict,list, str, set]]]]:
                     the validation function to run over inputted data
