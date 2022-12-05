@@ -4,10 +4,10 @@ This directory contains the code for the Dagster documentation site at https://d
 
 ```
 # only run the first time, to set up the site's environment
-$ make next-dev-install  
+$ make next-dev-install
 
 # runs development server on localhost:3001, watching mdx in `content` dir and site code in `next`
-$ make next-watch-build  
+$ make next-watch-build
 ```
 
 The content for the site is of several types and stored in several places:
@@ -34,7 +34,7 @@ See the subsections below for details.
 
 The set of React components available to our MDX files is defined in `next/components/mdx/MDXComponents.tsx`. Note that the various other compenents defined in `next/components` _are not available to MDX_; if you want to use a component in MDX, it must be exported from `MDXComponents.tsx`.
 
-MDX doesn't support imports, so components aren't imported into the MDX file in which they are used. Instead, the full set of `MDXComponents` components is injected into the build environment when the MDX is rendered to HTML (this happens in `next/pages/[...page].js`). 
+MDX doesn't support imports, so components aren't imported into the MDX file in which they are used. Instead, the full set of `MDXComponents` components is injected into the build environment when the MDX is rendered to HTML (this happens in `next/pages/[...page].js`).
 
 You should browse `MDXComponents.tsx` to get a sense of what's available, but
 the most commonly used component is the `<PyObject />` component. It is used to
@@ -83,7 +83,7 @@ The above points to a section of `examples/docs_snippets/docs_snippets/some/file
     # an_end_marker
     ... code
 
-Note that by default, extra whitespace between the ends of your snippet and the markers will be removed before injection into the MDX code block. You can pass the additional property `trim=false` to preserve the whitespace. You can also pass `dedent=<number of spaces>` to trim a leading number of spaces from each line in the snippet-- this is useful when you want to show e.g. an isolated method (indented in a class body) as a snippet. 
+Note that by default, extra whitespace between the ends of your snippet and the markers will be removed before injection into the MDX code block. You can pass the additional property `trim=false` to preserve the whitespace. You can also pass `dedent=<number of spaces>` to trim a leading number of spaces from each line in the snippet-- this is useful when you want to show e.g. an isolated method (indented in a class body) as a snippet.
 
 Running `make mdx-format` will inject referenced snippets into your code blocks. This will process _all_ MDX files in `content` and overwrite any existing body of any code block with a snippet reference. So be careful not to iterate on your code blocks inline in MDX-- always edit them in `docs_snippets`.
 
@@ -130,3 +130,41 @@ Most of the site's images are screenshots of Dagit. There is a semi-automated sy
 ## Navigation schema
 
 If you are adding a new prose page or want to update the navigation in the sidebar, update the `docs/content/_navigation.json` file. The structure is self-explanatory when looking at the sidebar.
+
+## Troubleshooting
+
+### Problem: ModuleNotFoundError: No module named 'X'
+
+Example stack trace:
+
+```
+dagster/docs $ make apidoc-build
+...
+
+/Users/jamie/dev/dagster/docs/sphinx/sections/api/apidocs/cli.rst:60: ERROR: Failed to import "grpc_command" from "dagster._cli.api". The following exception was raised:
+Traceback (most recent call last):
+File "/Users/jamie/dev/dagster/docs/.tox/sphinx/lib/python3.9/site-packages/sphinx_click/ext.py", line 403, in _load_module
+    mod = __import__(module_name, globals(), locals(), [attr_name])
+File "/Users/jamie/dev/dagster/python_modules/dagster/dagster/_cli/__init__.py", line 8, in <module>
+    from .api import api_cli
+File "/Users/jamie/dev/dagster/python_modules/dagster/dagster/_cli/api.py", line 14, in <module>
+    from dagster._cli.workspace.cli_target import (
+File "/Users/jamie/dev/dagster/python_modules/dagster/dagster/_cli/workspace/__init__.py", line 1, in <module>
+    from .cli_target import get_workspace_process_context_from_kwargs, workspace_target_argument
+File "/Users/jamie/dev/dagster/python_modules/dagster/dagster/_cli/workspace/cli_target.py", line 7, in <module>
+    import tomli
+ModuleNotFoundError: No module named 'tomli'
+```
+
+Solution:
+
+You likely need to rebuild your tox environment. To do this, run
+```
+dagster/docs $ tox -r
+```
+to rebuild the environment for every tox command, or run
+```
+dagster/docs $ tox -re sphinx
+```
+
+to rebuild and run just the sphinx command
