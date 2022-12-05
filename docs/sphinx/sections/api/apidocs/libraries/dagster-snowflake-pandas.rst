@@ -8,6 +8,10 @@ To use this library, you should first ensure that you have an appropriate `Snowf
 <https://docs.snowflake.net/manuals/user-guide/admin-user-management.html>`_ configured to access
 your data warehouse.
 
+Related Guides:
+
+* `Using Dagster with Snowflake guide </integrations/snowflake>`_
+
 
 .. currentmodule:: dagster_snowflake_pandas
 
