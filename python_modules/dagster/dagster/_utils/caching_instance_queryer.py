@@ -119,14 +119,27 @@ class CachingInstanceQueryer:
         )
         return next(iter(records), None)
 
-    @cached_method
-    def get_expected_runtime(self, asset_key: AssetKey) -> Optional[float]:
+    def get_expected_execution_time(self, asset_key: AssetKey) -> Optional[datetime.timedelta]:
+        """A rough estimate for how long we expect the execution of a given asset to take. If no
+        estimate can be reliably made, return None.
+        """
         latest_record = self.get_latest_materialization_record(asset_key)
         # this asset has never been executed before
         if latest_record is None:
             return None
+        # this is a graph-backed asset, which we don't currently support
+        if "." in latest_record.event_log_entry.step_key:
+            return None
 
-        pass
+        step_stats = self._instance.get_run_step_stats(
+            run_id=latest_record.event_log_entry.run_id,
+            step_keys=[latest_record.event_log_entry.step_key],
+        )[0]
+
+        execution_start_timestamp = datetime.datetime.fromtimestamp(step_stats.start_time)
+        execution_end_timestamp = datetime.datetime.fromtimestamp(step_stats.end_time)
+
+        return execution_end_timestamp - execution_start_timestamp
 
     def get_latest_materialization_record(
         self,

@@ -15,6 +15,27 @@ class FreshnessConstraint(NamedTuple):
     asset_key: AssetKey
     required_data_time: datetime.datetime
     required_by_time: datetime.datetime
+    expected_execution_time_known: bool = True
+
+    def for_upstream(
+        self, expected_execution_time: Optional[datetime.timedelta]
+    ) -> "FreshnessConstraint":
+        if self.expected_execution_time_known and expected_execution_time is not None:
+            # if you know how long you expect it to take to execute this step, then the upstream will
+            # require its data to be available
+            upstream_required_by_time = self.required_by_time - expected_execution_time
+            upstream_expected_execution_time_known = True
+        else:
+            # otherwise, make no guess as to how long this execution will take, but indicate to the
+            # scheduler that there are steps with unknown execution times along this path
+            upstream_required_by_time = self.required_by_time
+            upstream_expected_execution_time_known = False
+        return FreshnessConstraint(
+            asset_key=self.asset_key,
+            required_data_time=self.required_data_time,
+            required_by_time=upstream_required_by_time,
+            expected_execution_time_known=upstream_expected_execution_time_known,
+        )
 
 
 @experimental

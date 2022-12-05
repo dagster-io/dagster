@@ -449,11 +449,17 @@ def get_freshness_constraints_by_key(
     # upstream of another asset.
     for level in reversed(asset_graph.toposort_asset_keys()):
         for key in level:
+            expected_execution_time = instance_queryer.get_expected_execution_time(key)
             if key in asset_graph.source_asset_keys:
                 continue
+            # calculate constraints based on how long this step is expected to take
+            parent_constraints = {
+                constraint.for_upstream(expected_execution_time)
+                for constraint in constraints_by_key[key]
+            }
             for upstream_key in asset_graph.get_parents(key):
                 # pass along all of your constraints to your parents
-                constraints_by_key[upstream_key] |= constraints_by_key[key]
+                constraints_by_key[upstream_key] |= parent_constraints
     return constraints_by_key
 
 
@@ -515,7 +521,7 @@ def get_execution_time_window_for_constraints(
     current_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     asset_key: AssetKey,
-) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
+) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime], bool]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
     """
@@ -528,6 +534,7 @@ def get_execution_time_window_for_constraints(
 
     execution_window_start = None
     execution_window_end = None
+    expected_execution_time_known = True
     for constraint in sorted(constraints, key=lambda c: c.required_by_time):
         current_data_time = current_data_times.get(constraint.asset_key)
         expected_data_time = expected_data_times.get(constraint.asset_key)
@@ -562,7 +569,8 @@ def get_execution_time_window_for_constraints(
                     execution_window_end,
                     constraint.required_by_time,
                 )
-    return execution_window_start, execution_window_end
+                expected_execution_time_known &= constraint.expected_execution_time_known
+    return execution_window_start, execution_window_end, expected_execution_time_known
 
 
 def determine_asset_partitions_to_reconcile_for_freshness(
@@ -628,11 +636,9 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 instance_queryer, asset_graph, relevant_upstream_keys, key
             )
 
+            # if a key is not in target_asset_keys, we can't execute it
             if key not in target_asset_keys:
-                # cannot execute this asset, so if something consumes it, it should expect to
-                # recieve the current contents of the asset
-                execution_window_start = None
-                expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]] = {}
+                target_execution_time = None
             else:
                 # figure out the data times you'd expect for this key if you were to run it
                 expected_data_times = get_expected_data_times_for_key(
@@ -645,7 +651,8 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 # number of constraints
                 (
                     execution_window_start,
-                    _execution_window_end,
+                    execution_window_end,
+                    expected_execution_time_known,
                 ) = get_execution_time_window_for_constraints(
                     instance_queryer,
                     constraints,
@@ -655,8 +662,20 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                     key,
                 )
 
-            # this key should be updated on this tick, as we are within the allowable window
-            if execution_window_start is not None and execution_window_start <= current_time:
+                if execution_window_start is None or execution_window_end is None:
+                    target_execution_time = None
+                # if the expected execution time is known for this and all downstream assets, we
+                # can be confident in executing this asset close to the end of the time window,
+                # as the time window will take into account how long we expect execution to take
+                elif expected_execution_time_known:
+                    execution_window_length = execution_window_end - execution_window_start
+                    target_execution_time = execution_window_end - (execution_window_length * 0.1)
+                # otherwise, we choose to execute at the beginning of the time window in order to
+                # maximize likelihood of meeting the constraint
+                else:
+                    target_execution_time = execution_window_start
+
+            if target_execution_time is not None and current_time >= target_execution_time:
                 to_materialize.add(AssetKeyPartitionKey(key, None))
                 expected_data_times_by_key[key] = expected_data_times
             else:
