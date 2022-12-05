@@ -4,7 +4,10 @@ Snowflake (dagster-snowflake)
 This library provides an integration with the `Snowflake <https://www.snowflake.com/>`_ data
 warehouse.
 
-`Using Dagster with Snowflake guide </integrations/snowflake>`_.
+Related Guides:
+* `Using Dagster with Snowflake </integrations/snowflake>`_
+* `Transitioning Data Pipelines from Development to Production </guides/dagster/transitioning-data-pipelines-from-development-to-production>`
+* `Testing Against Production with Dagster Cloud Branch Deployments <guides/dagster/branch_deployments>`
 
 To use this library, you should first ensure that you have an appropriate `Snowflake user
 <https://docs.snowflake.net/manuals/user-guide/admin-user-management.html>`_ configured to access
