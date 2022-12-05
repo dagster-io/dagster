@@ -156,9 +156,11 @@ File "/Users/jamie/dev/dagster/python_modules/dagster/dagster/_cli/workspace/cli
 ModuleNotFoundError: No module named 'tomli'
 ```
 
+This error would occur after a new library has been added as a dependency in a dagster package. It could be done by you, or by another commit. The issue is that the library is not present in your tox environment.
+
 Solution:
 
-You likely need to rebuild your tox environment. To do this, run:
+You need to rebuild your tox environment to bring in the missing dependency. To do this, run:
 
 ```
 dagster/docs $ tox -r
