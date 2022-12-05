@@ -36,6 +36,7 @@ from .resource_definition import ResourceDefinition
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
     from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.partition_mapping import PartitionMapping
     from dagster._core.definitions.resolved_asset_defs import ResolvedAssetDependencies
     from dagster._core.execution.context.output import OutputContext
 
@@ -782,6 +783,14 @@ class AssetLayer:
                 return source_asset.partitions_def
 
         return None
+
+    def partition_mapping_for_asset_dep(
+        self, asset_key: AssetKey, upstream_asset_key: AssetKey
+    ) -> Optional["PartitionMapping"]:
+        assets_def = self._assets_defs_by_key.get(asset_key)
+        if not assets_def:
+            return None
+        return assets_def.get_partition_mapping(upstream_asset_key)
 
     def downstream_dep_assets(self, node_handle: NodeHandle, output_name: str) -> Set[AssetKey]:
         """

@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.1.5 (core) / 0.17.5 (libraries)
+
+### Bugfixes
+
+- [dagit] Fixed an issue where the Partitions tab sometimes failed to load for asset jobs.
+
 # 1.1.4 (core) / 0.17.4 (libraries)
 
 ### Community Contributions

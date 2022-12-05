@@ -60,6 +60,14 @@ export const defaultMocks = {
     id: randomId,
     loadStatus: () => RepositoryLocationLoadStatus.LOADED,
   }),
+  WorkspaceLocationStatusEntries: () => ({
+    entries: () => [...new Array(1)],
+  }),
+  WorkspaceLocationStatusEntry: () => ({
+    id: randomId,
+    loadStatus: () => RepositoryLocationLoadStatus.LOADED,
+    updateTimestamp: () => 0,
+  }),
   Schedule: () => ({
     id: hyphenatedName,
     name: hyphenatedName,
@@ -190,5 +198,8 @@ export const defaultMocks = {
   }),
   InstigationStatesOrError: () => ({
     __typename: 'InstigationStates',
+  }),
+  LocationStatusesOrError: () => ({
+    __typename: 'WorkspaceLocationStatusEntries',
   }),
 };

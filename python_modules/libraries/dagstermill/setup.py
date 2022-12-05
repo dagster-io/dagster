@@ -47,11 +47,11 @@ setup(
         "packaging>=20.5",
         "papermill>=1.0.0",
         "scrapbook>=0.5.0",
+        "nbconvert",
     ],
     extras_require={
         "test": [
             "matplotlib",
-            "nbconvert",
             "scikit-learn>=0.19.0",
             "tqdm<=4.48",  # https://github.com/tqdm/tqdm/issues/1049
         ]

@@ -467,6 +467,10 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
             "--+++---+++--",
             "++---+++---++",
         ),
+        (
+            "+--+",
+            "--+-",
+        ),
     ],
 )
 def test_partition_subset_with_partition_keys(initial: str, added: str):

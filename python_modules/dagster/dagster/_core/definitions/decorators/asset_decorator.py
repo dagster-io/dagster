@@ -308,7 +308,7 @@ class _Asset:
         partition_mappings = {
             keys_by_input_name[input_name]: asset_in.partition_mapping
             for input_name, asset_in in self.ins.items()
-            if asset_in.partition_mapping
+            if asset_in.partition_mapping is not None
         }
 
         return AssetsDefinition(
@@ -481,7 +481,7 @@ def multi_asset(
         partition_mappings = {
             keys_by_input_name[input_name]: asset_in.partition_mapping
             for input_name, asset_in in (ins or {}).items()
-            if asset_in.partition_mapping
+            if asset_in.partition_mapping is not None
         }
 
         return AssetsDefinition(
