@@ -129,12 +129,6 @@ class ConfigurableDocumenter(DataDocumenter):
 
     def add_content(self, more_content) -> None:
         source_name = self.get_sourcename()
-        if "dagster_snowflake" in source_name:
-            print("SOURCE NAME")
-            print(source_name)
-            print("MORE CONTENT")
-            print(more_content)
-            print(f"is function: {inspect.isfunction(self.object)}")
 
         self.add_line("", source_name)
         # explicit visual linebreak
