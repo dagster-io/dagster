@@ -32,7 +32,6 @@ def parse_spark_config(spark_conf):
 
     --conf "key=value"
     """
-
     spark_conf_list = flatten_dict(spark_conf)
     return format_for_cli(spark_conf_list)
 

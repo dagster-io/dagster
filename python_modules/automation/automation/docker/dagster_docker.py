@@ -193,7 +193,6 @@ class DagsterDockerImage(
 
     def push(self, python_version: str, custom_tag: Optional[str] = None) -> None:
         """Push this image to ECR."""
-
         if custom_tag:
             execute_docker_tag(
                 self.local_image(python_version),

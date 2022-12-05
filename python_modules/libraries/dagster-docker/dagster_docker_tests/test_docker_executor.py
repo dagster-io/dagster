@@ -22,7 +22,6 @@ def test_docker_executor(aws_env):
     """
     Note that this test relies on having AWS credentials in the environment.
     """
-
     executor_config = {
         "execution": {
             "docker": {
@@ -99,7 +98,6 @@ def test_docker_executor_config_on_container_context(aws_env):
     """
     Note that this test relies on having AWS credentials in the environment.
     """
-
     executor_config = {"execution": {"docker": {"config": {}}}}
 
     docker_image = get_test_project_docker_image()
@@ -141,7 +139,6 @@ def test_docker_executor_retries(aws_env):
     """
     Note that this test relies on having AWS credentials in the environment.
     """
-
     executor_config = {
         "execution": {
             "docker": {

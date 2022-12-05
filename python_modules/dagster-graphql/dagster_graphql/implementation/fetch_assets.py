@@ -135,7 +135,6 @@ def get_asset_nodes_by_asset_key(graphene_info) -> Mapping[AssetKey, "GrapheneAs
     If multiple repositories have asset nodes for the same asset key, chooses the asset node that
     has an op.
     """
-
     from ..schema.asset_graph import GrapheneAssetNode
 
     depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)

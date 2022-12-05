@@ -174,7 +174,6 @@ class ExecutorDefinition(NamedConfigurableDefinition):
 
         Returns (ConfigurableDefinition): A configured version of this object.
         """
-
         name = check.opt_str_param(name, "name")
 
         new_config_schema = ConfiguredDefinitionConfigSchema(

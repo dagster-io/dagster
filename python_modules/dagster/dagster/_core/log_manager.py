@@ -253,7 +253,6 @@ class DagsterLogHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord):
         """For any received record, add Dagster metadata, and have handlers handle it"""
-
         try:
             # to prevent the potential for infinite loops in which a handler produces log messages
             # which are then captured and then handled by that same handler (etc.), do not capture
@@ -321,7 +320,6 @@ class DagsterLogManager(logging.Logger):
         pipeline_run: Optional["DagsterRun"] = None,
     ) -> "DagsterLogManager":
         """Create a DagsterLogManager with a set of subservient loggers."""
-
         handlers = check.opt_sequence_param(handlers, "handlers", of_type=logging.Handler)
 
         managed_loggers = [get_dagster_logger()]

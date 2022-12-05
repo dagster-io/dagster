@@ -220,7 +220,6 @@ def execute_sensor_iteration_loop(
     iteration loop every 30 seconds, sensors are continuously evaluated, every 5 seconds. We rely on
     each sensor definition's min_interval to check that sensor evaluations are spaced appropriately.
     """
-
     sensor_state_lock = threading.Lock()
     sensor_tick_futures: Dict[str, Future] = {}
     with ExitStack() as stack:

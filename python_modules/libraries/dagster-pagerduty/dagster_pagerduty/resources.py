@@ -120,7 +120,6 @@ class PagerDutyService:
 
                 {"ping time": "1500ms", "load avg": 0.75 }
         """
-
         data = {
             "routing_key": self.routing_key,
             "event_action": event_action,

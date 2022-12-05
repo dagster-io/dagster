@@ -93,7 +93,6 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
     Configuration set using `tags` on a `@job` will only apply to the `run` level. For configuration
     to apply at each `step` it must be set using `tags` for each `@op`.
     """
-
     run_launcher = init_context.instance.run_launcher
     if not isinstance(run_launcher, K8sRunLauncher):
         raise DagsterUnmetExecutorRequirementsError(

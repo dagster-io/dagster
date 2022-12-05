@@ -242,7 +242,6 @@ def build_schedule_context(
             daily_schedule.evaluate_tick(context)
 
     """
-
     check.opt_inst_param(instance, "instance", DagsterInstance)
     return ScheduleEvaluationContext(
         instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
@@ -576,7 +575,6 @@ class ScheduleDefinition:
             ScheduleExecutionData: Contains list of run requests, or skip message if present.
 
         """
-
         check.inst_param(context, "context", ScheduleEvaluationContext)
         execution_fn: Callable[[ScheduleEvaluationContext], "ScheduleEvaluationFunctionReturn"]
         if isinstance(self._execution_fn, DecoratedScheduleFunction):

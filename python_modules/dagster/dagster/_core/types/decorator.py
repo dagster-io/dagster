@@ -82,7 +82,6 @@ def usable_as_dagster_type(  # type: ignore  # bug
             def s3_path(self):
                 return 's3://{bucket}/{key}'.format(bucket=self.s3_bucket, key=self.s3_key)
     """
-
     # check for no args, no parens case
     if isinstance(name, type):
         bare_cls = name  # with no parens, name is actually the decorated class

@@ -130,7 +130,6 @@ def make_dagster_definitions_from_airflow_dag_bag(
     Returns:
         Definitions
     """
-
     schedules, jobs = _make_schedules_and_jobs_from_airflow_dag_bag(
         dag_bag,
         use_airflow_template_context,

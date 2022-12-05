@@ -319,7 +319,6 @@ def all_daemons_healthy(
     """
     True if all required daemons have had a recent heartbeat with no errors
     """
-
     statuses_by_type = get_daemon_statuses(
         instance,
         daemon_types=instance.get_required_daemon_types(),
@@ -340,7 +339,6 @@ def all_daemons_live(
     """
     True if all required daemons have had a recent heartbeat, regardless of if it contained errors.
     """
-
     statuses_by_type = get_daemon_statuses(
         instance,
         daemon_types=instance.get_required_daemon_types(),

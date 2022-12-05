@@ -7,7 +7,6 @@ def define_snowflake_config():
     See the Snowflake documentation for reference:
         https://docs.snowflake.net/manuals/user-guide/python-connector-api.html
     """
-
     account = Field(
         StringSource,
         description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",

@@ -174,7 +174,6 @@ def make_email_on_run_failure_sensor(
 
 
     """
-
     from dagster._core.definitions.run_status_sensor_definition import (
         RunFailureSensorContext,
         run_failure_sensor,

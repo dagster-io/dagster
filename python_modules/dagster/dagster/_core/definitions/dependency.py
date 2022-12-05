@@ -438,7 +438,6 @@ class NodeHandle(
             ancestor = NodeHandle('bar', NodeHandle('foo', None))
             assert handle.pop(ancestor) == NodeHandle('baz', None)
         """
-
         check.inst_param(ancestor, "ancestor", NodeHandle)
         check.invariant(
             self.is_or_descends_from(ancestor),
@@ -498,7 +497,6 @@ class NodeHandle(
         """This method makes it possible to load a potentially nested NodeHandle after a
         roundtrip through json.loads(json.dumps(NodeHandle._asdict()))
         """
-
         check.dict_param(dict_repr, "dict_repr", key_type=str)
         check.invariant(
             "name" in dict_repr, "Dict representation of NodeHandle must have a 'name' key"
@@ -967,7 +965,6 @@ class DependencyStructure:
 
     def _validate_and_set_fan_out(self, node_input: NodeInput, node_output: NodeOutput) -> None:
         """Helper function for populating _dynamic_fan_out_index"""
-
         if not node_input.node.definition.input_supports_dynamic_output_dep(node_input.input_name):
             raise DagsterInvalidDefinitionError(
                 f"{node_input.node.describe_node()} cannot be downstream of dynamic output"

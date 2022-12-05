@@ -803,7 +803,6 @@ def categorical_column_validator_factory(categories, ignore_missing_vals=False):
             metadata['actual'] == {'foo': {'categorical_validation_fn': [7]}}
 
     """
-
     categories = set(categories)
 
     def categorical_validation_fn(x):

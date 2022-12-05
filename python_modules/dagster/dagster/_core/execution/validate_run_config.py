@@ -28,7 +28,6 @@ def validate_run_config(
     Returns:
         Dict[str, Any]: A dictionary representation of the validated config.
     """
-
     job_def = check.opt_inst_param(job_def, "job_def", (JobDefinition, PipelineDefinition))
     pipeline_def = check.opt_inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)

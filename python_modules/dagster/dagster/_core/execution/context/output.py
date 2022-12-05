@@ -495,7 +495,6 @@ class OutputContext:
         Returns:
             Sequence[str, ...]: A list of identifiers, i.e. run id, step key, and output name
         """
-
         warnings.warn(
             "`OutputContext.get_run_scoped_output_identifier` is deprecated. Use "
             "`OutputContext.get_identifier` instead."
@@ -633,7 +632,6 @@ class OutputContext:
 
         If consume_events has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
         """
-
         events = self._events
         self._events = []
         yield from events
@@ -664,7 +662,6 @@ class OutputContext:
                 materializations = [event for event in all_user_events if isinstance(event, AssetMaterialization)]
                 ...
         """
-
         return self._user_events
 
     @public
@@ -733,7 +730,6 @@ def get_output_context(
         run_id (str): The run ID of the run that produced the output, not necessarily the run that
             the context will be used in.
     """
-
     step = execution_plan.get_step_by_key(step_output_handle.step_key)
     # get config
     solid_config = resolved_run_config.solids[step.solid_handle.to_string()]

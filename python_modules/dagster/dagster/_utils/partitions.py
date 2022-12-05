@@ -45,7 +45,6 @@ def date_partition_range(
     Returns:
         Callable[[], List[Partition]]
     """
-
     check.inst_param(start, "start", datetime)
     check.opt_inst_param(end, "end", datetime)
     check.str_param(delta_range, "delta_range")
@@ -132,7 +131,6 @@ def identity_partition_selector(
             execution_timezone="US/Central",
         )
     """
-
     return create_offset_partition_selector(lambda d: d)(context, partition_set_def)
 
 
@@ -173,7 +171,6 @@ def create_offset_partition_selector(
         execution_time_to_partition_fn (Callable[[datetime], datetime]): A
             function that maps the execution time of the schedule to the partition time.
     """
-
     check.callable_param(execution_time_to_partition_fn, "execution_time_to_partition_fn")
 
     def offset_partition_selector(

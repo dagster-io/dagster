@@ -83,7 +83,6 @@ def build_resources(
             assert resources.from_val == "bar"
 
     """
-
     resources = check.mapping_param(resources, "resource_defs", key_type=str)
     instance = check.opt_inst_param(instance, "instance", DagsterInstance)
     resource_config = check.opt_mapping_param(resource_config, "resource_config", key_type=str)

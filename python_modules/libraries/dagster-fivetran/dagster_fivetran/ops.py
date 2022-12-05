@@ -93,7 +93,6 @@ def fivetran_sync_op(context):
             final_foobar_state = sync_foobar(start_after=some_op())
             other_op(final_foobar_state)
     """
-
     fivetran_output = context.resources.fivetran.sync_and_poll(
         connector_id=context.op_config["connector_id"],
         poll_interval=context.op_config["poll_interval"],
@@ -212,7 +211,6 @@ def fivetran_resync_op(context):
             final_foobar_state = sync_foobar(start_after=some_op())
             other_op(final_foobar_state)
     """
-
     fivetran_output = context.resources.fivetran.resync_and_poll(
         connector_id=context.op_config["connector_id"],
         resync_parameters=context.op_config["resync_parameters"],

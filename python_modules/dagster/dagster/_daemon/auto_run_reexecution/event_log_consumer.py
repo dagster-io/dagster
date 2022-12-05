@@ -163,7 +163,6 @@ def get_new_cursor(
     This method optimizes for moving the cursor as far forward as possible, using
     overall_max_event_id.
     """
-
     check.int_param(persisted_cursor, "persisted_cursor")
     check.opt_int_param(overall_max_event_id, "overall_max_event_id")
     check.int_param(fetch_limit, "fetch_limit")

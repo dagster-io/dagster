@@ -95,7 +95,6 @@ class AnonymousConfigurableDefinition(ConfigurableDefinition):
 
         Returns (ConfigurableDefinition): A configured version of this object.
         """
-
         new_config_schema = ConfiguredDefinitionConfigSchema(
             self, convert_user_facing_definition_config_schema(config_schema), config_or_config_fn
         )
@@ -144,7 +143,6 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
 
         Returns (ConfigurableDefinition): A configured version of this object.
         """
-
         name = check.str_param(name, "name")
 
         new_config_schema = ConfiguredDefinitionConfigSchema(

@@ -23,7 +23,6 @@ def main(quiet: bool, extra_packages: List[str]) -> None:
     some dependencies may have to be built from source. You may find yourself needing to install
     system packages such as freetype, gfortran, etc.; on macOS, Homebrew should suffice.
     """
-
     # Previously, we did a pip install --upgrade pip here. We have removed that and instead
     # depend on the user to ensure an up-to-date pip is installed and available. If you run into
     # build errors, try this first. For context, there is a lengthy discussion here:

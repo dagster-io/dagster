@@ -253,7 +253,6 @@ def dagster_event_sequence_for_step(
     of launching steps that then launch steps, and so on, the remote process will run this with
     the force_local_execution argument set to True.
     """
-
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
     try:

@@ -152,7 +152,6 @@ class SnowflakeConnection:
                         "DROP DATABASE IF EXISTS MY_DATABASE"
                     )
         """
-
         check.str_param(sql, "sql")
         check.opt_inst_param(parameters, "parameters", (list, dict))
         check.bool_param(fetch_results, "fetch_results")

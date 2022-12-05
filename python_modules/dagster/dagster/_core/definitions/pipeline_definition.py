@@ -605,7 +605,6 @@ class PipelineDefinition:
 
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PipelineDefinition":
         """Apply a set of hooks to all solid instances within the pipeline."""
-
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
         pipeline_def = PipelineDefinition(
@@ -687,7 +686,6 @@ def _get_pipeline_subset_def(
     Build a pipeline which is a subset of another pipeline.
     Only includes the solids which are in solids_to_execute.
     """
-
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     check.set_param(solids_to_execute, "solids_to_execute", of_type=str)
     graph = pipeline_def.graph

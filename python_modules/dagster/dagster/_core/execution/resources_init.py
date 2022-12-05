@@ -460,7 +460,6 @@ def _wrapped_resource_iterator(
     If the resource is a context manager, then resource initialization happens as the passed-in
     context manager opens. Resource teardown happens as the passed-in context manager closes (which will occur after all compute is finished).
     """
-
     # Context managers created using contextlib.contextdecorator are not usable as iterators.
     # Opening context manager and directly yielding preserves initialization/teardown behavior,
     # while also letting the context manager be used as an iterator.

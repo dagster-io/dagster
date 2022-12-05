@@ -24,7 +24,6 @@ def add_selector_id_to_jobs_table(storage, print_fn=None):
     Utility method that calculates the selector_id for each stored instigator state, and writes
     it to the jobs table.
     """
-
     if print_fn:
         print_fn("Querying storage.")
 
@@ -87,7 +86,6 @@ def add_selector_id_to_ticks_table(storage, print_fn=None):
     Utility method that calculates the selector_id for each stored instigator state, and writes
     it to the jobs table.
     """
-
     if print_fn:
         print_fn("Querying storage.")
 

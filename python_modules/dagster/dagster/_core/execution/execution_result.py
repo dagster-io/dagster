@@ -46,7 +46,6 @@ class ExecutionResult(ABC):
     @property
     def all_node_events(self) -> Sequence[DagsterEvent]:
         """List[DagsterEvent]: All dagster events from the execution."""
-
         step_events: List[DagsterEvent] = []
 
         for node_name in self.job_def.graph.node_dict.keys():

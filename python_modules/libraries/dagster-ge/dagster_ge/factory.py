@@ -174,7 +174,6 @@ def ge_validation_op_factory_v3(
         an output with all the metadata (for user processing)
 
     """
-
     check.str_param(datasource_name, "datasource_name")
     check.str_param(data_connector_name, "data_connector_name")
     check.str_param(suite_name, "suite_name")

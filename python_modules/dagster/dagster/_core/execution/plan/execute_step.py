@@ -716,7 +716,6 @@ def _create_type_materializations(
     step_context: StepExecutionContext, output_name: str, value: Any
 ) -> Iterator[DagsterEvent]:
     """If the output has any dagster type materializers, runs them."""
-
     step = step_context.step
     current_handle = step.solid_handle
 

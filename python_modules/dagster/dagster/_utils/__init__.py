@@ -114,7 +114,6 @@ def file_relative_path(dunderfile: str, relative_path: str) -> str:
         file_relative_path(__file__, 'path/relative/to/file')
 
     """
-
     check.str_param(dunderfile, "dunderfile")
     check.str_param(relative_path, "relative_path")
 
@@ -624,7 +623,7 @@ def process_is_alive(pid: int) -> bool:
 def compose(*args):
     """
     Compose python functions args such that compose(f, g)(x) is equivalent to f(g(x)).
-    """
+    """  # noqa: D402
     # reduce using functional composition over all the arguments, with the identity function as
     # initializer
     return functools.reduce(lambda f, g: lambda x: f(g(x)), args, lambda x: x)

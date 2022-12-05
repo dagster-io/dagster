@@ -125,7 +125,6 @@ def query_on_dask_worker(
     """Note that we need to pass "dependencies" to ensure Dask sequences futures during task
     scheduling, even though we do not use this argument within the function.
     """
-
     with DagsterInstance.from_ref(instance_ref) as instance:
         subset_pipeline = recon_pipeline.subset_for_execution_from_existing_pipeline(
             pipeline_run.solids_to_execute

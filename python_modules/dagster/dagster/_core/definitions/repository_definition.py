@@ -127,7 +127,6 @@ class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
                 even known until loaded.
 
         """
-
         for key, definition in definitions.items():
             check.invariant(
                 isinstance(definition, definition_class) or callable(definition),
@@ -987,7 +986,6 @@ class CachingRepositoryData(RepositoryData):
         Returns:
             PipelineDefinition: The pipeline/job definition corresponding to the given name.
         """
-
         check.str_param(pipeline_name, "pipeline_name")
 
         if self._jobs.has_definition(pipeline_name):
@@ -1007,7 +1005,6 @@ class CachingRepositoryData(RepositoryData):
         Returns:
             JobDefinition: The job definition corresponding to the given name.
         """
-
         check.str_param(job_name, "job_name")
         return self._jobs.get_definition(job_name)
 
@@ -1053,7 +1050,6 @@ class CachingRepositoryData(RepositoryData):
         Returns:
             PartitionSetDefinition: The partition set definition corresponding to the given name.
         """
-
         check.str_param(partition_set_name, "partition_set_name")
 
         return self._partition_sets.get_definition(partition_set_name)
@@ -1088,7 +1084,6 @@ class CachingRepositoryData(RepositoryData):
         Returns:
             ScheduleDefinition: The schedule definition corresponding to the given name.
         """
-
         check.str_param(schedule_name, "schedule_name")
 
         return self._schedules.get_definition(schedule_name)

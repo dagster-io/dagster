@@ -107,7 +107,6 @@ def migrate_run_start_end(storage, print_fn=None):
     """
     Utility method that updates the start and end times of historical runs using the completed event log.
     """
-
     if print_fn:
         print_fn("Querying run and event log storage.")
 

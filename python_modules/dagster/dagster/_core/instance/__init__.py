@@ -1873,8 +1873,7 @@ class DagsterInstance:
         Args:
             run_id (str): The id of the run.
         """
-
-        from dagster._core.host_representation.origin import ExternalPipelineOrigin
+        from dagster._core.host_representation import ExternalPipelineOrigin
         from dagster._core.run_coordinator import SubmitRunContext
 
         run = self.get_run_by_id(run_id)

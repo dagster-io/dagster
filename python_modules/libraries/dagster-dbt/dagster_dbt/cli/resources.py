@@ -305,7 +305,6 @@ class DbtCliResource(DbtResource):
             DbtCliOutput: An instance of :class:`DbtCliOutput<dagster_dbt.DbtCliOutput>` containing
                 parsed log output as well as the contents of run_results.json (if applicable).
         """
-
         return self.cli(f"run-operation {macro}", args=args, **kwargs)
 
     @public
@@ -356,7 +355,6 @@ class DbtCliResource(DbtResource):
 )
 def dbt_cli_resource(context) -> DbtCliResource:
     """This resource issues dbt CLI commands against a configured dbt project."""
-
     # set of options in the config schema that are not flags
     non_flag_options = {k.replace("-", "_") for k in CLI_COMMON_OPTIONS_CONFIG_SCHEMA}
     # all config options that are intended to be used as flags for dbt commands

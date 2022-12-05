@@ -30,7 +30,6 @@ def get_parameters_by_tags(
     Return a dictionary of AWS Secrets Manager names to arns
     for any secret tagged with `secrets_tag`.
     """
-
     parameter_names = []
     paginator = ssm_manager.get_paginator("describe_parameters")
     for parameter_tag in parameter_tags:

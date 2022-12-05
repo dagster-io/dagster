@@ -621,7 +621,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         Returns:
             bool: True if all selected partitions have been materialized, False otherwise.
         """
-
         check.inst_param(asset_key, "asset_key", AssetKey)
 
         if partitions is not None:
@@ -692,7 +691,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             Sequence[str]: A list of the corresponding downstream partitions in to_asset_key that
                 partition_key maps to.
         """
-
         partition_key = check.str_param(partition_key, "partition_key")
 
         to_asset = self._get_asset(to_asset_key, fn_name="get_downstream_partition_keys")
@@ -740,7 +738,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 will not fetch this event again. If None is provided, the cursor for the AssetKey
                 will not be updated.
         """
-
         self._cursor_advance_state_mutation.add_advanced_records(materialization_records_by_key)
         self._cursor_has_been_updated = True
 
