@@ -11,5 +11,7 @@ your data warehouse.
 
 .. currentmodule:: dagster_snowflake_pandas
 
-.. autoclass:: SnowflakePandasTypeHandler
+.. autoconfigurable:: snowflake_pandas_io_manager
+  :annotation: IOManagerDefinition
 
+.. autoclass:: SnowflakePandasTypeHandler

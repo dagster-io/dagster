@@ -129,6 +129,13 @@ class ConfigurableDocumenter(DataDocumenter):
 
     def add_content(self, more_content) -> None:
         source_name = self.get_sourcename()
+        if "dagster_snowflake_pandas" in source_name:
+            print("SOURCE NAME")
+            print(source_name)
+            print("MORE CONTENT")
+            print(more_content)
+            print(f"is function: {inspect.isfunction(self.object)}")
+
         self.add_line("", source_name)
         # explicit visual linebreak
         self.add_line("|", source_name)
@@ -151,6 +158,7 @@ class ConfigurableDocumenter(DataDocumenter):
             self.add_line(line, source_name)
 
         self.add_line("", source_name)
+
         # do this call at the bottom so that config schema is first thing in documentation
         super().add_content(more_content)
 
