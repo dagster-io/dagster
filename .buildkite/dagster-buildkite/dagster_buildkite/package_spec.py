@@ -99,8 +99,6 @@ class PackageSpec:
         run_pytest (bool, optional): Whether to run pytest. Enabled by default.
         run_mypy (bool, optional): Whether to run mypy. Runs in the highest available supported
             Python version. Enabled by default.
-        run_pylint (bool, optional): Whether to run pylint. Runs in the highest available supported
-            Python version. Enabled by default.
     """
 
     directory: str
@@ -117,7 +115,6 @@ class PackageSpec:
     queue: Optional[BuildkiteQueue] = None
     run_pytest: bool = True
     run_mypy: bool = True
-    run_pylint: bool = True
 
     def __post_init__(self):
         if not self.name:
@@ -199,18 +196,6 @@ class PackageSpec:
                     "mypy",
                     base_label=base_name,
                     command_type="mypy",
-                    python_version=supported_python_versions[-1],
-                    skip_reason=self.skip_reason,
-                )
-            )
-
-        if self.run_pylint:
-            steps.append(
-                build_tox_step(
-                    self.directory,
-                    "pylint",
-                    base_label=base_name,
-                    command_type="pylint",
                     python_version=supported_python_versions[-1],
                     skip_reason=self.skip_reason,
                 )

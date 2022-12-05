@@ -52,10 +52,6 @@ def build_docs_steps() -> List[BuildkiteStep]:
         build_tox_step("docs", "audit-screenshots", skip_reason=skip_if_no_docs_changes()),
         # mypy for build scripts
         build_tox_step("docs", "mypy", command_type="mypy", skip_reason=skip_if_no_docs_changes()),
-        # pylint for build scripts
-        build_tox_step(
-            "docs", "pylint", command_type="pylint", skip_reason=skip_if_no_docs_changes()
-        ),
     ]
 
     steps += [

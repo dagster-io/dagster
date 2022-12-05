@@ -23,12 +23,12 @@ branch_name = safe_getenv("BUILDKITE_BRANCH")
 
 
 def build_repo_wide_steps() -> List[BuildkiteStep]:
-    # Other linters are run in per-package environments because they rely on the dependencies of the
-    # target. `black`, `isort`, and `check-manifest` are run for the whole repo at once.
+    # Other linters may be run in per-package environments because they rely on the dependencies of
+    # the target. `black`, `check-manifest`, and `ruff` are run for the whole repo at once.
     return [
-        *build_repo_wide_isort_steps(),
         *build_repo_wide_black_steps(),
         *build_repo_wide_check_manifest_steps(),
+        *build_repo_wide_ruff_steps(),
     ]
 
 
@@ -36,7 +36,7 @@ def build_dagster_steps() -> List[BuildkiteStep]:
     steps: List[BuildkiteStep] = []
 
     # "Package" used loosely here to mean roughly "a directory with some python modules". For
-    # instances, a directory of unrelated scripts counts as a package. All packages must have a
+    # instance, a directory of unrelated scripts counts as a package. All packages must have a
     # toxfile that defines the tests for that package.
     steps += build_library_packages_steps()
 
@@ -63,10 +63,10 @@ def build_repo_wide_black_steps() -> List[CommandStep]:
     ]
 
 
-def build_repo_wide_isort_steps() -> List[CommandStep]:
+def build_repo_wide_ruff_steps() -> List[CommandStep]:
     return [
-        CommandStepBuilder(":isort: isort")
-        .run("pip install -e python_modules/dagster[isort]", "make check_isort")
+        CommandStepBuilder(":zap: ruff")
+        .run("pip install -e python_modules/dagster[ruff]", "make check_ruff")
         .on_test_image(AvailablePythonVersion.get_default())
         .with_skip(skip_if_no_python_changes())
         .build(),
