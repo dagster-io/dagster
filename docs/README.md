@@ -158,11 +158,14 @@ ModuleNotFoundError: No module named 'tomli'
 
 Solution:
 
-You likely need to rebuild your tox environment. To do this, run
+You likely need to rebuild your tox environment. To do this, run:
+
 ```
 dagster/docs $ tox -r
 ```
-to rebuild the environment for every tox command, or run
+
+to rebuild the environment for every tox command, or run:
+
 ```
 dagster/docs $ tox -re sphinx
 ```
