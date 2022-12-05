@@ -719,7 +719,7 @@ def graphql_context_variants_fixture(context_variants):
 
 def make_graphql_context_test_suite(context_variants):
     """
-        Arguments:
+    Arguments:
 
         context_variants (List[GraphQLContextVariant]): List of runs to run per test in this class.
 

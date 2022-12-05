@@ -43,9 +43,7 @@ class PagerDutyService:
                                          'acme-andromeda-sv1-c40 :: 179.21.24.50' is DOWN"
 
             source {string} -- Specific human-readable unique identifier, such as a hostname, for
-                               the system having the problem.
-
-                               Examples:
+                               the system having the problem. Examples:
                                "prod05.theseus.acme-widgets.com"
                                "171.26.23.22"
                                "aws:elasticache:us-east-1:852511987:cluster/api-stats-prod-003"
@@ -93,7 +91,7 @@ class PagerDutyService:
 
             component {string} -- The part or component of the affected system that is broken.
 
-                                  Examples:
+        Examples:
                                   "keepalive"
                                   "webping"
                                   "mysql"
@@ -103,14 +101,14 @@ class PagerDutyService:
                               "prod-datapipe-02" and "prod-datapipe-03" might both be part of
                               "prod-datapipe"
 
-                              Examples:
+        Examples:
                               "prod-datapipe"
                               "www"
                               "web_stack"
 
             event_class {string} -- The class/type of the event.
 
-                                    Examples:
+        Examples:
                                     "High CPU"
                                     "Latency"
                                     "500 Error"
