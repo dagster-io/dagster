@@ -109,7 +109,7 @@ class DagsterDockerImage(
             yaml.dump(last_updated, f, default_flow_style=False)
 
     def local_image(self, python_version: str) -> str:
-        """Generates the local image name, like: "dagster/foo:some-tag" """
+        """Generates the local image name, like: "dagster/foo:some-tag"."""
         check.str_param(python_version, "python_version")
 
         last_updated = self._get_last_updated_for_python_version(python_version)
