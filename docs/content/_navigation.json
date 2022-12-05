@@ -631,6 +631,10 @@
         "path": "/integrations/spark"
       },
       {
+        "title": "Snowflake",
+        "path": "/integrations/snowflake"
+      },
+      {
         "title": "All integrations",
         "path": "/integrations"
       }
