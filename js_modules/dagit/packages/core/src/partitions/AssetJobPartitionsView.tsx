@@ -139,16 +139,18 @@ export const AssetJobPartitionsView: React.FC<{
           </Box>
         )}
       </Box>
-      <AssetJobPartitionGraphs
-        pipelineName={pipelineName}
-        partitionSetName={partitionSetName}
-        multidimensional={(merged?.dimensions.length || 0) > 1}
-        dimensionName={dimension ? dimension.name : null}
-        dimensionKeys={dimensionKeys}
-        selected={selectedDimensionKeys}
-        offset={offset}
-        pageSize={pageSize}
-      />
+      {showAssets && (
+        <AssetJobPartitionGraphs
+          pipelineName={pipelineName}
+          partitionSetName={partitionSetName}
+          multidimensional={(merged?.dimensions.length || 0) > 1}
+          dimensionName={dimension ? dimension.name : null}
+          dimensionKeys={dimensionKeys}
+          selected={selectedDimensionKeys}
+          offset={offset}
+          pageSize={pageSize}
+        />
+      )}
       <Box
         padding={{horizontal: 24, vertical: 16}}
         border={{side: 'horizontal', color: Colors.KeylineGray, width: 1}}
