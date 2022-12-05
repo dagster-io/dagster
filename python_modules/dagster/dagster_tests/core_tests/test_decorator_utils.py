@@ -67,6 +67,6 @@ def test_format_docstring_for_description():
 
 def test_empty():
     def empty_docstring():
-        """"""
+        """"""  # noqa: D419
 
     assert format_docstring_for_description(empty_docstring) == ""
