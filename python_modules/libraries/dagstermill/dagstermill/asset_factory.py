@@ -7,7 +7,11 @@ from typing import Any, Mapping, Optional, Set, Union
 
 import papermill
 from dagstermill.compat import ExecutionError
-from dagstermill.factory import get_papermill_parameters, replace_parameters
+from dagstermill.factory import (
+    _clean_path_for_windows,
+    get_papermill_parameters,
+    replace_parameters,
+)
 from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
 
@@ -251,7 +255,8 @@ def define_dagstermill_asset(
             "kind" not in op_tags,
             "user-defined op tags contains the `kind` key, but the `kind` key is reserved for use by Dagster",
         )
-    default_tags = {"notebook_path": notebook_path, "kind": "ipynb"}
+
+    default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}
 
     return asset(
         name=name,
