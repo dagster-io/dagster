@@ -6,7 +6,7 @@ import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {PipelineTable, PIPELINE_TABLE_FRAGMENT} from '../pipelines/PipelineTable';
 
-import {repoAddressAsString} from './repoAddressAsString';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {
@@ -72,7 +72,7 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
     return null;
   }
 
-  const repoName = repoAddressAsString(repoAddress);
+  const repoName = repoAddressAsHumanString(repoAddress);
 
   if (error || !pipelinesForTable) {
     return (

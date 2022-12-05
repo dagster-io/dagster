@@ -1,7 +1,7 @@
 import {NonIdealState} from '@dagster-io/ui';
 import React from 'react';
 
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 interface Props {
@@ -49,7 +49,7 @@ export const NonIdealPipelineQueryResult: React.FC<Props> = ({isGraph, repoAddre
     return (
       <NonIdealState
         icon="error"
-        title={`${repoAddress ? repoAddressAsString(repoAddress) : 'Definitions'} not found`}
+        title={`${repoAddress ? repoAddressAsHumanString(repoAddress) : 'Definitions'} not found`}
         description={result.message}
       />
     );

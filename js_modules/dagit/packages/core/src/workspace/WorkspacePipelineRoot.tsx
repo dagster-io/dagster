@@ -7,7 +7,7 @@ import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {LoadingSpinner} from '../ui/Loading';
 
 import {isThisThingAJob, optionToRepoAddress, useRepositoryOptions} from './WorkspaceContext';
-import {buildRepoPath} from './buildRepoAddress';
+import {buildRepoPathForHuman} from './buildRepoAddress';
 import {findRepoContainingPipeline} from './findRepoContainingPipeline';
 import {workspacePath, workspacePathFromAddress} from './workspacePath';
 
@@ -106,7 +106,7 @@ export const WorkspacePipelineRoot = () => {
               repository: {name},
               repositoryLocation: {name: location},
             } = repository;
-            const repoString = buildRepoPath(name, location);
+            const repoString = buildRepoPathForHuman(name, location);
             return (
               <tr key={repoString}>
                 <td style={{width: '40%'}}>{repoString}</td>

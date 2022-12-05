@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {RunStatusWithStats} from '../runs/RunStatusDots';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -41,7 +41,7 @@ export const PipelineTable: React.FC<Props> = (props) => {
       </thead>
       <tbody>
         {pipelinesOrJobs.map(({pipelineOrJob, repoAddress}) => (
-          <tr key={`${pipelineOrJob.name}-${repoAddressAsString(repoAddress)}`}>
+          <tr key={`${pipelineOrJob.name}-${repoAddressAsHumanString(repoAddress)}`}>
             <td>
               <Group direction="column" spacing={4}>
                 <PipelineReference
@@ -50,7 +50,7 @@ export const PipelineTable: React.FC<Props> = (props) => {
                   pipelineHrefContext={repoAddress}
                   truncationThreshold={80}
                 />
-                {showRepo ? <Caption>{repoAddressAsString(repoAddress)}</Caption> : null}
+                {showRepo ? <Caption>{repoAddressAsHumanString(repoAddress)}</Caption> : null}
                 <Description>{pipelineOrJob.description}</Description>
               </Group>
             </td>

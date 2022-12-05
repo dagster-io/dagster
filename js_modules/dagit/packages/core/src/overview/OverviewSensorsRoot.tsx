@@ -24,7 +24,7 @@ import {UnloadableSensors} from '../instigation/Unloadable';
 import {SensorInfo} from '../sensors/SensorInfo';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {OverviewSensorTable} from './OverviewSensorsTable';
@@ -52,7 +52,7 @@ export const OverviewSensorsRoot = () => {
   const repoBuckets = React.useMemo(() => {
     const visibleKeys = visibleRepoKeys(visibleRepos);
     return buildBuckets(data).filter(({repoAddress}) =>
-      visibleKeys.has(repoAddressAsString(repoAddress)),
+      visibleKeys.has(repoAddressAsHumanString(repoAddress)),
     );
   }, [data, visibleRepos]);
 
