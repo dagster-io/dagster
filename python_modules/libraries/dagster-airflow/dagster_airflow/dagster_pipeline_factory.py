@@ -636,7 +636,7 @@ def _traverse_airflow_dag(
                 seen_tasks=seen_tasks,
                 pipeline_dependencies=pipeline_dependencies,
                 solid_defs=solid_defs,
-                use_airflow_template_contex=use_airflow_template_context,
+                use_airflow_template_context=use_airflow_template_context,
                 unique_id=unique_id,
                 mock_xcom=mock_xcom,
                 use_ephemeral_airflow_db=use_ephemeral_airflow_db,
