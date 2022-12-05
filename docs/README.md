@@ -135,7 +135,7 @@ If you are adding a new prose page or want to update the navigation in the sideb
 
 ### Problem: ModuleNotFoundError: No module named 'X'
 
-Example stack trace:
+**Example stack trace**:
 
 ```
 dagster/docs $ make apidoc-build
@@ -158,7 +158,7 @@ ModuleNotFoundError: No module named 'tomli'
 
 This error would occur after a new library has been added as a dependency in a dagster package. It could be done by you, or by another commit. The issue is that the library is not present in your tox environment.
 
-Solution:
+**Solution**:
 
 You need to rebuild your tox environment to bring in the missing dependency. To do this, run:
 
