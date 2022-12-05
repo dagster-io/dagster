@@ -74,56 +74,68 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     def supported_types(self):
         return [pd.DataFrame]
 
-duckdb_pandas_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
-duckdb_pandas_io_manager.__doc__ = """
-An IO manager definition that reads inputs from and writes pandas dataframes to DuckDB.
 
-Returns:
-    IOManagerDefinition
+# Helper function used as a decorator below
+# The only purpose in doing this is so that
+# we have a symbol to hang the duckdb_pandas_io_manager
+# docblock off of. Otherwise we would just invoke
+# build_duckdb_io_manager directly and assign to module-scoped variable
+def wrap_io_manager(fn) -> IOManagerDefinition:
+    return fn()
 
-Examples:
 
-    .. code-block:: python
+@wrap_io_manager
+def duckdb_pandas_io_manager():
+    """
+    An IO manager definition that reads inputs from and writes pandas dataframes to DuckDB.
 
-        from dagster_duckdb_pandas import duckdb_pandas_io_manager
+    Returns:
+        IOManagerDefinition
 
-        @asset(
-            key_prefix=["my_schema"]  # will be used as the schema in DuckDB
-        )
-        def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
-            ...
+    Examples:
 
-        @repository
-        def my_repo():
-            return with_resources(
-                [my_table],
-                {"io_manager": duckdb_pandas_io_manager.configured({"database": "my_db.duckdb"})}
+        .. code-block:: python
+
+            from dagster_duckdb_pandas import duckdb_pandas_io_manager
+
+            @asset(
+                key_prefix=["my_schema"]  # will be used as the schema in DuckDB
             )
+            def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
+                ...
 
-    If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-    the IO Manager. For assets, the schema will be determined from the asset key.
-    For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
-    via config or on the asset/op, "public" will be used for the schema.
+            @repository
+            def my_repo():
+                return with_resources(
+                    [my_table],
+                    {"io_manager": duckdb_pandas_io_manager.configured({"database": "my_db.duckdb"})}
+                )
 
-    .. code-block:: python
+        If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
+        the IO Manager. For assets, the schema will be determined from the asset key.
+        For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
+        via config or on the asset/op, "public" will be used for the schema.
 
-        @op(
-            out={"my_table": Out(metadata={"schema": "my_schema"})}
-        )
-        def make_my_table() -> pd.DataFrame:
-            # the returned value will be stored at my_schema.my_table
-            ...
+        .. code-block:: python
 
-    To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
-    In or AssetIn.
+            @op(
+                out={"my_table": Out(metadata={"schema": "my_schema"})}
+            )
+            def make_my_table() -> pd.DataFrame:
+                # the returned value will be stored at my_schema.my_table
+                ...
 
-    .. code-block:: python
+        To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
+        In or AssetIn.
 
-        @asset(
-            ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
-        )
-        def my_table_a(my_table: pd.DataFrame) -> pd.DataFrame:
-            # my_table will just contain the data from column "a"
-            ...
+        .. code-block:: python
 
-"""
+            @asset(
+                ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
+            )
+            def my_table_a(my_table: pd.DataFrame) -> pd.DataFrame:
+                # my_table will just contain the data from column "a"
+                ...
+
+    """
+    return build_duckdb_io_manager([DuckDBPandasTypeHandler()])
