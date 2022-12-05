@@ -24,7 +24,7 @@ Available as `dagster-me`, the `dagster-managed-elements` library includes the b
 
 ---
 
-## Step 1. Defining a reconciler
+## Step 1: Define a reconciler
 
 The config for your Airbyte instance is specified in a `AirbyteManagedElementReconciler`, which is pointed at a specific Airbyte instance using an Airbyte resource. It is also provided with a list of connections to reconcile, which we will set up in the following steps.
 
@@ -53,7 +53,7 @@ For more information on setting up secrets from the environment, see the [enviro
 
 ---
 
-## Step 2. Defining sources and destinations
+## Step 2: Define sources and destinations
 
 Next, we will define our sources and destinations. Sources and destinations can be constructed manually using the `AirbyteSource` and `AirbyteDestination` classes, respectively, however `dagster-airbyte` also provides generated, typed classes for specific source and destination types. The [API docs](/\_apidocs/libraries/dagster-airbyte#managed-config-generated-sources) provide a lsit of properties needed to configure each source and destination type.
 
@@ -79,7 +79,7 @@ local_json_destination = LocalJsonDestination(
 
 ---
 
-## Step 3. Defining a connection
+## Step 3: Define a connection
 
 Finally, we will define a connection between our source and destination. This is defined using the [`AirbyteConnection`](/\_apidocs/libraries/dagster-airbyte#dagster_airbyte.AirbyteConnection) class.
 
@@ -105,7 +105,7 @@ airbyte_reconciler = AirbyteManagedElementReconciler(
 
 ---
 
-## Step 4. Validating changes
+## Step 4. Validate changes
 
 Next, we'll use the `dagster-me` CLI to sanity-check our reconciler and apply any changes. The `check` command prints out differences between the current state of the Airbyte instance and the desired state specified in the reconciler. The CLI can be invoked by pointing it at a module that contains the reconciler.
 
@@ -132,7 +132,7 @@ Found 1 reconciler, checking...
 
 ---
 
-## Step 5. Applying changes
+## Step 5. Apply changes
 
 These changes look like what we expect, so we'll apply them:
 
@@ -141,8 +141,6 @@ dagster-me apply --module my_python_module.my_submodule:reconciler
 ```
 
 Now, we should see our new connection in the Airbyte UI:
-
-
 
 <Image
 alt="instance-overview"
@@ -176,7 +174,9 @@ airbyte_assets = load_assets_from_connections(
 )
 ```
 
-## For more information on managing Airbyte assets in Dagster, see the [Airbyte guide](/integrations/airbyte).
+For more information on managing Airbyte assets in Dagster, see the [Airbyte guide](/integrations/airbyte).
+
+---
 
 ## Additional configuration options
 
