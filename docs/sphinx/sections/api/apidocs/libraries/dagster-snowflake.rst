@@ -12,7 +12,7 @@ Related Guides:
 
 * `Using Dagster with Snowflake </integrations/snowflake>`_
 * `Transitioning Data Pipelines from Development to Production </guides/dagster/transitioning-data-pipelines-from-development-to-production>`_
-* `Testing Against Production with Dagster Cloud Branch Deployments <guides/dagster/branch_deployments>`_
+* `Testing Against Production with Dagster Cloud Branch Deployments </guides/dagster/branch_deployments>`_
 
 
 .. currentmodule:: dagster_snowflake
