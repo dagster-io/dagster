@@ -29,7 +29,6 @@ def ssm_resource(context):
     The returned resource object is a Systems Manager client, an instance of `botocore.client.ssm`.
 
     Example:
-
         .. code-block:: python
 
             from dagster import build_op_context, job, op
@@ -145,7 +144,6 @@ def parameter_store_resource(context):
     their string values. Optionally sets selected parameters as environment variables.
 
     Example:
-
         .. code-block:: python
 
             import os

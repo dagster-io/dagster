@@ -480,7 +480,6 @@ def load_assets_from_dbt_cloud_job(
         CacheableAssetsDefinition: A definition for the loaded assets.
 
     Examples:
-
     .. code-block:: python
 
         from dagster import repository

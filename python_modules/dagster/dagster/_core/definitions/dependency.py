@@ -72,7 +72,6 @@ class NodeInvocation(
             node instance.
 
     Examples:
-
     In general, users should prefer not to construct this class directly or use the
     :py:class:`JobDefinition` API that requires instances of this class. Instead, use the
     :py:func:`@job <job>` API:

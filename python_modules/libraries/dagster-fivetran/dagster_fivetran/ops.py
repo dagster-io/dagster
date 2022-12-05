@@ -69,7 +69,6 @@ def fivetran_sync_op(context):
     communicate with the Fivetran API.
 
     Examples:
-
     .. code-block:: python
 
         from dagster import job
@@ -178,7 +177,6 @@ def fivetran_resync_op(context):
     communicate with the Fivetran API.
 
     Examples:
-
     .. code-block:: python
 
         from dagster import job

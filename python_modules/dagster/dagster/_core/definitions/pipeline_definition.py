@@ -111,7 +111,6 @@ class PipelineDefinition:
         _parent_pipeline_def (INTERNAL ONLY): Used for tracking pipelines created using solid subsets.
 
     Examples:
-
         .. code-block:: python
 
             @solid

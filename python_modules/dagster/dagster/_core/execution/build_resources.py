@@ -69,7 +69,6 @@ def build_resources(
             initialization. Defaults to system log manager.
 
     Examples:
-
     .. code-block:: python
 
         from dagster import resource, build_resources

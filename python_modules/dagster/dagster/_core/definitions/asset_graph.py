@@ -177,6 +177,7 @@ class AssetGraph:
                 partition key belongs to.
             child_asset_key (AssetKey): The asset key of the downstream asset. The provided partition
                 key will be mapped to partitions within this asset.
+
         Returns:
             Sequence[str]: A list of the corresponding downstream partitions in child_asset_key that
                 partition_key maps to.
@@ -235,6 +236,7 @@ class AssetGraph:
                 partition key belongs to.
             parent_asset_key (AssetKey): The asset key of the parent asset. The provided partition
                 key will be mapped to partitions within this asset.
+
         Returns:
             Sequence[str]: A list of the corresponding downstream partitions in child_asset_key that
                 partition_key maps to.

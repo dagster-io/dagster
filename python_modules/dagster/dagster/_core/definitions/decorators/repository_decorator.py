@@ -212,7 +212,6 @@ def repository(
         description (Optional[str]): A string description of the repository.
 
     Example:
-
     .. code-block:: python
 
         ######################################################################

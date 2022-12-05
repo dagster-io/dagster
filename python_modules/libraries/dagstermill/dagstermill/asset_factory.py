@@ -198,7 +198,6 @@ def define_dagstermill_asset(
             Defaults to False.
 
     Examples:
-
     .. code-block:: python
 
         from dagstermill import define_dagstermill_asset

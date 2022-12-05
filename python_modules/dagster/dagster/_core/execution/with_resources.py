@@ -36,7 +36,6 @@ def with_resources(
             dictionary.
 
     Examples:
-
     .. code-block:: python
 
         from dagster import asset, resource, with_resources

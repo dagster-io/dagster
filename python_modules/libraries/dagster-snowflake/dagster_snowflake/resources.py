@@ -278,7 +278,6 @@ def snowflake_resource(context):
     A simple example of loading data into Snowflake and subsequently querying that data is shown below:
 
     Examples:
-
     .. code-block:: python
 
         from dagster import job, op

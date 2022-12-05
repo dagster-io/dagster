@@ -164,7 +164,6 @@ def pagerduty_resource(context):
     """A resource for posting events (alerts) to PagerDuty.
 
     Example:
-
     .. code-block:: python
 
         @op(required_resource_keys={'pagerduty'})

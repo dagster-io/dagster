@@ -56,7 +56,6 @@ def usable_as_dagster_type(  # type: ignore  # bug
             decorator to construct these arguments.
 
     Examples:
-
     .. code-block:: python
 
         # dagster_aws.s3.file_manager.S3FileHandle

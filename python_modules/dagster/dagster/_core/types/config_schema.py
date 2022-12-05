@@ -147,6 +147,7 @@ class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
         Args:
             config_value (object): Config value to be ingested by the external version
                 loading function.
+
         Returns:
             Optional[str]: Hash of concatenated loader version and external input version if both
                 are provided, else None.
@@ -210,7 +211,6 @@ def dagster_type_loader(
             another.
 
     Examples:
-
     .. code-block:: python
 
         @dagster_type_loader(Permissive())
@@ -291,7 +291,6 @@ def dagster_type_materializer(
         config_schema (object): The type of the config data expected by the decorated function.
 
     Examples:
-
     .. code-block:: python
 
         # Takes a list of dicts such as might be read in using csv.DictReader, as well as a config

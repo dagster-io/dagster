@@ -197,7 +197,6 @@ def generate_materializations(
     `dbt_rpc_sync_resource`, which will wait for execution to complete.
 
     Examples:
-
     .. code-block:: python
 
         from dagster import op, Output

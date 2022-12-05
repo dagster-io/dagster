@@ -42,6 +42,7 @@ def date_partition_range(
             interval partitions for which the start time of the interval is less than the
             current time.
         timezone (Optional(str)): Timezone in which the partition values should be expressed.
+
     Returns:
         Callable[[], List[Partition]]
     """

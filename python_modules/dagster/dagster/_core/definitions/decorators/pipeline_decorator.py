@@ -180,7 +180,6 @@ def pipeline(
             pipeline. Providing a VersionStrategy will enable memoization on the pipeline.
 
     Example:
-
         .. code-block:: python
 
             @solid(output_defs=[OutputDefinition(int, "two"), OutputDefinition(int, "four")])

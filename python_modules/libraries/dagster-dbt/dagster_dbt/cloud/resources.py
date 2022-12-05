@@ -100,6 +100,7 @@ class DbtCloudResourceV2:
             data (Optional[str]): JSON-formatted data string to be included in the request.
             return_text (bool): Override default behavior and return unparsed {"text": response.text}
                 blob instead of json.
+
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request
         """
@@ -157,11 +158,11 @@ class DbtCloudResourceV2:
                 the details page of your job in the dbt Cloud UI. It will be the final number in the
                 url, e.g.: ``https://cloud.getdbt.com/#/accounts/{account_id}/projects/{project_id}/jobs/{job_id}/``
             kwargs: Passed in as the properties to be changed.
+
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request
 
         Examples:
-
         .. code-block:: python
 
             # disable schedule for job with id=12345

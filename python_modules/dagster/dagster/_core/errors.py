@@ -181,7 +181,6 @@ def user_code_error_boundary(
     tool author wishes to do so.
 
     Examples:
-
     .. code-block:: python
 
         with user_code_error_boundary(

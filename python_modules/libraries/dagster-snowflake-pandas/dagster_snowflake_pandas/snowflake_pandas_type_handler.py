@@ -59,7 +59,6 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     Plugin for the Snowflake I/O Manager that can store and load Pandas DataFrames as Snowflake tables.
 
     Examples:
-
     .. code-block:: python
 
         from dagster_snowflake import build_snowflake_io_manager

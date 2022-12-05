@@ -120,6 +120,7 @@ class MlFlow(metaclass=MlflowMeta):
             dagster_run_id (optional): The Dagster run id.
             When none is passed it fetches the dagster_run_id object set in
             the constructor.  Defaults to None.
+
         Returns:
             run_id (str or None): run_id if it is found else None
         """
@@ -237,7 +238,6 @@ def mlflow_tracking(context):
        when the Dagster run is finished.
 
     Examples:
-
         .. code-block:: python
 
             from dagster_mlflow import end_mlflow_on_run_finished, mlflow_tracking

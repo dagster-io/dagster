@@ -26,7 +26,6 @@ def slack_resource(context):
     By configuring this Slack resource, you can post messages to Slack from any Dagster op:
 
     Examples:
-
     .. code-block:: python
 
         import os

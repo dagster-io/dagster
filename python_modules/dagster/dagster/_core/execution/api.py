@@ -418,6 +418,7 @@ class ReexecutionOptions(NamedTuple):
         Args:
             run_id (str): The run_id of the failed run. Run must fail in order to be reexecuted.
             instance (DagsterInstance): The DagsterInstance that the original run occurred in.
+
         Returns:
             ReexecutionOptions: Reexecution options to pass to a python execution.
         """

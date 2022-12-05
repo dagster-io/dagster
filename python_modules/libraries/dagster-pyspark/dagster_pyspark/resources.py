@@ -33,7 +33,6 @@ def pyspark_resource(init_context):
     """This resource provides access to a PySpark SparkSession for executing PySpark code within Dagster.
 
     Example:
-
     .. code-block:: python
 
         @op(required_resource_keys={"pyspark"})
@@ -81,7 +80,6 @@ def lazy_pyspark_resource(init_context):
     until it is actually needed / accessed by an op or IOManager.
 
     Example:
-
     .. code-block:: python
 
         @op(required_resource_keys={"lazy_pyspark"})

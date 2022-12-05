@@ -206,7 +206,6 @@ def _get_dependency_node_output_handles(
     belong in the same graph-backed asset node.
 
     Arguments:
-
     outputs_by_graph_handle: A mapping of every graph node handle to a dictionary with each out
         name as a key and a NodeOutputHandle containing the op output name and op node handle
     non_asset_inputs_by_node_handle: A mapping of all node handles to all upstream node handles
@@ -295,7 +294,6 @@ def asset_key_to_dep_node_handles(
     2. A mapping of each asset key to a list of node output handles that are upstream dependencies of the asset.
 
     Arguments:
-
     graph_def: The graph definition of the job, where each top level node is an asset.
     assets_defs_by_node_handle: A mapping of each node handle to the asset definition for that node.
     """

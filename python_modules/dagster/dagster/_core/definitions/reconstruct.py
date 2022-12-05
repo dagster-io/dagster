@@ -411,7 +411,6 @@ def reconstructable(target: Callable[..., "PipelineDefinition"]) -> Reconstructa
     specify your own reconstruction strategy.
 
     Examples:
-
     .. code-block:: python
 
         from dagster import job, reconstructable
@@ -526,7 +525,6 @@ def build_reconstructable_job(
             job. Values of the dict must be JSON serializable.
 
     Examples:
-
     .. code-block:: python
 
         # module: mymodule

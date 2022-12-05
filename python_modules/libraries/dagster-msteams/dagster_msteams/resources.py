@@ -27,7 +27,6 @@ def msteams_resource(context):
     By configuring this resource, you can post messages to MS Teams from any Dagster solid:
 
     Examples:
-
     .. code-block:: python
 
         import os

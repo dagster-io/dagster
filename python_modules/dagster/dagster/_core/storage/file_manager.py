@@ -175,7 +175,6 @@ def local_file_manager(init_context):
     Implements the :py:class:`~dagster._core.storage.file_manager.FileManager` API.
 
     Examples:
-
     .. code-block:: python
 
         import tempfile

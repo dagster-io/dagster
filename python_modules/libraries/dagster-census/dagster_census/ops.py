@@ -72,7 +72,6 @@ def census_trigger_sync_op(context):
     communicate with the census API.
 
     Examples:
-
     .. code-block:: python
 
         from dagster import job

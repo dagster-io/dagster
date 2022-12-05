@@ -68,7 +68,6 @@ def airbyte_sync_op(context):
     communicate with the Airbyte API.
 
     Examples:
-
     .. code-block:: python
 
         from dagster import job
