@@ -12,6 +12,14 @@ A code location is collection of Dagster definitions loadable and accessible by 
 
 Definitions within a code location have a common namespace and must have unique names. This allows them to be grouped and organized by code location in tools.
 
+<Note>
+  Before the introduction of the <PyObject object="Definitions" />
+  API, definitions were grouped into repositories, and there could be many repostories
+  in a particular code location. Refer to the <a href="/concepts/repositories-workspaces/repositories">
+    Repositories documentation
+  </a> for info on this previous API and mental model.
+</Note>
+
 ---
 
 ## Relevant APIs
@@ -25,14 +33,6 @@ Definitions within a code location have a common namespace and must have unique 
 ## Understanding code locations
 
 ### Definitions versus repositories
-
-<Note>
-  Before the introduction of the <PyObject object="Definitions" />
-  API, definitions were grouped into repositories, and there could be many repostories
-  in a particular code location. Refer to the <a href="/concepts/repositories-workspaces/repositories">
-    Repositories documentation
-  </a> for info on this previous API and mental model.
-</Note>
 
 <table
   className="table"
