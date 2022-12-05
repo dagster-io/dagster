@@ -282,7 +282,8 @@ def instance_from_debug_payloads(payload_files):
 
 def test_object_store_operation_result_data_new_fields():
     """We added address and version fields to ObjectStoreOperationResultData.
-    Make sure we can still deserialize old ObjectStoreOperationResultData without those fields."""
+    Make sure we can still deserialize old ObjectStoreOperationResultData without those fields.
+    """
     instance_from_debug_payloads([file_relative_path(__file__, "0_9_12_nothing_fs_storage.gz")])
 
 

@@ -45,7 +45,8 @@ class PrometheusResource:
                 'content' is the data which should be used to form the HTTP
                 Message Body.
         This overwrites all metrics with the same job and grouping_key.
-        This uses the PUT HTTP method."""
+        This uses the PUT HTTP method.
+        """
         prometheus_client.push_to_gateway(
             gateway=self.gateway,
             job=job,
@@ -68,7 +69,8 @@ class PrometheusResource:
                 See the 'prometheus_client.push_to_gateway' documentation
                 for implementation requirements.
         This replaces metrics with the same name, job and grouping_key.
-        This uses the POST HTTP method."""
+        This uses the POST HTTP method.
+        """
         prometheus_client.pushadd_to_gateway(
             gateway=self.gateway,
             job=job,
@@ -90,7 +92,8 @@ class PrometheusResource:
                 See the 'prometheus_client.push_to_gateway' documentation
                 for implementation requirements.
         This deletes metrics with the given job and grouping_key.
-        This uses the DELETE HTTP method."""
+        This uses the DELETE HTTP method.
+        """
         prometheus_client.delete_from_gateway(
             gateway=self.gateway,
             job=job,

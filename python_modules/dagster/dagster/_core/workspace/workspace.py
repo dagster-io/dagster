@@ -26,7 +26,8 @@ class WorkspaceLocationEntry(NamedTuple):
 class WorkspaceLocationStatusEntry(NamedTuple):
     """
     Slimmer version of WorkspaceLocationEntry, containing the minimum set of information required
-    to know whether the workspace needs reloading."""
+    to know whether the workspace needs reloading.
+    """
 
     location_name: str
     load_status: WorkspaceLocationLoadStatus

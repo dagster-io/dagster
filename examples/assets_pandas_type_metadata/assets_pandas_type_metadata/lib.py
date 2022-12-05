@@ -42,7 +42,8 @@ BollingerBandsDgType = pandera_schema_to_dagster_type(BollingerBands)
 
 class AnomalousEvents(pa.SchemaModel):
     """Anomalous price events, defined by a day on which a stock's closing price strayed above or
-    below its Bollinger bands."""
+    below its Bollinger bands.
+    """
 
     date: Series[pd.Timestamp] = pa.Field(description="Date of price event")
     name: Series[str] = pa.Field(description="Ticker symbol of stock")
@@ -74,7 +75,8 @@ def download_file(url: str, path: str):
 def load_prices_csv(path: str) -> pd.DataFrame:
     """Load a CSV file containing stock prices. CSV should conform to the schema in the
     `StockPrices` pandera schema above. If relative path, will be resolved relative to
-    `DATA_ROOT`."""
+    `DATA_ROOT`.
+    """
     path = normalize_path(path)
     df = cast(pd.DataFrame, pd.read_csv(path, parse_dates=["date"]))
     df = df.rename(columns={"Name": "name"})
@@ -96,7 +98,8 @@ def compute_bollinger_bands(
     df: pd.DataFrame, rate: int = 30, sigma: float = 2.0, dropna=True
 ) -> pd.DataFrame:
     """Compute Bollinger bands for a single stock over time. The dataframe passed in here should be
-    represent a single timeseries."""
+    represent a single timeseries.
+    """
     price = df["close"]
     rma = price.rolling(window=rate).mean()
     rstd = price.rolling(window=rate).std()
@@ -112,7 +115,8 @@ def compute_bollinger_bands_multi(
     df: pd.DataFrame, dropna: bool = True, rate: int = 30, sigma: float = 2.0
 ):
     """Compute Bollinger bands for a set of stocks over time. The input dataframe can contain
-    multiple timeseries grouped by the `name` column."""
+    multiple timeseries grouped by the `name` column.
+    """
     odf = df.groupby("name").apply(
         lambda idf: compute_bollinger_bands(idf, dropna=False, rate=rate, sigma=sigma)
     )

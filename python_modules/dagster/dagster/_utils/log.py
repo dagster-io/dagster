@@ -211,7 +211,8 @@ def get_stack_trace_array(exception):
 
 def _mockable_formatTime(record, datefmt=None):  # pylint: disable=unused-argument
     """Uses pendulum.now to determine the logging time, causing pendulum
-    mocking to affect the logger timestamp in tests."""
+    mocking to affect the logger timestamp in tests.
+    """
     return pendulum.now().strftime(datefmt if datefmt else default_date_format_string())
 
 

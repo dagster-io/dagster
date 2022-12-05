@@ -535,7 +535,8 @@ class DbtRpcSyncResource(DbtRpcResource):
 
     def _get_result(self, data: Optional[str] = None) -> DbtRpcOutput:
         """Sends a request to the dbt RPC server and continuously polls for the status of a request
-        until the state is ``success``."""
+        until the state is ``success``.
+        """
 
         out = super()._get_result(data)
         request_token: str = check.not_none(out.result.get("request_token"))

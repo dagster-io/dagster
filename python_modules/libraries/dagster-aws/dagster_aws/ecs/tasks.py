@@ -28,7 +28,8 @@ class DagsterEcsTaskDefinitionConfig(
     )
 ):
     """All the information that Dagster needs to create a task definition and compare two task
-    definitions to see if they should be reused."""
+    definitions to see if they should be reused.
+    """
 
     def __new__(
         cls,

@@ -206,7 +206,8 @@ class ScheduleEvaluationContext:
 
 class DecoratedScheduleFunction(NamedTuple):
     """Wrapper around the decorated schedule function.  Keeps track of both to better support the
-    optimal return value for direct invocation of the evaluation function"""
+    optimal return value for direct invocation of the evaluation function
+    """
 
     decorated_fn: RawScheduleEvaluationFunction
     wrapped_fn: Callable[[ScheduleEvaluationContext], RunRequestIterator]

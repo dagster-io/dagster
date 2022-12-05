@@ -399,7 +399,8 @@ class DagsterK8sJobConfig(
         """Configuration intended to be set when creating a k8s job (e.g. in an executor that runs
         each op in its own k8s job, or a run launcher that create a k8s job for the run worker).
         Shares most of the schema with the container_context, but for back-compat reasons,
-        'namespace' is called 'job_namespace'."""
+        'namespace' is called 'job_namespace'.
+        """
 
         return merge_dicts(
             {

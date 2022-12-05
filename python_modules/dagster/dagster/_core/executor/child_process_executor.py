@@ -51,7 +51,8 @@ class ChildProcessCommand(ABC):  # pylint: disable=no-init
     def execute(self) -> Iterator[Union[ChildProcessEvent, "DagsterEvent"]]:
         """This method is invoked in the child process.
 
-        Yields a sequence of events to be handled by _execute_command_in_child_process."""
+        Yields a sequence of events to be handled by _execute_command_in_child_process.
+        """
 
 
 class ChildProcessCrashException(Exception):
@@ -65,7 +66,8 @@ class ChildProcessCrashException(Exception):
 def _execute_command_in_child_process(event_queue: Queue, command: ChildProcessCommand):
     """Wraps the execution of a ChildProcessCommand.
 
-    Handles errors and communicates across a queue with the parent process."""
+    Handles errors and communicates across a queue with the parent process.
+    """
 
     check.inst_param(command, "command", ChildProcessCommand)
 

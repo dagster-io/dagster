@@ -180,7 +180,8 @@ def is_subclass(child_type: Type[Any], parent_type: Type[Any]):
     (https://github.com/python/cpython/issues/88459 and
     https://github.com/python/cpython/issues/89010), some types (list[str] in Python 3.9, for
     example) pass inspect.isclass check above but then raise an exception if issubclass is called
-    with the same class. This function provides a workaround for that issue."""
+    with the same class. This function provides a workaround for that issue.
+    """
 
     if not inspect.isclass(child_type):
         return False

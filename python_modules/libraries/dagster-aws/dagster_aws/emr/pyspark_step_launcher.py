@@ -393,7 +393,8 @@ class EmrPySparkStepLauncher(StepLauncher):
 
     def _log_logs_from_s3(self, log, emr_step_id):
         """Retrieves the logs from the remote PySpark process that EMR posted to S3 and logs
-        them to the given log."""
+        them to the given log.
+        """
         stdout_log, stderr_log = self.emr_job_runner.retrieve_logs_for_step_id(
             log, self.cluster_id, emr_step_id
         )

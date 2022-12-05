@@ -14,14 +14,16 @@ from dagster._core.errors import DagsterUnknownResourceError
 
 class IContainsGenerator:
     """This class adds an additional tag to indicate that the resources object has at least one
-    resource that has been yielded from a generator, and thus may require teardown."""
+    resource that has been yielded from a generator, and thus may require teardown.
+    """
 
 
 class Resources:
     """This class functions as a "tag" that we can use to type the namedtuple returned by
     ScopedResourcesBuilder.build(). The way that we create the namedtuple returned by build() is
     incompatible with type annotations on its own due to its dynamic attributes, so this tag class
-    provides a workaround."""
+    provides a workaround.
+    """
 
 
 class ScopedResourcesBuilder(
@@ -33,7 +35,8 @@ class ScopedResourcesBuilder(
     """There are concepts in the codebase (e.g. ops, system storage) that receive
     only the resources that they have specified in required_resource_keys.
     ScopedResourcesBuilder is responsible for dynamically building a class with
-    only those required resources and returning an instance of that class."""
+    only those required resources and returning an instance of that class.
+    """
 
     def __new__(
         cls,

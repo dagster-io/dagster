@@ -166,7 +166,8 @@ class InputContext:
     @property
     def has_input_name(self) -> bool:
         """If we're the InputContext is being used to load the result of a run from outside the run,
-        then it won't have an input name."""
+        then it won't have an input name.
+        """
         return self._name is not None
 
     @public  # type: ignore

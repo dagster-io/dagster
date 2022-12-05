@@ -135,7 +135,8 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     @property
     def resources(self) -> Any:
         """collections.namedtuple: A dynamically-created type whose properties allow access to
-        resources."""
+        resources.
+        """
         return self._pipeline_context.scoped_resources_builder.build(
             required_resource_keys=self._resource_keys_to_init,
         )
@@ -205,7 +206,8 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     @property
     def op_config(self) -> Any:
         """collections.namedtuple: A dynamically-created type whose properties allow access to
-        op-specific config."""
+        op-specific config.
+        """
         if self._solid_config:
             return self._solid_config
 
@@ -215,7 +217,8 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     @property
     def solid_config(self) -> Any:
         """collections.namedtuple: A dynamically-created type whose properties allow access to
-        solid-specific config."""
+        solid-specific config.
+        """
         deprecation_warning(
             "DagstermillExecutionContext.solid_config",
             "0.17.0",
