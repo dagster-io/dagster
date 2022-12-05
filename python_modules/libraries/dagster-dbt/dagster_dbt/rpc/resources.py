@@ -595,9 +595,6 @@ def dbt_rpc_resource(context) -> DbtRpcResource:
     <https://docs.dagster.io/concepts/configuration/configured>`_ method.
 
     Examples:
-
-    Examples:
-
     .. code-block:: python
 
         from dagster_dbt import dbt_rpc_resource
