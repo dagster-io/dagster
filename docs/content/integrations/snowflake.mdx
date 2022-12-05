@@ -223,6 +223,44 @@ def flowers_analysis_repository():
 
 ---
 
+## Additional features
+
+Now that you're familiar with the base features of the Snowflake I/O manager, let's take a look at some additional features!
+
+---
+
+### Selecting specific columns from a Snowflake table in a downstream asset
+
+Sometimes you may not want to fetch an entire table as the input to a downstream asset. In this case, you can select specific columns to load by supplying metadata on the downstream asset.
+
+```python file=/integrations/snowflake/downstream_columns.py
+import pandas as pd
+
+from dagster import AssetIn, asset
+
+# this example uses the iris_dataset asset from Step 2
+
+@asset(
+    ins={
+        "iris_sepal": AssetIn(
+            key="iris_dataset",
+            metadata={"columns": ["Sepal length (cm)", "Sepal width (cm)"]},
+        )
+    }
+)
+def sepal_data(iris_sepal: pd.DataFrame) -> pd.DataFrame:
+    iris_sepal["Sepal area (cm2)"] = (
+        iris_sepal["Sepal length (cm)"] * iris_sepal["Sepal width (cm)"]
+    )
+    return iris_sepal
+```
+
+In this example, we only need the columns with sepal data in our `sepal_data` asset. Fetching the entire table would be unnecessarily costly. To select specific columns, we need to add metadata to the input asset. We do this by explicitly specifying which asset should be loaded into our `sepal_data` asset.
+
+In the `ins` parameter to `sepal_data` we create a dictionary where the keys are the parameters for the asset function and the values are `AssetIn`s that tell Dagster what assets to load. In this example, we tell Dagster that the `iris_sepal` parameter should be the `iris_dataset` asset. In the `metadata` of the `AssetIn` we supply the key `columns` with a list of the column names we want to fetch.
+
+When Dagster materializes the `sepal_data` asset, when it loads the `iris_dataset` asset using the Snowflake I/O manager, it will only fetch the `Sepal length (cm)` and `Sepal width (cm)` columns of the `FLOWERS.IRIS.IRIS_DATASET` table as a Pandas DataFrame and pass them to `sepal_data`.
+
 ## Related
 
 For more information on software-defined assets, refer to the [Assets tutorial](/tutorial/assets/defining-an-asset) or the [Assets concept documentation](/concepts/assets/software-defined-assets).
