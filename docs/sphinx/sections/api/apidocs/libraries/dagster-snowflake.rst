@@ -8,6 +8,13 @@ To use this library, you should first ensure that you have an appropriate `Snowf
 <https://docs.snowflake.net/manuals/user-guide/admin-user-management.html>`_ configured to access
 your data warehouse.
 
+Related Guides:
+
+* `Using Dagster with Snowflake </integrations/snowflake>`_
+* `Transitioning Data Pipelines from Development to Production </guides/dagster/transitioning-data-pipelines-from-development-to-production>`_
+* `Testing Against Production with Dagster Cloud Branch Deployments </guides/dagster/branch_deployments>`_
+
+
 .. currentmodule:: dagster_snowflake
 
 I/O Manager

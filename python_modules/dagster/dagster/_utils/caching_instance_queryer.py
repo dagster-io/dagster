@@ -5,7 +5,10 @@ from typing import TYPE_CHECKING, AbstractSet, Dict, Iterable, Mapping, Optional
 import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.logical_version import get_input_event_pointer_tag_key
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.event_api import EventRecordsFilter
+from dagster._core.events import DagsterEventType
 from dagster._core.storage.event_log import EventLogRecord, SqlEventLogStorage
 from dagster._core.storage.event_log.sql_event_log import AssetEventTagsTable
 from dagster._core.storage.pipeline_run import (
@@ -15,6 +18,7 @@ from dagster._core.storage.pipeline_run import (
     RunsFilter,
 )
 from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._core.utils import frozendict
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
 
@@ -87,8 +91,6 @@ class CachingInstanceQueryer:
 
     @cached_method
     def _get_planned_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
-        from dagster._core.events import DagsterEventType
-
         materializations_planned = self._instance.get_records_for_run(
             run_id=run_id,
             of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
@@ -102,8 +104,6 @@ class CachingInstanceQueryer:
         after_cursor: Optional[int] = None,
         before_cursor: Optional[int] = None,
     ) -> Optional[EventLogRecord]:
-        from dagster import DagsterEventType, EventRecordsFilter
-
         records = self._instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -271,6 +271,7 @@ class CachingInstanceQueryer:
         asset_key: AssetKey,
         record_id: Optional[int],
         record_timestamp: Optional[float],
+        record_tags: Mapping[str, str],
         required_keys: AbstractSet[AssetKey],
     ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
 
@@ -299,20 +300,38 @@ class CachingInstanceQueryer:
                     if upstream_key in unknown_required_keys:
                         upstream_required_keys.add(upstream_key)
 
-                # get the most recent asset materialization for this parent which happened before
-                # the current record
-                latest_parent_record = self.get_latest_materialization_record(
-                    parent_key, before_cursor=record_id
-                )
+                input_event_pointer_tag = get_input_event_pointer_tag_key(parent_key)
+                if input_event_pointer_tag in record_tags:
+                    # get the upstream materialization event which was consumed when producing this
+                    # materialization event
+                    input_record_id = int(record_tags[input_event_pointer_tag])
+                    parent_record = self.get_latest_materialization_record(
+                        parent_key, before_cursor=input_record_id + 1
+                    )
+                else:
+                    # if the input event id was not recorded (materialized pre-1.1.0), just grab
+                    # the most recent asset materialization for this parent which happened before
+                    # the current record
+                    parent_record = self.get_latest_materialization_record(
+                        parent_key, before_cursor=record_id
+                    )
 
                 # recurse to find the data times of this parent
                 for key, tup in self.calculate_used_data(
                     asset_graph=asset_graph,
                     asset_key=parent_key,
-                    record_id=latest_parent_record.storage_id if latest_parent_record else None,
-                    record_timestamp=latest_parent_record.event_log_entry.timestamp
-                    if latest_parent_record
+                    record_id=parent_record.storage_id if parent_record else None,
+                    record_timestamp=parent_record.event_log_entry.timestamp
+                    if parent_record
                     else None,
+                    record_tags=frozendict(
+                        (
+                            parent_record.asset_materialization.tags
+                            if parent_record and parent_record.asset_materialization
+                            else None
+                        )
+                        or {}
+                    ),
                     required_keys=frozenset(upstream_required_keys),
                 ).items():
                     # if root data is missing, this overrides other values
@@ -337,9 +356,9 @@ class CachingInstanceQueryer:
         and finds the most recent materialization of each of its parents which happened *before* that
         given materialization event.
         """
-        if record.asset_key is None:
+        if record.asset_key is None or record.asset_materialization is None:
             raise DagsterInvariantViolationError(
-                "Can only calculate data times for records with an `asset_key`."
+                "Can only calculate data times for records with a materialization event and an asset_key."
             )
         if upstream_keys is None:
             upstream_keys = asset_graph.get_non_source_roots(record.asset_key)
@@ -349,6 +368,7 @@ class CachingInstanceQueryer:
             asset_key=record.asset_key,
             record_id=record.storage_id,
             record_timestamp=record.event_log_entry.timestamp,
+            record_tags=frozendict(record.asset_materialization.tags or {}),
             required_keys=frozenset(upstream_keys),
         )
         self.set_known_used_data(record, new_known_data=data)
