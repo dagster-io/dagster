@@ -139,7 +139,7 @@ class PythonPackages:
                     # Our change is in this package's directory
                     (change in package.directory.rglob("*"))
                     # The file can alter behavior - exclude things like README changes
-                    and (change.suffix in [".py", ".cfg", ".toml"])
+                    and (change.suffix in [".py", ".cfg", ".toml", ".yaml", ".ipynb", ".yml"])
                     # The file is not part of a test suite. We treat this differently
                     # because we don't want to run tests in dependent packages
                     and "_tests/" not in str(change)
