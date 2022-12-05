@@ -300,7 +300,7 @@ def make_dagster_repo_from_airflow_example_dags(
     patch_airflow_example_dag(dag_bag)
 
     return make_dagster_repo_from_airflow_dag_bag(
-        dag_bag, repo_name, use_ephemeral_airflow_db=use_ephemeral_airflow_db
+        dag_bag=dag_bag, repo_name=repo_name, use_ephemeral_airflow_db=use_ephemeral_airflow_db
     )
 
 
@@ -371,8 +371,8 @@ def make_dagster_repo_from_airflow_dags_path(
         raise DagsterAirflowError("Error initializing airflow.models.dagbag object with arguments")
 
     return make_dagster_repo_from_airflow_dag_bag(
-        dag_bag,
-        repo_name,
+        dag_bag=dag_bag,
+        repo_name=repo_name,
         use_airflow_template_context=use_airflow_template_context,
         mock_xcom=mock_xcom,
         use_ephemeral_airflow_db=use_ephemeral_airflow_db,
@@ -460,7 +460,11 @@ def make_dagster_pipeline_from_airflow_dag(
     tags = validate_tags(tags)
 
     pipeline_dependencies, solid_defs = _get_pipeline_definition_args(
-        dag, use_airflow_template_context, unique_id, mock_xcom, use_ephemeral_airflow_db
+        dag=dag,
+        use_airflow_template_context=use_airflow_template_context,
+        unique_id=unique_id,
+        mock_xcom=mock_xcom,
+        use_ephemeral_airflow_db=use_ephemeral_airflow_db,
     )
 
     @resource(
@@ -560,15 +564,15 @@ def _get_pipeline_definition_args(
     dag_roots = sorted(dag.roots, key=lambda x: x.task_id)
     for task in dag_roots:
         _traverse_airflow_dag(
-            dag,
-            task,
-            seen_tasks,
-            pipeline_dependencies,
-            solid_defs,
-            use_airflow_template_context,
-            unique_id,
-            mock_xcom,
-            use_ephemeral_airflow_db,
+            dag=dag,
+            task=task,
+            seen_tasks=seen_tasks,
+            pipeline_dependencies=pipeline_dependencies,
+            solid_defs=solid_defs,
+            use_airflow_template_context=use_airflow_template_context,
+            unique_id=unique_id,
+            mock_xcom=mock_xcom,
+            use_ephemeral_airflow_db=use_ephemeral_airflow_db,
         )
     return (pipeline_dependencies, solid_defs)
 
@@ -597,7 +601,12 @@ def _traverse_airflow_dag(
 
     seen_tasks.append(task)
     current_solid = make_dagster_solid_from_airflow_task(
-        dag, task, use_airflow_template_context, unique_id, mock_xcom, use_ephemeral_airflow_db
+        dag=dag,
+        task=task,
+        use_airflow_template_context=use_airflow_template_context,
+        unique_id=unique_id,
+        mock_xcom=mock_xcom,
+        use_ephemeral_airflow_db=use_ephemeral_airflow_db,
     )
     solid_defs.append(current_solid)
 
@@ -622,15 +631,15 @@ def _traverse_airflow_dag(
     for child_task in task_downstream_list:
         if child_task not in seen_tasks:
             _traverse_airflow_dag(
-                dag,
-                child_task,
-                seen_tasks,
-                pipeline_dependencies,
-                solid_defs,
-                use_airflow_template_context,
-                unique_id,
-                mock_xcom,
-                use_ephemeral_airflow_db,
+                dag=dag,
+                task=child_task,
+                seen_tasks=seen_tasks,
+                pipeline_dependencies=pipeline_dependencies,
+                solid_defs=solid_defs,
+                use_airflow_template_context=use_airflow_template_context,
+                unique_id=unique_id,
+                mock_xcom=mock_xcom,
+                use_ephemeral_airflow_db=use_ephemeral_airflow_db,
             )
 
 
