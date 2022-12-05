@@ -452,6 +452,7 @@ def test_reimport():
 
 
 @pytest.mark.notebook_test
+@pytest.mark.skip("https://github.com/dagster-io/dagster/pull/10539")
 def test_yield_3_job():
     with exec_for_test("yield_3_job") as result:
         assert result.success
