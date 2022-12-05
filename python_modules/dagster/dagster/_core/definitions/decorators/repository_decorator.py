@@ -69,7 +69,20 @@ class _Repository:
             for i, definition in enumerate(_flatten(repository_definitions)):
                 if isinstance(definition, CacheableAssetsDefinition):
                     defer_repository_data = True
-                elif not isinstance(definition, (PipelineDefinition, PartitionSetDefinition, ScheduleDefinition, SensorDefinition, GraphDefinition, AssetGroup, AssetsDefinition, SourceAsset, UnresolvedAssetJobDefinition)):
+                elif not isinstance(
+                    definition,
+                    (
+                        PipelineDefinition,
+                        PartitionSetDefinition,
+                        ScheduleDefinition,
+                        SensorDefinition,
+                        GraphDefinition,
+                        AssetGroup,
+                        AssetsDefinition,
+                        SourceAsset,
+                        UnresolvedAssetJobDefinition,
+                    ),
+                ):
                     bad_defns.append((i, type(definition)))
                 else:
                     repository_defns.append(definition)

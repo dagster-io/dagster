@@ -1,4 +1,6 @@
-from docs_snippets.concepts.partitions_schedules_sensors.partitioned_job import do_stuff_partitioned
+from docs_snippets.concepts.partitions_schedules_sensors.partitioned_job import (
+    do_stuff_partitioned,
+)
 
 
 def test_do_stuff():

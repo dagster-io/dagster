@@ -4,7 +4,11 @@ import pandas as pd
 
 from dagster import AssetIn, Definitions, IOManager, asset, io_manager
 
-from .asset_input_managers import load_numpy_array, load_pandas_dataframe, store_pandas_dataframe
+from .asset_input_managers import (
+    load_numpy_array,
+    load_pandas_dataframe,
+    store_pandas_dataframe,
+)
 
 
 # start_numpy_example

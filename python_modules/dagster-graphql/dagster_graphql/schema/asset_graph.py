@@ -281,8 +281,13 @@ class GrapheneAssetNode(graphene.ObjectType):
         # TODO: Add functionality for dynamic partitions definition
         partitions_def_data = self._external_asset_node.partitions_def_data
         if partitions_def_data:
-            if (
-                isinstance(partitions_def_data, (ExternalStaticPartitionsDefinitionData, ExternalTimeWindowPartitionsDefinitionData, ExternalMultiPartitionsDefinitionData))
+            if isinstance(
+                partitions_def_data,
+                (
+                    ExternalStaticPartitionsDefinitionData,
+                    ExternalTimeWindowPartitionsDefinitionData,
+                    ExternalMultiPartitionsDefinitionData,
+                ),
             ):
                 return [
                     partition.name

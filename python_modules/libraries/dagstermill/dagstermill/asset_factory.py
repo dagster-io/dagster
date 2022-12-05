@@ -91,7 +91,8 @@ def _dm_compute(
                     )
                 except Exception as ex:
                     step_execution_context.log.warn(
-                        f"Error when attempting to materialize executed notebook: {serializable_error_info_from_exc_info(sys.exc_info())}"
+                        "Error when attempting to materialize executed notebook:"
+                        f" {serializable_error_info_from_exc_info(sys.exc_info())}"
                     )
                     # pylint: disable=no-member
                     # compat:

@@ -10,7 +10,10 @@ from docs_snippets.concepts.ops_jobs_graphs.nested_graphs import (
     subgraph_config_job,
     subgraph_multiple_outputs_job,
 )
-from docs_snippets.concepts.ops_jobs_graphs.unnested_ops import all_together_unnested, return_fifty
+from docs_snippets.concepts.ops_jobs_graphs.unnested_ops import (
+    all_together_unnested,
+    return_fifty,
+)
 
 from dagster import job
 from dagster._utils import file_relative_path

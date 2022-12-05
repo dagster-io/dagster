@@ -530,7 +530,6 @@ if TYPE_CHECKING:
     )
 
 
-
 _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
     "dagster_type_materializer": (
         "dagster._core.types.config_schema",

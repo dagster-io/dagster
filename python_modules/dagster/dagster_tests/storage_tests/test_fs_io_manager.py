@@ -74,7 +74,7 @@ def test_fs_io_manager():
         assert input_metadata_entry_a.label == "path"
         assert input_metadata_entry_a.value == MetadataValue.path(filepath_a)
         assert len(loaded_input_events) == 1
-        assert loaded_input_events[0].event_specific_data.upstream_step_key == 'op_a'
+        assert loaded_input_events[0].event_specific_data.upstream_step_key == "op_a"
 
         filepath_b = os.path.join(tmpdir_path, result.run_id, "op_b", "result")
         result_metadata_entry_b = handled_output_events[1].event_specific_data.metadata_entries[0]

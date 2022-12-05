@@ -241,9 +241,7 @@ def test_any_config_field():
         assert context.op_config == conf_value
         called["yup"] = True
 
-    execute_in_graph(
-        hello_world, run_config={"solids": {"hello_world": {"config": conf_value}}}
-    )
+    execute_in_graph(hello_world, run_config={"solids": {"hello_world": {"config": conf_value}}})
 
     assert called["yup"]
 

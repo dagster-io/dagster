@@ -29,6 +29,7 @@ from dagster._legacy import ModeDefinition, pipeline, solid
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 
+
 @solid
 def noop_solid(_):
     pass

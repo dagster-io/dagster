@@ -4,7 +4,12 @@
 
 from dagster import graph, job, op
 
-from .unnested_ops import add_thirty_two, log_number, multiply_by_one_point_eight, return_fifty
+from .unnested_ops import (
+    add_thirty_two,
+    log_number,
+    multiply_by_one_point_eight,
+    return_fifty,
+)
 
 # start_composite_solid_example_marker
 

@@ -114,7 +114,7 @@ There are a variety of types of metadata that can be associated with a materiali
 #### Example: Op body
 
 ```python file=concepts/assets/materialization_ops.py startafter=start_materialization_ops_marker_2 endbefore=end_materialization_ops_marker_2
-from dagster import op, AssetMaterialization, MetadataValue
+from dagster import AssetMaterialization, MetadataValue, op
 
 
 @op
@@ -173,7 +173,7 @@ Check our API docs for <PyObject module="dagster" object="MetadataEntry" /> for 
 If you are materializing a single slice of an asset (e.g. a single day's worth of data on a larger table), rather than mutating or creating it entirely, you can indicate this to Dagster by including the `partition` argument on the object.
 
 ```python file=/concepts/assets/materialization_ops.py startafter=start_partitioned_asset_materialization endbefore=end_partitioned_asset_materialization
-from dagster import op, AssetMaterialization
+from dagster import AssetMaterialization, op
 
 
 @op(config_schema={"date": str})

@@ -80,8 +80,9 @@ Re-execution can be triggered via the API as well.
 Again, let's revist the job `unreliable_job`, which has a op named `unreliable`.
 
 ```python file=/guides/dagster/reexecution/reexecution_api.py startafter=start_initial_execution_marker endbefore=end_initial_execution_marker
-from dagster import DagsterInstance, ReexecutionOptions, execute_job, reconstructable
 from docs_snippets.guides.dagster.reexecution.unreliable_job import unreliable_job
+
+from dagster import DagsterInstance, ReexecutionOptions, execute_job, reconstructable
 
 instance = DagsterInstance.ephemeral()
 

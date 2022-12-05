@@ -89,7 +89,10 @@ else:
 # end_reload_repo_location_marker
 
 # start_shutdown_repo_location_marker
-from dagster_graphql import ShutdownRepositoryLocationInfo, ShutdownRepositoryLocationStatus
+from dagster_graphql import (
+    ShutdownRepositoryLocationInfo,
+    ShutdownRepositoryLocationStatus,
+)
 
 shutdown_info: ShutdownRepositoryLocationInfo = client.shutdown_repository_location(
     REPO_NAME

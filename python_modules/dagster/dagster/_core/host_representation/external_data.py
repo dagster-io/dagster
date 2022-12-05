@@ -1251,7 +1251,10 @@ def external_multi_partitions_definition_from_def(
 
     if any(
         [
-            not isinstance(dimension.partitions_def, (TimeWindowPartitionsDefinition, StaticPartitionsDefinition))
+            not isinstance(
+                dimension.partitions_def,
+                (TimeWindowPartitionsDefinition, StaticPartitionsDefinition),
+            )
             for dimension in partitions_def.partitions_defs
         ]
     ):

@@ -388,10 +388,7 @@ class SqlEventLogStorage(EventLogStorage):
         check.str_param(run_id, "run_id")
         check.opt_str_param(cursor, "cursor")
 
-        check.invariant(
-            not of_type
-            or isinstance(of_type, (DagsterEventType, frozenset, set))
-        )
+        check.invariant(not of_type or isinstance(of_type, (DagsterEventType, frozenset, set)))
 
         dagster_event_types = (
             {of_type}

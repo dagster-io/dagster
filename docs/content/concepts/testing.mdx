@@ -89,7 +89,7 @@ def get_data_without_resource(context):
 Dagster allows you to define multiple "jobs" from the same computation graph. With resources, you can modify the op above to:
 
 ```python file=/concepts/resources/tests.py startafter=start_test_after_marker endbefore=end_test_after_marker
-from dagster import op, graph
+from dagster import graph, op
 
 
 @op(required_resource_keys={"api"})
