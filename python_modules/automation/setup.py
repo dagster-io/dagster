@@ -31,7 +31,7 @@ setup(
     ],
     extras_require={
         "buildkite": [
-            "dagster==0+dev",  # Support buildkite conditional running of tests
+            "dagster",  # Support buildkite conditional running of tests
         ]
     },
     entry_points={

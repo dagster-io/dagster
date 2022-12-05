@@ -1,11 +1,10 @@
-from dagster import Field, Int, Map, Noneable, ScalarUnion, String
+from dagster import Field, GraphDefinition, Int, Map, Noneable, ScalarUnion, String, op
 from dagster._config import (
     get_recursive_type_keys,
     print_config_type_to_string,
     resolve_to_config_type,
     snap_from_config_type,
 )
-from dagster._legacy import PipelineDefinition, solid
 
 
 def assert_inner_types(parent_type, *dagster_types):
@@ -238,19 +237,19 @@ def test_test_type_pipeline_construction():
 
 
 def define_solid_for_test_type(name, config):
-    @solid(name=name, config_schema=config, input_defs=[], output_defs=[])
-    def a_solid(_):
+    @op(name=name, config_schema=config, ins={}, out={})
+    def a_op(_):
         return None
 
-    return a_solid
+    return a_op
 
 
 # launch in dagit with this command:
 # dagit -f test_type_printer.py -n define_test_type_pipeline
 def define_test_type_pipeline():
-    return PipelineDefinition(
+    return GraphDefinition(
         name="test_type_pipeline",
-        solid_defs=[
+        node_defs=[
             define_solid_for_test_type("int_config", int),
             define_solid_for_test_type("list_of_int_config", [int]),
             define_solid_for_test_type("nullable_list_of_int_config", Noneable([int])),
@@ -269,4 +268,4 @@ def define_test_type_pipeline():
             ),
             define_solid_for_test_type("nested_dict", {"nested": {"int_field": int}}),
         ],
-    )
+    ).to_job()

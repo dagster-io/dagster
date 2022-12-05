@@ -15,7 +15,12 @@ from dagster._core.host_representation import (
 )
 from dagster._core.scheduler.instigation import InstigatorType
 
-from ...implementation.external import fetch_repositories, fetch_repository, fetch_workspace
+from ...implementation.external import (
+    fetch_location_statuses,
+    fetch_repositories,
+    fetch_repository,
+    fetch_workspace,
+)
 from ...implementation.fetch_assets import (
     get_asset,
     get_asset_node,
@@ -73,6 +78,7 @@ from ..external import (
     GrapheneRepositoriesOrError,
     GrapheneRepositoryConnection,
     GrapheneRepositoryOrError,
+    GrapheneWorkspaceLocationStatusEntriesOrError,
     GrapheneWorkspaceOrError,
 )
 from ..inputs import (
@@ -146,6 +152,11 @@ class GrapheneDagitQuery(graphene.ObjectType):
     workspaceOrError = graphene.Field(
         graphene.NonNull(GrapheneWorkspaceOrError),
         description="Retrieve the workspace and its locations.",
+    )
+
+    locationStatusesOrError = graphene.Field(
+        graphene.NonNull(GrapheneWorkspaceLocationStatusEntriesOrError),
+        description="Retrieve location status for workspace locations",
     )
 
     pipelineOrError = graphene.Field(
@@ -399,6 +410,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_workspaceOrError(self, graphene_info):
         return fetch_workspace(graphene_info.context)
+
+    def resolve_locationStatusesOrError(self, graphene_info):
+        return fetch_location_statuses(graphene_info.context)
 
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         snapshot_id_arg = kwargs.get("snapshotId")
