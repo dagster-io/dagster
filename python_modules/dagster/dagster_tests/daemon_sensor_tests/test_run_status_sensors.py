@@ -6,6 +6,7 @@ import pendulum
 import pytest
 
 from dagster import DagsterRunStatus
+from dagster import _check as check
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.scheduler.instigation import TickStatus
@@ -26,6 +27,12 @@ from .test_sensor_run import (
 )
 
 
+@contextmanager
+def pendulum_test(datetime: pendulum.DateTime):  # type: ignore
+    with pendulum.test(datetime):  # type: ignore
+        yield
+
+
 @pytest.fixture(name="instance_module_scoped", scope="module")
 def instance_module_scoped_fixture():
     # Overridden from conftest.py, uses DefaultRunLauncher since we care about
@@ -42,14 +49,17 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
         with create_test_daemon_workspace_context(
             workspace_load_target(attribute=attribute), instance=instance
         ) as workspace_context:
-            yield (
-                instance,
-                workspace_context,
+            repository_location = check.not_none(
                 next(
                     iter(
                         workspace_context.create_request_context().get_workspace_snapshot().values()
                     )
-                ).repository_location.get_repository(attribute),
+                ).repository_location
+            )
+            yield (
+                instance,
+                workspace_context,
+                repository_location.get_repository(attribute),
             )
 
 
@@ -57,23 +67,26 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
 def instance_with_multiple_repos_with_sensors(overrides=None):
     with instance_for_test(overrides) as instance:
         with create_test_daemon_workspace_context(
-            workspace_load_target(None), instance=instance
+            workspace_load_target(), instance=instance
         ) as workspace_context:
-            yield (
-                instance,
-                workspace_context,
+            repository_location = check.not_none(
                 next(
                     iter(
                         workspace_context.create_request_context().get_workspace_snapshot().values()
                     )
-                ).repository_location.get_repositories(),
+                ).repository_location
+            )
+            yield (
+                instance,
+                workspace_context,
+                repository_location.get_repositories(),
             )
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_status_sensor(caplog, executor, instance, workspace_context, external_repo):
     freeze_datetime = pendulum.now()
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         success_sensor = external_repo.get_external_sensor("my_pipeline_success_sensor")
         instance.start_sensor(success_sensor)
 
@@ -96,7 +109,7 @@ def test_run_status_sensor(caplog, executor, instance, workspace_context, extern
         freeze_datetime = freeze_datetime.add(seconds=60)
         time.sleep(1)
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         external_pipeline = external_repo.get_full_external_job("failure_pipeline")
         run = instance.create_run_for_pipeline(
             failure_pipeline,
@@ -109,7 +122,7 @@ def test_run_status_sensor(caplog, executor, instance, workspace_context, extern
         assert run.status == DagsterRunStatus.FAILURE
         freeze_datetime = freeze_datetime.add(seconds=60)
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
 
         # should not fire the success sensor, should fire the started sensro
         evaluate_sensors(workspace_context, executor)
@@ -136,7 +149,7 @@ def test_run_status_sensor(caplog, executor, instance, workspace_context, extern
             TickStatus.SUCCESS,
         )
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         external_pipeline = external_repo.get_full_external_job("foo_pipeline")
         run = instance.create_run_for_pipeline(
             foo_pipeline,
@@ -151,7 +164,7 @@ def test_run_status_sensor(caplog, executor, instance, workspace_context, extern
 
     caplog.clear()
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
 
         # should fire the success sensor and the started sensor
         evaluate_sensors(workspace_context, executor)
@@ -189,7 +202,7 @@ def test_run_status_sensor(caplog, executor, instance, workspace_context, extern
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_failure_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = pendulum.now()
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor")
         instance.start_sensor(failure_sensor)
 
@@ -209,7 +222,7 @@ def test_run_failure_sensor(executor, instance, workspace_context, external_repo
         freeze_datetime = freeze_datetime.add(seconds=60)
         time.sleep(1)
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         external_pipeline = external_repo.get_full_external_job("failure_pipeline")
         run = instance.create_run_for_pipeline(
             failure_pipeline,
@@ -222,7 +235,7 @@ def test_run_failure_sensor(executor, instance, workspace_context, external_repo
         assert run.status == DagsterRunStatus.FAILURE
         freeze_datetime = freeze_datetime.add(seconds=60)
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
 
         # should fire the failure sensor
         evaluate_sensors(workspace_context, executor)
@@ -242,7 +255,7 @@ def test_run_failure_sensor(executor, instance, workspace_context, external_repo
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_failure_sensor_that_fails(executor, instance, workspace_context, external_repo):
     freeze_datetime = pendulum.now()
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         failure_sensor = external_repo.get_external_sensor(
             "my_run_failure_sensor_that_itself_fails"
         )
@@ -264,7 +277,7 @@ def test_run_failure_sensor_that_fails(executor, instance, workspace_context, ex
         freeze_datetime = freeze_datetime.add(seconds=60)
         time.sleep(1)
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         external_pipeline = external_repo.get_full_external_job("failure_pipeline")
         run = instance.create_run_for_pipeline(
             failure_pipeline,
@@ -277,7 +290,7 @@ def test_run_failure_sensor_that_fails(executor, instance, workspace_context, ex
         assert run.status == DagsterRunStatus.FAILURE
         freeze_datetime = freeze_datetime.add(seconds=60)
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
 
         # should fire the failure sensor and fail
         evaluate_sensors(workspace_context, executor)
@@ -296,7 +309,7 @@ def test_run_failure_sensor_that_fails(executor, instance, workspace_context, ex
 
     # Next tick skips again
     freeze_datetime = freeze_datetime.add(seconds=60)
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         # should fire the failure sensor and fail
         evaluate_sensors(workspace_context, executor)
 
@@ -315,7 +328,7 @@ def test_run_failure_sensor_that_fails(executor, instance, workspace_context, ex
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_failure_sensor_filtered(executor, instance, workspace_context, external_repo):
     freeze_datetime = pendulum.now()
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor_filtered")
         instance.start_sensor(failure_sensor)
 
@@ -335,7 +348,7 @@ def test_run_failure_sensor_filtered(executor, instance, workspace_context, exte
         freeze_datetime = freeze_datetime.add(seconds=60)
         time.sleep(1)
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         external_pipeline = external_repo.get_full_external_job("failure_pipeline")
         run = instance.create_run_for_pipeline(
             failure_pipeline,
@@ -348,7 +361,7 @@ def test_run_failure_sensor_filtered(executor, instance, workspace_context, exte
         assert run.status == DagsterRunStatus.FAILURE
         freeze_datetime = freeze_datetime.add(seconds=60)
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
 
         # should not fire the failure sensor (filtered to failure job)
         evaluate_sensors(workspace_context, executor)
@@ -367,7 +380,7 @@ def test_run_failure_sensor_filtered(executor, instance, workspace_context, exte
         freeze_datetime = freeze_datetime.add(seconds=60)
         time.sleep(1)
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
         external_pipeline = external_repo.get_full_external_job("failure_graph")
         run = instance.create_run_for_pipeline(
             failure_job,
@@ -381,7 +394,7 @@ def test_run_failure_sensor_filtered(executor, instance, workspace_context, exte
 
         freeze_datetime = freeze_datetime.add(seconds=60)
 
-    with pendulum.test(freeze_datetime):
+    with pendulum_test(freeze_datetime):
 
         # should not fire the failure sensor (filtered to failure job)
         evaluate_sensors(workspace_context, executor)
@@ -444,7 +457,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor):
             external_repo,
         ):
             # start sensor
-            with pendulum.test(freeze_datetime):
+            with pendulum_test(freeze_datetime):
                 failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor")
                 instance.start_sensor(failure_sensor)
 
@@ -464,7 +477,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor):
                 freeze_datetime = freeze_datetime.add(seconds=60)
                 time.sleep(1)
 
-            with pendulum.test(freeze_datetime):
+            with pendulum_test(freeze_datetime):
                 external_pipeline = external_repo.get_full_external_job("hanging_pipeline")
                 # start run 1
                 run1 = instance.create_run_for_pipeline(
@@ -490,7 +503,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor):
                 assert run.run_id == run2.run_id
 
             # check sensor
-            with pendulum.test(freeze_datetime):
+            with pendulum_test(freeze_datetime):
 
                 # should fire for run 2
                 evaluate_sensors(workspace_context, executor)
@@ -509,14 +522,14 @@ def test_run_status_sensor_interleave(storage_config_fn, executor):
                 assert ticks[0].origin_run_ids[0] == run2.run_id
 
             # fail run 1
-            with pendulum.test(freeze_datetime):
+            with pendulum_test(freeze_datetime):
                 # fail run 2
                 instance.report_run_failed(run1)
                 freeze_datetime = freeze_datetime.add(seconds=60)
                 time.sleep(1)
 
             # check sensor
-            with pendulum.test(freeze_datetime):
+            with pendulum_test(freeze_datetime):
 
                 # should fire for run 1
                 evaluate_sensors(workspace_context, executor)
@@ -545,7 +558,7 @@ def test_run_failure_sensor_empty_run_records(storage_config_fn, executor):
             workspace_context,
             external_repo,
         ):
-            with pendulum.test(freeze_datetime):
+            with pendulum_test(freeze_datetime):
                 failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor")
                 instance.start_sensor(failure_sensor)
 
@@ -565,7 +578,7 @@ def test_run_failure_sensor_empty_run_records(storage_config_fn, executor):
                 freeze_datetime = freeze_datetime.add(seconds=60)
                 time.sleep(1)
 
-            with pendulum.test(freeze_datetime):
+            with pendulum_test(freeze_datetime):
                 # create a mismatch between event storage and run storage
                 instance.event_log_storage.store_event(
                     EventLogEntry(
@@ -588,7 +601,7 @@ def test_run_failure_sensor_empty_run_records(storage_config_fn, executor):
                 assert len(failure_events) == 1
                 freeze_datetime = freeze_datetime.add(seconds=60)
 
-            with pendulum.test(freeze_datetime):
+            with pendulum_test(freeze_datetime):
                 # shouldn't fire the failure sensor due to the mismatch
                 evaluate_sensors(workspace_context, executor)
 
@@ -615,7 +628,7 @@ def test_cross_repo_run_status_sensor(executor):
         the_repo = repos["the_repo"]
         the_other_repo = repos["the_other_repo"]
 
-        with pendulum.test(freeze_datetime):
+        with pendulum_test(freeze_datetime):
             cross_repo_sensor = the_repo.get_external_sensor("cross_repo_sensor")
             instance.start_sensor(cross_repo_sensor)
 
@@ -635,7 +648,7 @@ def test_cross_repo_run_status_sensor(executor):
             freeze_datetime = freeze_datetime.add(seconds=60)
             time.sleep(1)
 
-        with pendulum.test(freeze_datetime):
+        with pendulum_test(freeze_datetime):
             external_pipeline = the_other_repo.get_full_external_job("the_pipeline")
             run = instance.create_run_for_pipeline(
                 the_pipeline,
@@ -648,7 +661,7 @@ def test_cross_repo_run_status_sensor(executor):
             assert run.status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
 
-        with pendulum.test(freeze_datetime):
+        with pendulum_test(freeze_datetime):
 
             evaluate_sensors(workspace_context, executor)
 
@@ -675,7 +688,7 @@ def test_cross_repo_job_run_status_sensor(executor):
         the_repo = repos["the_repo"]
         the_other_repo = repos["the_other_repo"]
 
-        with pendulum.test(freeze_datetime):
+        with pendulum_test(freeze_datetime):
             cross_repo_sensor = the_repo.get_external_sensor("cross_repo_job_sensor")
             instance.start_sensor(cross_repo_sensor)
 
@@ -699,7 +712,7 @@ def test_cross_repo_job_run_status_sensor(executor):
             freeze_datetime = freeze_datetime.add(seconds=60)
             time.sleep(1)
 
-        with pendulum.test(freeze_datetime):
+        with pendulum_test(freeze_datetime):
             external_pipeline = the_other_repo.get_full_external_job("the_pipeline")
             run = instance.create_run_for_pipeline(
                 the_pipeline,
@@ -713,7 +726,7 @@ def test_cross_repo_job_run_status_sensor(executor):
             assert run.status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
 
-        with pendulum.test(freeze_datetime):
+        with pendulum_test(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
             wait_for_all_runs_to_finish(instance)
 
@@ -733,7 +746,7 @@ def test_cross_repo_job_run_status_sensor(executor):
             assert run_request_runs[0].status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
 
-        with pendulum.test(freeze_datetime):
+        with pendulum_test(freeze_datetime):
             # ensure that the success of the run launched by the sensor doesn't trigger the sensor
             evaluate_sensors(workspace_context, executor)
             wait_for_all_runs_to_finish(instance)
@@ -766,7 +779,7 @@ def test_different_instance_run_status_sensor(executor):
             the_other_repo,
         ):
 
-            with pendulum.test(freeze_datetime):
+            with pendulum_test(freeze_datetime):
                 cross_repo_sensor = the_repo.get_external_sensor("cross_repo_sensor")
                 instance.start_sensor(cross_repo_sensor)
 
@@ -786,7 +799,7 @@ def test_different_instance_run_status_sensor(executor):
                 freeze_datetime = freeze_datetime.add(seconds=60)
                 time.sleep(1)
 
-            with pendulum.test(freeze_datetime):
+            with pendulum_test(freeze_datetime):
                 external_pipeline = the_other_repo.get_full_external_job("the_pipeline")
                 run = the_other_instance.create_run_for_pipeline(
                     the_pipeline,
@@ -801,7 +814,7 @@ def test_different_instance_run_status_sensor(executor):
                 assert run.status == DagsterRunStatus.SUCCESS
                 freeze_datetime = freeze_datetime.add(seconds=60)
 
-            with pendulum.test(freeze_datetime):
+            with pendulum_test(freeze_datetime):
 
                 evaluate_sensors(workspace_context, executor)
 
@@ -829,7 +842,7 @@ def test_instance_run_status_sensor(executor):
         the_repo = repos["the_repo"]
         the_other_repo = repos["the_other_repo"]
 
-        with pendulum.test(freeze_datetime):
+        with pendulum_test(freeze_datetime):
             instance_sensor = the_repo.get_external_sensor("instance_sensor")
             instance.start_sensor(instance_sensor)
 
@@ -849,7 +862,7 @@ def test_instance_run_status_sensor(executor):
             freeze_datetime = freeze_datetime.add(seconds=60)
             time.sleep(1)
 
-        with pendulum.test(freeze_datetime):
+        with pendulum_test(freeze_datetime):
             external_pipeline = the_other_repo.get_full_external_job("the_pipeline")
             run = instance.create_run_for_pipeline(
                 the_pipeline,
@@ -862,7 +875,7 @@ def test_instance_run_status_sensor(executor):
             assert run.status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
 
-        with pendulum.test(freeze_datetime):
+        with pendulum_test(freeze_datetime):
 
             evaluate_sensors(workspace_context, executor)
 
