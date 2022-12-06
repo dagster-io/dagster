@@ -15,6 +15,7 @@ from dagster._core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
 )
+from dagster._core.host_representation.grpc_server_state_subscriber import LocationStateSubscriber
 from dagster._core.workspace.context import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 
 from .asset_graph import GrapheneAssetGroup, GrapheneAssetNode
@@ -356,10 +357,10 @@ async def gen_location_state_changes(graphene_info):
     queue = asyncio.Queue()
     loop = asyncio.get_event_loop()
 
-    def _enqueue(event, cursor):
-        loop.call_soon_threadsafe(queue.put_nowait, (event, cursor))
+    def _enqueue(event):
+        loop.call_soon_threadsafe(queue.put_nowait, event)
 
-    token = context.add_state_subscriber(_enqueue)
+    token = context.add_state_subscriber(LocationStateSubscriber(_enqueue))
     try:
         while True:
             event = await queue.get()
