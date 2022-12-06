@@ -190,7 +190,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
             {currentlyLoading.length === 1 ? (
               <span>
-                Updating <strong>{currentlyLoading[0].id}</strong>
+                Updating <strong>{currentlyLoading[0].name}</strong>
               </span>
             ) : (
               <span>Updating {currentlyLoading.length} code locations</span>
@@ -258,6 +258,7 @@ const CODE_LOCATION_STATUS_QUERY = gql`
       ... on WorkspaceLocationStatusEntries {
         entries {
           id
+          name
           loadStatus
           updateTimestamp
         }
