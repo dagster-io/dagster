@@ -197,6 +197,16 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             result["unique_id"] for result in run_results_json["results"]
         )
 
+        # If there are no executed nodes, then there are no assets to generate.
+        # Inform the user to inspect their dbt Cloud job's command.
+        if not executed_node_ids:
+            raise DagsterDbtCloudJobInvariantViolationError(
+                f"The dbt Cloud job '{job['name']}' ({job['id']}) does not generate any "
+                "software-defined assets. Ensure that your dbt project has nodes to execute, "
+                "and that your dbt Cloud job's commands have the proper filter options applied. "
+                f"Received commands: {commands}."
+            )
+
         # Generate the dependency structure for the executed nodes.
         dbt_dependencies = _get_deps(
             dbt_nodes=dbt_nodes,
