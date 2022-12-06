@@ -554,7 +554,17 @@
     "children": [
       {
         "title": "Airbyte",
-        "path": "/integrations/airbyte"
+        "path": "/integrations/airbyte",
+        "children": [
+          {
+            "title": "Airbyte + Dagster",
+            "path": "/integrations/airbyte"
+          },
+          {
+            "title": "Ingestion as code",
+            "path": "/guides/dagster/airbyte-ingestion-as-code"
+          }
+        ]
       },
       {
         "title": "Airflow",
