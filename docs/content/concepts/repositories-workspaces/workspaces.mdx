@@ -1,81 +1,105 @@
 ---
 title: Workspaces | Dagster Docs
-description: Dagster Workspaces are collections of user-defined repositories and information about where they reside.
+description: Dagster Workspaces are collections of user-defined code locations and information about where they reside.
 ---
 
 # Workspaces
 
-A workspace is a collection of user-defined [repositories](/concepts/repositories-workspaces/repositories) and information about where to find them. Dagster tools, like Dagit and the Dagster CLI, use workspaces to load user code.
+A workspace is a collection of user-defined [code locations](/concepts/code-locations) and information about where to find them. Workspaces can accept code locations defined using a <PyObject object="Definitions" /> object or a <PyObject object="repository" decorator /> decorator.
 
-The repositories in a workspace are loaded in a different process and communicate with Dagster system processes over an RPC mechanism. This architecture provides several advantages:
+Prior to the introduction of <PyObject object="Definitions" />, workspaces were used to enable Dagster tools to load user code in tools like Dagit or the CLI. In a `Definitions` world, workspaces are only required to load multiple code locations as part of an [open source (OSS) deployment](/deployment). For local development, `Definitions` users can utilize a [`pyproject.toml` file](/concepts/code-locations).
+
+<!-- Code locations in a workspace are loaded in a different process and communicate with Dagster system processes over an RPC mechanism. This architecture provides several advantages:
 
 - When there is an update to user code, Dagit can pick up the change without a restart.
-- You can use multiple repositories to organize jobs, but still work on all of your repositories using a single running Dagit.
-- The Dagit process can run in a separate Python environment from user code so job dependencies do not need to be installed into the Dagit environment.
-- Each repository can be sourced from a separate Python environment, so teams can manage their dependencies (or even their Python versions) separately.
+- You can use multiple code locations to organize jobs, but still work on all of your code locations using a single instance of Dagit.
+- The Dagit process can run in a separate Python environment from user code so job dependencies don't need to be installed into the Dagit environment.
+- Each code location can be sourced from a separate Python environment, so teams can manage their dependencies (or even their Python versions) separately. -->
 
 ---
 
 ## Relevant APIs
 
-| Name                                       | Description                                                                                                    |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="repository" decorator /> | The decorator used to define repositories. The decorator returns a <PyObject object="RepositoryDefinition" />. |
+| Name                                       | Description                                                                                                                                       |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="Definitions" />          | The object that contains all the definitions defined within a code location. Definitions include assets, jobs, resources, schedules, and sensors. |
+| <PyObject object="repository" decorator /> | The decorator used to define repositories. The decorator returns a <PyObject object="RepositoryDefinition" />.                                    |
 
 ---
 
 ## Defining a workspace
 
-The structure of a workspace is encoded in a YAML document, named `workspace.yaml`, that tells Dagster where to find repositories. For example:
+The structure of a workspace is encoded in a YAML document, named `workspace.yaml` by default, that tells Dagster where to find code locations. For example:
 
 ```yaml file=/concepts/repositories_workspaces/workspace.yaml
 # workspace.yaml
 
 load_from:
-  - python_file: repository.py
+  - python_file: my_file.py
 ```
 
-Each entry in `workspace.yaml` is referred to as a **repository location.** A repository location can include more than one repository.
+Each entry in `workspace.yaml` is considered a code location.
 
-Each repository location is loaded in its own process that Dagster tools use an RPC protocol to communicate with. This process separation allows multiple repository locations in different environments to be loaded independently, and ensures that errors in user code can't impact Dagster system code.
+Each code location is loaded in its own process that Dagster tools use an RPC protocol to communicate with. This process separation allows multiple code locations in different environments to be loaded independently, and ensures that errors in user code can't impact Dagster system code.
 
 ---
 
-## Loading repositories
+## Loading code locations
 
-To load repositories from Python code, use the `python_file` or `python_package` keys in `workspace.yaml`.
+<TabGroup>
+<TabItem name="From a file">
 
-If you use `python_file`, it must specify a path relative to `workspace.yaml` leading to a file containing at least one repository definition. For example, the repository defined in `repository.py` here:
+### From a file
 
-```python file=/concepts/repositories_workspaces/hello_world_repository.py
-from dagster import job, op, repository
+To load a code location from a Python file, use the `python_file` key in `workspace.yaml`. The value of `python_file` should specify a path relative to `workspace.yaml` leading to a file that contains a code location definition.
 
-
-@op
-def hello_world():
-    pass
-
-
-@job
-def hello_world_job():
-    hello_world()
-
-
-@repository
-def hello_world_repository():
-    return [hello_world_job]
-```
-
-Could be loaded using the following `workspace.yaml` file in the same folder:
+For example, if a code location is in `my_file.py` and the file is in the same folder as `workspace.yaml`, the code location could be loaded using the following:
 
 ```yaml file=/concepts/repositories_workspaces/workspace.yaml
 # workspace.yaml
 
 load_from:
-  - python_file: repository.py
+  - python_file: my_file.py
 ```
 
-Refer to the [Examples section](#examples) for additional examples, including how to load multiple repositories, load from a Python package, and more.
+**If using <PyObject object="repository" decorator /> to define code locations**, you can identify a single repository within the package using the `attribute` key. The value of this key must be the name of a repository or the name of a function that returns a <PyObject object="RepositoryDefinition" />. For example:
+
+```yaml file=/concepts/repositories_workspaces/workspace_one_repository.yaml
+# workspace.yaml
+
+load_from:
+  - python_file:
+      relative_path: hello_world_repository.py
+      attribute: hello_world_repository
+```
+
+</TabItem>
+<TabItem name="From a Python package">
+
+### From a Python package
+
+To load a code location from a local or installed Python package, use the `python_package` key in `workspace.yaml`:
+
+```yaml file=/concepts/repositories_workspaces/workspace_python_package.yaml
+# workspace.yaml
+
+load_from:
+  - python_package: hello_world_package
+```
+
+**If using <PyObject object="repository" decorator /> to define code locations**, you can identify a single repository within the package using the `attribute` key:
+
+```yaml
+# workspace.yaml
+
+load_from:
+  - python_package:
+      package_name: yourproject.hello_world_repository
+      attribute: hello_world_repository
+```
+
+</TabItem>
+</TabGroup>
 
 ---
 
@@ -93,26 +117,26 @@ To load the `workspace.yaml` file from a different folder, use the `-w` argument
 dagit -w path/to/workspace.yaml
 ```
 
-When `dagit` is run, Dagit will load all the repositories in each repository location defined by the workspace. Refer to the [CLI reference](/\_apidocs/cli#dagit) for more info and examples.
+When `dagit` is run, Dagit will load all the code locations defined by the workspace. Refer to the [CLI reference](/\_apidocs/cli#dagit) for more info and examples.
 
-If a repository location can't be loaded - for example, due to a syntax or some other unrecoverable error - a warning message will display in Dagit. You'll be directed to a status page with a descriptive error and stack trace for any locations Dagit was unable to load.
+If a code location can't be loaded - for example, due to a syntax or some other unrecoverable error - a warning message will display in Dagit. You'll be directed to a status page with a descriptive error and stack trace for any locations Dagit was unable to load.
 
-**Note**: If a repository location is re-named or its configuration is modified in `workspace.yaml`, you'll need to stop and re-start any running schedules or sensors in that repository location. You can do this in Dagit by navigating to the [**Instance status** page](/concepts/dagit/dagit#instance-status) and using the **Schedules** and **Sensors** tabs.
+**Note**: If a code location is re-named or its configuration is modified in `workspace.yaml`, you'll need to stop and re-start any running schedules or sensors in that code location. You can do this in Dagit by navigating to the [**Instance status** page](/concepts/dagit/dagit#instance-status) and using the **Schedules** and **Sensors** tabs.
 
-This is required because when you start chedule or a sensor, a serialized representation of the entry in your `workspace.yaml` file is stored in a database. The dagster-daemon process uses this serialized representation to identify and load your schedule or sensor. If the repository location is modified and its schedules and sensors aren't restarted, the dagster-daemon process will use an outdated serialized representation, resulting in issues.
+This is required because when you start chedule or a sensor, a serialized representation of the entry in your `workspace.yaml` file is stored in a database. The dagster-daemon process uses this serialized representation to identify and load your schedule or sensor. If the code location is modified and its schedules and sensors aren't restarted, the dagster-daemon process will use an outdated serialized representation, resulting in issues.
 
 ---
 
 ## Running your own gRPC server
 
-By default, Dagster tools automatically create a process on your local machine for each of your repository locations. However, it's also possible to run your own gRPC server that's responsible for serving information about your repositories. This can be useful in more complex system architectures that deploy user code separately from Dagit.
+By default, Dagster tools automatically create a process on your local machine for each of your code locations. However, it's also possible to run your own gRPC server that's responsible for serving information about your code locations. This can be useful in more complex system architectures that deploy user code separately from Dagit.
 
 - [Initializing the server](#initializing-the-server)
 - [Specifying a Docker image](#specifying-a-docker-image)
 
 ### Initializing the server
 
-The Dagster gRPC server needs to have access to your code. To initialize the server, run the `dagster api grpc` command and include:
+To initialize the Dagster gRPC server, run the `dagster api grpc` command and include:
 
 - A target file or module. Similar to `workspace.yaml`, the target can either be a Python file or package.
 - Host address
@@ -121,7 +145,7 @@ The Dagster gRPC server needs to have access to your code. To initialize the ser
 The following tabs demonstrate some common ways to initialize a gRPC server:
 
 <TabGroup>
-<TabItem name="Loading a Python file">
+<TabItem name="Using a Python file">
 
 Running on a port, using a Python file:
 
@@ -149,7 +173,12 @@ dagster api grpc --package-name my_package_name --host 0.0.0.0 --port 4266
 ---
 
 </TabItem>
-<TabItem name="Loading specific repository">
+<TabItem name="Using a specific repository">
+
+<Note>
+  This is applicable only for code locations defined using{" "}
+  <PyObject object="repository" decorator />.
+</Note>
 
 Specifying an attribute within the target to load a specific repository. When run, the server will automatically find and load the specified repositories:
 
@@ -175,7 +204,7 @@ dagster api grpc --python-file /path/to/file.py --working-directory /var/my_work
 
 Refer to the [API docs](/\_apidocs/cli#dagster-api-grpc) for the full list of options that can be set when running a new gRPC server.
 
-Then, in your `workspace.yaml`, configure a new gRPC server repository location to load:
+Then, in your `workspace.yaml`, configure a new gRPC server code location to load:
 
 ```yaml file=/concepts/repositories_workspaces/workspace_grpc.yaml
 # workspace.yaml
@@ -189,68 +218,20 @@ load_from:
 
 ### Specifying a Docker image
 
-When running your own gRPC server within a container, you can tell Dagit that any runs launched from a repository location should be launched in a container with that same image.
+When running your own gRPC server within a container, you can tell Dagit that any runs launched from a code location should be launched in a container with that same image.
 
-To do this, set the `DAGSTER_CURRENT_IMAGE` environment variable to the name of the image before starting the server. After setting this environment variable for your server, the image should be listed alongside the repository location on the **Status** page in Dagit.
+To do this, set the `DAGSTER_CURRENT_IMAGE` environment variable to the name of the image before starting the server. After setting this environment variable for your server, the image should be listed alongside the code location on the **Status** page in Dagit.
 
 This image will only be used by [run launchers](/deployment/run-launcher) and [executors](/deployment/executors) that expect to use Docker images (like the <PyObject module="dagster_docker" object="DockerRunLauncher" />, <PyObject module="dagster_k8s" object="K8sRunLauncher" />, <PyObject module="dagster_docker" object="docker_executor" />, or <PyObject module="dagster_k8s" object="k8s_job_executor" />).
 
-If you're using our built-in [Helm chart](/deployment/guides/kubernetes/deploying-with-helm), this environment variable is automatically set on each of your gRPC servers.
+If you're using the built-in [Helm chart](/deployment/guides/kubernetes/deploying-with-helm), this environment variable is automatically set on each of your gRPC servers.
 
 ---
 
 ## Examples
 
-The examples in this section demonstrate various repository-loading configurations for `workspace.yaml`:
-
-- [Loading a single repository](#loading-a-single-repository)
-- [Loading via Python package](#loading-via-python-package)
-- [Loading relative imports](#loading-relative-imports)
-- [Loading multiple repositories](#loading-multiple-repositories)
-
-### Loading a single repository
-
-To specify a single repository, use the `attribute` key. The value of this key must be a repository name or the name of a function that returns a <PyObject object="RepositoryDefinition" />. For example:
-
-```yaml file=/concepts/repositories_workspaces/workspace_one_repository.yaml
-# workspace.yaml
-
-load_from:
-  - python_file:
-      relative_path: hello_world_repository.py
-      attribute: hello_world_repository
-```
-
-**Note**: If the only configuration needed is the relative file path, the `python_file` key can be a single string. For example:
-
-```yaml file=/concepts/repositories_workspaces/workspace.yaml
-# workspace.yaml
-
-load_from:
-  - python_file: repository.py
-```
-
-### Loading via Python package
-
-To load code from a local or installed Python package, use the `python_package` key:
-
-```yaml file=/concepts/repositories_workspaces/workspace_python_package.yaml
-# workspace.yaml
-
-load_from:
-  - python_package: hello_world_package
-```
-
-To identify a single repository within the package, use the `attribute` key:
-
-```yaml
-# workspace.yaml
-
-load_from:
-  - python_package:
-      package_name: yourproject.hello_world_repository
-      attribute: hello_world_repository
-```
+<TabGroup>
+<TabItem name="Loading relative imports">
 
 ### Loading relative imports
 
@@ -268,16 +249,19 @@ load_from:
       working_directory: my_other_working_directory/
 ```
 
+</TabItem>
+<TabItem name="Loading multiple repositories">
+
 ### Loading multiple repositories
 
-- [Multiple Python environments](#multiple-python-environments)
-- [Identifying repository locations](#identifying-repository-locations)
+<Note>
+  This is applicable only for code locations defined using{" "}
+  <PyObject object="repository" decorator />.
+</Note>
 
-#### Multiple Python environments
+By default, Dagit and other Dagster tools assume that code locations should be loaded using the same Python environment used to load Dagster. However, it's often useful for code locations to use independent environments. For example, a data engineering team running Spark can have dramatically different dependencies than an ML team running Tensorflow.
 
-By default, Dagit and other Dagster tools assume that repository locations should be loaded using the same Python environment used to load Dagster. However, it's often useful for repository locations to use independent environments. For example, a data engineering team running Spark can have dramatically different dependencies than an ML team running Tensorflow.
-
-To enable this use case, Dagster supports customizing the Python environment for each repository location, by adding the `executable_path` key to the YAML for a location. These environments can involve distinct sets of installed dependencies, or even completely different Python versions. For example:
+To enable this use case, Dagster supports customizing the Python environment for each code location, by adding the `executable_path` key to the YAML for a location. These environments can involve distinct sets of installed dependencies, or even completely different Python versions. For example:
 
 ```yaml file=/concepts/repositories_workspaces/python_environment_example.yaml
 load_from:
@@ -291,6 +275,7 @@ load_from:
       executable_path: venvs/path/to/ml_tensorflow/bin/python
 ```
 
-#### Identifying repository locations
+The example above also illustrates the `location_name` key. Each code location in a workspace has a unique name that is displayed in Dagit, and is also used to disambiguate definitions with the same name across multiple code locations. Dagster will supply a default name for each location based on its workspace entry if a custom one is not supplied.
 
-The example above also illustrates the `location_name` key. Each repository location in a workspace has a unique name that is displayed in Dagit, and is also used to disambiguate definitions with the same name across multiple repository locations. Dagster will supply a default name for each location based on its workspace entry if a custom one is not supplied.
+</TabItem>
+</TabGroup>
