@@ -6,6 +6,7 @@ import pendulum
 import pytest
 
 from dagster import DagsterRunStatus
+from dagster import _check as check
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.scheduler.instigation import TickStatus
@@ -42,14 +43,17 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
         with create_test_daemon_workspace_context(
             workspace_load_target(attribute=attribute), instance=instance
         ) as workspace_context:
-            yield (
-                instance,
-                workspace_context,
+            repository_location = check.not_none(
                 next(
                     iter(
                         workspace_context.create_request_context().get_workspace_snapshot().values()
                     )
-                ).repository_location.get_repository(attribute),
+                ).repository_location
+            )
+            yield (
+                instance,
+                workspace_context,
+                repository_location.get_repository(attribute),
             )
 
 
@@ -57,16 +61,19 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
 def instance_with_multiple_repos_with_sensors(overrides=None):
     with instance_for_test(overrides) as instance:
         with create_test_daemon_workspace_context(
-            workspace_load_target(None), instance=instance
+            workspace_load_target(), instance=instance
         ) as workspace_context:
-            yield (
-                instance,
-                workspace_context,
+            repository_location = check.not_none(
                 next(
                     iter(
                         workspace_context.create_request_context().get_workspace_snapshot().values()
                     )
-                ).repository_location.get_repositories(),
+                ).repository_location
+            )
+            yield (
+                instance,
+                workspace_context,
+                repository_location.get_repositories(),
             )
 
 
