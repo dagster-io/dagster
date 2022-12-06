@@ -568,7 +568,21 @@
       },
       {
         "title": "Airflow",
-        "path": "/integrations/airflow"
+        "path": "/integrations/airflow",
+        "children": [
+          {
+            "title": "Learning Dagster from Airflow",
+            "path": "/integrations/airflow/from-airflow-to-dagster"
+          },
+          {
+            "title": "Airflow Migration Guide",
+            "path": "/integrations/airflow/migrating-to-dagster"
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/airflow/reference"
+          }
+        ]
       },
       {
         "title": "dbt",
