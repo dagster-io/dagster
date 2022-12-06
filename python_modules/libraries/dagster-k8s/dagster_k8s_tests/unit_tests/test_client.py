@@ -368,7 +368,7 @@ def _create_status(state, ready):
 ###
 def test_wait_for_pod_success():
     """
-    Ready pod right away
+    Ready pod right away.
     """
     mock_client = create_mocked_client()
 

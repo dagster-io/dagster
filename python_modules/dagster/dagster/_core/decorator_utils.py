@@ -5,7 +5,7 @@ from dagster._seven import funcsigs
 
 
 def get_valid_name_permutations(param_name: str) -> Set[str]:
-    """Get all underscore permutations for provided arg name"""
+    """Get all underscore permutations for provided arg name."""
     return {
         "_",
         param_name,
@@ -34,7 +34,7 @@ def get_function_params(fn: Callable[..., Any]) -> Sequence[funcsigs.Parameter]:
 def validate_expected_params(
     params: Sequence[funcsigs.Parameter], expected_params: Sequence[str]
 ) -> Optional[str]:
-    """Returns first missing positional, if any, otherwise None"""
+    """Returns first missing positional, if any, otherwise None."""
     expected_idx = 0
     for expected_param in expected_params:
         if expected_idx >= len(params) or not _is_param_valid(params[expected_idx], expected_param):

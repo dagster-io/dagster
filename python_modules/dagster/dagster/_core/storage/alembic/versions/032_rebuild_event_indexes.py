@@ -1,4 +1,4 @@
-"""rebuild event log indices to include id
+"""rebuild event log indices to include id.
 
 Revision ID: a00dd8d936a1
 Revises: 5e139331e376

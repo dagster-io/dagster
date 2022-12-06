@@ -31,6 +31,7 @@ def key_from_str(key_str):
 class SSHResource:
     """
     Resource for ssh remote execution using Paramiko.
+
     ref: https://github.com/paramiko/paramiko
     """
 

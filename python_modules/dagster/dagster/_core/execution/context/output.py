@@ -357,7 +357,7 @@ class OutputContext:
     @public  # type: ignore
     @property
     def has_partition_key(self) -> bool:
-        """Whether the current run is a partitioned run"""
+        """Whether the current run is a partitioned run."""
         if self._warn_on_step_context_use:
             warnings.warn(
                 "You are using InputContext.upstream_output.has_partition_key"

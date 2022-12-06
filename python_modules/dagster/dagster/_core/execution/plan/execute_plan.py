@@ -155,7 +155,7 @@ def _handle_compute_log_teardown_error(context, exc_info):
 def _trigger_hook(
     step_context: StepExecutionContext, step_event_list: Sequence[DagsterEvent]
 ) -> Iterator[DagsterEvent]:
-    """Trigger hooks and record hook's operatonal events"""
+    """Trigger hooks and record hook's operatonal events."""
     hook_defs = step_context.pipeline_def.get_all_hooks_for_handle(step_context.solid_handle)
     # when the solid doesn't have a hook configured
     if hook_defs is None:

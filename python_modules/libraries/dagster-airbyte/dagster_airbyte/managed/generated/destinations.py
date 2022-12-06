@@ -19,7 +19,7 @@ class DynamodbDestination(GeneratedAirbyteDestination):
         dynamodb_endpoint: Optional[str] = None,
     ):
         """
-        Airbyte Destination for Dynamodb
+        Airbyte Destination for Dynamodb.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/dynamodb
 
@@ -90,7 +90,7 @@ class BigqueryDestination(GeneratedAirbyteDestination):
         big_query_client_buffer_size_mb: Optional[int] = None,
     ):
         """
-        Airbyte Destination for Bigquery
+        Airbyte Destination for Bigquery.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/bigquery
 
@@ -137,7 +137,7 @@ class RabbitmqDestination(GeneratedAirbyteDestination):
         exchange: Optional[str] = None,
     ):
         """
-        Airbyte Destination for Rabbitmq
+        Airbyte Destination for Rabbitmq.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/rabbitmq
 
@@ -167,7 +167,7 @@ class KvdbDestination(GeneratedAirbyteDestination):
     @public
     def __init__(self, name: str, bucket_id: str, secret_key: str):
         """
-        Airbyte Destination for Kvdb
+        Airbyte Destination for Kvdb.
 
         Documentation can be found at https://kvdb.io/docs/api/
 
@@ -195,7 +195,7 @@ class ClickhouseDestination(GeneratedAirbyteDestination):
         ssl: Optional[bool] = None,
     ):
         """
-        Airbyte Destination for Clickhouse
+        Airbyte Destination for Clickhouse.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/clickhouse
 
@@ -233,7 +233,7 @@ class AmazonSqsDestination(GeneratedAirbyteDestination):
         message_group_id: Optional[str] = None,
     ):
         """
-        Airbyte Destination for Amazon Sqs
+        Airbyte Destination for Amazon Sqs.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/amazon-sqs
 
@@ -270,7 +270,7 @@ class MariadbColumnstoreDestination(GeneratedAirbyteDestination):
         jdbc_url_params: Optional[str] = None,
     ):
         """
-        Airbyte Destination for Mariadb Columnstore
+        Airbyte Destination for Mariadb Columnstore.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/mariadb-columnstore
 
@@ -305,7 +305,7 @@ class KinesisDestination(GeneratedAirbyteDestination):
         bufferSize: int,
     ):
         """
-        Airbyte Destination for Kinesis
+        Airbyte Destination for Kinesis.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/kinesis
 
@@ -356,7 +356,7 @@ class AzureBlobStorageDestination(GeneratedAirbyteDestination):
         azure_blob_storage_output_buffer_size: Optional[int] = None,
     ):
         """
-        Airbyte Destination for Azure Blob Storage
+        Airbyte Destination for Azure Blob Storage.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/azureblobstorage
 
@@ -448,7 +448,7 @@ class KafkaDestination(GeneratedAirbyteDestination):
         client_id: Optional[str] = None,
     ):
         """
-        Airbyte Destination for Kafka
+        Airbyte Destination for Kafka.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/kafka
 
@@ -549,7 +549,7 @@ class ElasticsearchDestination(GeneratedAirbyteDestination):
         upsert: Optional[bool] = None,
     ):
         r"""
-        Airbyte Destination for Elasticsearch
+        Airbyte Destination for Elasticsearch.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/elasticsearch
 
@@ -587,7 +587,7 @@ class MysqlDestination(GeneratedAirbyteDestination):
         jdbc_url_params: Optional[str] = None,
     ):
         """
-        Airbyte Destination for Mysql
+        Airbyte Destination for Mysql.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/mysql
 
@@ -623,7 +623,7 @@ class SftpJsonDestination(GeneratedAirbyteDestination):
         port: Optional[int] = None,
     ):
         """
-        Airbyte Destination for Sftp Json
+        Airbyte Destination for Sftp Json.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/sftp-json
 
@@ -791,7 +791,7 @@ class GcsDestination(GeneratedAirbyteDestination):
         gcs_bucket_region: Optional[str] = None,
     ):
         """
-        Airbyte Destination for Gcs
+        Airbyte Destination for Gcs.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/gcs
 
@@ -834,7 +834,7 @@ class CassandraDestination(GeneratedAirbyteDestination):
         replication: Optional[int] = None,
     ):
         """
-        Airbyte Destination for Cassandra
+        Airbyte Destination for Cassandra.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/cassandra
 
@@ -890,7 +890,7 @@ class FireboltDestination(GeneratedAirbyteDestination):
         engine: Optional[str] = None,
     ):
         """
-        Airbyte Destination for Firebolt
+        Airbyte Destination for Firebolt.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/firebolt
 
@@ -934,7 +934,7 @@ class GoogleSheetsDestination(GeneratedAirbyteDestination):
         credentials: "GoogleSheetsDestination.AuthenticationViaGoogleOAuth",
     ):
         """
-        Airbyte Destination for Google Sheets
+        Airbyte Destination for Google Sheets.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/google-sheets
 
@@ -1013,7 +1013,7 @@ class DatabricksDestination(GeneratedAirbyteDestination):
         purge_staging_data: Optional[bool] = None,
     ):
         """
-        Airbyte Destination for Databricks
+        Airbyte Destination for Databricks.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/databricks
 
@@ -1096,7 +1096,7 @@ class BigqueryDenormalizedDestination(GeneratedAirbyteDestination):
         big_query_client_buffer_size_mb: Optional[int] = None,
     ):
         """
-        Airbyte Destination for Bigquery Denormalized
+        Airbyte Destination for Bigquery Denormalized.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/bigquery
 
@@ -1131,7 +1131,7 @@ class SqliteDestination(GeneratedAirbyteDestination):
     @public
     def __init__(self, name: str, destination_path: str):
         """
-        Airbyte Destination for Sqlite
+        Airbyte Destination for Sqlite.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/sqlite
 
@@ -1192,7 +1192,7 @@ class MongodbDestination(GeneratedAirbyteDestination):
         auth_type: Union["MongodbDestination.None_", "MongodbDestination.LoginPassword"],
     ):
         r"""
-        Airbyte Destination for Mongodb
+        Airbyte Destination for Mongodb.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/mongodb
 
@@ -1222,7 +1222,7 @@ class RocksetDestination(GeneratedAirbyteDestination):
     @public
     def __init__(self, name: str, api_key: str, workspace: str, api_server: Optional[str] = None):
         """
-        Airbyte Destination for Rockset
+        Airbyte Destination for Rockset.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/rockset
 
@@ -1278,7 +1278,7 @@ class OracleDestination(GeneratedAirbyteDestination):
         schema: Optional[str] = None,
     ):
         """
-        Airbyte Destination for Oracle
+        Airbyte Destination for Oracle.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/oracle
 
@@ -1316,7 +1316,7 @@ class CsvDestination(GeneratedAirbyteDestination):
     @public
     def __init__(self, name: str, destination_path: str):
         """
-        Airbyte Destination for Csv
+        Airbyte Destination for Csv.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/local-csv
 
@@ -1470,7 +1470,7 @@ class S3Destination(GeneratedAirbyteDestination):
         file_name_pattern: Optional[str] = None,
     ):
         """
-        Airbyte Destination for S3
+        Airbyte Destination for S3.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/s3
 
@@ -1535,7 +1535,7 @@ class AwsDatalakeDestination(GeneratedAirbyteDestination):
         lakeformation_database_name: Optional[str] = None,
     ):
         """
-        Airbyte Destination for Aws Datalake
+        Airbyte Destination for Aws Datalake.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/aws-datalake
 
@@ -1604,7 +1604,7 @@ class MssqlDestination(GeneratedAirbyteDestination):
         jdbc_url_params: Optional[str] = None,
     ):
         """
-        Airbyte Destination for Mssql
+        Airbyte Destination for Mssql.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/mssql
 
@@ -1642,7 +1642,7 @@ class PubsubDestination(GeneratedAirbyteDestination):
     @public
     def __init__(self, name: str, project_id: str, topic_id: str, credentials_json: str):
         """
-        Airbyte Destination for Pubsub
+        Airbyte Destination for Pubsub.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/pubsub
 
@@ -1772,7 +1772,7 @@ class R2Destination(GeneratedAirbyteDestination):
         file_name_pattern: Optional[str] = None,
     ):
         """
-        Airbyte Destination for R2
+        Airbyte Destination for R2.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/r2
 
@@ -1817,7 +1817,7 @@ class JdbcDestination(GeneratedAirbyteDestination):
         schema: Optional[str] = None,
     ):
         """
-        Airbyte Destination for Jdbc
+        Airbyte Destination for Jdbc.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/postgres
 
@@ -1841,7 +1841,7 @@ class KeenDestination(GeneratedAirbyteDestination):
         self, name: str, project_id: str, api_key: str, infer_timestamp: Optional[bool] = None
     ):
         """
-        Airbyte Destination for Keen
+        Airbyte Destination for Keen.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/keen
 
@@ -1871,7 +1871,7 @@ class TidbDestination(GeneratedAirbyteDestination):
         jdbc_url_params: Optional[str] = None,
     ):
         """
-        Airbyte Destination for Tidb
+        Airbyte Destination for Tidb.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/tidb
 
@@ -1899,7 +1899,7 @@ class FirestoreDestination(GeneratedAirbyteDestination):
     @public
     def __init__(self, name: str, project_id: str, credentials_json: Optional[str] = None):
         """
-        Airbyte Destination for Firestore
+        Airbyte Destination for Firestore.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/firestore
 
@@ -1926,7 +1926,7 @@ class ScyllaDestination(GeneratedAirbyteDestination):
         replication: Optional[int] = None,
     ):
         """
-        Airbyte Destination for Scylla
+        Airbyte Destination for Scylla.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/scylla
 
@@ -1954,7 +1954,7 @@ class RedisDestination(GeneratedAirbyteDestination):
         self, name: str, host: str, port: int, username: str, password: str, cache_type: str
     ):
         """
-        Airbyte Destination for Redis
+        Airbyte Destination for Redis.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/redis
 
@@ -1995,7 +1995,7 @@ class MqttDestination(GeneratedAirbyteDestination):
         client: Optional[str] = None,
     ):
         """
-        Airbyte Destination for Mqtt
+        Airbyte Destination for Mqtt.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/mqtt
 
@@ -2097,7 +2097,7 @@ class RedshiftDestination(GeneratedAirbyteDestination):
         jdbc_url_params: Optional[str] = None,
     ):
         """
-        Airbyte Destination for Redshift
+        Airbyte Destination for Redshift.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/redshift
 
@@ -2151,7 +2151,7 @@ class PulsarDestination(GeneratedAirbyteDestination):
         producer_sync: Optional[bool] = None,
     ):
         """
-        Airbyte Destination for Pulsar
+        Airbyte Destination for Pulsar.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/pulsar
 
@@ -2343,7 +2343,7 @@ class SnowflakeDestination(GeneratedAirbyteDestination):
         jdbc_url_params: Optional[str] = None,
     ):
         """
-        Airbyte Destination for Snowflake
+        Airbyte Destination for Snowflake.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/snowflake
 
@@ -2465,7 +2465,7 @@ class PostgresDestination(GeneratedAirbyteDestination):
         jdbc_url_params: Optional[str] = None,
     ):
         """
-        Airbyte Destination for Postgres
+        Airbyte Destination for Postgres.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/postgres
 
@@ -2508,7 +2508,7 @@ class ScaffoldDestinationPythonDestination(GeneratedAirbyteDestination):
     @public
     def __init__(self, name: str, TODO: Optional[str] = None):
         """
-        Airbyte Destination for Scaffold Destination Python
+        Airbyte Destination for Scaffold Destination Python.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/scaffold-destination-python
 
@@ -2524,7 +2524,7 @@ class LocalJsonDestination(GeneratedAirbyteDestination):
     @public
     def __init__(self, name: str, destination_path: str):
         """
-        Airbyte Destination for Local Json
+        Airbyte Destination for Local Json.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/local-json
 
@@ -2540,7 +2540,7 @@ class MeilisearchDestination(GeneratedAirbyteDestination):
     @public
     def __init__(self, name: str, host: str, api_key: Optional[str] = None):
         """
-        Airbyte Destination for Meilisearch
+        Airbyte Destination for Meilisearch.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/meilisearch
 

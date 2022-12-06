@@ -161,8 +161,10 @@ class DbtCloudResource:
 
     def update_job(self, job_id: int, **kwargs) -> Mapping[str, Any]:
         """
-        Updates specific properties of a dbt job. Documentation on the full set of potential
-        parameters can be found here: https://docs.getdbt.com/dbt-cloud/api-v2#operation/updateJobById
+        Updates specific properties of a dbt job.
+
+        Documentation on the full set of potential parameters can be found here:
+        https://docs.getdbt.com/dbt-cloud/api-v2#operation/updateJobById.
 
         Args:
             job_id (int): The ID of the relevant dbt Cloud job. You can find this value by going to
@@ -188,9 +190,11 @@ class DbtCloudResource:
 
     def run_job(self, job_id: int, **kwargs) -> Mapping[str, Any]:
         """
-        Initializes a run for a job. Overrides for specific properties can be set by passing in
-        values to the kwargs. A full list of overridable properties can be found here:
-        https://docs.getdbt.com/dbt-cloud/api-v2#operation/triggerRun
+        Initializes a run for a job.
+
+        Overrides for specific properties can be set by passing in values to the kwargs. A full list
+        of overridable properties can be found here:
+        https://docs.getdbt.com/dbt-cloud/api-v2#operation/triggerRun.
 
         Args:
             job_id (int): The ID of the relevant dbt Cloud job. You can find this value by going to

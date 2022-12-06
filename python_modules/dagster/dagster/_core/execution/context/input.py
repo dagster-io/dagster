@@ -322,7 +322,7 @@ class InputContext:
     @public  # type: ignore
     @property
     def has_partition_key(self) -> bool:
-        """Whether the current run is a partitioned run"""
+        """Whether the current run is a partitioned run."""
         return self._partition_key is not None
 
     @public  # type: ignore

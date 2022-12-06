@@ -494,7 +494,7 @@ class NodeHandle(
     @classmethod
     def from_dict(cls, dict_repr: Dict[str, Any]) -> Optional["NodeHandle"]:
         """This method makes it possible to load a potentially nested NodeHandle after a
-        roundtrip through json.loads(json.dumps(NodeHandle._asdict()))
+        roundtrip through json.loads(json.dumps(NodeHandle._asdict())).
         """
         check.dict_param(dict_repr, "dict_repr", key_type=str)
         check.invariant(
@@ -631,7 +631,7 @@ class IDependencyDefinition(ABC):  # pylint: disable=no-init
 
     @abstractmethod
     def is_fan_in(self) -> bool:
-        """The result passed to the corresponding input will be a List made from different node outputs
+        """The result passed to the corresponding input will be a List made from different node outputs.
         """
 
 
@@ -963,7 +963,7 @@ class DependencyStructure:
                 self._node_output_index[node_output.node.name][node_output].append(node_input)
 
     def _validate_and_set_fan_out(self, node_input: NodeInput, node_output: NodeOutput) -> None:
-        """Helper function for populating _dynamic_fan_out_index"""
+        """Helper function for populating _dynamic_fan_out_index."""
         if not node_input.node.definition.input_supports_dynamic_output_dep(node_input.input_name):
             raise DagsterInvalidDefinitionError(
                 f"{node_input.node.describe_node()} cannot be downstream of dynamic output"
@@ -1040,7 +1040,7 @@ class DependencyStructure:
         """
         Returns a Dict[NodeOutput, List[NodeInput]] that
         represents all the downstream inputs for each output in the
-        dictionary
+        dictionary.
         """
         check.str_param(node_name, "node_name")
         return self._node_output_index[node_name]

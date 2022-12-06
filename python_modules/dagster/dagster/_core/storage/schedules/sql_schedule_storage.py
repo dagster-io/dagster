@@ -29,7 +29,7 @@ from .schema import InstigatorsTable, JobTable, JobTickTable, SecondaryIndexMigr
 
 
 class SqlScheduleStorage(ScheduleStorage):
-    """Base class for SQL backed schedule storage"""
+    """Base class for SQL backed schedule storage."""
 
     @abstractmethod
     def connect(self):

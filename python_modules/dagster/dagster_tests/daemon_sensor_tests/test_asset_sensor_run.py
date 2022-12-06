@@ -38,7 +38,7 @@ def test_simple_parent_sensor(executor):
         |
         y
     Sensor for y that materializes y when all of its parents have materialized
-    Tests that materializing x results in a materialization of y
+    Tests that materializing x results in a materialization of y.
     """
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -115,7 +115,7 @@ def test_two_parents_AND_sensor(executor):
         \   /
           d
     Sensor for d that materializes d when all of its parents have materialized
-    Tests that materializing x materializes d since this is an OR sensor
+    Tests that materializing x materializes d since this is an OR sensor.
     """
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -187,7 +187,7 @@ def test_two_parents_OR_sensor(executor):
         \   /
           d
     Sensor that materializes d if x OR z materializes
-    Tests that materializing x materializes d
+    Tests that materializing x materializes d.
     """
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -266,7 +266,7 @@ def test_two_downstream_OR_sensor(executor):
           d    f
     Sensor for d and f that will materialize d (or f) if any of their parents materializes
     Tests that materializing x only materializes d, materializing e only materializes f, and materializing
-    z materializes d and f
+    z materializes d and f.
     """
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -379,7 +379,7 @@ def test_layered_sensor(executor):
             \       /
                 g
     Sensor for d, f, and g that materializes a child asset when all of its parents have materialized
-    Tests that materializing x, z, and e causes a materialization of d and f, which causes a materialization of g
+    Tests that materializing x, z, and e causes a materialization of d and f, which causes a materialization of g.
     """
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -436,7 +436,7 @@ def test_layered_AND_sensor_no_materialize(executor):
             \       /
                 g
     Sensor for g that materializes g when all of its parents have materialized
-    Tests that materializing x, z, and e does not cause a materialization of g
+    Tests that materializing x, z, and e does not cause a materialization of g.
     """
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -488,7 +488,7 @@ def test_layered_OR_sensor_no_materialize(executor):
             \       /
                 g
     Sensor for g that will materialize g if any of its parents materialize
-    Tests that materializing x, z, and e does not cause a materialization of g
+    Tests that materializing x, z, and e does not cause a materialization of g.
     """
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -539,7 +539,7 @@ def test_lots_of_materializations_sensor(executor):
         y
     Sensor for y
     Tests that materializing x a few times then starting the sensor results in only one materialization
-        of y
+        of y.
     """
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -596,7 +596,7 @@ def test_many_materializations_for_one_parent_sensor(executor):
         y  d
     Sensor for y and d that materializes y (or d) when all of its parents have materialized
     Tests that materializing x many times only materializes y, then materializing z materializes
-        d once
+        d once.
     """
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -696,7 +696,7 @@ def test_two_graph_sensor(executor):
         y   i
     Sensor for y and i that materializes y (or i) when all of its parents have materialized
     Tests that materializing x results in a materialization of y, materializing h results in a
-        materialization of i
+        materialization of i.
     """
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -774,7 +774,7 @@ def test_parent_in_progress_stops_materialization(executor):
         waits_on_sleep
     Sensor for waits_on_sleep
     Tests that setting parent_in_progress_stops_materialization=True will cause the sensor to not
-    materialize waits_on_sleep if one of it's parents is materializing
+    materialize waits_on_sleep if one of it's parents is materializing.
     """
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -850,7 +850,7 @@ def test_materialization_of_parent_and_child(executor):
         y
     Sensor for y
     Tests that if x and y are both materialized, the sensor will not materialize y (since it was already
-    materialized with x)
+    materialized with x).
     """
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -897,7 +897,7 @@ def test_materialization_of_parent_and_child(executor):
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_monitor_source_asset_sensor(executor):
-    """Tests a multi asset sensor that monitors an asset in another repo"""
+    """Tests a multi asset sensor that monitors an asset in another repo."""
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
@@ -948,7 +948,7 @@ def test_with_tags(executor):
         |
         y
     Sensor for y that materializes y when all of its parents have materialized
-    Tests that tags get forwarded to the run request
+    Tests that tags get forwarded to the run request.
     """
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),

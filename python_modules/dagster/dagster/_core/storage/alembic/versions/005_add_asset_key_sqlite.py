@@ -1,4 +1,4 @@
-"""add_asset_key
+"""add_asset_key.
 
 Revision ID: c39c047fa021
 Revises: 727ffe943a9f

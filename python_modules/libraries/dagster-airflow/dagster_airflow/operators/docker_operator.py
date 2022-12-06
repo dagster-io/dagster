@@ -183,7 +183,8 @@ class DagsterDockerOperator(DockerOperator):
         return command
 
     def get_docker_command(self, airflow_ts):
-        """Deliberately renamed from get_command to avoid shadoowing the method of the base class"""
+        """Deliberately renamed from get_command to avoid shadoowing the method of the base class.
+        """
         check.opt_str_param(airflow_ts, "airflow_ts")
 
         if self.command is not None and self.command.strip().find("[") == 0:

@@ -59,7 +59,7 @@ def _get_asset_lineage_from_fns(
 class StepInputData(
     NamedTuple("_StepInputData", [("input_name", str), ("type_check_data", TypeCheckData)])
 ):
-    """Serializable payload of information for the result of processing a step input"""
+    """Serializable payload of information for the result of processing a step input."""
 
     def __new__(cls, input_name: str, type_check_data: TypeCheckData):
         return super(StepInputData, cls).__new__(
@@ -75,7 +75,7 @@ class StepInput(
         [("name", str), ("dagster_type_key", str), ("source", "StepInputSource")],
     )
 ):
-    """Holds information for how to prepare an input for an ExecutionStep"""
+    """Holds information for how to prepare an input for an ExecutionStep."""
 
     def __new__(cls, name, dagster_type_key, source):
         return super(StepInput, cls).__new__(
@@ -104,7 +104,7 @@ def join_and_hash(*args: Optional[str]) -> Optional[str]:
 
 
 class StepInputSource(ABC):
-    """How to load the data for a step input"""
+    """How to load the data for a step input."""
 
     @property
     def step_key_dependencies(self) -> Set[str]:
@@ -135,7 +135,7 @@ class StepInputSource(ABC):
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
-        """See resolve_step_versions in resolve_versions.py for explanation of step_versions"""
+        """See resolve_step_versions in resolve_versions.py for explanation of step_versions."""
         raise NotImplementedError()
 
 
@@ -151,7 +151,7 @@ class FromSourceAsset(
     StepInputSource,
 ):
     """
-    Load input value from an asset
+    Load input value from an asset.
     """
 
     def load_input_object(
@@ -1054,7 +1054,7 @@ class FromDynamicCollect(
 
 
 class UnresolvedMappedStepInput(NamedTuple):
-    """Holds information for how to resolve a StepInput once the upstream mapping is done"""
+    """Holds information for how to resolve a StepInput once the upstream mapping is done."""
 
     name: str
     dagster_type_key: str
@@ -1076,12 +1076,13 @@ class UnresolvedMappedStepInput(NamedTuple):
         )
 
     def get_step_output_handle_deps_with_placeholders(self) -> Sequence[StepOutputHandle]:
-        """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys"""
+        """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys.
+        """
         return [self.source.get_step_output_handle_dep_with_placeholder()]
 
 
 class UnresolvedCollectStepInput(NamedTuple):
-    """Holds information for how to resolve a StepInput once the upstream mapping is done"""
+    """Holds information for how to resolve a StepInput once the upstream mapping is done."""
 
     name: str
     dagster_type_key: str
@@ -1103,7 +1104,8 @@ class UnresolvedCollectStepInput(NamedTuple):
         )
 
     def get_step_output_handle_deps_with_placeholders(self) -> Sequence[StepOutputHandle]:
-        """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys"""
+        """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys.
+        """
         return [self.source.get_step_output_handle_dep_with_placeholder()]
 
 
@@ -1126,5 +1128,5 @@ class FromRootInputConfig(
     StepInputSource,
 ):
     """
-    DEPRECATED replaced by FromConfig with None node handle
+    DEPRECATED replaced by FromConfig with None node handle.
     """

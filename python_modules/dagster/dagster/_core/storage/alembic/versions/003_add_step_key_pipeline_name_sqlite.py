@@ -1,4 +1,4 @@
-"""add step_key pipeline_name
+"""add step_key pipeline_name.
 
 Revision ID: 3b1e175a2be3
 Revises: 1ebdd7a9686f

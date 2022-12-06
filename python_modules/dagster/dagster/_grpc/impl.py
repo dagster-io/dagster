@@ -54,7 +54,7 @@ from .types import ExecuteExternalPipelineArgs
 
 
 class RunInSubprocessComplete:
-    """Sentinel passed over multiprocessing Queue when subprocess is complete"""
+    """Sentinel passed over multiprocessing Queue when subprocess is complete."""
 
 
 class StartRunInSubprocessSuccessful:

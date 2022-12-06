@@ -537,12 +537,12 @@ class AssetsDefinition(ResourceAddable):
 
     @property
     def node_keys_by_output_name(self) -> Mapping[str, AssetKey]:
-        """AssetKey for each output on the underlying NodeDefinition"""
+        """AssetKey for each output on the underlying NodeDefinition."""
         return self._keys_by_output_name
 
     @property
     def node_keys_by_input_name(self) -> Mapping[str, AssetKey]:
-        """AssetKey for each input on the underlying NodeDefinition"""
+        """AssetKey for each input on the underlying NodeDefinition."""
         return self._keys_by_input_name
 
     @property

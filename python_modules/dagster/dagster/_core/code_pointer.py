@@ -66,7 +66,7 @@ def rebase_file(relative_path_in_file: str, file_path_resides_in: str) -> str:
 
 def load_python_file(python_file: str, working_directory: Optional[str]) -> ModuleType:
     """
-    Takes a path to a python file and returns a loaded module
+    Takes a path to a python file and returns a loaded module.
     """
     check.str_param(python_file, "python_file")
     check.opt_str_param(working_directory, "working_directory")

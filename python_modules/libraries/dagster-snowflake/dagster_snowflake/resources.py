@@ -312,5 +312,5 @@ def snowflake_resource(context):
 
 
 def _filter_password(args):
-    """Remove password from connection args for logging"""
+    """Remove password from connection args for logging."""
     return {k: v for k, v in args.items() if k != "password"}
