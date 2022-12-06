@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import op, DagsterInvariantViolationError, resource
+from dagster import DagsterInvariantViolationError, op, resource
 from dagster._legacy import ModeDefinition, pipeline
 
 
@@ -38,31 +38,21 @@ def job_with_mode():
 def test_execute_pipeline_with_mode():
     pipeline_result = job_with_mode.execute_in_process(
         run_config={
-            "solids": {
-                "op_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}
-            }
+            "solids": {"op_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}}
         },
         mode="add_one",
     )
     assert pipeline_result.success
-    assert (
-        pipeline_result.result_for_solid("op_that_uses_adder_resource").output_value()
-        == 5
-    )
+    assert pipeline_result.result_for_solid("op_that_uses_adder_resource").output_value() == 5
 
     pipeline_result = job_with_mode.execute_in_process(
         run_config={
-            "solids": {
-                "op_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}
-            }
+            "solids": {"op_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}}
         },
         mode="add_two",
     )
     assert pipeline_result.success
-    assert (
-        pipeline_result.result_for_solid("op_that_uses_adder_resource").output_value()
-        == 6
-    )
+    assert pipeline_result.result_for_solid("op_that_uses_adder_resource").output_value() == 6
 
 
 def test_execute_pipeline_with_non_existant_mode():
@@ -70,9 +60,7 @@ def test_execute_pipeline_with_non_existant_mode():
         job_with_mode.execute_in_process(
             mode="BAD",
             run_config={
-                "solids": {
-                    "op_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}
-                }
+                "solids": {"op_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}}
             },
         )
 

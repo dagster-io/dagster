@@ -1,4 +1,4 @@
-from dagster import job, op, Failure, MetadataEntry
+from dagster import Failure, MetadataEntry, job, op
 
 
 def test_failure():

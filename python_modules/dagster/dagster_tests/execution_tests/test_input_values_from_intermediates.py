@@ -1,4 +1,4 @@
-from dagster import job, In, op, List, Optional
+from dagster import In, List, Optional, job, op
 
 
 def test_from_intermediates_from_multiple_outputs():
@@ -33,9 +33,7 @@ def test_from_intermediates_from_multiple_outputs():
 
 
 def test_from_intermediates_from_config():
-    run_config = {
-        "solids": {"x": {"inputs": {"string_input": {"value": "Dagster is great!"}}}}
-    }
+    run_config = {"solids": {"x": {"inputs": {"string_input": {"value": "Dagster is great!"}}}}}
 
     @op
     def x(string_input):

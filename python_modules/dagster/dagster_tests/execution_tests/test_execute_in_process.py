@@ -357,9 +357,7 @@ def test_execute_in_process_input_values():
     def requires_input_graph(x):
         return requires_input_op(x)
 
-    result = requires_input_graph.alias("named_graph").execute_in_process(
-        input_values={"x": 5}
-    )
+    result = requires_input_graph.alias("named_graph").execute_in_process(input_values={"x": 5})
     assert result.success
     assert result.output_value() == 6
     result = requires_input_graph.to_job().execute_in_process(input_values={"x": 5})
@@ -380,9 +378,7 @@ def test_retries_exceeded():
     def fail():
         always_fail()
 
-    with pytest.raises(
-        DagsterMaxRetriesExceededError, match="Exceeded max_retries of 2"
-    ):
+    with pytest.raises(DagsterMaxRetriesExceededError, match="Exceeded max_retries of 2"):
         fail.execute_in_process()
 
     result = fail.execute_in_process(raise_on_error=False)

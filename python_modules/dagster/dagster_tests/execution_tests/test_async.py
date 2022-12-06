@@ -1,6 +1,6 @@
 import asyncio
 
-from dagster import op, Output
+from dagster import Output, op
 from dagster._legacy import execute_solid
 
 

@@ -3,7 +3,7 @@ import time
 
 import pytest
 
-from dagster import GraphDefinition, op, Output
+from dagster import GraphDefinition, Output, op
 
 
 @pytest.mark.skipif(
