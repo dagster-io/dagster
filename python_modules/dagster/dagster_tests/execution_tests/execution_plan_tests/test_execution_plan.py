@@ -19,7 +19,7 @@ from dagster._core.utils import make_new_run_id
 from dagster._legacy import OutputDefinition
 
 
-def define_diamond_pipeline():
+def define_diamond_job():
     @op
     def return_two():
         return 2
@@ -45,7 +45,7 @@ def define_diamond_pipeline():
 
 
 def test_topological_sort():
-    plan = create_execution_plan(define_diamond_pipeline())
+    plan = create_execution_plan(define_diamond_job())
 
     levels = plan.get_steps_to_execute_by_level()
 
@@ -59,13 +59,13 @@ def test_topological_sort():
 def test_create_execution_plan_with_bad_inputs():
     with pytest.raises(DagsterInvalidConfigError):
         create_execution_plan(
-            define_diamond_pipeline(),
-            run_config={"solids": {"add_three": {"inputs": {"num": 3}}}},
+            define_diamond_job(),
+            run_config={"ops": {"add_three": {"inputs": {"num": 3}}}},
         )
 
 
 def test_active_execution_plan():
-    plan = create_execution_plan(define_diamond_pipeline())
+    plan = create_execution_plan(define_diamond_job())
 
     with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
 
@@ -122,8 +122,8 @@ def test_active_execution_plan():
 
 
 def test_failing_execution_plan():
-    pipeline_def = define_diamond_pipeline()
-    plan = create_execution_plan(pipeline_def)
+    job_def = define_diamond_job()
+    plan = create_execution_plan(job_def)
 
     with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
 
@@ -181,8 +181,8 @@ def test_failing_execution_plan():
 
 
 def test_retries_active_execution():
-    pipeline_def = define_diamond_pipeline()
-    plan = create_execution_plan(pipeline_def)
+    job_def = define_diamond_job()
+    plan = create_execution_plan(job_def)
 
     with plan.start(retry_mode=(RetryMode.ENABLED)) as active_execution:
 
@@ -249,8 +249,8 @@ def test_retries_active_execution():
 
 
 def test_retries_disabled_active_execution():
-    pipeline_def = define_diamond_pipeline()
-    plan = create_execution_plan(pipeline_def)
+    job_def = define_diamond_job()
+    plan = create_execution_plan(job_def)
 
     with pytest.raises(check.CheckError):
         with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
@@ -268,8 +268,8 @@ def test_retries_disabled_active_execution():
 
 
 def test_retries_deferred_active_execution():
-    pipeline_def = define_diamond_pipeline()
-    plan = create_execution_plan(pipeline_def)
+    job_def = define_diamond_job()
+    plan = create_execution_plan(job_def)
 
     with plan.start(retry_mode=(RetryMode.DEFERRED)) as active_execution:
 
@@ -353,15 +353,15 @@ def test_priorities():
 
 def test_executor_not_created_for_execute_plan():
     instance = DagsterInstance.ephemeral()
-    pipe = define_diamond_pipeline()
+    pipe = define_diamond_job()
     plan = create_execution_plan(pipe)
-    pipeline_run = instance.create_run_for_pipeline(pipe, plan)
+    job_def = instance.create_run_for_pipeline(pipe, plan)
 
     results = execute_plan(
         plan,
         InMemoryPipeline(pipe),
         instance,
-        pipeline_run,
+        job_def,
         run_config={"execution": {"multiprocess": {}}},
     )
     for result in results:
@@ -369,7 +369,7 @@ def test_executor_not_created_for_execute_plan():
 
 
 def test_incomplete_execution_plan():
-    plan = create_execution_plan(define_diamond_pipeline())
+    plan = create_execution_plan(define_diamond_job())
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -386,7 +386,7 @@ def test_incomplete_execution_plan():
 
 
 def test_lost_steps():
-    plan = create_execution_plan(define_diamond_pipeline())
+    plan = create_execution_plan(define_diamond_job())
 
     # run to completion - but step was in unknown state so exception thrown
     with pytest.raises(DagsterUnknownStepStateError):
@@ -550,7 +550,7 @@ def test_configured_input_should_skip_step():
         op_should_not_skip(one())
 
     run_config = {
-        "solids": {"op_should_not_skip": {"inputs": {"input_two": {"value": "2"}}}}
+        "ops": {"op_should_not_skip": {"inputs": {"input_two": {"value": "2"}}}}
     }
     my_job.execute_in_process(run_config=run_config)
     assert called.get("yup")
