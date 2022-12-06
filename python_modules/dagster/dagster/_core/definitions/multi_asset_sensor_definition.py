@@ -23,7 +23,6 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -719,46 +718,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 upstream_partitions_def=from_asset.partitions_def,
             )
         )
-        print(downstream_partition_key_subset.get_partition_keys())
 
-        partition_keys = to_partitions_def.get_partition_keys()
-        if not all(
-            [key in partition_keys for key in downstream_partition_key_subset.get_partition_keys()]
-        ):
-            missing_keys = [
-                key
-                for key in downstream_partition_key_subset.get_partition_keys()
-                if key not in partition_keys
-            ]
-            raise DagsterInvalidInvocationError(
-                f"Partition keys {missing_keys} not found in upstream asset."
-            )
-        # if (
-        #     downstream_partition_key_subset.start not in partition_keys
-        #     or downstream_partition_key_subset.end not in partition_keys
-        # ):
-        #     error_msg = f"""Mapped partition key {partition_key} to downstream partition key range
-        #     [{downstream_partition_key_subset.start}...{downstream_partition_key_subset.end}] which
-        #     is not a valid range in the downstream partitions definition."""
-
-        #     if not isinstance(to_partitions_def, TimeWindowPartitionsDefinition):
-        #         raise DagsterInvalidInvocationError(error_msg)
-        #     else:
-        #         warnings.warn(error_msg)
-
-        if isinstance(to_partitions_def, TimeWindowPartitionsDefinition):
-            return list(downstream_partition_key_subset.get_partition_keys())
-            # return to_partitions_def.get_partition_keys_in_range(downstream_partition_key_subset)  # type: ignore[attr-defined]
-
-        # Not a time-window partition definition
-        # downstream_partitions = partition_keys[
-        #     partition_keys.index(downstream_partition_key_subset.start) : partition_keys.index(
-        #         downstream_partition_key_subset.end
-        #     )
-        #     + 1
-        # ]
         return list(downstream_partition_key_subset.get_partition_keys())
-        # return downstream_partitions
 
     @public
     def advance_cursor(

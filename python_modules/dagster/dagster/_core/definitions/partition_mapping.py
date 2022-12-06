@@ -48,7 +48,7 @@ class PartitionMapping(ABC):
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionKeyRange:
         """Returns the range of partition keys in the downstream asset that use the data in the given
-        partition key range of the downstream asset.
+        partition key range of the upstream asset.
 
         Args:
             upstream_partition_key_range (PartitionKeyRange): The range of partition keys in the
@@ -67,7 +67,16 @@ class PartitionMapping(ABC):
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionsSubset:
         """
-        TODO add docstring
+        Returns the subset of partition keys in the upstream asset that include data necessary
+        to compute the contents of the given partition key subset in the downstream asset.
+
+        Args:
+            downstream_partition_key_subset (Optional[Union[PartitionKeyRange, PartitionsSubset]]):
+                The subset of partition keys in the downstream asset.
+            downstream_partitions_def (PartitionsDefinition): The partitions definition for the
+                downstream asset.
+            upstream_partitions_def (PartitionsDefinition): The partitions definition for the
+                upstream asset.
         """
         if isinstance(downstream_partition_key_subset, PartitionsSubset):
             raise NotImplementedError(
@@ -91,7 +100,16 @@ class PartitionMapping(ABC):
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionsSubset:
         """
-        TODO add docstring
+        Returns the subset of partition keys in the downstream asset that use the data in the given
+        partition key subset of the upstream asset.
+
+        Args:
+            upstream_partition_key_subset (Union[PartitionKeyRange, PartitionsSubset]): The
+                subset of partition keys in the upstream asset.
+            downstream_partitions_def (PartitionsDefinition): The partitions definition for the
+                downstream asset.
+            upstream_partitions_def (PartitionsDefinition): The partitions definition for the
+                upstream asset.
         """
         if isinstance(upstream_partition_key_subset, PartitionsSubset):
             raise NotImplementedError(
