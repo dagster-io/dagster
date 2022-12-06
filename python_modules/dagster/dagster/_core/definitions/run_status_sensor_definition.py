@@ -385,6 +385,28 @@ class RunStatusSensorDefinition(SensorDefinition):
         )
         event_type = PIPELINE_RUN_STATUS_TO_EVENT_TYPE[run_status]
 
+        # split monitored_jobs into external repos, external jobs, and jobs in the current repo
+        other_repos = (
+            [x for x in monitored_jobs if isinstance(x, RepositorySelector)]
+            if monitored_jobs
+            else []
+        )
+        other_repo_jobs = (
+            [x for x in monitored_jobs if isinstance(x, JobSelector)] if monitored_jobs else []
+        )
+
+        current_repo_jobs = (
+            [
+                x
+                for x in monitored_jobs
+                # monitored_jobs will not contain any CodeLocationSelectors at this point, but this
+                # is in this list to make mypy/pyright happy. Verified by invariant above.
+                if not isinstance(x, (JobSelector, RepositorySelector))
+            ]
+            if monitored_jobs
+            else []
+        )
+
         def _wrapped_fn(context: SensorEvaluationContext):
             # initiate the cursor to (most recent event id, current timestamp) when:
             # * it's the first time starting the sensor
@@ -426,36 +448,6 @@ class RunStatusSensorDefinition(SensorDefinition):
                 ),
                 ascending=True,
                 limit=5,
-            )
-
-            check.invariant(
-                len(
-                    [job for job in (monitored_jobs or []) if isinstance(job, CodeLocationSelector)]
-                )
-                == 0,
-                "No code location selectors in monitored_jobs at this point",
-            )
-
-            # split monitored_jobs into external repos, external jobs, and jobs in the current repo
-            other_repos = (
-                [x for x in monitored_jobs if isinstance(x, RepositorySelector)]
-                if monitored_jobs
-                else []
-            )
-            other_repo_jobs = (
-                [x for x in monitored_jobs if isinstance(x, JobSelector)] if monitored_jobs else []
-            )
-
-            current_repo_jobs = (
-                [
-                    x
-                    for x in monitored_jobs
-                    # monitored_jobs will not contain any CodeLocationSelectors at this point, but this
-                    # is in this list to make mypy/pyright happy. Verfied by invariant above.
-                    if not isinstance(x, (JobSelector, RepositorySelector, CodeLocationSelector))
-                ]
-                if monitored_jobs
-                else []
             )
 
             for event_record in event_records:
