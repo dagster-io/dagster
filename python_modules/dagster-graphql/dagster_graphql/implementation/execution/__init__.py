@@ -4,7 +4,6 @@ import sys
 from typing import TYPE_CHECKING, Any, AsyncIterator, Optional, Sequence, Tuple, Union
 
 from dagster_graphql.schema.util import HasContext
-from graphene import ResolveInfo
 from starlette.concurrency import (
     run_in_threadpool,  # can provide this indirectly if we dont want starlette dep in dagster-graphql
 )
@@ -140,7 +139,7 @@ def get_chunk_size() -> int:
 
 
 async def gen_events_for_run(
-    graphene_info: ResolveInfo,
+    graphene_info: HasContext,
     run_id: str,
     after_cursor: Optional[str] = None,
 ) -> AsyncIterator[
@@ -156,10 +155,9 @@ async def gen_events_for_run(
     )
     from ..events import from_event_record
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.str_param(run_id, "run_id")
     after_cursor = check.opt_str_param(after_cursor, "after_cursor")
-    instance: DagsterInstance = graphene_info.context.instance
+    instance = graphene_info.context.instance
     records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
 
     if not records:
@@ -224,7 +222,7 @@ async def gen_events_for_run(
 
 
 async def gen_compute_logs(
-    graphene_info: ResolveInfo,
+    graphene_info: HasContext,
     run_id: str,
     step_key: str,
     io_type: ComputeIOType,
@@ -232,12 +230,11 @@ async def gen_compute_logs(
 ) -> AsyncIterator[Optional["GrapheneComputeLogFile"]]:
     from ...schema.logs.compute_logs import from_compute_log_file
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.str_param(run_id, "run_id")
     check.str_param(step_key, "step_key")
     check.inst_param(io_type, "io_type", ComputeIOType)
     check.opt_str_param(cursor, "cursor")
-    instance: DagsterInstance = graphene_info.context.instance
+    instance = graphene_info.context.instance
 
     obs = instance.compute_log_manager.observable(run_id, step_key, io_type, cursor)
 
@@ -289,7 +286,7 @@ async def gen_captured_log_data(
 
 
 @capture_error
-def wipe_assets(graphene_info, asset_keys):
+def wipe_assets(graphene_info: HasContext, asset_keys):
     from ...schema.roots.mutation import GrapheneAssetWipeSuccess
 
     instance = graphene_info.context.instance
