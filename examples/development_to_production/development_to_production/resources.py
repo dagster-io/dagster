@@ -6,7 +6,7 @@ import requests
 
 class HNClient(ABC):
     """
-    Base class for a Hacker News Client
+    Base class for a Hacker News Client.
     """
 
     @abstractmethod
@@ -25,7 +25,7 @@ class HNClient(ABC):
 
 class HNAPIClient(HNClient):
     """
-    Hacker News client that fetches live data
+    Hacker News client that fetches live data.
     """
 
     def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
@@ -56,7 +56,7 @@ class HNAPIClient(HNClient):
 
 class StubHNClient(HNClient):
     """
-    Hacker News Client that returns fake data
+    Hacker News Client that returns fake data.
     """
 
     def __init__(self):

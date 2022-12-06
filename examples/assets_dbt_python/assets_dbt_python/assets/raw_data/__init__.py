@@ -7,7 +7,7 @@ from assets_dbt_python.utils import random_data
 
 @asset(compute_kind="random")
 def users() -> pd.DataFrame:
-    """A table containing all users data"""
+    """A table containing all users data."""
     return pd.DataFrame(
         {
             "user_id": range(1000),
@@ -21,7 +21,7 @@ def users() -> pd.DataFrame:
 
 @asset(compute_kind="random")
 def orders() -> pd.DataFrame:
-    """A table containing all orders that have been placed"""
+    """A table containing all orders that have been placed."""
     return random_data(
         extra_columns={"order_id": str, "quantity": int, "purchase_price": float, "sku": str},
         n=10000,

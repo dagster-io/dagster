@@ -35,7 +35,7 @@ from ..policy import RetryPolicy
 
 
 class DecoratedOpFunction(NamedTuple):
-    """Wrapper around the decorated solid function to provide commonly used util methods"""
+    """Wrapper around the decorated solid function to provide commonly used util methods."""
 
     decorated_fn: Callable[..., Any]
 

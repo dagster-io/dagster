@@ -80,7 +80,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def resolved_run_config(self) -> ResolvedRunConfig:
-        """:class:`dagster.ResolvedRunConfig`: The resolved_run_config for the context"""
+        """:class:`dagster.ResolvedRunConfig`: The resolved_run_config for the context."""
         return self._pipeline_context.resolved_run_config
 
     @public  # type: ignore

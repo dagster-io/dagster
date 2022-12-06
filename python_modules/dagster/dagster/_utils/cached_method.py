@@ -65,7 +65,7 @@ def cached_method(method):
 
 class _HashedSeq(list):
     """
-    Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L432
+    Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L432.
 
     This class guarantees that hash() will be called no more than once
     per element.  This is important because the lru_cache() will hash
@@ -84,7 +84,7 @@ class _HashedSeq(list):
 
 def _make_key(args, kwds, fasttypes={int, str}):  # pylint: disable=dangerous-default-value
     """
-    Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L448
+    Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L448.
 
     Make a cache key from optionally typed positional and keyword arguments
     The key is constructed in a way that is flat as possible rather than

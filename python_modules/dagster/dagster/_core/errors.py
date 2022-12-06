@@ -78,7 +78,7 @@ This value can be a:
 
 
 class DagsterInvalidConfigDefinitionError(DagsterError):
-    """Indicates that you have attempted to construct a config with an invalid value
+    """Indicates that you have attempted to construct a config with an invalid value.
 
     Acceptable values for config types are any of:
         1. A Python primitive type that resolves to a Dagster config type
@@ -482,7 +482,7 @@ class DagsterRunAlreadyExists(DagsterError):
 
 
 class DagsterSnapshotDoesNotExist(DagsterError):
-    """Indicates you attempted to create a pipeline run with a nonexistent snapshot id"""
+    """Indicates you attempted to create a pipeline run with a nonexistent snapshot id."""
 
 
 class DagsterRunConflict(DagsterError):
@@ -532,11 +532,11 @@ class PartitionExecutionError(DagsterUserCodeExecutionError):
 
 
 class DagsterInvalidAssetKey(DagsterError):
-    """Error raised by invalid asset key"""
+    """Error raised by invalid asset key."""
 
 
 class DagsterInvalidMetadata(DagsterError):
-    """Error raised by invalid metadata parameters"""
+    """Error raised by invalid metadata parameters."""
 
 
 class HookExecutionError(DagsterUserCodeExecutionError):
@@ -560,7 +560,7 @@ class JobError(DagsterUserCodeExecutionError):
 
 
 class DagsterUnknownStepStateError(DagsterError):
-    """When job execution completes with steps in an unknown state"""
+    """When job execution completes with steps in an unknown state."""
 
 
 class DagsterObjectStoreError(DagsterError):

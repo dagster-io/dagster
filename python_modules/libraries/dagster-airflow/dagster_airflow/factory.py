@@ -44,8 +44,9 @@ def _make_dag_description(pipeline_name):
 
 
 def _rename_for_airflow(name):
-    """Modify pipeline name for Airflow to meet constraints on DAG names:
-    https://github.com/apache/airflow/blob/1.10.3/airflow/utils/helpers.py#L52-L63
+    """Modify pipeline name for Airflow to meet constraints on DAG names.
+
+    See: https://github.com/apache/airflow/blob/1.10.3/airflow/utils/helpers.py#L52-L63
 
     Here, we just substitute underscores for illegal characters to avoid imposing Airflow's
     constraints on our naming schemes.

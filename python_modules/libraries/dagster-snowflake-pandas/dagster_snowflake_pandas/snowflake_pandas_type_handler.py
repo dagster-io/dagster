@@ -29,7 +29,7 @@ def _connect_snowflake(context: Union[InputContext, OutputContext], table_slice:
 def _convert_timestamp_to_string(s: pd.Series) -> pd.Series:
     """
     Converts columns of data of type pd.Timestamp to string so that it can be stored in
-    snowflake
+    snowflake.
     """
     if pd.core.dtypes.common.is_datetime_or_timedelta_dtype(s):
         return s.dt.strftime("%Y-%m-%d %H:%M:%S.%f %z")
@@ -40,7 +40,7 @@ def _convert_timestamp_to_string(s: pd.Series) -> pd.Series:
 def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
     """
     Converts columns of strings in Timestamp format to pd.Timestamp to undo the conversion in
-    _convert_timestamp_to_string
+    _convert_timestamp_to_string.
 
     This will not convert non-timestamp strings into timestamps (pd.to_datetime will raise an
     exception if the string cannot be converted)

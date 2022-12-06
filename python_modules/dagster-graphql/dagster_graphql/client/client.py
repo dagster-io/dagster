@@ -31,7 +31,7 @@ from .utils import (
 
 
 class DagsterGraphQLClient:
-    """Official Dagster Python Client for GraphQL
+    """Official Dagster Python Client for GraphQL.
 
     Utilizes the gql library to dispatch queries over HTTP to a remote Dagster GraphQL Server
 
@@ -330,7 +330,7 @@ class DagsterGraphQLClient:
 
     @public
     def get_run_status(self, run_id: str) -> DagsterRunStatus:
-        """Get the status of a given Pipeline Run
+        """Get the status of a given Pipeline Run.
 
         Args:
             run_id (str): run id of the requested pipeline run.

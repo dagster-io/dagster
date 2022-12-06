@@ -12,11 +12,11 @@ from dagster._core.scheduler.instigation import (
 
 
 class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
-    """Abstract class for managing persistance of scheduler artifacts"""
+    """Abstract class for managing persistance of scheduler artifacts."""
 
     @abc.abstractmethod
     def wipe(self):
-        """Delete all schedules from storage"""
+        """Delete all schedules from storage."""
 
     @abc.abstractmethod
     def all_instigator_state(
@@ -25,7 +25,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         repository_selector_id: Optional[str] = None,
         instigator_type: Optional[InstigatorType] = None,
     ) -> Iterable[InstigatorState]:
-        """Return all InstigationStates present in storage
+        """Return all InstigationStates present in storage.
 
         Args:
             repository_origin_id (Optional[str]): The ExternalRepository target id to scope results to
@@ -35,7 +35,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
 
     @abc.abstractmethod
     def get_instigator_state(self, origin_id: str, selector_id: str) -> Optional[InstigatorState]:
-        """Return the instigator state for the given id
+        """Return the instigator state for the given id.
 
         Args:
             origin_id (str): The unique instigator identifier
@@ -131,16 +131,16 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
 
     @abc.abstractmethod
     def upgrade(self):
-        """Perform any needed migrations"""
+        """Perform any needed migrations."""
 
     def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
-        """Call this method to run any required data migrations"""
+        """Call this method to run any required data migrations."""
 
     def optimize(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
-        """Call this method to run any optional data migrations for optimized reads"""
+        """Call this method to run any optional data migrations for optimized reads."""
 
     def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
-        """Allows for optimizing database connection / use in the context of a long lived dagit process
+        """Allows for optimizing database connection / use in the context of a long lived dagit process.
         """
 
     def alembic_version(self):

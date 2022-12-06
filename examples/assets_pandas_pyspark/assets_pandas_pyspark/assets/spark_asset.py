@@ -8,7 +8,7 @@ from pyspark.sql import (
 
 @asset
 def daily_temperature_high_diffs(daily_temperature_highs: SparkDF) -> SparkDF:
-    """Computes the difference between each day's high and the previous day's high"""
+    """Computes the difference between each day's high and the previous day's high."""
     window = Window.orderBy("valid_date")
     return daily_temperature_highs.select(
         "valid_date",

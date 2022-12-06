@@ -393,7 +393,7 @@ def _asset_mappings_for_node(
 ]:
     """
     Recursively iterate through all the sub-nodes of a Node to find any ops with asset info
-    encoded on their inputs/outputs
+    encoded on their inputs/outputs.
     """
     check.inst_param(node_def, "node_def", NodeDefinition)
     check.opt_inst_param(node_handle, "node_handle", NodeHandle)
@@ -554,7 +554,7 @@ class AssetLayer:
 
     @staticmethod
     def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
-        """Scrape asset info off of InputDefinition/OutputDefinition instances"""
+        """Scrape asset info off of InputDefinition/OutputDefinition instances."""
         check.inst_param(graph_def, "graph_def", GraphDefinition)
         asset_by_input, asset_by_output, asset_deps, io_manager_by_asset = _asset_mappings_for_node(
             graph_def, None

@@ -241,7 +241,7 @@ def is_context_provided(
 
 
 class SensorDefinition:
-    """Define a sensor that initiates a set of runs based on some external state
+    """Define a sensor that initiates a set of runs based on some external state.
 
     Args:
         evaluation_fn (Callable[[SensorEvaluationContext]]): The core evaluation function for the

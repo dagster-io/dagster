@@ -11,7 +11,7 @@ POLLING_CADENCE = 0.1  # 100 ms
 
 
 class CallbackAfterCursor(NamedTuple):
-    """Callback passed from Observer class in event polling
+    """Callback passed from Observer class in event polling.
 
     cursor (str): Only process EventLogEntrys after the given cursor
     callback (Callable[[EventLogEntry], None]): callback passed from Observer
@@ -25,7 +25,7 @@ class CallbackAfterCursor(NamedTuple):
 class SqlPollingEventWatcher:
     """Event Log Watcher that uses a multithreaded polling approach to retrieving new events for run_ids
     This class' job is to manage a collection of threads that each poll the event log for a given run_id
-    Uses one thread (SqlPollingRunIdEventWatcherThread) per watched run_id
+    Uses one thread (SqlPollingRunIdEventWatcherThread) per watched run_id.
 
     LOCKING INFO:
         ORDER: _dict_lock -> run_id_thread.callback_fn_list_lock
@@ -88,7 +88,7 @@ class SqlPollingEventWatcher:
 
 
 class SqlPollingRunIdEventWatcherThread(threading.Thread):
-    """subclass of Thread that watches a given run_id for new Events by polling every POLLING_CADENCE
+    """subclass of Thread that watches a given run_id for new Events by polling every POLLING_CADENCE.
 
     Holds a list of callbacks (_callback_fn_list) each passed in by an `Observer`. Note that
         the callbacks have a cursor associated; this means that the callbacks should be
@@ -117,7 +117,7 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
 
     def add_callback(self, cursor: Optional[str], callback: Callable[[EventLogEntry, str], None]):
         """Observer has started watching this run.
-            Add a callback to execute on new EventLogEntrys after the given cursor
+            Add a callback to execute on new EventLogEntrys after the given cursor.
 
         Args:
             cursor (Optional[str]): event log cursor for the callback to execute
@@ -130,7 +130,7 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
 
     def remove_callback(self, callback: Callable[[EventLogEntry, str], None]):
         """Observer has stopped watching this run;
-            Remove a callback from the list of callbacks to execute on new EventLogEntrys
+            Remove a callback from the list of callbacks to execute on new EventLogEntrys.
 
             Also kill thread if no callbacks remaining (i.e. no Observers are watching this run_id)
 
@@ -152,7 +152,7 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
         Wakes every POLLING_CADENCE &
             1. executes a SELECT query to get new EventLogEntrys
             2. fires each callback (taking into account the callback.cursor) on the new EventLogEntrys
-        Uses max_index_so_far as a cursor in the DB to make sure that only new records are retrieved
+        Uses max_index_so_far as a cursor in the DB to make sure that only new records are retrieved.
         """
         cursor = None
         while not self._should_thread_exit.wait(POLLING_CADENCE):

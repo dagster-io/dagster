@@ -92,7 +92,7 @@ def _select_unique_ids_from_manifest_json(
         ) from e
 
     class _DictShim(dict):
-        """Shim to enable hydrating a dictionary into a dot-accessible object"""
+        """Shim to enable hydrating a dictionary into a dot-accessible object."""
 
         def __getattr__(self, item):
             ret = super().get(item)
@@ -151,7 +151,7 @@ def _get_node_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
 
 
 def _get_node_group_name(node_info: Mapping[str, Any]) -> Optional[str]:
-    """A node's group name is subdirectory that it resides in"""
+    """A node's group name is subdirectory that it resides in."""
     fqn = node_info.get("fqn", [])
     # the first component is the package name, and the last component is the model name
     if len(fqn) < 3:

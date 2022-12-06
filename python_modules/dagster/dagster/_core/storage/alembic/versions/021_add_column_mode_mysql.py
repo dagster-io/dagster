@@ -1,4 +1,4 @@
-"""add column "mode"
+"""add column "mode".
 
 Revision ID: 45fa602c43dc
 Revises: 3b529ad30626

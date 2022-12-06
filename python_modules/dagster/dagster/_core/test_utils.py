@@ -103,7 +103,7 @@ def nesting_graph_pipeline(depth, num_children, *args, **kwargs):
 @contextmanager
 def environ(env):
     """Temporarily set environment variables inside the context manager and
-    fully restore previous environment afterwards
+    fully restore previous environment afterwards.
     """
     previous_values = {key: os.getenv(key) for key in env}
     for key, value in env.items():

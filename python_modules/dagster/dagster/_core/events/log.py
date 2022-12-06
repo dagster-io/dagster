@@ -142,7 +142,7 @@ class EventLogEntry(
     @property
     def message(self) -> str:
         """
-        Return the message from the structured DagsterEvent if present, fallback to user_message
+        Return the message from the structured DagsterEvent if present, fallback to user_message.
         """
         if self.is_dagster_event:
             msg = self.get_dagster_event().message
@@ -219,7 +219,7 @@ def construct_event_logger(event_record_callback):
 
 
 def construct_json_event_logger(json_path):
-    """Record a stream of event records to json"""
+    """Record a stream of event records to json."""
     check.str_param(json_path, "json_path")
     return construct_single_handler_logger(
         "json-event-record-logger",

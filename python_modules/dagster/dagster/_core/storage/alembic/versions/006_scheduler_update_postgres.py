@@ -1,4 +1,4 @@
-"""scheduler update
+"""scheduler update.
 
 Revision ID: 5c18fd3c2957
 Revises: c39c047fa021

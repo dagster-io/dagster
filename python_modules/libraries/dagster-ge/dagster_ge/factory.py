@@ -139,7 +139,7 @@ def ge_validation_op_factory_v3(
     runtime_method_type="batch_data",
     extra_kwargs=None,
 ):
-    """Generates ops for interacting with GE (v3 API)
+    """Generates ops for interacting with GE (v3 API).
 
     Args:
         name (str): the name of the op

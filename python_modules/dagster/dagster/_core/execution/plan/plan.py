@@ -182,7 +182,7 @@ class _PlanBuilder:
         self.step_output_map[key] = val
 
     def build(self) -> "ExecutionPlan":
-        """Builds the execution plan"""
+        """Builds the execution plan."""
         _check_persistent_storage_requirement(
             self.pipeline,
             self.mode_definition,
@@ -771,7 +771,7 @@ class ExecutionPlan(
         self,
         mappings: Mapping[str, Mapping[str, Optional[Sequence[str]]]],
     ) -> Mapping[str, Set[str]]:
-        """Resolve any dynamic map or collect steps with the resolved dynamic mappings"""
+        """Resolve any dynamic map or collect steps with the resolved dynamic mappings."""
         previous = self.get_executable_step_deps()
 
         _update_from_resolved_dynamic_outputs(

@@ -65,7 +65,7 @@ def build(
 @opt_build_timestamp
 @opt_build_platform
 def build_all(name: str, dagster_version: str, timestamp: str, platform: Optional[str]):
-    """Build all supported python versions for image"""
+    """Build all supported python versions for image."""
     image = get_image(name)
 
     for python_version in image.python_versions:

@@ -1,4 +1,4 @@
-"""add column mode
+"""add column mode.
 
 Revision ID: ddcc6d7244c6
 Revises: 45fa602c43dc

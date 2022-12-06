@@ -1,4 +1,4 @@
-"""add migration table
+"""add migration table.
 
 Revision ID: 8d66aa722f94
 Revises: d538c9496c01

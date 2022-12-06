@@ -146,7 +146,7 @@ def compile_datetime_and_add_precision_mysql(_element, _compiler, **_kw):
 
 
 class get_current_timestamp(db.sql.expression.FunctionElement):  # pylint: disable=abstract-method
-    """Like CURRENT_TIMESTAMP, but has the same semantics on MySQL, Postgres, and Sqlite"""
+    """Like CURRENT_TIMESTAMP, but has the same semantics on MySQL, Postgres, and Sqlite."""
 
     type = db.types.DateTime()
 
@@ -170,7 +170,7 @@ def add_precision_to_mysql_timestamps(_element, _compiler, **_kw):
 def add_precision_to_mysql_floats(_element, _compiler, **_kw):
     """Forces floats to have minimum precision of 32, which converts the underlying type to be a
     double.  This is necessary because the default precision of floats is too low for some types,
-    including unix timestamps, resulting in truncated values in MySQL
+    including unix timestamps, resulting in truncated values in MySQL.
     """
     return f"FLOAT({MYSQL_FLOAT_PRECISION})"
 
@@ -179,7 +179,7 @@ def add_precision_to_mysql_floats(_element, _compiler, **_kw):
 def add_precision_to_mysql_FLOAT(_element, _compiler, **_kw):
     """Forces floats to have minimum precision of 32, which converts the underlying type to be a
     double.  This is necessary because the default precision of floats is too low for some types,
-    including unix timestamps, resulting in truncated values in MySQL
+    including unix timestamps, resulting in truncated values in MySQL.
     """
     return f"FLOAT({MYSQL_FLOAT_PRECISION})"
 

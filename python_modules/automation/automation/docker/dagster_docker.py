@@ -109,7 +109,10 @@ class DagsterDockerImage(
             yaml.dump(last_updated, f, default_flow_style=False)
 
     def local_image(self, python_version: str) -> str:
-        """Generates the local image name, like: "dagster/foo:some-tag"."""
+        """Generates the local image name.
+
+        Like: "dagster/foo:some-tag".
+        """
         check.str_param(python_version, "python_version")
 
         last_updated = self._get_last_updated_for_python_version(python_version)
@@ -120,7 +123,7 @@ class DagsterDockerImage(
         self, python_version: Optional[str] = None, custom_tag: Optional[str] = None
     ) -> str:
         """Generates the AWS ECR image name, like:
-        "1234567890.dkr.ecr.us-west-1.amazonaws.com/foo:some-tag"
+        "1234567890.dkr.ecr.us-west-1.amazonaws.com/foo:some-tag".
         """
         check.invariant(not (python_version and custom_tag))
         check.opt_str_param(python_version, "python_version")

@@ -231,7 +231,7 @@ class CachingInstanceQueryer:
         An asset (partition) is considered unreconciled if any of:
         - It has never been materialized
         - One of its parents has been updated more recently than it has
-        - One of its parents is unreconciled
+        - One of its parents is unreconciled.
         """
         latest_materialization_record = self.get_latest_materialization_record(
             asset_partition, None
@@ -283,7 +283,7 @@ class CachingInstanceQueryer:
     def get_known_used_data(
         self, asset_key: AssetKey, record_id: int
     ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
-        """Returns the known upstream ids and timestamps stored on the instance"""
+        """Returns the known upstream ids and timestamps stored on the instance."""
         event_log_storage = self._instance.event_log_storage
         if isinstance(event_log_storage, SqlEventLogStorage) and event_log_storage.has_table(
             AssetEventTagsTable.name

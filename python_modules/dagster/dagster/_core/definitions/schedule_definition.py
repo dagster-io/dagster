@@ -206,7 +206,7 @@ class ScheduleEvaluationContext:
 
 class DecoratedScheduleFunction(NamedTuple):
     """Wrapper around the decorated schedule function.  Keeps track of both to better support the
-    optimal return value for direct invocation of the evaluation function
+    optimal return value for direct invocation of the evaluation function.
     """
 
     decorated_fn: RawScheduleEvaluationFunction
@@ -282,7 +282,7 @@ class ScheduleExecutionData(
 
 
 class ScheduleDefinition:
-    """Define a schedule that targets a job
+    """Define a schedule that targets a job.
 
     Args:
         name (Optional[str]): The name of the schedule to create. Defaults to the job name plus

@@ -1,5 +1,5 @@
 """
-This file contains sample run results responses from different DBT versions and invocations
+This file contains sample run results responses from different DBT versions and invocations.
 """
 
 DBT_RPC_RESPONSE_SAMPLE = {

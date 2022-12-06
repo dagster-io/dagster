@@ -20,7 +20,7 @@ class StravaSource(GeneratedAirbyteSource):
         auth_type: Optional[str] = None,
     ):
         """
-        Airbyte Source for Strava
+        Airbyte Source for Strava.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/strava
 
@@ -52,7 +52,7 @@ class AppsflyerSource(GeneratedAirbyteSource):
         timezone: Optional[str] = None,
     ):
         """
-        Airbyte Source for Appsflyer
+        Airbyte Source for Appsflyer.
 
         Args:
             name (str): The name of the destination.
@@ -74,7 +74,7 @@ class GoogleWorkspaceAdminReportsSource(GeneratedAirbyteSource):
         self, name: str, credentials_json: str, email: str, lookback: Optional[int] = None
     ):
         """
-        Airbyte Source for Google Workspace Admin Reports
+        Airbyte Source for Google Workspace Admin Reports.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/google-workspace-admin-reports
 
@@ -114,7 +114,7 @@ class CartSource(GeneratedAirbyteSource):
         start_date: str,
     ):
         """
-        Airbyte Source for Cart
+        Airbyte Source for Cart.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/cart
 
@@ -161,7 +161,7 @@ class LinkedinAdsSource(GeneratedAirbyteSource):
         account_ids: Optional[List[int]] = None,
     ):
         """
-        Airbyte Source for Linkedin Ads
+        Airbyte Source for Linkedin Ads.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/linkedin-ads
 
@@ -193,7 +193,7 @@ class MongodbSource(GeneratedAirbyteSource):
         ssl: Optional[bool] = None,
     ):
         """
-        Airbyte Source for Mongodb
+        Airbyte Source for Mongodb.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/mongodb
 
@@ -223,7 +223,7 @@ class TimelySource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, account_id: str, start_date: str, bearer_token: str):
         """
-        Airbyte Source for Timely
+        Airbyte Source for Timely.
 
         Args:
             name (str): The name of the destination.
@@ -241,7 +241,7 @@ class StockTickerApiTutorialSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, stock_ticker: str, api_key: str):
         """
-        Airbyte Source for Stock Ticker Api Tutorial
+        Airbyte Source for Stock Ticker Api Tutorial.
 
         Documentation can be found at https://polygon.io/docs/stocks/get_v2_aggs_grouped_locale_us_market_stocks__date
 
@@ -261,7 +261,7 @@ class WrikeSource(GeneratedAirbyteSource):
         self, name: str, access_token: str, wrike_instance: str, start_date: Optional[str] = None
     ):
         """
-        Airbyte Source for Wrike
+        Airbyte Source for Wrike.
 
         Args:
             name (str): The name of the destination.
@@ -288,7 +288,7 @@ class CommercetoolsSource(GeneratedAirbyteSource):
         client_secret: str,
     ):
         """
-        Airbyte Source for Commercetools
+        Airbyte Source for Commercetools.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/commercetools
 
@@ -324,7 +324,7 @@ class GutendexSource(GeneratedAirbyteSource):
         topic: Optional[str] = None,
     ):
         """
-        Airbyte Source for Gutendex
+        Airbyte Source for Gutendex.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/gutendex
 
@@ -352,7 +352,7 @@ class IterableSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_key: str, start_date: str):
         """
-        Airbyte Source for Iterable
+        Airbyte Source for Iterable.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/iterable
 
@@ -380,7 +380,7 @@ class QuickbooksSingerSource(GeneratedAirbyteSource):
         sandbox: bool,
     ):
         """
-        Airbyte Source for Quickbooks Singer
+        Airbyte Source for Quickbooks Singer.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/quickbooks
 
@@ -408,7 +408,7 @@ class BigcommerceSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, start_date: str, store_hash: str, access_token: str):
         """
-        Airbyte Source for Bigcommerce
+        Airbyte Source for Bigcommerce.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/bigcommerce
 
@@ -453,7 +453,7 @@ class ShopifySource(GeneratedAirbyteSource):
         start_date: str,
     ):
         """
-        Airbyte Source for Shopify
+        Airbyte Source for Shopify.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/shopify
 
@@ -477,7 +477,7 @@ class AppstoreSingerSource(GeneratedAirbyteSource):
         self, name: str, key_id: str, private_key: str, issuer_id: str, vendor: str, start_date: str
     ):
         """
-        Airbyte Source for Appstore Singer
+        Airbyte Source for Appstore Singer.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/appstore
 
@@ -501,7 +501,7 @@ class GreenhouseSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_key: str):
         """
-        Airbyte Source for Greenhouse
+        Airbyte Source for Greenhouse.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/greenhouse
 
@@ -517,7 +517,7 @@ class ZoomSingerSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, jwt: str):
         """
-        Airbyte Source for Zoom Singer
+        Airbyte Source for Zoom Singer.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/zoom
 
@@ -559,7 +559,7 @@ class TiktokMarketingSource(GeneratedAirbyteSource):
         report_granularity: Optional[str] = None,
     ):
         """
-        Airbyte Source for Tiktok Marketing
+        Airbyte Source for Tiktok Marketing.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/tiktok-marketing
 
@@ -612,7 +612,7 @@ class ZendeskChatSource(GeneratedAirbyteSource):
         subdomain: Optional[str] = None,
     ):
         """
-        Airbyte Source for Zendesk Chat
+        Airbyte Source for Zendesk Chat.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/zendesk-chat
 
@@ -635,7 +635,7 @@ class AwsCloudtrailSource(GeneratedAirbyteSource):
         self, name: str, aws_key_id: str, aws_secret_key: str, aws_region_name: str, start_date: str
     ):
         """
-        Airbyte Source for Aws Cloudtrail
+        Airbyte Source for Aws Cloudtrail.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/aws-cloudtrail
 
@@ -677,7 +677,7 @@ class OktaSource(GeneratedAirbyteSource):
         start_date: Optional[str] = None,
     ):
         """
-        Airbyte Source for Okta
+        Airbyte Source for Okta.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/okta
 
@@ -698,7 +698,7 @@ class InsightlySource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, token: Optional[str] = None, start_date: Optional[str] = None):
         """
-        Airbyte Source for Insightly
+        Airbyte Source for Insightly.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/insightly
 
@@ -741,7 +741,7 @@ class LinkedinPagesSource(GeneratedAirbyteSource):
         credentials: Union["LinkedinPagesSource.OAuth20", "LinkedinPagesSource.AccessToken"],
     ):
         """
-        Airbyte Source for Linkedin Pages
+        Airbyte Source for Linkedin Pages.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/linkedin-pages/
 
@@ -762,7 +762,7 @@ class PersistiqSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_key: str):
         """
-        Airbyte Source for Persistiq
+        Airbyte Source for Persistiq.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/persistiq
 
@@ -786,7 +786,7 @@ class FreshcallerSource(GeneratedAirbyteSource):
         sync_lag_minutes: Optional[int] = None,
     ):
         """
-        Airbyte Source for Freshcaller
+        Airbyte Source for Freshcaller.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/freshcaller
 
@@ -810,7 +810,7 @@ class AppfollowSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, ext_id: str, cid: str, api_secret: str, country: str):
         """
-        Airbyte Source for Appfollow
+        Airbyte Source for Appfollow.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/appfollow
 
@@ -832,7 +832,7 @@ class FacebookPagesSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, access_token: str, page_id: str):
         """
-        Airbyte Source for Facebook Pages
+        Airbyte Source for Facebook Pages.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/facebook-pages
 
@@ -862,7 +862,7 @@ class JiraSource(GeneratedAirbyteSource):
         enable_experimental_streams: Optional[bool] = None,
     ):
         """
-        Airbyte Source for Jira
+        Airbyte Source for Jira.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/jira
 
@@ -925,7 +925,7 @@ class GoogleSheetsSource(GeneratedAirbyteSource):
         row_batch_size: Optional[int] = None,
     ):
         """
-        Airbyte Source for Google Sheets
+        Airbyte Source for Google Sheets.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/google-sheets
 
@@ -952,7 +952,7 @@ class DockerhubSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, docker_username: str):
         """
-        Airbyte Source for Dockerhub
+        Airbyte Source for Dockerhub.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/dockerhub
 
@@ -970,7 +970,7 @@ class UsCensusSource(GeneratedAirbyteSource):
         self, name: str, query_path: str, api_key: str, query_params: Optional[str] = None
     ):
         """
-        Airbyte Source for Us Census
+        Airbyte Source for Us Census.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/us-census
 
@@ -990,7 +990,7 @@ class KustomerSingerSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_token: str, start_date: str):
         """
-        Airbyte Source for Kustomer Singer
+        Airbyte Source for Kustomer Singer.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/kustomer
 
@@ -1014,7 +1014,7 @@ class AzureTableSource(GeneratedAirbyteSource):
         storage_endpoint_suffix: Optional[str] = None,
     ):
         """
-        Airbyte Source for Azure Table
+        Airbyte Source for Azure Table.
 
         Args:
             name (str): The name of the destination.
@@ -1044,7 +1044,7 @@ class ScaffoldJavaJdbcSource(GeneratedAirbyteSource):
         jdbc_url_params: Optional[str] = None,
     ):
         """
-        Airbyte Source for Scaffold Java Jdbc
+        Airbyte Source for Scaffold Java Jdbc.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/scaffold_java_jdbc
 
@@ -1082,7 +1082,7 @@ class TidbSource(GeneratedAirbyteSource):
         ssl: Optional[bool] = None,
     ):
         """
-        Airbyte Source for Tidb
+        Airbyte Source for Tidb.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/tidb
 
@@ -1117,7 +1117,7 @@ class QualarooSource(GeneratedAirbyteSource):
         survey_ids: Optional[List[str]] = None,
     ):
         """
-        Airbyte Source for Qualaroo
+        Airbyte Source for Qualaroo.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/qualaroo
 
@@ -1141,7 +1141,7 @@ class YahooFinancePriceSource(GeneratedAirbyteSource):
         self, name: str, tickers: str, interval: Optional[str] = None, range: Optional[str] = None
     ):
         """
-        Airbyte Source for Yahoo Finance Price
+        Airbyte Source for Yahoo Finance Price.
 
         Args:
             name (str): The name of the destination.
@@ -1192,7 +1192,7 @@ class GoogleAnalyticsV4Source(GeneratedAirbyteSource):
         window_in_days: Optional[int] = None,
     ):
         """
-        Airbyte Source for Google Analytics V4
+        Airbyte Source for Google Analytics V4.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/google-analytics-universal-analytics
 
@@ -1230,7 +1230,7 @@ class JdbcSource(GeneratedAirbyteSource):
         jdbc_url_params: Optional[str] = None,
     ):
         """
-        Airbyte Source for Jdbc
+        Airbyte Source for Jdbc.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/postgres
 
@@ -1259,7 +1259,7 @@ class FakerSource(GeneratedAirbyteSource):
         records_per_slice: Optional[int] = None,
     ):
         """
-        Airbyte Source for Faker
+        Airbyte Source for Faker.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/faker
 
@@ -1293,7 +1293,7 @@ class TplcentralSource(GeneratedAirbyteSource):
         start_date: Optional[str] = None,
     ):
         """
-        Airbyte Source for Tplcentral
+        Airbyte Source for Tplcentral.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/tplcentral
 
@@ -1329,7 +1329,7 @@ class ClickhouseSource(GeneratedAirbyteSource):
         ssl: Optional[bool] = None,
     ):
         """
-        Airbyte Source for Clickhouse
+        Airbyte Source for Clickhouse.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/clickhouse
 
@@ -1357,7 +1357,7 @@ class FreshserviceSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, domain_name: str, api_key: str, start_date: str):
         """
-        Airbyte Source for Freshservice
+        Airbyte Source for Freshservice.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/freshservice
 
@@ -1384,7 +1384,7 @@ class ZenloopSource(GeneratedAirbyteSource):
         survey_group_id: Optional[str] = None,
     ):
         """
-        Airbyte Source for Zenloop
+        Airbyte Source for Zenloop.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/zenloop
 
@@ -1454,7 +1454,7 @@ class OracleSource(GeneratedAirbyteSource):
         jdbc_url_params: Optional[str] = None,
     ):
         """
-        Airbyte Source for Oracle
+        Airbyte Source for Oracle.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/oracle
 
@@ -1494,7 +1494,7 @@ class KlaviyoSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_key: str, start_date: str):
         """
-        Airbyte Source for Klaviyo
+        Airbyte Source for Klaviyo.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/klaviyo
 
@@ -1541,7 +1541,7 @@ class GoogleDirectorySource(GeneratedAirbyteSource):
         ],
     ):
         """
-        Airbyte Source for Google Directory
+        Airbyte Source for Google Directory.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/google-directory
 
@@ -1561,7 +1561,7 @@ class InstagramSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, start_date: str, access_token: str):
         """
-        Airbyte Source for Instagram
+        Airbyte Source for Instagram.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/instagram
 
@@ -1579,7 +1579,7 @@ class ShortioSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, domain_id: str, secret_key: str, start_date: str):
         """
-        Airbyte Source for Shortio
+        Airbyte Source for Shortio.
 
         Documentation can be found at https://developers.short.io/reference
 
@@ -1619,7 +1619,7 @@ class SquareSource(GeneratedAirbyteSource):
         include_deleted_objects: Optional[bool] = None,
     ):
         """
-        Airbyte Source for Square
+        Airbyte Source for Square.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/square
 
@@ -1644,7 +1644,7 @@ class DelightedSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, since: str, api_key: str):
         """
-        Airbyte Source for Delighted
+        Airbyte Source for Delighted.
 
         Args:
             name (str): The name of the destination.
@@ -1672,7 +1672,7 @@ class AmazonSqsSource(GeneratedAirbyteSource):
         secret_key: Optional[str] = None,
     ):
         """
-        Airbyte Source for Amazon Sqs
+        Airbyte Source for Amazon Sqs.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/amazon-sqs
 
@@ -1713,7 +1713,7 @@ class YoutubeAnalyticsSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, credentials: "YoutubeAnalyticsSource.AuthenticateViaOAuth20"):
         """
-        Airbyte Source for Youtube Analytics
+        Airbyte Source for Youtube Analytics.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/youtube-analytics
 
@@ -1731,7 +1731,7 @@ class ScaffoldSourcePythonSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, fix_me: Optional[str] = None):
         """
-        Airbyte Source for Scaffold Source Python
+        Airbyte Source for Scaffold Source Python.
 
         Args:
             name (str): The name of the destination.
@@ -1752,7 +1752,7 @@ class LookerSource(GeneratedAirbyteSource):
         run_look_ids: Optional[List[str]] = None,
     ):
         """
-        Airbyte Source for Looker
+        Airbyte Source for Looker.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/looker
 
@@ -1782,7 +1782,7 @@ class GitlabSource(GeneratedAirbyteSource):
         projects: Optional[str] = None,
     ):
         """
-        Airbyte Source for Gitlab
+        Airbyte Source for Gitlab.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/gitlab
 
@@ -1813,7 +1813,7 @@ class ExchangeRatesSource(GeneratedAirbyteSource):
         ignore_weekends: Optional[bool] = None,
     ):
         """
-        Airbyte Source for Exchange Rates
+        Airbyte Source for Exchange Rates.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/exchangeratesapi
 
@@ -1848,7 +1848,7 @@ class AmazonAdsSource(GeneratedAirbyteSource):
         state_filter: Optional[List[str]] = None,
     ):
         """
-        Airbyte Source for Amazon Ads
+        Airbyte Source for Amazon Ads.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/amazon-ads
 
@@ -1906,7 +1906,7 @@ class MixpanelSource(GeneratedAirbyteSource):
         date_window_size: Optional[int] = None,
     ):
         """
-        Airbyte Source for Mixpanel
+        Airbyte Source for Mixpanel.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/mixpanel
 
@@ -1944,7 +1944,7 @@ class OrbitSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_token: str, workspace: str, start_date: Optional[str] = None):
         """
-        Airbyte Source for Orbit
+        Airbyte Source for Orbit.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/orbit
 
@@ -1982,7 +1982,7 @@ class AmazonSellerPartnerSource(GeneratedAirbyteSource):
         max_wait_seconds: Optional[int] = None,
     ):
         """
-        Airbyte Source for Amazon Seller Partner
+        Airbyte Source for Amazon Seller Partner.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/amazon-seller-partner
 
@@ -2029,7 +2029,7 @@ class CourierSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_key: str):
         """
-        Airbyte Source for Courier
+        Airbyte Source for Courier.
 
         Documentation can be found at https://docs.airbyte.io/integrations/sources/courier
 
@@ -2045,7 +2045,7 @@ class CloseComSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_key: str, start_date: Optional[str] = None):
         r"""
-        Airbyte Source for Close Com
+        Airbyte Source for Close Com.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/close-com
 
@@ -2073,7 +2073,7 @@ class BingAdsSource(GeneratedAirbyteSource):
         client_secret: Optional[str] = None,
     ):
         """
-        Airbyte Source for Bing Ads
+        Airbyte Source for Bing Ads.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/bing-ads
 
@@ -2100,7 +2100,7 @@ class PrimetricSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, client_id: str, client_secret: str):
         """
-        Airbyte Source for Primetric
+        Airbyte Source for Primetric.
 
         Args:
             name (str): The name of the destination.
@@ -2116,7 +2116,7 @@ class PivotalTrackerSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_token: str):
         """
-        Airbyte Source for Pivotal Tracker
+        Airbyte Source for Pivotal Tracker.
 
         Args:
             name (str): The name of the destination.
@@ -2160,7 +2160,7 @@ class ElasticsearchSource(GeneratedAirbyteSource):
         ],
     ):
         r"""
-        Airbyte Source for Elasticsearch
+        Airbyte Source for Elasticsearch.
 
         Documentation can be found at https://docs.airbyte.com/integrations/source/elasticsearch
 
@@ -2188,7 +2188,7 @@ class BigquerySource(GeneratedAirbyteSource):
         self, name: str, project_id: str, credentials_json: str, dataset_id: Optional[str] = None
     ):
         """
-        Airbyte Source for Bigquery
+        Airbyte Source for Bigquery.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/bigquery
 
@@ -2216,7 +2216,7 @@ class WoocommerceSource(GeneratedAirbyteSource):
         conversion_window_days: Optional[int] = None,
     ):
         """
-        Airbyte Source for Woocommerce
+        Airbyte Source for Woocommerce.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/woocommerce
 
@@ -2244,7 +2244,7 @@ class SearchMetricsSource(GeneratedAirbyteSource):
         self, name: str, api_key: str, client_secret: str, country_code: str, start_date: str
     ):
         """
-        Airbyte Source for Search Metrics
+        Airbyte Source for Search Metrics.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/seacrh-metrics
 
@@ -2266,7 +2266,7 @@ class TypeformSource(GeneratedAirbyteSource):
         self, name: str, start_date: str, token: str, form_ids: Optional[List[str]] = None
     ):
         """
-        Airbyte Source for Typeform
+        Airbyte Source for Typeform.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/typeform
 
@@ -2286,7 +2286,7 @@ class WebflowSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, site_id: str, api_key: str):
         """
-        Airbyte Source for Webflow
+        Airbyte Source for Webflow.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/webflow
 
@@ -2313,7 +2313,7 @@ class FireboltSource(GeneratedAirbyteSource):
         engine: Optional[str] = None,
     ):
         """
-        Airbyte Source for Firebolt
+        Airbyte Source for Firebolt.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/firebolt
 
@@ -2370,7 +2370,7 @@ class FaunaSource(GeneratedAirbyteSource):
         collection: "FaunaSource.Collection",
     ):
         """
-        Airbyte Source for Fauna
+        Airbyte Source for Fauna.
 
         Documentation can be found at https://github.com/fauna/airbyte/blob/source-fauna/docs/integrations/sources/fauna.md
 
@@ -2394,7 +2394,7 @@ class IntercomSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, start_date: str, access_token: str):
         """
-        Airbyte Source for Intercom
+        Airbyte Source for Intercom.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/intercom
 
@@ -2412,7 +2412,7 @@ class FreshsalesSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, domain_name: str, api_key: str):
         """
-        Airbyte Source for Freshsales
+        Airbyte Source for Freshsales.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/freshsales
 
@@ -2439,7 +2439,7 @@ class AdjustSource(GeneratedAirbyteSource):
         until_today: Optional[bool] = None,
     ):
         """
-        Airbyte Source for Adjust
+        Airbyte Source for Adjust.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/adjust
 
@@ -2474,7 +2474,7 @@ class BambooHrSource(GeneratedAirbyteSource):
         custom_reports_include_default_fields: Optional[bool] = None,
     ):
         """
-        Airbyte Source for Bamboo Hr
+        Airbyte Source for Bamboo Hr.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/bamboo-hr
 
@@ -2532,7 +2532,7 @@ class GoogleAdsSource(GeneratedAirbyteSource):
         conversion_window_days: Optional[int] = None,
     ):
         """
-        Airbyte Source for Google Ads
+        Airbyte Source for Google Ads.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/google-ads
 
@@ -2564,7 +2564,7 @@ class HellobatonSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_key: str, company: str):
         """
-        Airbyte Source for Hellobaton
+        Airbyte Source for Hellobaton.
 
         Args:
             name (str): The name of the destination.
@@ -2580,7 +2580,7 @@ class SendgridSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, apikey: str, start_time: Union[int, str]):
         """
-        Airbyte Source for Sendgrid
+        Airbyte Source for Sendgrid.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/sendgrid
 
@@ -2621,7 +2621,7 @@ class MondaySource(GeneratedAirbyteSource):
         self, name: str, credentials: Union["MondaySource.OAuth20", "MondaySource.APIToken"]
     ):
         """
-        Airbyte Source for Monday
+        Airbyte Source for Monday.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/monday
 
@@ -2641,7 +2641,7 @@ class DixaSource(GeneratedAirbyteSource):
         self, name: str, api_token: str, start_date: str, batch_size: Optional[int] = None
     ):
         """
-        Airbyte Source for Dixa
+        Airbyte Source for Dixa.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/dixa
 
@@ -2677,7 +2677,7 @@ class SalesforceSource(GeneratedAirbyteSource):
         streams_criteria: Optional[List[FilterSalesforceObjectsEntry]] = None,
     ):
         """
-        Airbyte Source for Salesforce
+        Airbyte Source for Salesforce.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/salesforce
 
@@ -2727,7 +2727,7 @@ class PipedriveSource(GeneratedAirbyteSource):
         replication_start_date: str,
     ):
         """
-        Airbyte Source for Pipedrive
+        Airbyte Source for Pipedrive.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/pipedrive
 
@@ -2848,7 +2848,7 @@ class FileSource(GeneratedAirbyteSource):
         reader_options: Optional[str] = None,
     ):
         """
-        Airbyte Source for File
+        Airbyte Source for File.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/file
 
@@ -2885,7 +2885,7 @@ class GlassfrogSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_key: str):
         """
-        Airbyte Source for Glassfrog
+        Airbyte Source for Glassfrog.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/glassfrog
 
@@ -2901,7 +2901,7 @@ class ChartmogulSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_key: str, start_date: str, interval: str):
         """
-        Airbyte Source for Chartmogul
+        Airbyte Source for Chartmogul.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/chartmogul
 
@@ -2929,7 +2929,7 @@ class OrbSource(GeneratedAirbyteSource):
         numeric_event_properties_keys: Optional[List[str]] = None,
     ):
         """
-        Airbyte Source for Orb
+        Airbyte Source for Orb.
 
         Documentation can be found at https://docs.withorb.com/
 
@@ -2969,7 +2969,7 @@ class CockroachdbSource(GeneratedAirbyteSource):
         ssl: Optional[bool] = None,
     ):
         """
-        Airbyte Source for Cockroachdb
+        Airbyte Source for Cockroachdb.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/cockroachdb
 
@@ -2997,7 +2997,7 @@ class ConfluenceSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_token: str, domain_name: str, email: str):
         """
-        Airbyte Source for Confluence
+        Airbyte Source for Confluence.
 
         Args:
             name (str): The name of the destination.
@@ -3023,7 +3023,7 @@ class PlaidSource(GeneratedAirbyteSource):
         start_date: Optional[str] = None,
     ):
         """
-        Airbyte Source for Plaid
+        Airbyte Source for Plaid.
 
         Documentation can be found at https://plaid.com/docs/api/
 
@@ -3055,7 +3055,7 @@ class SnapchatMarketingSource(GeneratedAirbyteSource):
         end_date: Optional[str] = None,
     ):
         """
-        Airbyte Source for Snapchat Marketing
+        Airbyte Source for Snapchat Marketing.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/snapchat-marketing
 
@@ -3117,7 +3117,7 @@ class MicrosoftTeamsSource(GeneratedAirbyteSource):
         ],
     ):
         """
-        Airbyte Source for Microsoft Teams
+        Airbyte Source for Microsoft Teams.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/microsoft-teams
 
@@ -3162,7 +3162,7 @@ class LeverHiringSource(GeneratedAirbyteSource):
         environment: Optional[str] = None,
     ):
         """
-        Airbyte Source for Lever Hiring
+        Airbyte Source for Lever Hiring.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/lever-hiring
 
@@ -3191,7 +3191,7 @@ class TwilioSource(GeneratedAirbyteSource):
         lookback_window: Optional[int] = None,
     ):
         """
-        Airbyte Source for Twilio
+        Airbyte Source for Twilio.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/twilio
 
@@ -3221,7 +3221,7 @@ class StripeSource(GeneratedAirbyteSource):
         slice_range: Optional[int] = None,
     ):
         r"""
-        Airbyte Source for Stripe
+        Airbyte Source for Stripe.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/stripe
 
@@ -3271,7 +3271,7 @@ class Db2Source(GeneratedAirbyteSource):
         jdbc_url_params: Optional[str] = None,
     ):
         """
-        Airbyte Source for Db2
+        Airbyte Source for Db2.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/db2
 
@@ -3332,7 +3332,7 @@ class SlackSource(GeneratedAirbyteSource):
         channel_filter: Optional[List[str]] = None,
     ):
         """
-        Airbyte Source for Slack
+        Airbyte Source for Slack.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/slack
 
@@ -3360,7 +3360,7 @@ class RechargeSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, start_date: str, access_token: str):
         """
-        Airbyte Source for Recharge
+        Airbyte Source for Recharge.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/recharge
 
@@ -3386,7 +3386,7 @@ class OpenweatherSource(GeneratedAirbyteSource):
         lang: Optional[str] = None,
     ):
         """
-        Airbyte Source for Openweather
+        Airbyte Source for Openweather.
 
         Args:
             name (str): The name of the destination.
@@ -3434,7 +3434,7 @@ class RetentlySource(GeneratedAirbyteSource):
         ],
     ):
         """
-        Airbyte Source for Retently
+        Airbyte Source for Retently.
 
         Args:
             name (str): The name of the destination.
@@ -3452,7 +3452,7 @@ class ScaffoldSourceHttpSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, TODO: str):
         """
-        Airbyte Source for Scaffold Source Http
+        Airbyte Source for Scaffold Source Http.
 
         Args:
             name (str): The name of the destination.
@@ -3466,7 +3466,7 @@ class YandexMetricaSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, auth_token: str, counter_id: str, start_date: str, end_date: str):
         """
-        Airbyte Source for Yandex Metrica
+        Airbyte Source for Yandex Metrica.
 
         Args:
             name (str): The name of the destination.
@@ -3493,7 +3493,7 @@ class TalkdeskExploreSource(GeneratedAirbyteSource):
         timezone: Optional[str] = None,
     ):
         """
-        Airbyte Source for Talkdesk Explore
+        Airbyte Source for Talkdesk Explore.
 
         Args:
             name (str): The name of the destination.
@@ -3513,7 +3513,7 @@ class ChargifySource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_key: str, domain: str):
         """
-        Airbyte Source for Chargify
+        Airbyte Source for Chargify.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/chargify
 
@@ -3531,7 +3531,7 @@ class RkiCovidSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, start_date: str):
         """
-        Airbyte Source for Rki Covid
+        Airbyte Source for Rki Covid.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/rki-covid
 
@@ -3689,7 +3689,7 @@ class PostgresSource(GeneratedAirbyteSource):
         ssl: Optional[bool] = None,
     ):
         """
-        Airbyte Source for Postgres
+        Airbyte Source for Postgres.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/postgres
 
@@ -3755,7 +3755,7 @@ class TrelloSource(GeneratedAirbyteSource):
         board_ids: Optional[List[str]] = None,
     ):
         """
-        Airbyte Source for Trello
+        Airbyte Source for Trello.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/trello
 
@@ -3777,7 +3777,7 @@ class PrestashopSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, url: str, access_key: str):
         """
-        Airbyte Source for Prestashop
+        Airbyte Source for Prestashop.
 
         Args:
             name (str): The name of the destination.
@@ -3799,7 +3799,7 @@ class PaystackSource(GeneratedAirbyteSource):
         lookback_window_days: Optional[int] = None,
     ):
         r"""
-        Airbyte Source for Paystack
+        Airbyte Source for Paystack.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/paystack
 
@@ -3912,7 +3912,7 @@ class S3Source(GeneratedAirbyteSource):
         schema: Optional[str] = None,
     ):
         """
-        Airbyte Source for S3
+        Airbyte Source for S3.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/s3
 
@@ -3970,7 +3970,7 @@ class SnowflakeSource(GeneratedAirbyteSource):
         jdbc_url_params: Optional[str] = None,
     ):
         """
-        Airbyte Source for Snowflake
+        Airbyte Source for Snowflake.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/snowflake
 
@@ -4001,7 +4001,7 @@ class AmplitudeSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_key: str, secret_key: str, start_date: str):
         """
-        Airbyte Source for Amplitude
+        Airbyte Source for Amplitude.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/amplitude
 
@@ -4021,7 +4021,7 @@ class PosthogSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, start_date: str, api_key: str, base_url: Optional[str] = None):
         """
-        Airbyte Source for Posthog
+        Airbyte Source for Posthog.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/posthog
 
@@ -4049,7 +4049,7 @@ class PaypalTransactionSource(GeneratedAirbyteSource):
         refresh_token: Optional[str] = None,
     ):
         """
-        Airbyte Source for Paypal Transaction
+        Airbyte Source for Paypal Transaction.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/paypal-transactions
 
@@ -4127,7 +4127,7 @@ class MssqlSource(GeneratedAirbyteSource):
         jdbc_url_params: Optional[str] = None,
     ):
         """
-        Airbyte Source for Mssql
+        Airbyte Source for Mssql.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/mssql
 
@@ -4181,7 +4181,7 @@ class ZohoCrmSource(GeneratedAirbyteSource):
         start_datetime: Optional[str] = None,
     ):
         """
-        Airbyte Source for Zoho Crm
+        Airbyte Source for Zoho Crm.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/zoho-crm
 
@@ -4219,7 +4219,7 @@ class RedshiftSource(GeneratedAirbyteSource):
         jdbc_url_params: Optional[str] = None,
     ):
         """
-        Airbyte Source for Redshift
+        Airbyte Source for Redshift.
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/redshift
 
@@ -4265,7 +4265,7 @@ class AsanaSource(GeneratedAirbyteSource):
         credentials: Union["AsanaSource.PATCredentials", "AsanaSource.OAuthCredentials"],
     ):
         """
-        Airbyte Source for Asana
+        Airbyte Source for Asana.
 
         Args:
             name (str): The name of the destination.
@@ -4287,7 +4287,7 @@ class SmartsheetsSource(GeneratedAirbyteSource):
         start_datetime: Optional[str] = None,
     ):
         """
-        Airbyte Source for Smartsheets
+        Airbyte Source for Smartsheets.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/smartsheets
 
@@ -4328,7 +4328,7 @@ class MailchimpSource(GeneratedAirbyteSource):
         self, name: str, credentials: Union["MailchimpSource.OAuth20", "MailchimpSource.APIKey"]
     ):
         """
-        Airbyte Source for Mailchimp
+        Airbyte Source for Mailchimp.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/mailchimp
 
@@ -4354,7 +4354,7 @@ class SentrySource(GeneratedAirbyteSource):
         discover_fields: Optional[List[str]] = None,
     ):
         """
-        Airbyte Source for Sentry
+        Airbyte Source for Sentry.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/sentry
 
@@ -4386,7 +4386,7 @@ class MailgunSource(GeneratedAirbyteSource):
         start_date: Optional[str] = None,
     ):
         """
-        Airbyte Source for Mailgun
+        Airbyte Source for Mailgun.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/mailgun
 
@@ -4406,7 +4406,7 @@ class OnesignalSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, user_auth_key: str, start_date: str, outcome_names: str):
         """
-        Airbyte Source for Onesignal
+        Airbyte Source for Onesignal.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/onesignal
 
@@ -4426,7 +4426,7 @@ class PythonHttpTutorialSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, start_date: str, base: str, access_key: Optional[str] = None):
         """
-        Airbyte Source for Python Http Tutorial
+        Airbyte Source for Python Http Tutorial.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/exchangeratesapi
 
@@ -4446,7 +4446,7 @@ class AirtableSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_key: str, base_id: str, tables: List[str]):
         """
-        Airbyte Source for Airtable
+        Airbyte Source for Airtable.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/airtable
 
@@ -4499,7 +4499,7 @@ class MongodbV2Source(GeneratedAirbyteSource):
         auth_source: Optional[str] = None,
     ):
         """
-        Airbyte Source for Mongodb V2
+        Airbyte Source for Mongodb V2.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/mongodb-v2
 
@@ -4620,7 +4620,7 @@ class FileSecureSource(GeneratedAirbyteSource):
         reader_options: Optional[str] = None,
     ):
         """
-        Airbyte Source for File Secure
+        Airbyte Source for File Secure.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/file
 
@@ -4675,7 +4675,7 @@ class ZendeskSupportSource(GeneratedAirbyteSource):
         credentials: Union["ZendeskSupportSource.OAuth20", "ZendeskSupportSource.APIToken"],
     ):
         """
-        Airbyte Source for Zendesk Support
+        Airbyte Source for Zendesk Support.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/zendesk-support
 
@@ -4699,7 +4699,7 @@ class TempoSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_token: str):
         """
-        Airbyte Source for Tempo
+        Airbyte Source for Tempo.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/
 
@@ -4723,7 +4723,7 @@ class BraintreeSource(GeneratedAirbyteSource):
         start_date: Optional[str] = None,
     ):
         """
-        Airbyte Source for Braintree
+        Airbyte Source for Braintree.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/braintree
 
@@ -4749,7 +4749,7 @@ class SalesloftSource(GeneratedAirbyteSource):
         self, name: str, client_id: str, client_secret: str, refresh_token: str, start_date: str
     ):
         """
-        Airbyte Source for Salesloft
+        Airbyte Source for Salesloft.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/salesloft
 
@@ -4773,7 +4773,7 @@ class LinnworksSource(GeneratedAirbyteSource):
         self, name: str, application_id: str, application_secret: str, token: str, start_date: str
     ):
         """
-        Airbyte Source for Linnworks
+        Airbyte Source for Linnworks.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/linnworks
 
@@ -4796,7 +4796,7 @@ class ChargebeeSource(GeneratedAirbyteSource):
         self, name: str, site: str, site_api_key: str, start_date: str, product_catalog: str
     ):
         """
-        Airbyte Source for Chargebee
+        Airbyte Source for Chargebee.
 
         Documentation can be found at https://apidocs.chargebee.com/docs/api
 
@@ -4851,7 +4851,7 @@ class GoogleAnalyticsDataApiSource(GeneratedAirbyteSource):
         window_in_days: Optional[int] = None,
     ):
         """
-        Airbyte Source for Google Analytics Data Api
+        Airbyte Source for Google Analytics Data Api.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/google-analytics-v4
 
@@ -4892,7 +4892,7 @@ class OutreachSource(GeneratedAirbyteSource):
         start_date: str,
     ):
         """
-        Airbyte Source for Outreach
+        Airbyte Source for Outreach.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/outreach
 
@@ -4916,7 +4916,7 @@ class LemlistSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_key: str):
         """
-        Airbyte Source for Lemlist
+        Airbyte Source for Lemlist.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/lemlist
 
@@ -4932,7 +4932,7 @@ class ApifyDatasetSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, datasetId: str, clean: Optional[bool] = None):
         """
-        Airbyte Source for Apify Dataset
+        Airbyte Source for Apify Dataset.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/apify-dataset
 
@@ -4956,7 +4956,7 @@ class RecurlySource(GeneratedAirbyteSource):
         end_time: Optional[str] = None,
     ):
         """
-        Airbyte Source for Recurly
+        Airbyte Source for Recurly.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/recurly
 
@@ -4995,7 +4995,7 @@ class ZendeskTalkSource(GeneratedAirbyteSource):
         start_date: str,
     ):
         """
-        Airbyte Source for Zendesk Talk
+        Airbyte Source for Zendesk Talk.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/zendesk-talk
 
@@ -5039,7 +5039,7 @@ class SftpSource(GeneratedAirbyteSource):
         file_pattern: Optional[str] = None,
     ):
         """
-        Airbyte Source for Sftp
+        Airbyte Source for Sftp.
 
         Documentation can be found at https://docs.airbyte.com/integrations/source/sftp
 
@@ -5074,7 +5074,7 @@ class WhiskyHunterSource(GeneratedAirbyteSource):
         name: str,
     ):
         """
-        Airbyte Source for Whisky Hunter
+        Airbyte Source for Whisky Hunter.
 
         Documentation can be found at https://docs.airbyte.io/integrations/sources/whisky-hunter
 
@@ -5096,7 +5096,7 @@ class FreshdeskSource(GeneratedAirbyteSource):
         start_date: Optional[str] = None,
     ):
         """
-        Airbyte Source for Freshdesk
+        Airbyte Source for Freshdesk.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/freshdesk
 
@@ -5125,7 +5125,7 @@ class GocardlessSource(GeneratedAirbyteSource):
         start_date: str,
     ):
         """
-        Airbyte Source for Gocardless
+        Airbyte Source for Gocardless.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/gocardless
 
@@ -5158,7 +5158,7 @@ class ZuoraSource(GeneratedAirbyteSource):
         window_in_days: Optional[str] = None,
     ):
         """
-        Airbyte Source for Zuora
+        Airbyte Source for Zuora.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/zuora
 
@@ -5186,7 +5186,7 @@ class MarketoSource(GeneratedAirbyteSource):
         self, name: str, domain_url: str, client_id: str, client_secret: str, start_date: str
     ):
         """
-        Airbyte Source for Marketo
+        Airbyte Source for Marketo.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/marketo
 
@@ -5232,7 +5232,7 @@ class DriftSource(GeneratedAirbyteSource):
         self, name: str, credentials: Union["DriftSource.OAuth20", "DriftSource.AccessToken"]
     ):
         """
-        Airbyte Source for Drift
+        Airbyte Source for Drift.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/drift
 
@@ -5250,7 +5250,7 @@ class PokeapiSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, pokemon_name: str):
         """
-        Airbyte Source for Pokeapi
+        Airbyte Source for Pokeapi.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/pokeapi
 
@@ -5277,7 +5277,7 @@ class NetsuiteSource(GeneratedAirbyteSource):
         window_in_days: Optional[int] = None,
     ):
         """
-        Airbyte Source for Netsuite
+        Airbyte Source for Netsuite.
 
         Args:
             name (str): The name of the destination.
@@ -5305,7 +5305,7 @@ class HubplannerSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_key: str):
         """
-        Airbyte Source for Hubplanner
+        Airbyte Source for Hubplanner.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/hubplanner
 
@@ -5345,7 +5345,7 @@ class Dv360Source(GeneratedAirbyteSource):
         filters: Optional[List[str]] = None,
     ):
         """
-        Airbyte Source for Dv 360
+        Airbyte Source for Dv 360.
 
         Args:
             name (str): The name of the destination.
@@ -5388,7 +5388,7 @@ class NotionSource(GeneratedAirbyteSource):
         credentials: Union["NotionSource.OAuth20", "NotionSource.AccessToken"],
     ):
         """
-        Airbyte Source for Notion
+        Airbyte Source for Notion.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/notion
 
@@ -5429,7 +5429,7 @@ class ZendeskSunshineSource(GeneratedAirbyteSource):
         credentials: Union["ZendeskSunshineSource.OAuth20", "ZendeskSunshineSource.APIToken"],
     ):
         """
-        Airbyte Source for Zendesk Sunshine
+        Airbyte Source for Zendesk Sunshine.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/zendesk_sunshine
 
@@ -5476,7 +5476,7 @@ class PinterestSource(GeneratedAirbyteSource):
         credentials: Union["PinterestSource.OAuth20", "PinterestSource.AccessToken"],
     ):
         """
-        Airbyte Source for Pinterest
+        Airbyte Source for Pinterest.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/pinterest
 
@@ -5502,7 +5502,7 @@ class MetabaseSource(GeneratedAirbyteSource):
         session_token: Optional[str] = None,
     ):
         r"""
-        Airbyte Source for Metabase
+        Airbyte Source for Metabase.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/metabase
 
@@ -5549,7 +5549,7 @@ class HubspotSource(GeneratedAirbyteSource):
         ],
     ):
         """
-        Airbyte Source for Hubspot
+        Airbyte Source for Hubspot.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/hubspot
 
@@ -5600,7 +5600,7 @@ class HarvestSource(GeneratedAirbyteSource):
         ],
     ):
         """
-        Airbyte Source for Harvest
+        Airbyte Source for Harvest.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/harvest
 
@@ -5649,7 +5649,7 @@ class GithubSource(GeneratedAirbyteSource):
         page_size_for_large_streams: Optional[int] = None,
     ):
         """
-        Airbyte Source for Github
+        Airbyte Source for Github.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/github
 
@@ -5701,7 +5701,7 @@ class E2eTestSource(GeneratedAirbyteSource):
         message_interval_ms: Optional[int] = None,
     ):
         """
-        Airbyte Source for E2e Test
+        Airbyte Source for E2e Test.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/e2e-test
 
@@ -5810,7 +5810,7 @@ class MysqlSource(GeneratedAirbyteSource):
         ssl: Optional[bool] = None,
     ):
         """
-        Airbyte Source for Mysql
+        Airbyte Source for Mysql.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/mysql
 
@@ -5862,7 +5862,7 @@ class MyHoursSource(GeneratedAirbyteSource):
         logs_batch_size: Optional[int] = None,
     ):
         """
-        Airbyte Source for My Hours
+        Airbyte Source for My Hours.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/my-hours
 
@@ -5892,7 +5892,7 @@ class KyribaSource(GeneratedAirbyteSource):
         end_date: Optional[str] = None,
     ):
         """
-        Airbyte Source for Kyriba
+        Airbyte Source for Kyriba.
 
         Args:
             name (str): The name of the destination.
@@ -5949,7 +5949,7 @@ class GoogleSearchConsoleSource(GeneratedAirbyteSource):
         custom_reports: Optional[str] = None,
     ):
         """
-        Airbyte Source for Google Search Console
+        Airbyte Source for Google Search Console.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/google-search-console
 
@@ -6018,7 +6018,7 @@ class FacebookMarketingSource(GeneratedAirbyteSource):
         max_batch_size: Optional[int] = None,
     ):
         """
-        Airbyte Source for Facebook Marketing
+        Airbyte Source for Facebook Marketing.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/facebook-marketing
 
@@ -6060,7 +6060,7 @@ class SurveymonkeySource(GeneratedAirbyteSource):
         self, name: str, access_token: str, start_date: str, survey_ids: Optional[List[str]] = None
     ):
         """
-        Airbyte Source for Surveymonkey
+        Airbyte Source for Surveymonkey.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/surveymonkey
 
@@ -6089,7 +6089,7 @@ class PardotSource(GeneratedAirbyteSource):
         is_sandbox: Optional[bool] = None,
     ):
         """
-        Airbyte Source for Pardot
+        Airbyte Source for Pardot.
 
         Args:
             name (str): The name of the destination.
@@ -6115,7 +6115,7 @@ class FlexportSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_key: str, start_date: str):
         """
-        Airbyte Source for Flexport
+        Airbyte Source for Flexport.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/flexport
 
@@ -6132,7 +6132,7 @@ class ZenefitsSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, token: str):
         """
-        Airbyte Source for Zenefits
+        Airbyte Source for Zenefits.
 
         Args:
             name (str): The name of the destination.
@@ -6236,7 +6236,7 @@ class KafkaSource(GeneratedAirbyteSource):
         max_records_process: Optional[int] = None,
     ):
         """
-        Airbyte Source for Kafka
+        Airbyte Source for Kafka.
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/kafka
 

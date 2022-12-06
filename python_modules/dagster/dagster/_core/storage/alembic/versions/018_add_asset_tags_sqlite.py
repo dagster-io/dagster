@@ -1,4 +1,4 @@
-"""add asset tags
+"""add asset tags.
 
 Revision ID: 6e1f65d78b92
 Revises: b4e0c470acb3

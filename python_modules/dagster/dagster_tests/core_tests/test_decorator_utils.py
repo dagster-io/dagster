@@ -42,10 +42,10 @@ def test_format_docstring_for_description():
     def multiline_indented_docstring():
         """
         abc
-        123
+        123.
         """
 
-    multiline_indented_docstring_expected = "abc\n123"
+    multiline_indented_docstring_expected = "abc\n123."
 
     assert (
         format_docstring_for_description(multiline_indented_docstring)
@@ -54,10 +54,10 @@ def test_format_docstring_for_description():
 
     def no_indentation_at_start():
         """abc
-        123
+        123.
         """
 
-    no_indentation_at_start_expected = "abc\n123"
+    no_indentation_at_start_expected = "abc\n123."
 
     assert (
         format_docstring_for_description(no_indentation_at_start)
