@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Optional
 
 import kubernetes
+from kubernetes.client.models import V1JobStatus
 
 from dagster import DagsterInstance
 from dagster import _check as check
@@ -315,14 +316,10 @@ class DagsterKubernetesClient:
 
             # Reads the status of the specified job. Returns a V1Job object that
             # we need to read the status off of.
-            status = None
-
-            def _get_job_status():
-                job = self.batch_api.read_namespaced_job_status(job_name, namespace=namespace)
-                return job.status
-
-            status = k8s_api_retry(
-                _get_job_status, max_retries=3, timeout=wait_time_between_attempts
+            status = self.get_job_status(
+                job_name=job_name,
+                namespace=namespace,
+                wait_time_between_attempts=wait_time_between_attempts,
             )
 
             # status.succeeded represents the number of pods which reached phase Succeeded.
@@ -348,6 +345,18 @@ class DagsterKubernetesClient:
                     raise DagsterK8sPipelineStatusException()
 
             self.sleeper(wait_time_between_attempts)
+
+    def get_job_status(
+        self,
+        job_name: str,
+        namespace: str,
+        wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+    ) -> V1JobStatus:
+        def _get_job_status():
+            job = self.batch_api.read_namespaced_job_status(job_name, namespace=namespace)
+            return job.status
+
+        return k8s_api_retry(_get_job_status, max_retries=3, timeout=wait_time_between_attempts)
 
     def delete_job(
         self,

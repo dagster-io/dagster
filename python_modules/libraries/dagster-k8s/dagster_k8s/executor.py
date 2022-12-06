@@ -254,10 +254,11 @@ class K8sStepHandler(StepHandler):
 
         container_context = self._get_container_context(step_handler_context)
 
-        job = self._api_client.batch_api.read_namespaced_job(
-            namespace=container_context.namespace, name=job_name
+        status = self._api_client.get_job_status(
+            namespace=container_context.namespace,
+            job_name=job_name,
         )
-        if job.status.failed:
+        if status.failed:
             return CheckStepHealthResult.unhealthy(
                 reason=f"Discovered failed Kubernetes job {job_name} for step {step_key}.",
             )
