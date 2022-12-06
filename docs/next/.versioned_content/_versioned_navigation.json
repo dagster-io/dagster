@@ -64170,992 +64170,1024 @@
   ],
   "1.1.5": [
     {
-      "children": [
-        {
-          "path": "/getting-started/install",
-          "title": "Installation"
-        },
-        {
-          "path": "/getting-started/create-new-project",
-          "title": "Create a New Project"
-        },
-        {
-          "path": "/getting-started/telemetry",
-          "title": "Telemetry"
-        }
-      ],
+      "title": "Getting Started",
       "icon": "Flag",
       "path": "/getting-started",
-      "title": "Getting Started"
-    },
-    {
+      "isDefaultOpen": true,
       "children": [
         {
-          "path": "/tutorial/setup",
-          "title": "Setup"
+          "title": "Hello Dagster",
+          "path": "/getting-started/hello-dagster"
         },
         {
-          "children": [
-            {
-              "path": "/tutorial/assets/defining-an-asset",
-              "title": "Defining an Asset"
-            },
-            {
-              "path": "/tutorial/assets/asset-graph",
-              "title": "Building Graphs of Assets"
-            },
-            {
-              "path": "/tutorial/assets/non-argument-deps",
-              "title": "Assets without Arguments and Return Values"
-            },
-            {
-              "path": "/tutorial/assets/testing-assets",
-              "title": "Testing Assets"
-            }
-          ],
-          "title": "Assets"
+          "title": "Installation",
+          "path": "/getting-started/install"
         },
         {
-          "children": [
-            {
-              "path": "/tutorial/ops-jobs/single-op-job",
-              "title": "Writing, Executing a Single-Op Job"
-            },
-            {
-              "path": "/tutorial/ops-jobs/connecting-ops",
-              "title": "Connecting Ops In Jobs"
-            },
-            {
-              "path": "/tutorial/ops-jobs/testable",
-              "title": "Testing Ops and Jobs"
-            }
-          ],
-          "title": "Ops and Jobs"
+          "title": "Create a New Project",
+          "path": "/getting-started/create-new-project"
+        },
+        {
+          "title": "Telemetry",
+          "path": "/getting-started/telemetry"
         }
-      ],
+      ]
+    },
+    {
+      "title": "Tutorials",
       "icon": "Tutorials",
       "path": "/tutorial",
-      "title": "Tutorials"
-    },
-    {
       "children": [
         {
-          "children": [
-            {
-              "path": "/concepts/assets/software-defined-assets",
-              "title": "Software-Defined Assets"
-            },
-            {
-              "path": "/concepts/assets/asset-materializations",
-              "title": "Asset Materializations"
-            },
-            {
-              "path": "/concepts/assets/asset-observations",
-              "title": "Asset Observations"
-            },
-            {
-              "path": "/concepts/assets/graph-backed-assets",
-              "title": "Graph-Backed Assets"
-            },
-            {
-              "path": "/concepts/assets/multi-assets",
-              "title": "Multi-Assets"
-            }
-          ],
-          "title": "Assets"
+          "title": "Setup",
+          "path": "/tutorial/setup"
         },
         {
+          "title": "Assets",
           "children": [
             {
-              "path": "/concepts/ops-jobs-graphs/ops",
-              "title": "Ops"
+              "title": "Defining an Asset",
+              "path": "/tutorial/assets/defining-an-asset"
             },
             {
-              "path": "/concepts/ops-jobs-graphs/op-events",
-              "title": "Op Events"
+              "title": "Building Graphs of Assets",
+              "path": "/tutorial/assets/asset-graph"
             },
             {
-              "path": "/concepts/ops-jobs-graphs/op-hooks",
-              "title": "Op Hooks"
+              "title": "Assets without Arguments and Return Values",
+              "path": "/tutorial/assets/non-argument-deps"
             },
             {
-              "path": "/concepts/ops-jobs-graphs/op-retries",
-              "title": "Op Retries"
+              "title": "Testing Assets",
+              "path": "/tutorial/assets/testing-assets"
             }
-          ],
-          "title": "Ops"
+          ]
         },
         {
+          "title": "Ops and Jobs",
           "children": [
             {
-              "path": "/concepts/ops-jobs-graphs/graphs",
-              "title": "Graphs"
+              "title": "Writing, Executing a Single-Op Job",
+              "path": "/tutorial/ops-jobs/single-op-job"
             },
             {
-              "path": "/concepts/ops-jobs-graphs/nesting-graphs",
-              "title": "Nesting Graphs"
+              "title": "Connecting Ops In Jobs",
+              "path": "/tutorial/ops-jobs/connecting-ops"
             },
             {
-              "path": "/concepts/ops-jobs-graphs/dynamic-graphs",
-              "title": "Dynamic Graphs"
+              "title": "Testing Ops and Jobs",
+              "path": "/tutorial/ops-jobs/testable"
             }
-          ],
-          "title": "Graphs"
-        },
-        {
-          "children": [
-            {
-              "path": "/concepts/ops-jobs-graphs/jobs",
-              "title": "Jobs"
-            },
-            {
-              "path": "/concepts/ops-jobs-graphs/job-execution",
-              "title": "Job Execution"
-            },
-            {
-              "path": "/concepts/ops-jobs-graphs/metadata-tags",
-              "title": "Metadata & Tags"
-            }
-          ],
-          "title": "Jobs"
-        },
-        {
-          "children": [
-            {
-              "path": "/concepts/partitions-schedules-sensors/schedules",
-              "title": "Schedules"
-            },
-            {
-              "path": "/concepts/partitions-schedules-sensors/sensors",
-              "title": "Sensors"
-            },
-            {
-              "path": "/concepts/partitions-schedules-sensors/asset-sensors",
-              "title": "Asset Sensors"
-            },
-            {
-              "path": "/concepts/partitions-schedules-sensors/partitions",
-              "title": "Partitions"
-            },
-            {
-              "path": "/concepts/partitions-schedules-sensors/backfills",
-              "title": "Backfills"
-            }
-          ],
-          "title": "Schedules, Sensors, & Partitions"
-        },
-        {
-          "children": [
-            {
-              "path": "/concepts/io-management/io-managers",
-              "title": "IO Managers"
-            },
-            {
-              "path": "/concepts/io-management/unconnected-inputs",
-              "title": "Unconnected Inputs"
-            }
-          ],
-          "title": "IO Management"
-        },
-        {
-          "children": [
-            {
-              "path": "/concepts/configuration/config-schema",
-              "title": "Run Configuration"
-            },
-            {
-              "path": "/concepts/configuration/configured",
-              "title": "Configured API"
-            }
-          ],
-          "title": "Configuration"
-        },
-        {
-          "children": [
-            {
-              "path": "/concepts/repositories-workspaces/repositories",
-              "title": "Repositories"
-            },
-            {
-              "path": "/concepts/repositories-workspaces/workspaces",
-              "title": "Workspaces"
-            }
-          ],
-          "title": "Repositories & Workspaces"
-        },
-        {
-          "children": [
-            {
-              "path": "/concepts/resources",
-              "title": "Resources"
-            }
-          ],
-          "title": "Resources"
-        },
-        {
-          "children": [
-            {
-              "path": "/concepts/dagit/dagit",
-              "title": "Dagit UI"
-            },
-            {
-              "path": "/concepts/dagit/graphql",
-              "title": "GraphQL API"
-            },
-            {
-              "path": "/concepts/dagit/graphql-client",
-              "title": "GraphQL Python Client"
-            }
-          ],
-          "title": "Dagit UI & GraphQL API"
-        },
-        {
-          "children": [
-            {
-              "path": "/concepts/types",
-              "title": "Dagster Types"
-            }
-          ],
-          "title": "Dagster Types"
-        },
-        {
-          "children": [
-            {
-              "path": "/concepts/logging/loggers",
-              "title": "Loggers"
-            },
-            {
-              "path": "/concepts/logging/python-logging",
-              "title": "Python Logging"
-            }
-          ],
-          "title": "Logging"
-        },
-        {
-          "children": [
-            {
-              "path": "/concepts/testing",
-              "title": "Testing"
-            }
-          ],
-          "title": "Testing"
+          ]
         }
-      ],
+      ]
+    },
+    {
+      "title": "Concepts",
       "icon": "Concepts",
-      "isDefaultOpen": true,
       "path": "/concepts",
-      "title": "Concepts"
-    },
-    {
       "children": [
         {
+          "title": "Assets",
           "children": [
             {
-              "path": "/deployment/overview",
-              "title": "Overview and architecture"
+              "title": "Software-Defined Assets",
+              "path": "/concepts/assets/software-defined-assets"
             },
             {
-              "children": [
-                {
-                  "path": "/deployment/dagster-instance",
-                  "title": "Dagster instance"
-                },
-                {
-                  "path": "/deployment/dagster-daemon",
-                  "title": "Dagster daemon"
-                },
-                {
-                  "path": "/deployment/run-launcher",
-                  "title": "Run launchers"
-                },
-                {
-                  "path": "/deployment/executors",
-                  "title": "Executors"
-                },
-                {
-                  "path": "/deployment/run-coordinator",
-                  "title": "Run coordinators"
-                },
-                {
-                  "path": "/deployment/run-monitoring",
-                  "title": "Run monitoring"
-                },
-                {
-                  "path": "/deployment/run-retries",
-                  "title": "Run retries"
-                }
-              ],
-              "path": "/deployment/concepts",
-              "title": "Concepts"
+              "title": "Asset Materializations",
+              "path": "/concepts/assets/asset-materializations"
             },
             {
-              "path": "/deployment/guides",
-              "title": "Guides"
+              "title": "Asset Observations",
+              "path": "/concepts/assets/asset-observations"
+            },
+            {
+              "title": "Graph-Backed Assets",
+              "path": "/concepts/assets/graph-backed-assets"
+            },
+            {
+              "title": "Multi-Assets",
+              "path": "/concepts/assets/multi-assets"
             }
-          ],
-          "path": "/deployment/open-source",
-          "title": "Open Source"
+          ]
         },
         {
+          "title": "Ops",
           "children": [
             {
-              "children": [
-                {
-                  "path": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment",
-                  "title": "Serverless Deployment"
-                },
-                {
-                  "path": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment",
-                  "title": "Hybrid Deployment"
-                },
-                {
-                  "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets",
-                  "title": "Environment variables and secrets"
-                }
-              ],
-              "path": "/dagster-cloud/getting-started",
-              "title": "Getting started"
+              "title": "Ops",
+              "path": "/concepts/ops-jobs-graphs/ops"
             },
             {
-              "children": [
-                {
-                  "path": "/dagster-cloud/deployment/serverless",
-                  "title": "Serverless"
-                },
-                {
-                  "path": "/dagster-cloud/deployment/hybrid",
-                  "title": "Hybrid"
-                }
-              ],
-              "path": "/dagster-cloud/deployment",
-              "title": "Deployment types"
+              "title": "Op Events",
+              "path": "/concepts/ops-jobs-graphs/op-events"
             },
             {
-              "children": [
-                {
-                  "path": "/dagster-cloud/account/managing-users",
-                  "title": "Users"
-                },
-                {
-                  "path": "/dagster-cloud/account/managing-user-agent-tokens",
-                  "title": "Tokens"
-                },
-                {
-                  "path": "/dagster-cloud/account/setting-up-alerts",
-                  "title": "Alerts"
-                }
-              ],
-              "path": "/dagster-cloud/account",
-              "title": "Account"
+              "title": "Op Hooks",
+              "path": "/concepts/ops-jobs-graphs/op-hooks"
             },
             {
-              "children": [
-                {
-                  "path": "/dagster-cloud/account/authentication/setting-up-azure-ad-saml-sso",
-                  "title": "Azure Active Directory"
-                },
-                {
-                  "path": "/dagster-cloud/account/authentication/setting-up-google-workspace-saml-sso",
-                  "title": "Google Workspace"
-                },
-                {
-                  "path": "/dagster-cloud/account/authentication/setting-up-okta-saml-sso",
-                  "title": "Okta"
-                },
-                {
-                  "path": "/dagster-cloud/account/authentication/setting-up-onelogin-saml-sso",
-                  "title": "OneLogin"
-                },
-                {
-                  "path": "dagster-cloud/account/authentication/setting-up-pingone-saml-sso",
-                  "title": "PingOne"
-                }
-              ],
-              "path": "/dagster-cloud/account/authentication",
-              "title": "Authentication"
-            },
-            {
-              "children": [
-                {
-                  "children": [
-                    {
-                      "path": "/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc",
-                      "title": "Setup in new VPC"
-                    },
-                    {
-                      "path": "/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-existing-vpc",
-                      "title": "Setup in existing VPC"
-                    },
-                    {
-                      "path": "/dagster-cloud/deployment/agents/amazon-ecs/manually-provisioning-ecs-agent",
-                      "title": "Manual provision"
-                    },
-                    {
-                      "path": "/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference",
-                      "title": "Configuration"
-                    },
-                    {
-                      "path": "/dagster-cloud/deployment/agents/amazon-ecs/upgrading-cloudformation-template",
-                      "title": "Upgrade CloudFormation"
-                    }
-                  ],
-                  "path": "/dagster-cloud/deployment/agents/amazon-ecs",
-                  "title": "Amazon ECS"
-                },
-                {
-                  "children": [
-                    {
-                      "path": "/dagster-cloud/deployment/agents/docker/configuring-running-docker-agent",
-                      "title": "Setup"
-                    },
-                    {
-                      "path": "/dagster-cloud/deployment/agents/docker/configuration-reference",
-                      "title": "Configuration"
-                    }
-                  ],
-                  "path": "/dagster-cloud/deployment/agents/docker",
-                  "title": "Docker"
-                },
-                {
-                  "children": [
-                    {
-                      "path": "/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent",
-                      "title": "Setup"
-                    },
-                    {
-                      "path": "/dagster-cloud/deployment/agents/kubernetes/configuration-reference",
-                      "title": "Configuration"
-                    }
-                  ],
-                  "path": "/dagster-cloud/deployment/agents/kubernetes",
-                  "title": "Kubernetes"
-                },
-                {
-                  "path": "/dagster-cloud/deployment/agents/local",
-                  "title": "Local"
-                },
-                {
-                  "path": "/dagster-cloud/deployment/agents/customizing-configuration",
-                  "title": "Custom configuration"
-                },
-                {
-                  "path": "/dagster-cloud/deployment/agents/running-multiple-agents",
-                  "title": "Multiple agents"
-                },
-                {
-                  "path": "/dagster-cloud/developing-testing/setting-environment-variables-dagster-cloud-agents",
-                  "title": "Setting environment variables"
-                }
-              ],
-              "path": "/dagster-cloud/deployment/agents",
-              "title": "Hybrid agents"
-            },
-            {
-              "children": [
-                {
-                  "children": [
-                    {
-                      "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets",
-                      "title": "Overview and setup"
-                    },
-                    {
-                      "path": "/dagster-cloud/developing-testing/setting-environment-variables-dagster-cloud-agents",
-                      "title": "Setup for Hybrid agents"
-                    }
-                  ],
-                  "title": "Environment variables and secrets"
-                },
-                {
-                  "path": "/dagster-cloud/developing-testing/dagster-cloud-cli",
-                  "title": "dagster-cloud CLI"
-                },
-                {
-                  "children": [
-                    {
-                      "path": "/dagster-cloud/developing-testing/managing-deployments",
-                      "title": "Management"
-                    },
-                    {
-                      "path": "/dagster-cloud/developing-testing/deployment-settings-reference",
-                      "title": "Settings"
-                    }
-                  ],
-                  "title": "Full deployments"
-                },
-                {
-                  "path": "/dagster-cloud/developing-testing/code-locations",
-                  "title": "Code locations"
-                },
-                {
-                  "children": [
-                    {
-                      "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github",
-                      "title": "Using with GitHub"
-                    },
-                    {
-                      "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments",
-                      "title": "Using with dagster-cloud CLI"
-                    }
-                  ],
-                  "path": "/dagster-cloud/developing-testing/branch-deployments",
-                  "title": "Branch deployments"
-                }
-              ],
-              "path": "/dagster-cloud/developing-testing",
-              "title": "Developing and testing"
+              "title": "Op Retries",
+              "path": "/concepts/ops-jobs-graphs/op-retries"
             }
-          ],
-          "path": "/dagster-cloud",
-          "title": "Cloud"
+          ]
+        },
+        {
+          "title": "Graphs",
+          "children": [
+            {
+              "title": "Graphs",
+              "path": "/concepts/ops-jobs-graphs/graphs"
+            },
+            {
+              "title": "Nesting Graphs",
+              "path": "/concepts/ops-jobs-graphs/nesting-graphs"
+            },
+            {
+              "title": "Dynamic Graphs",
+              "path": "/concepts/ops-jobs-graphs/dynamic-graphs"
+            }
+          ]
+        },
+        {
+          "title": "Jobs",
+          "children": [
+            {
+              "title": "Jobs",
+              "path": "/concepts/ops-jobs-graphs/jobs"
+            },
+            {
+              "title": "Job Execution",
+              "path": "/concepts/ops-jobs-graphs/job-execution"
+            },
+            {
+              "title": "Metadata & Tags",
+              "path": "/concepts/ops-jobs-graphs/metadata-tags"
+            }
+          ]
+        },
+        {
+          "title": "Schedules, Sensors, & Partitions",
+          "children": [
+            {
+              "title": "Schedules",
+              "path": "/concepts/partitions-schedules-sensors/schedules"
+            },
+            {
+              "title": "Sensors",
+              "path": "/concepts/partitions-schedules-sensors/sensors"
+            },
+            {
+              "title": "Asset Sensors",
+              "path": "/concepts/partitions-schedules-sensors/asset-sensors"
+            },
+            {
+              "title": "Partitions",
+              "path": "/concepts/partitions-schedules-sensors/partitions"
+            },
+            {
+              "title": "Backfills",
+              "path": "/concepts/partitions-schedules-sensors/backfills"
+            }
+          ]
+        },
+        {
+          "title": "IO Management",
+          "children": [
+            {
+              "title": "IO Managers",
+              "path": "/concepts/io-management/io-managers"
+            },
+            {
+              "title": "Unconnected Inputs",
+              "path": "/concepts/io-management/unconnected-inputs"
+            }
+          ]
+        },
+        {
+          "title": "Configuration",
+          "children": [
+            {
+              "title": "Run Configuration",
+              "path": "/concepts/configuration/config-schema"
+            },
+            {
+              "title": "Configured API",
+              "path": "/concepts/configuration/configured"
+            }
+          ]
+        },
+        {
+          "title": "Repositories & Workspaces",
+          "children": [
+            {
+              "title": "Repositories",
+              "path": "/concepts/repositories-workspaces/repositories"
+            },
+            {
+              "title": "Workspaces",
+              "path": "/concepts/repositories-workspaces/workspaces"
+            }
+          ]
+        },
+        {
+          "title": "Resources",
+          "children": [
+            {
+              "title": "Resources",
+              "path": "/concepts/resources"
+            }
+          ]
+        },
+        {
+          "title": "Dagit UI & GraphQL API",
+          "children": [
+            {
+              "title": "Dagit UI",
+              "path": "/concepts/dagit/dagit"
+            },
+            {
+              "title": "GraphQL API",
+              "path": "/concepts/dagit/graphql"
+            },
+            {
+              "title": "GraphQL Python Client",
+              "path": "/concepts/dagit/graphql-client"
+            }
+          ]
+        },
+        {
+          "title": "Dagster Types",
+          "children": [
+            {
+              "title": "Dagster Types",
+              "path": "/concepts/types"
+            }
+          ]
+        },
+        {
+          "title": "Logging",
+          "children": [
+            {
+              "title": "Loggers",
+              "path": "/concepts/logging/loggers"
+            },
+            {
+              "title": "Python Logging",
+              "path": "/concepts/logging/python-logging"
+            }
+          ]
+        },
+        {
+          "title": "Testing",
+          "children": [
+            {
+              "title": "Testing",
+              "path": "/concepts/testing"
+            }
+          ]
         }
-      ],
+      ]
+    },
+    {
+      "title": "Deployment",
       "icon": "Deployment",
       "path": "/deployment",
-      "title": "Deployment"
-    },
-    {
       "children": [
         {
-          "path": "/integrations/airbyte",
-          "title": "Airbyte"
-        },
-        {
-          "path": "/integrations/airflow",
-          "title": "Airflow"
-        },
-        {
+          "title": "Open Source",
+          "path": "/deployment/open-source",
           "children": [
             {
+              "title": "Overview and architecture",
+              "path": "/deployment/overview"
+            },
+            {
+              "title": "Concepts",
+              "path": "/deployment/concepts",
               "children": [
                 {
-                  "path": "/integrations/dbt/using-dbt-with-dagster/part-one",
-                  "title": "Set up dbt project"
+                  "title": "Dagster instance",
+                  "path": "/deployment/dagster-instance"
                 },
                 {
-                  "path": "/integrations/dbt/using-dbt-with-dagster/part-two",
-                  "title": "Load dbt models as assets"
+                  "title": "Dagster daemon",
+                  "path": "/deployment/dagster-daemon"
                 },
                 {
-                  "path": "/integrations/dbt/using-dbt-with-dagster/part-three",
-                  "title": "Create and materialize upstream assets"
+                  "title": "Run launchers",
+                  "path": "/deployment/run-launcher"
                 },
                 {
-                  "path": "/integrations/dbt/using-dbt-with-dagster/part-four",
-                  "title": "Create and materialize downstream asset"
+                  "title": "Executors",
+                  "path": "/deployment/executors"
+                },
+                {
+                  "title": "Run coordinators",
+                  "path": "/deployment/run-coordinator"
+                },
+                {
+                  "title": "Run monitoring",
+                  "path": "/deployment/run-monitoring"
+                },
+                {
+                  "title": "Run retries",
+                  "path": "/deployment/run-retries"
                 }
-              ],
-              "path": "/integrations/dbt/using-dbt-with-dagster",
-              "title": "dbt + Dagster tutorial"
+              ]
             },
             {
-              "path": "/integrations/dbt/reference",
-              "title": "Reference"
+              "title": "Guides",
+              "path": "/deployment/guides"
             }
-          ],
-          "path": "/integrations/dbt",
-          "title": "dbt"
+          ]
         },
         {
-          "path": "/integrations/dbt-cloud",
-          "title": "dbt Cloud"
-        },
-        {
-          "path": "/integrations/fivetran",
-          "title": "Fivetran"
-        },
-        {
-          "path": "/integrations/great-expectations",
-          "title": "Great Expectations"
-        },
-        {
-          "path": "/integrations/dagstermill",
-          "title": "Jupyter / Papermill"
-        },
-        {
-          "path": "/integrations/pandas",
-          "title": "Pandas"
-        },
-        {
-          "path": "/integrations/pandera",
-          "title": "Pandera"
-        },
-        {
-          "path": "/integrations/spark",
-          "title": "PySpark"
-        },
-        {
-          "path": "/integrations",
-          "title": "All integrations"
+          "title": "Cloud",
+          "path": "/dagster-cloud",
+          "children": [
+            {
+              "title": "Getting started",
+              "path": "/dagster-cloud/getting-started",
+              "children": [
+                {
+                  "title": "Serverless Deployment",
+                  "path": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment"
+                },
+                {
+                  "title": "Hybrid Deployment",
+                  "path": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment"
+                },
+                {
+                  "title": "Environment variables and secrets",
+                  "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets"
+                }
+              ]
+            },
+            {
+              "title": "Deployment types",
+              "path": "/dagster-cloud/deployment",
+              "children": [
+                {
+                  "title": "Serverless",
+                  "path": "/dagster-cloud/deployment/serverless"
+                },
+                {
+                  "title": "Hybrid",
+                  "path": "/dagster-cloud/deployment/hybrid"
+                }
+              ]
+            },
+            {
+              "title": "Account",
+              "path": "/dagster-cloud/account",
+              "children": [
+                {
+                  "title": "Users",
+                  "path": "/dagster-cloud/account/managing-users"
+                },
+                {
+                  "title": "Tokens",
+                  "path": "/dagster-cloud/account/managing-user-agent-tokens"
+                },
+                {
+                  "title": "Alerts",
+                  "path": "/dagster-cloud/account/setting-up-alerts"
+                }
+              ]
+            },
+            {
+              "title": "Authentication",
+              "path": "/dagster-cloud/account/authentication",
+              "children": [
+                {
+                  "title": "Azure Active Directory",
+                  "path": "/dagster-cloud/account/authentication/setting-up-azure-ad-saml-sso"
+                },
+                {
+                  "title": "Google Workspace",
+                  "path": "/dagster-cloud/account/authentication/setting-up-google-workspace-saml-sso"
+                },
+                {
+                  "title": "Okta",
+                  "path": "/dagster-cloud/account/authentication/setting-up-okta-saml-sso"
+                },
+                {
+                  "title": "OneLogin",
+                  "path": "/dagster-cloud/account/authentication/setting-up-onelogin-saml-sso"
+                },
+                {
+                  "title": "PingOne",
+                  "path": "dagster-cloud/account/authentication/setting-up-pingone-saml-sso"
+                }
+              ]
+            },
+            {
+              "title": "Hybrid agents",
+              "path": "/dagster-cloud/deployment/agents",
+              "children": [
+                {
+                  "title": "Amazon ECS",
+                  "path": "/dagster-cloud/deployment/agents/amazon-ecs",
+                  "children": [
+                    {
+                      "title": "Setup in new VPC",
+                      "path": "/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc"
+                    },
+                    {
+                      "title": "Setup in existing VPC",
+                      "path": "/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-existing-vpc"
+                    },
+                    {
+                      "title": "Manual provision",
+                      "path": "/dagster-cloud/deployment/agents/amazon-ecs/manually-provisioning-ecs-agent"
+                    },
+                    {
+                      "title": "Configuration",
+                      "path": "/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference"
+                    },
+                    {
+                      "title": "Upgrade CloudFormation",
+                      "path": "/dagster-cloud/deployment/agents/amazon-ecs/upgrading-cloudformation-template"
+                    }
+                  ]
+                },
+                {
+                  "title": "Docker",
+                  "path": "/dagster-cloud/deployment/agents/docker",
+                  "children": [
+                    {
+                      "title": "Setup",
+                      "path": "/dagster-cloud/deployment/agents/docker/configuring-running-docker-agent"
+                    },
+                    {
+                      "title": "Configuration",
+                      "path": "/dagster-cloud/deployment/agents/docker/configuration-reference"
+                    }
+                  ]
+                },
+                {
+                  "title": "Kubernetes",
+                  "path": "/dagster-cloud/deployment/agents/kubernetes",
+                  "children": [
+                    {
+                      "title": "Setup",
+                      "path": "/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent"
+                    },
+                    {
+                      "title": "Configuration",
+                      "path": "/dagster-cloud/deployment/agents/kubernetes/configuration-reference"
+                    }
+                  ]
+                },
+                {
+                  "title": "Local",
+                  "path": "/dagster-cloud/deployment/agents/local"
+                },
+                {
+                  "title": "Custom configuration",
+                  "path": "/dagster-cloud/deployment/agents/customizing-configuration"
+                },
+                {
+                  "title": "Multiple agents",
+                  "path": "/dagster-cloud/deployment/agents/running-multiple-agents"
+                },
+                {
+                  "title": "Setting environment variables",
+                  "path": "/dagster-cloud/developing-testing/setting-environment-variables-dagster-cloud-agents"
+                }
+              ]
+            },
+            {
+              "title": "Developing and testing",
+              "path": "/dagster-cloud/developing-testing",
+              "children": [
+                {
+                  "title": "Environment variables and secrets",
+                  "children": [
+                    {
+                      "title": "Overview and setup",
+                      "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets"
+                    },
+                    {
+                      "title": "Setup for Hybrid agents",
+                      "path": "/dagster-cloud/developing-testing/setting-environment-variables-dagster-cloud-agents"
+                    }
+                  ]
+                },
+                {
+                  "title": "dagster-cloud CLI",
+                  "path": "/dagster-cloud/developing-testing/dagster-cloud-cli"
+                },
+                {
+                  "title": "Full deployments",
+                  "children": [
+                    {
+                      "title": "Management",
+                      "path": "/dagster-cloud/developing-testing/managing-deployments"
+                    },
+                    {
+                      "title": "Settings",
+                      "path": "/dagster-cloud/developing-testing/deployment-settings-reference"
+                    }
+                  ]
+                },
+                {
+                  "title": "Code locations",
+                  "path": "/dagster-cloud/developing-testing/code-locations"
+                },
+                {
+                  "title": "Branch deployments",
+                  "path": "/dagster-cloud/developing-testing/branch-deployments",
+                  "children": [
+                    {
+                      "title": "Using with GitHub",
+                      "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github"
+                    },
+                    {
+                      "title": "Using with dagster-cloud CLI",
+                      "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         }
-      ],
+      ]
+    },
+    {
+      "title": "Integrations",
       "icon": "Integrations",
       "path": "/integrations",
-      "title": "Integrations"
-    },
-    {
       "children": [
         {
+          "title": "Airbyte",
+          "path": "/integrations/airbyte",
           "children": [
             {
-              "path": "/guides/dagster/enriching-with-software-defined-assets",
-              "title": "Enriching with Software-defined assets"
+              "title": "Airbyte + Dagster",
+              "path": "/integrations/airbyte"
             },
             {
-              "path": "/guides/dagster/software-defined-assets",
-              "title": "Software-defined assets with Pandas & PySpark"
-            },
-            {
-              "path": "/guides/dagster/re-execution",
-              "title": "Re-executing jobs"
-            },
-            {
-              "path": "/guides/dagster/dagster_type_factories",
-              "title": "Validating data"
-            },
-            {
-              "isExternalLink": true,
-              "path": "https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op",
-              "title": "Migrating to graphs, jobs, ops"
+              "title": "Ingestion as code",
+              "path": "/guides/dagster/airbyte-ingestion-as-code"
             }
-          ],
-          "path": "/guides/general",
-          "title": "General"
+          ]
         },
         {
-          "children": [
-            {
-              "path": "/guides/dagster/using-environment-variables-and-secrets",
-              "title": "Using environment variables and secrets"
-            },
-            {
-              "path": "/guides/dagster/example_project",
-              "title": "Exploring a Dagster project"
-            },
-            {
-              "path": "/guides/dagster/transitioning-data-pipelines-from-development-to-production",
-              "title": "Transitioning from dev to prod"
-            },
-            {
-              "path": "/guides/dagster/branch_deployments",
-              "title": "Testing with Branch Deployments"
-            }
-          ],
-          "path": "/guides/best-practices",
-          "title": "Best practices"
+          "title": "Airflow",
+          "path": "/integrations/airflow"
         },
         {
+          "title": "dbt",
+          "path": "/integrations/dbt",
           "children": [
             {
-              "path": "/guides/dagster/memoization",
-              "title": "Versioning and memoization"
+              "title": "dbt + Dagster tutorial",
+              "path": "/integrations/dbt/using-dbt-with-dagster",
+              "children": [
+                {
+                  "title": "Set up dbt project",
+                  "path": "/integrations/dbt/using-dbt-with-dagster/part-one"
+                },
+                {
+                  "title": "Load dbt models as assets",
+                  "path": "/integrations/dbt/using-dbt-with-dagster/part-two"
+                },
+                {
+                  "title": "Create and materialize upstream assets",
+                  "path": "/integrations/dbt/using-dbt-with-dagster/part-three"
+                },
+                {
+                  "title": "Create and materialize downstream asset",
+                  "path": "/integrations/dbt/using-dbt-with-dagster/part-four"
+                }
+              ]
             },
             {
-              "path": "/guides/dagster/run-attribution",
-              "title": "Using custom run coordinators"
+              "title": "Reference",
+              "path": "/integrations/dbt/reference"
             }
-          ],
-          "path": "/guides/experimental-features",
-          "title": "Experimental features"
+          ]
+        },
+        {
+          "title": "dbt Cloud",
+          "path": "/integrations/dbt-cloud"
+        },
+        {
+          "title": "Fivetran",
+          "path": "/integrations/fivetran"
+        },
+        {
+          "title": "Great Expectations",
+          "path": "/integrations/great-expectations"
+        },
+        {
+          "title": "Jupyter / Papermill",
+          "path": "/integrations/dagstermill",
+          "children": [
+            {
+              "title": "Jupyter, Papermill + Dagster tutorial",
+              "path": "/integrations/dagstermill/using-notebooks-with-dagster"
+            },
+            {
+              "title": "Reference",
+              "path": "/integrations/dagstermill/reference"
+            }
+          ]
+        },
+        {
+          "title": "Pandas",
+          "path": "/integrations/pandas"
+        },
+        {
+          "title": "Pandera",
+          "path": "/integrations/pandera"
+        },
+        {
+          "title": "PySpark",
+          "path": "/integrations/spark"
+        },
+        {
+          "title": "Snowflake",
+          "path": "/integrations/snowflake"
+        },
+        {
+          "title": "All integrations",
+          "path": "/integrations"
         }
-      ],
+      ]
+    },
+    {
+      "title": "Guides",
       "icon": "Guides",
       "path": "/guides",
-      "title": "Guides"
-    },
-    {
       "children": [
         {
+          "title": "General",
+          "path": "/guides/general",
           "children": [
             {
-              "path": "/_apidocs/assets",
-              "title": "Software-Defined Assets"
+              "title": "Enriching with Software-defined assets",
+              "path": "/guides/dagster/enriching-with-software-defined-assets"
             },
             {
-              "path": "/_apidocs/jobs",
-              "title": "Jobs"
+              "title": "Software-defined assets with Pandas & PySpark",
+              "path": "/guides/dagster/software-defined-assets"
             },
             {
-              "path": "/_apidocs/ops",
-              "title": "Ops"
+              "title": "Re-executing jobs",
+              "path": "/guides/dagster/re-execution"
             },
             {
-              "path": "/_apidocs/graphs",
-              "title": "Graphs"
+              "title": "Validating data",
+              "path": "/guides/dagster/dagster_type_factories"
             },
             {
-              "path": "/_apidocs/resources",
-              "title": "Resources"
-            },
-            {
-              "path": "/_apidocs/loggers",
-              "title": "Loggers"
-            },
-            {
-              "path": "/_apidocs/repositories",
-              "title": "Repositories"
-            },
-            {
-              "path": "/_apidocs/config",
-              "title": "Config"
-            },
-            {
-              "path": "/_apidocs/types",
-              "title": "Types"
-            },
-            {
-              "path": "/_apidocs/cli",
-              "title": "Dagster CLI"
-            },
-            {
-              "path": "/_apidocs/schedules-sensors",
-              "title": "Schedules and Sensors"
-            },
-            {
-              "path": "/_apidocs/partitions",
-              "title": "Partitions"
-            },
-            {
-              "path": "/_apidocs/errors",
-              "title": "Errors"
-            },
-            {
-              "path": "/_apidocs/execution",
-              "title": "Execution"
-            },
-            {
-              "path": "/_apidocs/hooks",
-              "title": "Hooks"
-            },
-            {
-              "path": "/_apidocs/io-managers",
-              "title": "IO Managers"
-            },
-            {
-              "path": "/_apidocs/dynamic",
-              "title": "Dynamic Mapping & Collect"
-            },
-            {
-              "path": "/_apidocs/memoization",
-              "title": "Versioning & Memoization"
-            },
-            {
-              "path": "/_apidocs/utilities",
-              "title": "Utilities"
-            },
-            {
-              "path": "/_apidocs/internals",
-              "title": "Internals"
+              "title": "Migrating to graphs, jobs, ops",
+              "path": "https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op",
+              "isExternalLink": true
             }
-          ],
-          "title": "Core"
+          ]
         },
         {
+          "title": "Best practices",
+          "path": "/guides/best-practices",
           "children": [
             {
-              "path": "/_apidocs/libraries/dagster-airbyte",
-              "title": "Airbyte (dagster-airbyte)"
+              "title": "Using environment variables and secrets",
+              "path": "/guides/dagster/using-environment-variables-and-secrets"
             },
             {
-              "path": "/_apidocs/libraries/dagster-airflow",
-              "title": "Airflow (dagster-airflow)"
+              "title": "Exploring a Dagster project",
+              "path": "/guides/dagster/example_project"
             },
             {
-              "path": "/_apidocs/libraries/dagster-aws",
-              "title": "AWS (dagster-aws)"
+              "title": "Transitioning from dev to prod",
+              "path": "/guides/dagster/transitioning-data-pipelines-from-development-to-production"
             },
             {
-              "path": "/_apidocs/libraries/dagster-azure",
-              "title": "Azure (dagster-azure)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-celery",
-              "title": "Celery (dagster-celery)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-celery-docker",
-              "title": "Celery + Docker (dagster-celery-docker)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-celery-k8s",
-              "title": "Celery + Kubernetes (dagster-celery-k8s)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-dask",
-              "title": "Dask (dagster-dask)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-databricks",
-              "title": "Databricks (dagster-databricks)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-datadog",
-              "title": "Datadog (dagster-datadog)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-datahub",
-              "title": "Datahub (dagster-datahub)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-dbt",
-              "title": "dbt (dagster-dbt)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-docker",
-              "title": "Docker (dagster-docker)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-duckdb",
-              "title": "DuckDB (dagster-duckdb)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-duckdb-pandas",
-              "title": "DuckDB + Pandas (dagster-duckdb-pandas)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-duckdb-pyspark",
-              "title": "DuckDB + PySpark (dagster-duckdb-pyspark)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-fivetran",
-              "title": "Fivetran (dagster-fivetran)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-gcp",
-              "title": "GCP (dagster-gcp)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-ge",
-              "title": "Great Expectations (dagster-ge)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-github",
-              "title": "Github (dagster-github)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagstermill",
-              "title": "Jupyter / Papermill (dagstermill)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-k8s",
-              "title": "Kubernetes (dagster-k8s)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-mlflow",
-              "title": "MLflow (dagster-mlflow)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-msteams",
-              "title": "Microsoft Teams (dagster-msteams)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-mysql",
-              "title": "MySQL (dagster-mysql)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-pagerduty",
-              "title": "PagerDuty (dagster-pagerduty)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-pandas",
-              "title": "Pandas (dagster-pandas)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-papertrail",
-              "title": "Papertrail (dagster-papertrail)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-postgres",
-              "title": "PostgreSQL (dagster-postgres)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-prometheus",
-              "title": "Prometheus (dagster-prometheus)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-pyspark",
-              "title": "Pyspark (dagster-pyspark)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-shell",
-              "title": "Shell (dagster-shell)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-slack",
-              "title": "Slack (dagster-slack)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-snowflake",
-              "title": "Snowflake (dagster-snowflake)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-snowflake-pandas",
-              "title": "Snowflake + Pandas (dagster-snowflake-pandas)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-spark",
-              "title": "Spark (dagster-spark)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-ssh",
-              "title": "SSH / SFTP (dagster-ssh)"
-            },
-            {
-              "path": "/_apidocs/libraries/dagster-twilio",
-              "title": "Twilio (dagster-twilio)"
+              "title": "Testing with Branch Deployments",
+              "path": "/guides/dagster/branch_deployments"
             }
-          ],
-          "title": "Libraries"
+          ]
+        },
+        {
+          "title": "Experimental features",
+          "path": "/guides/experimental-features",
+          "children": [
+            {
+              "title": "Versioning and memoization",
+              "path": "/guides/dagster/memoization"
+            },
+            {
+              "title": "Using custom run coordinators",
+              "path": "/guides/dagster/run-attribution"
+            },
+            {
+              "title": "Airbyte ingestion as code",
+              "path": "/guides/dagster/airbyte-ingestion-as-code"
+            }
+          ]
         }
-      ],
+      ]
+    },
+    {
+      "title": "API Reference",
       "icon": "Reference",
       "path": "/_apidocs",
-      "title": "API Reference"
-    },
-    {
       "children": [
         {
-          "path": "/community/code-of-conduct",
-          "title": "Code of conduct"
+          "title": "Core",
+          "children": [
+            {
+              "title": "Software-Defined Assets",
+              "path": "/_apidocs/assets"
+            },
+            {
+              "title": "Jobs",
+              "path": "/_apidocs/jobs"
+            },
+            {
+              "title": "Ops",
+              "path": "/_apidocs/ops"
+            },
+            {
+              "title": "Graphs",
+              "path": "/_apidocs/graphs"
+            },
+            {
+              "title": "Resources",
+              "path": "/_apidocs/resources"
+            },
+            {
+              "title": "Loggers",
+              "path": "/_apidocs/loggers"
+            },
+            {
+              "title": "Repositories",
+              "path": "/_apidocs/repositories"
+            },
+            {
+              "title": "Config",
+              "path": "/_apidocs/config"
+            },
+            {
+              "title": "Types",
+              "path": "/_apidocs/types"
+            },
+            {
+              "title": "Dagster CLI",
+              "path": "/_apidocs/cli"
+            },
+            {
+              "title": "Schedules and Sensors",
+              "path": "/_apidocs/schedules-sensors"
+            },
+            {
+              "title": "Partitions",
+              "path": "/_apidocs/partitions"
+            },
+            {
+              "title": "Errors",
+              "path": "/_apidocs/errors"
+            },
+            {
+              "title": "Execution",
+              "path": "/_apidocs/execution"
+            },
+            {
+              "title": "Hooks",
+              "path": "/_apidocs/hooks"
+            },
+            {
+              "title": "IO Managers",
+              "path": "/_apidocs/io-managers"
+            },
+            {
+              "title": "Dynamic Mapping & Collect",
+              "path": "/_apidocs/dynamic"
+            },
+            {
+              "title": "Versioning & Memoization",
+              "path": "/_apidocs/memoization"
+            },
+            {
+              "title": "Utilities",
+              "path": "/_apidocs/utilities"
+            },
+            {
+              "title": "Internals",
+              "path": "/_apidocs/internals"
+            }
+          ]
         },
         {
-          "path": "/community/contributing",
-          "title": "Contributing"
-        },
-        {
-          "isExternalLink": true,
-          "path": "https://dagster.io/slack",
-          "title": "Slack"
-        },
-        {
-          "isExternalLink": true,
-          "path": "https://github.com/dagster-io/dagster",
-          "title": "GitHub"
+          "title": "Libraries",
+          "children": [
+            {
+              "title": "Airbyte (dagster-airbyte)",
+              "path": "/_apidocs/libraries/dagster-airbyte"
+            },
+            {
+              "title": "Airflow (dagster-airflow)",
+              "path": "/_apidocs/libraries/dagster-airflow"
+            },
+            {
+              "title": "AWS (dagster-aws)",
+              "path": "/_apidocs/libraries/dagster-aws"
+            },
+            {
+              "title": "Azure (dagster-azure)",
+              "path": "/_apidocs/libraries/dagster-azure"
+            },
+            {
+              "title": "Celery (dagster-celery)",
+              "path": "/_apidocs/libraries/dagster-celery"
+            },
+            {
+              "title": "Celery + Docker (dagster-celery-docker)",
+              "path": "/_apidocs/libraries/dagster-celery-docker"
+            },
+            {
+              "title": "Celery + Kubernetes (dagster-celery-k8s)",
+              "path": "/_apidocs/libraries/dagster-celery-k8s"
+            },
+            {
+              "title": "Dask (dagster-dask)",
+              "path": "/_apidocs/libraries/dagster-dask"
+            },
+            {
+              "title": "Databricks (dagster-databricks)",
+              "path": "/_apidocs/libraries/dagster-databricks"
+            },
+            {
+              "title": "Datadog (dagster-datadog)",
+              "path": "/_apidocs/libraries/dagster-datadog"
+            },
+            {
+              "title": "Datahub (dagster-datahub)",
+              "path": "/_apidocs/libraries/dagster-datahub"
+            },
+            {
+              "title": "dbt (dagster-dbt)",
+              "path": "/_apidocs/libraries/dagster-dbt"
+            },
+            {
+              "title": "Docker (dagster-docker)",
+              "path": "/_apidocs/libraries/dagster-docker"
+            },
+            {
+              "title": "DuckDB (dagster-duckdb)",
+              "path": "/_apidocs/libraries/dagster-duckdb"
+            },
+            {
+              "title": "DuckDB + Pandas (dagster-duckdb-pandas)",
+              "path": "/_apidocs/libraries/dagster-duckdb-pandas"
+            },
+            {
+              "title": "DuckDB + PySpark (dagster-duckdb-pyspark)",
+              "path": "/_apidocs/libraries/dagster-duckdb-pyspark"
+            },
+            {
+              "title": "Fivetran (dagster-fivetran)",
+              "path": "/_apidocs/libraries/dagster-fivetran"
+            },
+            {
+              "title": "GCP (dagster-gcp)",
+              "path": "/_apidocs/libraries/dagster-gcp"
+            },
+            {
+              "title": "Great Expectations (dagster-ge)",
+              "path": "/_apidocs/libraries/dagster-ge"
+            },
+            {
+              "title": "Github (dagster-github)",
+              "path": "/_apidocs/libraries/dagster-github"
+            },
+            {
+              "title": "Jupyter / Papermill (dagstermill)",
+              "path": "/_apidocs/libraries/dagstermill"
+            },
+            {
+              "title": "Kubernetes (dagster-k8s)",
+              "path": "/_apidocs/libraries/dagster-k8s"
+            },
+            {
+              "title": "MLflow (dagster-mlflow)",
+              "path": "/_apidocs/libraries/dagster-mlflow"
+            },
+            {
+              "title": "Microsoft Teams (dagster-msteams)",
+              "path": "/_apidocs/libraries/dagster-msteams"
+            },
+            {
+              "title": "MySQL (dagster-mysql)",
+              "path": "/_apidocs/libraries/dagster-mysql"
+            },
+            {
+              "title": "PagerDuty (dagster-pagerduty)",
+              "path": "/_apidocs/libraries/dagster-pagerduty"
+            },
+            {
+              "title": "Pandas (dagster-pandas)",
+              "path": "/_apidocs/libraries/dagster-pandas"
+            },
+            {
+              "title": "Papertrail (dagster-papertrail)",
+              "path": "/_apidocs/libraries/dagster-papertrail"
+            },
+            {
+              "title": "PostgreSQL (dagster-postgres)",
+              "path": "/_apidocs/libraries/dagster-postgres"
+            },
+            {
+              "title": "Prometheus (dagster-prometheus)",
+              "path": "/_apidocs/libraries/dagster-prometheus"
+            },
+            {
+              "title": "Pyspark (dagster-pyspark)",
+              "path": "/_apidocs/libraries/dagster-pyspark"
+            },
+            {
+              "title": "Shell (dagster-shell)",
+              "path": "/_apidocs/libraries/dagster-shell"
+            },
+            {
+              "title": "Slack (dagster-slack)",
+              "path": "/_apidocs/libraries/dagster-slack"
+            },
+            {
+              "title": "Snowflake (dagster-snowflake)",
+              "path": "/_apidocs/libraries/dagster-snowflake"
+            },
+            {
+              "title": "Snowflake + Pandas (dagster-snowflake-pandas)",
+              "path": "/_apidocs/libraries/dagster-snowflake-pandas"
+            },
+            {
+              "title": "Spark (dagster-spark)",
+              "path": "/_apidocs/libraries/dagster-spark"
+            },
+            {
+              "title": "SSH / SFTP (dagster-ssh)",
+              "path": "/_apidocs/libraries/dagster-ssh"
+            },
+            {
+              "title": "Twilio (dagster-twilio)",
+              "path": "/_apidocs/libraries/dagster-twilio"
+            }
+          ]
         }
-      ],
+      ]
+    },
+    {
+      "title": "Community",
       "icon": "Community",
       "path": "/community",
-      "title": "Community"
-    },
-    {
       "children": [
         {
-          "path": "/getting-started/releases",
-          "title": "Releases and changes"
+          "title": "Code of conduct",
+          "path": "/community/code-of-conduct"
         },
         {
-          "isUnversioned": true,
-          "path": "/changelog",
-          "title": "Changelog"
+          "title": "Contributing",
+          "path": "/community/contributing"
         },
         {
-          "isUnversioned": true,
-          "path": "/migration",
-          "title": "Migration guides"
+          "title": "Slack",
+          "path": "https://dagster.io/slack",
+          "isExternalLink": true
+        },
+        {
+          "title": "GitHub",
+          "path": "https://github.com/dagster-io/dagster",
+          "isExternalLink": true
         }
-      ],
+      ]
+    },
+    {
+      "title": "About",
       "icon": "About",
       "isUnversioned": true,
-      "title": "About"
+      "children": [
+        {
+          "title": "Releases and changes",
+          "path": "/getting-started/releases"
+        },
+        {
+          "title": "Changelog",
+          "path": "/changelog",
+          "isUnversioned": true
+        },
+        {
+          "title": "Migration guides",
+          "path": "/migration",
+          "isUnversioned": true
+        }
+      ]
     }
   ]
 }
