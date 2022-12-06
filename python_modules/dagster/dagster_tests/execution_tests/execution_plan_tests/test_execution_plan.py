@@ -362,7 +362,6 @@ def test_executor_not_created_for_execute_plan():
         InMemoryPipeline(pipe),
         instance,
         job_def,
-        run_config={"execution": {"multiprocess": {}}},
     )
     for result in results:
         assert not result.is_failure
@@ -435,28 +434,28 @@ def test_fan_out_should_skip_step():
         bar.alias("bar_3")(input_arg=foo_res.out_3)
 
     instance = DagsterInstance.ephemeral()
-    pipeline_run = DagsterRun(pipeline_name="optional_outputs", run_id=make_new_run_id())
+    run = DagsterRun(pipeline_name="optional_outputs", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(optional_outputs, step_keys_to_execute=["foo"]),
         InMemoryPipeline(optional_outputs),
         instance,
-        pipeline_run,
+        run,
     )
 
     assert not should_skip_step(
         create_execution_plan(optional_outputs, step_keys_to_execute=["bar_1"]),
         instance,
-        pipeline_run.run_id,
+        run.run_id,
     )
     assert should_skip_step(
         create_execution_plan(optional_outputs, step_keys_to_execute=["bar_2"]),
         instance,
-        pipeline_run.run_id,
+        run.run_id,
     )
     assert should_skip_step(
         create_execution_plan(optional_outputs, step_keys_to_execute=["bar_3"]),
         instance,
-        pipeline_run.run_id,
+        run.run_id,
     )
 
 
@@ -475,11 +474,11 @@ def test_fan_in_should_skip_step():
         return items
 
     @graph(output_defs=[OutputDefinition(is_required=False)])
-    def composite_all_upstream_skip():
+    def graph_all_upstream_skip():
         return fan_in([skip(), skip()])
 
     @graph(output_defs=[OutputDefinition(is_required=False)])
-    def composite_one_upstream_skip():
+    def graph_one_upstream_skip():
         return fan_in([one(), skip()])
 
     @job
@@ -488,7 +487,7 @@ def test_fan_in_should_skip_step():
         graph_one_upstream_skip()
 
     instance = DagsterInstance.ephemeral()
-    pipeline_run = DagsterRun(pipeline_name="optional_outputs_composite", run_id=make_new_run_id())
+    run = DagsterRun(pipeline_name="optional_outputs_composite", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(
             optional_outputs_composite,
@@ -499,7 +498,7 @@ def test_fan_in_should_skip_step():
         ),
         InMemoryPipeline(optional_outputs_composite),
         instance,
-        pipeline_run,
+        run,
     )
     # skip when all the step's sources weren't yield
     assert should_skip_step(
@@ -508,7 +507,7 @@ def test_fan_in_should_skip_step():
             step_keys_to_execute=["graph_all_upstream_skip.fan_in"],
         ),
         instance,
-        pipeline_run.run_id,
+        run.run_id,
     )
 
     execute_plan(
@@ -521,7 +520,7 @@ def test_fan_in_should_skip_step():
         ),
         InMemoryPipeline(optional_outputs_composite),
         instance,
-        pipeline_run,
+        run,
     )
     # do not skip when some of the sources exist
     assert not should_skip_step(
@@ -530,7 +529,7 @@ def test_fan_in_should_skip_step():
             step_keys_to_execute=["graph_one_upstream_skip.fan_in"],
         ),
         instance,
-        pipeline_run.run_id,
+        run.run_id,
     )
 
 
@@ -557,7 +556,7 @@ def test_configured_input_should_skip_step():
 
     # ensure should_skip_step behave the same as execute_pipeline
     instance = DagsterInstance.ephemeral()
-    pipeline_run = DagsterRun(pipeline_name="my_pipeline", run_id=make_new_run_id())
+    run = DagsterRun(pipeline_name="my_job", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(
             my_job,
@@ -566,7 +565,7 @@ def test_configured_input_should_skip_step():
         ),
         InMemoryPipeline(my_job),
         instance,
-        pipeline_run,
+        run,
         run_config=run_config,
     )
     assert not should_skip_step(
@@ -576,5 +575,5 @@ def test_configured_input_should_skip_step():
             run_config=run_config,
         ),
         instance,
-        pipeline_run.run_id,
+        run.run_id,
     )

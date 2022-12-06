@@ -54,7 +54,7 @@ from dagster._legacy import ModeDefinition, execute_pipeline_iterator, pipeline,
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
 
-RUN_CONFIG_BASE = {"solids": {"return_two": {"config": {"a": "b"}}}}
+RUN_CONFIG_BASE = {"ops": {"return_two": {"config": {"a": "b"}}}}
 
 
 def make_run_config(scratch_dir, mode):
@@ -230,7 +230,7 @@ def define_basic_job_last_launched():
     return _define_basic_job(False, True)
 
 
-def define_basic_pipeline():
+def define_basic_job(mode_name: str) -> JobDefinition:
     @op(
         required_resource_keys=set(["first_step_launcher"]),
         config_schema={"a": Field(str)},
@@ -242,7 +242,7 @@ def define_basic_pipeline():
     def add_one(_, num):
         return num + 1
 
-    @pipeline(
+    @job(
         mode_defs=[
             ModeDefinition(
                 "external",
@@ -276,7 +276,7 @@ def define_basic_pipeline():
     return basic_job
 
 
-def define_sleepy_pipeline():
+def define_sleepy_job():
     @op(
         config_schema={"tempfile": Field(String)},
         required_resource_keys=set(["first_step_launcher"]),
@@ -303,32 +303,32 @@ def define_sleepy_pipeline():
 
 
 def initialize_step_context(scratch_dir, instance):
-    pipeline_run = DagsterRun(
-        pipeline_name="foo_pipeline",
+    run = DagsterRun(
+        pipeline_name="foo_job",
         run_id=str(uuid.uuid4()),
         run_config=make_run_config(scratch_dir, "external"),
         mode="external",
     )
 
-    recon_pipeline = reconstructable(define_basic_pipeline)
+    recon_job = reconstructable(define_basic_job)
 
     plan = create_execution_plan(
-        recon_pipeline, pipeline_run.run_config, mode="external"
+        recon_job, run.run_config, mode="external"
     )
 
     initialization_manager = PlanExecutionContextManager(
-        pipeline=recon_pipeline,
+        pipeline=recon_job,
         execution_plan=plan,
-        run_config=pipeline_run.run_config,
-        pipeline_run=pipeline_run,
+        run_config=run.run_config,
+        pipeline_run=run,
         instance=instance,
         retry_mode=RetryMode.DISABLED,
     )
     for _ in initialization_manager.prepare_context():
         pass
-    pipeline_context = initialization_manager.get_context()
+    job_context = initialization_manager.get_context()
 
-    step_context = pipeline_context.for_step(
+    step_context = job_context.for_step(
         plan.get_step_by_key("return_two"),
         KnownExecutionState(),
     )
@@ -368,9 +368,10 @@ def test_local_external_step_launcher():
 
 
 @pytest.mark.parametrize("mode", ["external", "internal_and_external"])
-def test_pipeline(mode):
+def test_job(mode):
     with tempfile.TemporaryDirectory() as tmpdir:
-        result = reconstructable(define_basic_pipeline).execute_in_process(
+        result = execute_job(
+            reconstructable(define_basic_job),
             mode=mode,
             run_config=make_run_config(tmpdir, mode),
         )
@@ -512,7 +513,7 @@ def test_arbitrary_error():
 def test_launcher_requests_retry():
     mode = "request_retry"
     with tempfile.TemporaryDirectory() as tmpdir:
-        result = reconstructable(define_basic_pipeline).execute_in_process(
+        result = reconstructable(define_basic_job).execute_in_process(
             mode=mode,
             run_config=make_run_config(tmpdir, mode),
         )
@@ -543,7 +544,7 @@ def test_interrupt_step_launcher(mode):
                     },
                     "io_manager": {"config": {"base_dir": tmpdir}},
                 },
-                "solids": {"sleepy_op": {"config": {"tempfile": success_tempfile}}},
+                "ops": {"sleepy_op": {"config": {"tempfile": success_tempfile}}},
             }
 
             interrupt_thread = Thread(
@@ -555,7 +556,7 @@ def test_interrupt_step_launcher(mode):
             results = []
 
             for result in execute_pipeline_iterator(
-                pipeline=reconstructable(define_sleepy_pipeline),
+                pipeline=reconstructable(define_sleepy_job),
                 mode=mode,
                 run_config=sleepy_run_config,
             ):
@@ -573,7 +574,7 @@ def test_multiproc_launcher_requests_retry():
         run_config = make_run_config(tmpdir, mode)
         run_config["execution"] = {"multiprocess": {}}
         result = DagsterInstance.local_temp(tmpdir).execute_in_process(
-            pipeline=reconstructable(define_basic_pipeline),
+            pipeline=reconstructable(define_basic_job),
             mode=mode,
             run_config=run_config,
         )
@@ -601,11 +602,11 @@ def test_multiproc_launcher_with_repository_load_data():
                 file_relative_path(__file__, "test_external_step.py"),
                 fn_name="pending_repo",
             )
-            recon_pipeline = ReconstructablePipeline(
+            recon_job = ReconstructablePipeline(
                 repository=recon_repo, pipeline_name="all_asset_job"
             )
 
-            run = recon_pipeline.execute_in_process(
+            run = recon_job.execute_in_process(
                 run_config=run_config,
                 instance=instance,
             )
