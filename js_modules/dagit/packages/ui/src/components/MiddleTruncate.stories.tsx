@@ -2,7 +2,6 @@ import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 
-import {BaseTag} from './BaseTag';
 import {Box} from './Box';
 import {Colors} from './Colors';
 import {Icon} from './Icon';
