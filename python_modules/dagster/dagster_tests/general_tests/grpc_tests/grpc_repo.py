@@ -3,20 +3,17 @@ import time
 
 from dagster import (
     In,
-    Out,
-    op,
-    job,
     Int,
+    Out,
     ScheduleDefinition,
     SkipReason,
+    job,
+    op,
     repository,
     sensor,
     usable_as_dagster_type,
 )
-from dagster._legacy import (
-    PartitionSetDefinition,
-    pipeline,
-)
+from dagster._legacy import PartitionSetDefinition, pipeline
 
 
 @op

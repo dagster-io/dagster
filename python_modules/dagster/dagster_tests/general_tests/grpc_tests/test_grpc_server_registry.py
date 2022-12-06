@@ -4,11 +4,9 @@ import time
 
 import pytest
 
-from dagster import job, file_relative_path, repository
+from dagster import file_relative_path, job, repository
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.host_representation.grpc_server_registry import (
-    ProcessGrpcServerRegistry,
-)
+from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster._core.host_representation.origin import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RegisteredRepositoryLocationOrigin,
