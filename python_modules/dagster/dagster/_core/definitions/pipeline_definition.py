@@ -32,6 +32,7 @@ from .dependency import (
     DependencyDefinition,
     DependencyStructure,
     DynamicCollectDependencyDefinition,
+    GraphNode,
     IDependencyDefinition,
     MultiDependencyDefinition,
     Node,
@@ -768,7 +769,7 @@ def _get_pipeline_subset_def(
 def _iterate_all_nodes(root_node_dict: Mapping[str, Node]) -> Iterator[Node]:
     for node in root_node_dict.values():
         yield node
-        if node.is_graph:
+        if isinstance(node, GraphNode):
             yield from _iterate_all_nodes(node.definition.ensure_graph_def().node_dict)
 
 
