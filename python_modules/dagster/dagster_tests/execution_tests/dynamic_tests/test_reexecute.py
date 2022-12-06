@@ -14,10 +14,7 @@ from dagster import (
 )
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.output import DynamicOut, Out
-from dagster._core.errors import (
-    DagsterExecutionStepNotFoundError,
-    DagsterInvariantViolationError,
-)
+from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster._core.test_utils import instance_for_test
 
 
@@ -84,9 +81,7 @@ def test_reexec_from_parent_basic():
 
 def test_reexec_from_parent_1():
     with instance_for_test() as instance:
-        parent_result = execute_job(
-            reconstructable(dynamic_pipeline), instance=instance
-        )
+        parent_result = execute_job(reconstructable(dynamic_pipeline), instance=instance)
         parent_run_id = parent_result.run_id
 
         with execute_job(
@@ -105,9 +100,7 @@ def test_reexec_from_parent_1():
 
 def test_reexec_from_parent_dynamic_fails():
     with instance_for_test() as instance:
-        parent_result = execute_job(
-            reconstructable(dynamic_pipeline), instance=instance
-        )
+        parent_result = execute_job(reconstructable(dynamic_pipeline), instance=instance)
         parent_run_id = parent_result.run_id
 
         # not currently supported, this needs to know all fan outs of previous step, should just run previous step
@@ -127,9 +120,7 @@ def test_reexec_from_parent_dynamic_fails():
 
 def test_reexec_from_parent_2():
     with instance_for_test() as instance:
-        parent_result = execute_job(
-            reconstructable(dynamic_pipeline), instance=instance
-        )
+        parent_result = execute_job(reconstructable(dynamic_pipeline), instance=instance)
         parent_run_id = parent_result.run_id
 
         with execute_job(
@@ -148,9 +139,7 @@ def test_reexec_from_parent_2():
 
 def test_reexec_from_parent_3():
     with instance_for_test() as instance:
-        parent_result = execute_job(
-            reconstructable(dynamic_pipeline), instance=instance
-        )
+        parent_result = execute_job(reconstructable(dynamic_pipeline), instance=instance)
         parent_run_id = parent_result.run_id
 
         with execute_job(
@@ -211,9 +200,7 @@ def dynamic_with_optional_output_job():
 
 def test_reexec_dynamic_with_optional_output_job_1():
     with instance_for_test() as instance:
-        result = dynamic_with_optional_output_job().execute_in_process(
-            instance=instance
-        )
+        result = dynamic_with_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute all
         with execute_job(
@@ -224,16 +211,12 @@ def test_reexec_dynamic_with_optional_output_job_1():
             ),
         ) as re_result:
             assert re_result.success
-            assert re_result.output_for_node("adder") == sum(
-                [i for i in range(10) if i % 2 == 0]
-            )
+            assert re_result.output_for_node("adder") == sum([i for i in range(10) if i % 2 == 0])
 
 
 def test_reexec_dynamic_with_optional_output_job_2():
     with instance_for_test() as instance:
-        result = dynamic_with_optional_output_job().execute_in_process(
-            instance=instance
-        )
+        result = dynamic_with_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute the step where the source yielded an output
         with execute_job(
@@ -252,9 +235,7 @@ def test_reexec_dynamic_with_optional_output_job_2():
 
 def test_reexec_dynamic_with_optional_output_job_3():
     with instance_for_test() as instance:
-        result = dynamic_with_optional_output_job().execute_in_process(
-            instance=instance
-        )
+        result = dynamic_with_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute the step where the source did not yield
         # -> error because the dynamic step wont exist in execution plan
@@ -285,9 +266,7 @@ def dynamic_with_transitive_optional_output_job():
 
     @job(resource_defs={"io_manager": fs_io_manager})
     def _dynamic_with_transitive_optional_output_job():
-        dynamic_results = dynamic_op().map(
-            lambda n: echo(add_one_with_optional_output(n))
-        )
+        dynamic_results = dynamic_op().map(lambda n: echo(add_one_with_optional_output(n)))
         adder(dynamic_results.collect())
 
     return _dynamic_with_transitive_optional_output_job
@@ -295,13 +274,9 @@ def dynamic_with_transitive_optional_output_job():
 
 def test_reexec_dynamic_with_transitive_optional_output_job_1():
     with instance_for_test() as instance:
-        result = dynamic_with_transitive_optional_output_job().execute_in_process(
-            instance=instance
-        )
+        result = dynamic_with_transitive_optional_output_job().execute_in_process(instance=instance)
         assert result.success
-        assert result.output_for_node("adder") == sum(
-            [i + 1 for i in range(10) if i % 2 == 1]
-        )
+        assert result.output_for_node("adder") == sum([i + 1 for i in range(10) if i % 2 == 1])
 
         # re-execute all
         with execute_job(
@@ -319,9 +294,7 @@ def test_reexec_dynamic_with_transitive_optional_output_job_1():
 
 def test_reexec_dynamic_with_transitive_optional_output_job_2():
     with instance_for_test() as instance:
-        result = dynamic_with_transitive_optional_output_job().execute_in_process(
-            instance=instance
-        )
+        result = dynamic_with_transitive_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute the step where the source yielded an output
         with execute_job(
@@ -338,9 +311,7 @@ def test_reexec_dynamic_with_transitive_optional_output_job_2():
 
 def test_reexec_dynamic_with_transitive_optional_output_job_3():
     with instance_for_test() as instance:
-        result = dynamic_with_transitive_optional_output_job().execute_in_process(
-            instance=instance
-        )
+        result = dynamic_with_transitive_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute the step where the source did not yield
         re_result = execute_job(
