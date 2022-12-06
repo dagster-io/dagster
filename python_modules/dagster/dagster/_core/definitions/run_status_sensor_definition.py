@@ -391,18 +391,13 @@ class RunStatusSensorDefinition(SensorDefinition):
             if monitored_jobs
             else []
         )
+
         other_repo_jobs = (
             [x for x in monitored_jobs if isinstance(x, JobSelector)] if monitored_jobs else []
         )
 
         current_repo_jobs = (
-            [
-                x
-                for x in monitored_jobs
-                # monitored_jobs will not contain any CodeLocationSelectors at this point, but this
-                # is in this list to make mypy/pyright happy. Verified by invariant above.
-                if not isinstance(x, (JobSelector, RepositorySelector))
-            ]
+            [x for x in monitored_jobs if not isinstance(x, (JobSelector, RepositorySelector))]
             if monitored_jobs
             else []
         )
