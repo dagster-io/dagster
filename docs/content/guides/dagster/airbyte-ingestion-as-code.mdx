@@ -189,3 +189,24 @@ airbyte_reconciler = AirbyteManagedElementReconciler(
     airbyte=airbyte_instance, connections=[...], delete_unmentioned_resources=True
 )
 ```
+
+This tells the reconciler to clean up any sources, destinations, or connections which are not explicitly defined in Python code.
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    href="/integrations/airbyte"
+    title="Airbyte docs"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/\_apidocs/libraries/dagster-airbyte#dagster_airbyte"
+    title="Airbyte API docs"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/guides/dagster/using-environment-variables-and-secrets#using-environment-variables-and-secrets"
+    title="Environment variables and secrets"
+  ></ArticleListItem>
+</ArticleList>
