@@ -96,7 +96,7 @@ Any dependencies specified in either `requirements.txt` or `setup.py` will be in
 
 ## Customizing the runtime environment
 
-Dagster Cloud Serverless packages your code as [PEX](https://pex.readthedocs.io) files and deploys them on Docker images. Using PEX files significantly reduces the time to deploy since it does not require building a new Docker image and provisioning a new container for every code change. Many apps will work fine with the default Dagster Cloud Serverless setup. However, some apps may need to make changes to the runtime environment, either to include data files, use a different OS, different Python version, or install some native dependencies. You can customize the runtime environment using various methods described below.
+Dagster Cloud Serverless packages your code as [PEX](https://pex.readthedocs.io) files and deploys them on Docker images. Using PEX files significantly reduces the time to deploy since it does not require building a new Docker image and provisioning a new container for every code change. Many apps will work fine with the default Dagster Cloud Serverless setup. However, some apps may need to make changes to the runtime environment, either to include data files, use a different base image, different Python version, or install some native dependencies. You can customize the runtime environment using various methods described below.
 
 ### Including data files
 
