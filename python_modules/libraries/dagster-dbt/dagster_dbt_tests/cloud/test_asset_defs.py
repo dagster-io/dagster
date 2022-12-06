@@ -1,5 +1,6 @@
 import json
-from typing import List
+from copy import deepcopy
+from typing import List, Optional
 
 import pytest
 import responses
@@ -58,7 +59,11 @@ def dbt_cloud_service_fixture():
     )
 
 
-def _add_dbt_cloud_job_responses(dbt_cloud_api_base_url: str, dbt_commands: List[str]):
+def _add_dbt_cloud_job_responses(
+    dbt_cloud_api_base_url: str, dbt_commands: List[str], run_results_json: Optional[dict] = None
+):
+    run_results_json = run_results_json or RUN_RESULTS_JSON
+
     responses.add(
         method=responses.GET,
         url=f"{dbt_cloud_api_base_url}{DBT_CLOUD_ACCOUNT_ID}/jobs/{DBT_CLOUD_JOB_ID}/",
@@ -94,7 +99,7 @@ def _add_dbt_cloud_job_responses(dbt_cloud_api_base_url: str, dbt_commands: List
     responses.add(
         method=responses.GET,
         url=f"{dbt_cloud_api_base_url}{DBT_CLOUD_ACCOUNT_ID}/runs/{DBT_CLOUD_RUN_ID}/artifacts/run_results.json",
-        json=RUN_RESULTS_JSON,
+        json=run_results_json,
         status=200,
     )
     responses.add(
@@ -197,6 +202,24 @@ def test_invalid_dbt_cloud_job_commands(dbt_cloud, dbt_cloud_service, invalid_db
     _add_dbt_cloud_job_responses(
         dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
         dbt_commands=invalid_dbt_commands,
+    )
+
+    with pytest.raises(DagsterDbtCloudJobInvariantViolationError):
+        dbt_cloud_cacheable_assets.compute_cacheable_data()
+
+
+@responses.activate
+def test_empty_assets_dbt_cloud_job(dbt_cloud, dbt_cloud_service):
+    empty_run_results_json = deepcopy(RUN_RESULTS_JSON)
+    empty_run_results_json["results"] = []
+    dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
+        dbt_cloud=dbt_cloud, job_id=DBT_CLOUD_JOB_ID
+    )
+
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_commands=["dbt build"],
+        run_results_json=empty_run_results_json,
     )
 
     with pytest.raises(DagsterDbtCloudJobInvariantViolationError):
