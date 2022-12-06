@@ -33,6 +33,9 @@ Assets
 Managed Config
 ==============
 
+The following APIs are used as part of the experimental ingestion-as-code functionality.
+For more information, see the `Airbyte ingestion as code guide </guides/dagster/airbyte-ingestion-as-code>`_.
+
 .. autoclass:: AirbyteManagedElementReconciler
    :members:
    :special-members: __init__
