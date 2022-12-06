@@ -37,8 +37,6 @@ from dagster._config import (
     validate_config,
 )
 from dagster._utils.test import wrap_op_in_graph_and_execute
-from dagster._core.definitions.config import ConfigMapping
-from dagster._core.definitions.decorators.graph_decorator import graph
 
 
 def test_noop_config():
