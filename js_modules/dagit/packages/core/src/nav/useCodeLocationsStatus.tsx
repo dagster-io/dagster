@@ -106,12 +106,14 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     };
     const previousEntriesByName = _build_entries_by_name(previousEntries);
     const currentEntriesByName = _build_entries_by_name(currentEntries);
-    const hasUpdatedEntries = currentEntries.every(
-      (entry) =>
-        !(entry.id in previousEntriesByName) ||
-        previousEntriesByName[entry.id].updateTimestamp <
-          currentEntriesByName[entry.id].updateTimestamp,
-    );
+    const hasUpdatedEntries =
+      currentEntries.length &&
+      currentEntries.some(
+        (entry) =>
+          !(entry.id in previousEntriesByName) ||
+          previousEntriesByName[entry.id].updateTimestamp <
+            currentEntriesByName[entry.id].updateTimestamp,
+      );
 
     // At least one code location has been removed. Reload, but don't make a big deal about it
     // since this was probably done manually.
