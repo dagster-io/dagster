@@ -1,7 +1,7 @@
 # start_single_asset
 @asset(code_version="1")
 def asset_with_version():
-  return 100
+    return 100
 # end_single_asset
 
 # start_multi_asset
