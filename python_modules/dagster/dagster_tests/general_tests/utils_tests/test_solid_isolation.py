@@ -209,7 +209,7 @@ def test_execute_nested_graphs():
     res = execute_solid(nested_composite_solid)
 
     assert res.success
-    assert res.solid.name == "layer_0"
+    assert res.node.name == "layer_0"
 
     assert res.output_values == {}
 
