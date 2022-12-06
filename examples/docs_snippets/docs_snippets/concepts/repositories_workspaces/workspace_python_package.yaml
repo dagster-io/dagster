@@ -1,2 +1,4 @@
+# workspace.yaml
+
 load_from:
   - python_package: hello_world_package
