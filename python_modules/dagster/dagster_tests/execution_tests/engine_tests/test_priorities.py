@@ -33,9 +33,7 @@ def test_priorities():
     result = priority_test.execute_in_process()
     assert result.success
     assert [
-        str(event.solid_handle)
-        for event in result.step_event_list
-        if event.is_step_success
+        str(event.solid_handle) for event in result.step_event_list if event.is_step_success
     ] == ["high", "high_2", "none", "none_2", "low", "low_2"]
 
 
@@ -50,7 +48,5 @@ def test_priorities_mp():
         )
         assert result.success
         assert [
-            str(event.solid_handle)
-            for event in result.step_event_list
-            if event.is_step_success
+            str(event.solid_handle) for event in result.step_event_list if event.is_step_success
         ] == ["high", "high_2", "none", "none_2", "low", "low_2"]
