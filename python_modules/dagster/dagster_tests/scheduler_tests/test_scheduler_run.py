@@ -2035,7 +2035,11 @@ def test_grpc_server_down(instance, executor):
     workspace_context = stack.enter_context(
         create_test_daemon_workspace_context(
             GrpcServerTarget(
-                host="localhost", port=port, socket=None, location_name="test_location"
+                host="localhost",
+                port=port,
+                socket=None,
+                location_name="test_location",
+                use_ssl=False,
             ),
             instance,
         )

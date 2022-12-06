@@ -40,6 +40,7 @@ def test_run_always_finishes():  # pylint: disable=redefined-outer-name
                     socket=server_process.socket,
                     port=server_process.port,
                     location_name="test",
+                    use_ssl=False,
                 ),
             ) as workspace_process_context:
                 workspace = workspace_process_context.create_request_context()
@@ -100,6 +101,7 @@ def test_run_from_pending_repository():
                     socket=server_process.socket,
                     port=server_process.port,
                     location_name="test2",
+                    use_ssl=False,
                 ),
             ) as workspace_process_context:
                 workspace = workspace_process_context.create_request_context()
@@ -270,6 +272,7 @@ def test_server_down():
                     port=api_client.port,
                     socket=api_client.socket,
                     host=api_client.host,
+                    use_ssl=False,
                 ),
             ) as workspace_process_context:
                 workspace = workspace_process_context.create_request_context()

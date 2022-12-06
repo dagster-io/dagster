@@ -74,6 +74,7 @@ def workspace_process_context_fixture(instance):
                     socket=server_process.socket,
                     port=server_process.port,
                     location_name="test",
+                    use_ssl=False,
                 ),
             ) as workspace_process_context:
                 yield workspace_process_context

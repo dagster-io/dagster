@@ -104,6 +104,7 @@ class GrpcServerTarget(
             ("port", Optional[int]),
             ("socket", Optional[str]),
             ("location_name", Optional[str]),
+            ("use_ssl", Optional[bool]),
         ],
     ),
     WorkspaceLoadTarget,
@@ -115,6 +116,7 @@ class GrpcServerTarget(
                 socket=self.socket,
                 host=self.host,
                 location_name=self.location_name,
+                use_ssl=self.use_ssl,
             )
         ]
 
