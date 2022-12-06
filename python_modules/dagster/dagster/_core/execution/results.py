@@ -90,7 +90,9 @@ class GraphExecutionResult:
     def events_by_step_key(self) -> Mapping[str, Sequence[DagsterEvent]]:
         return self._events_by_step_key
 
-    def result_for_solid(self, name):
+    def result_for_node(
+        self, name: str
+    ) -> Union["CompositeSolidExecutionResult", "OpExecutionResult"]:
         """Get the result of a top level solid.
 
         Args:
@@ -109,7 +111,7 @@ class GraphExecutionResult:
 
         return self.result_for_handle(NodeHandle(name, None))
 
-    def output_for_solid(self, handle_str, output_name=DEFAULT_OUTPUT):
+    def output_for_node(self, handle_str: str, output_name: str = DEFAULT_OUTPUT) -> object:
         """Get the output of a solid by its solid handle string and output name.
 
         Args:
@@ -124,10 +126,12 @@ class GraphExecutionResult:
         return self.result_for_handle(NodeHandle.from_string(handle_str)).output_value(output_name)
 
     @property
-    def solid_result_list(self):
+    def node_result_list(
+        self,
+    ) -> Sequence[Union["CompositeSolidExecutionResult", "OpExecutionResult"]]:
         """List[Union[CompositeSolidExecutionResult, SolidExecutionResult]]: The results for each
         top level solid."""
-        return [self.result_for_solid(solid.name) for solid in self.container.solids]
+        return [self.result_for_node(node.name) for node in self.container.solids]
 
     def _result_for_handle(
         self, node: Node, handle: NodeHandle
@@ -194,9 +198,9 @@ class GraphExecutionResult:
         else:
             check.inst_param(handle, "handle", NodeHandle)
 
-        solid = self.container.get_solid(handle)
+        node = self.container.get_solid(handle)
 
-        return self._result_for_handle(solid, handle)
+        return self._result_for_handle(node, handle)
 
 
 class PipelineExecutionResult(GraphExecutionResult):
@@ -260,7 +264,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
 
     def output_values_for_solid(self, name: str) -> Optional[Mapping[str, object]]:
         check.str_param(name, "name")
-        return self.result_for_solid(name).output_values
+        return self.result_for_node(name).output_values
 
     def output_values_for_handle(self, handle_str: str) -> Optional[Mapping[str, object]]:
         check.str_param(handle_str, "handle_str")
@@ -271,7 +275,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
         check.str_param(name, "name")
         check.str_param(output_name, "output_name")
 
-        return self.result_for_solid(name).output_value(output_name)
+        return self.result_for_node(name).output_value(output_name)
 
     def output_value_for_handle(self, handle_str: str, output_name: str = DEFAULT_OUTPUT) -> object:
         check.str_param(handle_str, "handle_str")

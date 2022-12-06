@@ -60,7 +60,7 @@ def test_simple_values():
         )
     )
     assert result.success
-    assert result.result_for_solid("sum_num").output_value() == 6
+    assert result.result_for_node("sum_num").output_value() == 6
 
 
 @solid(input_defs=[InputDefinition("stuff", List[Any])])

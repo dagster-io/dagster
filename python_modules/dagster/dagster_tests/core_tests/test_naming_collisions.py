@@ -34,7 +34,7 @@ def test_execute_solid_with_input_same_name():
         pipe, run_config={"solids": {"pass_value": {"config": {"value": "foo"}}}}
     )
 
-    assert result.result_for_solid("a_thing").output_value() == "foofoo"
+    assert result.result_for_node("a_thing").output_value() == "foofoo"
 
 
 def test_execute_two_solids_with_same_input_name():
@@ -62,8 +62,8 @@ def test_execute_two_solids_with_same_input_name():
     )
 
     assert result.success
-    assert result.result_for_solid("solid_one").output_value() == "foofoo"
-    assert result.result_for_solid("solid_two").output_value() == "barbar"
+    assert result.result_for_node("solid_one").output_value() == "foofoo"
+    assert result.result_for_node("solid_two").output_value() == "barbar"
 
 
 def test_execute_dep_solid_different_input_name():
@@ -86,7 +86,7 @@ def test_execute_dep_solid_different_input_name():
     )
 
     assert result.success
-    assert len(result.solid_result_list) == 3
-    assert result.result_for_solid("pass_to_first").output_value() == "bar"
-    assert result.result_for_solid("first_solid").output_value() == "barbar"
-    assert result.result_for_solid("second_solid").output_value() == "barbarbarbar"
+    assert len(result.node_result_list) == 3
+    assert result.result_for_node("pass_to_first").output_value() == "bar"
+    assert result.result_for_node("first_solid").output_value() == "barbar"
+    assert result.result_for_node("second_solid").output_value() == "barbarbarbar"

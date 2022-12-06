@@ -49,7 +49,7 @@ def test_job_execution_multiprocess_config():
         )
 
         assert result.success
-        assert result.output_for_solid("my_op") == 5
+        assert result.output_for_node("my_op") == 5
 
 
 results_lst = []

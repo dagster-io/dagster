@@ -29,7 +29,7 @@ def test_single_level_pipeline():
     result = execute_pipeline(return_int_pipeline, {"solids": {"return_int": {"config": 2}}})
 
     assert result.success
-    assert result.result_for_solid("return_int").output_value() == 2
+    assert result.result_for_node("return_int").output_value() == 2
 
 
 def test_single_solid_pipeline_composite_descent():
@@ -52,7 +52,7 @@ def test_single_solid_pipeline_composite_descent():
     result = execute_pipeline(return_int_pipeline, {"solids": {"return_int": {"config": 3}}})
 
     assert result.success
-    assert result.result_for_solid("return_int").output_value() == 3
+    assert result.result_for_node("return_int").output_value() == 3
 
 
 def test_single_layer_pipeline_composite_descent():
@@ -371,7 +371,7 @@ def test_provide_one_of_two_inputs_via_config():
 
     assert result.success
     assert (
-        result.result_for_solid("wrap_all_config_one_input").output_value()
+        result.result_for_node("wrap_all_config_one_input").output_value()
         == "override_a.override_b.set_input_a.set_input_b"
     )
 
@@ -530,7 +530,7 @@ def test_config_mapped_enum():
         execute_pipeline(
             wrapping_return_enum_pipeline,
             {"solids": {"wrapping_return_enum": {"config": {"num": 1}}}},
-        ).output_for_solid("wrapping_return_enum")
+        ).output_for_node("wrapping_return_enum")
         == TestPythonEnum.VALUE_ONE
     )
 
@@ -538,7 +538,7 @@ def test_config_mapped_enum():
         execute_pipeline(
             wrapping_return_enum_pipeline,
             {"solids": {"wrapping_return_enum": {"config": {"num": -11}}}},
-        ).output_for_solid("wrapping_return_enum")
+        ).output_for_node("wrapping_return_enum")
         == TestPythonEnum.OTHER
     )
 
@@ -567,7 +567,7 @@ def test_config_mapped_enum():
         execute_pipeline(
             wrap_return_int_pipeline,
             {"solids": {"wrap_return_int": {"config": {"enum": "VALUE_ONE"}}}},
-        ).output_for_solid("wrap_return_int")
+        ).output_for_node("wrap_return_int")
         == 1
     )
 
@@ -575,7 +575,7 @@ def test_config_mapped_enum():
         execute_pipeline(
             wrap_return_int_pipeline,
             {"solids": {"wrap_return_int": {"config": {"enum": "OTHER"}}}},
-        ).output_for_solid("wrap_return_int")
+        ).output_for_node("wrap_return_int")
         == 2
     )
 
@@ -594,7 +594,7 @@ def test_single_level_pipeline_with_configured_solid():
     result = execute_pipeline(return_int_pipeline)
 
     assert result.success
-    assert result.result_for_solid("return_int_5").output_value() == 5
+    assert result.result_for_node("return_int_5").output_value() == 5
 
 
 def test_configured_solid_with_inputs():
@@ -614,7 +614,7 @@ def test_configured_solid_with_inputs():
     )
 
     assert result.success
-    assert result.result_for_solid("return_int_configured").output_value() == 6
+    assert result.result_for_node("return_int_configured").output_value() == 6
 
 
 def test_single_level_pipeline_with_complex_configured_solid_within_composite():
@@ -647,7 +647,7 @@ def test_single_level_pipeline_with_complex_configured_solid_within_composite():
     )
 
     assert result.success
-    assert result.result_for_solid("introduce_wrapper").output_value() == "AJ is 20 years old"
+    assert result.result_for_node("introduce_wrapper").output_value() == "AJ is 20 years old"
 
 
 def test_single_level_pipeline_with_complex_configured_solid():
@@ -664,7 +664,7 @@ def test_single_level_pipeline_with_complex_configured_solid():
     result = execute_pipeline(introduce_pipeline)
 
     assert result.success
-    assert result.result_for_solid("introduce_aj").output_value() == "AJ is 20 years old"
+    assert result.result_for_node("introduce_aj").output_value() == "AJ is 20 years old"
 
 
 def test_single_level_pipeline_with_complex_configured_solid_nested():
@@ -685,7 +685,7 @@ def test_single_level_pipeline_with_complex_configured_solid_nested():
     result = execute_pipeline(introduce_pipeline)
 
     assert result.success
-    assert result.result_for_solid("introduce_aj_20").output_value() == "AJ is 20 years old"
+    assert result.result_for_node("introduce_aj_20").output_value() == "AJ is 20 years old"
 
 
 def test_single_level_pipeline_with_configured_graph():
@@ -720,7 +720,7 @@ def test_single_level_pipeline_with_configured_graph():
     result = execute_pipeline(test_pipeline)
 
     assert result.success
-    assert result.result_for_solid("multiply_three_by_four").output_value() == 12
+    assert result.result_for_node("multiply_three_by_four").output_value() == 12
 
 
 def test_single_level_pipeline_with_configured_decorated_graph():
@@ -759,7 +759,7 @@ def test_single_level_pipeline_with_configured_decorated_graph():
     result = execute_pipeline(test_pipeline)
 
     assert result.success
-    assert result.result_for_solid("multiply_three_by_four").output_value() == 12
+    assert result.result_for_node("multiply_three_by_four").output_value() == 12
 
 
 def test_configured_graph_with_inputs():
@@ -799,7 +799,7 @@ def test_configured_graph_with_inputs():
     )
 
     assert result.success
-    assert result.result_for_solid("return_int_composite").output_value() == 10
+    assert result.result_for_node("return_int_composite").output_value() == 10
 
 
 def test_configured_graph_cannot_stub_inner_solids_config():
