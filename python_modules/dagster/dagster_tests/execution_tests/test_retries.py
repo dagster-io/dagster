@@ -14,6 +14,7 @@ from dagster import (
     Output,
     RetryPolicy,
     RetryRequested,
+    failure_hook,
     graph,
     job,
     op,
@@ -28,8 +29,8 @@ from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.retries import RetryMode
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import (
+    DagsterRun,
     OutputDefinition,
-    PipelineRun,
     execute_pipeline,
     execute_pipeline_iterator,
     lambda_solid,
@@ -210,7 +211,7 @@ def test_retry_deferral():
         events = execute_plan(
             create_execution_plan(pipeline_def),
             InMemoryPipeline(pipeline_def),
-            pipeline_run=PipelineRun(pipeline_name="retry_limits", run_id="42"),
+            pipeline_run=DagsterRun(pipeline_name="retry_limits", run_id="42"),
             retry_mode=RetryMode.DEFERRED,
             instance=instance,
         )
@@ -607,3 +608,26 @@ def test_failure_allow_retries():
     assert not result.success
     assert len(_get_retry_events(result.events_for_node("fail_allow"))) == 1
     assert len(_get_retry_events(result.events_for_node("fail_dissalow"))) == 0
+
+
+def test_retry_policy_with_failure_hook():
+    exception = Exception("something wrong happened")
+
+    hook_calls = []
+
+    @failure_hook
+    def something_on_failure(context):
+        hook_calls.append(context)
+
+    @op(retry_policy=RetryPolicy(max_retries=2))
+    def op1():
+        raise exception
+
+    @job(hooks={something_on_failure})
+    def job1():
+        op1()
+
+    job1.execute_in_process(raise_on_error=False)
+
+    assert len(hook_calls) == 1
+    assert hook_calls[0].op_exception == exception

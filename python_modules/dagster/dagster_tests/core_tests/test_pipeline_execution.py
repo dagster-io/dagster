@@ -21,7 +21,7 @@ from dagster._core.definitions import Node
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.graph_definition import _create_adjacency_lists
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
-from dagster._core.execution.results import SolidExecutionResult
+from dagster._core.execution.results import OpExecutionResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import (
     default_mode_def_for_test,
@@ -204,8 +204,8 @@ def compute_called(name):
 
 
 def assert_equivalent_results(left, right):
-    check.inst_param(left, "left", SolidExecutionResult)
-    check.inst_param(right, "right", SolidExecutionResult)
+    check.inst_param(left, "left", OpExecutionResult)
+    check.inst_param(right, "right", OpExecutionResult)
 
     assert left.success == right.success
     assert left.name == right.name
@@ -214,8 +214,8 @@ def assert_equivalent_results(left, right):
 
 
 def assert_all_results_equivalent(expected_results, result_results):
-    check.list_param(expected_results, "expected_results", of_type=SolidExecutionResult)
-    check.list_param(result_results, "result_results", of_type=SolidExecutionResult)
+    check.list_param(expected_results, "expected_results", of_type=OpExecutionResult)
+    check.list_param(result_results, "result_results", of_type=OpExecutionResult)
     assert len(expected_results) == len(result_results)
     for expected, result in zip(expected_results, result_results):
         assert_equivalent_results(expected, result)

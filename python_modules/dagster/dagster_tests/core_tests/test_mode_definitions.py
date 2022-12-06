@@ -187,7 +187,7 @@ def test_mode_with_resource_deps():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="resource with key 'a' required by solid 'requires_a' was not provided",
+        match="resource with key 'a' required by op 'requires_a' was not provided",
     ):
         PipelineDefinition(
             name="mode_with_bad_deps",

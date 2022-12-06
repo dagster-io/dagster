@@ -19,7 +19,7 @@ from dagster_test.test_project import (
 
 from dagster import DagsterEventType
 from dagster import _check as check
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._utils import load_yaml_from_path, merge_dicts
 from dagster._utils.yaml_utils import merge_yamls
@@ -119,7 +119,7 @@ def test_k8s_run_launcher_with_celery_executor_fails(
 
     assert (
         dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id).status
-        == PipelineRunStatus.FAILURE
+        == DagsterRunStatus.FAILURE
     )
 
 
@@ -183,11 +183,11 @@ def test_k8s_run_launcher_terminate(
     while True:
         assert datetime.datetime.now() < start_time + timeout, "Timed out waiting for termination"
         pipeline_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
-        if pipeline_run.status == PipelineRunStatus.CANCELED:
+        if pipeline_run.status == DagsterRunStatus.CANCELED:
             break
         time.sleep(5)
 
-    assert pipeline_run.status == PipelineRunStatus.CANCELED
+    assert pipeline_run.status == DagsterRunStatus.CANCELED
 
     assert not can_terminate_run_over_graphql(dagit_url_for_k8s_run_launcher, run_id)
 

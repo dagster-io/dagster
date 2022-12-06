@@ -31,7 +31,7 @@ from dagster_test.test_project.test_pipelines.repo import define_memoization_pip
 
 import dagster._check as check
 from dagster._core.events import DagsterEventType
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._utils import load_yaml_from_path, merge_dicts
 from dagster._utils.merger import deep_merge_dicts
@@ -334,7 +334,7 @@ def test_k8s_run_launcher_terminate(
     while True:
         assert datetime.datetime.now() < start_time + timeout, "Timed out waiting for termination"
         pipeline_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
-        if pipeline_run.status == PipelineRunStatus.CANCELED:
+        if pipeline_run.status == DagsterRunStatus.CANCELED:
             break
 
         time.sleep(5)
@@ -342,7 +342,7 @@ def test_k8s_run_launcher_terminate(
     # useful to have logs here, because the worker pods get deleted
     print(dagster_instance_for_k8s_run_launcher.all_logs(run_id))  # pylint: disable=print-call
 
-    assert pipeline_run.status == PipelineRunStatus.CANCELED
+    assert pipeline_run.status == DagsterRunStatus.CANCELED
 
     assert not can_terminate_run_over_graphql(dagit_url_for_k8s_run_launcher, run_id)
 

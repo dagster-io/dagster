@@ -125,7 +125,7 @@ class GraphExecutionResult:
                     if event.solid_handle.is_or_descends_from(handle.with_ancestor(self.handle)):
                         events_by_kind[event.step_kind].append(event)
 
-            return SolidExecutionResult(
+            return OpExecutionResult(
                 solid,
                 events_by_kind,
                 self.reconstruct_context,
@@ -263,10 +263,9 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
 
         if not self.solid.definition.has_output(output_name):
             raise DagsterInvariantViolationError(
-                "Output '{output_name}' not defined in composite solid '{solid}': "
+                "Output '{output_name}' not defined in graph '{solid}': "
                 "{outputs_clause}. If you were expecting this output to be present, you may "
-                "be missing an output_mapping from an inner solid to its enclosing composite "
-                "solid.".format(
+                "be missing an output_mapping from an inner solid to its enclosing graph.".format(
                     output_name=output_name,
                     solid=self.solid.name,
                     outputs_clause="found outputs {output_names}".format(
@@ -285,7 +284,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
         ).output_value(output_mapping.maps_from.output_name)
 
 
-class SolidExecutionResult:
+class OpExecutionResult:
     """Execution result for a leaf solid in a pipeline.
 
     Users should not instantiate this class.

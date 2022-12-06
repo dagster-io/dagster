@@ -11,8 +11,8 @@ import {LeftNavItemType} from '../nav/LeftNavItemType';
 import {getAssetGroupItemsForOption, getJobItemsForOption} from '../nav/getLeftNavItemsForOption';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {buildRepoAddress, DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
+import {repoAddressAsHumanString, repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
 
@@ -32,7 +32,7 @@ export const SectionedLeftNav = () => {
 
   const onToggle = React.useCallback(
     (repoAddress: RepoAddress) => {
-      const key = repoAddressAsString(repoAddress);
+      const key = repoAddressAsURLString(repoAddress);
       setExpandedKeys((current) => {
         let nextExpandedKeys = [...(current || [])];
         if (nextExpandedKeys.includes(key)) {
@@ -45,6 +45,17 @@ export const SectionedLeftNav = () => {
     },
     [setExpandedKeys],
   );
+
+  const visibleReposAndKeys = React.useMemo(() => {
+    return visibleRepos.map((repo) => {
+      const repoAddress = buildRepoAddress(repo.repository.name, repo.repositoryLocation.name);
+      return {
+        repo,
+        repoAddress,
+        key: repoAddressAsHumanString(repoAddress),
+      };
+    });
+  }, [visibleRepos]);
 
   const duplicateRepoNames = React.useMemo(() => {
     const uniques = new Set<string>();
@@ -62,21 +73,21 @@ export const SectionedLeftNav = () => {
 
   // Sort repositories alphabetically, then move empty repos to the bottom.
   const sortedRepos = React.useMemo(() => {
-    const alphaSorted = [...visibleRepos].sort((a, b) =>
-      a.repository.name.toLocaleLowerCase().localeCompare(b.repository.name.toLocaleLowerCase()),
+    const alphaSorted = [...visibleReposAndKeys].sort((a, b) =>
+      a.key.toLocaleLowerCase().localeCompare(b.key.toLocaleLowerCase()),
     );
     const reposWithJobs = [];
     const reposWithoutJobs = [];
-    for (const repo of alphaSorted) {
-      const jobs = repo.repository.pipelines;
+    for (const repoWithKey of alphaSorted) {
+      const jobs = repoWithKey.repo.repository.pipelines;
       if (jobs.length > 0 && jobs.some((job) => !isHiddenAssetGroupJob(job.name))) {
-        reposWithJobs.push(repo);
+        reposWithJobs.push(repoWithKey);
       } else {
-        reposWithoutJobs.push(repo);
+        reposWithoutJobs.push(repoWithKey);
       }
     }
     return [...reposWithJobs, ...reposWithoutJobs];
-  }, [visibleRepos]);
+  }, [visibleReposAndKeys]);
 
   if (loading) {
     return <div style={{flex: 1}} />;
@@ -84,19 +95,18 @@ export const SectionedLeftNav = () => {
 
   return (
     <Container>
-      {sortedRepos.map((repo) => {
-        const repoName = repo.repository.name;
-        const repoAddress = buildRepoAddress(repoName, repo.repositoryLocation.name);
-        const addressAsString = repoAddressAsString(repoAddress);
+      {sortedRepos.map(({repo, repoAddress, key}) => {
+        const {name} = repoAddress;
+        const addressAsString = repoAddressAsURLString(repoAddress);
         return (
           <Section
-            key={addressAsString}
+            key={key}
             onToggle={onToggle}
             option={repo}
             repoAddress={repoAddress}
             expanded={sortedRepos.length === 1 || expandedKeys.includes(addressAsString)}
             collapsible={sortedRepos.length > 1}
-            showRepoLocation={duplicateRepoNames.has(repoName)}
+            showRepoLocation={duplicateRepoNames.has(name) && name !== DUNDER_REPO_NAME}
             match={match?.repoAddress === repoAddress ? match : null}
           />
         );
@@ -164,6 +174,9 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
     );
   };
 
+  const {name: repoName, location: repoLocation} = repoAddress;
+  const isDunderName = repoName === DUNDER_REPO_NAME;
+
   return (
     <Box background={Colors.Gray100} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
       <SectionHeader
@@ -183,9 +196,9 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
           <RepoNameContainer>
             <Box flex={{direction: 'column'}} style={{flex: 1, minWidth: 0}}>
               <RepoName style={{fontWeight: 500}} data-tooltip={option.repository.name}>
-                {option.repository.name}
+                {isDunderName ? repoLocation : repoName}
               </RepoName>
-              {showRepoLocation ? (
+              {showRepoLocation && !isDunderName ? (
                 <RepoLocation data-tooltip={`@${option.repositoryLocation.name}`} $disabled={empty}>
                   @{option.repositoryLocation.name}
                 </RepoLocation>
@@ -222,8 +235,8 @@ type PathMatch = {
 
 const usePathMatch = () => {
   const match = useRouteMatch<PathMatch>([
-    '/workspace/:repoPath/(jobs|pipelines)/:pipelinePath',
-    '/workspace/:repoPath/asset-groups/:groupName',
+    '/locations/:repoPath/(jobs|pipelines)/:pipelinePath',
+    '/locations/:repoPath/asset-groups/:groupName',
   ]);
   const {groupName, repoPath, pipelinePath} = match?.params || {};
 

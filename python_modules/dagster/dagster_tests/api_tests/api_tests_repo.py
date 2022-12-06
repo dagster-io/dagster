@@ -1,4 +1,5 @@
 import string
+import time
 
 from dagster import Int, ScheduleDefinition, op, repository, usable_as_dagster_type
 from dagster._core.definitions.decorators.sensor_decorator import sensor
@@ -28,6 +29,17 @@ def do_input(x):
 @pipeline(name="foo", mode_defs=[default_mode_def_for_test])
 def foo_pipeline():
     do_input(do_something())
+
+
+@lambda_solid
+def forever_solid():
+    while True:
+        time.sleep(10)
+
+
+@pipeline(name="forever", mode_defs=[default_mode_def_for_test])
+def forever_pipeline():
+    forever_solid()
 
 
 @op
@@ -175,6 +187,7 @@ def bar_repo():
             "bar": lambda: bar_pipeline,
             "baz": lambda: baz_pipeline,
             "fail": fail_pipeline,
+            "forever": forever_pipeline,
         },
         "schedules": define_bar_schedules(),
         "partition_sets": define_baz_partitions(),

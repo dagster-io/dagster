@@ -10,7 +10,7 @@ import {
   VirtualizedScheduleRow,
 } from '../workspace/VirtualizedScheduleRow';
 import {RepoRow} from '../workspace/VirtualizedWorkspaceTable';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {OVERVIEW_COLLAPSED_KEY} from './OverviewExpansionKey';
@@ -31,7 +31,7 @@ type RowType =
 export const OverviewScheduleTable: React.FC<Props> = ({repos}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const allKeys = React.useMemo(
-    () => repos.map(({repoAddress}) => repoAddressAsString(repoAddress)),
+    () => repos.map(({repoAddress}) => repoAddressAsHumanString(repoAddress)),
     [repos],
   );
   const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
@@ -43,7 +43,7 @@ export const OverviewScheduleTable: React.FC<Props> = ({repos}) => {
     const flat: RowType[] = [];
     repos.forEach(({repoAddress, schedules}) => {
       flat.push({type: 'header', repoAddress, scheduleCount: schedules.length});
-      const repoKey = repoAddressAsString(repoAddress);
+      const repoKey = repoAddressAsHumanString(repoAddress);
       if (expandedKeys.includes(repoKey)) {
         schedules.forEach((name) => {
           flat.push({type: 'schedule', repoAddress, name});
@@ -85,7 +85,7 @@ export const OverviewScheduleTable: React.FC<Props> = ({repos}) => {
                   start={start}
                   onToggle={onToggle}
                   onToggleAll={onToggleAll}
-                  expanded={expandedKeys.includes(repoAddressAsString(row.repoAddress))}
+                  expanded={expandedKeys.includes(repoAddressAsHumanString(row.repoAddress))}
                   showLocation={duplicateRepoNames.has(row.repoAddress.name)}
                   rightElement={
                     <Tooltip

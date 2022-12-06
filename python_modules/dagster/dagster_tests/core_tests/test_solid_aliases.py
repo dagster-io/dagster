@@ -97,8 +97,8 @@ def test_aliased_solids_context():
     @solid
     def log_things(context):
         solid_value = context.solid.name
-        solid_def_value = context.solid_def.name
-        record[solid_def_value].add(solid_value)
+        op_def_value = context.op_def.name
+        record[op_def_value].add(solid_value)
 
     pipeline = PipelineDefinition(
         solid_defs=[log_things],

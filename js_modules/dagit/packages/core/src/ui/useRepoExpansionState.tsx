@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parsed : []);
@@ -23,7 +23,7 @@ export const useRepoExpansionState = (collapsedKey: string, allKeys: string[]) =
 
   const onToggle = React.useCallback(
     (repoAddress: RepoAddress) => {
-      const key = repoAddressAsString(repoAddress);
+      const key = repoAddressAsHumanString(repoAddress);
       setCollapsedKeys((current) => {
         const nextCollapsedKeys = new Set(current || []);
         if (nextCollapsedKeys.has(key)) {

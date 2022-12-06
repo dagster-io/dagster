@@ -1,4 +1,5 @@
 import sqlalchemy as db
+from packaging.version import parse
 
 import dagster._check as check
 from dagster._core.storage.config import mysql_config
@@ -25,6 +26,8 @@ from ..utils import (
     retry_mysql_connection_fn,
     retry_mysql_creation_fn,
 )
+
+MINIMUM_MYSQL_INTERSECT_VERSION = "8.0.31"
 
 
 class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
@@ -70,6 +73,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self.reindex_events()
             self.reindex_assets()
 
+        self._mysql_version = self.get_server_version()
         super().__init__()
 
     def _init_db(self):
@@ -119,6 +123,17 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def create_clean_storage(conn_string):
         MySQLEventLogStorage.wipe_storage(conn_string)
         return MySQLEventLogStorage(conn_string)
+
+    def get_server_version(self):
+        with self.index_connection() as conn:
+            result_proxy = conn.execute("select version()")
+            row = result_proxy.fetchone()
+            result_proxy.close()
+
+        if not row:
+            return None
+
+        return row[0]
 
     def store_asset_event(self, event):
         # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
@@ -178,6 +193,10 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def end_watch(self, run_id, handler):
         self._event_watcher.unwatch_run(run_id, handler)
+
+    @property
+    def supports_intersect(self):
+        return parse(self._mysql_version) >= parse(MINIMUM_MYSQL_INTERSECT_VERSION)
 
     @property
     def event_watcher(self):

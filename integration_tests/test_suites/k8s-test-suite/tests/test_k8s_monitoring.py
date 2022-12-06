@@ -7,7 +7,7 @@ from dagster_k8s.utils import delete_job
 from dagster_k8s_test_infra.integration_utils import image_pull_policy, launch_run_over_graphql
 from dagster_test.test_project import get_test_project_environments_path
 
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._utils import load_yaml_from_path, merge_dicts
 
@@ -66,16 +66,16 @@ def _launch_run_and_wait_for_resume(
         while True:
             assert time.time() - start_time < 60, "Timed out waiting for run to start"
             run = instance.get_run_by_id(run_id)
-            if run.status == PipelineRunStatus.STARTED:
+            if run.status == DagsterRunStatus.STARTED:
                 break
-            assert run.status == PipelineRunStatus.STARTING
+            assert run.status == DagsterRunStatus.STARTING
             time.sleep(1)
 
         time.sleep(5)
         assert delete_job(get_job_name_from_run_id(run_id), namespace)
 
         poll_for_finished_run(instance, run_id, timeout=120)
-        assert instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
+        assert instance.get_run_by_id(run_id).status == DagsterRunStatus.SUCCESS
     finally:
         if run_id:
             log_run_events(instance, run_id)

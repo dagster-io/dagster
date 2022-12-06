@@ -1,9 +1,17 @@
 # pylint: disable=pointless-statement
 
+from airflow import __version__ as airflow_version
 from airflow.models.dag import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.utils.dates import days_ago
-from airflow.utils.helpers import chain
+
+# pylint: disable=no-name-in-module,import-error
+if airflow_version >= "2.0.0":
+    from airflow.models.baseoperator import chain
+else:
+    from airflow.utils.helpers import chain
+# pylint: enable=no-name-in-module,import-error
+
 from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
 from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_airflow_dag
 
@@ -17,11 +25,18 @@ default_args = {
 
 
 def test_one_task_dag(snapshot):
-    dag = DAG(
-        dag_id="one_task_dag",
-        default_args=default_args,
-        schedule_interval=None,
-    )
+    if airflow_version >= "2.0.0":
+        dag = DAG(
+            dag_id="one_task_dag",
+            default_args=default_args,
+            schedule=None,
+        )
+    else:
+        dag = DAG(
+            dag_id="one_task_dag",
+            default_args=default_args,
+            schedule_interval=None,
+        )
     dummy_operator = DummyOperator(
         task_id="dummy_operator",
         dag=dag,
@@ -37,11 +52,18 @@ def test_one_task_dag(snapshot):
 
 
 def test_two_task_dag_no_dep(snapshot):
-    dag = DAG(
-        dag_id="two_task_dag_no_dep",
-        default_args=default_args,
-        schedule_interval=None,
-    )
+    if airflow_version >= "2.0.0":
+        dag = DAG(
+            dag_id="two_task_dag_no_dep",
+            default_args=default_args,
+            schedule=None,
+        )
+    else:
+        dag = DAG(
+            dag_id="two_task_dag_no_dep",
+            default_args=default_args,
+            schedule_interval=None,
+        )
     dummy_operator_1 = DummyOperator(
         task_id="dummy_operator_1",
         dag=dag,
@@ -61,11 +83,19 @@ def test_two_task_dag_no_dep(snapshot):
 
 
 def test_two_task_dag_with_dep(snapshot):
-    dag = DAG(
-        dag_id="two_task_dag_with_dep",
-        default_args=default_args,
-        schedule_interval=None,
-    )
+    if airflow_version >= "2.0.0":
+        dag = DAG(
+            dag_id="two_task_dag_with_dep",
+            default_args=default_args,
+            schedule=None,
+        )
+    else:
+        dag = DAG(
+            dag_id="two_task_dag_with_dep",
+            default_args=default_args,
+            schedule_interval=None,
+        )
+
     dummy_operator_1 = DummyOperator(
         task_id="dummy_operator_1",
         dag=dag,
@@ -86,11 +116,18 @@ def test_two_task_dag_with_dep(snapshot):
 
 
 def test_diamond_task_dag(snapshot):
-    dag = DAG(
-        dag_id="diamond_task_dag",
-        default_args=default_args,
-        schedule_interval=None,
-    )
+    if airflow_version >= "2.0.0":
+        dag = DAG(
+            dag_id="diamond_task_dag",
+            default_args=default_args,
+            schedule=None,
+        )
+    else:
+        dag = DAG(
+            dag_id="diamond_task_dag",
+            default_args=default_args,
+            schedule_interval=None,
+        )
     dummy_operator_1 = DummyOperator(
         task_id="dummy_operator_1",
         dag=dag,
@@ -122,11 +159,18 @@ def test_diamond_task_dag(snapshot):
 
 
 def test_multi_root_dag(snapshot):
-    dag = DAG(
-        dag_id="multi_root_dag",
-        default_args=default_args,
-        schedule_interval=None,
-    )
+    if airflow_version >= "2.0.0":
+        dag = DAG(
+            dag_id="multi_root_dag",
+            default_args=default_args,
+            schedule=None,
+        )
+    else:
+        dag = DAG(
+            dag_id="multi_root_dag",
+            default_args=default_args,
+            schedule_interval=None,
+        )
     dummy_operator_1 = DummyOperator(
         task_id="dummy_operator_1",
         dag=dag,
@@ -158,11 +202,18 @@ def test_multi_root_dag(snapshot):
 
 
 def test_multi_leaf_dag(snapshot):
-    dag = DAG(
-        dag_id="multi_leaf_dag",
-        default_args=default_args,
-        schedule_interval=None,
-    )
+    if airflow_version >= "2.0.0":
+        dag = DAG(
+            dag_id="multi_leaf_dag",
+            default_args=default_args,
+            schedule=None,
+        )
+    else:
+        dag = DAG(
+            dag_id="multi_leaf_dag",
+            default_args=default_args,
+            schedule_interval=None,
+        )
     dummy_operator_1 = DummyOperator(
         task_id="dummy_operator_1",
         dag=dag,
@@ -193,7 +244,18 @@ def test_multi_leaf_dag(snapshot):
 
 
 def test_complex_dag(snapshot):
-    dag = DAG(dag_id="complex_dag", default_args=default_args, schedule_interval=None)
+    if airflow_version >= "2.0.0":
+        dag = DAG(
+            dag_id="complex_dag",
+            default_args=default_args,
+            schedule=None,
+        )
+    else:
+        dag = DAG(
+            dag_id="complex_dag",
+            default_args=default_args,
+            schedule_interval=None,
+        )
 
     # Create
     create_entry_group = DummyOperator(
@@ -249,10 +311,6 @@ def test_complex_dag(snapshot):
         dag=dag,
     )
     create_tag_template_field_result = DummyOperator(
-        task_id="create_tag_template_field_result",
-        dag=dag,
-    )
-    create_tag_template_field_result2 = DummyOperator(
         task_id="create_tag_template_field_result",
         dag=dag,
     )
@@ -386,7 +444,6 @@ def test_complex_dag(snapshot):
 
     create_tag_template_field >> delete_tag_template_field
     create_tag_template_field >> create_tag_template_field_result
-    create_tag_template_field >> create_tag_template_field_result2
 
     create_tag >> delete_tag
     create_tag >> create_tag_result
@@ -443,11 +500,18 @@ def test_complex_dag(snapshot):
 
 
 def test_one_task_dag_to_job():
-    dag = DAG(
-        dag_id="dag-with.dot-dash",
-        default_args=default_args,
-        schedule_interval=None,
-    )
+    if airflow_version >= "2.0.0":
+        dag = DAG(
+            dag_id="dag-with.dot-dash",
+            default_args=default_args,
+            schedule=None,
+        )
+    else:
+        dag = DAG(
+            dag_id="dag-with.dot-dash",
+            default_args=default_args,
+            schedule_interval=None,
+        )
     dummy_operator = DummyOperator(
         task_id="dummy_operator",
         dag=dag,

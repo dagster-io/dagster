@@ -796,25 +796,44 @@ class SqlEventLogStorage(EventLogStorage):
                 isinstance(event_records_filter.asset_key, AssetKey),
                 "Asset key must be set in event records filter to filter by tags.",
             )
-            intersections = [
-                db.select([AssetEventTagsTable.c.event_id]).where(
-                    db.and_(
-                        AssetEventTagsTable.c.asset_key
-                        == event_records_filter.asset_key.to_string(),
-                        AssetEventTagsTable.c.key == key,
-                        (
-                            AssetEventTagsTable.c.value == value
-                            if isinstance(value, str)
-                            else AssetEventTagsTable.c.value.in_(value)
-                        ),
+            if self.supports_intersect:
+                intersections = [
+                    db.select([AssetEventTagsTable.c.event_id]).where(
+                        db.and_(
+                            AssetEventTagsTable.c.asset_key
+                            == event_records_filter.asset_key.to_string(),
+                            AssetEventTagsTable.c.key == key,
+                            (
+                                AssetEventTagsTable.c.value == value
+                                if isinstance(value, str)
+                                else AssetEventTagsTable.c.value.in_(value)
+                            ),
+                        )
                     )
-                )
-                for key, value in event_records_filter.tags.items()
-            ]
-
-            query = query.where(SqlEventLogStorageTable.c.id.in_(db.intersect(*intersections)))
+                    for key, value in event_records_filter.tags.items()
+                ]
+                query = query.where(SqlEventLogStorageTable.c.id.in_(db.intersect(*intersections)))
 
         return query
+
+    def _apply_tags_table_joins(self, table, tags, asset_key):
+        event_id_col = table.c.id if table == SqlEventLogStorageTable else table.c.event_id
+        for key, value in tags.items():
+            tags_table = AssetEventTagsTable.alias()
+            table = table.join(
+                tags_table,
+                db.and_(
+                    event_id_col == tags_table.c.event_id,
+                    not asset_key or tags_table.c.asset_key == asset_key.to_string(),
+                    tags_table.c.key == key,
+                    (
+                        tags_table.c.value == value
+                        if isinstance(value, str)
+                        else tags_table.c.value.in_(value)
+                    ),
+                ),
+            )
+        return table
 
     def get_event_records(
         self,
@@ -827,12 +846,21 @@ class SqlEventLogStorage(EventLogStorage):
         check.opt_int_param(limit, "limit")
         check.bool_param(ascending, "ascending")
 
-        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
-
         if event_records_filter.asset_key:
             asset_details = next(iter(self._get_assets_details([event_records_filter.asset_key])))
         else:
             asset_details = None
+
+        if event_records_filter.tags and not self.supports_intersect:
+            table = self._apply_tags_table_joins(
+                SqlEventLogStorageTable, event_records_filter.tags, event_records_filter.asset_key
+            )
+        else:
+            table = SqlEventLogStorageTable
+
+        query = db.select(
+            [SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]
+        ).select_from(table)
 
         query = self._apply_filter_to_query(
             query=query,
@@ -869,6 +897,10 @@ class SqlEventLogStorage(EventLogStorage):
         return event_records
 
     def supports_event_consumer_queries(self):
+        return True
+
+    @property
+    def supports_intersect(self):
         return True
 
     def get_logs_for_all_runs_by_log_id(
@@ -1335,7 +1367,7 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetEventTagsTable.c.event_timestamp
                     > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
                 )
-        else:
+        elif self.supports_intersect:
 
             def get_tag_filter_query(tag_key, tag_value):
                 filter_query = db.select([AssetEventTagsTable.c.event_id]).where(
@@ -1368,6 +1400,21 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetEventTagsTable.c.event_id.in_(db.intersect(*intersections)),
                 )
             )
+        else:
+            table = self._apply_tags_table_joins(AssetEventTagsTable, filter_tags, asset_key)
+            tags_query = db.select(
+                [
+                    AssetEventTagsTable.c.key,
+                    AssetEventTagsTable.c.value,
+                    AssetEventTagsTable.c.event_id,
+                ]
+            ).select_from(table)
+
+            if asset_details and asset_details.last_wipe_timestamp:
+                tags_query = tags_query.where(
+                    AssetEventTagsTable.c.event_timestamp
+                    > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+                )
 
         if filter_event_id is not None:
             tags_query = tags_query.where(AssetEventTagsTable.c.event_id == filter_event_id)

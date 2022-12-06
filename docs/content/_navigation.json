@@ -3,7 +3,12 @@
     "title": "Getting Started",
     "icon": "Flag",
     "path": "/getting-started",
+    "isDefaultOpen": true,
     "children": [
+      {
+        "title": "Hello Dagster",
+        "path": "/getting-started/hello-dagster"
+      },
       {
         "title": "Installation",
         "path": "/getting-started/install"
@@ -71,7 +76,6 @@
     "title": "Concepts",
     "icon": "Concepts",
     "path": "/concepts",
-    "isDefaultOpen": true,
     "children": [
       {
         "title": "Assets",
@@ -602,7 +606,17 @@
       },
       {
         "title": "Jupyter / Papermill",
-        "path": "/integrations/dagstermill"
+        "path": "/integrations/dagstermill",
+        "children": [
+          {
+            "title": "Jupyter, Papermill + Dagster tutorial",
+            "path": "/integrations/dagstermill/using-notebooks-with-dagster"
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/dagstermill/reference"
+          }
+        ]
       },
       {
         "title": "Pandas",
@@ -615,6 +629,10 @@
       {
         "title": "PySpark",
         "path": "/integrations/spark"
+      },
+      {
+        "title": "Snowflake",
+        "path": "/integrations/snowflake"
       },
       {
         "title": "All integrations",

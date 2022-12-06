@@ -909,7 +909,7 @@ def test_with_hooks_on_invoked_solid_fails():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="attempted to call hook method for InvokedSolidOutputHandle.",
+        match="attempted to call hook method for InvokedNodeOutputHandle.",
     ):
 
         @job
@@ -929,7 +929,7 @@ def test_iterating_over_dynamic_outputs_fails():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Attempted to iterate over an InvokedSolidOutputHandle.",
+        match="Attempted to iterate over an InvokedNodeOutputHandle.",
     ):
 
         @job
@@ -950,7 +950,7 @@ def test_indexing_into_dynamic_outputs_fails():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Attempted to index in to an InvokedSolidOutputHandle.",
+        match="Attempted to index in to an InvokedNodeOutputHandle.",
     ):
 
         @job
@@ -966,7 +966,7 @@ def test_aliasing_invoked_dynamic_output_fails():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="attempted to call alias method for InvokedSolidOutputHandle.",
+        match="attempted to call alias method for InvokedNodeOutputHandle.",
     ):
 
         @job
