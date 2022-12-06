@@ -105,3 +105,28 @@ def partitioned_dataset_op(context):
     )
     return df
 ```
+
+### Observable source assets
+
+<PyObject object="SourceAsset" /> objects may have a user-defiend _observation function_
+that returns a <PyObject object="LogicalVersion" />. Whenever the observation
+function is run, an `AssetObservation` will be generated for the source asset
+and tagged with the returned logical version. The logical version is used in
+staleness calculations for downstream assets.
+
+The <PyObject object="observable_source_asset" /> decorator provides a conveninet way to define source assets with observation functions. The below observable source asset takes a file hash and returns it as the logical version. Every time you run the observation function, a new observation will be generated with this hash set as logical verison.
+
+```python file=/concepts/assets/observable_source_assets.py startafter=start endbefore=end
+from datetime import datetime
+from dagster import LogicalVersion, observable_source_asset
+
+@observable_source_asset
+def foo_source_asset():
+  return LogicalVersion(str(datetime.now()))
+```
+
+When the file content changes, the hash and therefore the logical version will change-- this will notify Dagster that downstream assets derived from an older value (i.e. a different logical version) of this source asset are stale.
+
+Source asset observations can be triggered via the "Observe sources" button in the Dagit graph explorer view. Note that this button will only be visible if at least one source asset in the current graph defines an observation function.
+
+<Screenshot here>
