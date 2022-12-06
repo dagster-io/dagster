@@ -78,9 +78,7 @@ def test_active_execution_plan():
         assert len(steps) == 0  # cant progress
 
         active_execution.mark_success(step_1.key)
-        active_execution.mark_step_produced_output(
-            StepOutputHandle(step_1.key, "result")
-        )
+        active_execution.mark_step_produced_output(StepOutputHandle(step_1.key, "result"))
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 2
@@ -93,17 +91,13 @@ def test_active_execution_plan():
         assert len(steps) == 0  # cant progress
 
         active_execution.mark_success(step_2.key)
-        active_execution.mark_step_produced_output(
-            StepOutputHandle(step_2.key, "result")
-        )
+        active_execution.mark_step_produced_output(StepOutputHandle(step_2.key, "result"))
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 0  # cant progress
 
         active_execution.mark_success(step_3.key)
-        active_execution.mark_step_produced_output(
-            StepOutputHandle(step_3.key, "result")
-        )
+        active_execution.mark_step_produced_output(StepOutputHandle(step_3.key, "result"))
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
@@ -136,9 +130,7 @@ def test_failing_execution_plan():
         assert len(steps) == 0  # cant progress
 
         active_execution.mark_success(step_1.key)
-        active_execution.mark_step_produced_output(
-            StepOutputHandle(step_1.key, "result")
-        )
+        active_execution.mark_step_produced_output(StepOutputHandle(step_1.key, "result"))
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 2
@@ -151,18 +143,14 @@ def test_failing_execution_plan():
         assert len(steps) == 0  # cant progress
 
         active_execution.mark_success(step_2.key)
-        active_execution.mark_step_produced_output(
-            StepOutputHandle(step_2.key, "result")
-        )
+        active_execution.mark_step_produced_output(StepOutputHandle(step_2.key, "result"))
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 0  # cant progress
 
         # uh oh failure
         active_execution.mark_failed(step_3.key)
-        active_execution.mark_step_produced_output(
-            StepOutputHandle(step_3.key, "result")
-        )
+        active_execution.mark_step_produced_output(StepOutputHandle(step_3.key, "result"))
 
         # cant progres to 4th step
         steps = active_execution.get_steps_to_execute()
@@ -207,9 +195,7 @@ def test_retries_active_execution():
         assert steps[0].key == "return_two"
 
         active_execution.mark_success(step_1.key)
-        active_execution.mark_step_produced_output(
-            StepOutputHandle(step_1.key, "result")
-        )
+        active_execution.mark_step_produced_output(StepOutputHandle(step_1.key, "result"))
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 2
@@ -222,9 +208,7 @@ def test_retries_active_execution():
         assert len(steps) == 0  # cant progress
 
         active_execution.mark_success(step_2.key)
-        active_execution.mark_step_produced_output(
-            StepOutputHandle(step_2.key, "result")
-        )
+        active_execution.mark_step_produced_output(StepOutputHandle(step_2.key, "result"))
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 0  # cant progress
@@ -401,10 +385,7 @@ def test_lost_steps():
             # failure assumed for start step - so rest should skip
             steps_to_abandon = active_execution.get_steps_to_abandon()
             while steps_to_abandon:
-                _ = [
-                    active_execution.mark_abandoned(step.key)
-                    for step in steps_to_abandon
-                ]
+                _ = [active_execution.mark_abandoned(step.key) for step in steps_to_abandon]
                 steps_to_abandon = active_execution.get_steps_to_abandon()
 
             assert active_execution.is_complete
@@ -548,9 +529,7 @@ def test_configured_input_should_skip_step():
     def my_job():
         op_should_not_skip(one())
 
-    run_config = {
-        "ops": {"op_should_not_skip": {"inputs": {"input_two": {"value": "2"}}}}
-    }
+    run_config = {"ops": {"op_should_not_skip": {"inputs": {"input_two": {"value": "2"}}}}}
     my_job.execute_in_process(run_config=run_config)
     assert called.get("yup")
 

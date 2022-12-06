@@ -87,9 +87,7 @@ def test_execution_plan_reexecution():
         known_state=known_state,
     )
 
-    subset_plan = execution_plan.build_subset_plan(
-        ["add_two"], pipeline_def, resolved_run_config
-    )
+    subset_plan = execution_plan.build_subset_plan(["add_two"], pipeline_def, resolved_run_config)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
         execution_plan=subset_plan,
@@ -106,14 +104,10 @@ def test_execution_plan_reexecution():
         instance=instance,
     )
     assert not os.path.exists(
-        os.path.join(
-            instance.storage_directory(), pipeline_run.run_id, "add_one", "result"
-        )
+        os.path.join(instance.storage_directory(), pipeline_run.run_id, "add_one", "result")
     )
     with open(
-        os.path.join(
-            instance.storage_directory(), pipeline_run.run_id, "add_two", "result"
-        ),
+        os.path.join(instance.storage_directory(), pipeline_run.run_id, "add_two", "result"),
         "rb",
     ) as read_obj:
         assert pickle.load(read_obj) == 6
@@ -174,9 +168,7 @@ def test_execution_plan_reexecution_with_in_memory():
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_plan(
-            execution_plan.build_subset_plan(
-                ["add_two"], pipeline_def, resolved_run_config
-            ),
+            execution_plan.build_subset_plan(["add_two"], pipeline_def, resolved_run_config),
             InMemoryPipeline(pipeline_def),
             run_config=run_config,
             pipeline_run=pipeline_run,

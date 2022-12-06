@@ -93,9 +93,7 @@ def test_execution_plan_for_graph_with_config_mapping():
             }
         }
     }
-    execution_plan = create_execution_plan(
-        composite_job_with_config_mapping, run_config=run_config
-    )
+    execution_plan = create_execution_plan(composite_job_with_config_mapping, run_config=run_config)
     instance = DagsterInstance.ephemeral()
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=composite_job_with_config_mapping,

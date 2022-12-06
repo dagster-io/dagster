@@ -81,9 +81,7 @@ def test_host_run_worker():
 
     with instance_for_test() as instance:
         run_config = {
-            "solids": {
-                "op_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}
-            },
+            "solids": {"op_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}},
             "execution": {"multiprocess": None},
         }
         execution_plan = create_execution_plan(
@@ -100,9 +98,7 @@ def test_host_run_worker():
         recon_pipeline = reconstructable(job_with_mode)
 
         execute_run_host_mode(
-            ExplodingTestPipeline(
-                recon_pipeline.repository, recon_pipeline.pipeline_name
-            ),
+            ExplodingTestPipeline(recon_pipeline.repository, recon_pipeline.pipeline_name),
             pipeline_run,
             instance,
             raise_on_error=True,
@@ -112,8 +108,7 @@ def test_host_run_worker():
 
         logs = instance.all_logs(pipeline_run.run_id)
         assert any(
-            e.is_dagster_event
-            and "Executing steps using multiprocess executor" in e.message
+            e.is_dagster_event and "Executing steps using multiprocess executor" in e.message
             for e in logs
         )
 
@@ -134,9 +129,7 @@ def test_custom_executor_fn():
 
     with instance_for_test() as instance:
         run_config = {
-            "solids": {
-                "op_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}
-            },
+            "solids": {"op_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}},
         }
         execution_plan = create_execution_plan(
             job_with_mode,
@@ -152,9 +145,7 @@ def test_custom_executor_fn():
         recon_pipeline = reconstructable(job_with_mode)
 
         execute_run_host_mode(
-            ExplodingTestPipeline(
-                recon_pipeline.repository, recon_pipeline.pipeline_name
-            ),
+            ExplodingTestPipeline(recon_pipeline.repository, recon_pipeline.pipeline_name),
             pipeline_run,
             instance,
             executor_defs=[test_executor],
@@ -165,7 +156,6 @@ def test_custom_executor_fn():
 
         logs = instance.all_logs(pipeline_run.run_id)
         assert any(
-            e.is_dagster_event
-            and "Executing steps using multiprocess executor" in e.message
+            e.is_dagster_event and "Executing steps using multiprocess executor" in e.message
             for e in logs
         )

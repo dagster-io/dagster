@@ -50,11 +50,18 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, execute_pipeline_iterator, pipeline, reexecute_pipeline
+from dagster._legacy import (
+    ModeDefinition,
+    execute_pipeline,
+    execute_pipeline_iterator,
+    pipeline,
+    reexecute_pipeline,
+    solid,
+)
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
 
-RUN_CONFIG_BASE = {"ops": {"return_two": {"config": {"a": "b"}}}}
+RUN_CONFIG_BASE = {"solids": {"return_two": {"config": {"a": "b"}}}}
 
 
 def make_run_config(scratch_dir, mode):
@@ -81,9 +88,7 @@ class RequestRetryLocalExternalStepLauncher(LocalExternalStepLauncher):
         if step_context.previous_attempt_count == 0:
             raise RetryRequested()
         else:
-            return super(RequestRetryLocalExternalStepLauncher, self).launch_step(
-                step_context
-            )
+            return super(RequestRetryLocalExternalStepLauncher, self).launch_step(step_context)
 
 
 @resource(config_schema=local_external_step_launcher.config_schema)
@@ -99,9 +104,7 @@ def _define_failing_job(has_policy: bool, is_explicit: bool = True):
     def retry_op(context):
         if context.retry_number < 3:
             if is_explicit:
-                raise Failure(
-                    description="some failure description", metadata={"foo": 1.23}
-                )
+                raise Failure(description="some failure description", metadata={"foo": 1.23})
             else:
                 _ = "x" + 1
         return context.retry_number
@@ -132,14 +135,10 @@ def _define_failure_job():
 
 def _define_dynamic_job(launch_initial, launch_final):
     initial_launcher = (
-        local_external_step_launcher
-        if launch_initial
-        else ResourceDefinition.mock_resource()
+        local_external_step_launcher if launch_initial else ResourceDefinition.mock_resource()
     )
     final_launcher = (
-        local_external_step_launcher
-        if launch_final
-        else ResourceDefinition.mock_resource()
+        local_external_step_launcher if launch_final else ResourceDefinition.mock_resource()
     )
 
     @op(required_resource_keys={"initial_launcher"}, out=DynamicOut(int))
@@ -171,14 +170,10 @@ def _define_dynamic_job(launch_initial, launch_final):
 
 def _define_basic_job(launch_initial, launch_final):
     initial_launcher = (
-        local_external_step_launcher
-        if launch_initial
-        else ResourceDefinition.mock_resource()
+        local_external_step_launcher if launch_initial else ResourceDefinition.mock_resource()
     )
     final_launcher = (
-        local_external_step_launcher
-        if launch_final
-        else ResourceDefinition.mock_resource()
+        local_external_step_launcher if launch_final else ResourceDefinition.mock_resource()
     )
 
     @op(required_resource_keys={"initial_launcher"})
@@ -230,19 +225,19 @@ def define_basic_job_last_launched():
     return _define_basic_job(False, True)
 
 
-def define_basic_job(mode_name: str) -> JobDefinition:
-    @op(
+def define_basic_pipeline():
+    @solid(
         required_resource_keys=set(["first_step_launcher"]),
         config_schema={"a": Field(str)},
     )
     def return_two(_):
         return 2
 
-    @op(required_resource_keys=set(["second_step_launcher"]))
+    @solid(required_resource_keys=set(["second_step_launcher"]))
     def add_one(_, num):
         return num + 1
 
-    @job(
+    @pipeline(
         mode_defs=[
             ModeDefinition(
                 "external",
@@ -270,19 +265,19 @@ def define_basic_job(mode_name: str) -> JobDefinition:
             ),
         ]
     )
-    def basic_job():
+    def basic_pipeline():
         add_one(return_two())
 
-    return basic_job
+    return basic_pipeline
 
 
-def define_sleepy_job():
-    @op(
+def define_sleepy_pipeline():
+    @solid(
         config_schema={"tempfile": Field(String)},
         required_resource_keys=set(["first_step_launcher"]),
     )
-    def sleepy_op(context):
-        with open(context.op_config["tempfile"], "w", encoding="utf8") as ff:
+    def sleepy_solid(context):
+        with open(context.solid_config["tempfile"], "w", encoding="utf8") as ff:
             ff.write("yup")
         start_time = time.time()
         while True:
@@ -290,45 +285,48 @@ def define_sleepy_job():
             if time.time() - start_time > 120:
                 raise Exception("Timed out")
 
-    @job(
-        resource_defs={
-            "first_step_launcher": local_external_step_launcher,
-            "io_manager": fs_io_manager,
-        }
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                "external",
+                resource_defs={
+                    "first_step_launcher": local_external_step_launcher,
+                    "io_manager": fs_io_manager,
+                },
+            ),
+        ]
     )
-    def sleepy_job():
-        sleepy_op()
+    def sleepy_pipeline():
+        sleepy_solid()
 
-    return sleepy_job
+    return sleepy_pipeline
 
 
 def initialize_step_context(scratch_dir, instance):
-    run = DagsterRun(
-        pipeline_name="foo_job",
+    pipeline_run = DagsterRun(
+        pipeline_name="foo_pipeline",
         run_id=str(uuid.uuid4()),
         run_config=make_run_config(scratch_dir, "external"),
         mode="external",
     )
 
-    recon_job = reconstructable(define_basic_job)
+    recon_pipeline = reconstructable(define_basic_pipeline)
 
-    plan = create_execution_plan(
-        recon_job, run.run_config, mode="external"
-    )
+    plan = create_execution_plan(recon_pipeline, pipeline_run.run_config, mode="external")
 
     initialization_manager = PlanExecutionContextManager(
-        pipeline=recon_job,
+        pipeline=recon_pipeline,
         execution_plan=plan,
-        run_config=run.run_config,
-        pipeline_run=run,
+        run_config=pipeline_run.run_config,
+        pipeline_run=pipeline_run,
         instance=instance,
         retry_mode=RetryMode.DISABLED,
     )
     for _ in initialization_manager.prepare_context():
         pass
-    job_context = initialization_manager.get_context()
+    pipeline_context = initialization_manager.get_context()
 
-    step_context = job_context.for_step(
+    step_context = pipeline_context.for_step(
         plan.get_step_by_key("return_two"),
         KnownExecutionState(),
     )
@@ -368,10 +366,10 @@ def test_local_external_step_launcher():
 
 
 @pytest.mark.parametrize("mode", ["external", "internal_and_external"])
-def test_job(mode):
+def test_pipeline(mode):
     with tempfile.TemporaryDirectory() as tmpdir:
-        result = execute_job(
-            reconstructable(define_basic_job),
+        result = execute_pipeline(
+            pipeline=reconstructable(define_basic_pipeline),
             mode=mode,
             run_config=make_run_config(tmpdir, mode),
         )
@@ -390,7 +388,8 @@ def test_job(mode):
 def test_dynamic_job(job_fn):
     with tempfile.TemporaryDirectory() as tmpdir:
         with instance_for_test() as instance:
-            result = reconstructable(job_fn).execute_in_process(
+            result = execute_pipeline(
+                pipeline=reconstructable(job_fn),
                 run_config={
                     "resources": {
                         "initial_launcher": {
@@ -429,7 +428,8 @@ def test_reexecution(job_fn):
             }
         }
         with instance_for_test() as instance:
-            run1 = reconstructable(job_fn).execute_in_process(
+            run1 = execute_pipeline(
+                pipeline=reconstructable(job_fn),
                 run_config=run_config,
                 instance=instance,
             )
@@ -455,7 +455,8 @@ def test_retry_policy():
             }
         }
         with instance_for_test() as instance:
-            run = reconstructable(_define_retry_job).execute_in_process(
+            run = execute_pipeline(
+                pipeline=reconstructable(_define_retry_job),
                 run_config=run_config,
                 instance=instance,
             )
@@ -476,7 +477,8 @@ def test_explicit_failure():
             }
         }
         with instance_for_test() as instance:
-            run = reconstructable(_define_failure_job).execute_in_process(
+            run = execute_pipeline(
+                pipeline=reconstructable(_define_failure_job),
                 run_config=run_config,
                 instance=instance,
                 raise_on_error=False,
@@ -497,14 +499,13 @@ def test_arbitrary_error():
             }
         }
         with instance_for_test() as instance:
-            run = reconstructable(_define_error_job).execute_in_process(
+            run = execute_pipeline(
+                pipeline=reconstructable(_define_error_job),
                 run_config=run_config,
                 instance=instance,
                 raise_on_error=False,
             )
-            failure_events = [
-                e for e in run.event_list if e.event_type_value == "STEP_FAILURE"
-            ]
+            failure_events = [e for e in run.event_list if e.event_type_value == "STEP_FAILURE"]
             assert len(failure_events) == 1
             fd = run.result_for_solid("retry_op").failure_data
             assert fd.error.cause.cls_name == "TypeError"
@@ -513,7 +514,8 @@ def test_arbitrary_error():
 def test_launcher_requests_retry():
     mode = "request_retry"
     with tempfile.TemporaryDirectory() as tmpdir:
-        result = reconstructable(define_basic_job).execute_in_process(
+        result = execute_pipeline(
+            pipeline=reconstructable(define_basic_pipeline),
             mode=mode,
             run_config=make_run_config(tmpdir, mode),
         )
@@ -544,19 +546,17 @@ def test_interrupt_step_launcher(mode):
                     },
                     "io_manager": {"config": {"base_dir": tmpdir}},
                 },
-                "ops": {"sleepy_op": {"config": {"tempfile": success_tempfile}}},
+                "solids": {"sleepy_solid": {"config": {"tempfile": success_tempfile}}},
             }
 
-            interrupt_thread = Thread(
-                target=_send_interrupt_thread, args=(success_tempfile,)
-            )
+            interrupt_thread = Thread(target=_send_interrupt_thread, args=(success_tempfile,))
 
             interrupt_thread.start()
 
             results = []
 
             for result in execute_pipeline_iterator(
-                pipeline=reconstructable(define_sleepy_job),
+                pipeline=reconstructable(define_sleepy_pipeline),
                 mode=mode,
                 run_config=sleepy_run_config,
             ):
@@ -573,8 +573,9 @@ def test_multiproc_launcher_requests_retry():
     with tempfile.TemporaryDirectory() as tmpdir:
         run_config = make_run_config(tmpdir, mode)
         run_config["execution"] = {"multiprocess": {}}
-        result = DagsterInstance.local_temp(tmpdir).execute_in_process(
-            pipeline=reconstructable(define_basic_job),
+        result = execute_pipeline(
+            instance=DagsterInstance.local_temp(tmpdir),
+            pipeline=reconstructable(define_basic_pipeline),
             mode=mode,
             run_config=run_config,
         )
@@ -599,14 +600,14 @@ def test_multiproc_launcher_with_repository_load_data():
         with instance_for_test() as instance:
             instance.run_storage.kvs_set({"val": "INITIAL_VALUE"})
             recon_repo = ReconstructableRepository.for_file(
-                file_relative_path(__file__, "test_external_step.py"),
-                fn_name="pending_repo",
+                file_relative_path(__file__, "test_external_step.py"), fn_name="pending_repo"
             )
-            recon_job = ReconstructablePipeline(
+            recon_pipeline = ReconstructablePipeline(
                 repository=recon_repo, pipeline_name="all_asset_job"
             )
 
-            run = recon_job.execute_in_process(
+            run = execute_pipeline(
+                pipeline=recon_pipeline,
                 run_config=run_config,
                 instance=instance,
             )
@@ -615,9 +616,7 @@ def test_multiproc_launcher_with_repository_load_data():
 
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
-    _cacheable_data = AssetsDefinitionCacheableData(
-        keys_by_output_name={"result": AssetKey("foo")}
-    )
+    _cacheable_data = AssetsDefinitionCacheableData(keys_by_output_name={"result": AssetKey("foo")})
 
     def compute_cacheable_data(self):
         # used for tracking how many times this function gets called over an execution

@@ -106,9 +106,7 @@ def test_reentrant_execute_plan():
         assert context.get_tag("foo") == "bar"
         called["yup"] = True
 
-    pipeline_def = GraphDefinition(
-        name="has_tag_pipeline", node_defs=[has_tag]
-    ).to_job()
+    pipeline_def = GraphDefinition(name="has_tag_pipeline", node_defs=[has_tag]).to_job()
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline_def)
     pipeline_run = instance.create_run_for_pipeline(
@@ -124,8 +122,6 @@ def test_reentrant_execute_plan():
     assert called["yup"]
 
     assert (
-        find_events(step_events, event_type="STEP_OUTPUT")[0].logging_tags[
-            "pipeline_tags"
-        ]
+        find_events(step_events, event_type="STEP_OUTPUT")[0].logging_tags["pipeline_tags"]
         == "{'foo': 'bar'}"
     )
