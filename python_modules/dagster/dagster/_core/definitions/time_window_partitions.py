@@ -1,5 +1,6 @@
 import json
 import re
+import warnings
 from datetime import datetime
 from typing import (
     Any,
@@ -261,6 +262,18 @@ class TimeWindowPartitionsDefinition(
     def get_partition_keys_in_range(self, partition_key_range: PartitionKeyRange) -> Sequence[str]:
         start_time = self.start_time_for_partition_key(partition_key_range.start)
         end_time = self.start_time_for_partition_key(partition_key_range.end)
+
+        partition_keys = self.get_partition_keys()
+        keys_exist = {
+            partition_key_range.start: partition_key_range.start in partition_keys,
+            partition_key_range.end: partition_key_range.end in partition_keys,
+        }
+        if not all(keys_exist.values()):
+            warnings.warn(
+                f"""Partition range {partition_key_range.start} to {partition_key_range.end} is
+                not a valid range. Nonexistent partition keys:
+                {list(key for key in keys_exist if keys_exist[key] is False)}"""
+            )
 
         result: List[str] = []
         for time_window in self._iterate_time_windows(start_time):

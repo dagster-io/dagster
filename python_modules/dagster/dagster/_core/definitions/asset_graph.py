@@ -1,4 +1,3 @@
-import warnings
 from collections import defaultdict, deque
 from typing import (
     TYPE_CHECKING,
@@ -26,7 +25,6 @@ from .partition import PartitionsDefinition
 from .partition_key_range import PartitionKeyRange
 from .partition_mapping import PartitionMapping, infer_partition_mapping
 from .source_asset import SourceAsset
-from .time_window_partitions import TimeWindowPartitionsDefinition
 
 if TYPE_CHECKING:
     from dagster._core.host_representation.external_data import ExternalAssetNode

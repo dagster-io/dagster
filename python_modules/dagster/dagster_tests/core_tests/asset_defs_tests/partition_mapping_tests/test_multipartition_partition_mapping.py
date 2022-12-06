@@ -4,11 +4,11 @@ from dagster import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
     TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
-    StaticPartitionsDefinition,
-    MultiPartitionsDefinition,
-    MultiPartitionKey,
 )
 from dagster._core.definitions.partition import DefaultPartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange

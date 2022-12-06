@@ -1,6 +1,5 @@
 import inspect
 import json
-import warnings
 from collections import OrderedDict, defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -720,6 +719,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 upstream_partitions_def=from_asset.partitions_def,
             )
         )
+        print(downstream_partition_key_subset.get_partition_keys())
 
         partition_keys = to_partitions_def.get_partition_keys()
         if not all(
@@ -747,7 +747,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         #         warnings.warn(error_msg)
 
         if isinstance(to_partitions_def, TimeWindowPartitionsDefinition):
-            return to_partitions_def.get_partition_keys_in_range(downstream_partition_key_subset)  # type: ignore[attr-defined]
+            return list(downstream_partition_key_subset.get_partition_keys())
+            # return to_partitions_def.get_partition_keys_in_range(downstream_partition_key_subset)  # type: ignore[attr-defined]
 
         # Not a time-window partition definition
         # downstream_partitions = partition_keys[

@@ -6,7 +6,6 @@ from datetime import datetime, time, timedelta
 from enum import Enum
 from typing import (
     Any,
-    Set,
     Callable,
     Generic,
     Iterable,
@@ -15,6 +14,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Set,
     TypeVar,
     Union,
     cast,
@@ -1035,9 +1035,10 @@ class PartitionsSubset(ABC):
     def serialize(self) -> str:
         raise NotImplementedError()
 
-    def __eq__(self, other: "PartitionsSubset"):
+    def __eq__(self, other):
         return (
-            self.get_partition_keys_not_in_subset == other.get_partition_keys_not_in_subset
+            isinstance(other, PartitionsSubset)
+            and self.get_partition_keys_not_in_subset == other.get_partition_keys_not_in_subset
             and self.get_partition_keys == other.get_partition_keys
         )
 

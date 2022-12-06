@@ -1,20 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import Optional, cast, Union
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, Union, cast
 
 import dagster._check as check
 from dagster._annotations import experimental, public
-from dagster._core.definitions.partition import (
-    PartitionsDefinition,
-    DefaultPartitionsSubset,
-    PartitionsSubset,
-)
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.multi_dimensional_partitions import (
-    MultiPartitionsDefinition,
     MultiPartitionKey,
-    PartitionDimensionDefinition,
+    MultiPartitionsDefinition,
 )
+from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._serdes import whitelist_for_serdes
 
@@ -222,10 +216,12 @@ class SingleDimensionToMultiPartitionMapping(PartitionMapping):
 
     def get_upstream_partitions_for_partition_range(
         self,
-        downstream_partition_key_range: PartitionKeyRange,
+        downstream_partition_key_range: Optional[PartitionKeyRange],
         downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionKeyRange:
+        if downstream_partition_key_range is None:
+            check.failed("Must provide downstream partition key range")
         if not (
             isinstance(downstream_partition_key_range.start, MultiPartitionKey)
             and isinstance(downstream_partition_key_range.end, MultiPartitionKey)
@@ -311,7 +307,7 @@ class SingleDimensionToMultiPartitionMapping(PartitionMapping):
                 upstream_partition_key_subset
             )
         else:
-            upstream_keys = upstream_partition_key_subset.get_partition_keys()
+            upstream_keys = list(upstream_partition_key_subset.get_partition_keys())
 
         matching_keys = []
         for key in downstream_partitions_def.get_partition_keys():
