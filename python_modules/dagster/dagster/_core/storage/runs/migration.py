@@ -8,7 +8,7 @@ from dagster._serdes import deserialize_as
 
 from ...execution.backfill import PartitionBackfill
 from ...execution.bulk_actions import BulkActionType
-from ..pipeline_run import DagsterRunStatus, PipelineRun
+from ..pipeline_run import DagsterRun, DagsterRunStatus
 from ..runs.base import RunStorage
 from ..runs.schema import BulkActionsTable, RunTagsTable, RunsTable
 from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, REPOSITORY_LABEL_TAG
@@ -187,12 +187,12 @@ def migrate_run_repo_tags(run_storage: RunStorage, print_fn=None):
 
             has_more = len(rows) >= CHUNK_SIZE
             for row in rows:
-                run = deserialize_as(row[0], PipelineRun)
+                run = deserialize_as(row[0], DagsterRun)
                 cursor = row[1]
                 write_repo_tag(conn, run)
 
 
-def write_repo_tag(conn, run: PipelineRun):
+def write_repo_tag(conn, run: DagsterRun):
     if not run.external_pipeline_origin:
         # nothing to do
         return

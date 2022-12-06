@@ -37,7 +37,7 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.events.utils import filter_dagster_events_from_cli_logs
 from dagster._core.execution.plan.objects import StepFailureData, UserFailureData
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import pack_value, serialize_dagster_namedtuple, unpack_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -312,7 +312,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
 
         check.inst(
             pipeline_run,
-            PipelineRun,
+            DagsterRun,
             "Could not load run {}".format(execute_step_args.pipeline_run_id),
         )
         step_key = execute_step_args.step_keys_to_execute[0]

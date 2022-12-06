@@ -4,7 +4,7 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.execution.context.compute import SolidExecutionContext
-from dagster._core.storage.pipeline_run import DagsterRun, PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 
 
 def test_op_execution_context():
@@ -17,7 +17,7 @@ def test_op_execution_context():
         assert context.op_config is None
         check.inst(context.op_def, OpDefinition)
 
-        check.inst(context.run, PipelineRun)
+        check.inst(context.run, DagsterRun)
         assert context.job_name == "foo"
         assert context.pipeline_def.name == "foo"
         check.inst(context.pipeline_def, PipelineDefinition)
@@ -43,7 +43,7 @@ def test_solid_execution_context():
 
         check.inst(context.op_def, OpDefinition)
 
-        check.inst(context.run, PipelineRun)
+        check.inst(context.run, DagsterRun)
         assert context.job_name == "foo"
         assert context.pipeline_def.name == "foo"
         check.inst(context.pipeline_def, PipelineDefinition)

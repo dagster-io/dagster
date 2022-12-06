@@ -8,8 +8,8 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
+    DagsterRun,
     DagsterRunStatus,
-    PipelineRun,
     RunsFilter,
 )
 from dagster._core.storage.tags import PRIORITY_TAG
@@ -32,7 +32,7 @@ class _TagConcurrencyLimitsCounter:
 
     def __init__(self, tag_concurrency_limits, in_progress_runs):
         check.opt_list_param(tag_concurrency_limits, "tag_concurrency_limits", of_type=dict)
-        check.list_param(in_progress_runs, "in_progress_runs", of_type=PipelineRun)
+        check.list_param(in_progress_runs, "in_progress_runs", of_type=DagsterRun)
 
         self._key_limits = {}
         self._key_value_limits = {}
@@ -212,7 +212,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
     def _dequeue_run(
         self,
         instance: DagsterInstance,
-        run: PipelineRun,
+        run: DagsterRun,
         workspace_process_context: IWorkspaceProcessContext,
     ):
         # double check that the run is still queued before dequeing

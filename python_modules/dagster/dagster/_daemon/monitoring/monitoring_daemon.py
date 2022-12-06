@@ -8,8 +8,8 @@ from dagster._core.events import DagsterEventType
 from dagster._core.launcher import WorkerStatus
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
+    DagsterRun,
     DagsterRunStatus,
-    PipelineRun,
     RunsFilter,
 )
 from dagster._core.workspace.context import IWorkspace, IWorkspaceProcessContext
@@ -45,7 +45,7 @@ def count_resume_run_attempts(instance: DagsterInstance, run_id: str):
 def monitor_started_run(
     instance: DagsterInstance,
     workspace: IWorkspace,
-    run: PipelineRun,
+    run: DagsterRun,
     logger: logging.Logger,
 ):
     check.invariant(run.status == DagsterRunStatus.STARTED)

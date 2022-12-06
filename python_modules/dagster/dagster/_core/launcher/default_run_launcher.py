@@ -5,7 +5,7 @@ import dagster._seven as seven
 from dagster import Bool, Field
 from dagster import _check as check
 from dagster._core.errors import DagsterInvariantViolationError, DagsterLaunchFailedError
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._serdes import (
     ConfigurableClass,
@@ -97,7 +97,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
         run = context.pipeline_run
 
-        check.inst_param(run, "run", PipelineRun)
+        check.inst_param(run, "run", DagsterRun)
 
         if not context.workspace:
             raise DagsterInvariantViolationError(

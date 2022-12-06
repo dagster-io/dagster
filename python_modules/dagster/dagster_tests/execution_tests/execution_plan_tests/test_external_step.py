@@ -48,7 +48,7 @@ from dagster._core.execution.plan.external_step import (
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import (
     ModeDefinition,
@@ -303,7 +303,7 @@ def define_sleepy_pipeline():
 
 
 def initialize_step_context(scratch_dir, instance):
-    pipeline_run = PipelineRun(
+    pipeline_run = DagsterRun(
         pipeline_name="foo_pipeline",
         run_id=str(uuid.uuid4()),
         run_config=make_run_config(scratch_dir, "external"),

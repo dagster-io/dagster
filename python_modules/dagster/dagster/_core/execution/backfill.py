@@ -17,7 +17,7 @@ from dagster._core.host_representation.external_data import (
 )
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
@@ -220,7 +220,7 @@ def create_backfill_run(
     external_partition_set: ExternalPartitionSet,
     backfill_job: PartitionBackfill,
     partition_data: ExternalPartitionExecutionParamData,
-) -> Optional[PipelineRun]:
+) -> Optional[DagsterRun]:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
     log_action(
@@ -236,7 +236,7 @@ def create_backfill_run(
     tags = merge_dicts(
         external_pipeline.tags,
         partition_data.tags,
-        PipelineRun.tags_for_backfill_id(backfill_job.backfill_id),
+        DagsterRun.tags_for_backfill_id(backfill_job.backfill_id),
         backfill_job.tags,
     )
 
