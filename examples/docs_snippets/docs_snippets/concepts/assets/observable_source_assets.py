@@ -1,11 +1,14 @@
 # isort: off
 
+
 def read_some_file():
     return "foo"
+
 
 # start
 from hashlib import sha256
 from dagster import LogicalVersion, observable_source_asset
+
 
 @observable_source_asset
 def foo_source_asset(_context):
