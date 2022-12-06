@@ -9,7 +9,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {UnloadableSchedules} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -45,7 +45,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
       {(result) => {
         const {repositoryOrError, unloadableInstigationStatesOrError, instance} = result;
         let schedulesSection = null;
-        const repoName = repoAddressAsString(repoAddress);
+        const repoName = repoAddressAsHumanString(repoAddress);
 
         if (repositoryOrError.__typename === 'PythonError') {
           schedulesSection = <PythonErrorInfo error={repositoryOrError} />;

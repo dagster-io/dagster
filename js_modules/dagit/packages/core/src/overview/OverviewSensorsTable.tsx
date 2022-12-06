@@ -7,7 +7,7 @@ import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 import {VirtualizedSensorHeader, VirtualizedSensorRow} from '../workspace/VirtualizedSensorRow';
 import {RepoRow} from '../workspace/VirtualizedWorkspaceTable';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {OVERVIEW_COLLAPSED_KEY} from './OverviewExpansionKey';
@@ -28,7 +28,7 @@ type RowType =
 export const OverviewSensorTable: React.FC<Props> = ({repos}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const allKeys = React.useMemo(
-    () => repos.map(({repoAddress}) => repoAddressAsString(repoAddress)),
+    () => repos.map(({repoAddress}) => repoAddressAsHumanString(repoAddress)),
     [repos],
   );
   const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
@@ -40,7 +40,7 @@ export const OverviewSensorTable: React.FC<Props> = ({repos}) => {
     const flat: RowType[] = [];
     repos.forEach(({repoAddress, sensors}) => {
       flat.push({type: 'header', repoAddress, sensorCount: sensors.length});
-      const repoKey = repoAddressAsString(repoAddress);
+      const repoKey = repoAddressAsHumanString(repoAddress);
       if (expandedKeys.includes(repoKey)) {
         sensors.forEach((name) => {
           flat.push({type: 'sensor', repoAddress, name});
@@ -82,7 +82,7 @@ export const OverviewSensorTable: React.FC<Props> = ({repos}) => {
                   start={start}
                   onToggle={onToggle}
                   onToggleAll={onToggleAll}
-                  expanded={expandedKeys.includes(repoAddressAsString(row.repoAddress))}
+                  expanded={expandedKeys.includes(repoAddressAsHumanString(row.repoAddress))}
                   showLocation={duplicateRepoNames.has(row.repoAddress.name)}
                   rightElement={
                     <Tooltip
