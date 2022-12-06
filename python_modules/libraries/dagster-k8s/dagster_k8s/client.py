@@ -136,13 +136,13 @@ class DagsterKubernetesClient:
         self.timer = timer
 
     @staticmethod
-    def production_client():
+    def production_client(batch_api_override=None):
         return DagsterKubernetesClient(
-            kubernetes.client.BatchV1Api(),
-            kubernetes.client.CoreV1Api(),
-            logging.info,
-            time.sleep,
-            time.time,
+            batch_api=batch_api_override or kubernetes.client.BatchV1Api(),
+            core_api=kubernetes.client.CoreV1Api(),
+            logger=logging.info,
+            sleeper=time.sleep,
+            timer=time.time,
         )
 
     ### Job operations ###

@@ -20,6 +20,7 @@ from dagster._core.executor.step_delegating import (
 )
 from dagster._utils import frozentags, merge_dicts
 
+from .client import DagsterKubernetesClient
 from .container_context import K8sContainerContext
 from .job import (
     DagsterK8sJobConfig,
@@ -27,7 +28,6 @@ from .job import (
     get_k8s_job_name,
     get_user_defined_k8s_config,
 )
-from .utils import delete_job
 
 
 @executor(
@@ -142,8 +142,6 @@ class K8sStepHandler(StepHandler):
             container_context, "container_context", K8sContainerContext
         )
 
-        self._fixed_k8s_client_batch_api = k8s_client_batch_api
-
         if load_incluster_config:
             check.invariant(
                 kubeconfig_file is None,
@@ -154,6 +152,10 @@ class K8sStepHandler(StepHandler):
             check.opt_str_param(kubeconfig_file, "kubeconfig_file")
             kubernetes.config.load_kube_config(kubeconfig_file)
 
+        self._api_client = DagsterKubernetesClient.production_client(
+            batch_api_override=k8s_client_batch_api
+        )
+
     def _get_container_context(self, step_handler_context: StepHandlerContext):
         run_target = K8sContainerContext.create_for_run(
             step_handler_context.pipeline_run,
@@ -161,12 +163,14 @@ class K8sStepHandler(StepHandler):
         )
         return run_target.merge(self._executor_container_context)
 
-    @property
-    def _batch_api(self):
-        return self._fixed_k8s_client_batch_api or kubernetes.client.BatchV1Api()
+    def _get_k8s_step_job_name(self, step_handler_context: StepHandlerContext):
+        if (
+            step_handler_context.execute_step_args.step_keys_to_execute is None
+            or len(step_handler_context.execute_step_args.step_keys_to_execute) != 1
+        ):
+            check.failed("Expected step_keys_to_execute to contain single entry")
 
-    def _get_k8s_step_job_name(self, step_handler_context):
-        step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
+        step_key = next(iter(step_handler_context.execute_step_args.step_keys_to_execute))
 
         name_key = get_k8s_job_name(
             step_handler_context.execute_step_args.pipeline_run_id,
@@ -235,7 +239,9 @@ class K8sStepHandler(StepHandler):
             ],
         )
 
-        self._batch_api.create_namespaced_job(body=job, namespace=container_context.namespace)
+        self._api_client.batch_api.create_namespaced_job(
+            body=job, namespace=container_context.namespace
+        )
 
     def check_step_health(self, step_handler_context: StepHandlerContext) -> CheckStepHealthResult:
         step_keys_to_execute = cast(
@@ -248,7 +254,7 @@ class K8sStepHandler(StepHandler):
 
         container_context = self._get_container_context(step_handler_context)
 
-        job = self._batch_api.read_namespaced_job(
+        job = self._api_client.batch_api.read_namespaced_job(
             namespace=container_context.namespace, name=job_name
         )
         if job.status.failed:
@@ -274,4 +280,4 @@ class K8sStepHandler(StepHandler):
             event_specific_data=EngineEventData(),
         )
 
-        delete_job(job_name=job_name, namespace=container_context.namespace)
+        self._api_client.delete_job(job_name=job_name, namespace=container_context.namespace)
