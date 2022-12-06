@@ -156,7 +156,7 @@ The default version of Python for Serverless deployments is Python 3.8. Versions
 
 ### Using a different base image or using native dependencies
 
-Dagster cloud runs your code on a Docker image that we build as follows:
+Dagster Cloud runs your code on a Docker image that we build as follows:
 1. The standard Python "slim" [Docker image](https://hub.docker.com/_/python), such as `python:3.8-slim` is used as the base.
 2. The `dagster-cloud[serverless]` module installed in the image.
 
@@ -171,7 +171,7 @@ To build and upload the image, use the command line:
    ```
 
 
-2. Upload your Docker image to Dagster cloud using the `upload-base-image` command. Note this command prints out the tag used in Dagster cloud to identify your image:
+2. Upload your Docker image to Dagster Cloud using the `upload-base-image` command. Note this command prints out the tag used in Dagster Cloud to identify your image:
 
   ```shell
   $ dagster-cloud serverless upload-base-image local-image:tag
@@ -180,7 +180,7 @@ To build and upload the image, use the command line:
   To use the uploaded image run: dagster-cloud deploy-python-executable ... --base-image-tag=sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
   ```
 
-3. To use a Docker image you have published to Dagster cloud, use the `--base-image-tag` tag printed out by the above command.
+3. To use a Docker image you have published to Dagster Cloud, use the `--base-image-tag` tag printed out by the above command.
 
 - **With GitHub**: Set the `SERVERLESS_BASE_IMAGE_TAG` environment variable your GitHub Actions configuration (usually at `.github/workflows/deploy.yml`):
 
