@@ -47,7 +47,7 @@ from dagster._core.execution.plan.objects import StepFailureData, StepRetryData,
 from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.captured_log_manager import CapturedLogContext
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._serdes import (
     DefaultNamedTupleSerializer,
     WhitelistMap,
@@ -223,13 +223,13 @@ MARKER_EVENTS = {
 
 
 EVENT_TYPE_TO_PIPELINE_RUN_STATUS = {
-    DagsterEventType.RUN_START: PipelineRunStatus.STARTED,
-    DagsterEventType.RUN_SUCCESS: PipelineRunStatus.SUCCESS,
-    DagsterEventType.RUN_FAILURE: PipelineRunStatus.FAILURE,
-    DagsterEventType.RUN_ENQUEUED: PipelineRunStatus.QUEUED,
-    DagsterEventType.RUN_STARTING: PipelineRunStatus.STARTING,
-    DagsterEventType.RUN_CANCELING: PipelineRunStatus.CANCELING,
-    DagsterEventType.RUN_CANCELED: PipelineRunStatus.CANCELED,
+    DagsterEventType.RUN_START: DagsterRunStatus.STARTED,
+    DagsterEventType.RUN_SUCCESS: DagsterRunStatus.SUCCESS,
+    DagsterEventType.RUN_FAILURE: DagsterRunStatus.FAILURE,
+    DagsterEventType.RUN_ENQUEUED: DagsterRunStatus.QUEUED,
+    DagsterEventType.RUN_STARTING: DagsterRunStatus.STARTING,
+    DagsterEventType.RUN_CANCELING: DagsterRunStatus.CANCELING,
+    DagsterEventType.RUN_CANCELED: DagsterRunStatus.CANCELED,
 }
 
 PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN_STATUS.items()}

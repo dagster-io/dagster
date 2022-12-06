@@ -18,7 +18,7 @@ from dagster_test.test_project import cleanup_memoized_results, get_test_project
 from dagster_test.test_project.test_pipelines.repo import define_memoization_pipeline
 
 from dagster import DagsterEventType
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
 from dagster._utils.yaml_utils import merge_yamls
@@ -344,7 +344,7 @@ def _test_termination(dagit_url, dagster_instance, run_config):
     start_time = datetime.datetime.now()
     while datetime.datetime.now() < start_time + timeout:
         pipeline_run = dagster_instance.get_run_by_id(run_id)
-        if pipeline_run.status == PipelineRunStatus.CANCELED:
+        if pipeline_run.status == DagsterRunStatus.CANCELED:
             pipeline_run_status_canceled = True
             break
         time.sleep(5)
@@ -471,7 +471,7 @@ def test_execute_on_celery_k8s_with_hard_failure(  # pylint: disable=redefined-o
 
     while datetime.datetime.now() < start_time + timeout:
         pipeline_run = dagster_instance.get_run_by_id(run_id)
-        if pipeline_run.status == PipelineRunStatus.FAILURE:
+        if pipeline_run.status == DagsterRunStatus.FAILURE:
             pipeline_run_status_failure = True
             break
         time.sleep(5)

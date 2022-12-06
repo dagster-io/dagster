@@ -8,8 +8,8 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
+    DagsterRunStatus,
     PipelineRun,
-    PipelineRunStatus,
     RunsFilter,
 )
 from dagster._core.storage.tags import PRIORITY_TAG
@@ -187,7 +187,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             self._logger.info("Launched %d runs.", num_dequeued_runs)
 
     def _get_queued_runs(self, instance):
-        queued_runs_filter = RunsFilter(statuses=[PipelineRunStatus.QUEUED])
+        queued_runs_filter = RunsFilter(statuses=[DagsterRunStatus.QUEUED])
 
         # Reversed for fifo ordering
         # Note: should add a maximum fetch limit https://github.com/dagster-io/dagster/issues/3339
@@ -218,7 +218,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         # double check that the run is still queued before dequeing
         reloaded_run = check.not_none(instance.get_run_by_id(run.run_id))
 
-        if reloaded_run.status != PipelineRunStatus.QUEUED:
+        if reloaded_run.status != DagsterRunStatus.QUEUED:
             self._logger.info(
                 "Run %s is now %s instead of QUEUED, skipping",
                 reloaded_run.run_id,

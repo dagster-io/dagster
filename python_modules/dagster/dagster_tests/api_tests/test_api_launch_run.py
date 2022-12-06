@@ -1,5 +1,5 @@
 from dagster._core.host_representation.handle import PipelineHandle
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test, poll_for_event, poll_for_finished_run
 from dagster._grpc.server import ExecuteExternalPipelineArgs
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
@@ -63,7 +63,7 @@ def test_launch_run_with_unloadable_pipeline_grpc():
 
             assert finished_pipeline_run
             assert finished_pipeline_run.run_id == run_id
-            assert finished_pipeline_run.status == PipelineRunStatus.FAILURE
+            assert finished_pipeline_run.status == DagsterRunStatus.FAILURE
 
             poll_for_event(
                 instance, run_id, event_type="ENGINE_EVENT", message="Process for run exited"
@@ -123,7 +123,7 @@ def test_launch_run_grpc():
 
             assert finished_pipeline_run
             assert finished_pipeline_run.run_id == run_id
-            assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
+            assert finished_pipeline_run.status == DagsterRunStatus.SUCCESS
 
             poll_for_event(
                 instance, run_id, event_type="ENGINE_EVENT", message="Process for run exited"

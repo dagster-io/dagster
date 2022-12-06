@@ -14,7 +14,7 @@ from dagster import AssetMaterialization, ResourceDefinition
 from dagster import _check as check
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun
 from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
 from dagster._legacy import ModeDefinition
@@ -49,7 +49,7 @@ def in_job_manager(
                 mode=mode or "default",
                 run_config=None,
                 step_keys_to_execute=None,
-                status=PipelineRunStatus.NOT_STARTED,
+                status=DagsterRunStatus.NOT_STARTED,
             )
         )
 

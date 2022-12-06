@@ -16,7 +16,7 @@ from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
     get_reexecution_strategy,
 )
 from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
-from dagster._legacy import PipelineRunStatus
+from dagster._legacy import DagsterRunStatus
 
 from .utils import foo, get_foo_pipeline_handle
 
@@ -41,7 +41,7 @@ def create_run(instance, **kwargs):
 def test_filter_runs_to_should_retry(instance):
     instance.wipe()
 
-    run = create_run(instance, status=PipelineRunStatus.STARTED)
+    run = create_run(instance, status=DagsterRunStatus.STARTED)
 
     assert list(filter_runs_to_should_retry([run], instance, 2)) == []
 
@@ -65,7 +65,7 @@ def test_filter_runs_to_should_retry(instance):
         len(
             list(
                 filter_runs_to_should_retry(
-                    instance.get_runs(filters=RunsFilter(statuses=[PipelineRunStatus.FAILURE])),
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
                     instance,
                     2,
                 )
@@ -78,7 +78,7 @@ def test_filter_runs_to_should_retry(instance):
 def test_filter_runs_to_should_retry_tags(instance):
     instance.wipe()
 
-    run = create_run(instance, status=PipelineRunStatus.STARTED, tags={MAX_RETRIES_TAG: "0"})
+    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "0"})
 
     assert list(filter_runs_to_should_retry([run], instance, 2)) == []
 
@@ -88,7 +88,7 @@ def test_filter_runs_to_should_retry_tags(instance):
         len(
             list(
                 filter_runs_to_should_retry(
-                    instance.get_runs(filters=RunsFilter(statuses=[PipelineRunStatus.FAILURE])),
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
                     instance,
                     2,
                 )
@@ -99,7 +99,7 @@ def test_filter_runs_to_should_retry_tags(instance):
 
     instance.wipe()
 
-    run = create_run(instance, status=PipelineRunStatus.STARTED, tags={MAX_RETRIES_TAG: "10"})
+    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "10"})
 
     assert list(filter_runs_to_should_retry([run], instance, 0)) == []
 
@@ -109,7 +109,7 @@ def test_filter_runs_to_should_retry_tags(instance):
         len(
             list(
                 filter_runs_to_should_retry(
-                    instance.get_runs(filters=RunsFilter(statuses=[PipelineRunStatus.FAILURE])),
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
                     instance,
                     2,
                 )
@@ -121,7 +121,7 @@ def test_filter_runs_to_should_retry_tags(instance):
     instance.wipe()
 
     run = create_run(
-        instance, status=PipelineRunStatus.STARTED, tags={MAX_RETRIES_TAG: "not-an-int"}
+        instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "not-an-int"}
     )
 
     assert list(filter_runs_to_should_retry([run], instance, 0)) == []
@@ -131,7 +131,7 @@ def test_filter_runs_to_should_retry_tags(instance):
     assert (
         list(
             filter_runs_to_should_retry(
-                instance.get_runs(filters=RunsFilter(statuses=[PipelineRunStatus.FAILURE])),
+                instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
                 instance,
                 2,
             )
@@ -147,14 +147,14 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     list(
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
-            instance.get_run_records(filters=RunsFilter(statuses=[PipelineRunStatus.FAILURE])),
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
         )
     )
 
     assert len(instance.run_coordinator.queue()) == 0
 
     # retries failure
-    run = create_run(instance, status=PipelineRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
+    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
     dagster_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
         pipeline_name="foo",
@@ -174,7 +174,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     list(
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
-            instance.get_run_records(filters=RunsFilter(statuses=[PipelineRunStatus.FAILURE])),
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
         )
     )
     assert len(instance.run_coordinator.queue()) == 1
@@ -183,7 +183,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     list(
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
-            instance.get_run_records(filters=RunsFilter(statuses=[PipelineRunStatus.FAILURE])),
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
         )
     )
     assert len(instance.run_coordinator.queue()) == 1
@@ -207,7 +207,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     list(
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
-            instance.get_run_records(filters=RunsFilter(statuses=[PipelineRunStatus.FAILURE])),
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
         )
     )
     assert len(instance.run_coordinator.queue()) == 2
@@ -231,7 +231,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     list(
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
-            instance.get_run_records(filters=RunsFilter(statuses=[PipelineRunStatus.FAILURE])),
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
         )
     )
     assert len(instance.run_coordinator.queue()) == 2
@@ -250,27 +250,27 @@ def test_daemon_enabled(instance):
 def test_strategy(instance: DagsterInstance):
     run = create_run(
         instance,
-        status=PipelineRunStatus.FAILURE,
+        status=DagsterRunStatus.FAILURE,
     )
     assert get_reexecution_strategy(run, instance) is None
 
     run = create_run(
         instance,
-        status=PipelineRunStatus.FAILURE,
+        status=DagsterRunStatus.FAILURE,
         tags={RETRY_STRATEGY_TAG: "FROM_FAILURE"},
     )
     assert get_reexecution_strategy(run, instance) == ReexecutionStrategy.FROM_FAILURE
 
     run = create_run(
         instance,
-        status=PipelineRunStatus.FAILURE,
+        status=DagsterRunStatus.FAILURE,
         tags={RETRY_STRATEGY_TAG: "ALL_STEPS"},
     )
     assert get_reexecution_strategy(run, instance) == ReexecutionStrategy.ALL_STEPS
 
     run = create_run(
         instance,
-        status=PipelineRunStatus.FAILURE,
+        status=DagsterRunStatus.FAILURE,
         tags={RETRY_STRATEGY_TAG: "not a strategy"},
     )
     assert get_reexecution_strategy(run, instance) is None

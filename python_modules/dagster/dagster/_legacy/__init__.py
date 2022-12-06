@@ -37,7 +37,7 @@ from dagster._core.execution.results import (
     SolidExecutionResult,
 )
 from dagster._core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun
 from dagster._utils.partitions import (
     create_offset_partition_selector,
     date_partition_range,

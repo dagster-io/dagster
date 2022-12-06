@@ -17,7 +17,7 @@ from dagster._core.launcher import DefaultRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import environ
@@ -54,7 +54,7 @@ def test_fs_stores():
             result = simple.execute_in_process(instance=instance)
 
             assert run_store.has_run(result.run_id)
-            assert run_store.get_run_by_id(result.run_id).status == PipelineRunStatus.SUCCESS
+            assert run_store.get_run_by_id(result.run_id).status == DagsterRunStatus.SUCCESS
             assert DagsterEventType.PIPELINE_SUCCESS in [
                 event.dagster_event.event_type
                 for event in event_store.get_logs_for_run(result.run_id)

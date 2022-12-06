@@ -11,7 +11,7 @@ from dagster_graphql.test.utils import (
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import create_run_for_test
-from dagster._legacy import PipelineRun, PipelineRunStatus
+from dagster._legacy import DagsterRunStatus, PipelineRun
 from dagster._seven import get_system_temp_directory
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
@@ -91,7 +91,7 @@ GET_PARTITION_BACKFILLS_QUERY = """
 """
 
 
-def _seed_runs(graphql_context, partition_runs: List[Tuple[str, PipelineRunStatus]], backfill_id):
+def _seed_runs(graphql_context, partition_runs: List[Tuple[str, DagsterRunStatus]], backfill_id):
     for status, partition in partition_runs:
         create_run_for_test(
             instance=graphql_context.instance,
@@ -362,14 +362,14 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         _seed_runs(
             graphql_context,
             [
-                (PipelineRunStatus.SUCCESS, "5"),
-                (PipelineRunStatus.STARTED, "2"),
-                (PipelineRunStatus.STARTED, "3"),
-                (PipelineRunStatus.STARTED, "4"),
-                (PipelineRunStatus.STARTED, "5"),
-                (PipelineRunStatus.CANCELED, "2"),
-                (PipelineRunStatus.FAILURE, "3"),
-                (PipelineRunStatus.SUCCESS, "4"),
+                (DagsterRunStatus.SUCCESS, "5"),
+                (DagsterRunStatus.STARTED, "2"),
+                (DagsterRunStatus.STARTED, "3"),
+                (DagsterRunStatus.STARTED, "4"),
+                (DagsterRunStatus.STARTED, "5"),
+                (DagsterRunStatus.CANCELED, "2"),
+                (DagsterRunStatus.FAILURE, "3"),
+                (DagsterRunStatus.SUCCESS, "4"),
             ],
             backfill_id,
         )
@@ -436,10 +436,10 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         _seed_runs(
             graphql_context,
             [
-                (PipelineRunStatus.SUCCESS, "2"),
-                (PipelineRunStatus.SUCCESS, "3"),
-                (PipelineRunStatus.SUCCESS, "4"),
-                (PipelineRunStatus.SUCCESS, "5"),
+                (DagsterRunStatus.SUCCESS, "2"),
+                (DagsterRunStatus.SUCCESS, "3"),
+                (DagsterRunStatus.SUCCESS, "4"),
+                (DagsterRunStatus.SUCCESS, "5"),
             ],
             backfill_id,
         )
@@ -494,10 +494,10 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         _seed_runs(
             graphql_context,
             [
-                (PipelineRunStatus.SUCCESS, "2"),
-                (PipelineRunStatus.SUCCESS, "3"),
-                (PipelineRunStatus.SUCCESS, "4"),
-                (PipelineRunStatus.CANCELED, "5"),
+                (DagsterRunStatus.SUCCESS, "2"),
+                (DagsterRunStatus.SUCCESS, "3"),
+                (DagsterRunStatus.SUCCESS, "4"),
+                (DagsterRunStatus.CANCELED, "5"),
             ],
             backfill_id,
         )

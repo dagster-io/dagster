@@ -30,7 +30,7 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
@@ -768,7 +768,7 @@ def _get_or_create_sensor_run(
     run = existing_runs_by_key.get(run_request.run_key)
 
     if run:
-        if run.status != PipelineRunStatus.NOT_STARTED:
+        if run.status != DagsterRunStatus.NOT_STARTED:
             # A run already exists and was launched for this run key, but the daemon must have
             # crashed before the tick could be updated
             return SkippedSensorRun(run_key=run_request.run_key, existing_run=run)
@@ -832,7 +832,7 @@ def _create_sensor_run(
         mode=target_data.mode,
         solids_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=None,
-        status=PipelineRunStatus.NOT_STARTED,
+        status=DagsterRunStatus.NOT_STARTED,
         solid_selection=target_data.solid_selection,
         root_run_id=None,
         parent_run_id=None,
