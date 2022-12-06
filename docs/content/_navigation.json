@@ -642,7 +642,13 @@
       },
       {
         "title": "Snowflake",
-        "path": "/integrations/snowflake"
+        "path": "/integrations/snowflake",
+        "children": [
+          {
+            "title": "Snowflake+ Dagster tutorial",
+            "path": "/integrations/snowflake/using-snowflake-with-dagster"
+          }
+        ]
       },
       {
         "title": "All integrations",
