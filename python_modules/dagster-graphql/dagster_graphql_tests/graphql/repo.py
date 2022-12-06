@@ -95,10 +95,10 @@ from dagster._legacy import (
     InputDefinition,
     Materialization,
     ModeDefinition,
+    OpExecutionContext,
     OutputDefinition,
     PartitionSetDefinition,
     PresetDefinition,
-    SolidExecutionContext,
     build_assets_job,
     daily_schedule,
     hourly_schedule,
@@ -803,7 +803,7 @@ def eventually_successful():
     @solid(
         required_resource_keys={"retry_count"},
     )
-    def fail(context: SolidExecutionContext, depth: int) -> int:
+    def fail(context: OpExecutionContext, depth: int) -> int:
         if context.resources.retry_count <= depth:
             raise Exception("fail")
 

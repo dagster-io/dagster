@@ -79,7 +79,7 @@ from ..temp_file import (
 from ..typing_api import is_typing_type
 
 if TYPE_CHECKING:
-    from dagster._core.execution.results import CompositeSolidExecutionResult, SolidExecutionResult
+    from dagster._core.execution.results import CompositeSolidExecutionResult, OpExecutionResult
 
 
 def create_test_pipeline_execution_context(
@@ -172,7 +172,7 @@ def execute_solids_within_pipeline(
     preset: Optional[str] = None,
     tags: Optional[Mapping[str, str]] = None,
     instance: Optional[DagsterInstance] = None,
-) -> Mapping[str, Union["CompositeSolidExecutionResult", "SolidExecutionResult"]]:
+) -> Mapping[str, Union["CompositeSolidExecutionResult", "OpExecutionResult"]]:
     """Execute a set of solids within an existing pipeline.
 
     Intended to support tests. Input values may be passed directly.
@@ -281,7 +281,7 @@ def execute_solid_within_pipeline(
     preset: Optional[str] = None,
     tags: Optional[Dict[str, str]] = None,
     instance: Optional[DagsterInstance] = None,
-) -> Union["CompositeSolidExecutionResult", "SolidExecutionResult"]:
+) -> Union["CompositeSolidExecutionResult", "OpExecutionResult"]:
 
     """Execute a single solid within an existing pipeline.
 
@@ -341,7 +341,7 @@ def execute_solid(
     tags: Optional[Mapping[str, Any]] = ...,
     run_config: Optional[Mapping[str, object]] = ...,
     raise_on_error: bool = ...,
-) -> "SolidExecutionResult":
+) -> "OpExecutionResult":
     ...
 
 
@@ -352,7 +352,7 @@ def execute_solid(
     tags: Optional[Mapping[str, Any]] = None,
     run_config: Optional[Mapping[str, object]] = None,
     raise_on_error: bool = True,
-) -> Union["CompositeSolidExecutionResult", "SolidExecutionResult"]:
+) -> Union["CompositeSolidExecutionResult", "OpExecutionResult"]:
     """Execute a single solid in an ephemeral pipeline.
 
     Intended to support unit tests. Input values may be passed directly, and no pipeline need be

@@ -106,9 +106,6 @@ class NodeInvocation(
         )
 
 
-SolidInvocation = NodeInvocation
-
-
 class Node:
     """
     Node invocation within a graph. Identified by its name inside the graph.

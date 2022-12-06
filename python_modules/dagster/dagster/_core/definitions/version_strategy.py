@@ -29,9 +29,6 @@ class OpVersionContext(NamedTuple):
         return self.op_config
 
 
-SolidVersionContext = OpVersionContext
-
-
 class ResourceVersionContext(NamedTuple):
     """Provides execution-time information for computing the version for a resource.
 

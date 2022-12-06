@@ -10,7 +10,6 @@ from .dependency import (
     NodeInput,
     NodeInvocation,
     NodeOutput,
-    SolidInvocation,
 )
 from .events import (
     AssetKey,

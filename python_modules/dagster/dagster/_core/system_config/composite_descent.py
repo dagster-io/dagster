@@ -13,18 +13,18 @@ from dagster._core.errors import (
     DagsterInvalidConfigError,
     user_code_error_boundary,
 )
-from dagster._core.system_config.objects import SolidConfig
+from dagster._core.system_config.objects import OpConfig
 from dagster._utils.merger import merge_dicts
 
 
-class SolidConfigEntry(
-    NamedTuple("_SolidConfigEntry", [("handle", NodeHandle), ("solid_config", SolidConfig)])
+class OpConfigEntry(
+    NamedTuple("_SolidConfigEntry", [("handle", NodeHandle), ("solid_config", OpConfig)])
 ):
-    def __new__(cls, handle: NodeHandle, solid_config: SolidConfig):
-        return super(SolidConfigEntry, cls).__new__(
+    def __new__(cls, handle: NodeHandle, solid_config: OpConfig):
+        return super(OpConfigEntry, cls).__new__(
             cls,
             check.inst_param(handle, "handle", NodeHandle),
-            check.inst_param(solid_config, "solid_config", SolidConfig),
+            check.inst_param(solid_config, "solid_config", OpConfig),
         )
 
 
@@ -139,14 +139,14 @@ def _composite_descent(
             complete_config_object = merge_dicts(
                 current_solid_config, config_mapped_solid_config.value
             )
-            yield SolidConfigEntry(current_handle, SolidConfig.from_dict(complete_config_object))
+            yield OpConfigEntry(current_handle, OpConfig.from_dict(complete_config_object))
             continue
 
         graph_def = check.inst(solid.definition, GraphDefinition)
 
-        yield SolidConfigEntry(
+        yield OpConfigEntry(
             current_handle,
-            SolidConfig.from_dict(
+            OpConfig.from_dict(
                 {
                     "inputs": current_solid_config.get("inputs"),
                     "outputs": current_solid_config.get("outputs"),

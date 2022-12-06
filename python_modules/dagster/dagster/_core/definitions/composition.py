@@ -337,7 +337,7 @@ class PendingNodeInvocation:
 
     def __call__(self, *args, **kwargs):
         from ..execution.context.invocation import UnboundOpExecutionContext
-        from .decorators.solid_decorator import DecoratedSolidFunction
+        from .decorators.solid_decorator import DecoratedOpFunction
         from .solid_invocation import op_invocation_result
 
         node_name = self.given_alias if self.given_alias else self.node_def.name
@@ -348,7 +348,7 @@ class PendingNodeInvocation:
             node_label = (
                 self.node_def.node_type_str
             )  # will be the string "solid" for solids, and the string "ops" for ops
-            if not isinstance(self.node_def.compute_fn, DecoratedSolidFunction):
+            if not isinstance(self.node_def.compute_fn, DecoratedOpFunction):
                 raise DagsterInvalidInvocationError(
                     f"Attemped to invoke {node_label} that was not constructed using the `@{node_label}` "
                     f"decorator. Only {node_label}s constructed using the `@{node_label}` decorator can be "
@@ -1036,7 +1036,7 @@ def do_composition(
             This should be removed in 0.11.0.
     """
     from .decorators.solid_decorator import (
-        NoContextDecoratedSolidFunction,
+        NoContextDecoratedOpFunction,
         resolve_checked_solid_fn_inputs,
     )
 
@@ -1051,7 +1051,7 @@ def do_composition(
         outputs_are_explicit = True
         actual_output_defs = provided_output_defs
 
-    compute_fn = NoContextDecoratedSolidFunction(fn)
+    compute_fn = NoContextDecoratedOpFunction(fn)
 
     actual_input_defs = resolve_checked_solid_fn_inputs(
         decorator_name=decorator_name,
