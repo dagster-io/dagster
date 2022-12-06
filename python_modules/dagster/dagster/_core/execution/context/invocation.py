@@ -214,8 +214,10 @@ class UnboundOpExecutionContext(OpExecutionContext):
     def partition_key(self) -> str:
         if self._partition_key:
             return self._partition_key
-        else:
-            check.failed("Tried to access partition_key for a non-partitioned run")
+        check.failed("Tried to access partition_key for a non-partitioned run")
+
+    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
+        return self.partition_key
 
     def has_tag(self, key: str) -> bool:
         raise DagsterInvalidPropertyError(_property_msg("has_tag", "method"))
@@ -537,11 +539,14 @@ class BoundOpExecutionContext(OpExecutionContext):
             )
         return output_name in self._seen_outputs
 
-    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
+    @property
+    def partition_key(self) -> str:
         if self._partition_key is not None:
             return self._partition_key
-        else:
-            check.failed("Tried to access partition_key for a non-partitioned asset")
+        check.failed("Tried to access partition_key for a non-partitioned asset")
+
+    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
+        return self.partition_key
 
     def add_output_metadata(
         self,

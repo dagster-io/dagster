@@ -150,7 +150,23 @@ def test_access_partition_keys_from_context_direct_invocation():
         assert context.asset_partition_key_for_output() == "a"
 
     context = build_op_context(partition_key="a")
+
+    # check unbound context
+    assert context.asset_partition_key_for_output() == "a"
+
+    # check bound context
     partitioned_asset(context)
+
+    # check failure for non-partitioned asset
+    @asset
+    def non_partitioned_asset(context):
+        with pytest.raises(
+            CheckError, match="Tried to access partition_key for a non-partitioned asset"
+        ):
+            context.asset_partition_key_for_output()
+
+    context = build_op_context()
+    non_partitioned_asset(context)
 
 
 def test_access_partition_keys_from_context_only_one_asset_partitioned():
