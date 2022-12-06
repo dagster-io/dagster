@@ -56,7 +56,7 @@ def test_solid_invocation_no_arg():
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Compute function of solid 'basic_solid' has no context "
+        match="Compute function of op 'basic_solid' has no context "
         "argument, but context was provided when invoking.",
     ):
         basic_solid(build_solid_context())
@@ -64,25 +64,25 @@ def test_solid_invocation_no_arg():
     # Ensure alias is accounted for in error message
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Compute function of solid 'aliased_basic_solid' has no context "
+        match="Compute function of op 'aliased_basic_solid' has no context "
         "argument, but context was provided when invoking.",
     ):
         basic_solid.alias("aliased_basic_solid")(build_solid_context())
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Too many input arguments were provided for solid 'basic_solid'. This may be "
+        match="Too many input arguments were provided for op 'basic_solid'. This may be "
         "because an argument was provided for the context parameter, but no context parameter was "
-        "defined for the solid.",
+        "defined for the op.",
     ):
         basic_solid(None)
 
     # Ensure alias is accounted for in error message
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Too many input arguments were provided for solid 'aliased_basic_solid'. This may be "
+        match="Too many input arguments were provided for op 'aliased_basic_solid'. This may be "
         "because an argument was provided for the context parameter, but no context parameter was "
-        "defined for the solid.",
+        "defined for the op.",
     ):
         basic_solid.alias("aliased_basic_solid")(None)
 
@@ -145,7 +145,7 @@ def test_solid_invocation_with_resources():
     # Ensure that a check invariant is raise when we attempt to invoke without context
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Compute function of solid 'solid_requires_resources' has context argument, but no "
+        match="Compute function of op 'solid_requires_resources' has context argument, but no "
         "context was provided when invoking.",
     ):
         solid_requires_resources()
@@ -153,7 +153,7 @@ def test_solid_invocation_with_resources():
     # Ensure that alias is accounted for in error message
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Compute function of solid 'aliased_solid_requires_resources' has context argument, but no "
+        match="Compute function of op 'aliased_solid_requires_resources' has context argument, but no "
         "context was provided when invoking.",
     ):
         solid_requires_resources.alias("aliased_solid_requires_resources")()
@@ -161,7 +161,7 @@ def test_solid_invocation_with_resources():
     # Ensure that error is raised when we attempt to invoke with a None context
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match='solid "solid_requires_resources" has required resources, but no context was '
+        match='op "solid_requires_resources" has required resources, but no context was '
         "provided.",
     ):
         solid_requires_resources(None)
@@ -171,7 +171,7 @@ def test_solid_invocation_with_resources():
     context = build_solid_context()
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="resource with key 'foo' required by solid 'solid_requires_resources' was not provided",
+        match="resource with key 'foo' required by op 'solid_requires_resources' was not provided",
     ):
         solid_requires_resources(context)
 
@@ -217,7 +217,7 @@ def test_solid_invocation_with_config():
     # Ensure that error is raised when attempting to execute and no context is provided
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Compute function of solid 'solid_requires_config' has context argument, but no "
+        match="Compute function of op 'solid_requires_config' has context argument, but no "
         "context was provided when invoking.",
     ):
         solid_requires_config()
@@ -225,7 +225,7 @@ def test_solid_invocation_with_config():
     # Ensure that alias is accounted for in error message
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Compute function of solid 'aliased_solid_requires_config' has context argument, but no "
+        match="Compute function of op 'aliased_solid_requires_config' has context argument, but no "
         "context was provided when invoking.",
     ):
         solid_requires_config.alias("aliased_solid_requires_config")()
@@ -233,7 +233,7 @@ def test_solid_invocation_with_config():
     # Ensure that error is raised when we attempt to invoke with a None context
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match='solid "solid_requires_config" has required config schema, but no context was '
+        match='op "solid_requires_config" has required config schema, but no context was '
         "provided.",
     ):
         solid_requires_config(None)
@@ -242,7 +242,7 @@ def test_solid_invocation_with_config():
     context = build_solid_context()
     with pytest.raises(
         DagsterInvalidConfigError,
-        match="Error in config for solid",
+        match="Error in config for op",
     ):
         solid_requires_config(context)
 
@@ -250,7 +250,7 @@ def test_solid_invocation_with_config():
     # configured
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Compute function of solid 'configured_solid' has context argument, but no "
+        match="Compute function of op 'configured_solid' has context argument, but no "
         "context was provided when invoking.",
     ):
         solid_requires_config.configured({"foo": "bar"}, name="configured_solid")()
@@ -362,13 +362,13 @@ def test_solid_with_inputs():
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Too many input arguments were provided for solid 'solid_with_inputs'",
+        match="Too many input arguments were provided for op 'solid_with_inputs'",
     ):
         solid_with_inputs(5, 6, 7)
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Too many input arguments were provided for solid 'solid_with_inputs'",
+        match="Too many input arguments were provided for op 'solid_with_inputs'",
     ):
         solid_with_inputs(5, 6, z=7)
 
@@ -546,14 +546,14 @@ def test_missing_required_output_generator():
 
     with pytest.raises(
         DagsterStepOutputNotFoundError,
-        match='Core compute for solid "solid_multiple_outputs_not_sent" did not return an output '
+        match='Core compute for op "solid_multiple_outputs_not_sent" did not return an output '
         'for non-optional output "1"',
     ):
         execute_solid(solid_multiple_outputs_not_sent)
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Invocation of solid 'solid_multiple_outputs_not_sent' did not return an output "
+        match="Invocation of op 'solid_multiple_outputs_not_sent' did not return an output "
         "for non-optional output '1'",
     ):
         list(solid_multiple_outputs_not_sent())
@@ -567,7 +567,7 @@ def test_missing_required_output_generator_async():
 
     with pytest.raises(
         DagsterStepOutputNotFoundError,
-        match='Core compute for solid "solid_multiple_outputs_not_sent" did not return an output '
+        match='Core compute for op "solid_multiple_outputs_not_sent" did not return an output '
         'for non-optional output "1"',
     ):
         execute_solid(solid_multiple_outputs_not_sent)
@@ -581,7 +581,7 @@ def test_missing_required_output_generator_async():
     loop = asyncio.get_event_loop()
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Invocation of solid 'solid_multiple_outputs_not_sent' did not return an output "
+        match="Invocation of op 'solid_multiple_outputs_not_sent' did not return an output "
         "for non-optional output '1'",
     ):
         loop.run_until_complete(get_results())
@@ -613,13 +613,13 @@ def test_output_sent_multiple_times():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match='Compute for solid "solid_yields_twice" returned an output "1" multiple times',
+        match='Compute for op "solid_yields_twice" returned an output "1" multiple times',
     ):
         execute_solid(solid_yields_twice)
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Invocation of solid 'solid_yields_twice' yielded an output '1' multiple times",
+        match="Invocation of op 'solid_yields_twice' yielded an output '1' multiple times",
     ):
         list(solid_yields_twice())
 
@@ -781,15 +781,15 @@ def test_solid_invocation_nothing_deps():
     with pytest.raises(
         DagsterInvalidInvocationError,
         match="Attempted to provide value for nothing input 'start'. Nothing dependencies are ignored "
-        "when directly invoking solids.",
+        "when directly invoking ops.",
     ):
         nothing_dep(start="blah")
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Too many input arguments were provided for solid 'nothing_dep'. This may be because "
+        match="Too many input arguments were provided for op 'nothing_dep'. This may be because "
         "you attempted to provide a value for a nothing dependency. Nothing dependencies are "
-        "ignored when directly invoking solids.",
+        "ignored when directly invoking ops.",
     ):
         nothing_dep("blah")
 
@@ -810,9 +810,9 @@ def test_solid_invocation_nothing_deps():
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Too many input arguments were provided for solid 'sandwiched_nothing_dep'. This may "
+        match="Too many input arguments were provided for op 'sandwiched_nothing_dep'. This may "
         "be because you attempted to provide a value for a nothing dependency. Nothing "
-        "dependencies are ignored when directly invoking solids.",
+        "dependencies are ignored when directly invoking ops.",
     ):
         sandwiched_nothing_dep(5, 6, 7)
 
@@ -1107,6 +1107,6 @@ def test_required_resource_keys_no_context_invocation():
         match="Too many input arguments were provided for op "
         "'uses_resource_no_context'. This may be because an argument was "
         "provided for the context parameter, but no context parameter was "
-        "defined for the solid.",
+        "defined for the op.",
     ):
         uses_resource_no_context(None)

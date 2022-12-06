@@ -20,6 +20,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -43,7 +44,7 @@ from .logger_definition import LoggerDefinition
 from .output import OutputDefinition, OutputMapping
 from .policy import RetryPolicy
 from .resource_definition import ResourceDefinition
-from .solid_definition import NodeDefinition, SolidDefinition
+from .solid_definition import NodeDefinition
 from .utils import check_valid_name, validate_tags
 from .version_strategy import VersionStrategy
 
@@ -233,7 +234,7 @@ class CompleteCompositionContext(NamedTuple):
 
             deps: Dict[str, IDependencyDefinition] = {}
             for input_name, node in invocation.input_bindings.items():
-                if isinstance(node, InvokedSolidOutputHandle):
+                if isinstance(node, InvokedNodeOutputHandle):
                     deps[input_name] = DependencyDefinition(node.solid_name, node.output_name)
                 elif isinstance(node, InputMappingNode):
                     input_mappings.append(
@@ -242,7 +243,7 @@ class CompleteCompositionContext(NamedTuple):
                 elif isinstance(node, list):
                     entries: List[Union[DependencyDefinition, Type[MappedInputPlaceholder]]] = []
                     for idx, fanned_in_node in enumerate(node):
-                        if isinstance(fanned_in_node, InvokedSolidOutputHandle):
+                        if isinstance(fanned_in_node, InvokedNodeOutputHandle):
                             entries.append(
                                 DependencyDefinition(
                                     fanned_in_node.solid_name, fanned_in_node.output_name
@@ -335,15 +336,15 @@ class PendingNodeInvocation:
             current_context().add_pending_invocation(self)
 
     def __call__(self, *args, **kwargs):
-        from ..execution.context.invocation import UnboundSolidExecutionContext
+        from ..execution.context.invocation import UnboundOpExecutionContext
         from .decorators.solid_decorator import DecoratedSolidFunction
-        from .solid_invocation import solid_invocation_result
+        from .solid_invocation import op_invocation_result
 
         node_name = self.given_alias if self.given_alias else self.node_def.name
 
         # If PendingNodeInvocation is not within composition context, and underlying node definition
         # is a solid definition, then permit it to be invoked and executed like a solid definition.
-        if not is_in_composition() and isinstance(self.node_def, SolidDefinition):
+        if not is_in_composition() and isinstance(self.node_def, OpDefinition):
             node_label = (
                 self.node_def.node_type_str
             )  # will be the string "solid" for solids, and the string "ops" for ops
@@ -359,20 +360,20 @@ class PendingNodeInvocation:
                         f"Compute function of {node_label} '{self.given_alias}' has context argument, but no context "
                         "was provided when invoking."
                     )
-                elif args[0] is not None and not isinstance(args[0], UnboundSolidExecutionContext):
+                elif args[0] is not None and not isinstance(args[0], UnboundOpExecutionContext):
                     raise DagsterInvalidInvocationError(
                         f"Compute function of {node_label} '{self.given_alias}' has context argument, but no context "
                         "was provided when invoking."
                     )
                 context = args[0]
-                return solid_invocation_result(self, context, *args[1:], **kwargs)
+                return op_invocation_result(self, context, *args[1:], **kwargs)
             else:
-                if len(args) > 0 and isinstance(args[0], UnboundSolidExecutionContext):
+                if len(args) > 0 and isinstance(args[0], UnboundOpExecutionContext):
                     raise DagsterInvalidInvocationError(
                         f"Compute function of {node_label} '{self.given_alias}' has no context argument, but "
                         "context was provided when invoking."
                     )
-                return solid_invocation_result(self, None, *args, **kwargs)
+                return op_invocation_result(self, None, *args, **kwargs)
 
         assert_in_composition(node_name, self.node_def)
         input_bindings = {}
@@ -440,11 +441,11 @@ class PendingNodeInvocation:
             output_def = self.node_def.output_defs[0]
             output_name = output_def.name
             if output_def.is_dynamic:
-                return InvokedSolidDynamicOutputWrapper(
+                return InvokedNodeDynamicOutputWrapper(
                     resolved_node_name, output_name, self.node_def.node_type_str
                 )
             else:
-                return InvokedSolidOutputHandle(
+                return InvokedNodeOutputHandle(
                     resolved_node_name, output_name, self.node_def.node_type_str
                 )
 
@@ -452,11 +453,11 @@ class PendingNodeInvocation:
         invoked_output_handles = {}
         for output_def in outputs:
             if output_def.is_dynamic:
-                invoked_output_handles[output_def.name] = InvokedSolidDynamicOutputWrapper(
+                invoked_output_handles[output_def.name] = InvokedNodeDynamicOutputWrapper(
                     resolved_node_name, output_def.name, self.node_def.node_type_str
                 )
             else:
-                invoked_output_handles[output_def.name] = InvokedSolidOutputHandle(
+                invoked_output_handles[output_def.name] = InvokedNodeOutputHandle(
                     resolved_node_name, output_def.name, self.node_def.node_type_str
                 )
 
@@ -471,13 +472,13 @@ class PendingNodeInvocation:
 
     def _process_argument_node(self, node_name, output_node, input_name, input_bindings, arg_desc):
 
-        if isinstance(output_node, (InvokedSolidOutputHandle, InputMappingNode, DynamicFanIn)):
+        if isinstance(output_node, (InvokedNodeOutputHandle, InputMappingNode, DynamicFanIn)):
             input_bindings[input_name] = output_node
 
         elif isinstance(output_node, list):
             input_bindings[input_name] = []
             for idx, fanned_in_node in enumerate(output_node):
-                if isinstance(fanned_in_node, (InvokedSolidOutputHandle, InputMappingNode)):
+                if isinstance(fanned_in_node, (InvokedNodeOutputHandle, InputMappingNode)):
                     input_bindings[input_name].append(fanned_in_node)
                 else:
                     raise DagsterInvalidDefinitionError(
@@ -498,7 +499,7 @@ class PendingNodeInvocation:
                     )
 
         elif isinstance(output_node, tuple) and all(
-            map(lambda item: isinstance(item, InvokedSolidOutputHandle), output_node)
+            map(lambda item: isinstance(item, InvokedNodeOutputHandle), output_node)
         ):
             raise DagsterInvalidDefinitionError(
                 "In {source} {name}, received a tuple of multiple outputs for "
@@ -513,7 +514,7 @@ class PendingNodeInvocation:
                     options=output_node._fields,
                 )
             )
-        elif isinstance(output_node, InvokedSolidDynamicOutputWrapper):
+        elif isinstance(output_node, InvokedNodeDynamicOutputWrapper):
             raise DagsterInvalidDefinitionError(
                 f"In {current_context().source} {current_context().name}, received the dynamic output "
                 f"{output_node.output_name} from {output_node.describe_node()} directly. Dynamic "
@@ -692,7 +693,7 @@ class InvokedNode(NamedTuple):
     retry_policy: Optional[RetryPolicy]
 
 
-class InvokedSolidOutputHandle:
+class InvokedNodeOutputHandle:
     """The return value for an output when invoking a node in a composition function."""
 
     solid_name: str
@@ -758,14 +759,14 @@ class InvokedSolidOutputHandle:
 class DynamicFanIn(NamedTuple):
     """
     Type to signify collecting over a dynamic output, output by collect() on a
-    InvokedSolidDynamicOutputWrapper
+    InvokedNodeDynamicOutputWrapper
     """
 
     solid_name: str
     output_name: str
 
 
-class InvokedSolidDynamicOutputWrapper:
+class InvokedNodeDynamicOutputWrapper:
     """
     The return value for a dynamic output when invoking a solid in a composition function.
     Must be unwrapped by invoking map or collect.
@@ -781,18 +782,18 @@ class InvokedSolidDynamicOutputWrapper:
 
     def map(self, fn):
         check.is_callable(fn)
-        result = fn(InvokedSolidOutputHandle(self.solid_name, self.output_name, self.node_type))
+        result = fn(InvokedNodeOutputHandle(self.solid_name, self.output_name, self.node_type))
 
-        if isinstance(result, InvokedSolidOutputHandle):
-            return InvokedSolidDynamicOutputWrapper(
+        if isinstance(result, InvokedNodeOutputHandle):
+            return InvokedNodeDynamicOutputWrapper(
                 result.solid_name, result.output_name, result.node_type
             )
         elif isinstance(result, tuple) and all(
-            map(lambda item: isinstance(item, InvokedSolidOutputHandle), result)
+            map(lambda item: isinstance(item, InvokedNodeOutputHandle), result)
         ):
             return tuple(
                 map(
-                    lambda item: InvokedSolidDynamicOutputWrapper(
+                    lambda item: InvokedNodeDynamicOutputWrapper(
                         item.solid_name, item.output_name, item.node_type
                     ),
                     result,
@@ -800,7 +801,7 @@ class InvokedSolidDynamicOutputWrapper:
             )
         elif result is None:
             return None
-        elif isinstance(result, InvokedSolidDynamicOutputWrapper):
+        elif isinstance(result, InvokedNodeDynamicOutputWrapper):
             return result
         else:
             check.failed(
@@ -811,8 +812,8 @@ class InvokedSolidDynamicOutputWrapper:
     def collect(self) -> DynamicFanIn:
         return DynamicFanIn(self.solid_name, self.output_name)
 
-    def unwrap_for_composite_mapping(self) -> InvokedSolidOutputHandle:
-        return InvokedSolidOutputHandle(self.solid_name, self.output_name, self.node_type)
+    def unwrap_for_composite_mapping(self) -> InvokedNodeOutputHandle:
+        return InvokedNodeOutputHandle(self.solid_name, self.output_name, self.node_type)
 
     def __iter__(self):
         raise DagsterInvariantViolationError(
@@ -880,7 +881,7 @@ def composite_mapping_from_output(
     check.str_param(solid_name, "solid_name")
 
     # single output
-    if isinstance(output, InvokedSolidOutputHandle):
+    if isinstance(output, InvokedNodeOutputHandle):
         if len(output_defs) == 1:
             defn = output_defs[0]
             return {defn.name: defn.mapping_from(output.solid_name, output.output_name)}
@@ -897,7 +898,7 @@ def composite_mapping_from_output(
                 )
             )
 
-    elif isinstance(output, InvokedSolidDynamicOutputWrapper):
+    elif isinstance(output, InvokedNodeDynamicOutputWrapper):
         if len(output_defs) == 1:
             defn = output_defs[0]
             return {
@@ -923,7 +924,7 @@ def composite_mapping_from_output(
 
     # tuple returned directly
     if isinstance(output, tuple) and all(
-        map(lambda item: isinstance(item, InvokedSolidOutputHandle), output)
+        map(lambda item: isinstance(item, InvokedNodeOutputHandle), output)
     ):
         if decorator_name == "@composite_solid":
             for handle in output:
@@ -965,11 +966,11 @@ def composite_mapping_from_output(
                     )
                 )
 
-            if isinstance(handle, InvokedSolidOutputHandle):
+            if isinstance(handle, InvokedNodeOutputHandle):
                 output_mapping_dict[name] = output_def_dict[name].mapping_from(
                     handle.solid_name, handle.output_name
                 )
-            elif isinstance(handle, InvokedSolidDynamicOutputWrapper):
+            elif isinstance(handle, InvokedNodeDynamicOutputWrapper):
                 output_mapping_dict[name] = output_def_dict[name].mapping_from(
                     handle.solid_name, handle.output_name, from_dynamic_mapping=True
                 )

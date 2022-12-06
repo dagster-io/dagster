@@ -17,14 +17,14 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {InstanceTabs} from '../instance/InstanceTabs';
 
 import {DagsterRepoOption, useRepositoryOptions} from './WorkspaceContext';
-import {buildRepoAddress} from './buildRepoAddress';
-import {repoAddressAsString} from './repoAddressAsString';
+import {buildRepoAddress, DUNDER_REPO_NAME} from './buildRepoAddress';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {workspacePath} from './workspacePath';
 
 export const WorkspaceOverviewWithGrid = () => {
   return (
     <Page>
-      <PageHeader title={<Heading>Deployment</Heading>} tabs={<InstanceTabs tab="workspace" />} />
+      <PageHeader title={<Heading>Deployment</Heading>} tabs={<InstanceTabs tab="definitions" />} />
       <WorkspaceOverviewGrid />
     </Page>
   );
@@ -75,7 +75,7 @@ export const WorkspaceOverviewGrid = () => {
           option.repository.name,
           option.repositoryLocation.name,
         );
-        return <RepositoryGridItem key={repoAddressAsString(repoAddress)} repo={option} />;
+        return <RepositoryGridItem key={repoAddressAsHumanString(repoAddress)} repo={option} />;
       })}
     </CardGrid>
   );
@@ -100,9 +100,9 @@ const RepositoryGridItem: React.FC<{repo: DagsterRepoOption}> = React.memo(({rep
         >
           <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 8}}>
             <Icon name="folder" style={{marginTop: 1}} />
-            <RepoName>{repoName}</RepoName>
+            <RepoName>{repoName === DUNDER_REPO_NAME ? repoLocation : repoName}</RepoName>
           </Box>
-          <RepoLocation>{`@${repoLocation}`}</RepoLocation>
+          {repoName === DUNDER_REPO_NAME ? null : <RepoLocation>{`@${repoLocation}`}</RepoLocation>}
         </Box>
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}} padding={{top: 12}}>
           <Tag icon="asset">{assetCount}</Tag>

@@ -41,11 +41,7 @@ from dagster._core.definitions import (
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
-from dagster._core.definitions.solid_definition import (
-    CompositeSolidDefinition,
-    NodeDefinition,
-    SolidDefinition,
-)
+from dagster._core.definitions.solid_definition import CompositeSolidDefinition, NodeDefinition
 from dagster._core.execution.api import (
     create_execution_plan,
     execute_pipeline,
@@ -339,7 +335,7 @@ def execute_solid(
 
 @overload
 def execute_solid(
-    solid_def: SolidDefinition,
+    solid_def: OpDefinition,
     mode_def: Optional[ModeDefinition] = ...,
     input_values: Optional[Mapping[str, object]] = ...,
     tags: Optional[Mapping[str, Any]] = ...,

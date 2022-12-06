@@ -4,8 +4,8 @@ import React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {buildRepoPath} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {AssetKey} from './types';
@@ -32,7 +32,7 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
   }
 
   const allReposWithAsset = collision.repositories.map((r) =>
-    repoAddressAsString({name: r.name, location: r.location.name}),
+    repoAddressAsHumanString({name: r.name, location: r.location.name}),
   );
 
   return (
@@ -45,8 +45,9 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
         title={MULTIPLE_DEFINITIONS_WARNING}
         description={
           <>
-            This asset was loaded from {buildRepoPath(loadedFromRepo.name, loadedFromRepo.location)}
-            , but duplicate definitions were found in{' '}
+            This asset was loaded from{' '}
+            {buildRepoPathForHuman(loadedFromRepo.name, loadedFromRepo.location)}, but duplicate
+            definitions were found in{' '}
             <ButtonLink
               underline="always"
               color={Colors.Yellow700}

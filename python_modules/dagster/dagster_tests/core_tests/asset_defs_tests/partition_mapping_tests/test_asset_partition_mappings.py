@@ -1,3 +1,4 @@
+import inspect
 from typing import Optional
 
 import pendulum
@@ -26,7 +27,10 @@ from dagster._core.definitions.asset_partitions import (
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.definitions.partition_mapping import (
+    PartitionMapping,
+    get_builtin_partition_mapping_types,
+)
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.test_utils import assert_namedtuple_lists_equal
 
@@ -526,3 +530,17 @@ def test_partition_keys_in_range():
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     downstream_job.execute_in_process(partition_key="2022-09-11")
+
+
+def test_exported_partition_mappings_whitelisted():
+    import dagster
+
+    dagster_exports = (getattr(dagster, attr_name) for attr_name in dagster.__dir__(dagster))
+
+    exported_partition_mapping_classes = {
+        export
+        for export in dagster_exports
+        if inspect.isclass(export) and issubclass(export, PartitionMapping)
+    } - {PartitionMapping}
+
+    assert set(get_builtin_partition_mapping_types()) == exported_partition_mapping_classes

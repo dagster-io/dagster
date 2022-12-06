@@ -1,5 +1,54 @@
 # Changelog
 
+# 1.1.5 (core) / 0.17.5 (libraries)
+
+### Bugfixes
+
+- [dagit] Fixed an issue where the Partitions tab sometimes failed to load for asset jobs.
+
+# 1.1.4 (core) / 0.17.4 (libraries)
+
+### Community Contributions
+
+- Fixed a typo in GCSComputeLogManager docstring (thanks [reidab](https://github.com/reidab))!
+- [dagster-airbyte] job cancellation on run termination is now optional. (Thanks [adam-bloom](https://github.com/adam-bloom))!
+- [dagster-snowflake] Can now specify snowflake role in config to snowflake io manager (Thanks [binhnefits](https://github.com/binhnefits))!
+- [dagster-aws] A new AWS systems manager resource (thanks [zyd14](https://github.com/zyd14))!
+- [dagstermill] Retry policy can now be set on dagstermill assets (thanks [nickvazz](https://github.com/nickvazz))!
+- Corrected typo in docs on metadata (thanks [C0DK](https://github.com/C0dk))!
+
+### New
+
+- Added a `job_name` parameter to `InputContext`
+- Fixed inconsistent io manager behavior when using `execute_in_process` on a `GraphDefinition` (it would use the `fs_io_manager` instead of the in-memory io manager)
+- Compute logs will now load in Dagit even when websocket connections are not supported.
+- [dagit] A handful of changes have been made to our URLs:
+    - The `/instance` URL path prefix has been removed. E.g. `/instance/runs` can now be found at `/runs`.
+    - The `/workspace` URL path prefix has been changed to `/locations`. E.g. the URL for job `my_job` in repository `foo@bar` can now be found at `/locations/foo@bar/jobs/my_job`.
+- [dagit] The “Workspace” navigation item in the top nav has been moved to be a tab under the “Deployment” section of the app, and is renamed to “Definitions”.
+- [dagstermill] Dagster events can now be yielded from asset notebooks using `dagstermill.yield_event`.
+- [dagstermill] Failed notebooks can be saved for inspection and debugging using the new `save_on_notebook_failure` parameter.
+- [dagster-airflow] Added a new option `use_ephemeral_airflow_db` which will create a job run scoped airflow db for airflow dags running in dagster
+- [dagster-dbt] Materializing software-defined assets using dbt Cloud jobs now supports partitions.
+- [dagster-dbt] Materializing software-defined assets using dbt Cloud jobs now supports subsetting. Individual dbt Cloud models can be materialized, and the proper filters will be passed down to the dbt Cloud job.
+- [dagster-dbt] Software-defined assets from dbt Cloud jobs now support configurable group names.
+- [dagster-dbt] Software-defined assets from dbt Cloud jobs now support configurable `AssetKey`s.
+
+### Bugfixes
+
+- Fixed regression starting in `1.0.16` for some compute log managers where an exception in the compute log manager setup/teardown would cause runs to fail.
+- The S3 / GCS / Azure compute log managers now sanitize the optional `prefix` argument to prevent badly constructed paths.
+- [dagit] The run filter typeahead no longer surfaces key-value pairs when searching for `tag:`. This resolves an issue where retrieving the available tags could cause significant performance problems. Tags can still be searched with freeform text, and by adding them via click on individual run rows.
+- [dagit] Fixed an issue in the Runs tab for job snapshots, where the query would fail and no runs were shown.
+- [dagit] Schedules defined with cron unions displayed “Invalid cron string” in Dagit. This has been resolved, and human-readable versions of all members of the union will now be shown.
+### Breaking Changes
+
+- You can no longer set an output’s asset key by overriding `get_output_asset_key` on the `IOManager` handling the output. Previously, this was experimental and undocumented.
+
+### Experimental
+
+- Sensor and schedule evaluation contexts now have an experimental `log` property, which log events that can later be viewed in Dagit.  To enable these log views in dagit, navigate to the user settings and enable the `Experimental schedule/sensor logging view` option.  Log links will now be available for sensor/schedule ticks where logs were emitted.  Note: this feature is not available for users using the `NoOpComputeLogManager`.
+
 # 1.1.3 (core) / 0.17.3 (libraries)
 
 ### Bugfixes

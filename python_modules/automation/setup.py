@@ -18,7 +18,6 @@ setup(
     ],
     packages=find_packages(exclude=["automation_tests*"]),
     install_requires=[
-        "dagster==0+dev",
         "autoflake",
         "boto3",
         "packaging>=20.9",
@@ -30,6 +29,11 @@ setup(
         "wheel==0.33.6",
         "urllib3",
     ],
+    extras_require={
+        "buildkite": [
+            "dagster",  # Support buildkite conditional running of tests
+        ]
+    },
     entry_points={
         "console_scripts": [
             "dagster-image = automation.docker.cli:main",

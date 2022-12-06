@@ -15,7 +15,7 @@ import {DagsterTag} from '../runs/RunTag';
 import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
@@ -320,7 +320,7 @@ async function stateForLaunchingAssets(
     assets[0]?.repository.name || '',
     assets[0]?.repository.location.name || '',
   );
-  const repoName = repoAddressAsString(repoAddress);
+  const repoName = repoAddressAsHumanString(repoAddress);
 
   if (
     !assets.every(
@@ -502,7 +502,7 @@ export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
               <ul>
                 {collision.repositories.map((r, ridx) => (
                   <li key={ridx}>
-                    {repoAddressAsString({name: r.name, location: r.location.name})}
+                    {repoAddressAsHumanString({name: r.name, location: r.location.name})}
                   </li>
                 ))}
               </ul>
