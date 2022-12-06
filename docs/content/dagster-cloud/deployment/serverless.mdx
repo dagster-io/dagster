@@ -182,23 +182,23 @@ To build and upload the image, use the command line:
 
 3. To use a Docker image you have published to Dagster Cloud, use the `--base-image-tag` tag printed out by the above command.
 
-  - **With GitHub**: Set the `SERVERLESS_BASE_IMAGE_TAG` environment variable your GitHub Actions configuration (usually at `.github/workflows/deploy.yml`):
+   - **With GitHub**: Set the `SERVERLESS_BASE_IMAGE_TAG` environment variable your GitHub Actions configuration (usually at `.github/workflows/deploy.yml`):
 
-    ```yaml
-    env:
-      DAGSTER_CLOUD_URL: ...
-      DAGSTER_CLOUD_API_TOKEN: ...
-      SERVERLESS_BASE_IMAGE: "sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6"
-    ```
+     ```yaml
+     env:
+       DAGSTER_CLOUD_URL: ...
+       DAGSTER_CLOUD_API_TOKEN: ...
+       SERVERLESS_BASE_IMAGE_TAG: "sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6"
+     ```
 
-  - **With the CLI**: Add the `--base-image-tag` CLI argument to the deploy command:
+   - **With the CLI**: Add the `--base-image-tag` CLI argument to the deploy command:
 
-    ```shell
-    dagster-cloud serverless deploy-python-executable \
-      --location-name example \
-      --package-name assets_modern_data_stack \
-      --base-image-tag sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
-    ```
+     ```shell
+     dagster-cloud serverless deploy-python-executable \
+       --location-name example \
+       --package-name assets_modern_data_stack \
+       --base-image-tag sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
+     ```
 
 ---
 
