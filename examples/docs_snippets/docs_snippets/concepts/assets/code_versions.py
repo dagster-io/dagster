@@ -1,3 +1,5 @@
+from dagster import asset, multi_asset, AssetOut, Output
+
 # start_single_asset
 @asset(code_version="1")
 def asset_with_version():
@@ -11,7 +13,7 @@ def asset_with_version():
       "b": AssetOut(code_version="2"),
     }
 )
-def asset_with_version():
+def multi_asset_with_versions():
     yield Output(100, "a")
     yield Output(200, "b")
 # end_multi_asset
