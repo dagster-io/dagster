@@ -8,7 +8,12 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {usePermissions} from '../app/Permissions';
-import {displayNameForAssetKey, LiveData, toGraphId} from '../asset-graph/Utils';
+import {
+  displayNameForAssetKey,
+  isHiddenAssetGroupJob,
+  LiveData,
+  toGraphId,
+} from '../asset-graph/Utils';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {DagsterTag} from '../runs/RunTag';
@@ -385,7 +390,15 @@ async function stateForLaunchingAssets(
   const anyResourcesHaveRequiredConfig = resources.some((r) => r.configField?.isRequired);
   const anyAssetsHaveRequiredConfig = assets.some((a) => a.configField?.isRequired);
 
-  if (anyAssetsHaveRequiredConfig || anyResourcesHaveRequiredConfig || forceLaunchpad) {
+  // Note: If a partition definition is present and we're launching a user-defined job,
+  // we assume that any required config will be provided by a PartitionedConfig function
+  // attached to the job. Otherwise backfills won't work and you'll know to add one!
+  const assumeConfigPresent = partitionDefinition && !isHiddenAssetGroupJob(jobName);
+
+  const needLaunchpad =
+    !assumeConfigPresent && (anyAssetsHaveRequiredConfig || anyResourcesHaveRequiredConfig);
+
+  if (needLaunchpad || forceLaunchpad) {
     const assetOpNames = assets.flatMap((a) => a.opNames || []);
     return {
       type: 'launchpad',
