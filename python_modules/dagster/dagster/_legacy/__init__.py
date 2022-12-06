@@ -1,4 +1,4 @@
-from dagster._core.definitions import AssetGroup, CompositeSolidDefinition
+from dagster._core.definitions import AssetGroup
 from dagster._core.definitions import DagsterRunMetadataValue as DagsterPipelineRunMetadataValue
 from dagster._core.definitions import (
     DynamicOutputDefinition,
@@ -13,7 +13,6 @@ from dagster._core.definitions import (
     SensorExecutionContext,
     SolidInvocation,
     build_assets_job,
-    composite_solid,
     daily_schedule,
     default_executors,
     hourly_schedule,

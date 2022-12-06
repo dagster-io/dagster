@@ -25,7 +25,7 @@ from .dependency import (
 
 if TYPE_CHECKING:
     from .graph_definition import GraphDefinition
-    from .solid_definition import NodeDefinition
+    from .node_definition import NodeDefinition
 
 
 def validate_dependency_dict(
@@ -136,7 +136,7 @@ def create_execution_structure(
     as well as a dagster._core.definitions.dependency.DependencyStructure object.
     """
     from .graph_definition import GraphDefinition
-    from .solid_definition import NodeDefinition
+    from .node_definition import NodeDefinition
 
     check.sequence_param(node_defs, "node_defs", of_type=NodeDefinition)
     check.mapping_param(

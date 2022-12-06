@@ -1,8 +1,10 @@
 from dagster import Field, Int, String
+from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance import DagsterInstance
-from dagster._legacy import composite_solid, pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 @solid(config_schema={"foo": Field(String)})
@@ -15,7 +17,7 @@ def node_b(context, input_):
     return input_ * context.solid_config["bar"]
 
 
-@composite_solid
+@graph
 def composite_with_nested_config_solid():
     return node_b(node_a())
 
@@ -25,12 +27,14 @@ def composite_pipeline():
     composite_with_nested_config_solid()
 
 
-@composite_solid(
-    config_fn=lambda cfg: {
-        "node_a": {"config": {"foo": cfg["foo"]}},
-        "node_b": {"config": {"bar": cfg["bar"]}},
-    },
-    config_schema={"foo": Field(String), "bar": Int},
+@graph(
+    config=ConfigMapping(
+        config_fn=lambda cfg: {
+            "node_a": {"config": {"foo": cfg["foo"]}},
+            "node_b": {"config": {"bar": cfg["bar"]}},
+        },
+        config_schema={"foo": Field(String), "bar": Int},
+    )
 )
 def composite_with_nested_config_solid_and_config_mapping():
     return node_b(node_a())
@@ -41,7 +45,7 @@ def composite_pipeline_with_config_mapping():
     composite_with_nested_config_solid_and_config_mapping()
 
 
-def test_execution_plan_for_composite_solid():
+def test_execution_plan_for_graph():
     run_config = {
         "solids": {
             "composite_with_nested_config_solid": {
@@ -82,7 +86,7 @@ def test_execution_plan_for_composite_solid():
     ]
 
 
-def test_execution_plan_for_composite_solid_with_config_mapping():
+def test_execution_plan_for_graph_with_config_mapping():
     run_config = {
         "solids": {
             "composite_with_nested_config_solid_and_config_mapping": {

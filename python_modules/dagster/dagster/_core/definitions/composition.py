@@ -41,10 +41,10 @@ from .hook_definition import HookDefinition
 from .inference import infer_output_props
 from .input import InputDefinition, InputMapping
 from .logger_definition import LoggerDefinition
+from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .policy import RetryPolicy
 from .resource_definition import ResourceDefinition
-from .solid_definition import NodeDefinition
 from .utils import check_valid_name, validate_tags
 from .version_strategy import VersionStrategy
 

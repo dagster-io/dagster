@@ -2,6 +2,7 @@ import pytest
 
 from dagster import DagsterInstance, Int, Output
 from dagster import _check as check
+from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -14,14 +15,7 @@ from dagster._core.execution.plan.plan import should_skip_step
 from dagster._core.execution.retries import RetryMode
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import (
-    OutputDefinition,
-    composite_solid,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import OutputDefinition, execute_pipeline, lambda_solid, pipeline, solid
 
 
 def define_diamond_pipeline():
@@ -460,11 +454,11 @@ def test_fan_in_should_skip_step():
     def fan_in(_context, items):
         return items
 
-    @composite_solid(output_defs=[OutputDefinition(is_required=False)])
+    @graph(output_defs=[OutputDefinition(is_required=False)])
     def composite_all_upstream_skip():
         return fan_in([skip(), skip()])
 
-    @composite_solid(output_defs=[OutputDefinition(is_required=False)])
+    @graph(output_defs=[OutputDefinition(is_required=False)])
     def composite_one_upstream_skip():
         return fan_in([one(), skip()])
 
