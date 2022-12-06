@@ -5,4 +5,4 @@ def _make_defs():
     return Definitions()
 
 
-wrong_name = _make_defs()
+not_defs = _make_defs()
