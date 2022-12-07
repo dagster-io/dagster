@@ -230,14 +230,13 @@ Isolated runs each take place in their own container with their own compute reso
 
 These runs may take up to 3 minutes to start while these resources are provisioned.
 
-When launching runs manually, select `Isolate run environment` in the Launchpad to launch an isolated runs.
-Scheduled, sensor, and backfill runs are always isolated.
+When launching runs manually, select `Isolate run environment` in the Launchpad to launch an isolated runs. Scheduled, sensor, and backfill runs are always isolated.
 
 <Image
-  alt="The isolated run toggle in Dagster Cloud"
-  src="/images/dagster-cloud/deployment/isolatedruns.png"
-  width={344}
-  height={37}
+alt="The isolated run toggle in Dagster Cloud"
+src="/images/dagster-cloud/deployment/isolatedruns.png"
+width={344}
+height={37}
 />
 
 _Note: if non-isolated runs aren't enabled (see the section below), the toggle won't appear and all runs will be isolated._
@@ -253,21 +252,18 @@ non_isolated_runs:
 
 Non-isolated runs provide a faster start time by using a standing, shared container for each code location.
 
-They have fewer compute resources: 0.25 vCPU cores and 1GB of RAM. These resources are shared with other processes for a code location
-like sensors. As a result, it's recommended to use isolated runs for compute intensive jobs and asset materializations.
+They have fewer compute resources: 0.25 vCPU cores and 1GB of RAM. These resources are shared with other processes for a code location like sensors. As a result, it's recommended to use isolated runs for compute intensive jobs and asset materializations.
 
-While launching runs from the Launchpad, leave `Isolate run environment` unchecked to launch a non-isolated run.
-Materializing assets from the UI also defaults to non-isolated.
+While launching runs from the Launchpad, leave `Isolate run environment` unchecked to launch a non-isolated run. Materializing assets from the UI also defaults to non-isolated.
 
 <Image
-  alt="The isolated run toggle in Dagster Cloud"
-  src="/images/dagster-cloud/deployment/nonisolatedruns.png"
-  width={339}
-  height={35}
+alt="The isolated run toggle in Dagster Cloud"
+src="/images/dagster-cloud/deployment/nonisolatedruns.png"
+width={339}
+height={35}
 />
 
-By default only one non-isolated run will execute at once. While a run is in progress, the the Launchpad will
-swap to only launching isolated runs.
+By default only one non-isolated run will execute at once. While a run is in progress, the the Launchpad will swap to only launching isolated runs.
 
 This limit can be configured in [deployment settings](/dagster-cloud/developing-testing/deployment-settings-reference#non-isolated-runs). Take caution; The limit is in place to help wih avoiding crashes due to OOMs.
 
