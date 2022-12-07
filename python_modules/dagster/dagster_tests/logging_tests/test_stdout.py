@@ -8,6 +8,7 @@ import time
 
 import pytest
 from dagster import DagsterEventType, fs_io_manager, reconstructable, resource
+from dagster._core.definitions import op
 from dagster._core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.captured_log_manager import CapturedLogManager

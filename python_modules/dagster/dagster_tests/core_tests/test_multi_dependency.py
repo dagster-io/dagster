@@ -8,6 +8,7 @@ from dagster import (
     MultiDependencyDefinition,
     Nothing,
 )
+from dagster._core.definitions import op
 from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.graph_definition import GraphDefinition

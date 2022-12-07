@@ -1,11 +1,6 @@
 import pytest
 from dagster import DagsterInvalidConfigError, DependencyDefinition, List, NodeInvocation, String
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-)
+from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, execute_pipeline
 
 
 def test_string_from_inputs():

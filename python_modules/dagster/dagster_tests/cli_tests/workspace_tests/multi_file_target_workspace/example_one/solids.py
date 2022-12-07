@@ -1,4 +1,4 @@
-
+from dagster._core.definitions import op
 
 
 @op

@@ -4,12 +4,7 @@ from collections import defaultdict
 from dagster import DagsterEvent
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry, construct_event_logger
-from dagster._legacy import (
-    ModeDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-    pipeline,
-)
+from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline
 from dagster._loggers import colored_console_logger
 from dagster._serdes import deserialize_as
 

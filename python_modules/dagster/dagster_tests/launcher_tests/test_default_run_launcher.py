@@ -15,6 +15,7 @@ from dagster import (
     fs_io_manager,
     repository,
 )
+from dagster._core.definitions import op
 from dagster._core.errors import DagsterLaunchFailedError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRunStatus

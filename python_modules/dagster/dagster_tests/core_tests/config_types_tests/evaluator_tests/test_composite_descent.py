@@ -11,6 +11,7 @@ from dagster import (
     mem_io_manager,
     op,
 )
+from dagster._core.definitions import op
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.system_config.composite_descent import composite_descent

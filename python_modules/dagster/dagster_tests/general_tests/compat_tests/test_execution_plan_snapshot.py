@@ -1,6 +1,7 @@
 import os
 
 from dagster import DynamicOutput, List, Output, fs_io_manager
+from dagster._core.definitions import op
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import create_execution_plan, execute_run
 from dagster._core.execution.plan.inputs import (

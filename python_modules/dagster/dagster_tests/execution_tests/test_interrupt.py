@@ -19,12 +19,7 @@ from dagster import (
 )
 from dagster._core.errors import DagsterExecutionInterruptedError, raise_execution_interrupts
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import (
-    ModeDefinition,
-    execute_pipeline,
-    execute_pipeline_iterator,
-    pipeline,
-)
+from dagster._legacy import ModeDefinition, execute_pipeline, execute_pipeline_iterator, pipeline
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.interrupts import capture_interrupts, check_captured_interrupt
 

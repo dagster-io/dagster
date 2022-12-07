@@ -21,13 +21,7 @@ from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import (
-    DagsterRun,
-    ModeDefinition,
-    execute_pipeline,
-    execute_solid,
-    pipeline,
-)
+from dagster._legacy import DagsterRun, ModeDefinition, execute_pipeline, execute_solid, pipeline
 from dagster._loggers import colored_console_logger, default_system_loggers, json_console_logger
 from dagster._utils.error import SerializableErrorInfo
 

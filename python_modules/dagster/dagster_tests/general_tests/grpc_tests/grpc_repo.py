@@ -2,12 +2,8 @@ import string
 import time
 
 from dagster import Int, ScheduleDefinition, SkipReason, repository, sensor, usable_as_dagster_type
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PartitionSetDefinition,
-    pipeline,
-)
+from dagster._core.definitions import op
+from dagster._legacy import InputDefinition, OutputDefinition, PartitionSetDefinition, pipeline
 
 
 @op

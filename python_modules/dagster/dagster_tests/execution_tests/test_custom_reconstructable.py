@@ -3,7 +3,7 @@ import sys
 
 import pytest
 from dagster import reconstructable
-from dagster._core.definitions import ReconstructablePipeline, build_reconstructable_pipeline
+from dagster._core.definitions import ReconstructablePipeline, build_reconstructable_pipeline, op
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._legacy import pipeline
 

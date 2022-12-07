@@ -13,12 +13,7 @@ from dagster import (
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.inference import infer_input_props, infer_output_props
 from dagster._core.types.dagster_type import DagsterTypeKind
-from dagster._legacy import (
-    InputDefinition,
-    execute_pipeline,
-    execute_solid,
-    pipeline,
-)
+from dagster._legacy import InputDefinition, execute_pipeline, execute_solid, pipeline
 
 
 def test_infer_solid_description_from_docstring():

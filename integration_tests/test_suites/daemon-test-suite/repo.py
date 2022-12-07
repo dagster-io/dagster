@@ -1,5 +1,5 @@
 from dagster import RunRequest, repository, schedule, sensor
-from dagster._legacy import pipeline, op
+from dagster._legacy import op, pipeline
 
 
 @op()

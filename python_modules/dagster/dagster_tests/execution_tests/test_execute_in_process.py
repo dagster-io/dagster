@@ -21,7 +21,6 @@ from dagster._core.definitions.output import GraphOut
 from dagster._core.errors import DagsterMaxRetriesExceededError
 
 
-
 def get_solids():
     @op
     def emit_one():

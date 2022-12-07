@@ -1,4 +1,5 @@
 from dagster import job, repository
+from dagster._core.definitions import op
 from dagster._legacy import pipeline
 
 

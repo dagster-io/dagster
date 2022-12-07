@@ -14,6 +14,7 @@ from dagster import (
     multiprocess_executor,
     reconstructable,
 )
+from dagster._core.definitions import op
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult

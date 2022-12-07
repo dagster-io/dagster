@@ -1,5 +1,5 @@
 # type: ignore
-from dagster import op
+from dagster._core.definitions import op
 
 
 @op
