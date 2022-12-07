@@ -102,15 +102,13 @@ Dagster Cloud Serverless packages your code as [PEX](https://pex.readthedocs.io)
 
 To add data files to your deployment, use the [Data Files Support](https://setuptools.pypa.io/en/latest/userguide/datafiles.html) built into Python's `setup.py`. This requires adding a `package_data` or `include_package_data` keyword in the call to `setup()` in `setup.py`. For example, given this directory structure:
 
-```
-- setup.py
-- my_dagster_project/
-  - __init__.py
-  - repository.py
-  - data/
-    - file1.txt
-    - file2.csv
-```
+    - setup.py
+    - my_dagster_project/
+      - __init__.py
+      - repository.py
+      - data/
+        - file1.txt
+        - file2.csv
 
 If you want to include the `data` folder, modify your `setup.py` to add the `package_data` line:
 
@@ -136,16 +134,17 @@ if __name__ == "__main__":
 The default version of Python for Serverless deployments is Python 3.8. Versions 3.7, 3.9 and 3.10 are also supported. You can specify the version you want by updating your GitHub workflow or using the `--python-version` command line argument:
 
 - **With GitHub**: Change the `python_version` parameter for the `build_deploy_python_executable` job in your `.github/workflows` files. For example:
+
   ```yaml
-      - name: Build and deploy Python executable
-        if: env.ENABLE_FAST_DEPLOYS == 'true'
-        uses: dagster-io/dagster-cloud-action/actions/build_deploy_python_executable@pex-v0.1
-        with:
-          dagster_cloud_file: "$GITHUB_WORKSPACE/project-repo/dagster_cloud.yaml"
-          build_output_dir: "$GITHUB_WORKSPACE/build"
-          python_version: "3.9"   # Change this value to the desired Python version
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  - name: Build and deploy Python executable
+    if: env.ENABLE_FAST_DEPLOYS == 'true'
+    uses: dagster-io/dagster-cloud-action/actions/build_deploy_python_executable@pex-v0.1
+    with:
+      dagster_cloud_file: "$GITHUB_WORKSPACE/project-repo/dagster_cloud.yaml"
+      build_output_dir: "$GITHUB_WORKSPACE/build"
+      python_version: "3.9" # Change this value to the desired Python version
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   ```
 
 - **With the CLI**: Add the `--python-version` CLI argument to the deploy command to specify the registry path to the desired base image:
@@ -157,28 +156,28 @@ The default version of Python for Serverless deployments is Python 3.8. Versions
 ### Using a different base image or using native dependencies
 
 Dagster Cloud runs your code on a Docker image that we build as follows:
-1. The standard Python "slim" [Docker image](https://hub.docker.com/_/python), such as `python:3.8-slim` is used as the base.
+
+1. The standard Python "slim" [Docker image](https://hub.docker.com/\_/python), such as `python:3.8-slim` is used as the base.
 2. The `dagster-cloud[serverless]` module installed in the image.
 
-As far as possible, add all dependencies by including the corresponding native Python bindings in your `setup.py`. When that is not possible, you can build and upload a custom base image that will be used to run your Python code. 
+As far as possible, add all dependencies by including the corresponding native Python bindings in your `setup.py`. When that is not possible, you can build and upload a custom base image that will be used to run your Python code.
 
 To build and upload the image, use the command line:
 
-1. Build your Docker image using `docker build` or your usual Docker toolchain. Ensure the `dagster-cloud[serverless]` dependency is included. You can do this by adding the following to your `Dockerfile`: 
+1. Build your Docker image using `docker build` or your usual Docker toolchain. Ensure the `dagster-cloud[serverless]` dependency is included. You can do this by adding the following to your `Dockerfile`:
 
    ```shell
    RUN pip install "dagster-cloud[serverless]"
    ```
 
-
 2. Upload your Docker image to Dagster Cloud using the `upload-base-image` command. Note that this command prints out the tag used in Dagster Cloud to identify your image:
 
-  ```shell
-  $ dagster-cloud serverless upload-base-image local-image:tag
+   ```shell
+   $ dagster-cloud serverless upload-base-image local-image:tag
 
-  ...
-  To use the uploaded image run: dagster-cloud deploy-python-executable ... --base-image-tag=sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
-  ```
+   ...
+   To use the uploaded image run: dagster-cloud deploy-python-executable ... --base-image-tag=sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
+   ```
 
 3. To use a Docker image you have published to Dagster Cloud, use the `--base-image-tag` tag printed out by the above command.
 
