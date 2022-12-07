@@ -16,6 +16,7 @@ export interface CodeLocationStatusQuery_locationStatusesOrError_PythonError {
 export interface CodeLocationStatusQuery_locationStatusesOrError_WorkspaceLocationStatusEntries_entries {
   __typename: "WorkspaceLocationStatusEntry";
   id: string;
+  name: string;
   loadStatus: RepositoryLocationLoadStatus;
   updateTimestamp: number;
 }

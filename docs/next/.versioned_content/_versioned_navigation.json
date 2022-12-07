@@ -64172,6 +64172,10 @@
     {
       "children": [
         {
+          "path": "/getting-started/hello-dagster",
+          "title": "Hello Dagster"
+        },
+        {
           "path": "/getting-started/install",
           "title": "Installation"
         },
@@ -64185,6 +64189,7 @@
         }
       ],
       "icon": "Flag",
+      "isDefaultOpen": true,
       "path": "/getting-started",
       "title": "Getting Started"
     },
@@ -64442,7 +64447,6 @@
         }
       ],
       "icon": "Concepts",
-      "isDefaultOpen": true,
       "path": "/concepts",
       "title": "Concepts"
     },
@@ -64716,6 +64720,16 @@
     {
       "children": [
         {
+          "children": [
+            {
+              "path": "/integrations/airbyte",
+              "title": "Airbyte + Dagster"
+            },
+            {
+              "path": "/guides/dagster/airbyte-ingestion-as-code",
+              "title": "Ingestion as code"
+            }
+          ],
           "path": "/integrations/airbyte",
           "title": "Airbyte"
         },
@@ -64768,6 +64782,16 @@
           "title": "Great Expectations"
         },
         {
+          "children": [
+            {
+              "path": "/integrations/dagstermill/using-notebooks-with-dagster",
+              "title": "Jupyter, Papermill + Dagster tutorial"
+            },
+            {
+              "path": "/integrations/dagstermill/reference",
+              "title": "Reference"
+            }
+          ],
           "path": "/integrations/dagstermill",
           "title": "Jupyter / Papermill"
         },
@@ -64782,6 +64806,10 @@
         {
           "path": "/integrations/spark",
           "title": "PySpark"
+        },
+        {
+          "path": "/integrations/snowflake",
+          "title": "Snowflake"
         },
         {
           "path": "/integrations",
@@ -64852,6 +64880,10 @@
             {
               "path": "/guides/dagster/run-attribution",
               "title": "Using custom run coordinators"
+            },
+            {
+              "path": "/guides/dagster/airbyte-ingestion-as-code",
+              "title": "Airbyte ingestion as code"
             }
           ],
           "path": "/guides/experimental-features",

@@ -1,7 +1,9 @@
 from collections import defaultdict
+from typing import List
 
 import dagster._check as check
 from dagster._core.definitions import GraphDefinition, Node, NodeHandle, PipelineDefinition
+from dagster._core.definitions.dependency import GraphNode, OpNode
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent, DagsterEventType
@@ -94,16 +96,16 @@ class GraphExecutionResult:
         top level solid."""
         return [self.result_for_solid(solid.name) for solid in self.container.solids]
 
-    def _result_for_handle(self, solid, handle):
-        if not solid:
+    def _result_for_handle(self, node, handle):
+        if not node:
             raise DagsterInvariantViolationError(
                 "Can not find solid handle {handle_str}.".format(handle_str=handle.to_string())
             )
 
         events_by_kind = defaultdict(list)
 
-        if solid.is_graph:
-            events = []
+        if isinstance(node, GraphNode):
+            events: List[DagsterEvent] = []
             for event in self.event_list:
                 if event.is_step_event:
                     if event.solid_handle.is_or_descends_from(handle.with_ancestor(self.handle)):
@@ -111,7 +113,7 @@ class GraphExecutionResult:
                         events.append(event)
 
             return CompositeSolidExecutionResult(
-                solid,
+                node,
                 events,
                 events_by_kind,
                 self.reconstruct_context,
@@ -119,14 +121,14 @@ class GraphExecutionResult:
                 handle=handle.with_ancestor(self.handle),
                 output_capture=self.output_capture,
             )
-        else:
+        elif isinstance(node, OpNode):
             for event in self.event_list:
                 if event.is_step_event:
                     if event.solid_handle.is_or_descends_from(handle.with_ancestor(self.handle)):
                         events_by_kind[event.step_kind].append(event)
 
             return OpExecutionResult(
-                solid,
+                node,
                 events_by_kind,
                 self.reconstruct_context,
                 self.pipeline_def,
@@ -199,9 +201,11 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
         output_capture=None,
     ):
         check.inst_param(solid, "solid", Node)
-        check.invariant(
-            solid.is_graph,
-            desc="Tried to instantiate a CompositeSolidExecutionResult with a noncomposite solid",
+        check.inst_param(
+            solid,
+            "solid",
+            GraphNode,
+            "Tried to instantiate a CompositeSolidExecutionResult with a noncomposite solid",
         )
         self.solid = solid
         self.step_events_by_kind = check.dict_param(
@@ -294,9 +298,11 @@ class OpExecutionResult:
         self, solid, step_events_by_kind, reconstruct_context, pipeline_def, output_capture=None
     ):
         check.inst_param(solid, "solid", Node)
-        check.invariant(
-            not solid.is_graph,
-            desc="Tried to instantiate a SolidExecutionResult with a composite solid",
+        check.inst_param(
+            solid,
+            "solid",
+            OpNode,
+            "Tried to instantiate a SolidExecutionResult with a composite solid",
         )
         self.solid = solid
         self.step_events_by_kind = check.dict_param(

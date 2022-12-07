@@ -1,3 +1,4 @@
+import tempfile
 from contextlib import contextmanager
 
 from dagster import (
@@ -5,8 +6,10 @@ from dagster import (
     DagsterInstance,
     DailyPartitionsDefinition,
     IOManager,
+    PartitionKeyRange,
     ResourceDefinition,
     asset,
+    fs_io_manager,
     io_manager,
     materialize,
     repository,
@@ -169,6 +172,11 @@ def test_partition_key():
 
         def load_input(self, context):
             assert context.partition_key == "2020-05-05"
+            assert context.has_asset_partitions
+            assert context.asset_partition_key_range == PartitionKeyRange(
+                "2020-05-05", "2020-05-05"
+            )
+            assert context.asset_partition_keys == ["2020-05-05"]
             return 5
 
     @io_manager
@@ -186,3 +194,25 @@ def test_partition_key():
     with repo.get_asset_value_loader() as loader:
         value = loader.load_asset_value(AssetKey("asset1"), partition_key="2020-05-05")
         assert value == 5
+
+
+def test_partitions_with_fs_io_manager():
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
+
+        @asset(
+            partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+            io_manager_def=io_manager_def,
+        )
+        def asset1():
+            return 5
+
+        materialize([asset1], partition_key="2020-05-05")
+
+        @repository
+        def repo():
+            return [asset1]
+
+        with repo.get_asset_value_loader() as loader:
+            value = loader.load_asset_value(AssetKey("asset1"), partition_key="2020-05-05")
+            assert value == 5

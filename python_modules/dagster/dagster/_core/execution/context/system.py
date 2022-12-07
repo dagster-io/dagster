@@ -607,6 +607,15 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         else:
             upstream_output = artificial_output_context
 
+        asset_key = self.pipeline_def.asset_layer.asset_key_for_input(
+            node_handle=self.solid_handle, input_name=name
+        )
+        asset_partition_key_range = (
+            self.asset_partition_key_range_for_input(name)
+            if self.has_asset_partitions_for_input(name)
+            else None
+        )
+
         return InputContext(
             job_name=self.pipeline_def.name,
             name=name,
@@ -619,9 +628,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             step_context=self,
             resource_config=resource_config,
             resources=resources,
-            asset_key=self.pipeline_def.asset_layer.asset_key_for_input(
-                node_handle=self.solid_handle, input_name=name
-            ),
+            asset_key=asset_key,
+            asset_partition_key_range=asset_partition_key_range,
+            asset_partitions_def=self.pipeline_def.asset_layer.partitions_def_for_asset(asset_key)
+            if asset_key
+            else None,
         )
 
     def for_hook(self, hook_def: HookDefinition) -> "HookContext":
