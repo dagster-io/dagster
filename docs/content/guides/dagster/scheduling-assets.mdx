@@ -15,7 +15,7 @@ To understand freshness policies it helps to run a few experiments. To run these
 
 <Note>
 
-To run each code snippet, copy the code into a python file and then run `dagit -f my_file.py`
+To run each code snippet, copy the code into a Python file and then run `dagit -f my_file.py`
 
 </Note>
 
@@ -55,7 +55,7 @@ def my_repo():
     return [[a, b], [update_job_schedule]]
 ```
 
-This schedule runs a job every minute called `update_job` that materialiazes asset `a` and then asset `b`. This setup represents a traditional cron based schedule. To ensure asset `b` is updated with fresh data, you tell the orchestrator to run a job targetting asset `a` and `b`, and Dagster knows to run `a` before `b` because `a` is an input to the asset function `b`.
+This schedule runs a job every minute called `update_job` that materialiazes asset `a` and then asset `b`. This setup represents a traditional cron-based schedule. To ensure asset `b` is updated with fresh data, you tell the orchestrator to run a job targetting asset `a` and `b`, and Dagster knows to run `a` before `b` because `a` is an input to the asset function `b`.
 
 <Image
 src="/images/guides/scheduling-assets/freshness_1.png"
@@ -92,6 +92,7 @@ def b(a):
 
 update_job = define_asset_job(name="update_job", selection=AssetSelection.keys("a"))
 
+# add a reconciliation sensor
 update_sensor = build_asset_reconciliation_sensor(
     name="update_sensor", asset_selection=AssetSelection.all()
 )
@@ -108,11 +109,11 @@ def my_repo():
 
 This example adds a reconciliation sensor called `update_sensor` and modifies the scheduled job to only target asset `a`. When the scheduled job runs:
 
-1. `a` is updated by the scheduled job amndasset `b` is marked as stale
+1. `a` is updated by the scheduled job and asset `b` is marked as stale
 2. The reconciliation sensor identifies `b` is stale and starts a run to materialize `b`
 3. `b` is updated and marked as fresh
 
-This approach is more declarative, you are stating that "`b` should be as up-to-date as possible" and Dagster figures out when `b` needs to run.
+This approach is more declarative:, you are stating that "`b` should be as up-to-date as possible" and Dagster figures out when `b` needs to run.
 
 <Image
 src="/images/guides/scheduling-assets/freshness_2.png"
@@ -124,7 +125,7 @@ height={540}
 
 ## Step 3: Introduce freshness policies
 
-Now introduce another asset, `c`. What if you don't need `c` to be as up-to-date as `a` and `b`? In traditional cron based schedules this requirement quickly becomes confusing.
+In this section, we'll introduce another asset, `c`. What if you don't need `c` to be as up-to-date as `a` and `b`? In traditional cron-based schedules this requirement quickly becomes confusing.
 
 - Shoud the scheduled job target `c` and try to re-use the last value of `a`?
 - Should the scheduled job instead run `a` and `c`?
@@ -153,7 +154,7 @@ def a():
 def b(a):
     pass
 
-
+# add a freshness policy
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=2))
 def c(a):
     pass
@@ -244,7 +245,7 @@ def my_repo():
 
 Here is where the reconciliation sensor and freshness policies become really powerful. Dagster will determine that after two minutes asset `c` is late and violating its freshness policy. Dagster will also determine that in order for `c` to be fresh, asset `a` needs to be updated as well. Dagster will create a run to update both `a` and `c`.
 
-1. `c` is late: because it was last updated more than two minutes ago thus violating the freshness policy
+1. `c` is late because it was last updated more than two minutes ago thus violating the freshness policy:
 
    <Image
    src="/images/guides/scheduling-assets/freshness_4a.png"
@@ -284,7 +285,7 @@ from dagster import (
 def a():
     pass
 
-
+# add a freshness policy for b
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=5))
 def b(a):
     pass
@@ -309,8 +310,6 @@ When multiple freshness policies exist, Dagster determines the minimal amount of
 
 The data assets are now fully declarative. You tell Dagster how fresh `c` should be and Dagster does the rest. Asset `a` is updated when it needs to be, not any more or less frequently.
 
-Declarative scheduling simplifies how data pipelines are built, and it helps data engineers meet the needs of their stakeholders. Freshness policies can map to data SLAs. An executive dashboard with KPIs might have a strict SLA and freshness policy with a low lag time, whereas retraining a ML model may accept a greater lag.
-
 ---
 
 ## Step 5: Change code versions
@@ -327,8 +326,8 @@ from dagster import AssetSelection, asset, build_asset_reconciliation_sensor, re
 def a():
     pass
 
-
-@asset(op_version="0.1")
+# original code version
+@asset(code_version="0.1")
 def b(a):
     pass
 
@@ -366,7 +365,7 @@ from dagster import AssetSelection, asset, build_asset_reconciliation_sensor, re
 def a():
     pass
 
-
+# update code version
 @asset(code_version="0.2")
 def b(a):
     return "significant change"
@@ -404,3 +403,5 @@ height={1158}
 />
 
 In production, a reconciliation sensor will launch runs to refresh the stale assets taking into account any of their freshness policies.
+
+Declarative scheduling simplifies how data pipelines are built, and it helps data engineers meet the needs of their stakeholders. Freshness policies can map to data SLAs. An executive dashboard with KPIs might have a strict SLA and freshness policy with a low lag time, whereas retraining a ML model may accept a greater lag.

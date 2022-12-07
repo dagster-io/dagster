@@ -11,7 +11,7 @@ from dagster import (
 def a():
     pass
 
-
+# add a freshness policy for b
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=5))
 def b(a):
     pass
