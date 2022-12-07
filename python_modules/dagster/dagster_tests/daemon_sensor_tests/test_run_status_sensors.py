@@ -1,6 +1,7 @@
 import tempfile
 import time
 from contextlib import contextmanager
+from typing import Dict, NamedTuple
 
 import pendulum
 import pytest
@@ -8,9 +9,12 @@ import pytest
 from dagster import DagsterRunStatus
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
+from dagster._core.host_representation.external import ExternalRepository
+from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
+from dagster._core.workspace.context import WorkspaceProcessContext
 
 from .conftest import create_workspace_load_target
 from .test_sensor_run import (
@@ -51,13 +55,6 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
                     )
                 ).repository_location.get_repository(attribute),
             )
-
-
-from typing import Dict, NamedTuple
-
-from dagster._core.host_representation.external import ExternalRepository
-from dagster._core.instance import DagsterInstance
-from dagster._core.workspace.context import WorkspaceProcessContext
 
 
 class CodeLocationInfoForSensorTest(NamedTuple):
