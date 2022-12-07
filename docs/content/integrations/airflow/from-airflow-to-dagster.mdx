@@ -39,9 +39,6 @@ The first thing you need to do when approaching Dagster from Airflow is to learn
 | Datasets | [Software-Defined Assets](/concepts/assets/software-defined-assets) | SDAs are much more powerful and mature than datasets, include support for things like partitioning |
 | Connections/Variables | [Run Config](/concepts/configuration/config-schema#run-configuration), [Configured APIs](/concepts/configuration/configured) and [Environment Variables](https://docs.dagster.io/dagster-cloud/developing-testing/environment-variables-and-secrets#dagster-cloud-environment-variables-and-secrets) (cloud only)  |  |
 
-
-A Graph is a collection of Ops connected by data dependencies. if you've used the newer Airflow Task Flow API this style of programming will be familiar. At a high level instead of imperitively telling the orchestration engine when to do things with operators you will instead be focused on declaring the relationships between your data assets allowing the orchestration engine to take care of scheduling and execution. This declaritive programming model becomes most clear in the Software Defined
-
 ## Comparing an Airflow Dag to Dagster
 
 In this guide we will rewrite an Airflow Dag as a Dagster [Job](/concepts/ops-jobs-graphs/job).
