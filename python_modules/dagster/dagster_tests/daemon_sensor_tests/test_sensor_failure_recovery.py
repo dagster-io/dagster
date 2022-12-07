@@ -20,7 +20,7 @@ from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._seven import IS_WINDOWS
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
-from .test_sensor_run import wait_for_all_runs_to_start, create_workspace_load_target
+from .test_sensor_run import create_workspace_load_target, wait_for_all_runs_to_start
 
 spawn_ctx = multiprocessing.get_context("spawn")
 
