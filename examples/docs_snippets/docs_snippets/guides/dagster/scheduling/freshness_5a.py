@@ -5,8 +5,8 @@ from dagster import AssetSelection, asset, build_asset_reconciliation_sensor, re
 def a():
     pass
 
-
-@asset(op_version="0.1")
+# original code version
+@asset(code_version="0.1")
 def b(a):
     pass
 

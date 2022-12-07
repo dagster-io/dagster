@@ -18,7 +18,7 @@ def a():
 def b(a):
     pass
 
-
+# add a freshness policy
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=2))
 def c(a):
     pass
