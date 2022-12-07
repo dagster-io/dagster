@@ -160,6 +160,7 @@ def a():
 def b(a):
     pass
 
+
 # add a freshness policy
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=2))
 def c(a):
@@ -291,6 +292,7 @@ from dagster import (
 def a():
     pass
 
+
 # add a freshness policy for b
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=5))
 def b(a):
@@ -332,6 +334,7 @@ from dagster import AssetSelection, asset, build_asset_reconciliation_sensor, re
 def a():
     pass
 
+
 # original code version
 @asset(code_version="0.1")
 def b(a):
@@ -370,6 +373,7 @@ from dagster import AssetSelection, asset, build_asset_reconciliation_sensor, re
 @asset
 def a():
     pass
+
 
 # update code version
 @asset(code_version="0.2")
