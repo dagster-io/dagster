@@ -136,7 +136,7 @@ if __name__ == "__main__":
 The default version of Python for Serverless deployments is Python 3.8. Versions 3.7, 3.9 and 3.10 are also supported. You can specify the version you want by updating your GitHub workflow or using the `--python-version` command line argument:
 
 - **With GitHub**: Change the `python_version` parameter for the `build_deploy_python_executable` job in your `.github/workflows` files. For example:
-```yaml
+  ```yaml
       - name: Build and deploy Python executable
         if: env.ENABLE_FAST_DEPLOYS == 'true'
         uses: dagster-io/dagster-cloud-action/actions/build_deploy_python_executable@pex-v0.1
@@ -146,7 +146,7 @@ The default version of Python for Serverless deployments is Python 3.8. Versions
           python_version: "3.9"   # Change this value to the desired Python version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
+  ```
 
 - **With the CLI**: Add the `--python-version` CLI argument to the deploy command to specify the registry path to the desired base image:
 
