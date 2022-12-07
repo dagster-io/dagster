@@ -10,3 +10,8 @@ export const repoAddressAsHumanString = memoize((repoAddress: RepoAddress) => {
 export const repoAddressAsURLString = memoize((repoAddress: RepoAddress) => {
   return buildRepoPathForURL(repoAddress.name, repoAddress.location);
 });
+
+// Unencoded, dunder repo visible.
+export const repoAddressAsTag = memoize((repoAddress: RepoAddress) => {
+  return `${repoAddress.name}@${repoAddress.location}`;
+});

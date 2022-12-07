@@ -32,6 +32,7 @@ import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {explorerPathFromString} from './PipelinePathUtils';
@@ -70,7 +71,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
   if (repoAddress) {
     const repoToken = {
       token: 'tag',
-      value: `${DagsterTag.RepositoryLabelTag}=${repoAddress.name}@${repoAddress.location}`,
+      value: `${DagsterTag.RepositoryLabelTag}=${repoAddressAsTag(repoAddress)}`,
     };
     allTokens.push(repoToken);
   }
