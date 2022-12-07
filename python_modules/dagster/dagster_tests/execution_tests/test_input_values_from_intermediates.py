@@ -1,5 +1,5 @@
 from dagster import List, Optional
-from dagster._legacy import InputDefinition, execute_pipeline, op, pipeline
+from dagster._legacy import InputDefinition, execute_pipeline, pipeline
 
 
 def test_from_intermediates_from_multiple_outputs():

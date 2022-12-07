@@ -100,10 +100,8 @@ from dagster._legacy import (
     build_assets_job,
     daily_schedule,
     hourly_schedule,
-    op,
     monthly_schedule,
     pipeline,
-    op,
     weekly_schedule,
 )
 from dagster._seven import get_system_temp_directory

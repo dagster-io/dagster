@@ -30,7 +30,7 @@ from dagster._core.definitions.metadata.table import (
     TableSchema,
 )
 from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult
-from dagster._legacy import execute_pipeline, pipeline, op
+from dagster._legacy import execute_pipeline, pipeline
 from dagster._utils import frozendict
 
 

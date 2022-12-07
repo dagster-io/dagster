@@ -1,5 +1,6 @@
-from dagster._legacy import op
 from dagster_dask.executor import get_dask_resource_requirements
+
+
 
 
 def test_resource_tags():

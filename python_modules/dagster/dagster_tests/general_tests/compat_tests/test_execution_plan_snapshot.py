@@ -25,7 +25,6 @@ from dagster._legacy import (
     ModeDefinition,
     OutputDefinition,
     pipeline,
-    op,
 )
 from dagster._utils import file_relative_path
 from dagster._utils.test import copy_directory

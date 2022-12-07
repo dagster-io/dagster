@@ -35,7 +35,6 @@ from dagster._legacy import (
     OutputDefinition,
     default_executors,
     pipeline,
-    op,
 )
 from dagster._utils import segfault
 from dagster._utils.merger import merge_dicts

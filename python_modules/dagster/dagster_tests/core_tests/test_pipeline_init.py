@@ -11,7 +11,7 @@ from dagster._core.execution.resources_init import (
 from dagster._core.execution.retries import RetryMode
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._legacy import ModeDefinition, PipelineDefinition, op
+from dagster._legacy import ModeDefinition, PipelineDefinition
 
 
 def test_generator_exit():

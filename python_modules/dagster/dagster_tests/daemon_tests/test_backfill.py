@@ -36,7 +36,7 @@ from dagster._core.test_utils import step_did_not_run, step_failed, step_succeed
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
-from dagster._legacy import ModeDefinition, pipeline, op
+from dagster._legacy import ModeDefinition, pipeline
 from dagster._seven import IS_WINDOWS, get_system_temp_directory
 from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo

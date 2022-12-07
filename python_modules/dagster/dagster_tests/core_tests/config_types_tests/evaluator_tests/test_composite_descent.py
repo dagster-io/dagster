@@ -9,11 +9,12 @@ from dagster import (
     String,
     configured,
     mem_io_manager,
+    op,
 )
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.system_config.composite_descent import composite_descent
-from dagster._legacy import InputDefinition, execute_pipeline, op, pipeline
+from dagster._legacy import InputDefinition, execute_pipeline, pipeline
 
 
 def test_single_level_pipeline():

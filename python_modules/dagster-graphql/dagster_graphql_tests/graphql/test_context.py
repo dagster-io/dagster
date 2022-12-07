@@ -4,11 +4,10 @@ from contextlib import ExitStack
 from unittest import mock
 
 import pytest
-from dagster import repository
+from dagster import op, repository
 from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import op, pipeline
-from dagster_graphql.test.utils import define_out_of_process_workspace, main_repo_location_name
+from dagster._legacy import pipeline
 
 
 def get_repo():

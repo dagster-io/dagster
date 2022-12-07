@@ -2,7 +2,7 @@ import pytest
 from dagster import DagsterInvalidConfigError, Field, String, root_input_manager
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators.graph_decorator import graph
-from dagster._legacy import InputDefinition, ModeDefinition, execute_pipeline, pipeline, op
+from dagster._legacy import InputDefinition, ModeDefinition, execute_pipeline, pipeline
 
 
 def test_basic_solid_with_config():

@@ -24,7 +24,6 @@ from dagster._legacy import (
     execute_pipeline,
     execute_pipeline_iterator,
     pipeline,
-    op,
 )
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.interrupts import capture_interrupts, check_captured_interrupt

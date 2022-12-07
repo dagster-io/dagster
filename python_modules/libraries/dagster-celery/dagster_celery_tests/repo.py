@@ -7,7 +7,6 @@ from dagster._legacy import (
     ModeDefinition,
     OutputDefinition,
     default_executors,
-    op,
     pipeline,
 )
 from dagster_celery import celery_executor

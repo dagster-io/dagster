@@ -10,7 +10,7 @@ from dagit.webserver import DagitWebserver
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceFileTarget
-from dagster._legacy import execute_pipeline, pipeline, op
+from dagster._legacy import execute_pipeline, pipeline
 from dagster._utils import file_relative_path
 from starlette.testclient import TestClient
 

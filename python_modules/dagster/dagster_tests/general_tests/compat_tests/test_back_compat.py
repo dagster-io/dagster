@@ -33,7 +33,7 @@ from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
-from dagster._legacy import execute_pipeline, pipeline, op
+from dagster._legacy import execute_pipeline, pipeline
 from dagster._serdes import DefaultNamedTupleSerializer, create_snapshot_id
 from dagster._serdes.serdes import (
     WhitelistMap,

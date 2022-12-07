@@ -25,9 +25,7 @@ from dagster._legacy import (
     OutputDefinition,
     PresetDefinition,
     execute_pipeline,
-    op,
     pipeline,
-    op,
 )
 from dagster._utils import safe_tempfile_path, segfault
 

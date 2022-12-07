@@ -1,5 +1,5 @@
 from dagster import resource
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, op
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
 def test_configured_solids_and_resources():

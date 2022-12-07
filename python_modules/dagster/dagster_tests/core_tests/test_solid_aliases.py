@@ -1,11 +1,10 @@
 from collections import defaultdict
 
-from dagster import DependencyDefinition, Int, NodeInvocation
+from dagster import DependencyDefinition, Int, NodeInvocation, op
 from dagster._legacy import (
     InputDefinition,
     PipelineDefinition,
     execute_pipeline,
-    op,
 )
 
 

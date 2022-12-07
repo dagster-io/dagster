@@ -14,7 +14,6 @@ from dagster._legacy import (
     OutputDefinition,
     execute_pipeline,
     pipeline,
-    op,
 )
 from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.test import create_test_pipeline_execution_context

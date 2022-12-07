@@ -2,7 +2,7 @@ import shutil
 
 import pytest
 from dagster import file_relative_path
-from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, execute_solid, op
+from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, execute_solid
 from dagster._utils import dict_without_keys
 from dagster._utils.test import get_temp_dir
 from dagster_pyspark import (

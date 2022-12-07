@@ -4,7 +4,7 @@ import pytest
 from dagster import DagsterEventType, DagsterInvariantViolationError, ExpectationResult
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult
-from dagster._legacy import PipelineDefinition, execute_pipeline, op
+from dagster._legacy import PipelineDefinition, execute_pipeline
 
 
 def expt_results_for_compute_step(

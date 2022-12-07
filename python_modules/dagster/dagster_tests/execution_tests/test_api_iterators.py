@@ -15,7 +15,7 @@ from dagster._core.execution.api import (
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, PipelineDefinition, op
+from dagster._legacy import ModeDefinition, PipelineDefinition
 
 
 @resource

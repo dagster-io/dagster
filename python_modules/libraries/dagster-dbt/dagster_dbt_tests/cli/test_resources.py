@@ -1,7 +1,8 @@
 import json
 
-from dagster._legacy import build_solid_context, op
 from dagster_dbt import dbt_cli_resource
+
+from dagster._legacy import build_solid_context
 
 
 def get_dbt_resource(project_dir, profiles_dir, **kwargs):

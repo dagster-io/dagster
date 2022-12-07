@@ -1,6 +1,6 @@
 import dask.dataframe as dd
 from dagster import file_relative_path
-from dagster._legacy import InputDefinition, execute_solid, op
+from dagster._legacy import InputDefinition, execute_solid
 from dagster_dask import DataFrame
 
 

@@ -11,7 +11,6 @@ from dagster._legacy import (
     OutputDefinition,
     PartitionSetDefinition,
     pipeline,
-    op,
 )
 
 

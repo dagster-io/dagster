@@ -31,7 +31,7 @@ from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, OutputDefinition, execute_pipeline, pipeline, op
+from dagster._legacy import ModeDefinition, OutputDefinition, execute_pipeline, pipeline
 
 
 class VersionedInMemoryIOManager(MemoizableIOManager):

@@ -55,7 +55,6 @@ from dagster._legacy import (
     execute_pipeline_iterator,
     pipeline,
     reexecute_pipeline,
-    op,
 )
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.merger import deep_merge_dicts, merge_dicts

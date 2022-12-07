@@ -8,7 +8,6 @@ from dagster._legacy import (
     ModeDefinition,
     PipelineDefinition,
     execute_pipeline,
-    op,
     pipeline,
 )
 from dagster._loggers import colored_console_logger

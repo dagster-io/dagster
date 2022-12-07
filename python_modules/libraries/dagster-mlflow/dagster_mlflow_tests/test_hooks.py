@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 
-from dagster import Nothing, ResourceDefinition
-from dagster._legacy import InputDefinition, ModeDefinition, execute_pipeline, pipeline, op
+from dagster import Nothing, ResourceDefinition, op
+from dagster._legacy import InputDefinition, ModeDefinition, execute_pipeline, pipeline
 from dagster_mlflow.hooks import _cleanup_on_success, end_mlflow_on_run_finished
 
 

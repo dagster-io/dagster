@@ -1,4 +1,4 @@
-from dagster._legacy import op
+
 
 
 @op

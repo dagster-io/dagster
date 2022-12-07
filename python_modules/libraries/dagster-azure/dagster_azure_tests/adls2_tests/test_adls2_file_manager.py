@@ -8,7 +8,6 @@ from dagster._legacy import (
     OutputDefinition,
     execute_pipeline,
     pipeline,
-    op,
 )
 from dagster_azure.adls2 import (
     ADLS2FileHandle,

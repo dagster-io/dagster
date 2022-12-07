@@ -7,7 +7,7 @@ from dagster._core.execution.api import execute_run
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline, op, pipeline
+from dagster._legacy import execute_pipeline, pipeline
 from dagster._utils import Counter, traced_counter
 from dagster_graphql.test.utils import (
     define_out_of_process_context,

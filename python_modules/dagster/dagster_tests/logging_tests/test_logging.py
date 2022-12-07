@@ -27,7 +27,6 @@ from dagster._legacy import (
     execute_pipeline,
     execute_solid,
     pipeline,
-    op,
 )
 from dagster._loggers import colored_console_logger, default_system_loggers, json_console_logger
 from dagster._utils.error import SerializableErrorInfo

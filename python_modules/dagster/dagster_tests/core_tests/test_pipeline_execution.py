@@ -43,7 +43,6 @@ from dagster._legacy import (
     execute_pipeline_iterator,
     pipeline,
     reexecute_pipeline,
-    op,
 )
 from dagster._utils.test import execute_solid_within_pipeline
 

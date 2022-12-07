@@ -1,7 +1,7 @@
 import asyncio
 
 from dagster import Output
-from dagster._legacy import execute_solid, op
+from dagster._legacy import execute_solid
 
 
 def test_aio_solid():

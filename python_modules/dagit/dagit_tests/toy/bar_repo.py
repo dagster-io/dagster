@@ -1,7 +1,7 @@
 import string
 
 from dagster import ScheduleDefinition, repository
-from dagster._legacy import PartitionSetDefinition, op, pipeline
+from dagster._legacy import PartitionSetDefinition, pipeline
 
 
 @op

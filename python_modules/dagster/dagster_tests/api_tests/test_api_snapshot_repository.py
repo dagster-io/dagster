@@ -15,7 +15,7 @@ from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.host_representation.origin import ExternalRepositoryOrigin
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._legacy import op, pipeline
+from dagster._legacy import pipeline
 from dagster._serdes.serdes import deserialize_as
 
 from .utils import get_bar_repo_repository_location

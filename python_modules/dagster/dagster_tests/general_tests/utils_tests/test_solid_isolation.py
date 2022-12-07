@@ -1,7 +1,8 @@
 import re
 
 import pytest
-from dagster import DagsterInvariantViolationError, DagsterTypeCheckDidNotPass, Field, Int, resource
+
+from dagster import DagsterInvariantViolationError, DagsterTypeCheckDidNotPass, Field, Int, op, resource
 from dagster._core.definitions.decorators import graph
 from dagster._core.test_utils import nesting_graph_pipeline
 from dagster._core.utility_solids import (
@@ -10,7 +11,7 @@ from dagster._core.utility_solids import (
     define_stub_solid,
     input_set,
 )
-from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, op
+from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition
 from dagster._utils.test import execute_solid
 
 

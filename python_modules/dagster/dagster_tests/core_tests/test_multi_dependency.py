@@ -16,9 +16,7 @@ from dagster._legacy import (
     OutputDefinition,
     PipelineDefinition,
     execute_pipeline,
-    op,
     pipeline,
-    op,
 )
 
 
