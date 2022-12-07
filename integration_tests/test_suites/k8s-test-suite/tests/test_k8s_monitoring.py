@@ -2,8 +2,8 @@ import os
 import time
 
 import pytest
+from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.job import get_job_name_from_run_id
-from dagster_k8s.utils import delete_job
 from dagster_k8s_test_infra.integration_utils import image_pull_policy, launch_run_over_graphql
 from dagster_test.test_project import get_test_project_environments_path
 
@@ -72,7 +72,9 @@ def _launch_run_and_wait_for_resume(
             time.sleep(1)
 
         time.sleep(5)
-        assert delete_job(get_job_name_from_run_id(run_id), namespace)
+        assert DagsterKubernetesClient.production_client().delete_job(
+            get_job_name_from_run_id(run_id), namespace
+        )
 
         poll_for_finished_run(instance, run_id, timeout=120)
         assert instance.get_run_by_id(run_id).status == DagsterRunStatus.SUCCESS

@@ -34,6 +34,7 @@ from dagster._core.types.dagster_type import (
 
 from .dependency import (
     DependencyStructure,
+    GraphNode,
     IDependencyDefinition,
     Node,
     NodeHandle,
@@ -343,7 +344,7 @@ class GraphDefinition(NodeDefinition):
     ) -> Iterator[NodeHandle]:
         for node in self.node_dict.values():
             cur_node_handle = NodeHandle(node.name, parent_node_handle)
-            if node.is_graph:
+            if isinstance(node, GraphNode):
                 graph_def = node.definition.ensure_graph_def()
                 yield from graph_def.iterate_node_handles(cur_node_handle)
             yield cur_node_handle

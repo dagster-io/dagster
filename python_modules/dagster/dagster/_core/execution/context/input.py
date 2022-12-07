@@ -83,6 +83,8 @@ class InputContext:
         op_def: Optional["OpDefinition"] = None,
         asset_key: Optional[AssetKey] = None,
         partition_key: Optional[str] = None,
+        asset_partition_key_range: Optional[PartitionKeyRange] = None,
+        asset_partitions_def: Optional["PartitionsDefinition"] = None,
     ):
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
@@ -105,6 +107,9 @@ class InputContext:
             self._partition_key: Optional[str] = self._step_context.partition_key
         else:
             self._partition_key = partition_key
+
+        self._asset_partition_key_range = asset_partition_key_range
+        self._asset_partitions_def = asset_partitions_def
 
         if isinstance(resources, Resources):
             self._resources_cm = None
@@ -266,14 +271,17 @@ class InputContext:
     @property
     def asset_partitions_def(self) -> "PartitionsDefinition":
         """The PartitionsDefinition on the upstream asset corresponding to this input."""
-        asset_key = self.asset_key
-        result = self.step_context.pipeline_def.asset_layer.partitions_def_for_asset(asset_key)
-        if result is None:
-            raise DagsterInvariantViolationError(
-                f"Attempting to access partitions def for asset {asset_key}, but it is not partitioned"
-            )
+        if self._asset_partitions_def is None:
+            if self.asset_key:
+                raise DagsterInvariantViolationError(
+                    f"Attempting to access partitions def for asset {self.asset_key}, but it is not partitioned"
+                )
+            else:
+                raise DagsterInvariantViolationError(
+                    "Attempting to access partitions def for asset, but input does not correspond to an asset"
+                )
 
-        return result
+        return self._asset_partitions_def
 
     @property
     def step_context(self) -> "StepExecutionContext":
@@ -308,10 +316,7 @@ class InputContext:
     @public  # type: ignore
     @property
     def has_asset_partitions(self) -> bool:
-        if self._step_context is not None:
-            return self._step_context.has_asset_partitions_for_input(self.name)
-        else:
-            return False
+        return self._asset_partition_key_range is not None
 
     @public  # type: ignore
     @property
@@ -321,7 +326,16 @@ class InputContext:
         Raises an error if the input asset has no partitioning, or if the run covers a partition
         range for the input asset.
         """
-        return self.step_context.asset_partition_key_for_input(self.name)
+        if self._asset_partition_key_range is None:
+            check.failed("The input does not correspond to any asset partitions.")
+        start, end = self._asset_partition_key_range
+        if start == end:
+            return start
+        else:
+            check.failed(
+                f"Tried to access partition key for asset '{self.asset_key}', "
+                f"but the step input has a partition range: '{start}' to '{end}'."
+            )
 
     @public  # type: ignore
     @property
@@ -330,7 +344,12 @@ class InputContext:
 
         Raises an error if the input asset has no partitioning.
         """
-        return self.step_context.asset_partition_key_range_for_input(self.name)
+        if self._asset_partition_key_range is None:
+            check.failed(
+                "Tried to access asset_partition_key_range, but the asset is not partitioned.",
+            )
+
+        return self._asset_partition_key_range
 
     @public  # type: ignore
     @property
@@ -495,6 +514,8 @@ def build_input_context(
     step_context: Optional["StepExecutionContext"] = None,
     asset_key: Optional["AssetKey"] = None,
     partition_key: Optional[str] = None,
+    asset_partition_key_range: Optional[PartitionKeyRange] = None,
+    asset_partitions_def: Optional["PartitionsDefinition"] = None,
 ) -> "InputContext":
     """Builds input context from provided parameters.
 
@@ -520,6 +541,9 @@ def build_input_context(
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
         step_context (Optional[StepExecutionContext]): For internal use.
         partition_key (Optional[str]): String value representing partition key to execute with.
+        asset_partition_key_range (Optional[str]): The range of asset partition keys to load.
+        asset_partitions_def: Optional[PartitionsDefinition]: The PartitionsDefinition of the asset
+            being loaded.
 
     Examples:
 
@@ -530,7 +554,7 @@ def build_input_context(
             with build_input_context(resources={"foo": context_manager_resource}) as context:
                 do_something
     """
-    from dagster._core.definitions import OpDefinition
+    from dagster._core.definitions import OpDefinition, PartitionsDefinition
     from dagster._core.execution.context.output import OutputContext
     from dagster._core.execution.context.system import StepExecutionContext
     from dagster._core.execution.context_creation_pipeline import initialize_console_manager
@@ -546,6 +570,12 @@ def build_input_context(
     step_context = check.opt_inst_param(step_context, "step_context", StepExecutionContext)
     asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)
     partition_key = check.opt_str_param(partition_key, "partition_key")
+    asset_partition_key_range = check.opt_inst_param(
+        asset_partition_key_range, "asset_partition_key_range", PartitionKeyRange
+    )
+    asset_partitions_def = check.opt_inst_param(
+        asset_partitions_def, "asset_partitions_def", PartitionsDefinition
+    )
 
     return InputContext(
         name=name,
@@ -561,4 +591,6 @@ def build_input_context(
         op_def=op_def,
         asset_key=asset_key,
         partition_key=partition_key,
+        asset_partition_key_range=asset_partition_key_range,
+        asset_partitions_def=asset_partitions_def,
     )

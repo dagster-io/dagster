@@ -771,7 +771,7 @@ class DagsterInstance:
             self._schedule_storage.upgrade()
             self._schedule_storage.migrate(print_fn)
 
-    def optimize_for_dagit(self, statement_timeout, pool_recycle):
+    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
         if self._schedule_storage:
             self._schedule_storage.optimize_for_dagit(
                 statement_timeout=statement_timeout, pool_recycle=pool_recycle
