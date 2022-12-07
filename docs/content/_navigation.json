@@ -668,7 +668,7 @@
             "path": "/guides/dagster/software-defined-assets"
           },
           {
-            "title": "Scheduling Software-defined assets with freshness policies",
+            "title": "Declarative scheduling for Software-defined assets",
             "path": "/guides/dagster/scheduling-assets"
           },
           {

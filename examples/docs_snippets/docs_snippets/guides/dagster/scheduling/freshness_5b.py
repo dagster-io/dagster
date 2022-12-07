@@ -6,7 +6,7 @@ def a():
     pass
 
 
-@asset(op_version="0.2")
+@asset(code_version="0.2")
 def b(a):
     return "significant change"
 
