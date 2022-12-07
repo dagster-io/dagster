@@ -20,7 +20,7 @@ def b(a):
 
 update_job = define_asset_job(name="update_job", selection=AssetSelection.keys("a"))
 
-# add a reconciliation sensor 
+# add a reconciliation sensor
 update_sensor = build_asset_reconciliation_sensor(
     name="update_sensor", asset_selection=AssetSelection.all()
 )
