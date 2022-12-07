@@ -12,7 +12,7 @@ from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
 
-from .conftest import workspace_load_target
+from .conftest import create_workspace_load_target
 from .test_sensor_run import (
     evaluate_sensors,
     failure_job,
@@ -40,7 +40,7 @@ def instance_module_scoped_fixture():
 def instance_with_sensors(overrides=None, attribute="the_repo"):
     with instance_for_test(overrides=overrides) as instance:
         with create_test_daemon_workspace_context(
-            workspace_load_target(attribute=attribute), instance=instance
+            create_workspace_load_target(attribute=attribute), instance=instance
         ) as workspace_context:
             yield (
                 instance,
@@ -54,10 +54,10 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
 
 
 @contextmanager
-def instance_with_multiple_repos_with_sensors(overrides=None):
+def instance_with_multiple_repos_with_sensors(overrides=None, workspace_load_target=None):
     with instance_for_test(overrides) as instance:
         with create_test_daemon_workspace_context(
-            workspace_load_target(None), instance=instance
+            workspace_load_target or create_workspace_load_target(None), instance=instance
         ) as workspace_context:
             yield (
                 instance,
