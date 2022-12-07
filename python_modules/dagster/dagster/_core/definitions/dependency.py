@@ -39,6 +39,8 @@ from .output import OutputDefinition
 from .utils import DEFAULT_OUTPUT, struct_to_string, validate_tags
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.op_definition import OpDefinition
+
     from .asset_layer import AssetLayer
     from .composition import MappedInputPlaceholder
     from .graph_definition import GraphDefinition
@@ -106,7 +108,7 @@ class NodeInvocation(
         )
 
 
-class Node:
+class Node(ABC):
     """
     Node invocation within a graph. Identified by its name inside the graph.
     """
@@ -179,25 +181,11 @@ class Node:
         return self.definition.output_def_named(name)
 
     @property
-    def is_graph(self) -> bool:
-        from .graph_definition import GraphDefinition
-
-        return isinstance(self.definition, GraphDefinition)
-
-    def describe_node(self) -> str:
-        from .op_definition import OpDefinition
-
-        if isinstance(self.definition, OpDefinition):
-            return f"op '{self.name}'"
-        else:
-            return f"graph '{self.name}'"
-
-    @property
-    def input_dict(self):
+    def input_dict(self) -> Mapping[str, InputDefinition]:
         return self.definition.input_dict
 
     @property
-    def output_dict(self):
+    def output_dict(self) -> Mapping[str, OutputDefinition]:
         return self.definition.output_dict
 
     @property
@@ -249,6 +237,76 @@ class Node:
     def retry_policy(self) -> Optional[RetryPolicy]:
         return self._retry_policy
 
+    @abstractmethod
+    def describe_node(self) -> str:
+        ...
+
+    @abstractmethod
+    def get_resource_requirements(
+        self,
+        outer_container: "GraphDefinition",
+        parent_handle: Optional["NodeHandle"] = None,
+        asset_layer: Optional["AssetLayer"] = None,
+    ) -> Iterator["ResourceRequirement"]:
+        ...
+
+
+class GraphNode(Node):
+
+    definition: "GraphDefinition"
+
+    def __init__(
+        self,
+        name: str,
+        definition: "GraphDefinition",
+        graph_definition: "GraphDefinition",
+        tags: Optional[Mapping[str, str]] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
+        retry_policy: Optional[RetryPolicy] = None,
+    ):
+        from .graph_definition import GraphDefinition
+
+        check.inst_param(definition, "definition", GraphDefinition)
+        super().__init__(name, definition, graph_definition, tags, hook_defs, retry_policy)
+
+    def get_resource_requirements(
+        self,
+        outer_container: "GraphDefinition",
+        parent_handle: Optional["NodeHandle"] = None,
+        asset_layer: Optional["AssetLayer"] = None,
+    ) -> Iterator["ResourceRequirement"]:
+
+        cur_node_handle = NodeHandle(self.name, parent_handle)
+
+        for node in self.definition.node_dict.values():
+            yield from node.get_resource_requirements(
+                asset_layer=asset_layer,
+                outer_container=self.definition,
+                parent_handle=cur_node_handle,
+            )
+
+    def describe_node(self) -> str:
+        return f"graph '{self.name}'"
+
+
+class OpNode(Node):
+
+    definition: "OpDefinition"
+
+    def __init__(
+        self,
+        name: str,
+        definition: "OpDefinition",
+        graph_definition: "GraphDefinition",
+        tags: Optional[Mapping[str, str]] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
+        retry_policy: Optional[RetryPolicy] = None,
+    ):
+        from .op_definition import OpDefinition
+
+        check.inst_param(definition, "definition", OpDefinition)
+        super().__init__(name, definition, graph_definition, tags, hook_defs, retry_policy)
+
     def get_resource_requirements(
         self,
         outer_container: "GraphDefinition",
@@ -259,29 +317,24 @@ class Node:
 
         cur_node_handle = NodeHandle(self.name, parent_handle)
 
-        if not self.is_graph:
-            solid_def = self.definition.ensure_op_def()
-            for requirement in solid_def.get_resource_requirements((cur_node_handle, asset_layer)):
-                # If requirement is a root input manager requirement, but the corresponding node has an upstream output, then ignore the requirement.
-                if (
-                    isinstance(requirement, InputManagerRequirement)
-                    and outer_container.dependency_structure.has_deps(
-                        NodeInput(self, solid_def.input_def_named(requirement.input_name))
-                    )
-                    and requirement.root_input
-                ):
-                    continue
-                yield requirement
-            for hook_def in self.hook_defs:
-                yield from hook_def.get_resource_requirements(self.describe_node())
-        else:
-            graph_def = self.definition.ensure_graph_def()
-            for node in graph_def.node_dict.values():
-                yield from node.get_resource_requirements(
-                    asset_layer=asset_layer,
-                    outer_container=graph_def,
-                    parent_handle=cur_node_handle,
+        for requirement in self.definition.get_resource_requirements(
+            (cur_node_handle, asset_layer)
+        ):
+            # If requirement is a root input manager requirement, but the corresponding node has an upstream output, then ignore the requirement.
+            if (
+                isinstance(requirement, InputManagerRequirement)
+                and outer_container.dependency_structure.has_deps(
+                    NodeInput(self, self.definition.input_def_named(requirement.input_name))
                 )
+                and requirement.root_input
+            ):
+                continue
+            yield requirement
+        for hook_def in self.hook_defs:
+            yield from hook_def.get_resource_requirements(self.describe_node())
+
+    def describe_node(self) -> str:
+        return f"op '{self.name}'"
 
 
 class NodeHandleSerializer(DefaultNamedTupleSerializer):
@@ -392,7 +445,7 @@ class NodeHandle(
 
         return NodeHandle.from_path(self.path[len(ancestor.path) :])
 
-    def with_ancestor(self, ancestor: "NodeHandle") -> Optional["NodeHandle"]:
+    def with_ancestor(self, ancestor: Optional["NodeHandle"]) -> "NodeHandle":
         """Returns a copy of the handle with an ancestor grafted on.
 
         Args:

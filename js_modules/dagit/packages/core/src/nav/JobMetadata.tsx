@@ -9,7 +9,7 @@ import {DagsterTag} from '../runs/RunTag';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {LatestRunTag} from './LatestRunTag';
@@ -37,7 +37,7 @@ export function useJobNavMetadata(repoAddress: RepoAddress, pipelineName: string
         tags: [
           {
             key: DagsterTag.RepositoryLabelTag,
-            value: repoAddressAsHumanString(repoAddress),
+            value: repoAddressAsTag(repoAddress),
           },
         ],
       },
