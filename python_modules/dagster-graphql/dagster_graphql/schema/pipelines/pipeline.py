@@ -348,6 +348,9 @@ class GrapheneRun(graphene.ObjectType):
     def resolve_pipelineSnapshotId(self, _graphene_info):
         return self._pipeline_run.pipeline_snapshot_id
 
+    def resolve_parentPipelineSnapshotId(self, graphene_info):
+        return self._pipeline_run.pipeline_snapshot_id
+
     def resolve_stats(self, graphene_info):
         return get_stats(graphene_info, self.run_id)
 

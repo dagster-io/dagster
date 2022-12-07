@@ -161,7 +161,7 @@ class PipelineSnapshot(
         graph_def_name: str,
         metadata: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]],
     ):
-        return super(PipelineSnapshot, cls).__new__(
+        x = super(PipelineSnapshot, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             description=check.opt_str_param(description, "description"),
@@ -189,6 +189,12 @@ class PipelineSnapshot(
             graph_def_name=check.str_param(graph_def_name, "graph_def_name"),
             metadata=check.opt_sequence_param(metadata, "metadata"),
         )
+        print("=" * 100)
+        print("\n")
+        print(x)
+        print("\n")
+        print("=" * 100)
+        return x
 
     @classmethod
     def from_pipeline_def(cls, pipeline_def: PipelineDefinition) -> "PipelineSnapshot":
