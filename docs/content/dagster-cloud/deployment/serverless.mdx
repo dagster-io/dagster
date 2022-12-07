@@ -30,7 +30,7 @@ Serverless is currently in early access and is subject to the following limitati
 - Maximum of 100 GB of bandwidth per day
 - Maximum of 4500 step-minutes per day
 - Runs receive 4 vCPU cores, 16 GB of RAM and 128 GB of ephemeral disk
-- Sensors receive 0.25 vCPU cores and 512 MB of RAM
+- Sensors receive 0.25 vCPU cores and 1 GB of RAM
 - All Serverless jobs run in the United States
 
 Enterprise customers may request a quota increase by [contacting Sales](mailto:sales@elementl.com).
@@ -217,3 +217,58 @@ Unlike Hybrid, Serverless Deployments on Dagster Cloud require direct access to 
 - Secrets and source code are built into the image directly. Images are stored in a per-customer container registry with restricted access.
 - User code is securely sandboxed using modern container sandboxing techniques.
 - All production access is governed by industry-standard best practices which are regularly audited.
+
+---
+
+## Run isolation
+
+Dagster Cloud Serverless offers two settings for run isolation: isolated and non-isolated. Non-isolated runs are for iterating quickly and trade off isolation for speed. Isolated runs are for production and compute heavy Assets/Jobs.
+
+### Isolated runs
+
+Isolated runs each take place in their own container with their own compute resources: 4 cpu cores and 16GB of RAM.
+
+These runs may take up to 3 minutes to start while these resources are provisioned.
+
+When launching runs manually, select `Isolate run environment` in the Launchpad to launch an isolated runs. Scheduled, sensor, and backfill runs are always isolated.
+
+<Image
+alt="The isolated run toggle in Dagster Cloud"
+src="/images/dagster-cloud/deployment/isolatedruns.png"
+width={344}
+height={37}
+/>
+
+_Note: if non-isolated runs aren't enabled (see the section below), the toggle won't appear and all runs will be isolated._
+
+### Non-isolated runs
+
+This can be enabled or disabled in deployment settings with
+
+```yaml
+non_isolated_runs:
+  enabled: True
+```
+
+Non-isolated runs provide a faster start time by using a standing, shared container for each code location.
+
+They have fewer compute resources: 0.25 vCPU cores and 1GB of RAM. These resources are shared with other processes for a code location like sensors. As a result, it's recommended to use isolated runs for compute intensive jobs and asset materializations.
+
+While launching runs from the Launchpad, leave `Isolate run environment` unchecked to launch a non-isolated run. Materializing assets from the UI also defaults to non-isolated.
+
+<Image
+alt="The isolated run toggle in Dagster Cloud"
+src="/images/dagster-cloud/deployment/nonisolatedruns.png"
+width={339}
+height={35}
+/>
+
+By default only one non-isolated run will execute at once. While a run is in progress, the the Launchpad will swap to only launching isolated runs.
+
+This limit can be configured in [deployment settings](/dagster-cloud/developing-testing/deployment-settings-reference#non-isolated-runs). Take caution; The limit is in place to help wih avoiding crashes due to OOMs.
+
+```yaml
+non_isolated_runs:
+  enabled: True
+  max_concurrent_non_isolated_runs: 1
+```
