@@ -116,8 +116,17 @@ staleness calculations for downstream assets.
 
 The <PyObject object="observable_source_asset" /> decorator provides a convenient way to define source assets with observation functions. The below observable source asset takes a file hash and returns it as the logical version. Every time you run the observation function, a new observation will be generated with this hash set as logical version.
 
-```python file=/concepts/assets/observable_source_assets.py startafter=start endbefore=end
-No match for endBefore value "end"
+```python file=/concepts/assets/observable_source_assets.py startafter=start_marker endbefore=end_marker
+from hashlib import sha256
+from dagster import LogicalVersion, observable_source_asset
+
+
+@observable_source_asset
+def foo_source_asset(_context):
+    content = read_some_file()
+    hash_sig = sha256()
+    hash_sig.update(bytearray(content, "utf8"))
+    return LogicalVersion(hash_sig.hexdigest())
 ```
 
 When the file content changes, the hash and therefore the logical version will change-- this will notify Dagster that downstream assets derived from an older value (i.e. a different logical version) of this source asset are stale.
