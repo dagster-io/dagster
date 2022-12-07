@@ -134,12 +134,12 @@ Inside of the `my_dagster_project/` directory, the following files and directori
       <td>my_dagster_project/assets.py</td>
       <td>
         A Python module that contains {" "}
-        <a href="/concepts/assets/software-defined-assets">Software-Defined Assets</a>.
+        <a href="/concepts/assets/software-defined-assets">software-defined assets</a>.
         <br />
         <br />
         Note: As your project grows, we recommend organizing assets in subpackages, e.g. <code>my_dagster_project/assets/analytics.py</code>, so that you can use{" "}
-        <PyObject object="load_assets_from_package_module" /> to load assets into your project and
-        group them based on the folder structure, rather than needing to manually group assets every time you define one.
+        <PyObject object="load_assets_from_package_module" /> to load assets from a package or <PyObject object="load_assets_from_modules" /> from a list of modules into your project and
+        group them based on the folder structure, rather than needing to manually add assets to the top-level definitions every time you define one.
         Read more about best practices in the <a href="/guides/dagster/example_project">Fully Featured Project guide</a>.
       </td>
     </tr>
@@ -195,7 +195,7 @@ dagit
 
 Open <http://localhost:3000> with your browser to see the project.
 
-Now, you can start writing assets in `my_dagster_project/assets.pypy`, define your own ops or jobs, and include them in `my_dagster_project/__init__.py`.
+Now, you can start writing assets in `my_dagster_project/assets.py`.
 
 ---
 
