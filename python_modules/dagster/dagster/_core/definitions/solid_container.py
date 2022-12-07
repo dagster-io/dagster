@@ -3,6 +3,7 @@ from typing import (
     TYPE_CHECKING,
     DefaultDict,
     Dict,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -13,14 +14,17 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 from .dependency import (
     DependencyDefinition,
     DependencyStructure,
+    GraphNode,
     IDependencyDefinition,
     Node,
     NodeInvocation,
+    OpNode,
 )
 
 if TYPE_CHECKING:
@@ -169,7 +173,7 @@ def create_execution_structure(
         alias_to_name[alias] = solid_key.name
         aliased_dependencies_dict[alias] = input_dep_dict
 
-    pipeline_solid_dict = _build_pipeline_node_dict(
+    pipeline_solid_dict = _build_graph_node_dict(
         node_defs, name_to_aliases, alias_to_solid_instance, graph_definition
     )
 
@@ -182,34 +186,48 @@ def create_execution_structure(
     return dependency_structure, pipeline_solid_dict
 
 
-def _build_pipeline_node_dict(
-    solid_defs: Sequence["NodeDefinition"],
+def _build_graph_node_dict(
+    node_defs: Sequence["NodeDefinition"],
     name_to_aliases: Mapping[str, Set[str]],
-    alias_to_solid_instance: Mapping[str, NodeInvocation],
+    alias_to_node_invocation: Mapping[str, NodeInvocation],
     graph_definition,
 ) -> Mapping[str, Node]:
-    pipeline_solids = []
-    for solid_def in solid_defs:
-        uses_of_solid = name_to_aliases.get(solid_def.name, {solid_def.name})
+    from .graph_definition import GraphDefinition
 
-        for alias in uses_of_solid:
-            solid_instance = alias_to_solid_instance.get(alias)
+    nodes: List[Node] = []
+    for node_def in node_defs:
+        uses_of_node = name_to_aliases.get(node_def.name, {node_def.name})
 
-            solid_instance_tags = solid_instance.tags if solid_instance else {}
-            hook_defs = solid_instance.hook_defs if solid_instance else frozenset()
-            retry_policy = solid_instance.retry_policy if solid_instance else None
-            pipeline_solids.append(
-                Node(
+        for alias in uses_of_node:
+            node_invocation = alias_to_node_invocation.get(alias)
+
+            node_invocation_tags = node_invocation.tags if node_invocation else {}
+            hook_defs = node_invocation.hook_defs if node_invocation else frozenset()
+            retry_policy = node_invocation.retry_policy if node_invocation else None
+            node: Node
+            if isinstance(node_def, GraphDefinition):
+                node = GraphNode(
                     name=alias,
-                    definition=solid_def,
+                    definition=node_def,
                     graph_definition=graph_definition,
-                    tags=solid_instance_tags,
+                    tags=node_invocation_tags,
                     hook_defs=hook_defs,
                     retry_policy=retry_policy,
                 )
-            )
+            elif isinstance(node_def, OpDefinition):
+                node = OpNode(
+                    name=alias,
+                    definition=node_def,
+                    graph_definition=graph_definition,
+                    tags=node_invocation_tags,
+                    hook_defs=hook_defs,
+                    retry_policy=retry_policy,
+                )
+            else:
+                check.failed(f"Unexpected node_def type {node_def}")
+            nodes.append(node)
 
-    return {ps.name: ps for ps in pipeline_solids}
+    return {node.name: node for node in nodes}
 
 
 def _validate_dependencies(

@@ -55,7 +55,7 @@ from dagster._utils import merge_dicts
 
 from .asset_layer import AssetLayer, build_asset_selection_job
 from .config import ConfigMapping
-from .dependency import DependencyDefinition
+from .dependency import DependencyDefinition, GraphNode
 from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
@@ -753,9 +753,12 @@ def get_subselected_graph_definition(
 
         # rebuild graph if any nodes inside the graph are selected
         definition: Union[SubselectedGraphDefinition, NodeDefinition]
-        if node.is_graph and resolved_op_selection_dict[node.name] is not LeafNodeSelection:
+        if (
+            isinstance(node, GraphNode)
+            and resolved_op_selection_dict[node.name] is not LeafNodeSelection
+        ):
             definition = get_subselected_graph_definition(
-                cast(GraphDefinition, node.definition),  # guaranteed by node.is_graph
+                node.definition,
                 resolved_op_selection_dict[node.name],
                 parent_handle=node_handle,
             )
