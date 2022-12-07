@@ -15,6 +15,7 @@ from dagster import (
     AssetMaterialization,
     AssetObservation,
     AssetSelection,
+    CodeLocationSelector,
     DagsterRunStatus,
     ExperimentalWarning,
     Field,
@@ -60,7 +61,7 @@ from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iter
 from dagster._legacy import pipeline, solid
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
-from .conftest import workspace_load_target
+from .conftest import create_workspace_load_target
 
 
 @asset
@@ -2350,7 +2351,7 @@ def test_status_in_code_sensor(executor, instance):
         "US/Central",
     )
     with create_test_daemon_workspace_context(
-        workspace_load_target(attribute="the_status_in_code_repo"),
+        create_workspace_load_target(attribute="the_status_in_code_repo"),
         instance=instance,
     ) as workspace_context:
         external_repo = next(
@@ -2599,7 +2600,7 @@ def test_repository_namespacing(executor):
         instance = exit_stack.enter_context(instance_for_test())
         full_workspace_context = exit_stack.enter_context(
             create_test_daemon_workspace_context(
-                workspace_load_target(attribute=None),  # load all repos
+                create_workspace_load_target(attribute=None),  # load all repos
                 instance=instance,
             )
         )
@@ -2698,3 +2699,19 @@ def test_sensor_logging(executor, instance, workspace_context, external_repo):
     record = records[0]
     assert record[DAGSTER_META_KEY]["orig_message"] == "hello hello"
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
+
+
+def test_code_location_construction():
+    # this just gets code coverage in in the run status sensor definition constructor
+    @run_status_sensor(
+        monitored_jobs=[
+            CodeLocationSelector(
+                location_name="test_location",
+            )
+        ],
+        run_status=DagsterRunStatus.SUCCESS,
+    )
+    def cross_code_location_sensor(context):
+        raise Exception("never executed")
+
+    assert cross_code_location_sensor
