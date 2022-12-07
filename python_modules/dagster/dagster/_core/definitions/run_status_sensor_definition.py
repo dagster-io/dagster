@@ -205,6 +205,7 @@ def run_failure_sensor(
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",
                 "JobSelector",
+                "CodeLocationSelector",
             ]
         ]
     ] = None,
@@ -216,6 +217,7 @@ def run_failure_sensor(
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",
                 "JobSelector",
+                "CodeLocationSelector",
             ]
         ]
     ] = None,
@@ -682,14 +684,14 @@ def run_status_sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector]]]):
+        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
             Jobs in the current repository that will be monitored by this sensor. Defaults to None, which means the alert will
             be sent when any job in the repository matches the requested run_status. Jobs in external repositories can be monitored by using
             RepositorySelector or JobSelector.
         monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the Dagster instance.
             If set to True, an error will be raised if you also specify monitored_jobs or job_selection.
             Defaults to False.
-        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector]]]):
+        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
             (deprecated in favor of monitored_jobs) Jobs in the current repository that will be
             monitored by this sensor. Defaults to None, which means the alert will be sent when
             any job in the repository matches the requested run_status.
