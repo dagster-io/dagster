@@ -5,14 +5,14 @@ from dagster._legacy import (
     OutputDefinition,
     PipelineDefinition,
     execute_pipeline,
-    solid,
+    op,
 )
 
 
 def test_string_from_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition("string_input", String)])
+    @op(input_defs=[InputDefinition("string_input", String)])
     def str_as_input(_context, string_input):
         assert string_input == "foo"
         called["yup"] = True
@@ -33,7 +33,7 @@ def test_string_from_inputs():
 def test_string_from_aliased_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition("string_input", String)])
+    @op(input_defs=[InputDefinition("string_input", String)])
     def str_as_input(_context, string_input):
         assert string_input == "foo"
         called["yup"] = True
@@ -56,7 +56,7 @@ def test_string_from_aliased_inputs():
 def test_string_missing_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition("string_input", String)])
+    @op(input_defs=[InputDefinition("string_input", String)])
     def str_as_input(_context, string_input):  # pylint: disable=W0613
         called["yup"] = True
 
@@ -78,11 +78,11 @@ def test_string_missing_inputs():
 def test_string_missing_input_collision():
     called = {}
 
-    @solid(output_defs=[OutputDefinition(String)])
+    @op(output_defs=[OutputDefinition(String)])
     def str_as_output(_context):
         return "bar"
 
-    @solid(input_defs=[InputDefinition("string_input", String)])
+    @op(input_defs=[InputDefinition("string_input", String)])
     def str_as_input(_context, string_input):  # pylint: disable=W0613
         called["yup"] = True
 
@@ -107,7 +107,7 @@ def test_string_missing_input_collision():
 def test_composite_input_type():
     called = {}
 
-    @solid(input_defs=[InputDefinition("list_string_input", List[String])])
+    @op(input_defs=[InputDefinition("list_string_input", List[String])])
     def str_as_input(_context, list_string_input):
         assert list_string_input == ["foo"]
         called["yup"] = True

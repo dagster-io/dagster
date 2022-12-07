@@ -1,5 +1,5 @@
 from dagster import job, op, repository
-from dagster._legacy import pipeline, solid
+from dagster._legacy import pipeline, op
 
 
 @op
@@ -12,7 +12,7 @@ def my_job():
     my_op()
 
 
-@solid
+@op
 def my_solid():
     pass
 

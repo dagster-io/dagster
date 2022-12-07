@@ -11,7 +11,7 @@ from dagster._core.execution.resources_init import (
 from dagster._core.execution.retries import RetryMode
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._legacy import ModeDefinition, PipelineDefinition, solid
+from dagster._legacy import ModeDefinition, PipelineDefinition, op
 
 
 def test_generator_exit():
@@ -50,7 +50,7 @@ def gen_basic_resource_pipeline(called=None, cleaned=None):
         finally:
             cleaned.append("B")
 
-    @solid(required_resource_keys={"a", "b"})
+    @op(required_resource_keys={"a", "b"})
     def resource_solid(_):
         pass
 
@@ -118,6 +118,6 @@ def test_clean_event_generator_exit():
     generator.close()
 
 
-@solid
+@op
 def fake_solid(_):
     pass

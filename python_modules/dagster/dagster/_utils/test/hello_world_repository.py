@@ -1,7 +1,7 @@
-from dagster._core.definitions import pipeline, repository, solid
+from dagster._core.definitions import pipeline, repository, op
 
 
-@solid
+@op
 def hello_world(_):
     pass
 

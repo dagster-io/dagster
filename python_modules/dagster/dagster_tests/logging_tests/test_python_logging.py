@@ -6,7 +6,7 @@ import mock
 import pytest
 from dagster import get_dagster_logger, reconstructable, resource
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, op
 
 
 def _reset_logging():
@@ -56,7 +56,7 @@ def test_logging_capture_logger_defined_outside(managed_logs, expect_output, res
     logger = logging.getLogger("python_logger")
     logger.setLevel(logging.INFO)
 
-    @solid
+    @op
     def my_solid():
         logger.info("some info")
 
@@ -88,7 +88,7 @@ def test_logging_capture_logger_defined_outside(managed_logs, expect_output, res
     ],
 )
 def test_logging_capture_logger_defined_inside(managed_logs, expect_output, reset_logging):
-    @solid
+    @op
     def my_solid():
         logger = logging.getLogger("python_logger")
         logger.setLevel(logging.INFO)
@@ -139,7 +139,7 @@ def test_logging_capture_resource(managed_logs, expect_output, reset_logging):
 
         return fn
 
-    @solid(required_resource_keys={"foo", "bar"})
+    @op(required_resource_keys={"foo", "bar"})
     def process(context):
         context.resources.foo()
         context.resources.bar()
@@ -166,7 +166,7 @@ def define_multilevel_logging_pipeline(inside, python):
     if not inside:
         outside_logger = logging.getLogger("my_logger_outside") if python else get_dagster_logger()
 
-    @solid
+    @op
     def my_solid1():
         if inside:
             logger = logging.getLogger("my_logger_inside") if python else get_dagster_logger()
@@ -178,7 +178,7 @@ def define_multilevel_logging_pipeline(inside, python):
         ]:
             logger.log(level, "foobar%s", "baz")
 
-    @solid
+    @op
     def my_solid2(_in):
         if inside:
             logger = logging.getLogger("my_logger_inside") if python else get_dagster_logger()
@@ -311,13 +311,13 @@ def test_logging_capture_builtin_inside(log_level, expected_msgs, reset_logging)
 def define_logging_pipeline():
     loggerA = logging.getLogger("loggerA")
 
-    @solid
+    @op
     def solidA():
         loggerA.debug("loggerA")
         loggerA.info("loggerA")
         return 1
 
-    @solid
+    @op
     def solidB(_in):
         loggerB = logging.getLogger("loggerB")
         loggerB.debug("loggerB")

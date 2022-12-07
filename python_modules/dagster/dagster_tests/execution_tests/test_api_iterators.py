@@ -15,7 +15,7 @@ from dagster._core.execution.api import (
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, PipelineDefinition, solid
+from dagster._legacy import ModeDefinition, PipelineDefinition, op
 
 
 @resource
@@ -34,7 +34,7 @@ def resource_b(context):
     yield  # add the second yield here to test teardown generator exit handling
 
 
-@solid(required_resource_keys={"a", "b"})
+@op(required_resource_keys={"a", "b"})
 def resource_solid(_):
     return "A"
 

@@ -1,13 +1,13 @@
 import json
 
-from dagster._legacy import ModeDefinition, execute_solid, solid
+from dagster._legacy import ModeDefinition, execute_solid, op
 from dagster_msteams import msteams_resource
 from mock import patch
 
 
 @patch("dagster_msteams.client.TeamsClient.post_message")
 def test_msteams_resource(mock_teams_post_message, json_message, teams_client):
-    @solid(required_resource_keys={"msteams"})
+    @op(required_resource_keys={"msteams"})
     def msteams_solid(context):
         assert context.resources.msteams
         body = {"ok": True}

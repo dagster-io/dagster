@@ -1,9 +1,9 @@
 from dagster import Failure, MetadataEntry
-from dagster._legacy import execute_pipeline, pipeline, solid
+from dagster._legacy import execute_pipeline, op, pipeline
 
 
 def test_failure():
-    @solid
+    @op
     def throw():
         raise Failure(
             description="it Failure",

@@ -36,7 +36,7 @@ from dagster._core.test_utils import step_did_not_run, step_failed, step_succeed
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
-from dagster._legacy import ModeDefinition, pipeline, solid
+from dagster._legacy import ModeDefinition, pipeline, op
 from dagster._seven import IS_WINDOWS, get_system_temp_directory
 from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
@@ -48,7 +48,7 @@ def _failure_flag_file():
     return os.path.join(get_system_temp_directory(), "conditionally_fail")
 
 
-@solid
+@op
 def always_succeed(_):
     return 1
 
@@ -66,12 +66,12 @@ def my_config(_start, _end):
 always_succeed_job = comp_always_succeed.to_job(config=my_config)
 
 
-@solid
+@op
 def fail_solid(_):
     raise Exception("blah")
 
 
-@solid
+@op
 def conditionally_fail(_, _input):
     if os.path.isfile(_failure_flag_file()):
         raise Exception("blah")
@@ -79,7 +79,7 @@ def conditionally_fail(_, _input):
     return 1
 
 
-@solid
+@op
 def after_failure(_, _input):
     return 1
 
@@ -109,7 +109,7 @@ def parallel_failure_pipeline():
     always_succeed.alias("success_four")()
 
 
-@solid(config_schema=Field(Any))
+@op(config_schema=Field(Any))
 def config_solid(_):
     return 1
 

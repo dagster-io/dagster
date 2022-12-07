@@ -1,6 +1,6 @@
 import pytest
 from dagster import DagsterInvariantViolationError, resource
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, op
 
 
 @resource
@@ -19,7 +19,7 @@ def add_two_resource(_):
     return add_two
 
 
-@solid(required_resource_keys={"adder"})
+@op(required_resource_keys={"adder"})
 def solid_that_uses_adder_resource(context, number):
     return context.resources.adder(number)
 
@@ -67,7 +67,7 @@ def test_execute_pipeline_with_non_existant_mode():
         )
 
 
-@solid
+@op
 def solid_that_gets_tags(context):
     return context.pipeline_run.tags
 

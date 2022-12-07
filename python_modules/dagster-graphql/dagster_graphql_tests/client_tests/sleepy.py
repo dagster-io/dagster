@@ -4,10 +4,10 @@ from time import sleep
 
 from dagster import Field, Int, List, Output
 from dagster._core.test_utils import default_mode_def_for_test
-from dagster._legacy import InputDefinition, OutputDefinition, PresetDefinition, pipeline, solid
+from dagster._legacy import InputDefinition, OutputDefinition, PresetDefinition, pipeline, op
 
 
-@solid(
+@op(
     input_defs=[InputDefinition("units", List[Int])],
     output_defs=[OutputDefinition(Int, "total")],
 )
@@ -21,7 +21,7 @@ def sleeper(context, units):
     return tot
 
 
-@solid(
+@op(
     config_schema=Field([int], is_required=False, default_value=[1, 1, 1, 1]),
     output_defs=[
         OutputDefinition(List[Int], "out_1"),
@@ -42,7 +42,7 @@ def giver(context):
     yield Output(queues[3], "out_4")
 
 
-@solid(
+@op(
     input_defs=[
         InputDefinition("in_1", Int),
         InputDefinition("in_2", Int),

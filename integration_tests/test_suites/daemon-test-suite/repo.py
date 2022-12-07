@@ -1,8 +1,8 @@
 from dagster import RunRequest, repository, schedule, sensor
-from dagster._legacy import pipeline, solid
+from dagster._legacy import pipeline, op
 
 
-@solid()
+@op()
 def foo_solid(_):
     pass
 

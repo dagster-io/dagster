@@ -7,7 +7,7 @@ import pytest
 from dagster import repository
 from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import op, pipeline
 from dagster_graphql.test.utils import define_out_of_process_workspace, main_repo_location_name
 
 
@@ -16,7 +16,7 @@ def get_repo():
     This is a repo that changes name very time it's loaded.
     """
 
-    @solid
+    @op
     def solid_A():
         pass
 

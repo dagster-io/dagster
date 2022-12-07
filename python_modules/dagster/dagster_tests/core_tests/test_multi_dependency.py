@@ -16,27 +16,28 @@ from dagster._legacy import (
     OutputDefinition,
     PipelineDefinition,
     execute_pipeline,
+    op,
     pipeline,
-    solid,
+    op,
 )
 
 
 def test_simple_values():
-    @solid(input_defs=[InputDefinition("numbers", List[Int])])
+    @op(input_defs=[InputDefinition("numbers", List[Int])])
     def sum_num(_context, numbers):
         # cant guarantee order
         assert set(numbers) == set([1, 2, 3])
         return sum(numbers)
 
-    @solid
+    @op
     def emit_1():
         return 1
 
-    @solid
+    @op
     def emit_2():
         return 2
 
-    @solid
+    @op
     def emit_3():
         return 3
 
@@ -61,28 +62,28 @@ def test_simple_values():
     assert result.result_for_node("sum_num").output_value() == 6
 
 
-@solid(input_defs=[InputDefinition("stuff", List[Any])])
+@op(input_defs=[InputDefinition("stuff", List[Any])])
 def collect(_context, stuff):
     assert set(stuff) == set([1, None, "one"])
     return stuff
 
 
-@solid
+@op
 def emit_num():
     return 1
 
 
-@solid
+@op
 def emit_none():
     pass
 
 
-@solid
+@op
 def emit_str():
     return "one"
 
 
-@solid(output_defs=[OutputDefinition(Nothing)])
+@op(output_def=OutputDefinition(Nothing))
 def emit_nothing():
     pass
 
@@ -119,7 +120,7 @@ def test_dsl():
 
 
 def test_collect_one():
-    @solid
+    @op
     def collect_one(list_arg):
         assert list_arg == ["one"]
 

@@ -1,4 +1,4 @@
-from dagster._legacy import execute_pipeline, pipeline, solid
+from dagster._legacy import execute_pipeline, pipeline, op
 
 
 def _set_key_value(ddict, key, value):
@@ -9,11 +9,11 @@ def _set_key_value(ddict, key, value):
 def test_execute_solid_with_dep_only_inputs_no_api():
     did_run_dict = {}
 
-    @solid
+    @op
     def step_one_solid(_):
         _set_key_value(did_run_dict, "step_one", True)
 
-    @solid
+    @op
     def step_two_solid(_, _in):
         _set_key_value(did_run_dict, "step_two", True)
 
@@ -35,11 +35,11 @@ def test_execute_solid_with_dep_only_inputs_no_api():
 def test_execute_solid_with_dep_only_inputs_with_api():
     did_run_dict = {}
 
-    @solid
+    @op
     def step_one_solid(_):
         _set_key_value(did_run_dict, "step_one", True)
 
-    @solid
+    @op
     def step_two_solid(_, _in):
         _set_key_value(did_run_dict, "step_two", True)
 

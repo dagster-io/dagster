@@ -28,19 +28,19 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.instance import DagsterInstance
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, solid
+from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, op
 
 
 def define_inty_pipeline(using_file_system=False):
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @op(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
     def add_one(num):
         return num + 1
 
-    @solid
+    @op
     def user_throw_exception():
         raise Exception("whoops")
 

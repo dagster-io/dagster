@@ -4,14 +4,14 @@ from dagster import (
     String,
     _check as check,
 )
-from dagster._legacy import OutputDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import OutputDefinition, execute_pipeline, pipeline
 
 
 def define_pass_value_solid(name, description=None):
     check.str_param(name, "name")
     check.opt_str_param(description, "description")
 
-    @solid(
+    @op(
         name=name,
         description=description,
         input_defs=[],
@@ -25,7 +25,7 @@ def define_pass_value_solid(name, description=None):
 
 
 def test_execute_solid_with_input_same_name():
-    @solid(output_defs=[OutputDefinition()])
+    @op(output_defs=[OutputDefinition()])
     def a_thing(_, a_thing):
         return a_thing + a_thing
 
@@ -42,11 +42,11 @@ def test_execute_solid_with_input_same_name():
 
 
 def test_execute_two_solids_with_same_input_name():
-    @solid
+    @op
     def solid_one(_, a_thing):
         return a_thing + a_thing
 
-    @solid
+    @op
     def solid_two(_, a_thing):
         return a_thing + a_thing
 
@@ -73,11 +73,11 @@ def test_execute_two_solids_with_same_input_name():
 def test_execute_dep_solid_different_input_name():
     pass_to_first = define_pass_value_solid("pass_to_first")
 
-    @solid
+    @op
     def first_solid(_, a_thing):
         return a_thing + a_thing
 
-    @solid
+    @op
     def second_solid(_, an_input):
         return an_input + an_input
 

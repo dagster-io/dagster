@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 import mlflow
 import pandas as pd
 import pytest
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, op
 from dagster_mlflow.resources import MlFlow, mlflow_tracking
 
 
@@ -359,12 +359,12 @@ def test_execute_solid_with_mlflow_resource():
     params = {"learning_rate": "0.01", "n_estimators": "10"}
     extra_tags = {"super": "experiment"}
 
-    @solid(required_resource_keys={"mlflow"})
+    @op(required_resource_keys={"mlflow"})
     def solid1(_):
         mlflow.log_params(params)
         run_id_holder["solid1_run_id"] = mlflow.active_run().info.run_id
 
-    @solid(required_resource_keys={"mlflow"})
+    @op(required_resource_keys={"mlflow"})
     def solid2(_, _arg1):
         run_id_holder["solid2_run_id"] = mlflow.active_run().info.run_id
 

@@ -6,17 +6,17 @@ from dagster._legacy import (
     InputDefinition,
     OutputDefinition,
     PartitionSetDefinition,
+    op,
     pipeline,
-    solid,
 )
 
 
-@solid
+@op
 def do_something():
     return 1
 
 
-@solid
+@op
 def do_input(x):
     return x
 
@@ -41,11 +41,11 @@ def bar_pipeline():
     class InputTypeWithoutHydration(int):
         pass
 
-    @solid(output_defs=[OutputDefinition(InputTypeWithoutHydration)])
+    @op(output_defs=[OutputDefinition(InputTypeWithoutHydration)])
     def one(_):
         return 1
 
-    @solid(
+    @op(
         input_defs=[InputDefinition("some_input", InputTypeWithoutHydration)],
         output_defs=[OutputDefinition(Int)],
     )

@@ -25,18 +25,18 @@ from dagster._legacy import (
     ModeDefinition,
     OutputDefinition,
     pipeline,
-    solid,
+    op,
 )
 from dagster._utils import file_relative_path
 from dagster._utils.test import copy_directory
 
 
-@solid(output_defs=[OutputDefinition(int)])
+@op(output_defs=[OutputDefinition(int)])
 def return_one(_):
     return 1
 
 
-@solid(input_defs=[InputDefinition("nums", List[int])], output_defs=[OutputDefinition(int)])
+@op(input_defs=[InputDefinition("nums", List[int])], output_defs=[OutputDefinition(int)])
 def sum_fan_in(_, nums):
     return sum(nums)
 
@@ -46,24 +46,24 @@ def fake_root_input_manager(_context):
     return 678
 
 
-@solid(input_defs=[InputDefinition("from_manager", root_manager_key="root_input_manager")])
+@op(input_defs=[InputDefinition("from_manager", root_manager_key="root_input_manager")])
 def input_from_root_manager(_context, from_manager):
     return from_manager
 
 
-@solid
+@op
 def multiply_by_two(context, y):
     context.log.info("multiply_by_two is returning " + str(y * 2))
     return y * 2
 
 
-@solid
+@op
 def multiply_inputs(context, y, ten):
     context.log.info("multiply_inputs is returning " + str(y * ten))
     return y * ten
 
 
-@solid(
+@op(
     output_defs=[
         OutputDefinition(int, "optional_output", is_required=False),
         OutputDefinition(int, "required_output", is_required=True),
@@ -73,22 +73,22 @@ def optional_outputs(_):
     yield Output(1234, "required_output")
 
 
-@solid
+@op
 def emit_ten(_):
     return 10
 
 
-@solid
+@op
 def echo(_, x: int) -> int:
     return x
 
 
-@solid(input_defs=[InputDefinition("y", int, default_value=7)])
+@op(input_defs=[InputDefinition("y", int, default_value=7)])
 def echo_default(_, y: int) -> int:
     return y
 
 
-@solid(
+@op(
     output_defs=[DynamicOutputDefinition()],
     input_defs=[InputDefinition("range_input", int, default_value=3)],
 )
@@ -97,12 +97,12 @@ def emit(_context, range_input):
         yield DynamicOutput(value=i, mapping_key=str(i))
 
 
-@solid
+@op
 def sum_numbers(_, nums):
     return sum(nums)
 
 
-@solid(output_defs=[DynamicOutputDefinition()])
+@op(output_defs=[DynamicOutputDefinition()])
 def dynamic_echo(_, nums):
     for x in nums:
         yield DynamicOutput(value=x, mapping_key=str(x))

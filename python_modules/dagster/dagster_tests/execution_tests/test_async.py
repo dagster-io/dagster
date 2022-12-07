@@ -1,11 +1,11 @@
 import asyncio
 
 from dagster import Output
-from dagster._legacy import execute_solid, solid
+from dagster._legacy import execute_solid, op
 
 
 def test_aio_solid():
-    @solid
+    @op
     async def aio_solid(_):
         await asyncio.sleep(0.01)
         return "done"
@@ -15,7 +15,7 @@ def test_aio_solid():
 
 
 def test_aio_gen_solid():
-    @solid
+    @op
     async def aio_gen(_):
         await asyncio.sleep(0.01)
         yield Output("done")

@@ -1,19 +1,19 @@
 from dagster import reconstructable
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import execute_pipeline, pipeline, solid
+from dagster._legacy import execute_pipeline, pipeline, op
 
 
-@solid(tags={"dagster/priority": "-1"})
+@op(tags={"dagster/priority": "-1"})
 def low(_):
     pass
 
 
-@solid
+@op
 def none(_):
     pass
 
 
-@solid(tags={"dagster/priority": "1"})
+@op(tags={"dagster/priority": "1"})
 def high(_):
     pass
 

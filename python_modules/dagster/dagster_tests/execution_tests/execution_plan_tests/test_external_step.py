@@ -55,7 +55,7 @@ from dagster._legacy import (
     execute_pipeline_iterator,
     pipeline,
     reexecute_pipeline,
-    solid,
+    op,
 )
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
@@ -225,14 +225,14 @@ def define_basic_job_last_launched():
 
 
 def define_basic_pipeline():
-    @solid(
+    @op(
         required_resource_keys=set(["first_step_launcher"]),
         config_schema={"a": Field(str)},
     )
     def return_two(_):
         return 2
 
-    @solid(required_resource_keys=set(["second_step_launcher"]))
+    @op(required_resource_keys=set(["second_step_launcher"]))
     def add_one(_, num):
         return num + 1
 
@@ -271,7 +271,7 @@ def define_basic_pipeline():
 
 
 def define_sleepy_pipeline():
-    @solid(
+    @op(
         config_schema={"tempfile": Field(String)},
         required_resource_keys=set(["first_step_launcher"]),
     )

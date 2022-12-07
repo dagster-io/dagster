@@ -1,7 +1,7 @@
 import pandas as pd
 
 from dagster import io_manager
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, op
 from docs_snippets.concepts.assets.materialization_io_managers import (
     PandasCsvIOManager,
     PandasCsvIOManagerWithAsset,
@@ -18,7 +18,7 @@ def _generate_pipeline_for_io_manager(manager, config_schema=None):
     def custom_io_manager(_):
         return manager
 
-    @solid
+    @op
     def dummy_solid():
         return DummyClass.from_dict({"some_column": [2]})
 

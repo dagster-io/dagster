@@ -1,8 +1,8 @@
 from dagster import job, repository
-from dagster._legacy import pipeline, solid
+from dagster._legacy import op, pipeline
 
 
-@solid
+@op
 def do_something():
     return 1
 

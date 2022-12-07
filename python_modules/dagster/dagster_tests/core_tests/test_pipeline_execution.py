@@ -43,7 +43,7 @@ from dagster._legacy import (
     execute_pipeline_iterator,
     pipeline,
     reexecute_pipeline,
-    solid,
+    op,
 )
 from dagster._utils.test import execute_solid_within_pipeline
 
@@ -348,7 +348,7 @@ def test_empty_pipeline_execution():
 def test_pipeline_name_threaded_through_context():
     name = "foobar"
 
-    @solid()
+    @op()
     def assert_name_solid(context):
         assert context.pipeline_name == name
 
@@ -358,11 +358,11 @@ def test_pipeline_name_threaded_through_context():
 
 
 def test_pipeline_subset():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def add_one(num):
         return num + 1
 
@@ -388,11 +388,11 @@ def test_pipeline_subset():
 
 
 def test_pipeline_explicit_subset():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def add_one(num):
         return num + 1
 
@@ -418,11 +418,11 @@ def test_pipeline_explicit_subset():
 
 
 def test_pipeline_subset_of_subset():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def add_one(num):
         return num + 1
 
@@ -456,15 +456,15 @@ def test_pipeline_subset_of_subset():
 
 
 def test_pipeline_subset_with_multi_dependency():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def return_two():
         return 2
 
-    @solid(input_defs=[InputDefinition("dep", Nothing)])
+    @op(input_defs=[InputDefinition("dep", Nothing)])
     def noop():
         return 3
 
@@ -503,15 +503,15 @@ def test_pipeline_subset_with_multi_dependency():
 
 
 def test_pipeline_explicit_subset_with_multi_dependency():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def return_two():
         return 2
 
-    @solid(input_defs=[InputDefinition("dep", Nothing)])
+    @op(input_defs=[InputDefinition("dep", Nothing)])
     def noop():
         return 3
 
@@ -550,15 +550,15 @@ def test_pipeline_explicit_subset_with_multi_dependency():
 
 
 def define_three_part_pipeline():
-    @solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @op(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
     def add_one(num):
         return num + 1
 
-    @solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @op(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
     def add_two(num):
         return num + 2
 
-    @solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @op(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
     def add_three(num):
         return num + 3
 
@@ -598,7 +598,7 @@ def test_pipeline_execution_explicit_disjoint_subset():
 
 
 def test_pipeline_wrapping_types():
-    @solid(
+    @op(
         input_defs=[InputDefinition("value", Optional[List[Optional[String]]])],
         output_defs=[OutputDefinition(Optional[List[Optional[String]]])],
     )
@@ -641,12 +641,12 @@ def test_pipeline_wrapping_types():
 def test_pipeline_streaming_iterator():
     events = []
 
-    @solid
+    @op
     def push_one():
         events.append(1)
         return 1
 
-    @solid
+    @op
     def add_one(num):
         events.append(num + 1)
         return num + 1
@@ -671,7 +671,7 @@ def test_pipeline_streaming_iterator():
 def test_pipeline_streaming_multiple_outputs():
     events = []
 
-    @solid(output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")])
+    @op(output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")])
     def push_one_two(_context):
         events.append(1)
         yield Output(1, "one")
@@ -698,7 +698,7 @@ def test_pipeline_streaming_multiple_outputs():
 
 
 def test_pipeline_init_failure():
-    @solid(required_resource_keys={"failing"})
+    @op(required_resource_keys={"failing"})
     def stub_solid(_):
         return None
 
@@ -745,11 +745,11 @@ def test_pipeline_init_failure():
 
 
 def test_reexecution_fs_storage():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def add_one(num):
         return num + 1
 
@@ -794,7 +794,7 @@ def test_reexecution_fs_storage():
 
 
 def retry_pipeline():
-    @solid(
+    @op(
         config_schema={
             "fail": Field(bool, is_required=False, default_value=False),
         },
@@ -804,7 +804,7 @@ def retry_pipeline():
             raise Exception("FAILURE")
         return 1
 
-    @solid
+    @op
     def add_one(num):
         return num + 1
 
@@ -862,11 +862,11 @@ def test_multiproc_reexecution_fs_storage_after_fail():
 
 
 def test_reexecution_fs_storage_with_solid_selection():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def add_one(num):
         return num + 1
 
@@ -946,11 +946,11 @@ def test_reexecution_fs_storage_with_solid_selection():
 
 
 def test_single_step_reexecution():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def add_one(num):
         return num + 1
 
@@ -979,11 +979,11 @@ def test_single_step_reexecution():
 
 
 def test_two_step_reexecution():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def add_one(num):
         return num + 1
 
@@ -1009,7 +1009,7 @@ def test_two_step_reexecution():
 
 
 def test_optional():
-    @solid(
+    @op(
         output_defs=[
             OutputDefinition(Int, "x"),
             OutputDefinition(Int, "y", is_required=False),
@@ -1018,7 +1018,7 @@ def test_optional():
     def return_optional(_context):
         yield Output(1, "x")
 
-    @solid
+    @op
     def echo(x):
         return x
 
@@ -1042,11 +1042,11 @@ def test_optional():
 def test_selector_with_partial_dependency_dict():
     executed = {}
 
-    @solid
+    @op
     def def_one(_):
         executed["one"] = True
 
-    @solid
+    @op
     def def_two(_):
         executed["two"] = True
 
@@ -1061,11 +1061,11 @@ def test_selector_with_partial_dependency_dict():
 
 
 def test_selector_with_subset_for_execution():
-    @solid
+    @op
     def def_one(_):
         pass
 
-    @solid
+    @op
     def def_two(_):
         pass
 
@@ -1081,7 +1081,7 @@ def test_selector_with_subset_for_execution():
 def test_default_run_id():
     called = {}
 
-    @solid
+    @op
     def check_run_id(context):
         called["yes"] = True
         assert uuid.UUID(context.run_id)
@@ -1097,7 +1097,7 @@ def test_default_run_id():
 def test_pipeline_tags():
     called = {}
 
-    @solid
+    @op
     def check_tags(context):
         assert context.get_tag("foo") == "bar"
         called["yup"] = True
@@ -1119,24 +1119,24 @@ def test_pipeline_tags():
 
 
 def test_multi_dep_optional():
-    @solid
+    @op
     def ret_one():
         return 1
 
-    @solid
+    @op
     def echo(x):
         return x
 
-    @solid(output_defs=[OutputDefinition(name="skip", is_required=False)])
+    @op(output_defs=[OutputDefinition(name="skip", is_required=False)])
     def skip(_):
         return
         yield  # pylint: disable=unreachable
 
-    @solid
+    @op
     def collect(_, items):
         return items
 
-    @solid
+    @op
     def collect_and(_, items, other):
         return items + [other]
 

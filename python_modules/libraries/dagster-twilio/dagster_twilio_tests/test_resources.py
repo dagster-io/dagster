@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from dagster._legacy import ModeDefinition, execute_solid, solid
+from dagster._legacy import ModeDefinition, execute_solid, op
 from dagster_twilio import twilio_resource
 from twilio.base.exceptions import TwilioRestException
 
@@ -10,7 +10,7 @@ def test_twilio_resource():
     account_sid = os.environ.get("TWILIO_TEST_ACCOUNT_SID")
     auth_token = os.environ.get("TWILIO_TEST_AUTH_TOKEN")
 
-    @solid(required_resource_keys={"twilio"})
+    @op(required_resource_keys={"twilio"})
     def twilio_solid(context):
         assert context.resources.twilio
 

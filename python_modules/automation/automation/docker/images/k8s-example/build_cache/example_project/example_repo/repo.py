@@ -8,18 +8,18 @@ from dagster._legacy import (
     PresetDefinition,
     default_executors,
     pipeline,
-    solid,
+    op,
 )
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_celery_k8s import celery_k8s_job_executor
 
 
-@solid(input_defs=[InputDefinition("word", str)], config_schema={"factor": int})
+@op(input_defs=[InputDefinition("word", str)], config_schema={"factor": int})
 def multiply_the_word(context, word):
     return word * context.op_config["factor"]
 
 
-@solid(input_defs=[InputDefinition("word")])
+@op(input_defs=[InputDefinition("word")])
 def count_letters(_context, word):
     return dict(Counter(word))
 

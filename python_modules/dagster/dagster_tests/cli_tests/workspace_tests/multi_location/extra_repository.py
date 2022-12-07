@@ -1,8 +1,8 @@
 from dagster import repository
-from dagster._legacy import pipeline, solid
+from dagster._legacy import pipeline, op
 
 
-@solid
+@op
 def extra_solid(_):
     pass
 

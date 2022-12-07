@@ -1,5 +1,5 @@
 from dagster import Int, repository
-from dagster._legacy import InputDefinition, OutputDefinition, pipeline, solid
+from dagster._legacy import InputDefinition, OutputDefinition, op, pipeline
 
 
 @solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
@@ -7,7 +7,7 @@ def add_one(num):
     return num + 1
 
 
-@solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+@op(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
 def mult_two(num):
     return num * 2
 

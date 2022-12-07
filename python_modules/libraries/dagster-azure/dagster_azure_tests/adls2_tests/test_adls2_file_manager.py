@@ -8,7 +8,7 @@ from dagster._legacy import (
     OutputDefinition,
     execute_pipeline,
     pipeline,
-    solid,
+    op,
 )
 from dagster_azure.adls2 import (
     ADLS2FileHandle,
@@ -97,14 +97,14 @@ def create_adls2_key(run_id, step_key, output_name):
 def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
     bar_bytes = b"bar"
 
-    @solid(
+    @op(
         output_defs=[OutputDefinition(ADLS2FileHandle)],
         required_resource_keys={"file_manager"},
     )
     def emit_file(context):
         return context.resources.file_manager.write_data(bar_bytes)
 
-    @solid(
+    @op(
         input_defs=[InputDefinition("file_handle", ADLS2FileHandle)],
         required_resource_keys={"file_manager"},
     )

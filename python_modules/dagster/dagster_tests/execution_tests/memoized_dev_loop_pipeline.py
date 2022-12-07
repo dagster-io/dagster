@@ -1,9 +1,9 @@
 from dagster import Field, String, job, op, repository
 from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
-from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, pipeline, solid
+from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, pipeline, op
 
 
-@solid(
+@op(
     version="create_string_version",
     config_schema={"input_str": Field(String)},
     output_defs=[OutputDefinition(name="created_string", io_manager_key="io_manager", metadata={})],
@@ -12,7 +12,7 @@ def create_string_1_asset(context):
     return context.op_config["input_str"]
 
 
-@solid(
+@op(
     input_defs=[InputDefinition("_string_input", String)],
     version="take_string_version",
     config_schema={"input_str": Field(String)},

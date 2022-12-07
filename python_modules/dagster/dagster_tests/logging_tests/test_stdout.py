@@ -13,7 +13,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.test_utils import create_run_for_test, instance_for_test
-from dagster._legacy import InputDefinition, ModeDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import InputDefinition, ModeDefinition, execute_pipeline, pipeline, op
 from dagster._utils import ensure_dir, touch_file
 
 HELLO_SOLID = "HELLO SOLID"
@@ -27,12 +27,12 @@ def resource_a(_):
     return "A"
 
 
-@solid
+@op
 def spawn(_):
     return 1
 
 
-@solid(input_defs=[InputDefinition("num", int)], required_resource_keys={"a"})
+@op(input_defs=[InputDefinition("num", int)], required_resource_keys={"a"})
 def spew(_, num):
     print(HELLO_SOLID)  # pylint: disable=print-call
     return num

@@ -12,7 +12,7 @@ from dagster._legacy import (
     OutputDefinition,
     execute_pipeline,
     pipeline,
-    solid,
+    op,
 )
 
 
@@ -22,7 +22,7 @@ class UserError(Exception):
 
 
 def test_user_error_boundary_solid_compute():
-    @solid
+    @op
     def throws_user_error(_):
         raise UserError()
 
@@ -43,7 +43,7 @@ def test_user_error_boundary_input_hydration():
     class CustomType(str):
         pass
 
-    @solid(input_defs=[InputDefinition("custom_type", CustomType)])
+    @op(input_defs=[InputDefinition("custom_type", CustomType)])
     def input_hydration_solid(context, custom_type):
         context.log.info(custom_type)
 
@@ -66,7 +66,7 @@ def test_user_error_boundary_output_materialization():
 
     CustomDagsterType = create_any_type(name="CustomType", materializer=materialize)
 
-    @solid(output_defs=[OutputDefinition(CustomDagsterType)])
+    @op(output_defs=[OutputDefinition(CustomDagsterType)])
     def output_solid(_context):
         return "hello"
 
@@ -87,7 +87,7 @@ def test_user_error_boundary_resource_init():
     def resource_a(_):
         raise UserError()
 
-    @solid(required_resource_keys={"a"})
+    @op(required_resource_keys={"a"})
     def resource_solid(_context):
         return "hello"
 

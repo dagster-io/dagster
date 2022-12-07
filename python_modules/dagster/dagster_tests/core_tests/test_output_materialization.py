@@ -19,13 +19,13 @@ from dagster._legacy import (
     OutputDefinition,
     PipelineDefinition,
     execute_pipeline,
-    solid,
+    op,
 )
 from dagster._utils.test import get_temp_file_name, get_temp_file_names
 
 
 def single_int_output_pipeline():
-    @solid(output_defs=[OutputDefinition(Int)])
+    @op(output_defs=[OutputDefinition(Int)])
     def return_one():
         return 1
 
@@ -33,7 +33,7 @@ def single_int_output_pipeline():
 
 
 def single_string_output_pipeline():
-    @solid(output_defs=[OutputDefinition(String)])
+    @op(output_defs=[OutputDefinition(String)])
     def return_foo():
         return "foo"
 
@@ -41,7 +41,7 @@ def single_string_output_pipeline():
 
 
 def multiple_output_pipeline():
-    @solid(
+    @op(
         output_defs=[
             OutputDefinition(Int, "number"),
             OutputDefinition(String, "string"),
@@ -55,7 +55,7 @@ def multiple_output_pipeline():
 
 
 def single_int_named_output_pipeline():
-    @solid(output_defs=[OutputDefinition(Int, name="named")])
+    @op(output_defs=[OutputDefinition(Int, name="named")])
     def return_named_one():
         return 1
 
@@ -65,7 +65,7 @@ def single_int_named_output_pipeline():
 
 
 def no_input_no_output_pipeline():
-    @solid(output_defs=[])
+    @op(output_defs=[])
     def take_nothing_return_nothing(_context):
         pass
 
@@ -75,7 +75,7 @@ def no_input_no_output_pipeline():
 
 
 def one_input_no_output_pipeline():
-    @solid(input_defs=[InputDefinition("dummy")], output_defs=[])
+    @op(input_defs=[InputDefinition("dummy")], output_defs=[])
     def take_input_return_nothing(_context, **_kwargs):
         pass
 
@@ -347,7 +347,7 @@ def yield_two_materializations(*_args, **_kwargs):
 def test_basic_yield_multiple_materializations():
     SomeDagsterType = create_any_type(name="SomeType", materializer=yield_two_materializations)
 
-    @solid(output_defs=[OutputDefinition(SomeDagsterType)])
+    @op(output_defs=[OutputDefinition(SomeDagsterType)])
     def return_one():
         return 1
 
@@ -379,7 +379,7 @@ def return_int(*_args, **_kwargs):
 def test_basic_bad_output_materialization():
     SomeDagsterType = create_any_type(name="SomeType", materializer=return_int)
 
-    @solid(output_defs=[OutputDefinition(SomeDagsterType)])
+    @op(output_defs=[OutputDefinition(SomeDagsterType)])
     def return_one():
         return 1
 

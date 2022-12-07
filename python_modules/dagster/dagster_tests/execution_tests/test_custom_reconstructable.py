@@ -5,10 +5,10 @@ import pytest
 from dagster import reconstructable
 from dagster._core.definitions import ReconstructablePipeline, build_reconstructable_pipeline
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._legacy import pipeline, solid
+from dagster._legacy import pipeline, op
 
 
-@solid
+@op
 def top_scope_solid(_context):
     pass
 
@@ -18,7 +18,7 @@ class PipelineFactory:
         self.prefix = prefix
 
     def make_pipeline(self, has_nested_scope_solid, name=None):
-        @solid
+        @op
         def nested_scope_solid(_context):
             pass
 

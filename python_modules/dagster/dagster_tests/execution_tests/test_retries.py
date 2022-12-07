@@ -34,7 +34,7 @@ from dagster._legacy import (
     execute_pipeline_iterator,
     pipeline,
     reexecute_pipeline,
-    solid,
+    op,
 )
 
 executors = pytest.mark.parametrize(
@@ -47,14 +47,14 @@ executors = pytest.mark.parametrize(
 
 
 def define_run_retry_pipeline():
-    @solid(config_schema={"fail": bool})
+    @op(config_schema={"fail": bool})
     def can_fail(context, _start_fail):
         if context.op_config["fail"]:
             raise Exception("blah")
 
         return "okay perfect"
 
-    @solid(
+    @op(
         output_defs=[
             OutputDefinition(bool, "start_fail", is_required=False),
             OutputDefinition(bool, "start_skip", is_required=False),
@@ -64,11 +64,11 @@ def define_run_retry_pipeline():
         yield Output(True, "start_fail")
         # won't yield start_skip
 
-    @solid
+    @op
     def will_be_skipped(_, _start_skip):
         pass  # doesn't matter
 
-    @solid
+    @op
     def downstream_of_failed(_, input_str):
         return input_str
 
@@ -118,7 +118,7 @@ def test_retries(environment):
 
 
 def define_step_retry_pipeline():
-    @solid(config_schema=str)
+    @op(config_schema=str)
     def fail_first_time(context):
         file = os.path.join(context.op_config, "i_threw_up")
         if os.path.exists(file):
@@ -157,11 +157,11 @@ def test_step_retry(environment):
 
 
 def define_retry_limit_pipeline():
-    @solid
+    @op
     def default_max():
         raise RetryRequested()
 
-    @solid
+    @op
     def three_max():
         raise RetryRequested(max_retries=3)
 
@@ -227,7 +227,7 @@ DELAY = 2
 
 
 def define_retry_wait_fixed_pipeline():
-    @solid(config_schema=str)
+    @op(config_schema=str)
     def fail_first_and_wait(context):
         file = os.path.join(context.op_config, "i_threw_up")
         if os.path.exists(file):
@@ -274,7 +274,7 @@ def test_step_retry_fixed_wait(environment):
 
 
 def test_basic_retry_policy():
-    @solid(retry_policy=RetryPolicy())
+    @op(retry_policy=RetryPolicy())
     def throws(_):
         raise Exception("I fail")
 
@@ -288,15 +288,15 @@ def test_basic_retry_policy():
 
 
 def test_retry_policy_rules():
-    @solid(retry_policy=RetryPolicy(max_retries=2))
+    @op(retry_policy=RetryPolicy(max_retries=2))
     def throw_with_policy():
         raise Exception("I throw")
 
-    @solid
+    @op
     def throw_no_policy():
         raise Exception("I throw")
 
-    @solid
+    @op
     def fail_no_policy():
         raise Failure("I fail")
 
@@ -324,7 +324,7 @@ def test_retry_policy_rules():
 def test_delay():
     delay = 0.3
 
-    @solid(retry_policy=RetryPolicy(delay=delay))
+    @op(retry_policy=RetryPolicy(delay=delay))
     def throws(_):
         raise Exception("I fail")
 
@@ -397,7 +397,7 @@ def test_linear_backoff():
     delay = 0.1
     logged_times = []
 
-    @solid
+    @op
     def throws(_):
         logged_times.append(time.time())
         raise Exception("I fail")
@@ -418,7 +418,7 @@ def test_expo_backoff():
     delay = 0.1
     logged_times = []
 
-    @solid
+    @op
     def throws(_):
         logged_times.append(time.time())
         raise Exception("I fail")

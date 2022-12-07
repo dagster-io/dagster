@@ -1,13 +1,13 @@
 from dagster import AssetMaterialization, Output
 from dagster._annotations import experimental
-from dagster._legacy import execute_solid, solid
+from dagster._legacy import execute_solid, op
 
 
 def test_generator_return_solid():
     def _gen():
         yield Output("done")
 
-    @solid
+    @op
     def gen_ret_solid(_):
         return _gen()
 
@@ -19,7 +19,7 @@ def test_generator_yield_solid():
     def _gen():
         yield Output("done")
 
-    @solid
+    @op
     def gen_yield_solid(_):
         for event in _gen():
             yield event
@@ -32,7 +32,7 @@ def test_generator_yield_from_solid():
     def _gen():
         yield Output("done")
 
-    @solid
+    @op
     def gen_yield_solid(_):
         yield from _gen()
 
@@ -51,7 +51,7 @@ def test_nested_generator_solid():
         yield from _gen1()
         yield from _gen2()
 
-    @solid
+    @op
     def gen_return_solid(_):
         return _gen()
 
@@ -60,7 +60,7 @@ def test_nested_generator_solid():
 
 
 def test_experimental_generator_solid():
-    @solid
+    @op
     @experimental
     def gen_solid():
         yield Output("done")

@@ -33,7 +33,7 @@ from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
-from dagster._legacy import execute_pipeline, pipeline, solid
+from dagster._legacy import execute_pipeline, pipeline, op
 from dagster._serdes import DefaultNamedTupleSerializer, create_snapshot_id
 from dagster._serdes.serdes import (
     WhitelistMap,
@@ -161,7 +161,7 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
 
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
 
-        @solid
+        @op
         def noop_solid(_):
             pass
 
@@ -463,7 +463,7 @@ def test_rename_event_log_entry():
 def test_0_12_0_extract_asset_index_cols():
     src_dir = file_relative_path(__file__, "snapshot_0_12_0_pre_asset_index_cols/sqlite")
 
-    @solid
+    @op
     def asset_solid(_):
         yield AssetMaterialization(asset_key=AssetKey(["a"]), partition="partition_1")
         yield AssetMaterialization(asset_key=AssetKey(["b"]))

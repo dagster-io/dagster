@@ -100,9 +100,10 @@ from dagster._legacy import (
     build_assets_job,
     daily_schedule,
     hourly_schedule,
+    op,
     monthly_schedule,
     pipeline,
-    solid,
+    op,
     weekly_schedule,
 )
 from dagster._seven import get_system_temp_directory
@@ -173,9 +174,9 @@ def get_main_external_repo(instance):
         yield location.get_repository(main_repo_name())
 
 
-@solid(
+@op(
     input_defs=[InputDefinition("num", PoorMansDataFrame)],
-    output_defs=[OutputDefinition(PoorMansDataFrame)],
+    output_def=OutputDefinition(PoorMansDataFrame),
 )
 def sum_solid(num):
     sum_df = deepcopy(num)
@@ -184,9 +185,9 @@ def sum_solid(num):
     return sum_df
 
 
-@solid(
+@op(
     input_defs=[InputDefinition("sum_df", PoorMansDataFrame)],
-    output_defs=[OutputDefinition(PoorMansDataFrame)],
+    output_def=OutputDefinition(PoorMansDataFrame),
 )
 def sum_sq_solid(sum_df):
     sum_sq_df = deepcopy(sum_df)
@@ -195,7 +196,7 @@ def sum_sq_solid(sum_df):
     return sum_sq_df
 
 
-@solid(
+@op(
     input_defs=[InputDefinition("sum_df", PoorMansDataFrame)],
     output_defs=[OutputDefinition(PoorMansDataFrame)],
 )
@@ -213,7 +214,7 @@ def csv_hello_world_solids_config():
     }
 
 
-@solid(config_schema={"file": Field(String)})
+@op(config_schema={"file": Field(String)})
 def loop(context):
     with open(context.op_config["file"], "w", encoding="utf8") as ff:
         ff.write("yup")
@@ -227,7 +228,7 @@ def infinite_loop_pipeline():
     loop()
 
 
-@solid
+@op
 def noop_solid(_):
     pass
 
@@ -237,13 +238,13 @@ def noop_pipeline():
     noop_solid()
 
 
-@solid
+@op
 def solid_asset_a(_):
     yield AssetMaterialization(asset_key="a")
     yield Output(1)
 
 
-@solid
+@op
 def solid_asset_b(_, num):
     yield AssetMaterialization(asset_key="b")
     time.sleep(0.1)
@@ -251,13 +252,13 @@ def solid_asset_b(_, num):
     yield Output(num)
 
 
-@solid
+@op
 def solid_partitioned_asset(_):
     yield AssetMaterialization(asset_key="a", partition="partition_1")
     yield Output(1)
 
 
-@solid
+@op
 def tag_asset_solid(_):
     yield AssetMaterialization(asset_key="a")
     yield Output(1)
@@ -285,7 +286,7 @@ def asset_tag_pipeline():
 
 @pipeline
 def pipeline_with_expectations():
-    @solid(output_defs=[])
+    @op(output_defs=[])
     def emit_successful_expectation(_context):
         yield ExpectationResult(
             success=True,
@@ -294,7 +295,7 @@ def pipeline_with_expectations():
             metadata={"data": {"reason": "Just because."}},
         )
 
-    @solid(output_defs=[])
+    @op(output_defs=[])
     def emit_failed_expectation(_context):
         yield ExpectationResult(
             success=False,
@@ -303,7 +304,7 @@ def pipeline_with_expectations():
             metadata={"data": {"reason": "Relentless pessimism."}},
         )
 
-    @solid(output_defs=[])
+    @op(output_defs=[])
     def emit_successful_expectation_no_metadata(_context):
         yield ExpectationResult(success=True, label="no_metadata", description="Successful")
 
@@ -314,7 +315,7 @@ def pipeline_with_expectations():
 
 @pipeline
 def more_complicated_config():
-    @solid(
+    @op(
         config_schema={
             "field_one": Field(String),
             "field_two": Field(String, is_required=False),
@@ -330,7 +331,7 @@ def more_complicated_config():
 
 @pipeline
 def config_with_map():
-    @solid(
+    @op(
         config_schema={
             "field_one": Field(Map(str, int, key_label_name="username")),
             "field_two": Field({bool: int}, is_required=False),
@@ -350,7 +351,7 @@ def config_with_map():
 
 @pipeline
 def more_complicated_nested_config():
-    @solid(
+    @op(
         name="a_solid_with_multilayered_config",
         input_defs=[],
         output_defs=[],
@@ -415,7 +416,7 @@ def csv_hello_world_two():
     sum_solid()
 
 
-@solid
+@op
 def solid_that_gets_tags(context):
     return context.pipeline_run.tags
 
@@ -425,14 +426,14 @@ def hello_world_with_tags():
     solid_that_gets_tags()
 
 
-@solid(name="solid_with_list", input_defs=[], output_defs=[], config_schema=[int])
+@op(name="solid_with_list", input_defs=[], output_defs=[], config_schema=[int])
 def solid_def(_):
     return None
 
 
 @pipeline
 def pipeline_with_input_output_metadata():
-    @solid(
+    @op(
         input_defs=[InputDefinition("foo", Int, metadata={"a": "b"})],
         output_defs=[OutputDefinition(Int, "bar", metadata={"c": "d"})],
     )
@@ -454,7 +455,7 @@ def csv_hello_world_df_input():
 
 @pipeline(mode_defs=[default_mode_def_for_test])
 def no_config_pipeline():
-    @solid
+    @op
     def return_hello():
         return "Hello"
 
@@ -463,11 +464,11 @@ def no_config_pipeline():
 
 @pipeline
 def no_config_chain_pipeline():
-    @solid
+    @op
     def return_foo():
         return "foo"
 
-    @solid
+    @op
     def return_hello_world(_foo):
         return "Hello World"
 
@@ -476,19 +477,19 @@ def no_config_chain_pipeline():
 
 @pipeline
 def scalar_output_pipeline():
-    @solid(output_defs=[OutputDefinition(String)])
+    @op(output_defs=[OutputDefinition(String)])
     def return_str():
         return "foo"
 
-    @solid(output_defs=[OutputDefinition(Int)])
+    @op(output_defs=[OutputDefinition(Int)])
     def return_int():
         return 34234
 
-    @solid(output_defs=[OutputDefinition(Bool)])
+    @op(output_defs=[OutputDefinition(Bool)])
     def return_bool():
         return True
 
-    @solid(output_defs=[OutputDefinition(Any)])
+    @op(output_defs=[OutputDefinition(Any)])
     def return_any():
         return "dkjfkdjfe"
 
@@ -500,7 +501,7 @@ def scalar_output_pipeline():
 
 @pipeline
 def pipeline_with_enum_config():
-    @solid(
+    @op(
         config_schema=Enum(
             "TestEnum",
             [
@@ -518,7 +519,7 @@ def pipeline_with_enum_config():
 
 @pipeline
 def naughty_programmer_pipeline():
-    @solid
+    @op
     def throw_a_thing():
         try:
             try:
@@ -540,11 +541,11 @@ def pipeline_with_invalid_definition_error():
     class InputTypeWithoutHydration(int):
         pass
 
-    @solid(output_defs=[OutputDefinition(InputTypeWithoutHydration)])
+    @op(output_defs=[OutputDefinition(InputTypeWithoutHydration)])
     def one(_):
         return 1
 
-    @solid(
+    @op(
         input_defs=[InputDefinition("some_input", InputTypeWithoutHydration)],
         output_defs=[OutputDefinition(Int)],
     )
@@ -594,7 +595,7 @@ def double_adder_resource(init_context):
     preset_defs=[PresetDefinition.from_files("add", mode="add_mode")],
 )
 def multi_mode_with_resources():
-    @solid(required_resource_keys={"op"})
+    @op(required_resource_keys={"op"})
     def apply_to_three(context):
         return context.resources.op(3)
 
@@ -608,7 +609,7 @@ def req_resource(_):
 
 @pipeline(mode_defs=[ModeDefinition(resource_defs={"R1": req_resource})])
 def required_resource_pipeline():
-    @solid(required_resource_keys={"R1"})
+    @op(required_resource_keys={"R1"})
     def solid_with_required_resource(_):
         return 1
 
@@ -660,7 +661,7 @@ def bar_logger(init_context):
     ]
 )
 def multi_mode_with_loggers():
-    @solid
+    @op
     def return_six(context):
         context.log.critical("OMG!")
         return 6
@@ -670,11 +671,11 @@ def multi_mode_with_loggers():
 
 @pipeline
 def composites_pipeline():
-    @solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @op(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
     def add_one(num):
         return num + 1
 
-    @solid(input_defs=[InputDefinition("num")])
+    @op(input_defs=[InputDefinition("num")])
     def div_two(num):
         return num / 2
 
@@ -695,7 +696,7 @@ def composites_pipeline():
 
 @pipeline
 def materialization_pipeline():
-    @solid
+    @op
     def materialize(_):
         yield AssetMaterialization(
             asset_key="all_types",
@@ -750,7 +751,7 @@ def materialization_pipeline():
 
 @pipeline
 def spew_pipeline():
-    @solid
+    @op
     def spew(_):
         print("HELLO WORLD")  # pylint: disable=print-call
 
@@ -779,11 +780,11 @@ def retry_config_resource(context):
     ]
 )
 def eventually_successful():
-    @solid
+    @op
     def spawn() -> int:
         return 0
 
-    @solid(
+    @op(
         required_resource_keys={"retry_count"},
     )
     def fail(context: OpExecutionContext, depth: int) -> int:
@@ -792,11 +793,11 @@ def eventually_successful():
 
         return depth + 1
 
-    @solid
+    @op
     def reset(depth: int) -> int:
         return depth
 
-    @solid
+    @op
     def collect(fan_in: List[int]):
         if fan_in != [1, 2, 3]:
             raise Exception(f"Fan in failed, expected [1, 2, 3] got {fan_in}")
@@ -811,7 +812,7 @@ def eventually_successful():
 
 @pipeline
 def hard_failer():
-    @solid(
+    @op(
         config_schema={"fail": Field(Bool, is_required=False, default_value=False)},
         output_defs=[OutputDefinition(Int)],
     )
@@ -820,7 +821,7 @@ def hard_failer():
             segfault()
         return 0
 
-    @solid(
+    @op(
         input_defs=[InputDefinition("n", Int)],
     )
     def increment(_, n):
@@ -839,13 +840,13 @@ def resource_b(_):
     return "B"
 
 
-@solid(required_resource_keys={"a"})
+@op(required_resource_keys={"a"})
 def start(context):
     assert context.resources.a == "A"
     return 1
 
 
-@solid(required_resource_keys={"b"})
+@op(required_resource_keys={"b"})
 def will_fail(context, num):  # pylint: disable=unused-argument
     assert context.resources.b == "B"
     raise Exception("fail")
@@ -866,7 +867,7 @@ def retry_resource_pipeline():
     will_fail(start())
 
 
-@solid(
+@op(
     config_schema={"fail": bool},
     input_defs=[InputDefinition("inp", str)],
     output_defs=[
@@ -881,7 +882,7 @@ def can_fail(context, inp):  # pylint: disable=unused-argument
     yield Output("okay perfect", "start_fail")
 
 
-@solid(
+@op(
     output_defs=[
         OutputDefinition(str, "success", is_required=False),
         OutputDefinition(str, "skip", is_required=False),
@@ -891,12 +892,12 @@ def multi(_):
     yield Output("okay perfect", "success")
 
 
-@solid
+@op
 def passthrough(_, value):
     return value
 
 
-@solid(input_defs=[InputDefinition("start", Nothing)], output_defs=[])
+@op(input_defs=[InputDefinition("start", Nothing)], output_defs=[])
 def no_output(_):
     yield ExpectationResult(True)
 
@@ -912,7 +913,7 @@ def retry_multi_output_pipeline():
 
 @pipeline(tags={"foo": "bar"}, mode_defs=[default_mode_def_for_test])
 def tagged_pipeline():
-    @solid
+    @op
     def simple_solid():
         return "Hello"
 
@@ -938,11 +939,11 @@ def disable_gc(_context):
     ]
 )
 def retry_multi_input_early_terminate_pipeline():
-    @solid(output_defs=[OutputDefinition(Int)])
+    @op(output_defs=[OutputDefinition(Int)])
     def return_one():
         return 1
 
-    @solid(
+    @op(
         config_schema={"wait_to_terminate": bool},
         input_defs=[InputDefinition("one", Int)],
         output_defs=[OutputDefinition(Int)],
@@ -954,7 +955,7 @@ def retry_multi_input_early_terminate_pipeline():
                 time.sleep(0.1)
         return one
 
-    @solid(
+    @op(
         config_schema={"wait_to_terminate": bool},
         input_defs=[InputDefinition("one", Int)],
         output_defs=[OutputDefinition(Int)],
@@ -966,7 +967,7 @@ def retry_multi_input_early_terminate_pipeline():
                 time.sleep(0.1)
         return one
 
-    @solid(
+    @op(
         input_defs=[
             InputDefinition("input_one", Int),
             InputDefinition("input_two", Int),
@@ -982,12 +983,12 @@ def retry_multi_input_early_terminate_pipeline():
 
 @pipeline(mode_defs=[default_mode_def_for_test])
 def dynamic_pipeline():
-    @solid
+    @op
     def multiply_by_two(context, y):
         context.log.info("multiply_by_two is returning " + str(y * 2))
         return y * 2
 
-    @solid
+    @op
     def multiply_inputs(context, y, ten, should_fail):
         current_run = context.instance.get_run_by_id(context.run_id)
         if should_fail:
@@ -996,16 +997,16 @@ def dynamic_pipeline():
         context.log.info("multiply_inputs is returning " + str(y * ten))
         return y * ten
 
-    @solid
+    @op
     def emit_ten(_):
         return 10
 
-    @solid(output_defs=[DynamicOutputDefinition()])
+    @op(output_defs=[DynamicOutputDefinition()])
     def emit(_):
         for i in range(3):
             yield DynamicOutput(value=i, mapping_key=str(i))
 
-    @solid
+    @op
     def sum_numbers(_, nums):
         return sum(nums)
 
@@ -1390,11 +1391,11 @@ def define_sensors():
 
 @pipeline(mode_defs=[default_mode_def_for_test])
 def chained_failure_pipeline():
-    @solid
+    @op
     def always_succeed():
         return "hello"
 
-    @solid
+    @op
     def conditionally_fail(_upstream):
         if os.path.isfile(
             os.path.join(
@@ -1406,7 +1407,7 @@ def chained_failure_pipeline():
 
         return "hello"
 
-    @solid
+    @op
     def after_failure(_upstream):
         return "world"
 
@@ -1415,7 +1416,7 @@ def chained_failure_pipeline():
 
 @pipeline
 def backcompat_materialization_pipeline():
-    @solid
+    @op
     def backcompat_materialize(_):
         yield Materialization(
             asset_key="all_types",

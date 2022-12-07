@@ -24,7 +24,7 @@ from dagster._legacy import (
     execute_pipeline,
     execute_pipeline_iterator,
     pipeline,
-    solid,
+    op,
 )
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.interrupts import capture_interrupts, check_captured_interrupt
@@ -36,7 +36,7 @@ def _send_kbd_int(temp_files):
     send_interrupt()
 
 
-@solid(config_schema={"tempfile": Field(String)})
+@op(config_schema={"tempfile": Field(String)})
 def write_a_file(context):
     with open(context.op_config["tempfile"], "w", encoding="utf8") as ff:
         ff.write("yup")
@@ -48,7 +48,7 @@ def write_a_file(context):
     raise Exception("Timed out")
 
 
-@solid
+@op
 def should_not_start(_context):
     assert False
 
@@ -148,7 +148,7 @@ def test_interrupt_resource_teardown():
         finally:
             cleaned.append("A")
 
-    @solid(config_schema={"tempfile": Field(String)}, required_resource_keys={"a"})
+    @op(config_schema={"tempfile": Field(String)}, required_resource_keys={"a"})
     def write_a_file_resource_solid(context):
         with open(context.op_config["tempfile"], "w", encoding="utf8") as ff:
             ff.write("yup")

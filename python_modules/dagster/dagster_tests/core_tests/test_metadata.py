@@ -1,11 +1,11 @@
 from dagster import NodeInvocation
-from dagster._legacy import PipelineDefinition, execute_pipeline, solid
+from dagster._legacy import PipelineDefinition, execute_pipeline, op
 
 
 def test_solid_instance_tags():
     called = {}
 
-    @solid(tags={"foo": "bar", "baz": "quux"})
+    @op(tags={"foo": "bar", "baz": "quux"})
     def metadata_solid(context):
         assert context.solid.tags == {"foo": "oof", "baz": "quux", "bip": "bop"}
         called["yup"] = True

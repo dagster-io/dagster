@@ -1,8 +1,8 @@
 from dagster import repository
-from dagster._legacy import pipeline, solid
+from dagster._legacy import pipeline, op
 
 
-@solid
+@op
 def hello_world(_):
     pass
 
