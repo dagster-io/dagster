@@ -10,7 +10,7 @@ import docker
 import kubernetes
 import psycopg2
 import pytest
-from dagster_k8s.utils import wait_for_pod
+from dagster_k8s.client import DagsterKubernetesClient
 from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage, PostgresScheduleStorage
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
@@ -116,7 +116,7 @@ def local_port_forward_postgres(namespace):
     )
     forward_port = find_free_port()
 
-    wait_for_pod(postgres_pod_name, namespace=namespace)
+    DagsterKubernetesClient.production_client().wait_for_pod(postgres_pod_name, namespace=namespace)
 
     p = None
     try:

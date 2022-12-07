@@ -49,7 +49,7 @@
     "graphql": "^15.5.0",
     "lodash": "^4.17.15",
     "lru-cache": "^6.0.0",
-    "moment-timezone": "^0.5.31",
+    "moment-timezone": "^0.5.35",
     "qs": "^6.10.3",
     "react-chartjs-2": "^3.0.3",
     "react-codemirror2": "^7.2.1",

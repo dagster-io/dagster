@@ -17,9 +17,9 @@ from dagster import (
 )
 from dagster import _check as check
 from dagster import reconstructable
-from dagster._core.definitions import Node
-from dagster._core.definitions.dependency import DependencyStructure
-from dagster._core.definitions.graph_definition import _create_adjacency_lists
+from dagster._core.definitions.dependency import DependencyStructure, OpNode
+from dagster._core.definitions.graph_definition import GraphDefinition, _create_adjacency_lists
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster._core.execution.results import OpExecutionResult
 from dagster._core.instance import DagsterInstance
@@ -80,13 +80,13 @@ def make_compute_fn():
     return compute
 
 
-def _do_construct(solids, dependencies):
-    pipeline_def = PipelineDefinition(name="test", solid_defs=solids, dependencies=dependencies)
-    solids = {
-        s.name: Node(name=s.name, definition=s, graph_definition=pipeline_def.graph) for s in solids
-    }
-    dependency_structure = DependencyStructure.from_definitions(solids, dependencies)
-    return _create_adjacency_lists(list(solids.values()), dependency_structure)
+def _do_construct(ops, dependencies):
+    job_def = JobDefinition(
+        graph_def=GraphDefinition(name="test", node_defs=ops, dependencies=dependencies)
+    )
+    ops = {s.name: OpNode(name=s.name, definition=s, graph_definition=job_def.graph) for s in ops}
+    dependency_structure = DependencyStructure.from_definitions(ops, dependencies)
+    return _create_adjacency_lists(list(ops.values()), dependency_structure)
 
 
 def test_empty_adjaceny_lists():

@@ -7,7 +7,6 @@ import pytest
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.job import get_k8s_job_name
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
-from dagster_k8s.utils import get_pods_in_job, wait_for_job
 from dagster_k8s_test_infra.helm import (
     TEST_CONFIGMAP_NAME,
     TEST_IMAGE_PULL_SECRET_NAME,
@@ -171,7 +170,7 @@ def test_k8s_executor_combine_configs(
     step_job_key = get_k8s_job_name(run_id, "count_letters")
     step_job_name = f"dagster-step-{step_job_key}"
 
-    step_pods = get_pods_in_job(
+    step_pods = DagsterKubernetesClient.production_client().get_pods_in_job(
         job_name=step_job_name, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
@@ -316,7 +315,7 @@ def test_k8s_run_launcher_terminate(
         mode="k8s",
     )
 
-    wait_for_job(
+    DagsterKubernetesClient.production_client().wait_for_job(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
     timeout = datetime.timedelta(0, 30)
