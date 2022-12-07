@@ -27,6 +27,7 @@ from dagster import (
     repository,
     resource,
 )
+from dagster._core.definitions import op
 from dagster._core.definitions.decorators import daily_schedule, schedule
 from dagster._core.test_utils import nesting_graph_pipeline
 from dagster._legacy import (
