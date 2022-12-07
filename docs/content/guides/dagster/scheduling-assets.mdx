@@ -1,6 +1,6 @@
 ---
-title: Building Graphs of Assets | Dagster
-description: Software-defined assets can depend on other software-defined assets
+title: Scheduling Assets | Dagster
+description: Software-defined assets can be scheduled based on freshness policies
 ---
 
 # Scheduling Assets
@@ -19,7 +19,7 @@ To run each code snippet, follow [these instructions](https://docs.dagster.io/ge
 
 Begin with a regular schedule:
 
-```python file=/intro_tutorial/scheduling/freshness_1.py
+```python file=/guides/dagster/scheduling/freshness_1.py
 from dagster import (
     AssetSelection,
     ScheduleDefinition,
@@ -56,7 +56,7 @@ def my_repo():
 This schedule runs a job every minute called `update_job` that materialiazes asset `a` and then asset `b`. This setup represents a traditional cron based schedule. To ensure asset `b` is updated with fresh data, you tell the orchestrator to run a job targetting asset `a` and `b`, and Dagster knows to run `a` before `b` because `a` is an input to the asset function `b`.
 
 <Image
-src="/images/tutorial/assets/scheduling-assets/freshness_1.png"
+src="/images/guides/scheduling-assets/freshness_1.png"
 width={2060}
 height={1456}
 />
@@ -67,7 +67,7 @@ height={1456}
 
 Now take a step towards a more declarative approach to scheduling that describes _what_ assets you want to exist.
 
-```python file=/intro_tutorial/scheduling/freshness_2.py
+```python file=/guides/dagster/scheduling/freshness_2.py
 from dagster import (
     AssetSelection,
     ScheduleDefinition,
@@ -107,7 +107,7 @@ def my_repo():
 This example adds a reconciliation sensor called `update_sensor` and modifies the scheduled job to only target asset `a`. The result is that whenever asset `a` is updated by the scheduled job, asset `b` is marked as stale. The reconciliation sensor keeps track of all of the assets, and automatically determines that `b` needs to be updated when `b` is marked stale. A run is started to materialize asset `b`. This approach is more declarative, you are stating that "`b` should be as up-to-date as possible" and Dagster figures out when `b` needs to run.
 
 <Image
-src="/images/tutorial/assets/scheduling-assets/freshness_2.png"
+src="/images/guides/scheduling-assets/freshness_2.png"
 width={960}
 height={540}
 />
@@ -118,7 +118,7 @@ height={540}
 
 Now introduce another asset, `c`. What if you don't need `c` to be as up-to-date as `a` and `b`? In traditional cron based schedules this requirement quickly becomes confusing. Shoud the scheduled job target `c` and try to re-use the last value of `a`? Should the scheduled job instead run `a` and `c`? Does scheduling `c` create any side-effects that will impact `b`? In Dagster you can avoid all of these questions and instead declare how fresh you want `c` to be, and Dagster figures out the rest. This declaration is done through a freshness policy:
 
-```python file=/intro_tutorial/scheduling/freshness_3.py
+```python file=/guides/dagster/scheduling/freshness_3.py
 from dagster import (
     AssetSelection,
     FreshnessPolicy,
@@ -166,7 +166,7 @@ One way to think about a freshness policy is that it adds a tolerance to the rec
 1. First `a` is updated by the schedule. `c` is marked stale but is not violating the freshness policy:
 
 <Image
-src="/images/tutorial/assets/scheduling-assets/freshness_3a.png"
+src="/images/guides/scheduling-assets/freshness_3a.png"
 width={2466}
 height={1278}
 />
@@ -174,7 +174,7 @@ height={1278}
 2. After 2 minutes, `c` is marked late because the freshness policy is violated. A run is started to update `c`.
 
 <Image
-src="/images/tutorial/assets/scheduling-assets/freshness_3b.png"
+src="/images/guides/scheduling-assets/freshness_3b.png"
 width={2326}
 height={1236}
 />
@@ -182,7 +182,7 @@ height={1236}
 3. Once the run completes `c` is both on-time and fresh.
 
 <Image
-src="/images/tutorial/assets/scheduling-assets/freshness_3c.png"
+src="/images/guides/scheduling-assets/freshness_3c.png"
 width={2336}
 height={1228}
 />
@@ -193,7 +193,7 @@ height={1228}
 
 So far, a schedule still updates `a`. The final step is to remove this schedule:
 
-```python file=/intro_tutorial/scheduling/freshness_4a.py
+```python file=/guides/dagster/scheduling/freshness_4a.py
 from dagster import (
     AssetSelection,
     FreshnessPolicy,
@@ -233,7 +233,7 @@ Here is where the reconciliation sensor and freshness policies become really pow
 1. `c` is late because it was last updated more than 2 minutes ago thus violating the freshness policy
 
 <Image
-src="/images/tutorial/assets/scheduling-assets/freshness_4a.png"
+src="/images/guides/scheduling-assets/freshness_4a.png"
 width={2404}
 height={1224}
 />
@@ -241,7 +241,7 @@ height={1224}
 2. A run is triggered that updates `a` and `c`
 
 <Image
-src="/images/tutorial/assets/scheduling-assets/freshness_4b.png"
+src="/images/guides/scheduling-assets/freshness_4b.png"
 width={2406}
 height={1182}
 />
@@ -249,14 +249,14 @@ height={1182}
 3. `a` and `c` are both updated. Asset `b` is now stale and will be updated based on it's policy.
 
 <Image
-src="/images/tutorial/assets/scheduling-assets/freshness_4c.png"
+src="/images/guides/scheduling-assets/freshness_4c.png"
 width={2444}
 height={1228}
 />
 
 In the current code asset `b` has no policy, but `b` is monitored by the reconciliation sensor. As a result, as soon as `a` is updated, asset `b` will be marked as stale and then a run will be started to update `b`. This immediate update may not be desirable, luckily adding a freshness policy to `b` is easy:
 
-```python file=/intro_tutorial/scheduling/freshness_4b.py
+```python file=/guides/dagster/scheduling/freshness_4b.py
 from dagster import (
     AssetSelection,
     FreshnessPolicy,
@@ -303,7 +303,7 @@ One final concept is important when considering how assets become stale. So far 
 
 In Dagster it is possible to indicate that an asset is stale by updating it's `op_version`. Existing code in production might be labelled with version 0.1:
 
-```python file=/intro_tutorial/scheduling/freshness_5a.py
+```python file=/guides/dagster/scheduling/freshness_5a.py
 from dagster import AssetSelection, asset, build_asset_reconciliation_sensor, repository
 
 
@@ -335,14 +335,14 @@ def my_repo():
 These assets would be managed by the reconciliation scheduler and be considered fresh when all three have been materialized:
 
 <Image
-src="/images/tutorial/assets/scheduling-assets/freshness_5a.png"
+src="/images/guides/scheduling-assets/freshness_5a.png"
 width={2084}
 height={1362}
 />
 
 If you make a substantial change to our code, you can increment the `op_version`:
 
-```python file=/intro_tutorial/scheduling/freshness_5b.py
+```python file=/guides/dagster/scheduling/freshness_5b.py
 from dagster import AssetSelection, asset, build_asset_reconciliation_sensor, repository
 
 
@@ -374,7 +374,7 @@ def my_repo():
 When the new asset definitions are loaded, `b` and the downstream asset `c` will be flagged as stale.
 
 <Image
-src="/images/tutorial/assets/scheduling-assets/freshness_5b.png"
+src="/images/guides/scheduling-assets/freshness_5b.png"
 width={2208}
 height={1404}
 />
@@ -382,7 +382,7 @@ height={1404}
 In testing environments the stale assets can be manually materialized to verify the code change.
 
 <Image
-src="/images/tutorial/assets/scheduling-assets/freshness_5c.png"
+src="/images/guides/scheduling-assets/freshness_5c.png"
 width={1520}
 height={1158}
 />

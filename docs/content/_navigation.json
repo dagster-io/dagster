@@ -50,10 +50,6 @@
           {
             "title": "Testing Assets",
             "path": "/tutorial/assets/testing-assets"
-          },
-          {
-            "title": "Scheduling Assets",
-            "path": "/tutorial/assets/scheduling-assets"
           }
         ]
       },
@@ -670,6 +666,10 @@
           {
             "title": "Software-defined assets with Pandas & PySpark",
             "path": "/guides/dagster/software-defined-assets"
+          },
+          {
+            "title": "Scheduling Software-defined assets with freshness policies",
+            "path": "/guides/dagster/scheduling-assets"
           },
           {
             "title": "Re-executing jobs",
