@@ -45,11 +45,11 @@ def send_alert(_msg: str) -> None:
 
 # start_freshness_policy_sensor_marker
 
-from dagster import FreshnessPolicySensorEvaluationContext, freshness_policy_sensor
+from dagster import FreshnessPolicySensorContext, freshness_policy_sensor
 
 
 @freshness_policy_sensor(asset_selection=AssetSelection.all())
-def my_freshness_alerting_sensor(context: FreshnessPolicySensorEvaluationContext):
+def my_freshness_alerting_sensor(context: FreshnessPolicySensorContext):
     if context.current_minutes_late is None or context.previous_minutes_late is None:
         return
 
