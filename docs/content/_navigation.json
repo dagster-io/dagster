@@ -50,6 +50,10 @@
           {
             "title": "Testing Assets",
             "path": "/tutorial/assets/testing-assets"
+          },
+          {
+            "title": "Scheduling Assets",
+            "path": "/tutorial/assets/scheduling-assets"
           }
         ]
       },
