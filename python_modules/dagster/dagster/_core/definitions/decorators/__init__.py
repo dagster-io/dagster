@@ -24,6 +24,5 @@ from .sensor_decorator import (
     sensor as sensor,
 )
 from .solid_decorator import (
-    lambda_solid as lambda_solid,
     solid as solid,
 )

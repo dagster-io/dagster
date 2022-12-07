@@ -40,7 +40,6 @@ from dagster._legacy import (
     PartitionSetDefinition,
     PresetDefinition,
     execute_pipeline,
-    lambda_solid,
     pipeline,
     solid,
 )
@@ -49,12 +48,12 @@ from dagster._utils.merger import merge_dicts
 from dagster.version import __version__
 
 
-@lambda_solid
+@solid
 def do_something():
     return 1
 
 
-@lambda_solid
+@solid
 def do_input(x):
     return x
 

@@ -13,7 +13,7 @@ from dagster import (
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.system_config.composite_descent import composite_descent
-from dagster._legacy import InputDefinition, execute_pipeline, lambda_solid, pipeline, solid
+from dagster._legacy import InputDefinition, execute_pipeline, pipeline, solid
 
 
 def test_single_level_pipeline():
@@ -275,7 +275,7 @@ def test_nested_input_via_config_mapping():
 
 
 def test_double_nested_input_via_config_mapping():
-    @lambda_solid
+    @solid
     def number(num):
         return num
 

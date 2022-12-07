@@ -1,15 +1,15 @@
 import string
 
 from dagster import ScheduleDefinition, repository
-from dagster._legacy import PartitionSetDefinition, lambda_solid, pipeline
+from dagster._legacy import PartitionSetDefinition, pipeline, solid
 
 
-@lambda_solid
+@solid
 def do_something():
     return 1
 
 
-@lambda_solid
+@solid
 def do_input(x):
     return x
 

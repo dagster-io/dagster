@@ -16,7 +16,6 @@ from dagster._legacy import (
     OutputDefinition,
     PipelineDefinition,
     execute_pipeline,
-    lambda_solid,
     pipeline,
     solid,
 )
@@ -29,15 +28,15 @@ def test_simple_values():
         assert set(numbers) == set([1, 2, 3])
         return sum(numbers)
 
-    @lambda_solid
+    @solid
     def emit_1():
         return 1
 
-    @lambda_solid
+    @solid
     def emit_2():
         return 2
 
-    @lambda_solid
+    @solid
     def emit_3():
         return 3
 
@@ -68,22 +67,22 @@ def collect(_context, stuff):
     return stuff
 
 
-@lambda_solid
+@solid
 def emit_num():
     return 1
 
 
-@lambda_solid
+@solid
 def emit_none():
     pass
 
 
-@lambda_solid
+@solid
 def emit_str():
     return "one"
 
 
-@lambda_solid(output_def=OutputDefinition(Nothing))
+@solid(output_defs=[OutputDefinition(Nothing)])
 def emit_nothing():
     pass
 
@@ -120,7 +119,7 @@ def test_dsl():
 
 
 def test_collect_one():
-    @lambda_solid
+    @solid
     def collect_one(list_arg):
         assert list_arg == ["one"]
 

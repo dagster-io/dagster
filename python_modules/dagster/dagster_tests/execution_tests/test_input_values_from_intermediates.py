@@ -1,17 +1,17 @@
 from dagster import List, Optional
-from dagster._legacy import InputDefinition, execute_pipeline, lambda_solid, pipeline
+from dagster._legacy import InputDefinition, execute_pipeline, pipeline, solid
 
 
 def test_from_intermediates_from_multiple_outputs():
-    @lambda_solid
+    @solid
     def x():
         return "x"
 
-    @lambda_solid
+    @solid
     def y():
         return "y"
 
-    @lambda_solid(input_defs=[InputDefinition("stuff", Optional[List[str]])])
+    @solid(input_defs=[InputDefinition("stuff", Optional[List[str]])])
     def gather(stuff):
         return "{} and {}".format(*stuff)
 
@@ -36,7 +36,7 @@ def test_from_intermediates_from_multiple_outputs():
 def test_from_intermediates_from_config():
     run_config = {"solids": {"x": {"inputs": {"string_input": {"value": "Dagster is great!"}}}}}
 
-    @lambda_solid
+    @solid
     def x(string_input):
         return string_input
 
