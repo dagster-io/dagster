@@ -103,7 +103,7 @@ This command loads the definitions in the variable containing the <PyObject obje
 **Note**: Before getting started, install dependencies as an editable install by running:
 
 ```shell
-pip install -e
+pip install -e path/to/your/package_name
 ```
 
 ---
@@ -197,14 +197,47 @@ Interested in how `Definitions` and repositories differ when it comes to definin
     </tr>
     <tr>
       <td>
-        <strong>Created by</strong>
+        <strong>Description</strong>
       </td>
       <td>
-        Using the <PyObject object="Definitions" /> object assigned to a
-        top-level variable
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            Created by using the <PyObject object="Definitions" /> object
+            assigned to a top-level variable
+          </li>
+          <li>
+            One <PyObject object="Definitions" /> object allowed per code
+            location
+          </li>
+        </ul>
       </td>
       <td>
-        Using the <PyObject object="repository" decorator /> decorator
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            Created by using the <PyObject object="repository" decorator />{" "}
+            decorator
+          </li>
+          <li>
+            Multiple <PyObject object="repository" decorator /> definitions
+            allowed per code location
+          </li>
+        </ul>
       </td>
     </tr>
     <tr>
@@ -236,20 +269,7 @@ Interested in how `Definitions` and repositories differ when it comes to definin
         </ul>
       </td>
       <td>
-        Resources are manually bound using <code>with_resources</code>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <strong>Multiple code locations</strong>
-      </td>
-      <td>
-        <strong>Not supported.</strong> Only one{" "}
-        <PyObject object="Definitions" /> object per code location.
-      </td>
-      <td>
-        <strong>Supported.</strong> A code location may have one or many{" "}
-        <PyObject object="repository" decorator /> definitions.
+        Resources are manually bound to assets (<code>with_resources</code>)
       </td>
     </tr>
     <tr>
