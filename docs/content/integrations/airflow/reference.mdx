@@ -13,8 +13,15 @@ This reference provides a high-level look at working with Airflow using the [`ai
 
 To load all Airflow DAGS in a file path into a [Dagster Repository](/concepts/repositories-workspaces/repositories), use <PyObject module="dagster_airflow" object="make_dagster_repo_from_airflow_dags_path" />:
 
-```python file=/integrations/airflow/migrate_repo
-ENOENT: no such file or directory, open '/Users/josephvandrunen/workspace/elementl/dagster/examples/docs_snippets/docs_snippets/integrations/airflow/migrate_repo'
+```python file=/integrations/airflow/migrate_repo.py
+import os
+
+from dagster_airflow import make_dagster_repo_from_airflow_dags_path
+
+migrated_airflow_repo = make_dagster_repo_from_airflow_dags_path(
+    os.path.join(os.getenv("AIRFLOW_HOME"), "dags"),
+    "migrated_airflow_repo",
+)
 ```
 
 ## Dagster Job to Dag
