@@ -73,7 +73,7 @@ def test_from_solid_not_there():
 def test_from_non_existant_input():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='solid "B" does not have input "not_an_input"',
+        match='op "B" does not have input "not_an_input"',
     ):
         GraphDefinition(
             node_defs=solid_a_b_list(),
@@ -129,7 +129,7 @@ def test_one_layer_off_dependencies():
 def test_malformed_dependencies():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='Expected IDependencyDefinition for solid "B" input "b_input"',
+        match='Expected IDependencyDefinition for node "B" input "b_input"',
     ):
         GraphDefinition(
             node_defs=solid_a_b_list(),

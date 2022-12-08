@@ -93,7 +93,8 @@ export const AppTopNav: React.FC<Props> = ({
                 const {pathname} = location;
                 return (
                   pathname.startsWith('/code-locations') ||
-                  pathname.startsWith('/workspace') ||
+                  pathname.startsWith('/locations') ||
+                  pathname.startsWith('/definitions') ||
                   pathname.startsWith('/health') ||
                   pathname.startsWith('/config')
                 );
@@ -147,15 +148,17 @@ export const AppTopNavLogo: React.FC = () => {
 
   return (
     <LogoContainer>
-      <ShortcutHandler
-        onShortcut={() => onToggle()}
-        shortcutLabel="."
-        shortcutFilter={(e) => e.key === '.'}
-      >
-        <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
-          <Icon name="menu" color={Colors.White} size={24} />
-        </NavButton>
-      </ShortcutHandler>
+      {nav.canOpen ? (
+        <ShortcutHandler
+          onShortcut={() => onToggle()}
+          shortcutLabel="."
+          shortcutFilter={(e) => e.key === '.'}
+        >
+          <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
+            <Icon name="menu" color={Colors.White} size={24} />
+          </NavButton>
+        </ShortcutHandler>
+      ) : null}
       <Box flex={{display: 'inline-flex'}} margin={{left: 8}}>
         <DaggyTooltip
           content={

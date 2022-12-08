@@ -1,7 +1,7 @@
 from typing import Any, Mapping, Optional
 
 from dagster._core.events import EngineEventData, MetadataEntry
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 
 from .launcher import EcsRunLauncher
 
@@ -39,14 +39,14 @@ class CustomECSRunLauncher(EcsRunLauncher):
     def from_config_value(inst_data, config_value):
         return CustomECSRunLauncher(inst_data=inst_data, **config_value)
 
-    def get_cpu_and_memory_overrides(self, run: PipelineRun) -> Mapping[str, str]:
+    def get_cpu_and_memory_overrides(self, run: DagsterRun) -> Mapping[str, str]:
         return {"cpu": "4096", "memory": "16384"}
 
-    def _get_task_overrides(self, run: PipelineRun) -> Mapping[str, Any]:
+    def _get_task_overrides(self, run: DagsterRun) -> Mapping[str, Any]:
         return {"ephemeralStorage": {"sizeInGiB": 128}}
 
     def report_launch_events(
-        self, run: PipelineRun, arn: Optional[str] = None, cluster: Optional[str] = None
+        self, run: DagsterRun, arn: Optional[str] = None, cluster: Optional[str] = None
     ):
         self._instance.report_engine_event(
             message="Launching run in custom ECS task",

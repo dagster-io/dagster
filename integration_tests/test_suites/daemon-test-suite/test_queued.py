@@ -1,6 +1,6 @@
 from utils import start_daemon
 
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster._utils import file_relative_path, merge_dicts
 
@@ -38,10 +38,10 @@ def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_exa
 
         runs = [
             poll_for_finished_run(instance, run.run_id),
-            poll_for_finished_run(instance, run_tags=PipelineRun.tags_for_sensor(external_sensor)),
+            poll_for_finished_run(instance, run_tags=DagsterRun.tags_for_sensor(external_sensor)),
             poll_for_finished_run(
                 instance,
-                run_tags=PipelineRun.tags_for_schedule(external_schedule),
+                run_tags=DagsterRun.tags_for_schedule(external_schedule),
                 timeout=90,
             ),
         ]

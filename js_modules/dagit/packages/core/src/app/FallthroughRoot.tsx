@@ -28,7 +28,7 @@ const FinalRedirectOrLoadingRoot = () => {
       <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
           <Spinner purpose="section" />
-          <div style={{color: Colors.Gray600}}>Loading workspace…</div>
+          <div style={{color: Colors.Gray600}}>Loading definitions…</div>
         </Box>
       </Box>
     );
@@ -37,7 +37,7 @@ const FinalRedirectOrLoadingRoot = () => {
   // If we have location entries but no repos, we have no useful objects to show.
   // Redirect to Workspace overview to surface relevant errors to the user.
   if (locationEntries.length && allRepos.length === 0) {
-    return <Redirect to="/workspace" />;
+    return <Redirect to="/locations" />;
   }
 
   const reposWithVisibleJobs = allRepos.filter((r) => getVisibleJobs(r).length > 0);
@@ -85,11 +85,11 @@ const FinalRedirectOrLoadingRoot = () => {
     <Box padding={{vertical: 64}}>
       <NonIdealState
         icon="no-results"
-        title={repoWithNoJob ? 'No jobs' : 'No repositories'}
+        title={repoWithNoJob ? 'No jobs' : 'No definitions'}
         description={
           repoWithNoJob
-            ? 'Your repository is loaded, but no jobs were found.'
-            : 'Add a repository to get started.'
+            ? 'Your definitions are loaded, but no jobs were found.'
+            : 'Add a job to get started.'
         }
         action={
           <ExternalAnchorButton href="https://docs.dagster.io/getting-started">

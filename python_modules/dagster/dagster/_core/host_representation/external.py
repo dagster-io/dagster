@@ -36,6 +36,7 @@ from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
 from dagster._core.utils import toposort
 from dagster._serdes import create_snapshot_id
+from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
@@ -50,7 +51,7 @@ from .external_data import (
     ExternalSensorMetadata,
     ExternalTargetData,
 )
-from .handle import InstigatorHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
+from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
 from .selector import InstigatorSelector, RepositorySelector
@@ -96,19 +97,6 @@ class ExternalRepository:
 
         self._handle = check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
 
-        # mypy doesn't understand splat
-        instigation_list: Sequence[Union[ExternalScheduleData, ExternalSensorData]] = [
-            *external_repository_data.external_schedule_datas,  # type: ignore
-            *external_repository_data.external_sensor_datas,  # type: ignore
-        ]
-        self._instigation_map: Mapping[str, Union[ExternalScheduleData, ExternalSensorData]] = {
-            instigation_data.name: instigation_data for instigation_data in instigation_list
-        }
-        self._partition_set_map: Mapping[str, ExternalPartitionSetData] = {
-            external_partition_set_data.name: external_partition_set_data
-            for external_partition_set_data in external_repository_data.external_partition_set_datas
-        }
-
         self._asset_jobs: Dict[str, List[ExternalAssetNode]] = {}
         for asset_node in external_repository_data.external_asset_graph_data:
             for job_name in asset_node.job_names:
@@ -125,48 +113,58 @@ class ExternalRepository:
     def name(self) -> str:
         return self.external_repository_data.name
 
+    @property
+    @cached_method
+    def _external_schedules(self) -> Dict[str, ExternalSchedule]:
+        return {
+            external_schedule_data.name: ExternalSchedule(external_schedule_data, self._handle)
+            for external_schedule_data in self.external_repository_data.external_schedule_datas
+        }
+
     def has_external_schedule(self, schedule_name: str) -> bool:
-        return isinstance(self._instigation_map.get(schedule_name), ExternalScheduleData)
+        return schedule_name in self._external_schedules
 
     def get_external_schedule(self, schedule_name: str) -> ExternalSchedule:
-        return ExternalSchedule(
-            self.external_repository_data.get_external_schedule_data(schedule_name), self._handle
-        )
+        return self._external_schedules[schedule_name]
 
     def get_external_schedules(self) -> Sequence[ExternalSchedule]:
-        return [
-            ExternalSchedule(external_schedule_data, self._handle)
-            for external_schedule_data in self.external_repository_data.external_schedule_datas
-        ]
+        return self._external_schedules.values()
 
-    def has_external_sensor(self, sensor_name) -> bool:
-        return isinstance(self._instigation_map.get(sensor_name), ExternalSensorData)
+    @property
+    @cached_method
+    def _external_sensors(self) -> Dict[str, ExternalSensor]:
+        return {
+            external_sensor_data.name: ExternalSensor(external_sensor_data, self._handle)
+            for external_sensor_data in self.external_repository_data.external_sensor_datas
+        }
 
-    def get_external_sensor(self, sensor_name) -> ExternalSensor:
-        return ExternalSensor(
-            self.external_repository_data.get_external_sensor_data(sensor_name), self._handle
-        )
+    def has_external_sensor(self, sensor_name: str) -> bool:
+        return sensor_name in self._external_sensors
+
+    def get_external_sensor(self, sensor_name: str) -> ExternalSensor:
+        return self._external_sensors[sensor_name]
 
     def get_external_sensors(self) -> Sequence[ExternalSensor]:
-        return [
-            ExternalSensor(external_sensor_data, self._handle)
-            for external_sensor_data in self.external_repository_data.external_sensor_datas
-        ]
+        return self._external_sensors.values()
+
+    @property
+    @cached_method
+    def _external_partition_sets(self) -> Dict[str, ExternalPartitionSet]:
+        return {
+            external_partition_set_data.name: ExternalPartitionSet(
+                external_partition_set_data, self._handle
+            )
+            for external_partition_set_data in self.external_repository_data.external_partition_set_datas
+        }
 
     def has_external_partition_set(self, partition_set_name: str) -> bool:
-        return partition_set_name in self._partition_set_map
+        return partition_set_name in self._external_partition_sets
 
     def get_external_partition_set(self, partition_set_name: str) -> ExternalPartitionSet:
-        return ExternalPartitionSet(
-            self.external_repository_data.get_external_partition_set_data(partition_set_name),
-            self._handle,
-        )
+        return self._external_partition_sets[partition_set_name]
 
     def get_external_partition_sets(self) -> Sequence[ExternalPartitionSet]:
-        return [
-            ExternalPartitionSet(external_partition_set_data, self._handle)
-            for external_partition_set_data in self.external_repository_data.external_partition_set_datas
-        ]
+        return self._external_partition_sets.values()
 
     def has_external_job(self, job_name: str) -> bool:
         return job_name in self._job_map
@@ -286,7 +284,7 @@ class ExternalPipeline(RepresentedPipeline):
         else:
             check.failed("Expected either job data or ref, got neither")
 
-        self._handle = PipelineHandle(self._name, repository_handle)
+        self._handle = JobHandle(self._name, repository_handle)
 
     @property
     def _pipeline_index(self) -> PipelineIndex:
@@ -402,7 +400,7 @@ class ExternalPipeline(RepresentedPipeline):
         return self._snapshot_id
 
     @property
-    def handle(self) -> PipelineHandle:
+    def handle(self) -> JobHandle:
         return self._handle
 
     def get_python_origin(self) -> PipelinePythonOrigin:

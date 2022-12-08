@@ -58,7 +58,7 @@ class _Job:
         if not self.name:
             self.name = fn.__name__
 
-        from dagster._core.definitions.decorators.composite_solid_decorator import do_composition
+        from dagster._core.definitions.composition import do_composition
 
         (
             input_mappings,

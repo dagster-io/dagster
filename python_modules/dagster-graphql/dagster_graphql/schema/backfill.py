@@ -2,7 +2,7 @@ import graphene
 
 import dagster._check as check
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.storage.pipeline_run import FINISHED_STATUSES, PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG
 
 from ..implementation.fetch_partition_sets import partition_statuses_from_run_partition_data
@@ -210,7 +210,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
                     [
                         partition
                         for partition in partition_run_data
-                        if partition.status == PipelineRunStatus.SUCCESS
+                        if partition.status == DagsterRunStatus.SUCCESS
                     ]
                 )
                 if num_success == len(self._backfill_job.partition_names):
