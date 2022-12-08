@@ -24,9 +24,9 @@ except ImportError:
 
 
 class SnowflakeConnection:
-    """A connection to Snowflake that can execute queries. In
-    general this class should not be directly instantiated, but rather used as a resource in an op
-    or asset via the :py:func:`snowflake_resource`.
+    """A connection to Snowflake that can execute queries. In general this class should not be
+    directly instantiated, but rather used as a resource in an op or asset via the
+    :py:func:`snowflake_resource`.
     """
 
     def __init__(self, config: Mapping[str, str], log):  # pylint: disable=too-many-locals

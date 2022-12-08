@@ -301,7 +301,6 @@ def dagster_type_materializer(
                     writer = csv.DictWriter(fd, fieldnames=value[0].keys())
                     writer.writeheader()
                     writer.writerows(rowdicts=value)
-
                 return AssetMaterialization.file(path)
     """
     from dagster._config import resolve_to_config_type
