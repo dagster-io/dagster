@@ -256,7 +256,12 @@ class PartitionsDefinition(ABC, Generic[T]):
 class StaticPartitionsDefinition(
     PartitionsDefinition[str],
 ):  # pylint: disable=unsubscriptable-object
-    def __init__(self, partition_keys: Sequence[str]):
+    def __init__(
+        self,
+        partition_keys: Sequence[str],
+        partition_column: Optional[str] = None,
+        partition_key_conversion: Optional[Callable] = None,
+    ):
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
 
         # Dagit selects partition ranges following the format '2022-01-13...2022-01-14'
@@ -265,6 +270,8 @@ class StaticPartitionsDefinition(
             raise DagsterInvalidDefinitionError("'...' is an invalid substring in a partition key")
 
         self._partitions = [Partition(key) for key in partition_keys]
+        self.partition_column = partition_column
+        self.partition_key_conversion = partition_key_conversion
 
     def get_partitions(
         self, current_time: Optional[datetime] = None  # pylint: disable=unused-argument

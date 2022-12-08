@@ -55,6 +55,8 @@ class TimeWindowPartitionsDefinition(
             ("fmt", PublicAttr[str]),
             ("end_offset", PublicAttr[int]),
             ("cron_schedule", PublicAttr[str]),
+            ("partition_column", PublicAttr[Optional[str]]),
+            ("partition_key_conversion", PublicAttr[Optional[Callable]]),
         ],
     ),
 ):
@@ -97,6 +99,8 @@ class TimeWindowPartitionsDefinition(
         hour_offset: Optional[int] = None,
         day_offset: Optional[int] = None,
         cron_schedule: Optional[str] = None,
+        partition_column: Optional[str] = None,
+        partition_key_conversion: Optional[Callable] = None,
     ):
         if isinstance(start, datetime):
             start_dt = start
@@ -121,7 +125,14 @@ class TimeWindowPartitionsDefinition(
             )
 
         return super(TimeWindowPartitionsDefinition, cls).__new__(
-            cls, start_dt, timezone or "UTC", fmt, end_offset, cron_schedule
+            cls,
+            start_dt,
+            timezone or "UTC",
+            fmt,
+            end_offset,
+            cron_schedule,
+            partition_column,
+            partition_key_conversion,
         )
 
     def get_partitions(
@@ -465,6 +476,8 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         timezone: Optional[str] = None,
         fmt: Optional[str] = None,
         end_offset: int = 0,
+        partition_column: Optional[str] = None,
+        partition_key_conversion: Optional[Callable] = None,
     ):
         """A set of daily partitions.
 
@@ -506,6 +519,8 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
             timezone=timezone,
             fmt=_fmt,
             end_offset=end_offset,
+            partition_column=partition_column,
+            partition_key_conversion=partition_key_conversion,
         )
 
 

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import (
+    Callable,
     Dict,
     Generic,
     Mapping,
@@ -25,7 +26,8 @@ T = TypeVar("T")
 
 class TablePartition(NamedTuple):
     time_window: TimeWindow
-    partition_expr: str
+    partition_column: str
+    partition_key_conversion: Optional[Callable]
 
 
 class TableSlice(NamedTuple):
@@ -132,7 +134,6 @@ class DbIOManager(IOManager):
 
         schema: str
         table: str
-        time_window: Optional[TimeWindow]
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
@@ -153,9 +154,7 @@ class DbIOManager(IOManager):
                 schema = cast(str, context.resource_config["schema"])
             else:
                 schema = "public"
-            time_window = (
-                context.asset_partitions_time_window if context.has_asset_partitions else None
-            )
+            partitions_def = context.asset_partitions_def if context.has_asset_partitions else None
         else:
             table = output_context.name
             if (
@@ -175,18 +174,20 @@ class DbIOManager(IOManager):
                 schema = cast(str, output_context.resource_config["schema"])
             else:
                 schema = "public"
-            time_window = None
+            partitions_def = None
 
-        if time_window is not None:
-            partition_expr = cast(str, output_context_metadata.get("partition_expr"))
-            if partition_expr is None:
+        if partitions_def is not None:
+            partition_column = partitions_def.partition_column
+            if partition_column is None:
                 raise ValueError(
-                    f"Asset '{context.asset_key}' has partitions, but no 'partition_expr' metadata "
+                    f"Asset '{context.asset_key}' has partitions, but no 'partition_column' "
                     "value, so we don't know what column to filter it on."
                 )
+
             partition = TablePartition(
-                time_window=time_window,
-                partition_expr=partition_expr,
+                time_window=context.asset_partitions_time_window,
+                partition_column=partition_column,
+                partition_key_conversion=partitions_def.partition_key_conversion,
             )
         else:
             partition = None
