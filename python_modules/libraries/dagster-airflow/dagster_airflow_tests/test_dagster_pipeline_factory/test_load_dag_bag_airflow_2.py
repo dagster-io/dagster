@@ -422,6 +422,8 @@ def get_examples_airflow_repo_params():
         "airflow_example_trigger_controller_dag",
         # runs slow
         "airflow_example_subdag_operator",
+        # runs slow
+        "airflow_example_sensors",
     ]
     for job_name in repo.job_names:
         params.append(
@@ -431,13 +433,10 @@ def get_examples_airflow_repo_params():
     return params
 
 
-test_airflow_example_dags_params = get_examples_airflow_repo_params()
-
-
 @pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
 @pytest.mark.parametrize(
     "job_name, exclude_from_execution_tests",
-    test_airflow_example_dags_params,
+    get_examples_airflow_repo_params(),
 )
 @requires_airflow_db
 def test_airflow_example_dags(
