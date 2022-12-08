@@ -18,11 +18,8 @@ class InMemoryRunStorage(SqlRunStorage):
     """
 
     def __init__(self, preload=None):
-        self._conn = self._create_connection()
-
-        self.migrate()
-        self.optimize()
-
+        self._engine = None
+        self._conn = None
         if preload:
             for payload in preload:
                 self.add_pipeline_snapshot(
@@ -36,6 +33,7 @@ class InMemoryRunStorage(SqlRunStorage):
     def _create_connection(self):
         engine = create_engine(create_in_memory_conn_string("runs"), poolclass=NullPool)
         conn = engine.connect()
+
         conn.execute("PRAGMA journal_mode=WAL;")
         conn.execute("PRAGMA foreign_keys=ON;")
         RunStorageSqlMetadata.create_all(conn)
@@ -44,11 +42,27 @@ class InMemoryRunStorage(SqlRunStorage):
         table_names = db.inspect(conn).get_table_names()
         if "instance_info" not in table_names:
             InstanceInfo.create(conn)
-        return conn
+
+        self._engine = engine
+        self._conn = conn
+
+        self.migrate()
+        self.optimize()
 
     @contextmanager
     def connect(self):
+        if not self._conn:
+            self._create_connection()
+
         yield self._conn
 
     def upgrade(self):
         pass
+
+    def dispose(self):
+        if self._conn:
+            self._conn.close()
+            self._conn = None
+
+        if self._engine:
+            self._engine.dispose()

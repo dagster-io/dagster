@@ -38,7 +38,7 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._loggers import default_loggers, default_system_loggers
 from dagster._utils import EventGenerationManager
@@ -59,7 +59,7 @@ if TYPE_CHECKING:
 
 
 def initialize_console_manager(
-    pipeline_run: Optional[PipelineRun], instance: Optional[DagsterInstance] = None
+    pipeline_run: Optional[DagsterRun], instance: Optional[DagsterInstance] = None
 ) -> DagsterLogManager:
     # initialize default colored console logger
     loggers = []
@@ -105,7 +105,7 @@ def executor_def_from_config(
 class ContextCreationData(NamedTuple):
     pipeline: IPipeline
     resolved_run_config: ResolvedRunConfig
-    pipeline_run: PipelineRun
+    pipeline_run: DagsterRun
     mode_def: ModeDefinition
     executor_def: ExecutorDefinition
     instance: DagsterInstance
@@ -121,7 +121,7 @@ def create_context_creation_data(
     pipeline: IPipeline,
     execution_plan: ExecutionPlan,
     run_config: Mapping[str, object],
-    pipeline_run: PipelineRun,
+    pipeline_run: DagsterRun,
     instance: DagsterInstance,
 ) -> "ContextCreationData":
 
@@ -207,7 +207,7 @@ def execution_context_event_generator(
     pipeline: IPipeline,
     execution_plan: ExecutionPlan,
     run_config: Mapping[str, object],
-    pipeline_run: PipelineRun,
+    pipeline_run: DagsterRun,
     instance: DagsterInstance,
     retry_mode: RetryMode,
     scoped_resources_builder_cm: Optional[
@@ -229,7 +229,7 @@ def execution_context_event_generator(
     pipeline_def = pipeline.get_definition()
 
     run_config = check.mapping_param(run_config, "run_config", key_type=str)
-    pipeline_run = check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    pipeline_run = check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     instance = check.inst_param(instance, "instance", DagsterInstance)
 
     raise_on_error = check.bool_param(raise_on_error, "raise_on_error")
@@ -282,7 +282,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
         pipeline: IPipeline,
         execution_plan: ExecutionPlan,
         run_config: Mapping[str, object],
-        pipeline_run: PipelineRun,
+        pipeline_run: DagsterRun,
         instance: DagsterInstance,
         raise_on_error: Optional[bool] = False,
         output_capture: Optional[Dict["StepOutputHandle", Any]] = None,
@@ -311,7 +311,7 @@ def orchestration_context_event_generator(
     pipeline: IPipeline,
     execution_plan: ExecutionPlan,
     run_config: Mapping[str, object],
-    pipeline_run: PipelineRun,
+    pipeline_run: DagsterRun,
     instance: DagsterInstance,
     raise_on_error: bool,
     executor_defs: Optional[Sequence[ExecutorDefinition]],
@@ -377,7 +377,7 @@ class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext])
         pipeline: IPipeline,
         execution_plan: ExecutionPlan,
         run_config: Mapping[str, object],
-        pipeline_run: PipelineRun,
+        pipeline_run: DagsterRun,
         instance: DagsterInstance,
         retry_mode: RetryMode,
         scoped_resources_builder_cm: Optional[
@@ -430,7 +430,7 @@ def scoped_pipeline_context(
     execution_plan: ExecutionPlan,
     pipeline: IPipeline,
     run_config: Mapping[str, object],
-    pipeline_run: PipelineRun,
+    pipeline_run: DagsterRun,
     instance: DagsterInstance,
     scoped_resources_builder_cm: Callable[
         ..., EventGenerationManager[ScopedResourcesBuilder]
@@ -447,7 +447,7 @@ def scoped_pipeline_context(
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.mapping_param(run_config, "run_config", key_type=str)
-    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
     check.callable_param(scoped_resources_builder_cm, "scoped_resources_builder_cm")
 
@@ -521,7 +521,7 @@ def create_log_manager(
 
 
 def create_context_free_log_manager(
-    instance: DagsterInstance, pipeline_run: PipelineRun
+    instance: DagsterInstance, pipeline_run: DagsterRun
 ) -> DagsterLogManager:
     """In the event of pipeline initialization failure, we want to be able to log the failure
     without a dependency on the PlanExecutionContext to initialize DagsterLogManager.
@@ -530,7 +530,7 @@ def create_context_free_log_manager(
         pipeline_def (PipelineDefinition)
     """
     check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
 
     loggers = []
     # Use the default logger

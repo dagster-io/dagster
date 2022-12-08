@@ -5,7 +5,7 @@ from dagster_graphql import DagsterGraphQLClientError
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 
 from ..graphql.graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from ..graphql.repo import csv_hello_world_solids_config
@@ -14,7 +14,7 @@ from .conftest import MockClient, python_client_test_suite
 
 @python_client_test_suite
 def test_get_run_status_success(mock_client: MockClient):
-    expected_result = PipelineRunStatus.SUCCESS
+    expected_result = DagsterRunStatus.SUCCESS
     response = {"pipelineRunOrError": {"__typename": "PipelineRun", "status": expected_result}}
     mock_client.mock_gql_client.execute.return_value = response
 
@@ -82,7 +82,7 @@ class TestGetRunStatusWithClient(ExecutingGraphQLContextTestMatrix):
 
             status = graphql_client.get_run_status(run_id)
 
-            if status == PipelineRunStatus.SUCCESS:
+            if status == DagsterRunStatus.SUCCESS:
                 break
 
             time.sleep(3)

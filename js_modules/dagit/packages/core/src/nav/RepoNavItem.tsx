@@ -17,8 +17,8 @@ import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {buildRepoAddress, DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -37,7 +37,7 @@ export const RepoNavItem: React.FC<Props> = (props) => {
 
   const summary = () => {
     if (allRepos.length === 0) {
-      return <span style={{color: Colors.Gray700}}>No repositories</span>;
+      return <span style={{color: Colors.Gray700}}>No definitions</span>;
     }
     if (allRepos.length === 1) {
       return <SingleRepoSummary repo={allRepos[0]} onlyRepo />;
@@ -69,7 +69,7 @@ export const RepoNavItem: React.FC<Props> = (props) => {
               style={{width: 'auto'}}
               onClose={() => setOpen(false)}
             >
-              <DialogHeader icon="repo" label="Repositories" />
+              <DialogHeader icon="repo" label="Definitions" />
               <RepoSelector
                 options={allRepos}
                 onBrowse={() => setOpen(false)}
@@ -99,15 +99,16 @@ const SingleRepoSummary: React.FC<{repo: RepoSelectorOption; onlyRepo: boolean}>
   onlyRepo,
 }) => {
   const repoAddress = buildRepoAddress(repo.repository.name, repo.repositoryLocation.name);
+  const isDunder = repoAddress.name === DUNDER_REPO_NAME;
   const {canReloadRepositoryLocation} = usePermissions();
   return (
     <Group direction="row" spacing={4} alignItems="center">
       <SingleRepoNameLink
         to={workspacePathFromAddress(repoAddress)}
-        title={repoAddressAsString(repoAddress)}
+        title={repoAddressAsHumanString(repoAddress)}
         $onlyRepo={onlyRepo}
       >
-        {repoAddress.name}
+        {isDunder ? repoAddress.location : repoAddress.name}
       </SingleRepoNameLink>
       {canReloadRepositoryLocation.enabled ? (
         <ReloadRepositoryLocationButton location={repoAddress.location}>

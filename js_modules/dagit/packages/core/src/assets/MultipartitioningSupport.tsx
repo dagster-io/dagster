@@ -6,6 +6,9 @@ import {
   PartitionHealthDimensionRange,
 } from './usePartitionHealthData';
 
+export function isTimeseriesDimension(dimension: PartitionHealthDimension) {
+  return isTimeseriesPartition(dimension.partitionKeys[0]);
+}
 export function isTimeseriesPartition(aPartitionKey = '') {
   return /\d{4}-\d{2}-\d{2}/.test(aPartitionKey); // cheak trick for now
 }
@@ -16,7 +19,11 @@ export function mergedAssetHealth(
   dimensions: PartitionHealthDimension[];
   stateForKey: (dimensionKeys: string[]) => PartitionState;
   stateForPartialKey: (dimensionKeys: string[]) => PartitionState;
-  stateForSingleDimension: (dimensionIdx: number, dimensionKey: string) => PartitionState;
+  stateForSingleDimension: (
+    dimensionIdx: number,
+    dimensionKey: string,
+    otherDimensionSelectedKeys?: string[],
+  ) => PartitionState;
 } {
   if (!assetHealth.length) {
     return {
@@ -54,9 +61,15 @@ export function mergedAssetHealth(
       mergedStates(assetHealth.map((health) => health.stateForKey(dimensionKeys))),
     stateForPartialKey: (dimensionKeys: string[]) =>
       mergedStates(assetHealth.map((health) => health.stateForPartialKey(dimensionKeys))),
-    stateForSingleDimension: (dimensionIdx: number, dimensionKey: string) =>
+    stateForSingleDimension: (
+      dimensionIdx: number,
+      dimensionKey: string,
+      otherDimensionSelectedKeys?: string[],
+    ) =>
       mergedStates(
-        assetHealth.map((health) => health.stateForSingleDimension(dimensionIdx, dimensionKey)),
+        assetHealth.map((health) =>
+          health.stateForSingleDimension(dimensionIdx, dimensionKey, otherDimensionSelectedKeys),
+        ),
       ),
   };
 }

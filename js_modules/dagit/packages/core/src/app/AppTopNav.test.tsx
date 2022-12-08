@@ -56,7 +56,7 @@ describe('AppTopNav', () => {
     render(
       <TestProvider
         apolloProps={{mocks: [defaultMocks]}}
-        routerProps={{initialEntries: ['/workspace/my_repository@my_location']}}
+        routerProps={{initialEntries: ['/locations/my_repository@my_location']}}
       >
         <Test>
           <AppTopNav searchPlaceholder="Test..." rightOfSearchBar={<div>RightOfSearchBar</div>} />

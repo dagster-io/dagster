@@ -518,18 +518,18 @@ def test_launching_custom_task_definition(
     family = task_definition["family"]
 
     # The task definition doesn't exist
-    with pytest.raises(Exception), instance_cm({"task_definition": "does not exist"}):
-        pass
+    with pytest.raises(Exception), instance_cm({"task_definition": "does not exist"}) as instance:
+        print(instance.run_launcher)  # pylint: disable=print-call
 
     # The task definition doesn't include the default container name
-    with pytest.raises(CheckError), instance_cm({"task_definition": family}):
-        pass
+    with pytest.raises(CheckError), instance_cm({"task_definition": family}) as instance:
+        print(instance.run_launcher)  # pylint: disable=print-call
 
     # The task definition doesn't include the container name
     with pytest.raises(CheckError), instance_cm(
         {"task_definition": family, "container_name": "does not exist"}
-    ):
-        pass
+    ) as instance:
+        print(instance.run_launcher)  # pylint: disable=print-call
 
     # You can provide a family or a task definition ARN
     with instance_cm(

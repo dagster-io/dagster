@@ -88,7 +88,13 @@ export const PipelineExplorerContainer: React.FC<{
     <Loading<PipelineExplorerRootQuery> queryResult={pipelineResult}>
       {({pipelineSnapshotOrError: result}) => {
         if (result.__typename !== 'PipelineSnapshot') {
-          return <NonIdealPipelineQueryResult isGraph={isGraph} result={result} />;
+          return (
+            <NonIdealPipelineQueryResult
+              isGraph={isGraph}
+              result={result}
+              repoAddress={repoAddress}
+            />
+          );
         }
 
         const parentHandle = result.solidHandle;

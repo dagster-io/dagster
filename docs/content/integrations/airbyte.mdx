@@ -53,7 +53,7 @@ from dagster_airbyte import airbyte_resource
 airbyte_instance = airbyte_resource.configured(
     {
         "host": "localhost",
-        "port": 8000,
+        "port": "8000",
         # If using basic auth, include username and password:
         "username": "airbyte",
         "password": {"env": "AIRBYTE_PASSWORD"},
@@ -274,9 +274,29 @@ If you have questions on using Airbyte with Dagster, we'd love to hear from you:
   </a>
 </p>
 
-### Related material
+---
 
-- [`dagster-airbyte` API reference](/\_apidocs/libraries/dagster-airbyte)
-- [Software-defined assets](/concepts/assets/software-defined-assets)
-- [Resources](/concepts/resources)
-- [Scheduling Dagster jobs](/concepts/partitions-schedules-sensors/schedules#running-the-scheduler)
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    href="/\_apidocs/libraries/dagster-airbyte"
+    title="dagster-airbyte API reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/guides/dagster/airbyte-ingestion-as-code"
+    title="Airbyte ingestion as code"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/assets/software-defined-assets"
+    title="Software-defined assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/resources"
+    title="Resources"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/schedules#running-the-scheduler"
+    title="Scheduling Dagster jobs"
+  ></ArticleListItem>
+</ArticleList>

@@ -1,7 +1,7 @@
 from graphene import ResolveInfo
 
 import dagster._check as check
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 
 from .external import get_external_pipeline_or_raise, get_full_external_pipeline_or_raise
 from .utils import PipelineSelector, UserFacingGraphQLError, capture_error
@@ -58,7 +58,7 @@ def get_pipeline_reference_or_raise(graphene_info, pipeline_run):
     InvalidSubsetError."""
     from ..schema.pipelines.pipeline_ref import GrapheneUnknownPipeline
 
-    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     solid_selection = (
         list(pipeline_run.solids_to_execute) if pipeline_run.solids_to_execute else None
     )

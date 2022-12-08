@@ -38,7 +38,13 @@ from dagster._utils.error import SerializableErrorInfo, serializable_error_info_
 
 from .load_target import WorkspaceLoadTarget
 from .permissions import PermissionResult, get_user_permissions
-from .workspace import IWorkspace, WorkspaceLocationEntry, WorkspaceLocationLoadStatus
+from .workspace import (
+    IWorkspace,
+    WorkspaceLocationEntry,
+    WorkspaceLocationLoadStatus,
+    WorkspaceLocationStatusEntry,
+    location_status_from_location_entry,
+)
 
 if TYPE_CHECKING:
     from dagster._core.host_representation import (
@@ -76,6 +82,10 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
     @abstractmethod
     def get_location_entry(self, name: str) -> Optional[WorkspaceLocationEntry]:
+        pass
+
+    @abstractmethod
+    def get_location_statuses(self) -> Sequence[WorkspaceLocationStatusEntry]:
         pass
 
     @property
@@ -196,8 +206,8 @@ class BaseWorkspaceRequestContext(IWorkspace):
         external_pipeline: ExternalPipeline,
         run_config: Mapping[str, object],
         mode: str,
-        step_keys_to_execute: Sequence[str],
-        known_state: KnownExecutionState,
+        step_keys_to_execute: Optional[Sequence[str]],
+        known_state: Optional[KnownExecutionState],
     ) -> ExternalExecutionPlan:
         return self.get_repository_location(
             external_pipeline.handle.location_name
@@ -286,6 +296,12 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
 
     def get_location_entry(self, name) -> Optional[WorkspaceLocationEntry]:
         return self._workspace_snapshot.get(name)
+
+    def get_location_statuses(self) -> Sequence[WorkspaceLocationStatusEntry]:
+        return [
+            location_status_from_location_entry(entry)
+            for entry in self._workspace_snapshot.values()
+        ]
 
     @property
     def process_context(self) -> "IWorkspaceProcessContext":

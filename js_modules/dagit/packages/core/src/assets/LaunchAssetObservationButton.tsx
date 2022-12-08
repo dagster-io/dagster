@@ -4,9 +4,10 @@ import React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissions} from '../app/Permissions';
-import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 import {
   buildAssetCollisionsAlert,
@@ -36,6 +37,7 @@ export const LaunchAssetObservationButton: React.FC<{
   preferredJobName?: string;
 }> = ({assetKeys, preferredJobName, intent = 'none'}) => {
   const {canLaunchPipelineExecution} = usePermissions();
+  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
   const [state, setState] = React.useState<ObserveAssetsState>({type: 'none'});
@@ -133,6 +135,7 @@ async function stateForObservingAssets(
     assets[0]?.repository.name || '',
     assets[0]?.repository.location.name || '',
   );
+  const repoName = repoAddressAsHumanString(repoAddress);
 
   if (
     !assets.every(
@@ -143,7 +146,7 @@ async function stateForObservingAssets(
   ) {
     return {
       type: 'error',
-      error: 'Assets must be in the same repository to be materialized together.',
+      error: `Assets must be in ${repoName} to be materialized together.`,
     };
   }
 
