@@ -7,6 +7,7 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.job_definition import (
     default_job_io_manager_with_fs_io_manager_schema,
 )
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.build_resources import build_resources, get_mapped_resource_config
@@ -109,6 +110,10 @@ class AssetValueLoader:
             resources=self._resource_instance_cache,
             resource_config=io_manager_config[io_manager_key].config,
             partition_key=partition_key,
+            asset_partition_key_range=PartitionKeyRange(partition_key, partition_key)
+            if partition_key is not None
+            else None,
+            asset_partitions_def=assets_def.partitions_def,
         )
 
         return io_manager.load_input(input_context)

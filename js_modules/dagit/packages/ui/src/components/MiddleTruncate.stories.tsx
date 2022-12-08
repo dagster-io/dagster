@@ -7,6 +7,7 @@ import {Colors} from './Colors';
 import {Icon} from './Icon';
 import {MiddleTruncate} from './MiddleTruncate';
 import {Slider} from './Slider';
+import {Tag} from './Tag';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -41,6 +42,22 @@ export const Simple = () => {
         <MiddleTruncate text="Hello world" />
       </div>
     </>
+  );
+};
+
+export const TagUsage = () => {
+  return (
+    <Tag icon="job">
+      <span>
+        Job in{' '}
+        <Box
+          flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}}
+          style={{maxWidth: 100}}
+        >
+          <MiddleTruncate text="repo@longrepolocation.py" />
+        </Box>
+      </span>
+    </Tag>
   );
 };
 

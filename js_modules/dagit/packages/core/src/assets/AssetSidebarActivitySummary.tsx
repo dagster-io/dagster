@@ -77,7 +77,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
       <SidebarSection title="Materialization in Last Run">
         {materializations[0] ? (
           <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
-            <LatestMaterializationMetadata latest={materializations[0]} />
+            <LatestMaterializationMetadata latest={materializations[0]} liveData={liveData} />
           </div>
         ) : (
           <Box

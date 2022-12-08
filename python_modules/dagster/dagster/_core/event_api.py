@@ -3,7 +3,7 @@ from typing import Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
@@ -51,6 +51,19 @@ class EventLogRecord(NamedTuple):
         dagster_event = self.event_log_entry.dagster_event
         if dagster_event:
             return dagster_event.partition
+
+        return None
+
+    @property
+    def asset_materialization(self) -> Optional[AssetMaterialization]:
+        dagster_event = self.event_log_entry.dagster_event
+        if (
+            dagster_event
+            and dagster_event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION
+        ):
+            materialization = dagster_event.step_materialization_data.materialization
+            if isinstance(materialization, AssetMaterialization):
+                return materialization
 
         return None
 

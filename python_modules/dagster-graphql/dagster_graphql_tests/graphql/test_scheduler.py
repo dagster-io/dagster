@@ -92,6 +92,11 @@ query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
           id
           timestamp
         }
+        typeSpecificData {
+          ... on ScheduleData {
+            cronSchedule
+          }
+        }
       }
     }
   }
@@ -387,6 +392,18 @@ def test_get_single_schedule_definition(graphql_context):
         create_pendulum_time(2019, 3, 3, tz="US/Central").timestamp(),
         create_pendulum_time(2019, 3, 4, tz="US/Central").timestamp(),
     ]
+
+
+def test_composite_cron_schedule_definition(graphql_context):
+    schedule_selector = infer_schedule_selector(graphql_context, "composite_cron_schedule")
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SCHEDULE_QUERY,
+        variables={"scheduleSelector": schedule_selector},
+    )
+    assert result.data
+    assert result.data["scheduleOrError"]["__typename"] == "Schedule"
+    assert result.data["scheduleOrError"]["scheduleState"]
 
 
 def test_next_tick(graphql_context):

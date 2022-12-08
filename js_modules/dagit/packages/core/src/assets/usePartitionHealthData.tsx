@@ -25,7 +25,7 @@ export interface PartitionHealthData {
   stateForSingleDimension: (
     dimensionIdx: number,
     dimensionKey: string,
-    withinParentDimensions?: string[],
+    otherDimensionSelectedKeys?: string[],
   ) => PartitionState;
 }
 

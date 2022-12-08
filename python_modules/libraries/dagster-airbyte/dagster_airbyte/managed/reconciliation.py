@@ -31,7 +31,7 @@ from dagster_managed_elements.utils import UNSET, diff_dicts
 
 import dagster._check as check
 from dagster import AssetKey, ResourceDefinition
-from dagster._annotations import experimental
+from dagster._annotations import experimental, public
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.execution.context.init import build_init_resource_context
@@ -636,6 +636,17 @@ def reconcile_connections_post(
 
 @experimental
 class AirbyteManagedElementReconciler(ManagedElementReconciler):
+    """
+    Reconciles Python-specified Airbyte connections with an Airbyte instance.
+
+    Passing the module containing an AirbyteManagedElementReconciler to the dagster-airbyte
+    CLI will allow you to check the state of your Python-code-specified Airbyte connections
+    against an Airbyte instance, and reconcile them if necessary.
+
+    This functionality is experimental and subject to change.
+    """
+
+    @public
     def __init__(
         self,
         airbyte: ResourceDefinition,
@@ -643,7 +654,7 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
         delete_unmentioned_resources: bool = False,
     ):
         """
-        Reconciles Python-specified Airbyte resources with an Airbyte instance.
+        Reconciles Python-specified Airbyte connections with an Airbyte instance.
 
         Args:
             airbyte (ResourceDefinition): The Airbyte resource definition to reconcile against.
@@ -736,6 +747,7 @@ def load_assets_from_connections(
 ) -> CacheableAssetsDefinition:
     """
     Loads Airbyte connection assets from a configured AirbyteResource instance, checking against a list of AirbyteConnection objects.
+    This method will raise an error on repo load if the passed AirbyteConnection objects are not in sync with the Airbyte instance.
 
     Args:
         airbyte (ResourceDefinition): An AirbyteResource configured with the appropriate connection
@@ -757,6 +769,27 @@ def load_assets_from_connections(
             takes in connection metadata and table name and returns an asset key for the table. If None, the default asset
             key is based on the table name. Any asset key prefix will be applied to the output of this function.
 
+    **Examples:**
+
+    .. code-block:: python
+
+        from dagster_airbyte import (
+            AirbyteConnection,
+            airbyte_resource,
+            load_assets_from_connections,
+        )
+
+        airbyte_instance = airbyte_resource.configured(
+            {
+                "host": "localhost",
+                "port": "8000",
+            }
+        )
+        airbyte_connections = [
+            AirbyteConnection(...),
+            AirbyteConnection(...)
+        ]
+        airbyte_assets = load_assets_from_connections(airbyte_instance, airbyte_connections)
     """
 
     if isinstance(key_prefix, str):

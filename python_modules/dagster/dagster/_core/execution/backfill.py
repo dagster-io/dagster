@@ -17,7 +17,7 @@ from dagster._core.host_representation.external_data import (
 )
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
@@ -220,7 +220,7 @@ def create_backfill_run(
     external_partition_set: ExternalPartitionSet,
     backfill_job: PartitionBackfill,
     partition_data: ExternalPartitionExecutionParamData,
-) -> Optional[PipelineRun]:
+) -> Optional[DagsterRun]:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
     log_action(
@@ -236,7 +236,7 @@ def create_backfill_run(
     tags = merge_dicts(
         external_pipeline.tags,
         partition_data.tags,
-        PipelineRun.tags_for_backfill_id(backfill_job.backfill_id),
+        DagsterRun.tags_for_backfill_id(backfill_job.backfill_id),
         backfill_job.tags,
     )
 
@@ -253,7 +253,7 @@ def create_backfill_run(
 
     elif backfill_job.from_failure:
         last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
-        if not last_run or last_run.status != PipelineRunStatus.FAILURE:
+        if not last_run or last_run.status != DagsterRunStatus.FAILURE:
             return None
         return instance.create_reexecuted_run(
             last_run,
@@ -275,7 +275,7 @@ def create_backfill_run(
                 tags, {PARENT_RUN_ID_TAG: parent_run_id, ROOT_RUN_ID_TAG: root_run_id}
             )
         step_keys_to_execute = backfill_job.reexecution_steps
-        if last_run and last_run.status == PipelineRunStatus.SUCCESS:
+        if last_run and last_run.status == DagsterRunStatus.SUCCESS:
             known_state = KnownExecutionState.build_for_reexecution(
                 instance,
                 last_run,
@@ -309,10 +309,13 @@ def create_backfill_run(
         tags=tags,
         root_run_id=root_run_id,
         parent_run_id=parent_run_id,
-        status=PipelineRunStatus.NOT_STARTED,
+        status=DagsterRunStatus.NOT_STARTED,
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
         solid_selection=solid_selection,
+        asset_selection=frozenset(backfill_job.asset_selection)
+        if backfill_job.asset_selection
+        else None,
     )
 
 

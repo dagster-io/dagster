@@ -219,19 +219,11 @@ dagit_extra_cmds = ["make rebuild_dagit"]
 mysql_extra_cmds = [
     "pushd python_modules/libraries/dagster-mysql/dagster_mysql_tests/",
     "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
-    "docker-compose -f docker-compose-multi.yml up -d",  # clean up in hooks/pre-exit,
     *network_buildkite_container("mysql"),
+    *network_buildkite_container("mysqlbackcompat"),
     *connect_sibling_docker_container("mysql", "test-mysql-db", "MYSQL_TEST_DB_HOST"),
-    *network_buildkite_container("mysql_multi"),
     *connect_sibling_docker_container(
-        "mysql_multi",
-        "test-run-storage-db",
-        "MYSQL_TEST_RUN_STORAGE_DB_HOST",
-    ),
-    *connect_sibling_docker_container(
-        "mysql_multi",
-        "test-event-log-storage-db",
-        "MYSQL_TEST_EVENT_LOG_STORAGE_DB_HOST",
+        "mysqlbackcompat", "test-mysql-db-backcompat", "MYSQL_TEST_BACKCOMPAT_DB_HOST"
     ),
     "popd",
 ]
@@ -380,9 +372,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-airflow",
-        # omit python 3.9 until we add support
+        # omit python 3.10 until we add support
         unsupported_python_versions=[
-            AvailablePythonVersion.V3_9,
             AvailablePythonVersion.V3_10,
         ],
         env_vars=[
@@ -395,7 +386,12 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
         pytest_extra_cmds=airflow_extra_cmds,
         pytest_step_dependencies=test_project_depends_fn,
-        pytest_tox_factors=["default", "requiresairflowdb"],
+        pytest_tox_factors=[
+            "default-airflow1",
+            "requiresairflowdb-airflow1",
+            "default-airflow2",
+            "requiresairflowdb-airflow2",
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-aws",
