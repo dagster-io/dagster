@@ -44,7 +44,7 @@ def test_execute_pipeline_with_mode():
         mode="add_one",
     )
     assert pipeline_result.success
-    assert pipeline_result.result_for_solid("solid_that_uses_adder_resource").output_value() == 5
+    assert pipeline_result.result_for_node("solid_that_uses_adder_resource").output_value() == 5
 
     pipeline_result = execute_pipeline(
         pipeline_with_mode,
@@ -54,7 +54,7 @@ def test_execute_pipeline_with_mode():
         mode="add_two",
     )
     assert pipeline_result.success
-    assert pipeline_result.result_for_solid("solid_that_uses_adder_resource").output_value() == 6
+    assert pipeline_result.result_for_node("solid_that_uses_adder_resource").output_value() == 6
 
 
 def test_execute_pipeline_with_non_existant_mode():
@@ -86,7 +86,7 @@ def pipeline_with_one_mode_and_tags():
 def test_execute_pipeline_with_mode_and_tags():
     pipeline_result = execute_pipeline(pipeline_with_one_mode_and_tags)
     assert pipeline_result.success
-    assert pipeline_result.result_for_solid("solid_that_gets_tags").output_value() == {
+    assert pipeline_result.result_for_node("solid_that_gets_tags").output_value() == {
         "tag_key": "tag_value"
     }
 
@@ -106,7 +106,7 @@ def pipeline_with_multi_mode_and_tags():
 def test_execute_pipeline_with_multi_mode_and_pipeline_def_tags():
     pipeline_result = execute_pipeline(pipeline_with_multi_mode_and_tags, mode="tags_1")
     assert pipeline_result.success
-    assert pipeline_result.result_for_solid("solid_that_gets_tags").output_value() == {
+    assert pipeline_result.result_for_node("solid_that_gets_tags").output_value() == {
         "pipeline_tag_key": "pipeline_tag_value"
     }
 
@@ -118,7 +118,7 @@ def test_execute_pipeline_with_multi_mode_and_pipeline_def_tags_and_execute_tags
         tags={"run_tag_key": "run_tag_value"},
     )
     assert pipeline_result.success
-    assert pipeline_result.result_for_solid("solid_that_gets_tags").output_value() == {
+    assert pipeline_result.result_for_node("solid_that_gets_tags").output_value() == {
         "pipeline_tag_key": "pipeline_tag_value",
         "run_tag_key": "run_tag_value",
     }

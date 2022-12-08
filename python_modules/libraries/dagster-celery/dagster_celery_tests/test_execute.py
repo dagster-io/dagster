@@ -30,7 +30,7 @@ from .utils import (  # isort:skip
 
 def test_execute_on_celery_default(dagster_celery_worker):
     with execute_pipeline_on_celery("test_pipeline") as result:
-        assert result.result_for_solid("simple").output_value() == 1
+        assert result.result_for_node("simple").output_value() == 1
         assert len(result.step_event_list) == 4
         assert len(events_of_type(result, "STEP_START")) == 1
         assert len(events_of_type(result, "STEP_OUTPUT")) == 1
@@ -40,8 +40,8 @@ def test_execute_on_celery_default(dagster_celery_worker):
 
 def test_execute_serial_on_celery(dagster_celery_worker):
     with execute_pipeline_on_celery("test_serial_pipeline") as result:
-        assert result.result_for_solid("simple").output_value() == 1
-        assert result.result_for_solid("add_one").output_value() == 2
+        assert result.result_for_node("simple").output_value() == 1
+        assert result.result_for_node("add_one").output_value() == 2
         assert len(result.step_event_list) == 10
         assert len(events_of_type(result, "STEP_START")) == 2
         assert len(events_of_type(result, "STEP_INPUT")) == 1
@@ -53,36 +53,36 @@ def test_execute_serial_on_celery(dagster_celery_worker):
 
 def test_execute_diamond_pipeline_on_celery(dagster_celery_worker):
     with execute_pipeline_on_celery("test_diamond_pipeline") as result:
-        assert result.result_for_solid("emit_values").output_values == {
+        assert result.result_for_node("emit_values").output_values == {
             "value_one": 1,
             "value_two": 2,
         }
-        assert result.result_for_solid("add_one").output_value() == 2
-        assert result.result_for_solid("renamed").output_value() == 3
-        assert result.result_for_solid("subtract").output_value() == -1
+        assert result.result_for_node("add_one").output_value() == 2
+        assert result.result_for_node("renamed").output_value() == 3
+        assert result.result_for_node("subtract").output_value() == -1
 
 
 def test_execute_parallel_pipeline_on_celery(dagster_celery_worker):
     with execute_pipeline_on_celery("test_parallel_pipeline") as result:
-        assert len(result.solid_result_list) == 11
+        assert len(result.node_result_list) == 11
 
 
 def test_execute_composite_pipeline_on_celery(dagster_celery_worker):
     with execute_pipeline_on_celery("composite_pipeline") as result:
         assert result.success
         assert isinstance(result, PipelineExecutionResult)
-        assert len(result.solid_result_list) == 1
-        composite_solid_result = result.solid_result_list[0]
-        assert len(composite_solid_result.solid_result_list) == 2
-        for r in composite_solid_result.solid_result_list:
+        assert len(result.node_result_list) == 1
+        composite_solid_result = result.node_result_list[0]
+        assert len(composite_solid_result.node_result_list) == 2
+        for r in composite_solid_result.node_result_list:
             assert isinstance(r, CompositeSolidExecutionResult)
-        composite_solid_results = composite_solid_result.solid_result_list
+        composite_solid_results = composite_solid_result.node_result_list
         for i in range(COMPOSITE_DEPTH):
             next_level = []
             assert len(composite_solid_results) == pow(2, i + 1)
             for res in composite_solid_results:
                 assert isinstance(res, CompositeSolidExecutionResult)
-                for r in res.solid_result_list:
+                for r in res.node_result_list:
                     next_level.append(r)
             composite_solid_results = next_level
         assert len(composite_solid_results) == pow(2, COMPOSITE_DEPTH + 1)
@@ -93,20 +93,20 @@ def test_execute_composite_pipeline_on_celery(dagster_celery_worker):
 
 def test_execute_optional_outputs_pipeline_on_celery(dagster_celery_worker):
     with execute_pipeline_on_celery("test_optional_outputs") as result:
-        assert len(result.solid_result_list) == 4
-        assert sum([int(x.skipped) for x in result.solid_result_list]) == 2
-        assert sum([int(x.success) for x in result.solid_result_list]) == 2
+        assert len(result.node_result_list) == 4
+        assert sum([int(x.skipped) for x in result.node_result_list]) == 2
+        assert sum([int(x.success) for x in result.node_result_list]) == 2
 
 
 def test_execute_fails_pipeline_on_celery(dagster_celery_worker):
     with execute_pipeline_on_celery("test_fails") as result:
-        assert len(result.solid_result_list) == 2  # fail & skip
-        assert not result.result_for_solid("fails").success
+        assert len(result.node_result_list) == 2  # fail & skip
+        assert not result.result_for_node("fails").success
         assert (
             "Exception: argjhgjh\n"
-            in result.result_for_solid("fails").failure_data.error.cause.message
+            in result.result_for_node("fails").failure_data.error.cause.message
         )
-        assert result.result_for_solid("should_never_execute").skipped
+        assert result.result_for_node("should_never_execute").skipped
 
 
 def test_terminate_pipeline_on_celery(dagster_celery_worker, instance, tempdir):
@@ -154,7 +154,7 @@ def test_terminate_pipeline_on_celery(dagster_celery_worker, instance, tempdir):
 
 def test_execute_eagerly_on_celery(instance):
     with execute_eagerly_on_celery("test_pipeline", instance=instance) as result:
-        assert result.result_for_solid("simple").output_value() == 1
+        assert result.result_for_node("simple").output_value() == 1
         assert len(result.step_event_list) == 4
         assert len(events_of_type(result, "STEP_START")) == 1
         assert len(events_of_type(result, "STEP_OUTPUT")) == 1
@@ -189,8 +189,8 @@ def test_execute_eagerly_on_celery(instance):
 
 def test_execute_eagerly_serial_on_celery():
     with execute_eagerly_on_celery("test_serial_pipeline") as result:
-        assert result.result_for_solid("simple").output_value() == 1
-        assert result.result_for_solid("add_one").output_value() == 2
+        assert result.result_for_node("simple").output_value() == 1
+        assert result.result_for_node("add_one").output_value() == 2
         assert len(result.step_event_list) == 10
         assert len(events_of_type(result, "STEP_START")) == 2
         assert len(events_of_type(result, "STEP_INPUT")) == 1
@@ -202,45 +202,45 @@ def test_execute_eagerly_serial_on_celery():
 
 def test_execute_eagerly_diamond_pipeline_on_celery():
     with execute_eagerly_on_celery("test_diamond_pipeline") as result:
-        assert result.result_for_solid("emit_values").output_values == {
+        assert result.result_for_node("emit_values").output_values == {
             "value_one": 1,
             "value_two": 2,
         }
-        assert result.result_for_solid("add_one").output_value() == 2
-        assert result.result_for_solid("renamed").output_value() == 3
-        assert result.result_for_solid("subtract").output_value() == -1
+        assert result.result_for_node("add_one").output_value() == 2
+        assert result.result_for_node("renamed").output_value() == 3
+        assert result.result_for_node("subtract").output_value() == -1
 
 
 def test_execute_eagerly_diamond_pipeline_subset_on_celery():
     with execute_eagerly_on_celery("test_diamond_pipeline", subset=["emit_values"]) as result:
-        assert result.result_for_solid("emit_values").output_values == {
+        assert result.result_for_node("emit_values").output_values == {
             "value_one": 1,
             "value_two": 2,
         }
-        assert len(result.solid_result_list) == 1
+        assert len(result.node_result_list) == 1
 
 
 def test_execute_eagerly_parallel_pipeline_on_celery():
     with execute_eagerly_on_celery("test_parallel_pipeline") as result:
-        assert len(result.solid_result_list) == 11
+        assert len(result.node_result_list) == 11
 
 
 def test_execute_eagerly_composite_pipeline_on_celery():
     with execute_eagerly_on_celery("composite_pipeline") as result:
         assert result.success
         assert isinstance(result, PipelineExecutionResult)
-        assert len(result.solid_result_list) == 1
-        composite_solid_result = result.solid_result_list[0]
-        assert len(composite_solid_result.solid_result_list) == 2
-        for r in composite_solid_result.solid_result_list:
+        assert len(result.node_result_list) == 1
+        composite_solid_result = result.node_result_list[0]
+        assert len(composite_solid_result.node_result_list) == 2
+        for r in composite_solid_result.node_result_list:
             assert isinstance(r, CompositeSolidExecutionResult)
-        composite_solid_results = composite_solid_result.solid_result_list
+        composite_solid_results = composite_solid_result.node_result_list
         for i in range(COMPOSITE_DEPTH):
             next_level = []
             assert len(composite_solid_results) == pow(2, i + 1)
             for res in composite_solid_results:
                 assert isinstance(res, CompositeSolidExecutionResult)
-                for r in res.solid_result_list:
+                for r in res.node_result_list:
                     next_level.append(r)
             composite_solid_results = next_level
         assert len(composite_solid_results) == pow(2, COMPOSITE_DEPTH + 1)
@@ -251,26 +251,26 @@ def test_execute_eagerly_composite_pipeline_on_celery():
 
 def test_execute_eagerly_optional_outputs_pipeline_on_celery():
     with execute_eagerly_on_celery("test_optional_outputs") as result:
-        assert len(result.solid_result_list) == 4
-        assert sum([int(x.skipped) for x in result.solid_result_list]) == 2
-        assert sum([int(x.success) for x in result.solid_result_list]) == 2
+        assert len(result.node_result_list) == 4
+        assert sum([int(x.skipped) for x in result.node_result_list]) == 2
+        assert sum([int(x.success) for x in result.node_result_list]) == 2
 
 
 def test_execute_eagerly_resources_limit_pipeline_on_celery():
     with execute_eagerly_on_celery("test_resources_limit") as result:
-        assert result.result_for_solid("resource_req_solid").success
+        assert result.result_for_node("resource_req_solid").success
         assert result.success
 
 
 def test_execute_eagerly_fails_pipeline_on_celery():
     with execute_eagerly_on_celery("test_fails") as result:
-        assert len(result.solid_result_list) == 2
-        assert not result.result_for_solid("fails").success
+        assert len(result.node_result_list) == 2
+        assert not result.result_for_node("fails").success
         assert (
             "Exception: argjhgjh\n"
-            in result.result_for_solid("fails").failure_data.error.cause.message
+            in result.result_for_node("fails").failure_data.error.cause.message
         )
-        assert result.result_for_solid("should_never_execute").skipped
+        assert result.result_for_node("should_never_execute").skipped
 
 
 def test_execute_eagerly_retries_pipeline_on_celery():
@@ -306,7 +306,7 @@ def test_memoization_celery_executor(instance, dagster_celery_worker):
         "bar_pipeline", instance=instance, run_config={"execution": {"celery": {}}}
     ) as result:
         assert result.success
-        assert result.output_for_solid("bar_solid") == "bar"
+        assert result.output_for_node("bar_solid") == "bar"
 
     with execute_pipeline_on_celery(
         "bar_pipeline", instance=instance, run_config={"execution": {"celery": {}}}
