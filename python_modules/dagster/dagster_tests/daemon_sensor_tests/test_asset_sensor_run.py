@@ -9,7 +9,7 @@ from dagster._core.scheduler.instigation import TickStatus
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .test_run_status_sensors import (
-    instance_with_multiple_repos_with_sensors,
+    instance_with_single_code_location_multiple_repos_with_sensors,
     instance_with_sensors,
 )
 from .test_sensor_run import (
@@ -919,7 +919,7 @@ def test_monitor_source_asset_sensor(executor):
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
     )
-    with instance_with_multiple_repos_with_sensors() as (
+    with instance_with_single_code_location_multiple_repos_with_sensors() as (
         instance,
         workspace_ctx,
         repos,
