@@ -4,26 +4,26 @@
 
 ### New
 
+- [dagit] Throughout Dagit, when the default repository name `__repository__` is used for a repo, only the code location name will be shown. This change also applies to URL paths.
 - [dagster-dbt] When attempting to generate software-defined assets from a dbt Cloud job, an error is now raised if none are created.
 - [dagster-dbt] Software-defined assets can now be generated for dbt Cloud jobs that execute multiple commands.
-- Throughout Dagit, when the default repository name `__repository__` is used for a repo, only the code location name will be shown. This change also applies to URL paths.
 
 ### Bugfixes
 
 - Fixed a bug that caused `load_asset_value` to error with the default IO manager when a `partition_key` argument was provided.
 - Previously, trying to access `context.partition_key` or `context.asset_partition_key_for_output` when invoking an asset directly (e.g. in a unit test) would result in an error. This has been fixed.
 - Failure hooks now receive the original exception instead of `RetryRequested` when using a retry policy.
-- Dagit now allows backfills to be launched for asset jobs that have partitions and required config.
-- Dagit no longer renders the "Job in repo@location" label incorrectly in Chrome v109.
-- Dagit's run list now shows improved labels on asset group runs of more than three assets
-- Dagit's run gantt chart now renders per-step resource initialization markers correctly.
 - The LocationStateChange GraphQL subscription has been fixed (thanks @****[roeij](https://github.com/roeij) !)**
+- Fixed a bug where a `sqlite3.ProgrammingError` error was raised when creating an ephemeral `DagsterInstance`, most commonly when `build_resources` was called without passing in an instance parameter.
 - [dagstermill] Jupyter notebooks now correctly render in Dagit on Windows machines.
 - [dagster-duckdb-pyspark] New `duckdb_pyspark_io_manager` helper to automatically create a DuckDB I/O manager that can store and load PySpark DataFrames.
 - [dagster-mysql] Fixed a bug where versions of mysql < `8.0.31` would raise an error on some run queries.
-- In op and asset descriptions in Dagit, rendered markdown no longer includes extraneous escape slashes.
-- Fixed a bug where a `sqlite3.ProgrammingError` error was raised when creating an ephemeral `DagsterInstance`, most commonly when `build_resources` was called without passing in an instance parameter.
 - [dagster-postgres] connection url param “options“ are no longer overwritten in dagit.
+- [dagit] Dagit now allows backfills to be launched for asset jobs that have partitions and required config.
+- [dagit] Dagit no longer renders the "Job in repo@location" label incorrectly in Chrome v109.
+- [dagit] Dagit's run list now shows improved labels on asset group runs of more than three assets
+- [dagit] Dagit's run gantt chart now renders per-step resource initialization markers correctly.
+- [dagit] In op and asset descriptions in Dagit, rendered markdown no longer includes extraneous escape slashes.
 - Assorted typos and omissions fixed in the docs — thanks @[C0DK](https://github.com/C0DK) and @[akan72](https://github.com/akan72)!
 
 
@@ -37,8 +37,8 @@
 - Refreshed `dagstermill` guide and reference page [https://docs.dagster.io/integrations/dagstermill](https://docs.dagster.io/integrations/dagstermill)
 - New declarative scheduling guide: [https://docs.dagster.io/guides/dagster/scheduling-assets](https://docs.dagster.io/guides/dagster/scheduling-assets)
 - New `dagster-snowflake` guide: [https://docs.dagster.io/integrations/snowflake](https://docs.dagster.io/integrations/snowflake)
-- Add docs for asset code versioning: [https://docs.dagster.io/concepts/assets/software-defined-assets#asset-code-versions](https://docs.dagster.io/concepts/assets/software-defined-assets#asset-code-versions)
-- Add docs for observable source assets: [https://docs.dagster.io/concepts/assets/asset-observations#observable-source-assets](https://docs.dagster.io/concepts/assets/asset-observations#observable-source-assets)
+- Added docs for asset code versioning: [https://docs.dagster.io/concepts/assets/software-defined-assets#asset-code-versions](https://docs.dagster.io/concepts/assets/software-defined-assets#asset-code-versions)
+- Added docs for observable source assets: [https://docs.dagster.io/concepts/assets/asset-observations#observable-source-assets](https://docs.dagster.io/concepts/assets/asset-observations#observable-source-assets)
 
 
 # 1.1.5 (core) / 0.17.5 (libraries)
