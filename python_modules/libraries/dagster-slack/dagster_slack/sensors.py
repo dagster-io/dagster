@@ -208,7 +208,7 @@ def _default_freshness_message_text_fn(context: FreshnessPolicySensorContext) ->
 
 
 @experimental
-def make_slack_on_freshness_policy_sensor(
+def make_slack_on_freshness_policy_status_change_sensor(
     channel: str,
     slack_token: str,
     asset_selection: AssetSelection,
@@ -260,7 +260,7 @@ def make_slack_on_freshness_policy_sensor(
 
         .. code-block:: python
 
-            slack_on_freshness_policy = make_slack_on_freshness_policy_sensor(
+            slack_on_freshness_policy = make_slack_on_freshness_policy_status_change_sensor(
                 "#my_channel",
                 os.getenv("MY_SLACK_TOKEN"),
             )

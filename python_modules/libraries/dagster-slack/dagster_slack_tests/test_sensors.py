@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 from dagster_slack.sensors import (
-    make_slack_on_freshness_policy_sensor,
+    make_slack_on_freshness_policy_status_change_sensor,
     make_slack_on_run_failure_sensor,
 )
 from slack_sdk.web.client import WebClient
@@ -71,7 +71,7 @@ def test_slack_freshness_polciy_status(
 ):
 
     with patch.object(WebClient, "chat_postMessage", return_value=None) as mocked_post:
-        my_sensor = make_slack_on_freshness_policy_sensor(
+        my_sensor = make_slack_on_freshness_policy_status_change_sensor(
             channel="#foo",
             slack_token="blah",
             asset_selection=AssetSelection.all(),
