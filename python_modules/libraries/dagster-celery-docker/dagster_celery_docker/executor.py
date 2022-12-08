@@ -13,7 +13,7 @@ from dagster._cli.api import ExecuteStepArgs
 from dagster._core.events import EngineEventData
 from dagster._core.events.utils import filter_dagster_events_from_cli_logs
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._serdes import pack_value, serialize_dagster_namedtuple, unpack_value
 from dagster._utils import merge_dicts
 
@@ -224,7 +224,7 @@ def create_docker_task(celery_app, **task_kwargs):
         pipeline_run = instance.get_run_by_id(execute_step_args.pipeline_run_id)
         check.inst(
             pipeline_run,
-            PipelineRun,
+            DagsterRun,
             "Could not load run {}".format(execute_step_args.pipeline_run_id),
         )
         step_keys_str = ", ".join(execute_step_args.step_keys_to_execute)

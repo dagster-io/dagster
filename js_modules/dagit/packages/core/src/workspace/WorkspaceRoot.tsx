@@ -1,6 +1,6 @@
 import {Box, MainContent, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
-import {Route, Switch, useParams} from 'react-router-dom';
+import {Redirect, Route, Switch, useParams} from 'react-router-dom';
 
 import {AssetGroupRoot} from '../assets/AssetGroupRoot';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
@@ -13,11 +13,11 @@ import {WorkspaceContext} from './WorkspaceContext';
 import {WorkspaceGraphsRoot} from './WorkspaceGraphsRoot';
 import {WorkspaceJobsRoot} from './WorkspaceJobsRoot';
 import {WorkspaceOpsRoot} from './WorkspaceOpsRoot';
-import {WorkspaceOverviewRoot} from './WorkspaceOverviewRoot';
 import {WorkspacePipelineRoot} from './WorkspacePipelineRoot';
 import {WorkspaceRepoRoot} from './WorkspaceRepoRoot';
 import {WorkspaceSchedulesRoot} from './WorkspaceSchedulesRoot';
 import {WorkspaceSensorsRoot} from './WorkspaceSensorsRoot';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressFromPath} from './repoAddressFromPath';
 
 const RepoRouteContainer = () => {
@@ -31,13 +31,13 @@ const RepoRouteContainer = () => {
       <Box padding={{vertical: 64}}>
         <NonIdealState
           icon="error"
-          title="Invalid repository"
+          title="Invalid code location path"
           description={
             <div>
               <div>
                 <strong>{repoPath}</strong>
               </div>
-              {'  is not a valid repository path.'}
+              {'  is not a valid code location path.'}
             </div>
           }
         />
@@ -57,18 +57,18 @@ const RepoRouteContainer = () => {
       repo.repositoryLocation.name === addressForPath.location,
   );
 
-  // If we don't have any active repositories, or if our active repo does not match
+  // If we don't have any active code locations, or if our active repo does not match
   // the repo path in the URL, it means we aren't able to load this repo.
   if (!matchingRepo) {
     return (
       <Box padding={{vertical: 64}}>
         <NonIdealState
           icon="error"
-          title="Unknown repository"
+          title="Unknown code location"
           description={
             <div>
               <div>
-                <strong>{repoPath}</strong>
+                <strong>{repoAddressAsHumanString(addressForPath)}</strong>
               </div>
               {'  is not loaded in the current workspace.'}
             </div>
@@ -80,54 +80,54 @@ const RepoRouteContainer = () => {
 
   return (
     <Switch>
-      <Route path="/workspace/:repoPath/assets" exact>
+      <Route path="/locations/:repoPath/assets" exact>
         <WorkspaceAssetsRoot repoAddress={addressForPath} />
       </Route>
-      <Route path="/workspace/:repoPath/jobs" exact>
+      <Route path="/locations/:repoPath/jobs" exact>
         <WorkspaceJobsRoot repoAddress={addressForPath} />
       </Route>
-      <Route path="/workspace/:repoPath/schedules" exact>
+      <Route path="/locations/:repoPath/schedules" exact>
         <WorkspaceSchedulesRoot repoAddress={addressForPath} />
       </Route>
-      <Route path="/workspace/:repoPath/sensors" exact>
+      <Route path="/locations/:repoPath/sensors" exact>
         <WorkspaceSensorsRoot repoAddress={addressForPath} />
       </Route>
-      <Route path="/workspace/:repoPath/graphs" exact>
+      <Route path="/locations/:repoPath/graphs" exact>
         <WorkspaceGraphsRoot repoAddress={addressForPath} />
       </Route>
-      <Route path="/workspace/:repoPath/ops/:name?" exact>
+      <Route path="/locations/:repoPath/ops/:name?" exact>
         <WorkspaceOpsRoot repoAddress={addressForPath} />
       </Route>
-      <Route path="/workspace/:repoPath/graphs/(/?.*)">
+      <Route path="/locations/:repoPath/graphs/(/?.*)">
         <GraphRoot repoAddress={addressForPath} />
       </Route>
       <Route
         path={[
-          '/workspace/:repoPath/pipelines/(/?.*)',
-          '/workspace/:repoPath/jobs/(/?.*)',
-          '/workspace/:repoPath/pipeline_or_job/(/?.*)',
+          '/locations/:repoPath/pipelines/(/?.*)',
+          '/locations/:repoPath/jobs/(/?.*)',
+          '/locations/:repoPath/pipeline_or_job/(/?.*)',
         ]}
       >
         <PipelineRoot repoAddress={addressForPath} />
       </Route>
-      <Route path="/workspace/:repoPath/schedules/:scheduleName/:runTab?">
+      <Route path="/locations/:repoPath/schedules/:scheduleName/:runTab?">
         <ScheduleRoot repoAddress={addressForPath} />
       </Route>
-      <Route path="/workspace/:repoPath/sensors/:sensorName">
+      <Route path="/locations/:repoPath/sensors/:sensorName">
         <SensorRoot repoAddress={addressForPath} />
       </Route>
-      <Route path={['/workspace/:repoPath/asset-groups/:groupName/list(/?.*)']}>
+      <Route path={['/locations/:repoPath/asset-groups/:groupName/list(/?.*)']}>
         <AssetGroupRoot repoAddress={addressForPath} tab="list" />
       </Route>
       <Route
         path={[
-          '/workspace/:repoPath/asset-groups/:groupName/(/?.*)',
-          '/workspace/:repoPath/asset-groups/:groupName',
+          '/locations/:repoPath/asset-groups/:groupName/(/?.*)',
+          '/locations/:repoPath/asset-groups/:groupName',
         ]}
       >
         <AssetGroupRoot repoAddress={addressForPath} tab="lineage" />
       </Route>
-      <Route path="/workspace/:repoPath/:tab?">
+      <Route path="/locations/:repoPath/:tab?">
         <WorkspaceRepoRoot repoAddress={addressForPath} />
       </Route>
     </Switch>
@@ -138,13 +138,11 @@ export const WorkspaceRoot = () => {
   return (
     <MainContent>
       <Switch>
-        <Route path="/workspace" exact>
-          <WorkspaceOverviewRoot />
-        </Route>
-        <Route path={['/workspace/pipelines/:pipelinePath', '/workspace/jobs/:pipelinePath']}>
+        <Route path="/locations" exact render={() => <Redirect to="/definitions" />} />
+        <Route path={['/locations/pipelines/:pipelinePath', '/locations/jobs/:pipelinePath']}>
           <WorkspacePipelineRoot />
         </Route>
-        <Route path="/workspace/:repoPath">
+        <Route path="/locations/:repoPath">
           <RepoRouteContainer />
         </Route>
       </Switch>

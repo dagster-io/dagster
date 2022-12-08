@@ -9,6 +9,7 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 
 import {VirtualizedJobTable} from './VirtualizedJobTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {WorkspaceJobsQuery, WorkspaceJobsQueryVariables} from './types/WorkspaceJobsQuery';
@@ -60,6 +61,8 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
       );
     }
 
+    const repoName = repoAddressAsHumanString(repoAddress);
+
     if (!filteredBySearch.length) {
       if (anySearch) {
         return (
@@ -69,7 +72,7 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
               title="No matching jobs"
               description={
                 <div>
-                  No jobs matching <strong>{searchValue}</strong> were found in this repository
+                  No jobs matching <strong>{searchValue}</strong> were found in {repoName}
                 </div>
               }
             />
@@ -82,7 +85,7 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
           <NonIdealState
             icon="search"
             title="No jobs"
-            description="No jobs were found in this repository"
+            description={`No jobs were found in ${repoName}`}
           />
         </Box>
       );

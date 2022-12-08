@@ -252,7 +252,7 @@ def notebook_dag_job():
     mult_two_numbers(num, b)
 
 
-error_notebook = test_nb_op("error_notebook")
+error_notebook = test_nb_op("error_notebook", save_notebook_on_failure=True)
 
 
 @job(resource_defs=common_resource_defs)
@@ -496,6 +496,12 @@ hello_logging_asset = dagstermill.define_dagstermill_asset(
     name="hello_logging_asset", notebook_path=nb_test_path("hello_logging")
 )
 
+error_notebook_asset = dagstermill.define_dagstermill_asset(
+    name="error_notebook_asset",
+    notebook_path=nb_test_path("error_notebook"),
+    save_notebook_on_failure=True,
+)
+
 
 @asset
 def a():
@@ -544,6 +550,7 @@ assets = with_resources(
         b,
         add_two_number_asset,
         hello_world_resource_asset,
+        error_notebook_asset,
         yield_event_asset,
     ],
     resource_defs={
@@ -568,6 +575,7 @@ goodbye_config_asset_job = make_resolved_job(goodbye_config_asset)
 hello_logging_asset_job = make_resolved_job(hello_logging_asset)
 add_two_number_asset_job = make_resolved_job(add_two_number_asset)
 hello_world_resource_asset_job = make_resolved_job(hello_world_resource_asset)
+error_notebook_asset_job = make_resolved_job(error_notebook_asset)
 yield_event_asset_job = make_resolved_job(yield_event_asset)
 
 

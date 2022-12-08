@@ -54,8 +54,8 @@ export const MiddleTruncate: React.FC<{text: string}> = React.memo(({text}) => {
 
   return (
     <Container onCopy={handleCopy} title={text}>
-      <MeasureWidth ref={measure}>{text}</MeasureWidth>
       <span>{truncatedText}</span>
+      <MeasureWidth ref={measure}>{text}</MeasureWidth>
     </Container>
   );
 });

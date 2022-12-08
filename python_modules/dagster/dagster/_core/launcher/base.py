@@ -4,7 +4,7 @@ from typing import NamedTuple, Optional
 
 from dagster._core.instance import MayHaveInstanceWeakref
 from dagster._core.origin import PipelinePythonOrigin
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
 
@@ -14,7 +14,7 @@ class LaunchRunContext(NamedTuple):
     Context available within a run launcher's launch_run call.
     """
 
-    pipeline_run: PipelineRun
+    pipeline_run: DagsterRun
     workspace: Optional[IWorkspace]
 
     @property
@@ -27,7 +27,7 @@ class ResumeRunContext(NamedTuple):
     Context available within a run launcher's resume_run call.
     """
 
-    pipeline_run: PipelineRun
+    pipeline_run: DagsterRun
     workspace: Optional[IWorkspace]
     resume_attempt_number: Optional[int] = None
 
@@ -99,7 +99,7 @@ class RunLauncher(ABC, MayHaveInstanceWeakref):
         """
         return False
 
-    def check_run_worker_health(self, run: PipelineRun) -> CheckRunHealthResult:
+    def check_run_worker_health(self, run: DagsterRun) -> CheckRunHealthResult:
         raise NotImplementedError(
             "This run launcher does not support run monitoring. Please disable it on your instance."
         )

@@ -7,7 +7,7 @@ import {QueryRefreshState} from '../app/QueryRefresh';
 import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
 
 import {WorkspaceTabs} from './WorkspaceTabs';
-import {repoAddressAsString} from './repoAddressAsString';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {RepoAddress} from './types';
 
 interface Props<TData> {
@@ -25,12 +25,12 @@ export const WorkspaceHeader = <TData extends Record<string, any>>(props: Props<
       title={
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <Heading>
-            <Link to="/workspace" style={{color: Colors.Dark}}>
+            <Link to="/definitions" style={{color: Colors.Dark}}>
               Deployment
             </Link>
           </Heading>
           <Heading>/</Heading>
-          <Heading style={{color: Colors.Gray600}}>{repoAddressAsString(repoAddress)}</Heading>
+          <Heading style={{color: Colors.Gray600}}>{repoAddressAsHumanString(repoAddress)}</Heading>
         </Box>
       }
       tabs={
@@ -50,7 +50,7 @@ export const WorkspaceHeader = <TData extends Record<string, any>>(props: Props<
                 loading={reloading}
                 icon={<Icon name="refresh" />}
               >
-                Reload code location
+                Reload definitions
               </Button>
             );
           }}

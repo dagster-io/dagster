@@ -9,3 +9,7 @@ export const WorkspaceOverviewRoot = () => {
 
   return <WorkspaceOverviewWithGrid />;
 };
+
+// Imported via React.lazy, which requires a default export.
+// eslint-disable-next-line import/no-default-export
+export default WorkspaceOverviewRoot;

@@ -15,7 +15,12 @@ from dagster._core.host_representation import (
 )
 from dagster._core.scheduler.instigation import InstigatorType
 
-from ...implementation.external import fetch_repositories, fetch_repository, fetch_workspace
+from ...implementation.external import (
+    fetch_location_statuses,
+    fetch_repositories,
+    fetch_repository,
+    fetch_workspace,
+)
 from ...implementation.fetch_assets import (
     get_asset,
     get_asset_node,
@@ -73,6 +78,7 @@ from ..external import (
     GrapheneRepositoriesOrError,
     GrapheneRepositoryConnection,
     GrapheneRepositoryOrError,
+    GrapheneWorkspaceLocationStatusEntriesOrError,
     GrapheneWorkspaceOrError,
 )
 from ..inputs import (
@@ -92,7 +98,11 @@ from ..instigation import (
     GrapheneInstigationStatesOrError,
     GrapheneInstigationType,
 )
-from ..logs.compute_logs import GrapheneCapturedLogsMetadata
+from ..logs.compute_logs import (
+    GrapheneCapturedLogs,
+    GrapheneCapturedLogsMetadata,
+    from_captured_log_data,
+)
 from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
 from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
@@ -142,6 +152,11 @@ class GrapheneDagitQuery(graphene.ObjectType):
     workspaceOrError = graphene.Field(
         graphene.NonNull(GrapheneWorkspaceOrError),
         description="Retrieve the workspace and its locations.",
+    )
+
+    locationStatusesOrError = graphene.Field(
+        graphene.NonNull(GrapheneWorkspaceLocationStatusEntriesOrError),
+        description="Retrieve location status for workspace locations",
     )
 
     pipelineOrError = graphene.Field(
@@ -367,6 +382,13 @@ class GrapheneDagitQuery(graphene.ObjectType):
         logKey=graphene.Argument(non_null_list(graphene.String)),
         description="Retrieve the captured log metadata for a given log key.",
     )
+    capturedLogs = graphene.Field(
+        graphene.NonNull(GrapheneCapturedLogs),
+        logKey=graphene.Argument(non_null_list(graphene.String)),
+        cursor=graphene.Argument(graphene.String),
+        limit=graphene.Argument(graphene.Int),
+        description="Captured logs are the stdout/stderr logs for a given log key",
+    )
 
     def resolve_repositoriesOrError(self, graphene_info, **kwargs):
         if kwargs.get("repositorySelector"):
@@ -388,6 +410,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_workspaceOrError(self, graphene_info):
         return fetch_workspace(graphene_info.context)
+
+    def resolve_locationStatusesOrError(self, graphene_info):
+        return fetch_location_statuses(graphene_info.context)
 
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         snapshot_id_arg = kwargs.get("snapshotId")
@@ -673,3 +698,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_capturedLogsMetadata(self, graphene_info, logKey):
         return get_captured_log_metadata(graphene_info, logKey)
+
+    def resolve_capturedLogs(self, graphene_info, logKey, cursor=None, limit=None):
+        log_data = graphene_info.context.instance.compute_log_manager.get_log_data(
+            logKey, cursor=cursor, max_bytes=limit
+        )
+        return from_captured_log_data(log_data)
