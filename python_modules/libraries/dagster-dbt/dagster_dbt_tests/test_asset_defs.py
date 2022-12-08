@@ -69,7 +69,7 @@ def test_runtime_metadata_fn():
         run_results_json = json.load(f)
 
     def runtime_metadata_fn(context, node_info):
-        return {"op_name": context.solid_def.name, "dbt_model": node_info["name"]}
+        return {"op_name": context.op_def.name, "dbt_model": node_info["name"]}
 
     dbt_assets = load_assets_from_dbt_manifest(
         manifest_json=manifest_json, runtime_metadata_fn=runtime_metadata_fn

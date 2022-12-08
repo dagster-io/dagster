@@ -79,9 +79,9 @@ export const PipelineNav: React.FC<Props> = (props) => {
   const permissions = usePermissions();
 
   const match = useRouteMatch<{tab?: string; selector: string}>([
-    '/workspace/:repoPath/pipelines/:selector/:tab?',
-    '/workspace/:repoPath/jobs/:selector/:tab?',
-    '/workspace/:repoPath/pipeline_or_job/:selector/:tab?',
+    '/locations/:repoPath/pipelines/:selector/:tab?',
+    '/locations/:repoPath/jobs/:selector/:tab?',
+    '/locations/:repoPath/pipeline_or_job/:selector/:tab?',
   ]);
 
   const active = tabForPipelinePathComponent(match!.params.tab);

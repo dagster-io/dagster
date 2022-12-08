@@ -2,13 +2,12 @@ import os
 import tempfile
 
 import pytest
+from airflow import __version__ as airflow_version
 from dagster_airflow.dagster_pipeline_factory import (
     make_dagster_repo_from_airflow_dags_path,
     make_dagster_repo_from_airflow_example_dags,
 )
 from dagster_airflow_tests.marks import requires_airflow_db
-
-from dagster._legacy import execute_pipeline
 
 COMPLEX_DAG_FILE_CONTENTS = '''#
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -34,6 +33,7 @@ Example Airflow DAG that shows the complex DAG structure.
 import sys
 
 from airflow import models
+
 from airflow.utils.dates import days_ago
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.python_operator import PythonOperator
@@ -102,8 +102,8 @@ with models.DAG(
     )
 
     create_tag_template_field_result2 = BashOperator(
-        task_id="create_tag_template_field_result",
-        bash_command="echo create_tag_template_field_result",
+        task_id="create_tag_template_field_result2",
+        bash_command="echo create_tag_template_field_result2",
     )
 
     # Delete
@@ -361,14 +361,15 @@ test_make_repo_inputs = [
 ]
 
 
+@pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
 @pytest.mark.parametrize(
-    "path_and_content_tuples, fn_arg_path, expected_pipeline_names",
+    "path_and_content_tuples, fn_arg_path, expected_job_names",
     test_make_repo_inputs,
 )
 def test_make_repo(
     path_and_content_tuples,
     fn_arg_path,
-    expected_pipeline_names,
+    expected_job_names,
 ):
     repo_name = "my_repo_name"
     with tempfile.TemporaryDirectory() as tmpdir_path:
@@ -378,24 +379,23 @@ def test_make_repo(
 
         repo = (
             make_dagster_repo_from_airflow_dags_path(
-                tmpdir_path,
-                repo_name,
+                tmpdir_path, repo_name, use_ephemeral_airflow_db=False
             )
             if fn_arg_path is None
             else make_dagster_repo_from_airflow_dags_path(
-                os.path.join(tmpdir_path, fn_arg_path), repo_name
+                os.path.join(tmpdir_path, fn_arg_path), repo_name, use_ephemeral_airflow_db=False
             )
         )
 
-        for pipeline_name in expected_pipeline_names:
+        for job_name in expected_job_names:
             assert repo.name == repo_name
-            assert repo.has_pipeline(pipeline_name)
+            assert repo.has_job(job_name)
 
-            pipeline = repo.get_pipeline(pipeline_name)
-            result = execute_pipeline(pipeline)
+            job = repo.get_job(job_name)
+            result = job.execute_in_process()
             assert result.success
 
-        assert set(repo.pipeline_names) == set(expected_pipeline_names)
+        assert set(repo.job_names) == set(expected_job_names)
 
 
 test_airflow_example_dags_inputs = [
@@ -408,6 +408,7 @@ test_airflow_example_dags_inputs = [
             "airflow_example_external_task_marker_child",
             "airflow_example_external_task_marker_parent",
             "airflow_example_http_operator",
+            "airflow_example_kubernetes_executor_config",
             "airflow_example_nested_branch_dag",  # only exists in airflow v1.10.10
             "airflow_example_passing_params_via_test_command",
             "airflow_example_pig_operator",
@@ -426,34 +427,44 @@ test_airflow_example_dags_inputs = [
             "airflow_tutorial",
         ],
         [
-            "airflow_example_external_task_marker_child",
+            #  No such file or directory: '/foo/volume_mount_test.txt'
+            "airflow_example_kubernetes_executor_config",
+            # [Errno 2] No such file or directory: 'pig'
             "airflow_example_pig_operator",
-            "airflow_example_skip_dag",
+            # airflow.exceptions.DagNotFound: Dag id example_trigger_target_dag not found in DagModel
+            "airflow_example_trigger_controller_dag",
+            # 'NoneType' object is not subscriptable, target dag does not exist
             "airflow_example_trigger_target_dag",
-            "airflow_example_xcom",
+            # sleeps forever, not an example
             "airflow_test_utils",
+            # patching airflow.models.DAG causes this to fail
+            "airflow_example_complex",
         ],
     ),
 ]
 
 
+@pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
 @pytest.mark.parametrize(
-    "expected_pipeline_names, exclude_from_execution_tests",
+    "expected_job_names, exclude_from_execution_tests",
     test_airflow_example_dags_inputs,
 )
 @requires_airflow_db
 def test_airflow_example_dags(
-    expected_pipeline_names,
+    expected_job_names,
     exclude_from_execution_tests,
 ):
     repo = make_dagster_repo_from_airflow_example_dags()
 
-    for pipeline_name in expected_pipeline_names:
+    for job_name in expected_job_names:
         assert repo.name == "airflow_example_dags_repo"
-        assert repo.has_pipeline(pipeline_name)
+        assert repo.has_job(job_name)
 
-        pipeline = repo.get_pipeline(pipeline_name)
-        if pipeline_name not in exclude_from_execution_tests:
-            result = execute_pipeline(pipeline)
+        if job_name not in exclude_from_execution_tests:
+            job = repo.get_job(job_name)
+            result = job.execute_in_process()
             assert result.success
-    assert set(repo.pipeline_names) == set(expected_pipeline_names)
+            for event in result.all_events:
+                assert event.event_type_value != "STEP_FAILURE"
+
+    assert set(repo.job_names) == set(expected_job_names)

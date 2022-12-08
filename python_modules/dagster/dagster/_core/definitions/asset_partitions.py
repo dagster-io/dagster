@@ -20,7 +20,7 @@ def get_upstream_partitions_for_partition_range(
     if upstream_partitions_def is None:
         check.failed("upstream asset is not partitioned")
 
-    downstream_partition_mapping = downstream_assets_def.get_partition_mapping(upstream_asset_key)
+    downstream_partition_mapping = downstream_assets_def.infer_partition_mapping(upstream_asset_key)
     return downstream_partition_mapping.get_upstream_partitions_for_partition_range(
         downstream_partition_key_range,
         downstream_assets_def.partitions_def,
@@ -43,7 +43,7 @@ def get_downstream_partitions_for_partition_range(
     if upstream_assets_def.partitions_def is None:
         check.failed("upstream asset is not partitioned")
 
-    downstream_partition_mapping = downstream_assets_def.get_partition_mapping(upstream_asset_key)
+    downstream_partition_mapping = downstream_assets_def.infer_partition_mapping(upstream_asset_key)
     return downstream_partition_mapping.get_downstream_partitions_for_partition_range(
         upstream_partition_key_range,
         downstream_assets_def.partitions_def,

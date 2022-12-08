@@ -18,7 +18,7 @@ class PipelineSelector(
     )
 ):
     """
-    The information needed to resolve a pipeline within a host process.
+    The information needed to resolve a job within a host process.
     """
 
     def __new__(

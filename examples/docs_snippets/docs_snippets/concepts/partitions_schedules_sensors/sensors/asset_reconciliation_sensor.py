@@ -1,10 +1,12 @@
 from dagster import AssetSelection, build_asset_reconciliation_sensor, repository
 
-asset_a = None
+asset1 = None
 
-asset_b = None
+asset2 = None
 
-asset_c = None
+asset3 = None
+
+asset4 = None
 
 # start_asset_reconciliation_sensor
 
@@ -12,11 +14,12 @@ asset_c = None
 @repository
 def repository_1():
     return [
-        asset_a,
-        asset_b,
-        asset_c,
+        asset1,
+        asset2,
+        asset3,
+        asset4,
         build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(asset_b, asset_c),
+            asset_selection=AssetSelection.assets(asset1, asset3, asset4),
             name="asset_reconciliation_sensor",
         ),
     ]

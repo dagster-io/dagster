@@ -67,6 +67,10 @@ class OutputDefinition:
         asset_partitions (Optional[Union[Set[str], OutputContext -> Set[str]]]): (Experimental) A
             set of partitions of the given asset_key (or a function that produces this list of
             partitions from the OutputContext) which should be associated with this OutputDefinition.
+        code_version (Optional[str]): (Experimental) Version of the code that generates this output. In
+            general, versions should be set only for code that deterministically produces the same
+            output when given the same inputs.
+
     """
 
     def __init__(
@@ -81,7 +85,8 @@ class OutputDefinition:
         asset_partitions: Optional[
             Union[AbstractSet[str], Callable[["OutputContext"], AbstractSet[str]]]
         ] = None,
-        asset_partitions_def: Optional["PartitionsDefinition"] = None
+        asset_partitions_def: Optional["PartitionsDefinition"] = None,
+        code_version: Optional[str] = None,
         # make sure new parameters are updated in combine_with_inferred below
     ):
         from dagster._core.definitions.partition import PartitionsDefinition
@@ -96,6 +101,7 @@ class OutputDefinition:
             "io_manager_key",
             default=DEFAULT_IO_MANAGER_KEY,
         )
+        self._code_version = check.opt_str_param(code_version, "code_version")
         self._metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self._metadata_entries = check.is_list(
             normalize_metadata(self._metadata, [], allow_invalid=True), MetadataEntry
@@ -160,6 +166,10 @@ class OutputDefinition:
     @property
     def io_manager_key(self) -> str:
         return self._io_manager_key
+
+    @property
+    def code_version(self) -> Optional[str]:
+        return self._code_version
 
     @property
     def optional(self) -> bool:
@@ -246,18 +256,22 @@ class OutputDefinition:
         )
 
     @staticmethod
-    def create_from_inferred(inferred: Optional[InferredOutputProps]) -> "OutputDefinition":
+    def create_from_inferred(
+        inferred: Optional[InferredOutputProps], code_version: Optional[str] = None
+    ) -> "OutputDefinition":
         if not inferred:
-            return OutputDefinition()
+            return OutputDefinition(code_version=code_version)
         if is_dynamic_output_annotation(inferred.annotation):
             return DynamicOutputDefinition(
                 dagster_type=_checked_inferred_type(inferred.annotation),
                 description=inferred.description,
+                code_version=code_version,
             )
         else:
             return OutputDefinition(
                 dagster_type=_checked_inferred_type(inferred.annotation),
                 description=inferred.description,
+                code_version=code_version,
             )
 
     def combine_with_inferred(
@@ -436,6 +450,7 @@ class Out(
                 ],
             ),
             ("asset_partitions_def", PublicAttr[Optional["PartitionsDefinition"]]),
+            ("code_version", PublicAttr[Optional[str]]),
         ],
     )
 ):
@@ -466,6 +481,9 @@ class Out(
         asset_partitions (Optional[Union[Set[str], OutputContext -> Set[str]]]): (Experimental) A
             set of partitions of the given asset_key (or a function that produces this list of
             partitions from the OutputContext) which should be associated with this Out.
+        code_version (Optional[str]): (Experimental) Version of the code that generates this output. In
+            general, versions should be set only for code that deterministically produces the same
+            output when given the same inputs.
     """
 
     def __new__(
@@ -480,6 +498,7 @@ class Out(
             Union[AbstractSet[str], Callable[["OutputContext"], AbstractSet[str]]]
         ] = None,
         asset_partitions_def: Optional["PartitionsDefinition"] = None,
+        code_version: Optional[str] = None,
         # make sure new parameters are updated in combine_with_inferred below
     ):
         if asset_partitions_def:
@@ -498,6 +517,7 @@ class Out(
             asset_key=asset_key,
             asset_partitions=asset_partitions,
             asset_partitions_def=asset_partitions_def,
+            code_version=code_version,
         )
 
     @classmethod
@@ -512,10 +532,15 @@ class Out(
             asset_key=output_def._asset_key,  # type: ignore # pylint: disable=protected-access
             asset_partitions=output_def._asset_partitions_fn,  # pylint: disable=protected-access
             asset_partitions_def=output_def.asset_partitions_def,  # pylint: disable=protected-access
+            code_version=output_def.code_version,
         )
 
     def to_definition(
-        self, annotation_type: type, name: Optional[str], description: Optional[str]
+        self,
+        annotation_type: type,
+        name: Optional[str],
+        description: Optional[str],
+        code_version: Optional[str],
     ) -> "OutputDefinition":
         dagster_type = (
             self.dagster_type
@@ -535,6 +560,7 @@ class Out(
             asset_key=self.asset_key,
             asset_partitions=self.asset_partitions,
             asset_partitions_def=self.asset_partitions_def,
+            code_version=self.code_version or code_version,
         )
 
     @property
@@ -581,7 +607,11 @@ class DynamicOut(Out):
     """
 
     def to_definition(
-        self, annotation_type: type, name: Optional[str], description: Optional[str]
+        self,
+        annotation_type: type,
+        name: Optional[str],
+        description: Optional[str],
+        code_version: Optional[str],
     ) -> "OutputDefinition":
         dagster_type = (
             self.dagster_type
@@ -598,6 +628,7 @@ class DynamicOut(Out):
             metadata=self.metadata,
             asset_key=self.asset_key,
             asset_partitions=self.asset_partitions,
+            code_version=self.code_version or code_version,
         )
 
     @property

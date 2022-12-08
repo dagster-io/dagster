@@ -1,7 +1,9 @@
 import pytest
 
-from dagster import DagsterInstance, Int, Output
+from dagster import DagsterInstance, Int, Out, Output
 from dagster import _check as check
+from dagster import job, op
+from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -12,45 +14,38 @@ from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.plan import should_skip_step
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import (
-    OutputDefinition,
-    composite_solid,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import OutputDefinition
 
 
-def define_diamond_pipeline():
-    @lambda_solid
+def define_diamond_job():
+    @op
     def return_two():
         return 2
 
-    @solid
+    @op
     def add_three(num):
         return num + 3
 
-    @solid
+    @op
     def mult_three(num):
         return num * 3
 
-    @solid
+    @op
     def adder(left, right):
         return left + right
 
-    @pipeline
-    def diamond_pipeline():
+    @job
+    def diamond_job():
         two = return_two()
         adder(left=add_three(two), right=mult_three(two))
 
-    return diamond_pipeline
+    return diamond_job
 
 
 def test_topological_sort():
-    plan = create_execution_plan(define_diamond_pipeline())
+    plan = create_execution_plan(define_diamond_job())
 
     levels = plan.get_steps_to_execute_by_level()
 
@@ -64,13 +59,13 @@ def test_topological_sort():
 def test_create_execution_plan_with_bad_inputs():
     with pytest.raises(DagsterInvalidConfigError):
         create_execution_plan(
-            define_diamond_pipeline(),
-            run_config={"solids": {"add_three": {"inputs": {"num": 3}}}},
+            define_diamond_job(),
+            run_config={"ops": {"add_three": {"inputs": {"num": 3}}}},
         )
 
 
 def test_active_execution_plan():
-    plan = create_execution_plan(define_diamond_pipeline())
+    plan = create_execution_plan(define_diamond_job())
 
     with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
 
@@ -121,8 +116,8 @@ def test_active_execution_plan():
 
 
 def test_failing_execution_plan():
-    pipeline_def = define_diamond_pipeline()
-    plan = create_execution_plan(pipeline_def)
+    job_def = define_diamond_job()
+    plan = create_execution_plan(job_def)
 
     with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
 
@@ -174,8 +169,8 @@ def test_failing_execution_plan():
 
 
 def test_retries_active_execution():
-    pipeline_def = define_diamond_pipeline()
-    plan = create_execution_plan(pipeline_def)
+    job_def = define_diamond_job()
+    plan = create_execution_plan(job_def)
 
     with plan.start(retry_mode=(RetryMode.ENABLED)) as active_execution:
 
@@ -238,8 +233,8 @@ def test_retries_active_execution():
 
 
 def test_retries_disabled_active_execution():
-    pipeline_def = define_diamond_pipeline()
-    plan = create_execution_plan(pipeline_def)
+    job_def = define_diamond_job()
+    plan = create_execution_plan(job_def)
 
     with pytest.raises(check.CheckError):
         with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
@@ -257,8 +252,8 @@ def test_retries_disabled_active_execution():
 
 
 def test_retries_deferred_active_execution():
-    pipeline_def = define_diamond_pipeline()
-    plan = create_execution_plan(pipeline_def)
+    job_def = define_diamond_job()
+    plan = create_execution_plan(job_def)
 
     with plan.start(retry_mode=(RetryMode.DEFERRED)) as active_execution:
 
@@ -293,31 +288,31 @@ def test_retries_deferred_active_execution():
 
 
 def test_priorities():
-    @solid(tags={"priority": 5})
+    @op(tags={"priority": 5})
     def pri_5(_):
         pass
 
-    @solid(tags={"priority": 4})
+    @op(tags={"priority": 4})
     def pri_4(_):
         pass
 
-    @solid(tags={"priority": 3})
+    @op(tags={"priority": 3})
     def pri_3(_):
         pass
 
-    @solid(tags={"priority": 2})
+    @op(tags={"priority": 2})
     def pri_2(_):
         pass
 
-    @solid(tags={"priority": -1})
+    @op(tags={"priority": -1})
     def pri_neg_1(_):
         pass
 
-    @solid
+    @op
     def pri_none(_):
         pass
 
-    @pipeline
+    @job
     def priorities():
         pri_neg_1()
         pri_3()
@@ -342,23 +337,22 @@ def test_priorities():
 
 def test_executor_not_created_for_execute_plan():
     instance = DagsterInstance.ephemeral()
-    pipe = define_diamond_pipeline()
+    pipe = define_diamond_job()
     plan = create_execution_plan(pipe)
-    pipeline_run = instance.create_run_for_pipeline(pipe, plan)
+    job_def = instance.create_run_for_pipeline(pipe, plan)
 
     results = execute_plan(
         plan,
         InMemoryPipeline(pipe),
         instance,
-        pipeline_run,
-        run_config={"execution": {"multiprocess": {}}},
+        job_def,
     )
     for result in results:
         assert not result.is_failure
 
 
 def test_incomplete_execution_plan():
-    plan = create_execution_plan(define_diamond_pipeline())
+    plan = create_execution_plan(define_diamond_job())
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -375,7 +369,7 @@ def test_incomplete_execution_plan():
 
 
 def test_lost_steps():
-    plan = create_execution_plan(define_diamond_pipeline())
+    plan = create_execution_plan(define_diamond_job())
 
     # run to completion - but step was in unknown state so exception thrown
     with pytest.raises(DagsterUnknownStepStateError):
@@ -398,21 +392,21 @@ def test_lost_steps():
 
 
 def test_fan_out_should_skip_step():
-    @solid(
-        output_defs=[
-            OutputDefinition(Int, "out_1", is_required=False),
-            OutputDefinition(Int, "out_2", is_required=False),
-            OutputDefinition(Int, "out_3", is_required=False),
-        ]
+    @op(
+        out={
+            "out_1": Out(Int, is_required=False),
+            "out_2": Out(Int, is_required=False),
+            "out_3": Out(Int, is_required=False),
+        }
     )
     def foo(_):
         yield Output(1, "out_1")
 
-    @solid
+    @op
     def bar(_, input_arg):
         return input_arg
 
-    @pipeline
+    @job
     def optional_outputs():
         foo_res = foo()
         # pylint: disable=no-member
@@ -421,144 +415,144 @@ def test_fan_out_should_skip_step():
         bar.alias("bar_3")(input_arg=foo_res.out_3)
 
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(pipeline_name="optional_outputs", run_id=make_new_run_id())
+    run = DagsterRun(pipeline_name="optional_outputs", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(optional_outputs, step_keys_to_execute=["foo"]),
         InMemoryPipeline(optional_outputs),
         instance,
-        pipeline_run,
+        run,
     )
 
     assert not should_skip_step(
         create_execution_plan(optional_outputs, step_keys_to_execute=["bar_1"]),
         instance,
-        pipeline_run.run_id,
+        run.run_id,
     )
     assert should_skip_step(
         create_execution_plan(optional_outputs, step_keys_to_execute=["bar_2"]),
         instance,
-        pipeline_run.run_id,
+        run.run_id,
     )
     assert should_skip_step(
         create_execution_plan(optional_outputs, step_keys_to_execute=["bar_3"]),
         instance,
-        pipeline_run.run_id,
+        run.run_id,
     )
 
 
 def test_fan_in_should_skip_step():
-    @lambda_solid
+    @op
     def one():
         return 1
 
-    @solid(output_defs=[OutputDefinition(is_required=False)])
+    @op(out=Out(is_required=False))
     def skip(_):
         return
         yield  # pylint: disable=unreachable
 
-    @solid
+    @op
     def fan_in(_context, items):
         return items
 
-    @composite_solid(output_defs=[OutputDefinition(is_required=False)])
-    def composite_all_upstream_skip():
+    @graph(output_defs=[OutputDefinition(is_required=False)])
+    def graph_all_upstream_skip():
         return fan_in([skip(), skip()])
 
-    @composite_solid(output_defs=[OutputDefinition(is_required=False)])
-    def composite_one_upstream_skip():
+    @graph(output_defs=[OutputDefinition(is_required=False)])
+    def graph_one_upstream_skip():
         return fan_in([one(), skip()])
 
-    @pipeline
+    @job
     def optional_outputs_composite():
-        composite_all_upstream_skip()
-        composite_one_upstream_skip()
+        graph_all_upstream_skip()
+        graph_one_upstream_skip()
 
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(pipeline_name="optional_outputs_composite", run_id=make_new_run_id())
+    run = DagsterRun(pipeline_name="optional_outputs_composite", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(
             optional_outputs_composite,
             step_keys_to_execute=[
-                "composite_all_upstream_skip.skip",
-                "composite_all_upstream_skip.skip_2",
+                "graph_all_upstream_skip.skip",
+                "graph_all_upstream_skip.skip_2",
             ],
         ),
         InMemoryPipeline(optional_outputs_composite),
         instance,
-        pipeline_run,
+        run,
     )
     # skip when all the step's sources weren't yield
     assert should_skip_step(
         create_execution_plan(
             optional_outputs_composite,
-            step_keys_to_execute=["composite_all_upstream_skip.fan_in"],
+            step_keys_to_execute=["graph_all_upstream_skip.fan_in"],
         ),
         instance,
-        pipeline_run.run_id,
+        run.run_id,
     )
 
     execute_plan(
         create_execution_plan(
             optional_outputs_composite,
             step_keys_to_execute=[
-                "composite_one_upstream_skip.one",
-                "composite_one_upstream_skip.skip",
+                "graph_one_upstream_skip.one",
+                "graph_one_upstream_skip.skip",
             ],
         ),
         InMemoryPipeline(optional_outputs_composite),
         instance,
-        pipeline_run,
+        run,
     )
     # do not skip when some of the sources exist
     assert not should_skip_step(
         create_execution_plan(
             optional_outputs_composite,
-            step_keys_to_execute=["composite_one_upstream_skip.fan_in"],
+            step_keys_to_execute=["graph_one_upstream_skip.fan_in"],
         ),
         instance,
-        pipeline_run.run_id,
+        run.run_id,
     )
 
 
 def test_configured_input_should_skip_step():
     called = {}
 
-    @solid(output_defs=[OutputDefinition(is_required=False)])
+    @op(out=Out(is_required=False))
     def one(_):
         yield Output(1)
 
-    @solid
-    def solid_should_not_skip(_, input_one, input_two):  # pylint: disable=unused-argument
+    @op
+    def op_should_not_skip(_, input_one, input_two):  # pylint: disable=unused-argument
         called["yup"] = True
 
-    @pipeline
-    def my_pipeline():
-        solid_should_not_skip(one())
+    @job
+    def my_job():
+        op_should_not_skip(one())
 
-    run_config = {"solids": {"solid_should_not_skip": {"inputs": {"input_two": {"value": "2"}}}}}
-    execute_pipeline(my_pipeline, run_config=run_config)
+    run_config = {"ops": {"op_should_not_skip": {"inputs": {"input_two": {"value": "2"}}}}}
+    my_job.execute_in_process(run_config=run_config)
     assert called.get("yup")
 
     # ensure should_skip_step behave the same as execute_pipeline
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(pipeline_name="my_pipeline", run_id=make_new_run_id())
+    run = DagsterRun(pipeline_name="my_job", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(
-            my_pipeline,
+            my_job,
             step_keys_to_execute=["one"],
             run_config=run_config,
         ),
-        InMemoryPipeline(my_pipeline),
+        InMemoryPipeline(my_job),
         instance,
-        pipeline_run,
+        run,
         run_config=run_config,
     )
     assert not should_skip_step(
         create_execution_plan(
-            my_pipeline,
-            step_keys_to_execute=["solid_should_not_skip"],
+            my_job,
+            step_keys_to_execute=["op_should_not_skip"],
             run_config=run_config,
         ),
         instance,
-        pipeline_run.run_id,
+        run.run_id,
     )

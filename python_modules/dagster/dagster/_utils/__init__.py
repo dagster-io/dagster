@@ -45,7 +45,7 @@ from typing_extensions import Literal
 import dagster._check as check
 import dagster._seven as seven
 
-from .merger import merge_dicts
+from .merger import deep_merge_dicts, merge_dicts
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
 if sys.version_info > (3,):
@@ -56,8 +56,10 @@ else:
 if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent
 
+K = TypeVar("K")
 T = TypeVar("T")
 U = TypeVar("U")
+V = TypeVar("V")
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)
 
@@ -78,9 +80,7 @@ def library_version_from_core_version(core_version: str) -> str:
 
 def parse_package_version(version_str: str) -> packaging.version.Version:
     parsed_version = packaging.version.parse(version_str)
-    assert isinstance(
-        parsed_version, packaging.version.Version
-    ), f"Found LegacyVersion: {version_str}"
+    assert isinstance(parsed_version, packaging.version.Version)
     return parsed_version
 
 
@@ -96,12 +96,6 @@ def convert_dagster_submodule_name(name: str, mode: Literal["private", "public"]
         return re.sub(r"^dagster._", "dagster.", name)
     else:
         check.failed("`mode` must be 'private' or 'public'")
-
-
-def make_email_on_run_failure_sensor(*args, **kwargs):
-    from .alert import make_email_on_run_failure_sensor  # pylint: disable=redefined-outer-name
-
-    return make_email_on_run_failure_sensor(*args, **kwargs)
 
 
 def file_relative_path(dunderfile: str, relative_path: str) -> str:
@@ -455,7 +449,7 @@ def start_termination_thread(termination_event):
 # Executes the next() function within an instance of the supplied context manager class
 # (leaving the context before yielding each result)
 def iterate_with_context(
-    context_fn: Callable[[], ContextManager], iterator: Iterator[T]
+    context_fn: Callable[[], ContextManager[Any]], iterator: Iterator[T]
 ) -> Iterator[T]:
     while True:
         # Allow interrupts during user code so that we can terminate slow/hanging steps

@@ -14,7 +14,7 @@ from dagster._core.errors import (
 )
 from dagster._core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, PipelineRun, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
@@ -122,7 +122,7 @@ class RunStatusSensorContext(
         )
 
     @property
-    def pipeline_run(self) -> PipelineRun:
+    def pipeline_run(self) -> DagsterRun:
         warnings.warn(
             "`RunStatusSensorContext.pipeline_run` is deprecated as of 0.13.0; use "
             "`RunStatusSensorContext.dagster_run` instead."
