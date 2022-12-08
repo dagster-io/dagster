@@ -638,6 +638,10 @@
           {
             "title": "Snowflake+ Dagster tutorial",
             "path": "/integrations/snowflake/using-snowflake-with-dagster"
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/snowflake/reference"
           }
         ]
       },
