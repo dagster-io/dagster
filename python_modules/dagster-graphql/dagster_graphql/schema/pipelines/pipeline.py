@@ -8,7 +8,7 @@ import dagster._check as check
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster._core.host_representation.external_data import ExternalPresetData
-from dagster._core.storage.pipeline_run import PipelineRunStatus, RunRecord, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunRecord, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
 from dagster._utils import datetime_as_float
 from dagster._utils.yaml_utils import dump_run_config_yaml
@@ -52,16 +52,16 @@ from .pipeline_run_stats import GrapheneRunStatsSnapshotOrError
 from .status import GrapheneRunStatus
 
 STARTED_STATUSES = {
-    PipelineRunStatus.STARTED,
-    PipelineRunStatus.SUCCESS,
-    PipelineRunStatus.FAILURE,
-    PipelineRunStatus.CANCELED,
+    DagsterRunStatus.STARTED,
+    DagsterRunStatus.SUCCESS,
+    DagsterRunStatus.FAILURE,
+    DagsterRunStatus.CANCELED,
 }
 
 COMPLETED_STATUSES = {
-    PipelineRunStatus.FAILURE,
-    PipelineRunStatus.SUCCESS,
-    PipelineRunStatus.CANCELED,
+    DagsterRunStatus.FAILURE,
+    DagsterRunStatus.SUCCESS,
+    DagsterRunStatus.CANCELED,
 }
 
 
@@ -415,8 +415,8 @@ class GrapheneRun(graphene.ObjectType):
         if self._pipeline_run.is_finished:
             return False
         return (
-            self._pipeline_run.status == PipelineRunStatus.QUEUED
-            or self._pipeline_run.status == PipelineRunStatus.STARTED
+            self._pipeline_run.status == DagsterRunStatus.QUEUED
+            or self._pipeline_run.status == DagsterRunStatus.STARTED
         )
 
     def resolve_assets(self, graphene_info):

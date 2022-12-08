@@ -9,7 +9,7 @@ import {LiveDataForNode, MISSING_LIVE_DATA} from './Utils';
 
 export const AssetLatestRunSpinner: React.FC<{
   liveData?: LiveDataForNode;
-  purpose?: 'caption-text' | 'body-text';
+  purpose?: 'caption-text' | 'body-text' | 'section';
 }> = ({liveData, purpose = 'body-text'}) => {
   if (liveData?.inProgressRunIds?.length) {
     return (
@@ -104,12 +104,10 @@ export const AssetLatestRunWithNotices: React.FC<{
 export const AssetRunLink: React.FC<{
   runId: string;
   event?: Parameters<typeof linkToRunEvent>[1];
-  color?: string;
-}> = ({runId, children, event, color}) => (
+}> = ({runId, children, event}) => (
   <Caption>
     <Link
       to={event ? linkToRunEvent({runId}, event) : `/runs/${runId}`}
-      style={{color}}
       target="_blank"
       rel="noreferrer"
     >

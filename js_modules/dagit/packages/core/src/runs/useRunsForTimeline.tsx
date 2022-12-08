@@ -5,7 +5,7 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
 import {InstigationStatus, RunsFilter, RunStatus} from '../types/globalTypes';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
@@ -182,7 +182,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
 };
 
 export const makeJobKey = (repoAddress: RepoAddress, jobName: string) =>
-  `${jobName}-${repoAddressAsString(repoAddress)}`;
+  `${jobName}-${repoAddressAsHumanString(repoAddress)}`;
 
 const RUN_TIMELINE_QUERY = gql`
   query RunTimelineQuery(

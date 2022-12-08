@@ -34,4 +34,9 @@ setup(
     packages=find_packages(exclude=["dagster_fivetran_tests*"]),
     install_requires=[f"dagster{pin}"],
     zip_safe=False,
+    entry_points={
+        "console_scripts": [
+            "dagster-fivetran = dagster_fivetran.cli:main",
+        ]
+    },
 )

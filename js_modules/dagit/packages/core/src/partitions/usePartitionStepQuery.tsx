@@ -5,7 +5,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {DagsterTag} from '../runs/RunTag';
 import {RunFilterToken} from '../runs/RunsFilterInput';
-import {RunStatus} from '../types/globalTypes';
+import {RepositorySelector, RunStatus} from '../types/globalTypes';
 
 import {PartitionMatrixStepRunFragment} from './types/PartitionMatrixStepRunFragment';
 import {
@@ -29,33 +29,48 @@ const InitialDataState: DataState = {
   loadingCursorIdx: 0,
 };
 
+type PartitionStepQueryOptions = {
+  partitionSetName: string;
+  partitionTagName: string;
+  partitionNames: string[];
+  pageSize: number;
+  runsFilter: RunFilterToken[];
+  repositorySelector: RepositorySelector;
+  jobName?: string;
+  offset?: number;
+  skipQuery?: boolean;
+};
+
 /**
  * This React hook mirrors `useCursorPaginatedQuery` but collects each page of partitions
  * in slices that are smaller than pageSize and cause the results to load incrementally.
  */
-export function usePartitionStepQuery(
-  partitionSetName: string,
-  partitionNames: string[],
-  pageSize: number,
-  runsFilter: RunFilterToken[],
-  jobName?: string,
-  offset?: number,
-  skipQuery?: boolean,
-) {
+export function usePartitionStepQuery({
+  partitionSetName,
+  partitionTagName,
+  partitionNames,
+  pageSize,
+  runsFilter,
+  jobName,
+  repositorySelector,
+  offset,
+  skipQuery,
+}: PartitionStepQueryOptions) {
   const client = useApolloClient();
 
   const version = React.useRef(0);
   const [dataState, setDataState] = React.useState<DataState>(InitialDataState);
-  const _serializedRunTags = React.useMemo(
-    () =>
-      JSON.stringify(
-        runsFilter.map((token) => {
-          const [key, value] = token.value.split('=');
-          return {key, value};
-        }),
-      ),
-    [runsFilter],
-  );
+
+  const _serializedRunTags = JSON.stringify([
+    ...runsFilter.map((token) => {
+      const [key, value] = token.value.split('=');
+      return {key, value};
+    }),
+    {
+      key: DagsterTag.RepositoryLabelTag,
+      value: `${repositorySelector.repositoryName}@${repositorySelector.repositoryLocationName}`,
+    },
+  ]);
 
   React.useEffect(() => {
     // Note: there are several async steps to the loading process - to cancel the previous
@@ -85,7 +100,7 @@ export function usePartitionStepQuery(
         const fetched = await Promise.all(
           sliceNames.map((partitionName) => {
             const partitionSetTag = {key: DagsterTag.PartitionSet, value: partitionSetName};
-            const partitionTag = {key: DagsterTag.Partition, value: partitionName};
+            const partitionTag = {key: partitionTagName, value: partitionName};
             // for jobs, filter by pipelineName/jobName instead of by partition set tag.  This
             // preserves partition run history across the pipeline => job transition
             const runTagsFilter = jobName
@@ -146,7 +161,7 @@ export function usePartitionStepQuery(
         // Filter detected changes to just runs in our visible range of partitions, and then update
         // local state if changes have been found.
         const relevant = [...pending, ...recent].filter((run) =>
-          run.tags.find((t) => t.key === DagsterTag.Partition && partitionNames.includes(t.value)),
+          run.tags.find((t) => t.key === partitionTagName && partitionNames.includes(t.value)),
         );
         setDataState((state) => {
           const updated = state.runs
@@ -168,6 +183,7 @@ export function usePartitionStepQuery(
     pageSize,
     client,
     partitionSetName,
+    partitionTagName,
     _serializedRunTags,
     jobName,
     offset,
@@ -175,7 +191,7 @@ export function usePartitionStepQuery(
     skipQuery,
   ]);
 
-  return assemblePartitions(dataState);
+  return assemblePartitions(dataState, partitionTagName);
 }
 
 async function fetchRunsForFilter(
@@ -194,7 +210,7 @@ async function fetchRunsForFilter(
   );
 }
 
-function assemblePartitions(data: DataState) {
+function assemblePartitions(data: DataState, partitionTagName: string) {
   // Note: Partitions don't have any unique keys beside their names, so we use names
   // extensively in our display layer as React keys. To create unique empty partitions
   // we use different numbers of zero-width space characters
@@ -211,7 +227,7 @@ function assemblePartitions(data: DataState) {
   });
 
   data.runs.forEach((r) => {
-    const partitionName = r.tags.find((t) => t.key === DagsterTag.Partition)?.value || '';
+    const partitionName = r.tags.find((t) => t.key === partitionTagName)?.value || '';
     byName[partitionName]?.runs.push(r);
   });
 

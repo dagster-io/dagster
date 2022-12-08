@@ -16,7 +16,7 @@ def test_failure():
 
     result = execute_pipeline(failure, raise_on_error=False)
     assert not result.success
-    failure_data = result.result_for_solid("throw").failure_data
+    failure_data = result.result_for_node("throw").failure_data
     assert failure_data
     assert failure_data.error.cls_name == "Failure"
 

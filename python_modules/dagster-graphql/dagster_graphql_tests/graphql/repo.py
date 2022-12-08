@@ -84,7 +84,7 @@ from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster._core.log_manager import coerce_valid_log_level
 from dagster._core.storage.fs_io_manager import fs_io_manager
-from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.test_utils import default_mode_def_for_test, today_at_midnight
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -95,12 +95,11 @@ from dagster._legacy import (
     InputDefinition,
     Materialization,
     ModeDefinition,
+    OpExecutionContext,
     OutputDefinition,
     PartitionSetDefinition,
     PresetDefinition,
-    SolidExecutionContext,
     build_assets_job,
-    composite_solid,
     daily_schedule,
     hourly_schedule,
     lambda_solid,
@@ -696,15 +695,15 @@ def composites_pipeline():
     def div_two(num):
         return num / 2
 
-    @composite_solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @graph(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
     def add_two(num):
         return add_one.alias("adder_2")(add_one.alias("adder_1")(num))
 
-    @composite_solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @graph(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
     def add_four(num):
         return add_two.alias("adder_2")(add_two.alias("adder_1")(num))
 
-    @composite_solid
+    @graph
     def div_four(num):
         return div_two.alias("div_2")(div_two.alias("div_1")(num))
 
@@ -804,7 +803,7 @@ def eventually_successful():
     @solid(
         required_resource_keys={"retry_count"},
     )
-    def fail(context: SolidExecutionContext, depth: int) -> int:
+    def fail(context: OpExecutionContext, depth: int) -> int:
         if context.resources.retry_count <= depth:
             raise Exception("fail")
 
@@ -1068,7 +1067,7 @@ def last_empty_partition(context, partition_set_def):
     for partition in reversed(partitions):
         filters = RunsFilter.for_partition(partition_set_def, partition)
         matching = context.instance.get_runs(filters)
-        if not any(run.status == PipelineRunStatus.SUCCESS for run in matching):
+        if not any(run.status == DagsterRunStatus.SUCCESS for run in matching):
             selected = partition
             break
     return selected

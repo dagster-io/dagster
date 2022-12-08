@@ -2,6 +2,8 @@ import {Box, Colors, Icon, IconWrapper} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
+
 export const SECTION_HEADER_HEIGHT = 32;
 
 interface Props {
@@ -15,6 +17,7 @@ interface Props {
 
 export const RepoSectionHeader = (props: Props) => {
   const {expanded, onClick, repoName, repoLocation, showLocation, rightElement} = props;
+  const isDunderRepoName = repoName === DUNDER_REPO_NAME;
   return (
     <SectionHeaderButton $open={expanded} onClick={onClick}>
       <Box
@@ -24,8 +27,10 @@ export const RepoSectionHeader = (props: Props) => {
         <Box flex={{alignItems: 'center', gap: 8}}>
           <Icon name="folder" color={Colors.Dark} />
           <div>
-            <RepoName>{repoName}</RepoName>
-            {showLocation ? <RepoLocation>{`@${repoLocation}`}</RepoLocation> : null}
+            <RepoName>{isDunderRepoName ? repoLocation : repoName}</RepoName>
+            {showLocation && !isDunderRepoName ? (
+              <RepoLocation>{`@${repoLocation}`}</RepoLocation>
+            ) : null}
           </div>
         </Box>
         <Box flex={{alignItems: 'center', gap: 8}}>

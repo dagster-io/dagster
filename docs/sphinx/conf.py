@@ -32,6 +32,7 @@ paths = [
     "../../python_modules/libraries/dagster-fivetran",
     "../../python_modules/libraries/dagster-github",
     "../../python_modules/libraries/dagster-k8s",
+    "../../python_modules/libraries/dagster-managed-elements",
     "../../python_modules/libraries/dagster-mlflow",
     "../../python_modules/libraries/dagster-msteams",
     "../../python_modules/libraries/dagster-mysql",
@@ -57,10 +58,8 @@ paths = [
     "../../python_modules/libraries/dagster-duckdb",
     "../../python_modules/libraries/dagster-duckdb-pandas",
     "../../python_modules/libraries/dagster-duckdb-pyspark",
-
     ### autodoc_dagster extension
     "./_ext",
-
 ]
 
 for path in paths:
@@ -68,9 +67,9 @@ for path in paths:
 
 # -- Project information -----------------------------------------------------
 
-project = 'Dagster'
-copyright = '2019, Elementl, Inc'  # pylint: disable=redefined-builtin
-author = 'The Dagster Team'
+project = "Dagster"
+copyright = "2019, Elementl, Inc"  # pylint: disable=redefined-builtin
+author = "The Dagster Team"
 
 # The short X.Y version
 version = ""
@@ -85,23 +84,17 @@ release = ""
 extensions = [
     # Automatically generate docs from docstrings.
     "sphinx.ext.autodoc",
-
     # Allows direct references to doc sections by title
     "sphinx.ext.autosectionlabel",
-
     # Supplements autodoc with the ability to parse numpy and google-style docstrings (dagster
     # uses google style).
     "sphinx.ext.napoleon",
-
     # Adds links to source code for autodoc objects
     "sphinx.ext.viewcode",
-
     # Directives for automatically documenting CLIs built with the `click` package.
     "sphinx_click.ext",
-
     # Elementl-authored extension with custom directives and sphinx processing.
     "autodoc_dagster",
-
     # Renders a collapsible HTML component. Used by autodoc_dagster.
     "sphinx_toolbox.collapse",
 ]
@@ -119,9 +112,7 @@ extensions = [
 # directive invocation. Note that filtration by publicity (done in the `autodoc_dagster` extension)
 # is performed on the member list controlled by this option-- without `members` set, even a method
 # marked `@public` will _not_ be included in the docs!
-autodoc_default_options = {
-    "members": True
-}
+autodoc_default_options = {"members": True}
 
 # List of all packages that should be mocked when autodoc is running. Autodoc is going to import
 # dagster packages, which in turn import various third-party packages. The vast majority of those

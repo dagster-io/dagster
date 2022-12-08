@@ -39,7 +39,7 @@ from dagster._core.host_representation.external_data import (
     ExternalSensorExecutionErrorData,
 )
 from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
-from dagster._core.host_representation.handle import PipelineHandle, RepositoryHandle
+from dagster._core.host_representation.handle import JobHandle, RepositoryHandle
 from dagster._core.host_representation.origin import (
     GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
@@ -57,7 +57,7 @@ from dagster._grpc.impl import (
     get_partition_set_execution_param_data,
     get_partition_tags,
 )
-from dagster._grpc.types import GetCurrentImageResult
+from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
 from dagster._serdes import deserialize_as
 from dagster._seven.compat.pendulum import PendulumDateTime
 from dagster._utils import merge_dicts
@@ -669,6 +669,9 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             GetCurrentImageResult,
         ).current_image
 
+    def get_current_runs(self) -> Sequence[str]:
+        return deserialize_as(self.client.get_current_runs(), GetCurrentRunsResult).current_runs
+
     def cleanup(self) -> None:
         if self._heartbeat_shutdown_event:
             self._heartbeat_shutdown_event.set()
@@ -741,10 +744,10 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         )
 
         external_repository = self.get_repository(selector.repository_name)
-        pipeline_handle = PipelineHandle(selector.pipeline_name, external_repository.handle)
+        job_handle = JobHandle(selector.pipeline_name, external_repository.handle)
         return sync_get_external_pipeline_subset_grpc(
             self.client,
-            pipeline_handle.get_external_origin(),
+            job_handle.get_external_origin(),
             selector.solid_selection,
             selector.asset_selection,
         )
