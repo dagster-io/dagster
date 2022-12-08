@@ -14,14 +14,7 @@ This reference provides a high-level look at working with Airflow using the [`ai
 To load all Airflow DAGS in a file path into a [Dagster Repository](/concepts/repositories-workspaces/repositories), use <PyObject module="dagster_airflow" object="make_dagster_repo_from_airflow_dags_path" />:
 
 ```python file=/integrations/airflow/migrate_repo
-import os
-
-from dagster_airflow import make_dagster_repo_from_airflow_dags_path
-
-migrated_airflow_repo = make_dagster_repo_from_airflow_dags_path(
-    os.path.join(os.getenv("AIRFLOW_HOME"), "dags"),
-    "migrated_airflow_repo",
-)
+ENOENT: no such file or directory, open '/Users/josephvandrunen/workspace/elementl/dagster/examples/docs_snippets/docs_snippets/integrations/airflow/migrate_repo'
 ```
 
 ## Dagster Job to Dag
@@ -29,6 +22,8 @@ migrated_airflow_repo = make_dagster_repo_from_airflow_dags_path(
 To convert a Dagster Job to a Airflow Dag[dagster repository](/concepts/repositories-workspaces/repositories), use <PyObject module="dagster_airflow" object="make_dagster_repo_from_airflow_dags_path" />:
 
 ```python file=/integrations/airflow/hello_cereal_dag.py
+# pylint: disable=unused-variable
+
 import datetime
 
 from dagster_airflow.factory import make_airflow_dag
@@ -47,7 +42,6 @@ dag, tasks = make_airflow_dag(
     job_name="hello_cereal_job",
     dag_kwargs={"default_args": DEFAULT_ARGS, "max_active_runs": 1},
 )
-
 ```
 
 ## Orchestrating Dagster jobs from Airflow

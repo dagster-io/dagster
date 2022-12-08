@@ -34,6 +34,6 @@ Run Dagster on Airflow
 Orchestrate Dagster from Airflow
 ================================
 
-.. autofunction:: DagsterCloudOperator
+.. autoclass:: DagsterCloudOperator
 
-.. autofunction:: DagsterOperator
+.. autoclass:: DagsterOperator
