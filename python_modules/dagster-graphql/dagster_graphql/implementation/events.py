@@ -12,6 +12,7 @@ from dagster import (
     MarkdownMetadataValue,
     MetadataEntry,
     NotebookMetadataValue,
+    NullMetadataValue,
     PathMetadataValue,
     PythonArtifactMetadataValue,
     TableMetadataValue,
@@ -38,6 +39,7 @@ def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Itera
         GrapheneIntMetadataEntry,
         GrapheneJsonMetadataEntry,
         GrapheneMarkdownMetadataEntry,
+        GrapheneNullMetadataEntry,
         GrapheneNotebookMetadataEntry,
         GraphenePathMetadataEntry,
         GraphenePipelineRunMetadataEntry,
@@ -126,6 +128,11 @@ def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Itera
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 boolValue=metadata_entry.entry_data.value,
+            )
+        elif isinstance(metadata_entry.entry_data, NullMetadataValue):
+            yield GrapheneNullMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
             )
         elif isinstance(metadata_entry.entry_data, DagsterPipelineRunMetadataValue):
             yield GraphenePipelineRunMetadataEntry(
