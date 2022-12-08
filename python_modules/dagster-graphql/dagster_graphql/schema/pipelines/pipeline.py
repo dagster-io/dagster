@@ -350,8 +350,12 @@ class GrapheneRun(graphene.ObjectType):
         return self._pipeline_run.pipeline_snapshot_id
 
     def resolve_parentPipelineSnapshotId(self, graphene_info):
-        if graphene_context.instance.has_pipeline_snapshot(self.pipelineSnapshotId):
-            snapshot = graphene_context.instance.get_pipeline_snapshot(self.pipelineSnapshotId)
+        pipeline_snapshot_id = self._pipeline_run.pipeline_snapshot_id
+        if (
+            pipeline_snapshot_id is not None
+            and graphene_info.context.instance.has_pipeline_snapshot(pipeline_snapshot_id)
+        ):
+            snapshot = graphene_info.context.instance.get_pipeline_snapshot(pipeline_snapshot_id)
             if snapshot.lineage_snapshot is not None:
                 return snapshot.lineage_snapshot.parent_snapshot_id
         return None
