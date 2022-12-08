@@ -1,6 +1,6 @@
 import enum
 from collections import defaultdict
-from typing import Dict, Optional, Sequence, Tuple
+from typing import Dict, Sequence, Tuple
 
 import dagster._check as check
 from dagster._core.errors import DagsterExecutionPlanSnapshotNotFoundError
@@ -39,7 +39,7 @@ class ReexecutionStrategy(enum.Enum):
 def get_retry_steps_from_parent_run(
     instance: DagsterInstance,
     parent_run: DagsterRun,
-) -> Tuple[Sequence[str], Optional[KnownExecutionState]]:
+) -> Tuple[Sequence[str], KnownExecutionState]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.opt_inst_param(parent_run, "parent_run", DagsterRun)
 

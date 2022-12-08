@@ -14,17 +14,12 @@ from dagster_k8s.client import (
     DagsterK8sPipelineStatusException,
     DagsterK8sTimeoutError,
     DagsterK8sUnrecoverableAPIError,
+    DagsterKubernetesClient,
 )
 from dagster_k8s.job import (
     UserDefinedDagsterK8sConfig,
     get_k8s_job_name,
     get_user_defined_k8s_config,
-)
-from dagster_k8s.utils import (
-    delete_job,
-    get_pod_names_in_job,
-    retrieve_pod_logs,
-    wait_for_job_success,
 )
 
 from dagster import DagsterEvent, DagsterEventType, DagsterInstance, Executor, MetadataEntry
@@ -37,7 +32,7 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.events.utils import filter_dagster_events_from_cli_logs
 from dagster._core.execution.plan.objects import StepFailureData, UserFailureData
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import pack_value, serialize_dagster_namedtuple, unpack_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -307,12 +302,13 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         else:
             kubernetes.config.load_kube_config(kubeconfig_file)
 
+        api_client = DagsterKubernetesClient.production_client()
         instance = DagsterInstance.from_ref(execute_step_args.instance_ref)
         pipeline_run = instance.get_run_by_id(execute_step_args.pipeline_run_id)
 
         check.inst(
             pipeline_run,
-            PipelineRun,
+            DagsterRun,
             "Could not load run {}".format(execute_step_args.pipeline_run_id),
         )
         step_key = execute_step_args.step_keys_to_execute[0]
@@ -332,7 +328,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             step_key=step_key,
         )
 
-        if pipeline_run.status != PipelineRunStatus.STARTED:
+        if pipeline_run.status != DagsterRunStatus.STARTED:
             instance.report_engine_event(
                 "Not scheduling step because dagster run status is not STARTED",
                 pipeline_run,
@@ -403,7 +399,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         )
         events.append(engine_event)
         try:
-            kubernetes.client.BatchV1Api().create_namespaced_job(body=job, namespace=job_namespace)
+            api_client.batch_api.create_namespaced_job(body=job, namespace=job_namespace)
         except kubernetes.client.rest.ApiException as e:
             if e.reason == "Conflict":
                 # There is an existing job with the same name so proceed and see if the existing job succeeded
@@ -438,7 +434,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 return []
 
         try:
-            wait_for_job_success(
+            api_client.wait_for_job_success(
                 job_name=job_name,
                 namespace=job_namespace,
                 instance=instance,
@@ -464,7 +460,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 CeleryK8sJobExecutor,
                 step_key=step_key,
             )
-            delete_job(job_name=job_name, namespace=job_namespace)
+            api_client.delete_job(job_name=job_name, namespace=job_namespace)
             return []
         except (
             DagsterK8sUnrecoverableAPIError,
@@ -490,7 +486,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             return []
 
         try:
-            pod_names = get_pod_names_in_job(job_name, namespace=job_namespace)
+            pod_names = api_client.get_pod_names_in_job(job_name, namespace=job_namespace)
         except kubernetes.client.rest.ApiException:
             instance.report_engine_event(
                 "Encountered unexpected error retreiving Pods for Kubernetes job {} for step {}, "
@@ -520,7 +516,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         logs = []
         for pod_name in pod_names:
             try:
-                raw_logs = retrieve_pod_logs(pod_name, namespace=job_namespace)
+                raw_logs = api_client.retrieve_pod_logs(pod_name, namespace=job_namespace)
                 logs += raw_logs.split("\n")
             except kubernetes.client.rest.ApiException:
                 instance.report_engine_event(

@@ -244,6 +244,7 @@ export interface PipelineSelector {
   repositoryName: string;
   repositoryLocationName: string;
   solidSelection?: string[] | null;
+  assetSelection?: AssetKeyInput[] | null;
 }
 
 export interface ReexecutionParams {

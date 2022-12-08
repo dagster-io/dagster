@@ -2282,6 +2282,7 @@ input PipelineSelector {
   repositoryName: String!
   repositoryLocationName: String!
   solidSelection: [String!]
+  assetSelection: [AssetKeyInput!]
 }
 
 """
@@ -3045,6 +3046,11 @@ type DagitQuery {
   workspaceOrError: WorkspaceOrError!
 
   """
+  Retrieve location status for workspace locations
+  """
+  locationStatusesOrError: WorkspaceLocationStatusEntriesOrError!
+
+  """
   Retrieve a job by its location name, repository name, and job name.
   """
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
@@ -3239,9 +3245,27 @@ type DagitQuery {
   Retrieve the captured log metadata for a given log key.
   """
   capturedLogsMetadata(logKey: [String!]!): CapturedLogsMetadata!
+
+  """
+  Captured logs are the stdout/stderr logs for a given log key
+  """
+  capturedLogs(logKey: [String!]!, cursor: String, limit: Int): CapturedLogs!
 }
 
 union WorkspaceOrError = Workspace | PythonError
+
+union WorkspaceLocationStatusEntriesOrError = WorkspaceLocationStatusEntries | PythonError
+
+type WorkspaceLocationStatusEntries {
+  entries: [WorkspaceLocationStatusEntry!]!
+}
+
+type WorkspaceLocationStatusEntry {
+  id: ID!
+  name: String!
+  loadStatus: RepositoryLocationLoadStatus!
+  updateTimestamp: Float!
+}
 
 union GraphOrError = Graph | GraphNotFoundError | PythonError
 

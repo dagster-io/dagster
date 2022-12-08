@@ -8,7 +8,6 @@ from dagster._annotations import public
 if TYPE_CHECKING:
     from .op_definition import OpDefinition
     from .resource_definition import ResourceDefinition
-    from .solid_definition import SolidDefinition
 
 
 class OpVersionContext(NamedTuple):
@@ -22,15 +21,12 @@ class OpVersionContext(NamedTuple):
     op_config: Any
 
     @property
-    def solid_def(self) -> "SolidDefinition":
+    def solid_def(self) -> "OpDefinition":
         return self.op_def
 
     @property
     def solid_config(self) -> Any:
         return self.op_config
-
-
-SolidVersionContext = OpVersionContext
 
 
 class ResourceVersionContext(NamedTuple):

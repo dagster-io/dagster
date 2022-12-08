@@ -16,7 +16,7 @@ from dagster._core.launcher.base import (
     RunLauncher,
     WorkerStatus,
 )
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._grpc.types import ExecuteRunArgs
 from dagster._serdes import ConfigurableClass
 
@@ -357,7 +357,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self.report_launch_events(run, arn, cluster_arn)
 
     def report_launch_events(
-        self, run: PipelineRun, arn: Optional[str] = None, cluster: Optional[str] = None
+        self, run: DagsterRun, arn: Optional[str] = None, cluster: Optional[str] = None
     ):
         # Extracted method to allow for subclasses to customize the launch reporting behavior
 
@@ -375,7 +375,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             cls=self.__class__,
         )
 
-    def get_cpu_and_memory_overrides(self, run: PipelineRun) -> Mapping[str, str]:
+    def get_cpu_and_memory_overrides(self, run: DagsterRun) -> Mapping[str, str]:
         overrides = {}
 
         cpu = run.tags.get("ecs/cpu")
@@ -387,7 +387,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             overrides["memory"] = memory
         return overrides
 
-    def _get_task_overrides(self, run: PipelineRun) -> Mapping[str, Any]:
+    def _get_task_overrides(self, run: DagsterRun) -> Mapping[str, Any]:
         overrides = run.tags.get("ecs/task_overrides")
         if overrides:
             return json.loads(overrides)
@@ -548,7 +548,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
     def supports_check_run_worker_health(self):
         return True
 
-    def check_run_worker_health(self, run: PipelineRun):
+    def check_run_worker_health(self, run: DagsterRun):
 
         tags = self._get_run_tags(run.run_id)
 

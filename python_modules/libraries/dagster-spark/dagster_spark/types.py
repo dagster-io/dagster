@@ -7,9 +7,5 @@ SparkDeployMode = Enum(
 )
 
 
-class SparkSolidError(Exception):
-    pass
-
-
-class SparkOpError(SparkSolidError):
+class SparkOpError(Exception):
     pass

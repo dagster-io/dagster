@@ -266,6 +266,19 @@ def test_my_directory_sensor_cursor():
         assert validate_run_config(log_file_job, run_request.run_config)
 ```
 
+## Logging in sensors <Experimental />
+
+Any sensor can emit log messages during its evaluation function:
+
+```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_logging endbefore=end_sensor_logging
+@sensor(job=the_job)
+def logs_then_skips(context):
+    context.log.info("Logging from a sensor!")
+    return SkipReason("Nothing to do")
+```
+
+These logs can be viewed in Dagit on the corresponding sensor page, after first enabling the "Experimental schedule/sensor logging view" option in "User Settings".
+
 ## Monitoring sensors in Dagit
 
 <!--

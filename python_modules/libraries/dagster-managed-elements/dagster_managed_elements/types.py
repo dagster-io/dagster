@@ -12,6 +12,7 @@ class ManagedElementError(enum.Enum):
 
 
 SANITIZE_KEY_KEYWORDS = ["password", "token", "secret", "ssh_key"]
+SANITIZE_KEY_EXACT_MATCHES = ["pat"]
 
 SECRET_MASK_VALUE = "**********"
 
@@ -20,7 +21,9 @@ def is_key_secret(key: str):
     """
     Rudamentary check to see if a config key is a secret value.
     """
-    return any(keyword in key for keyword in SANITIZE_KEY_KEYWORDS)
+    return any(keyword in key for keyword in SANITIZE_KEY_KEYWORDS) or any(
+        match == key for match in SANITIZE_KEY_EXACT_MATCHES
+    )
 
 
 def _sanitize(key: str, value: str):

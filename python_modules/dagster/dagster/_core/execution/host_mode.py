@@ -21,7 +21,7 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._loggers import default_system_loggers
 from dagster._utils import ensure_single_item
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -78,7 +78,7 @@ def host_mode_execution_context_event_generator(
     check.inst_param(pipeline, "pipeline", ReconstructablePipeline)
 
     check.dict_param(run_config, "run_config", key_type=str)
-    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
     executor_defs = check.list_param(executor_defs, "executor_defs", of_type=ExecutorDefinition)
     check.bool_param(raise_on_error, "raise_on_error")
@@ -156,18 +156,18 @@ def host_mode_execution_context_event_generator(
 
 def execute_run_host_mode(
     pipeline: ReconstructablePipeline,
-    pipeline_run: PipelineRun,
+    pipeline_run: DagsterRun,
     instance: DagsterInstance,
     executor_defs: Optional[Sequence[ExecutorDefinition]] = None,
     raise_on_error: bool = False,
 ):
     check.inst_param(pipeline, "pipeline", ReconstructablePipeline)
-    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
     check.opt_sequence_param(executor_defs, "executor_defs", of_type=ExecutorDefinition)
     executor_defs = executor_defs if executor_defs != None else default_executors
 
-    if pipeline_run.status == PipelineRunStatus.CANCELED:
+    if pipeline_run.status == DagsterRunStatus.CANCELED:
         message = "Not starting execution since the run was canceled before execution could start"
         instance.report_engine_event(
             message,
@@ -176,8 +176,8 @@ def execute_run_host_mode(
         raise DagsterInvariantViolationError(message)
 
     check.invariant(
-        pipeline_run.status == PipelineRunStatus.NOT_STARTED
-        or pipeline_run.status == PipelineRunStatus.STARTING,
+        pipeline_run.status == DagsterRunStatus.NOT_STARTED
+        or pipeline_run.status == DagsterRunStatus.STARTING,
         desc="Pipeline run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
             pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
         ),

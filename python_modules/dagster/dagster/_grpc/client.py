@@ -454,6 +454,10 @@ class DagsterGrpcClient:
         res = self._query("GetCurrentImage", api_pb2.Empty)
         return res.serialized_current_image
 
+    def get_current_runs(self):
+        res = self._query("GetCurrentRuns", api_pb2.Empty)
+        return res.serialized_current_runs
+
     def health_check_query(self):
         try:
             with self._channel() as channel:

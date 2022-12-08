@@ -3,8 +3,8 @@ from contextlib import ExitStack, contextmanager
 
 from dagster import file_relative_path
 from dagster._core.host_representation import (
+    JobHandle,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    PipelineHandle,
 )
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -56,11 +56,11 @@ def get_bar_repo_handle(instance=None):
 
 
 @contextmanager
-def get_foo_pipeline_handle(instance=None):
+def get_foo_job_handle(instance=None):
 
     with ExitStack() as stack:
         if not instance:
             instance = stack.enter_context(instance_for_test())
 
         with get_bar_repo_handle(instance) as repo_handle:
-            yield PipelineHandle("foo", repo_handle)
+            yield JobHandle("foo", repo_handle)

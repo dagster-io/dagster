@@ -25,7 +25,7 @@ import {ShortcutHandler} from '../app/ShortcutHandler';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {RepositorySelector} from '../types/globalTypes';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -162,7 +162,7 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
       },
     );
 
-    const sortOrderKey = `${SORT_ORDER_KEY_BASE}-${basePath}-${repoAddressAsString(
+    const sortOrderKey = `${SORT_ORDER_KEY_BASE}-${basePath}-${repoAddressAsHumanString(
       repoAddress,
     )}-${partitionSetName}`;
 

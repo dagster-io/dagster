@@ -236,50 +236,42 @@ class RepositoryScopedBatchLoader:
         self._limits[data_type] = limit
 
     def get_run_records_for_job(self, job_name: str, limit: int) -> Sequence[Any]:
-        check.invariant(
-            job_name in [pipeline.name for pipeline in self._repository.get_all_external_jobs()]
-        )
+        check.invariant(self._repository.has_external_job(job_name))
         return self._get(RepositoryDataType.JOB_RUNS, job_name, limit)
 
     def get_run_records_for_schedule(self, schedule_name: str, limit: int) -> Sequence[Any]:
-        check.invariant(
-            schedule_name
-            in [schedule.name for schedule in self._repository.get_external_schedules()]
-        )
+        check.invariant(self._repository.has_external_schedule(schedule_name))
         return self._get(RepositoryDataType.SCHEDULE_RUNS, schedule_name, limit)
 
     def get_run_records_for_sensor(self, sensor_name: str, limit: int) -> Sequence[Any]:
-        check.invariant(
-            sensor_name in [sensor.name for sensor in self._repository.get_external_sensors()]
-        )
+        check.invariant(self._repository.has_external_sensor(sensor_name))
         return self._get(RepositoryDataType.SENSOR_RUNS, sensor_name, limit)
 
     def get_schedule_state(self, schedule_name: str) -> Optional[Sequence[Any]]:
-        check.invariant(
-            schedule_name
-            in [schedule.name for schedule in self._repository.get_external_schedules()]
-        )
+        check.invariant(self._repository.has_external_schedule(schedule_name))
         states = self._get(RepositoryDataType.SCHEDULE_STATES, schedule_name, 1)
         return states[0] if states else None
 
     def get_sensor_state(self, sensor_name: str) -> Optional[Sequence[Any]]:
-        check.invariant(
-            sensor_name in [sensor.name for sensor in self._repository.get_external_sensors()]
-        )
+        check.invariant(self._repository.has_external_sensor(sensor_name))
         states = self._get(RepositoryDataType.SENSOR_STATES, sensor_name, 1)
         return states[0] if states else None
 
     def get_sensor_ticks(self, origin_id: str, selector_id: str, limit: int) -> Sequence[Any]:
         check.invariant(
-            selector_id
-            in [sensor.selector_id for sensor in self._repository.get_external_sensors()]
+            any(
+                selector_id == sensor.selector_id
+                for sensor in self._repository.get_external_sensors()
+            )
         )
         return self._get(RepositoryDataType.SENSOR_TICKS, origin_id, limit)
 
     def get_schedule_ticks(self, origin_id: str, selector_id: str, limit: int) -> Sequence[Any]:
         check.invariant(
-            selector_id
-            in [schedule.selector_id for schedule in self._repository.get_external_schedules()]
+            any(
+                selector_id == schedule.selector_id
+                for schedule in self._repository.get_external_schedules()
+            )
         )
         return self._get(RepositoryDataType.SCHEDULE_TICKS, origin_id, limit)
 
@@ -486,7 +478,7 @@ class ProjectedLogicalVersionLoader:
                 )
             else:
                 version = DEFAULT_LOGICAL_VERSION
-        elif node.op_version is not None:
+        elif node.code_version is not None:
             version = self._compute_projected_new_materialization_logical_version(node)
         else:
             materialization = self._instance.get_latest_materialization_event(key)
@@ -519,7 +511,7 @@ class ProjectedLogicalVersionLoader:
     ) -> LogicalVersion:
         dep_keys = {dep.upstream_asset_key for dep in node.dependencies}
         return compute_logical_version(
-            node.op_version or UNKNOWN_VALUE,
+            node.code_version or UNKNOWN_VALUE,
             {dep_key: self._get_version(key=dep_key) for dep_key in dep_keys},
         )
 
