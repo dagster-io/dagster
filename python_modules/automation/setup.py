@@ -20,7 +20,9 @@ setup(
     install_requires=[
         "autoflake",
         "boto3",
-        "packaging>=20.9",
+        # packaging v22 has build compatibility issues with dbt as of 2022-12-07
+        # upper bound can be removed as soon as BK passes with packaging >=22
+        "packaging>=20.9,<22",
         "pandas",
         "pytablereader",
         "requests",

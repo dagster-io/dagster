@@ -156,10 +156,10 @@ def test_graphs():
     assert result.output_values_for_solid("hello") == {"result": "hello"}
     assert result.output_value_for_handle("hello") == "hello"
 
-    nested_result = result.result_for_solid("hello")
+    nested_result = result.result_for_node("hello")
     assert nested_result.success
     assert nested_result.output_value() == "hello"
-    assert len(result.solid_result_list) == 1
+    assert len(result.node_result_list) == 1
     assert nested_result.output_values == {"result": "hello"}
 
     with pytest.raises(
@@ -168,7 +168,7 @@ def test_graphs():
             "Tried to get result for solid 'goodbye' in 'hello_graph'. No such top level " "solid"
         ),
     ):
-        _ = result.result_for_solid("goodbye")
+        _ = result.result_for_node("goodbye")
 
 
 def test_graph_with_no_output_mappings():
@@ -199,7 +199,7 @@ def test_graph_with_no_output_mappings():
     ):
         _ = res.output_value()
 
-    assert len(res.solid_result_list) == 5
+    assert len(res.node_result_list) == 5
 
 
 def test_execute_nested_graphs():
@@ -209,7 +209,7 @@ def test_execute_nested_graphs():
     res = execute_solid(nested_composite_solid)
 
     assert res.success
-    assert res.solid.name == "layer_0"
+    assert res.node.name == "layer_0"
 
     assert res.output_values == {}
 
@@ -223,7 +223,7 @@ def test_execute_nested_graphs():
     ):
         _ = res.output_value()
 
-    assert len(res.solid_result_list) == 2
+    assert len(res.node_result_list) == 2
 
 
 def test_single_solid_with_bad_inputs():

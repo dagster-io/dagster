@@ -38,9 +38,9 @@ def test_multiple_outputs():
         multiple_outputs()
 
     result = execute_pipeline(multiple_outputs_pipeline)
-    solid_result = result.solid_result_list[0]
+    solid_result = result.node_result_list[0]
 
-    assert solid_result.solid.name == "multiple_outputs"
+    assert solid_result.node.name == "multiple_outputs"
     assert solid_result.output_value("output_one") == "foo"
     assert solid_result.output_value("output_two") == "bar"
 
@@ -126,7 +126,7 @@ def test_multiple_outputs_only_emit_one():
     result = execute_pipeline(define_multi_out())
     assert result.success
 
-    solid_result = result.result_for_solid("multiple_outputs")
+    solid_result = result.result_for_node("multiple_outputs")
     assert set(solid_result.output_values.keys()) == set(["output_one"])
 
     with pytest.raises(
@@ -145,9 +145,9 @@ def test_multiple_outputs_only_emit_one():
             "'multiple_outputs_only_emit_one_pipeline'. No such top level solid."
         ),
     ):
-        result.result_for_solid("not_present")
+        result.result_for_node("not_present")
 
-    assert result.result_for_solid("downstream_two").skipped
+    assert result.result_for_node("downstream_two").skipped
 
 
 def test_multiple_outputs_only_emit_one_multiproc():
@@ -161,7 +161,7 @@ def test_multiple_outputs_only_emit_one_multiproc():
         )
         assert result.success
 
-        solid_result = result.result_for_solid("multiple_outputs")
+        solid_result = result.result_for_node("multiple_outputs")
         assert set(solid_result.output_values.keys()) == set(["output_one"])
 
         with pytest.raises(
@@ -180,9 +180,9 @@ def test_multiple_outputs_only_emit_one_multiproc():
                 "'multiple_outputs_only_emit_one_pipeline'. No such top level solid."
             ),
         ):
-            result.result_for_solid("not_present")
+            result.result_for_node("not_present")
 
-        assert result.result_for_solid("downstream_two").skipped
+        assert result.result_for_node("downstream_two").skipped
 
 
 def test_missing_non_optional_output_fails():

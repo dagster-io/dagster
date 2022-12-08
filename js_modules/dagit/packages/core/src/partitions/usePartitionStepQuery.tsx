@@ -5,7 +5,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {DagsterTag} from '../runs/RunTag';
 import {RunFilterToken} from '../runs/RunsFilterInput';
-import {RunStatus} from '../types/globalTypes';
+import {RepositorySelector, RunStatus} from '../types/globalTypes';
 
 import {PartitionMatrixStepRunFragment} from './types/PartitionMatrixStepRunFragment';
 import {
@@ -29,34 +29,48 @@ const InitialDataState: DataState = {
   loadingCursorIdx: 0,
 };
 
+type PartitionStepQueryOptions = {
+  partitionSetName: string;
+  partitionTagName: string;
+  partitionNames: string[];
+  pageSize: number;
+  runsFilter: RunFilterToken[];
+  repositorySelector: RepositorySelector;
+  jobName?: string;
+  offset?: number;
+  skipQuery?: boolean;
+};
+
 /**
  * This React hook mirrors `useCursorPaginatedQuery` but collects each page of partitions
  * in slices that are smaller than pageSize and cause the results to load incrementally.
  */
-export function usePartitionStepQuery(
-  partitionSetName: string,
-  partitionTagName: string,
-  partitionNames: string[],
-  pageSize: number,
-  runsFilter: RunFilterToken[],
-  jobName?: string,
-  offset?: number,
-  skipQuery?: boolean,
-) {
+export function usePartitionStepQuery({
+  partitionSetName,
+  partitionTagName,
+  partitionNames,
+  pageSize,
+  runsFilter,
+  jobName,
+  repositorySelector,
+  offset,
+  skipQuery,
+}: PartitionStepQueryOptions) {
   const client = useApolloClient();
 
   const version = React.useRef(0);
   const [dataState, setDataState] = React.useState<DataState>(InitialDataState);
-  const _serializedRunTags = React.useMemo(
-    () =>
-      JSON.stringify(
-        runsFilter.map((token) => {
-          const [key, value] = token.value.split('=');
-          return {key, value};
-        }),
-      ),
-    [runsFilter],
-  );
+
+  const _serializedRunTags = JSON.stringify([
+    ...runsFilter.map((token) => {
+      const [key, value] = token.value.split('=');
+      return {key, value};
+    }),
+    {
+      key: DagsterTag.RepositoryLabelTag,
+      value: `${repositorySelector.repositoryName}@${repositorySelector.repositoryLocationName}`,
+    },
+  ]);
 
   React.useEffect(() => {
     // Note: there are several async steps to the loading process - to cancel the previous
