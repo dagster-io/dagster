@@ -153,9 +153,10 @@ def test_unknown_metadata_value():
         "Consider wrapping the value with the appropriate MetadataValue type."
     )
 
+
 def test_parse_null_metadata():
 
-    metadata = { "foo": None }
+    metadata = {"foo": None}
     entries = normalize_metadata(metadata, [])
     assert entries[0].label == "foo"
     assert entries[0].value == NullMetadataValue()

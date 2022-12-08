@@ -165,7 +165,7 @@ def test_execute_summary_stats_error():
 def test_execute_summary_stats_metadata_value_error():
     with pytest.raises(DagsterInvariantViolationError):
         assert _execute_summary_stats(
-            "foo", DataFrame({}), event_metadata_fn=lambda _: {"bad": None}
+            "foo", DataFrame({}), event_metadata_fn=lambda _: {"bad": object()}
         )
 
 
