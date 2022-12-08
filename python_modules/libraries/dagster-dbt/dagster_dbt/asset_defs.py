@@ -38,7 +38,7 @@ from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._legacy import SolidExecutionContext
+from dagster._legacy import OpExecutionContext
 from dagster._utils.backcompat import experimental_arg_warning
 
 
@@ -332,7 +332,7 @@ def _get_dbt_op(
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
     runtime_metadata_fn: Optional[
-        Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
+        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ],
 ):
     @op(
@@ -403,7 +403,7 @@ def _dbt_nodes_to_assets(
     selected_unique_ids: AbstractSet[str],
     project_id: str,
     runtime_metadata_fn: Optional[
-        Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
+        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ] = None,
     io_manager_key: Optional[str] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
@@ -473,7 +473,7 @@ def load_assets_from_dbt_project(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     runtime_metadata_fn: Optional[
-        Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
+        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
     io_manager_key: Optional[str] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
@@ -566,7 +566,7 @@ def load_assets_from_dbt_manifest(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     runtime_metadata_fn: Optional[
-        Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
+        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
     io_manager_key: Optional[str] = None,
     selected_unique_ids: Optional[AbstractSet[str]] = None,

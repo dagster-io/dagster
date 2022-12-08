@@ -11,11 +11,11 @@ from dagster import (
     op,
     usable_as_dagster_type,
 )
+from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.inference import infer_input_props, infer_output_props
 from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster._legacy import (
     InputDefinition,
-    composite_solid,
     execute_pipeline,
     execute_solid,
     lambda_solid,
@@ -196,7 +196,7 @@ def test_composites():
     def subtract(n1: int, n2: int) -> int:
         return n1 - n2
 
-    @composite_solid
+    @graph
     def add_one(a: int) -> int:
         return subtract(a, emit_one())
 
@@ -583,7 +583,7 @@ def test_composites_user_defined_type():
     def subtract(_n1: MyClass, _n2: MyClass) -> MyClass:
         return MyClass()
 
-    @composite_solid
+    @graph
     def add_one(a: MyClass) -> MyClass:
         return subtract(a, emit_one())
 

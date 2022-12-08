@@ -17,7 +17,6 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.solid_definition import NodeDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidSubsetError,
@@ -33,6 +32,7 @@ from .dependency import (
     DependencyDefinition,
     DependencyStructure,
     DynamicCollectDependencyDefinition,
+    GraphNode,
     IDependencyDefinition,
     MultiDependencyDefinition,
     Node,
@@ -769,7 +769,7 @@ def _get_pipeline_subset_def(
 def _iterate_all_nodes(root_node_dict: Mapping[str, Node]) -> Iterator[Node]:
     for node in root_node_dict.values():
         yield node
-        if node.is_graph:
+        if isinstance(node, GraphNode):
             yield from _iterate_all_nodes(node.definition.ensure_graph_def().node_dict)
 
 

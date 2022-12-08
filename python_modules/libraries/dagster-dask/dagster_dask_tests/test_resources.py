@@ -1,7 +1,10 @@
+from typing import Any, Mapping
+
 from dagster_dask import dask_resource
 from dask.distributed import Client
 
 from dagster import Dict, Output
+from dagster._core.execution.results import PipelineExecutionResult
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import ModeDefinition, OutputDefinition, execute_pipeline, pipeline, solid
 
@@ -67,11 +70,13 @@ def test_multiple_local_cluster():
             _assert_scheduler_info_result(result, cluster_config)
 
 
-def _assert_scheduler_info_result(result, config):
-    scheduler_info_solid_result = result.result_for_solid("scheduler_info_solid")
+def _assert_scheduler_info_result(result: PipelineExecutionResult, config: Mapping[str, Any]):
+    scheduler_info_solid_result = result.result_for_node("scheduler_info_solid")
 
     scheduler_info = scheduler_info_solid_result.output_value("scheduler_info")
+    assert isinstance(scheduler_info, dict)
     assert len(scheduler_info["workers"]) == config["n_workers"]
 
     nthreads = scheduler_info_solid_result.output_value("nthreads")
+    assert isinstance(nthreads, dict)
     assert all(v == config["threads_per_worker"] for v in nthreads.values())

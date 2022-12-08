@@ -16,7 +16,7 @@ from dagster_graphql.test.utils import (
 from dagster import AssetKey, DagsterEventType
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.test_utils import poll_for_finished_run
-from dagster._legacy import PipelineRunStatus
+from dagster._legacy import DagsterRunStatus
 from dagster._utils import Counter, safe_tempfile_path, traced_counter
 
 # from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
@@ -980,7 +980,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         run_id = _create_run(graphql_context, "foo_job", asset_selection=[{"path": ["bar"]}])
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run.is_finished
-        assert run.status == PipelineRunStatus.SUCCESS
+        assert run.status == DagsterRunStatus.SUCCESS
         assert run.asset_selection == {AssetKey("bar")}
 
     def test_execute_pipeline_subset(self, graphql_context):

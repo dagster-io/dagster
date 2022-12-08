@@ -33,7 +33,7 @@ from ..output import Out, OutputDefinition
 from ..policy import RetryPolicy
 
 
-class DecoratedSolidFunction(NamedTuple):
+class DecoratedOpFunction(NamedTuple):
     """Wrapper around the decorated solid function to provide commonly used util methods"""
 
     decorated_fn: Callable[..., Any]
@@ -62,7 +62,7 @@ class DecoratedSolidFunction(NamedTuple):
         return infer_output_props(self.decorated_fn).annotation
 
 
-class NoContextDecoratedSolidFunction(DecoratedSolidFunction):
+class NoContextDecoratedOpFunction(DecoratedOpFunction):
     """Wrapper around a decorated solid function, when the decorator does not permit a context
     parameter (such as lambda_solid).
     """
@@ -121,9 +121,9 @@ class _Solid:
             output_defs = self.output_defs
 
         compute_fn = (
-            DecoratedSolidFunction(decorated_fn=fn)
+            DecoratedOpFunction(decorated_fn=fn)
             if self.decorator_takes_context
-            else NoContextDecoratedSolidFunction(decorated_fn=fn)
+            else NoContextDecoratedOpFunction(decorated_fn=fn)
         )
 
         resolved_input_defs = resolve_checked_solid_fn_inputs(
@@ -311,7 +311,7 @@ def solid(
 def resolve_checked_solid_fn_inputs(
     decorator_name: str,
     fn_name: str,
-    compute_fn: DecoratedSolidFunction,
+    compute_fn: DecoratedOpFunction,
     explicit_input_defs: Sequence[InputDefinition],
     exclude_nothing: bool,
 ) -> Sequence[InputDefinition]:

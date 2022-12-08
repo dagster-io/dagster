@@ -29,7 +29,7 @@ from dagster._core.execution.resources_init import (
     resource_initialization_event_generator,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun, PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.utils import make_new_run_id
 from dagster._legacy import Materialization, ModeDefinition, PipelineDefinition
@@ -273,7 +273,7 @@ class Manager:
             run_config=run_config,
             mode=mode_def.name,
             step_keys_to_execute=None,
-            status=PipelineRunStatus.NOT_STARTED,
+            status=DagsterRunStatus.NOT_STARTED,
             tags=None,
         )
 

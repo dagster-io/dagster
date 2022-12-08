@@ -7,7 +7,7 @@ import {QueryRefreshState} from '../app/QueryRefresh';
 import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
 
 import {WorkspaceTabs} from './WorkspaceTabs';
-import {repoAddressAsString} from './repoAddressAsString';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {RepoAddress} from './types';
 
 interface Props<TData> {
@@ -30,7 +30,7 @@ export const WorkspaceHeader = <TData extends Record<string, any>>(props: Props<
             </Link>
           </Heading>
           <Heading>/</Heading>
-          <Heading style={{color: Colors.Gray600}}>{repoAddressAsString(repoAddress)}</Heading>
+          <Heading style={{color: Colors.Gray600}}>{repoAddressAsHumanString(repoAddress)}</Heading>
         </Box>
       }
       tabs={

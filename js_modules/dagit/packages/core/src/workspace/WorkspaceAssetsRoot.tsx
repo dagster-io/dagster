@@ -9,7 +9,7 @@ import {useAssetNodeSearch} from '../assets/useAssetSearch';
 
 import {VirtualizedAssetTable} from './VirtualizedAssetTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
-import {repoAddressAsString} from './repoAddressAsString';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {WorkspaceAssetsQuery, WorkspaceAssetsQueryVariables} from './types/WorkspaceAssetsQuery';
@@ -55,7 +55,7 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
       );
     }
 
-    const repoName = repoAddressAsString(repoAddress);
+    const repoName = repoAddressAsHumanString(repoAddress);
 
     if (!filteredBySearch.length) {
       if (anySearch) {

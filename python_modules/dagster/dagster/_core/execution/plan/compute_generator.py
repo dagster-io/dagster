@@ -13,7 +13,7 @@ from dagster._core.definitions import (
     Output,
     OutputDefinition,
 )
-from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
+from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
@@ -26,7 +26,7 @@ class NoAnnotationSentinel:
 
 
 def create_solid_compute_wrapper(solid_def: OpDefinition):
-    compute_fn = cast(DecoratedSolidFunction, solid_def.compute_fn)
+    compute_fn = cast(DecoratedOpFunction, solid_def.compute_fn)
     fn = compute_fn.decorated_fn
     input_defs = solid_def.input_defs
     output_defs = solid_def.output_defs

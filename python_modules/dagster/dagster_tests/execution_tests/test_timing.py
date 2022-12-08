@@ -18,7 +18,7 @@ def test_event_timing_before_yield():
 
     pipeline_def = PipelineDefinition(solid_defs=[before_yield_solid], name="test")
     pipeline_result = execute_pipeline(pipeline_def)
-    success_event = pipeline_result.result_for_solid("before_yield_solid").get_step_success_event()
+    success_event = pipeline_result.result_for_node("before_yield_solid").get_step_success_event()
     assert success_event.event_specific_data.duration_ms >= 10.0
 
 
@@ -33,7 +33,7 @@ def test_event_timing_after_yield():
 
     pipeline_def = PipelineDefinition(solid_defs=[after_yield_solid], name="test")
     pipeline_result = execute_pipeline(pipeline_def)
-    success_event = pipeline_result.result_for_solid("after_yield_solid").get_step_success_event()
+    success_event = pipeline_result.result_for_node("after_yield_solid").get_step_success_event()
     assert success_event.event_specific_data.duration_ms >= 10.0
 
 
@@ -48,5 +48,5 @@ def test_event_timing_direct_return():
 
     pipeline_def = PipelineDefinition(solid_defs=[direct_return_solid], name="test")
     pipeline_result = execute_pipeline(pipeline_def)
-    success_event = pipeline_result.result_for_solid("direct_return_solid").get_step_success_event()
+    success_event = pipeline_result.result_for_node("direct_return_solid").get_step_success_event()
     assert success_event.event_specific_data.duration_ms >= 10.0

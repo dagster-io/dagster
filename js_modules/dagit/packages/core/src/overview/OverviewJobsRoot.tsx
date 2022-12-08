@@ -9,7 +9,7 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {OverviewJobsTable} from './OverviewJobsTable';
@@ -38,7 +38,7 @@ export const OverviewJobsRoot = () => {
   const repoBuckets = React.useMemo(() => {
     const visibleKeys = visibleRepoKeys(visibleRepos);
     return buildBuckets(data).filter(({repoAddress}) =>
-      visibleKeys.has(repoAddressAsString(repoAddress)),
+      visibleKeys.has(repoAddressAsHumanString(repoAddress)),
     );
   }, [data, visibleRepos]);
 

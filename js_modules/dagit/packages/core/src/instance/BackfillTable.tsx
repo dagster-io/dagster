@@ -34,7 +34,7 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {BulkActionStatus, RunStatus} from '../types/globalTypes';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {workspacePathFromAddress, workspacePipelinePath} from '../workspace/workspacePath';
 
 import {BackfillPartitionsRequestedDialog} from './BackfillPartitionsRequestedDialog';
@@ -392,7 +392,9 @@ const BackfillTarget: React.FC<{
   const repoLink = (
     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}} style={{fontSize: '12px'}}>
       <Icon name="repo" color={Colors.Gray400} />
-      <Link to={workspacePathFromAddress(repoAddress)}>{repoAddressAsString(repoAddress)}</Link>
+      <Link to={workspacePathFromAddress(repoAddress)}>
+        {repoAddressAsHumanString(repoAddress)}
+      </Link>
     </Box>
   );
 

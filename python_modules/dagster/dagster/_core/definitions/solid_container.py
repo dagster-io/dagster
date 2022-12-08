@@ -3,6 +3,7 @@ from typing import (
     TYPE_CHECKING,
     DefaultDict,
     Dict,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -13,19 +14,22 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 from .dependency import (
     DependencyDefinition,
     DependencyStructure,
+    GraphNode,
     IDependencyDefinition,
     Node,
     NodeInvocation,
+    OpNode,
 )
 
 if TYPE_CHECKING:
     from .graph_definition import GraphDefinition
-    from .solid_definition import NodeDefinition
+    from .node_definition import NodeDefinition
 
 
 def validate_dependency_dict(
@@ -43,32 +47,28 @@ def validate_dependency_dict(
 
     if not isinstance(dependencies, dict):
         raise DagsterInvalidDefinitionError(
-            prelude
-            + "Received value {val} of type {type} at the top level.".format(
-                val=dependencies, type=type(dependencies)
-            )
+            prelude + "Received value {dependencies} of type {type(dependencies)} at the top level."
         )
 
     for key, dep_dict in dependencies.items():
         if not (isinstance(key, str) or isinstance(key, NodeInvocation)):
             raise DagsterInvalidDefinitionError(
                 prelude + "Expected str or NodeInvocation key in the top level dict. "
-                "Received value {val} of type {type}".format(val=key, type=type(key))
+                "Received value {key} of type {type(key)}"
             )
         if not isinstance(dep_dict, dict):
             if isinstance(dep_dict, IDependencyDefinition):
                 raise DagsterInvalidDefinitionError(
                     prelude
-                    + "Received a IDependencyDefinition one layer too high under key {key}. "
+                    + f"Received a IDependencyDefinition one layer too high under key {key}. "
                     "The DependencyDefinition should be moved in to a dict keyed on "
-                    "input name.".format(key=key)
+                    "input name."
                 )
             else:
                 raise DagsterInvalidDefinitionError(
-                    prelude + "Under key {key} received value {val} of type {type}. "
-                    "Expected dict[str, DependencyDefinition]".format(
-                        key=key, val=dep_dict, type=type(dep_dict)
-                    )
+                    prelude
+                    + f"Under key {key} received value {dep_dict} of type {type(dep_dict)}. "
+                    "Expected dict[str, DependencyDefinition]"
                 )
 
         for input_key, dep in dep_dict.items():
@@ -80,10 +80,8 @@ def validate_dependency_dict(
             if not isinstance(dep, IDependencyDefinition):
                 raise DagsterInvalidDefinitionError(
                     prelude
-                    + 'Expected IDependencyDefinition for solid "{key}" input "{input_key}". '
-                    "Received value {val} of type {type}.".format(
-                        key=key, input_key=input_key, val=dep, type=type(dep)
-                    )
+                    + f'Expected IDependencyDefinition for node "{key}" input "{input_key}". '
+                    f"Received value {dep} of type {type(dep)}."
                 )
 
     return dependencies
@@ -95,7 +93,7 @@ def create_execution_structure(
     graph_definition: "GraphDefinition",
 ) -> Tuple[DependencyStructure, Mapping[str, Node]]:
     """This builder takes the dependencies dictionary specified during creation of the
-    PipelineDefinition object and builds (1) the execution structure and (2) a solid dependency
+    PipelineDefinition object and builds (1) the execution structure and (2) a node dependency
     dictionary.
 
     For example, for the following dependencies:
@@ -124,7 +122,7 @@ def create_execution_structure(
 
     This will create:
 
-    pipeline_solid_dict = {
+    node_dict = {
         'giver': <dagster._core.definitions.dependency.Solid object>,
         'sleeper_1': <dagster._core.definitions.dependency.Solid object>,
         'sleeper_2': <dagster._core.definitions.dependency.Solid object>,
@@ -136,7 +134,7 @@ def create_execution_structure(
     as well as a dagster._core.definitions.dependency.DependencyStructure object.
     """
     from .graph_definition import GraphDefinition
-    from .solid_definition import NodeDefinition
+    from .node_definition import NodeDefinition
 
     check.sequence_param(node_defs, "node_defs", of_type=NodeDefinition)
     check.mapping_param(
@@ -145,7 +143,6 @@ def create_execution_structure(
         key_type=(str, NodeInvocation),
         value_type=dict,
     )
-    # graph_definition is none in the context of a pipeline
     check.inst_param(graph_definition, "graph_definition", GraphDefinition)
 
     # Same as dep_dict but with NodeInvocation replaced by alias string
@@ -169,47 +166,61 @@ def create_execution_structure(
         alias_to_name[alias] = solid_key.name
         aliased_dependencies_dict[alias] = input_dep_dict
 
-    pipeline_solid_dict = _build_pipeline_node_dict(
+    node_dict = _build_graph_node_dict(
         node_defs, name_to_aliases, alias_to_solid_instance, graph_definition
     )
 
-    _validate_dependencies(aliased_dependencies_dict, pipeline_solid_dict, alias_to_name)
+    _validate_dependencies(aliased_dependencies_dict, node_dict, alias_to_name)
 
     dependency_structure = DependencyStructure.from_definitions(
-        pipeline_solid_dict, aliased_dependencies_dict
+        node_dict, aliased_dependencies_dict
     )
 
-    return dependency_structure, pipeline_solid_dict
+    return dependency_structure, node_dict
 
 
-def _build_pipeline_node_dict(
-    solid_defs: Sequence["NodeDefinition"],
+def _build_graph_node_dict(
+    node_defs: Sequence["NodeDefinition"],
     name_to_aliases: Mapping[str, Set[str]],
-    alias_to_solid_instance: Mapping[str, NodeInvocation],
+    alias_to_node_invocation: Mapping[str, NodeInvocation],
     graph_definition,
 ) -> Mapping[str, Node]:
-    pipeline_solids = []
-    for solid_def in solid_defs:
-        uses_of_solid = name_to_aliases.get(solid_def.name, {solid_def.name})
+    from .graph_definition import GraphDefinition
 
-        for alias in uses_of_solid:
-            solid_instance = alias_to_solid_instance.get(alias)
+    nodes: List[Node] = []
+    for node_def in node_defs:
+        uses_of_node = name_to_aliases.get(node_def.name, {node_def.name})
 
-            solid_instance_tags = solid_instance.tags if solid_instance else {}
-            hook_defs = solid_instance.hook_defs if solid_instance else frozenset()
-            retry_policy = solid_instance.retry_policy if solid_instance else None
-            pipeline_solids.append(
-                Node(
+        for alias in uses_of_node:
+            node_invocation = alias_to_node_invocation.get(alias)
+
+            node_invocation_tags = node_invocation.tags if node_invocation else {}
+            hook_defs = node_invocation.hook_defs if node_invocation else frozenset()
+            retry_policy = node_invocation.retry_policy if node_invocation else None
+            node: Node
+            if isinstance(node_def, GraphDefinition):
+                node = GraphNode(
                     name=alias,
-                    definition=solid_def,
+                    definition=node_def,
                     graph_definition=graph_definition,
-                    tags=solid_instance_tags,
+                    tags=node_invocation_tags,
                     hook_defs=hook_defs,
                     retry_policy=retry_policy,
                 )
-            )
+            elif isinstance(node_def, OpDefinition):
+                node = OpNode(
+                    name=alias,
+                    definition=node_def,
+                    graph_definition=graph_definition,
+                    tags=node_invocation_tags,
+                    hook_defs=hook_defs,
+                    retry_policy=retry_policy,
+                )
+            else:
+                check.failed(f"Unexpected node_def type {node_def}")
+            nodes.append(node)
 
-    return {ps.name: ps for ps in pipeline_solids}
+    return {node.name: node for node in nodes}
 
 
 def _validate_dependencies(
