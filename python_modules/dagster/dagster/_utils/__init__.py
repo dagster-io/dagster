@@ -80,6 +80,7 @@ def library_version_from_core_version(core_version: str) -> str:
 
 def parse_package_version(version_str: str) -> packaging.version.Version:
     parsed_version = packaging.version.parse(version_str)
+    assert isinstance(parsed_version, packaging.version.Version)
     return parsed_version
 
 
