@@ -20,7 +20,7 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
-import {repoAddressAsString} from './repoAddressAsString';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {RepoAddress} from './types';
 import {SingleAssetQuery, SingleAssetQueryVariables} from './types/SingleAssetQuery';
 import {workspacePathFromAddress} from './workspacePath';
@@ -41,7 +41,7 @@ const ASSET_GROUPS_EXPANSION_STATE_STORAGE_KEY = 'assets-virtualized-expansion-s
 
 export const VirtualizedAssetTable: React.FC<Props> = ({repoAddress, assets}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
-  const repoKey = repoAddressAsString(repoAddress);
+  const repoKey = repoAddressAsHumanString(repoAddress);
   const {expandedKeys, onToggle} = useAssetGroupExpansionState(
     `${repoKey}-${ASSET_GROUPS_EXPANSION_STATE_STORAGE_KEY}`,
   );

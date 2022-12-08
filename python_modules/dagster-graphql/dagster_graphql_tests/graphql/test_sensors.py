@@ -764,6 +764,7 @@ def test_unloadable_sensor(graphql_context):
     )
 
     result = execute_dagster_graphql(graphql_context, GET_UNLOADABLE_QUERY)
+
     assert len(result.data["unloadableInstigationStatesOrError"]["results"]) == 1
     assert (
         result.data["unloadableInstigationStatesOrError"]["results"][0]["name"]

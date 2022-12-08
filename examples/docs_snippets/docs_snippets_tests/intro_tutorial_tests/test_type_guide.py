@@ -217,7 +217,7 @@ def test_nothing_type():
 
     result = execute_pipeline(nothing_pipeline)
     assert result.success
-    assert result.output_for_solid("after_cleanup") == "worked"
+    assert result.output_for_node("after_cleanup") == "worked"
 
 
 def test_nothing_fanin_actually_test():

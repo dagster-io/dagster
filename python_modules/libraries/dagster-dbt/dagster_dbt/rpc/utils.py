@@ -7,7 +7,7 @@ from requests import Response
 from requests.exceptions import RequestException
 
 from dagster import Failure, RetryRequested
-from dagster._core.execution.context.compute import SolidExecutionContext
+from dagster._core.execution.context.compute import OpExecutionContext
 
 
 def fmt_rpc_logs(logs: Sequence[Mapping[str, str]]) -> Mapping[int, str]:
@@ -21,7 +21,7 @@ def fmt_rpc_logs(logs: Sequence[Mapping[str, str]]) -> Mapping[int, str]:
     return {level: "\n".join(logs) for level, logs in d.items()}
 
 
-def log_rpc(context: SolidExecutionContext, logs: Sequence[Mapping]) -> None:
+def log_rpc(context: OpExecutionContext, logs: Sequence[Mapping]) -> None:
     if len(logs) > 0:
         logs_fmt = fmt_rpc_logs(logs)
         for level, logs_str in logs_fmt.items():
@@ -37,7 +37,7 @@ class DBTErrors(Enum):
     rpc_timeout_error = 10008
 
 
-def raise_for_rpc_error(context: SolidExecutionContext, resp: Response) -> None:
+def raise_for_rpc_error(context: OpExecutionContext, resp: Response) -> None:
     error = resp.json().get("error")
     if error is not None:
         if error["code"] in [

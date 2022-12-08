@@ -6,7 +6,7 @@ import dagster._check as check
 from dagster._config import process_config
 from dagster._core.container_context import process_shared_container_context_config
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.utils import parse_env_var
 from dagster._utils import make_readonly_value, merge_dicts
 
@@ -112,7 +112,7 @@ class K8sContainerContext(
 
     @staticmethod
     def create_for_run(
-        pipeline_run: PipelineRun, run_launcher: Optional["K8sRunLauncher"]
+        pipeline_run: DagsterRun, run_launcher: Optional["K8sRunLauncher"]
     ) -> "K8sContainerContext":
         context = K8sContainerContext()
 

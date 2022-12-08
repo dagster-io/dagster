@@ -722,10 +722,10 @@ def load_assets_from_airbyte_instance(
         connection_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
             group name for a given Airbyte connection name. If None, no groups will be created. Defaults
             to a basic sanitization function.
-        io_manager_key (Optional[str]): The IO manager key to use for all assets. Defaults to "io_manager".
+        io_manager_key (Optional[str]): The I/O manager key to use for all assets. Defaults to "io_manager".
             Use this if all assets should be loaded from the same source, otherwise use connection_to_io_manager_key_fn.
         connection_to_io_manager_key_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an
-            IO manager key for a given Airbyte connection name. When other ops are downstream of the loaded assets,
+            I/O manager key for a given Airbyte connection name. When other ops are downstream of the loaded assets,
             the IOManager specified determines how the inputs to those ops are loaded. Defaults to "io_manager".
         connection_filter (Optional[Callable[[AirbyteConnectionMetadata], bool]]): Optional function which takes
             in connection metadata and returns False if the connection should be excluded from the output assets.
@@ -823,10 +823,10 @@ def load_assets_from_airbyte_project(
         connection_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
             group name for a given Airbyte connection name. If None, no groups will be created. Defaults
             to a basic sanitization function.
-        io_manager_key (Optional[str]): The IO manager key to use for all assets. Defaults to "io_manager".
+        io_manager_key (Optional[str]): The I/O manager key to use for all assets. Defaults to "io_manager".
             Use this if all assets should be loaded from the same source, otherwise use connection_to_io_manager_key_fn.
         connection_to_io_manager_key_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an
-            IO manager key for a given Airbyte connection name. When other ops are downstream of the loaded assets,
+            I/O manager key for a given Airbyte connection name. When other ops are downstream of the loaded assets,
             the IOManager specified determines how the inputs to those ops are loaded. Defaults to "io_manager".
         connection_filter (Optional[Callable[[AirbyteConnectionMetadata], bool]]): Optional function which
             takes in connection metadata and returns False if the connection should be excluded from the output assets.

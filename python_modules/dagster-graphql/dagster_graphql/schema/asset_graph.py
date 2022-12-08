@@ -235,7 +235,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             assetKey=external_asset_node.asset_key,
             description=external_asset_node.op_description,
             opName=external_asset_node.op_name,
-            opVersion=external_asset_node.op_version,
+            opVersion=external_asset_node.code_version,
             groupName=external_asset_node.group_name,
         )
 

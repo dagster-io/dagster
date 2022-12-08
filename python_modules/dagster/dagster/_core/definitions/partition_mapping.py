@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import experimental, public
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._serdes import whitelist_for_serdes
 
 
 @experimental
@@ -55,7 +56,8 @@ class PartitionMapping(ABC):
 
 
 @experimental
-class IdentityPartitionMapping(PartitionMapping):
+@whitelist_for_serdes
+class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionMapping", [])):
     def get_upstream_partitions_for_partition_range(
         self,
         downstream_partition_key_range: Optional[PartitionKeyRange],
@@ -77,7 +79,8 @@ class IdentityPartitionMapping(PartitionMapping):
 
 
 @experimental
-class AllPartitionMapping(PartitionMapping):
+@whitelist_for_serdes
+class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [])):
     def get_upstream_partitions_for_partition_range(
         self,
         downstream_partition_key_range: Optional[PartitionKeyRange],
@@ -99,7 +102,8 @@ class AllPartitionMapping(PartitionMapping):
 
 
 @experimental
-class LastPartitionMapping(PartitionMapping):
+@whitelist_for_serdes
+class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping", [])):
     def get_upstream_partitions_for_partition_range(
         self,
         downstream_partition_key_range: Optional[PartitionKeyRange],
@@ -127,3 +131,14 @@ def infer_partition_mapping(
         return partitions_def.get_default_partition_mapping()
     else:
         return AllPartitionMapping()
+
+
+def get_builtin_partition_mapping_types():
+    from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
+
+    return (
+        AllPartitionMapping,
+        IdentityPartitionMapping,
+        LastPartitionMapping,
+        TimeWindowPartitionMapping,
+    )

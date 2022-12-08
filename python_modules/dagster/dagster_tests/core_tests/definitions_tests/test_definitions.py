@@ -16,7 +16,7 @@ from dagster import (
     op,
 )
 from dagster._core.definitions import AssetMaterialization, Node, create_run_config_schema
-from dagster._core.definitions.dependency import NodeHandle, SolidOutputHandle
+from dagster._core.definitions.dependency import NodeHandle, NodeOutput
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._legacy import InputDefinition
 
@@ -48,7 +48,7 @@ def test_solid_def():
         dependencies={"op_one": {"input_one": DependencyDefinition("produce_string")}},
     )
 
-    assert len(pipeline_def.solids[0].output_handles()) == 1
+    assert len(list(pipeline_def.solids[0].outputs())) == 1
 
     assert isinstance(pipeline_def.solid_named("op_one"), Node)
 
@@ -61,38 +61,36 @@ def test_solid_def():
     assert len(solid_one_solid.input_dict) == 1
     assert len(solid_one_solid.output_dict) == 1
 
-    assert str(solid_one_solid.input_handle("input_one")) == (
-        "SolidInputHandle(input_name=\"'input_one'\", solid_name=\"'op_one'\")"
+    assert str(solid_one_solid.get_input("input_one")) == (
+        "NodeInput(input_name=\"'input_one'\", node_name=\"'op_one'\")"
     )
 
-    assert repr(solid_one_solid.input_handle("input_one")) == (
-        "SolidInputHandle(input_name=\"'input_one'\", solid_name=\"'op_one'\")"
+    assert repr(solid_one_solid.get_input("input_one")) == (
+        "NodeInput(input_name=\"'input_one'\", node_name=\"'op_one'\")"
     )
 
-    assert str(solid_one_solid.output_handle("result")) == (
-        "SolidOutputHandle(output_name=\"'result'\", solid_name=\"'op_one'\")"
+    assert str(solid_one_solid.get_output("result")) == (
+        "NodeOutput(node_name=\"'op_one'\", output_name=\"'result'\")"
     )
 
-    assert repr(solid_one_solid.output_handle("result")) == (
-        "SolidOutputHandle(output_name=\"'result'\", solid_name=\"'op_one'\")"
+    assert repr(solid_one_solid.get_output("result")) == (
+        "NodeOutput(node_name=\"'op_one'\", output_name=\"'result'\")"
     )
 
-    assert solid_one_solid.output_handle("result") == SolidOutputHandle(
+    assert solid_one_solid.get_output("result") == NodeOutput(
         solid_one_solid, solid_one_solid.output_dict["result"]
     )
 
-    assert len(pipeline_def.dependency_structure.input_to_upstream_outputs_for_solid("op_one")) == 1
+    assert len(pipeline_def.dependency_structure.input_to_upstream_outputs_for_node("op_one")) == 1
 
     assert (
         len(
-            pipeline_def.dependency_structure.output_to_downstream_inputs_for_solid(
-                "produce_string"
-            )
+            pipeline_def.dependency_structure.output_to_downstream_inputs_for_node("produce_string")
         )
         == 1
     )
 
-    assert len(pipeline_def.dependency_structure.input_handles()) == 1
+    assert len(pipeline_def.dependency_structure.inputs()) == 1
 
 
 def test_solid_def_bad_input_name():

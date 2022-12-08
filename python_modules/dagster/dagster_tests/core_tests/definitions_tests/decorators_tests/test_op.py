@@ -145,7 +145,12 @@ def test_out_dagster_types():
 
 
 def test_multi_out():
-    @op(out={"a": Out(metadata={"x": 1}), "b": Out(metadata={"y": 2})})
+    @op(
+        out={
+            "a": Out(metadata={"x": 1}, code_version="foo"),
+            "b": Out(metadata={"y": 2}, code_version="bar"),
+        }
+    )
     def my_op() -> Tuple[int, str]:
         """
         Returns:
@@ -162,18 +167,22 @@ def test_multi_out():
             dagster_type=Int,
             is_required=True,
             io_manager_key="io_manager",
+            code_version="foo",
         ),
         "b": Out(
             metadata={"y": 2},
             dagster_type=String,
             is_required=True,
             io_manager_key="io_manager",
+            code_version="bar",
         ),
     }
     assert my_op.output_defs[0].metadata == {"x": 1}
     assert my_op.output_defs[0].name == "a"
+    assert my_op.output_defs[0].code_version == "foo"
     assert my_op.output_defs[1].metadata == {"y": 2}
     assert my_op.output_defs[1].name == "b"
+    assert my_op.output_defs[1].code_version == "bar"
 
     assert my_op() == (1, "q")
 
@@ -1251,3 +1260,13 @@ def test_none_annotated_input():
         @op
         def op1(input1: None):
             ...
+
+
+def test_default_code_version():
+    @op(code_version="foo", out={"a": Out(), "b": Out(code_version="bar")})
+    def alpha():
+        yield Output(1, "a")
+        yield Output(1, "b")
+
+    assert alpha.output_def_named("a").code_version == "foo"
+    assert alpha.output_def_named("b").code_version == "bar"

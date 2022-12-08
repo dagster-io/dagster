@@ -700,3 +700,27 @@ class GetCurrentImageResult(
                 serializable_error_info, "serializable_error_info", SerializableErrorInfo
             ),
         )
+
+
+@whitelist_for_serdes
+class GetCurrentRunsResult(
+    NamedTuple(
+        "_GetCurrentRunsResult",
+        [
+            ("current_runs", Sequence[str]),
+            ("serializable_error_info", Optional[SerializableErrorInfo]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        current_runs: Sequence[str],
+        serializable_error_info: Optional[SerializableErrorInfo],
+    ):
+        return super(GetCurrentRunsResult, cls).__new__(
+            cls,
+            current_runs=check.list_param(current_runs, "current_runs", of_type=str),
+            serializable_error_info=check.opt_inst_param(
+                serializable_error_info, "serializable_error_info", SerializableErrorInfo
+            ),
+        )

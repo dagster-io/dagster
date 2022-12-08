@@ -16,7 +16,7 @@ from typing import (
 import dagster._check as check
 from dagster._config import Shape
 from dagster._core.definitions.composition import PendingNodeInvocation
-from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
+from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
     AssetMaterialization,
@@ -36,7 +36,6 @@ from dagster._core.definitions.resource_definition import (
     ScopedResourcesBuilder,
 )
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
-from dagster._core.definitions.solid_definition import SolidDefinition
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -47,7 +46,7 @@ from dagster._core.errors import (
 from dagster._core.execution.build_resources import build_resources, wrap_resources_for_execution
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import merge_dicts
 from dagster._utils.forked_pdb import ForkedPdb
@@ -62,7 +61,7 @@ def _property_msg(prop_name: str, method_name: str) -> str:
     )
 
 
-class UnboundSolidExecutionContext(OpExecutionContext):
+class UnboundOpExecutionContext(OpExecutionContext):
     """The ``context`` object available as the first argument to a solid's compute function when
     being invoked directly. Can also be used as a context manager.
     """
@@ -140,7 +139,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         return self._resources
 
     @property
-    def pipeline_run(self) -> PipelineRun:
+    def pipeline_run(self) -> DagsterRun:
         raise DagsterInvalidPropertyError(_property_msg("pipeline_run", "property"))
 
     @property
@@ -204,8 +203,8 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         raise DagsterInvalidPropertyError(_property_msg("solid", "property"))
 
     @property
-    def solid_def(self) -> SolidDefinition:
-        raise DagsterInvalidPropertyError(_property_msg("solid_def", "property"))
+    def op_def(self) -> OpDefinition:
+        raise DagsterInvalidPropertyError(_property_msg("op_def", "property"))
 
     @property
     def has_partition_key(self) -> bool:
@@ -215,8 +214,10 @@ class UnboundSolidExecutionContext(OpExecutionContext):
     def partition_key(self) -> str:
         if self._partition_key:
             return self._partition_key
-        else:
-            check.failed("Tried to access partition_key for a non-partitioned run")
+        check.failed("Tried to access partition_key for a non-partitioned run")
+
+    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
+        return self.partition_key
 
     def has_tag(self, key: str) -> bool:
         raise DagsterInvalidPropertyError(_property_msg("has_tag", "method"))
@@ -228,39 +229,41 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         raise DagsterInvalidPropertyError(_property_msg("get_step_execution_context", "methods"))
 
     def bind(
-        self, solid_def_or_invocation: Union[SolidDefinition, PendingNodeInvocation]
-    ) -> "BoundSolidExecutionContext":
+        self,
+        op_def_or_invocation: Union[OpDefinition, PendingNodeInvocation],
+    ) -> "BoundOpExecutionContext":
 
-        solid_def = (
-            solid_def_or_invocation
-            if isinstance(solid_def_or_invocation, SolidDefinition)
-            else solid_def_or_invocation.node_def.ensure_solid_def()
+        op_def = (
+            op_def_or_invocation
+            if isinstance(op_def_or_invocation, OpDefinition)
+            else op_def_or_invocation.node_def.ensure_op_def()
         )
 
-        _validate_resource_requirements(self._resource_defs, solid_def)
+        _validate_resource_requirements(self._resource_defs, op_def)
 
-        solid_config = _resolve_bound_config(self.solid_config, solid_def)
+        solid_config = _resolve_bound_config(self.solid_config, op_def)
 
-        return BoundSolidExecutionContext(
-            solid_def=solid_def,
-            solid_config=solid_config,
+        return BoundOpExecutionContext(
+            op_def=op_def,
+            op_config=solid_config,
             resources=self.resources,
             resources_config=self._resources_config,
             instance=self.instance,
             log_manager=self.log,
             pdb=self.pdb,
-            tags=solid_def_or_invocation.tags
-            if isinstance(solid_def_or_invocation, PendingNodeInvocation)
+            tags=op_def_or_invocation.tags
+            if isinstance(op_def_or_invocation, PendingNodeInvocation)
             else None,
-            hook_defs=solid_def_or_invocation.hook_defs
-            if isinstance(solid_def_or_invocation, PendingNodeInvocation)
+            hook_defs=op_def_or_invocation.hook_defs
+            if isinstance(op_def_or_invocation, PendingNodeInvocation)
             else None,
-            alias=solid_def_or_invocation.given_alias
-            if isinstance(solid_def_or_invocation, PendingNodeInvocation)
+            alias=op_def_or_invocation.given_alias
+            if isinstance(op_def_or_invocation, PendingNodeInvocation)
             else None,
             user_events=self._user_events,
             output_metadata=self._output_metadata,
             mapping_key=self._mapping_key,
+            partition_key=self._partition_key,
         )
 
     def get_events(self) -> Sequence[UserEvent]:
@@ -311,36 +314,36 @@ class UnboundSolidExecutionContext(OpExecutionContext):
 
 
 def _validate_resource_requirements(
-    resource_defs: Mapping[str, ResourceDefinition], solid_def: SolidDefinition
+    resource_defs: Mapping[str, ResourceDefinition], op_def: OpDefinition
 ) -> None:
     """Validate correctness of resources against required resource keys"""
-    if cast(DecoratedSolidFunction, solid_def.compute_fn).has_context_arg():
-        for requirement in solid_def.get_resource_requirements():
+    if cast(DecoratedOpFunction, op_def.compute_fn).has_context_arg():
+        for requirement in op_def.get_resource_requirements():
             if not requirement.is_io_manager_requirement:
                 ensure_requirements_satisfied(resource_defs, [requirement])
 
 
-def _resolve_bound_config(solid_config: Any, solid_def: SolidDefinition) -> Any:
+def _resolve_bound_config(solid_config: Any, op_def: OpDefinition) -> Any:
     """Validate config against config schema, and return validated config."""
     from dagster._config import process_config
 
     # Config processing system expects the top level config schema to be a dictionary, but solid
     # config schema can be scalar. Thus, we wrap it in another layer of indirection.
-    outer_config_shape = Shape({"config": solid_def.get_config_field()})
+    outer_config_shape = Shape({"config": op_def.get_config_field()})
     config_evr = process_config(
         outer_config_shape, {"config": solid_config} if solid_config else {}
     )
     if not config_evr.success:
         raise DagsterInvalidConfigError(
-            f"Error in config for {solid_def.node_type_str} ",
+            f"Error in config for {op_def.node_type_str} ",
             config_evr.errors,
             solid_config,
         )
     validated_config = cast(Dict, config_evr.value).get("config")
-    mapped_config_evr = solid_def.apply_config_mapping({"config": validated_config})
+    mapped_config_evr = op_def.apply_config_mapping({"config": validated_config})
     if not mapped_config_evr.success:
         raise DagsterInvalidConfigError(
-            f"Error in config for {solid_def.node_type_str} ",
+            f"Error in config for {op_def.node_type_str} ",
             mapped_config_evr.errors,
             solid_config,
         )
@@ -348,15 +351,15 @@ def _resolve_bound_config(solid_config: Any, solid_def: SolidDefinition) -> Any:
     return validated_config
 
 
-class BoundSolidExecutionContext(OpExecutionContext):
+class BoundOpExecutionContext(OpExecutionContext):
     """The solid execution context that is passed to the compute function during invocation.
 
     This context is bound to a specific solid definition, for which the resources and config have
     been validated.
     """
 
-    _solid_def: SolidDefinition
-    _solid_config: Any
+    _op_def: OpDefinition
+    _op_config: Any
     _resources: "Resources"
     _resources_config: Mapping[str, Any]
     _instance: DagsterInstance
@@ -369,11 +372,12 @@ class BoundSolidExecutionContext(OpExecutionContext):
     _seen_outputs: Dict[str, Union[str, Set[str]]]
     _output_metadata: Dict[str, Any]
     _mapping_key: Optional[str]
+    _partition_key: Optional[str]
 
     def __init__(
         self,
-        solid_def: SolidDefinition,
-        solid_config: Any,
+        op_def: OpDefinition,
+        op_config: Any,
         resources: "Resources",
         resources_config: Mapping[str, Any],
         instance: DagsterInstance,
@@ -385,32 +389,34 @@ class BoundSolidExecutionContext(OpExecutionContext):
         user_events: List[UserEvent],
         output_metadata: Dict[str, Any],
         mapping_key: Optional[str],
+        partition_key: Optional[str],
     ):
-        self._solid_def = solid_def
-        self._solid_config = solid_config
+        self._op_def = op_def
+        self._op_config = op_config
         self._resources = resources
         self._instance = instance
         self._log = log_manager
         self._pdb = pdb
-        self._tags = merge_dicts(self._solid_def.tags, tags) if tags else self._solid_def.tags
+        self._tags = merge_dicts(self._op_def.tags, tags) if tags else self._op_def.tags
         self._hook_defs = hook_defs
-        self._alias = alias if alias else self._solid_def.name
+        self._alias = alias if alias else self._op_def.name
         self._resources_config = resources_config
         self._user_events = user_events
         self._seen_outputs = {}
         self._output_metadata = output_metadata
         self._mapping_key = mapping_key
+        self._partition_key = partition_key
 
     @property
     def solid_config(self) -> Any:
-        return self._solid_config
+        return self._op_config
 
     @property
     def resources(self) -> Resources:
         return self._resources
 
     @property
-    def pipeline_run(self) -> PipelineRun:
+    def pipeline_run(self) -> DagsterRun:
         raise DagsterInvalidPropertyError(_property_msg("pipeline_run", "property"))
 
     @property
@@ -447,8 +453,8 @@ class BoundSolidExecutionContext(OpExecutionContext):
     @property
     def run_config(self) -> Mapping[str, object]:
         run_config: Dict[str, object] = {}
-        if self._solid_config:
-            run_config["solids"] = {self._solid_def.name: {"config": self._solid_config}}
+        if self._op_config:
+            run_config["solids"] = {self._op_def.name: {"config": self._op_config}}
         run_config["resources"] = self._resources_config
         return run_config
 
@@ -478,8 +484,8 @@ class BoundSolidExecutionContext(OpExecutionContext):
         raise DagsterInvalidPropertyError(_property_msg("solid", "property"))
 
     @property
-    def solid_def(self) -> SolidDefinition:
-        return self._solid_def
+    def op_def(self) -> OpDefinition:
+        return self._op_def
 
     def has_tag(self, key: str) -> bool:
         return key in self._tags
@@ -504,10 +510,10 @@ class BoundSolidExecutionContext(OpExecutionContext):
         return self._mapping_key
 
     def describe_op(self) -> str:
-        if isinstance(self.solid_def, OpDefinition):
-            return f'op "{self.solid_def.name}"'
+        if isinstance(self.op_def, OpDefinition):
+            return f'op "{self.op_def.name}"'
 
-        return f'solid "{self.solid_def.name}"'
+        return f'solid "{self.op_def.name}"'
 
     def log_event(self, event: UserEvent) -> None:
 
@@ -532,6 +538,15 @@ class BoundSolidExecutionContext(OpExecutionContext):
                 output_name in self._seen_outputs and mapping_key in self._seen_outputs[output_name]
             )
         return output_name in self._seen_outputs
+
+    @property
+    def partition_key(self) -> str:
+        if self._partition_key is not None:
+            return self._partition_key
+        check.failed("Tried to access partition_key for a non-partitioned asset")
+
+    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
+        return self.partition_key
 
     def add_output_metadata(
         self,
@@ -571,15 +586,15 @@ class BoundSolidExecutionContext(OpExecutionContext):
         output_name = check.opt_str_param(output_name, "output_name")
         mapping_key = check.opt_str_param(mapping_key, "mapping_key")
 
-        if output_name is None and len(self.solid_def.output_defs) == 1:
-            output_def = self.solid_def.output_defs[0]
+        if output_name is None and len(self.op_def.output_defs) == 1:
+            output_def = self.op_def.output_defs[0]
             output_name = output_def.name
         elif output_name is None:
             raise DagsterInvariantViolationError(
                 "Attempted to log metadata without providing output_name, but multiple outputs exist. Please provide an output_name to the invocation of `context.add_output_metadata`."
             )
         else:
-            output_def = self.solid_def.output_def_named(output_name)
+            output_def = self.op_def.output_def_named(output_name)
 
         if self.has_seen_output(output_name, mapping_key):
             output_desc = (
@@ -588,18 +603,18 @@ class BoundSolidExecutionContext(OpExecutionContext):
                 else f"output '{output_def.name}' with mapping_key '{mapping_key}'"
             )
             raise DagsterInvariantViolationError(
-                f"In {self.solid_def.node_type_str} '{self.solid_def.name}', attempted to log output metadata for {output_desc} which has already been yielded. Metadata must be logged before the output is yielded."
+                f"In {self.op_def.node_type_str} '{self.op_def.name}', attempted to log output metadata for {output_desc} which has already been yielded. Metadata must be logged before the output is yielded."
             )
         if output_def.is_dynamic and not mapping_key:
             raise DagsterInvariantViolationError(
-                f"In {self.solid_def.node_type_str} '{self.solid_def.name}', attempted to log metadata for dynamic output '{output_def.name}' without providing a mapping key. When logging metadata for a dynamic output, it is necessary to provide a mapping key."
+                f"In {self.op_def.node_type_str} '{self.op_def.name}', attempted to log metadata for dynamic output '{output_def.name}' without providing a mapping key. When logging metadata for a dynamic output, it is necessary to provide a mapping key."
             )
 
         output_name = output_def.name
         if output_name in self._output_metadata:
             if not mapping_key or mapping_key in self._output_metadata[output_name]:
                 raise DagsterInvariantViolationError(
-                    f"In {self.solid_def.node_type_str} '{self.solid_def.name}', attempted to log metadata for output '{output_name}' more than once."
+                    f"In {self.op_def.node_type_str} '{self.op_def.name}', attempted to log metadata for output '{output_name}' more than once."
                 )
         if mapping_key:
             if not output_name in self._output_metadata:
@@ -671,7 +686,7 @@ def build_solid_context(
     config: Any = None,
     partition_key: Optional[str] = None,
     mapping_key: Optional[str] = None,
-) -> UnboundSolidExecutionContext:
+) -> UnboundOpExecutionContext:
     """Builds solid execution context from provided parameters.
 
     ``build_solid_context`` can be used as either a function or context manager. If there is a
@@ -708,7 +723,7 @@ def build_solid_context(
 
     solid_config = solid_config if solid_config else config
 
-    return UnboundSolidExecutionContext(
+    return UnboundOpExecutionContext(
         resources_dict=check.opt_mapping_param(resources, "resources", key_type=str),
         resources_config=check.opt_mapping_param(
             resources_config, "resources_config", key_type=str

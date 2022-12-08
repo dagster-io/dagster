@@ -16,9 +16,9 @@ from .utils import DEFAULT_IO_MANAGER_KEY
 if TYPE_CHECKING:
     from ..types.dagster_type import DagsterType
     from .dependency import Node, NodeHandle
+    from .op_definition import OpDefinition
     from .pipeline_definition import PipelineDefinition
     from .resource_definition import ResourceDefinition
-    from .solid_definition import SolidDefinition
 
 
 class ResourceRequirement(ABC):
@@ -77,8 +77,8 @@ class ResourceAddable(ABC):
         raise NotImplementedError()
 
 
-class SolidDefinitionResourceRequirement(
-    NamedTuple("_SolidDefinitionResourceRequirement", [("key", str), ("node_description", str)]),
+class OpDefinitionResourceRequirement(
+    NamedTuple("_OpDefinitionResourceRequirement", [("key", str), ("node_description", str)]),
     ResourceRequirement,
 ):
     def describe_requirement(self) -> str:

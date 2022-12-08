@@ -54,7 +54,7 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
             <Box padding={{vertical: 32}} flex={{justifyContent: 'center'}}>
               <NonIdealState
                 icon="error"
-                title={`Could not find sensor \`${sensorName}\` in repository \`${repoAddress.name}\``}
+                title={`Could not find sensor \`${sensorName}\` in definitions for \`${repoAddress.name}\``}
               />
             </Box>
           );

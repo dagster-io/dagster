@@ -54,22 +54,30 @@ Sensors
 .. autoclass:: SensorEvaluationContext
    :noindex:
 
-.. autoclass:: MultiAssetSensorEvaluationContext
-
 .. autofunction:: build_sensor_context
-
-.. autofunction:: build_multi_asset_sensor_context
-
-.. autoclass:: AssetSensorDefinition
 
 .. autodecorator:: asset_sensor
 
-.. autoclass:: MultiAssetSensorDefinition
+.. autoclass:: AssetSensorDefinition
+
+.. autodecorator:: freshness_policy_sensor
+
+.. autoclass:: FreshnessPolicySensorDefinition
+
+.. autoclass:: FreshnessPolicySensorContext
+   :noindex:
+
+.. autofunction:: build_freshness_policy_sensor_context
 
 .. autodecorator:: multi_asset_sensor
 
-.. autofunction:: build_asset_reconciliation_sensor
+.. autoclass:: MultiAssetSensorDefinition
 
+.. autoclass:: MultiAssetSensorEvaluationContext
+
+.. autofunction:: build_multi_asset_sensor_context
+
+.. autofunction:: build_asset_reconciliation_sensor
 
 .. autoclass:: RunStatusSensorDefinition
 

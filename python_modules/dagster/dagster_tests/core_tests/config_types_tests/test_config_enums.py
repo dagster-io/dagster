@@ -8,11 +8,13 @@ from dagster import (
     Enum,
     EnumValue,
     Field,
+    GraphDefinition,
     Int,
+    job,
+    op,
 )
 from dagster._config import Enum as ConfigEnum
 from dagster._config.validate import validate_config
-from dagster._legacy import PipelineDefinition, execute_pipeline, pipeline, solid
 
 
 def define_test_enum_type():
@@ -38,35 +40,33 @@ def test_config_enum_error():
 def test_enum_in_pipeline_execution():
     called = {}
 
-    @solid(
+    @op(
         config_schema={
             "int_field": Int,
             "enum_field": Enum("AnEnum", [EnumValue("ENUM_VALUE")]),
         }
     )
     def config_me(context):
-        assert context.solid_config["int_field"] == 2
-        assert context.solid_config["enum_field"] == "ENUM_VALUE"
+        assert context.op_config["int_field"] == 2
+        assert context.op_config["enum_field"] == "ENUM_VALUE"
         called["yup"] = True
 
-    pipeline_def = PipelineDefinition(name="enum_in_pipeline", solid_defs=[config_me])
+    pipeline_def = GraphDefinition(name="enum_in_pipeline", node_defs=[config_me]).to_job()
 
-    result = execute_pipeline(
-        pipeline_def,
-        {"solids": {"config_me": {"config": {"int_field": 2, "enum_field": "ENUM_VALUE"}}}},
+    result = pipeline_def.execute_in_process(
+        {"ops": {"config_me": {"config": {"int_field": 2, "enum_field": "ENUM_VALUE"}}}},
     )
 
     assert result.success
     assert called["yup"]
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
-        execute_pipeline(
-            pipeline_def,
-            {"solids": {"config_me": {"config": {"int_field": 2, "enum_field": "NOPE"}}}},
+        pipeline_def.execute_in_process(
+            {"ops": {"config_me": {"config": {"int_field": 2, "enum_field": "NOPE"}}}},
         )
 
     assert (
-        "Value at path root:solids:config_me:config:enum_field not in enum type AnEnum got NOPE"
+        "Value at path root:ops:config_me:config:enum_field not in enum type AnEnum got NOPE"
         in str(exc_info.value)
     )
 
@@ -87,16 +87,16 @@ def test_native_enum_dagster_enum():
 
     called = {}
 
-    @solid(config_schema=dagster_enum)
+    @op(config_schema=dagster_enum)
     def dagster_enum_me(context):
-        assert context.solid_config == NativeEnum.BAR
+        assert context.op_config == NativeEnum.BAR
         called["yup"] = True
 
-    pipeline_def = PipelineDefinition(
-        name="native_enum_dagster_pipeline", solid_defs=[dagster_enum_me]
-    )
+    pipeline_def = GraphDefinition(
+        name="native_enum_dagster_pipeline", node_defs=[dagster_enum_me]
+    ).to_job()
 
-    result = execute_pipeline(pipeline_def, {"solids": {"dagster_enum_me": {"config": "BAR"}}})
+    result = pipeline_def.execute_in_process({"ops": {"dagster_enum_me": {"config": "BAR"}}})
     assert result.success
     assert called["yup"]
 
@@ -105,16 +105,16 @@ def test_native_enum_dagster_enum_from_classmethod():
     dagster_enum = Enum.from_python_enum(NativeEnum)
     called = {}
 
-    @solid(config_schema=dagster_enum)
+    @op(config_schema=dagster_enum)
     def dagster_enum_me(context):
-        assert context.solid_config == NativeEnum.BAR
+        assert context.op_config == NativeEnum.BAR
         called["yup"] = True
 
-    pipeline_def = PipelineDefinition(
-        name="native_enum_dagster_pipeline", solid_defs=[dagster_enum_me]
-    )
+    pipeline_def = GraphDefinition(
+        name="native_enum_dagster_pipeline", node_defs=[dagster_enum_me]
+    ).to_job()
 
-    result = execute_pipeline(pipeline_def, {"solids": {"dagster_enum_me": {"config": "BAR"}}})
+    result = pipeline_def.execute_in_process({"ops": {"dagster_enum_me": {"config": "BAR"}}})
     assert result.success
     assert called["yup"]
 
@@ -124,7 +124,7 @@ def test_native_enum_not_allowed_as_default_value():
 
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
 
-        @solid(config_schema=Field(dagster_enum, is_required=False, default_value=NativeEnum.BAR))
+        @op(config_schema=Field(dagster_enum, is_required=False, default_value=NativeEnum.BAR))
         def _enum_direct(_):
             pass
 
@@ -140,16 +140,16 @@ def test_list_enum_with_default_value():
 
     called = {}
 
-    @solid(config_schema=Field([dagster_enum], is_required=False, default_value=["BAR"]))
+    @op(config_schema=Field([dagster_enum], is_required=False, default_value=["BAR"]))
     def enum_list(context):
-        assert context.solid_config == [NativeEnum.BAR]
+        assert context.op_config == [NativeEnum.BAR]
         called["yup"] = True
 
-    @pipeline
-    def enum_list_pipeline():
+    @job
+    def enum_list_job():
         enum_list()
 
-    result = execute_pipeline(enum_list_pipeline)
+    result = enum_list_job.execute_in_process()
 
     assert result.success
     assert called["yup"]
@@ -160,16 +160,16 @@ def test_dict_enum_with_default():
 
     called = {}
 
-    @solid(config_schema={"enum": Field(dagster_enum, is_required=False, default_value="BAR")})
+    @op(config_schema={"enum": Field(dagster_enum, is_required=False, default_value="BAR")})
     def enum_dict(context):
-        assert context.solid_config["enum"] == NativeEnum.BAR
+        assert context.op_config["enum"] == NativeEnum.BAR
         called["yup"] = True
 
-    @pipeline
-    def enum_dict_pipeline():
+    @job
+    def enum_dict_job():
         enum_dict()
 
-    result = execute_pipeline(enum_dict_pipeline)
+    result = enum_dict_job.execute_in_process()
 
     assert result.success
     assert called["yup"]
@@ -180,9 +180,7 @@ def test_list_enum_with_bad_default_value():
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
 
-        @solid(
-            config_schema=Field([dagster_enum], is_required=False, default_value=[NativeEnum.BAR])
-        )
+        @op(config_schema=Field([dagster_enum], is_required=False, default_value=[NativeEnum.BAR]))
         def _bad_enum_list(_):
             pass
 
@@ -199,7 +197,7 @@ def test_dict_enum_with_bad_default():
 
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
 
-        @solid(
+        @op(
             config_schema={
                 "enum": Field(dagster_enum, is_required=False, default_value=NativeEnum.BAR)
             }
