@@ -7,7 +7,10 @@ import {StepEventStatus} from '../types/globalTypes';
 import {LogsProviderLogs} from './LogsProvider';
 import {RunContext} from './RunContext';
 import {RunFragment} from './types/RunFragment';
-import {RunMetadataProviderMessageFragment} from './types/RunMetadataProviderMessageFragment';
+import {
+  RunMetadataProviderMessageFragment,
+  RunMetadataProviderMessageFragment_ResourceInitFailureEvent,
+} from './types/RunMetadataProviderMessageFragment';
 
 export enum IStepState {
   PREPARING = 'preparing',
@@ -169,6 +172,19 @@ const stepStatusToStepState = (status: StepEventStatus | null) => {
   }
 };
 
+const isMarkerEvent = (
+  log: RunMetadataProviderMessageFragment,
+): log is RunMetadataProviderMessageFragment_ResourceInitFailureEvent => {
+  return (
+    log.__typename === 'EngineEvent' ||
+    log.__typename === 'ResourceInitFailureEvent' ||
+    log.__typename === 'ResourceInitStartedEvent' ||
+    log.__typename === 'ResourceInitSuccessEvent' ||
+    log.__typename === 'StepWorkerStartedEvent' ||
+    log.__typename === 'StepWorkerStartingEvent'
+  );
+};
+
 export function extractMetadataFromLogs(
   logs: RunMetadataProviderMessageFragment[],
 ): IRunMetadataDict {
@@ -219,14 +235,7 @@ export function extractMetadataFromLogs(
       }
     }
 
-    if (
-      log.__typename === 'EngineEvent' ||
-      log.__typename === 'ResourceInitFailureEvent' ||
-      log.__typename === 'ResourceInitStartedEvent' ||
-      log.__typename === 'ResourceInitSuccessEvent' ||
-      log.__typename === 'StepWorkerStartedEvent' ||
-      log.__typename === 'StepWorkerStartingEvent'
-    ) {
+    if (isMarkerEvent(log) && !log.stepKey) {
       if (log.markerStart) {
         upsertMarker(metadata.globalMarkers, log.markerStart).start = timestamp;
       }
@@ -265,6 +274,14 @@ export function extractMetadataFromLogs(
           markers: [],
         } as IStepMetadata);
 
+      if (isMarkerEvent(log)) {
+        if (log.markerStart) {
+          upsertMarker(step.markers, log.markerStart).start = timestamp;
+        }
+        if (log.markerEnd) {
+          upsertMarker(step.markers, log.markerEnd).end = timestamp;
+        }
+      }
       if (log.__typename === 'ExecutionStepStartEvent') {
         upsertState(step, timestamp, IStepState.RUNNING);
         step.start = timestamp;

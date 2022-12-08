@@ -47,32 +47,28 @@ def validate_dependency_dict(
 
     if not isinstance(dependencies, dict):
         raise DagsterInvalidDefinitionError(
-            prelude
-            + "Received value {val} of type {type} at the top level.".format(
-                val=dependencies, type=type(dependencies)
-            )
+            prelude + "Received value {dependencies} of type {type(dependencies)} at the top level."
         )
 
     for key, dep_dict in dependencies.items():
         if not (isinstance(key, str) or isinstance(key, NodeInvocation)):
             raise DagsterInvalidDefinitionError(
                 prelude + "Expected str or NodeInvocation key in the top level dict. "
-                "Received value {val} of type {type}".format(val=key, type=type(key))
+                "Received value {key} of type {type(key)}"
             )
         if not isinstance(dep_dict, dict):
             if isinstance(dep_dict, IDependencyDefinition):
                 raise DagsterInvalidDefinitionError(
                     prelude
-                    + "Received a IDependencyDefinition one layer too high under key {key}. "
+                    + f"Received a IDependencyDefinition one layer too high under key {key}. "
                     "The DependencyDefinition should be moved in to a dict keyed on "
-                    "input name.".format(key=key)
+                    "input name."
                 )
             else:
                 raise DagsterInvalidDefinitionError(
-                    prelude + "Under key {key} received value {val} of type {type}. "
-                    "Expected dict[str, DependencyDefinition]".format(
-                        key=key, val=dep_dict, type=type(dep_dict)
-                    )
+                    prelude
+                    + f"Under key {key} received value {dep_dict} of type {type(dep_dict)}. "
+                    "Expected dict[str, DependencyDefinition]"
                 )
 
         for input_key, dep in dep_dict.items():
@@ -84,10 +80,8 @@ def validate_dependency_dict(
             if not isinstance(dep, IDependencyDefinition):
                 raise DagsterInvalidDefinitionError(
                     prelude
-                    + 'Expected IDependencyDefinition for solid "{key}" input "{input_key}". '
-                    "Received value {val} of type {type}.".format(
-                        key=key, input_key=input_key, val=dep, type=type(dep)
-                    )
+                    + f'Expected IDependencyDefinition for node "{key}" input "{input_key}". '
+                    f"Received value {dep} of type {type(dep)}."
                 )
 
     return dependencies
@@ -99,7 +93,7 @@ def create_execution_structure(
     graph_definition: "GraphDefinition",
 ) -> Tuple[DependencyStructure, Mapping[str, Node]]:
     """This builder takes the dependencies dictionary specified during creation of the
-    PipelineDefinition object and builds (1) the execution structure and (2) a solid dependency
+    PipelineDefinition object and builds (1) the execution structure and (2) a node dependency
     dictionary.
 
     For example, for the following dependencies:
@@ -128,7 +122,7 @@ def create_execution_structure(
 
     This will create:
 
-    pipeline_solid_dict = {
+    node_dict = {
         'giver': <dagster._core.definitions.dependency.Solid object>,
         'sleeper_1': <dagster._core.definitions.dependency.Solid object>,
         'sleeper_2': <dagster._core.definitions.dependency.Solid object>,
@@ -149,7 +143,6 @@ def create_execution_structure(
         key_type=(str, NodeInvocation),
         value_type=dict,
     )
-    # graph_definition is none in the context of a pipeline
     check.inst_param(graph_definition, "graph_definition", GraphDefinition)
 
     # Same as dep_dict but with NodeInvocation replaced by alias string
@@ -173,17 +166,17 @@ def create_execution_structure(
         alias_to_name[alias] = solid_key.name
         aliased_dependencies_dict[alias] = input_dep_dict
 
-    pipeline_solid_dict = _build_graph_node_dict(
+    node_dict = _build_graph_node_dict(
         node_defs, name_to_aliases, alias_to_solid_instance, graph_definition
     )
 
-    _validate_dependencies(aliased_dependencies_dict, pipeline_solid_dict, alias_to_name)
+    _validate_dependencies(aliased_dependencies_dict, node_dict, alias_to_name)
 
     dependency_structure = DependencyStructure.from_definitions(
-        pipeline_solid_dict, aliased_dependencies_dict
+        node_dict, aliased_dependencies_dict
     )
 
-    return dependency_structure, pipeline_solid_dict
+    return dependency_structure, node_dict
 
 
 def _build_graph_node_dict(

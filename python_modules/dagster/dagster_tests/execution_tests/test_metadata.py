@@ -28,12 +28,16 @@ from dagster._core.definitions.metadata.table import (
     TableRecord,
     TableSchema,
 )
+from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult
 from dagster._legacy import execute_pipeline, pipeline, solid
 from dagster._utils import frozendict
 
 
-def solid_events_for_type(result, solid_name, event_type):
-    solid_result = result.result_for_solid(solid_name)
+def solid_events_for_type(
+    result: PipelineExecutionResult, solid_name: str, event_type: DagsterEventType
+):
+    solid_result = result.result_for_node(solid_name)
+    assert isinstance(solid_result, OpExecutionResult)
     return [
         compute_step_event
         for compute_step_event in solid_result.compute_step_events

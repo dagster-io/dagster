@@ -14,6 +14,7 @@ from dagster import (
     Output,
     SourceAsset,
     StaticPartitionsDefinition,
+    build_op_context,
     daily_partitioned_config,
     define_asset_job,
     hourly_partitioned_config,
@@ -139,6 +140,33 @@ def test_assets_job_with_different_partitions_defs():
             assert upstream is None
 
         build_assets_job("my_job", assets=[upstream, downstream])
+
+
+def test_access_partition_keys_from_context_direct_invocation():
+    partitions_def = StaticPartitionsDefinition(["a"])
+
+    @asset(partitions_def=partitions_def)
+    def partitioned_asset(context):
+        assert context.asset_partition_key_for_output() == "a"
+
+    context = build_op_context(partition_key="a")
+
+    # check unbound context
+    assert context.asset_partition_key_for_output() == "a"
+
+    # check bound context
+    partitioned_asset(context)
+
+    # check failure for non-partitioned asset
+    @asset
+    def non_partitioned_asset(context):
+        with pytest.raises(
+            CheckError, match="Tried to access partition_key for a non-partitioned asset"
+        ):
+            context.asset_partition_key_for_output()
+
+    context = build_op_context()
+    non_partitioned_asset(context)
 
 
 def test_access_partition_keys_from_context_only_one_asset_partitioned():

@@ -35,7 +35,6 @@ export const AssetNodeList: React.FC<{
         >
           <AssetNode
             definition={asset}
-            inAssetCatalog
             selected={false}
             liveData={liveDataByNode[toGraphId(asset.assetKey)]}
           />
@@ -46,7 +45,7 @@ export const AssetNodeList: React.FC<{
 };
 
 const Container = styled(Box)`
-  height: 144px;
+  height: 154px;
   overflow-x: auto;
   width: 100%;
   white-space: nowrap;

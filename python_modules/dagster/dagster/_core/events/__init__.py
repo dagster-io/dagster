@@ -507,6 +507,10 @@ class DagsterEvent(
         )
 
     @property
+    def node_handle(self) -> Optional[NodeHandle]:
+        return self.solid_handle
+
+    @property
     def solid_name(self) -> str:
         check.invariant(self.solid_handle is not None)
         solid_handle = cast(NodeHandle, self.solid_handle)
