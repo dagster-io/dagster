@@ -6,8 +6,8 @@ from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.instance import MayHaveInstanceWeakref
 from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 from dagster._core.storage.pipeline_run import (
+    DagsterRun,
     JobBucket,
-    PipelineRun,
     RunPartitionData,
     RunRecord,
     RunsFilter,
@@ -29,7 +29,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     """
 
     @abstractmethod
-    def add_run(self, pipeline_run: PipelineRun) -> PipelineRun:
+    def add_run(self, pipeline_run: DagsterRun) -> DagsterRun:
         """Add a run to storage.
 
         If a run already exists with the same ID, raise DagsterRunAlreadyExists
@@ -55,7 +55,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
-    ) -> Iterable[PipelineRun]:
+    ) -> Iterable[DagsterRun]:
         """Return all the runs present in the storage that match the given filters.
 
         Args:
@@ -83,7 +83,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[PipelineRun]]]:
+    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[DagsterRun]]]:
         """Get the run group to which a given run belongs.
 
         Args:
@@ -104,7 +104,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Mapping[str, Mapping[str, Union[Iterable[PipelineRun], int]]]:
+    ) -> Mapping[str, Mapping[str, Union[Iterable[DagsterRun], int]]]:
         """Return all of the run groups present in the storage that include rows matching the
         given filter.
 
@@ -138,7 +138,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         # more than 2x total instances of PipelineRun.
 
     @abstractmethod
-    def get_run_by_id(self, run_id: str) -> Optional[PipelineRun]:
+    def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
         """Get a run by its id.
 
         Args:

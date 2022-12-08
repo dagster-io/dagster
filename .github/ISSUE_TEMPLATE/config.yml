@@ -2,6 +2,9 @@ contact_links:
   - name: 🌟 Star us on Github
     url: https://github.com/dagster-io/dagster
     about: Show your support by starring the project!
+  - name: 📥 Subscribe to our Newsletter
+    url: https://dagster.io/newsletter-signup
+    about: Receive emails about Dagster content from our core team.
   - name: 🐦 Follow us on Twitter
     url: https://twitter.com/dagster
     about: Get notifications about Dagster content from our Twitter account.

@@ -7,6 +7,7 @@ from dagster import Field, In, Noneable, Nothing, OpExecutionContext, Permissive
 from dagster._annotations import experimental
 from dagster._utils import merge_dicts
 
+from ..client import DagsterKubernetesClient
 from ..container_context import K8sContainerContext
 from ..job import (
     DagsterK8sJobConfig,
@@ -15,12 +16,6 @@ from ..job import (
     get_k8s_job_name,
 )
 from ..launcher import K8sRunLauncher
-from ..utils import (
-    wait_for_job,
-    wait_for_job_to_have_pods,
-    wait_for_pod,
-    wait_for_running_job_to_succeed,
-)
 
 K8S_JOB_OP_CONFIG = merge_dicts(
     DagsterK8sJobConfig.config_type_container(),
@@ -260,26 +255,27 @@ def execute_k8s_job(
     else:
         kubernetes.config.load_kube_config(kubeconfig_file)
 
+    # changing this to be able to be passed in will allow for unit testing
+    api_client = DagsterKubernetesClient.production_client()
+
     context.log.info(f"Creating Kubernetes job {job_name} in namespace {namespace}...")
 
     start_time = time.time()
 
-    kubernetes.client.BatchV1Api().create_namespaced_job(namespace, job)
-
-    core_api = kubernetes.client.CoreV1Api()
+    api_client.batch_api.create_namespaced_job(namespace, job)
 
     context.log.info("Waiting for Kubernetes job to finish...")
 
     timeout = timeout or 0
 
-    wait_for_job(
+    api_client.wait_for_job(
         job_name=job_name,
         namespace=namespace,
         wait_timeout=timeout,
         start_time=start_time,
     )
 
-    pods = wait_for_job_to_have_pods(
+    pods = api_client.wait_for_job_to_have_pods(
         job_name,
         namespace,
         wait_timeout=timeout,
@@ -292,12 +288,12 @@ def execute_k8s_job(
         raise Exception("No pod names in job after it started")
 
     pod_to_watch = pod_names[0]
-    watch = kubernetes.watch.Watch()
+    watch = kubernetes.watch.Watch()  # consider moving in to api_client
 
-    wait_for_pod(pod_to_watch, namespace, wait_timeout=timeout, start_time=start_time)
+    api_client.wait_for_pod(pod_to_watch, namespace, wait_timeout=timeout, start_time=start_time)
 
     log_stream = watch.stream(
-        core_api.read_namespaced_pod_log, name=pod_to_watch, namespace=namespace
+        api_client.core_api.read_namespaced_pod_log, name=pod_to_watch, namespace=namespace
     )
 
     while True:
@@ -311,7 +307,7 @@ def execute_k8s_job(
         except StopIteration:
             break
 
-    wait_for_running_job_to_succeed(
+    api_client.wait_for_running_job_to_succeed(
         job_name=job_name,
         namespace=namespace,
         wait_timeout=timeout,

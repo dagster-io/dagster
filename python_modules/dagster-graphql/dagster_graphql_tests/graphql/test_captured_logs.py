@@ -10,14 +10,11 @@ from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .utils import sync_execute_get_run_log_data
 
 CAPTURED_LOGS_QUERY = """
-  query CapturedLogsQuery($runId: ID!, $fileKey: String!) {
-    pipelineRunOrError(runId: $runId) {
-      ... on PipelineRun {
-        runId
-        capturedLogs(fileKey: $fileKey) {
-          stdout
-        }
-      }
+  query CapturedLogsQuery($logKey: [String!]!) {
+    capturedLogs(logKey: $logKey) {
+      stdout
+      stderr
+      cursor
     }
   }
 """
@@ -34,7 +31,7 @@ CAPTURED_LOGS_SUBSCRIPTION = """
 
 
 class TestCapturedLogs(ExecutingGraphQLContextTestMatrix):
-    def test_get_captured_logs_over_graphql(self, graphql_context, snapshot):
+    def test_get_captured_logs_over_graphql(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "spew_pipeline")
         payload = sync_execute_get_run_log_data(
             context=graphql_context,
@@ -45,13 +42,15 @@ class TestCapturedLogs(ExecutingGraphQLContextTestMatrix):
         logs = graphql_context.instance.all_logs(run_id, of_type=DagsterEventType.LOGS_CAPTURED)
         assert len(logs) == 1
         entry = logs[0]
+        log_key = [run_id, "compute_logs", entry.dagster_event.logs_captured_data.file_key]
+
         result = execute_dagster_graphql(
             graphql_context,
             CAPTURED_LOGS_QUERY,
-            variables={"runId": run_id, "fileKey": entry.dagster_event.logs_captured_data.file_key},
+            variables={"logKey": log_key},
         )
-        stdout = result.data["pipelineRunOrError"]["capturedLogs"]["stdout"]
-        snapshot.assert_match(stdout)
+        stdout = result.data["capturedLogs"]["stdout"]
+        assert stdout == "HELLO WORLD\n"
 
     def test_captured_logs_subscription_graphql(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "spew_pipeline")

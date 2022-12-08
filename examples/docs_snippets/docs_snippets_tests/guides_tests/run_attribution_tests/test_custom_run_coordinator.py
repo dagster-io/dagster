@@ -7,7 +7,7 @@ from dagster_tests.core_tests.run_coordinator_tests.test_queued_run_coordinator 
 from mock import patch
 
 from dagster._core.run_coordinator import SubmitRunContext
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from docs_snippets.guides.dagster.run_attribution.custom_run_coordinator import (
     CustomRunCoordinator,
 )
@@ -32,12 +32,12 @@ class TestCustomRunCoordinator(TestQueuedRunCoordinator):
                 instance,
                 external_pipeline,
                 run_id=run_id,
-                status=PipelineRunStatus.NOT_STARTED,
+                status=DagsterRunStatus.NOT_STARTED,
             )
             returned_run = coordinator.submit_run(SubmitRunContext(run, workspace))
 
             assert returned_run.run_id == run_id
-            assert returned_run.status == PipelineRunStatus.QUEUED
+            assert returned_run.status == DagsterRunStatus.QUEUED
             mock_warnings.warn.assert_called_once()
             assert mock_warnings.warn.call_args.args[0].startswith(
                 "Couldn't decode JWT header"
@@ -63,12 +63,12 @@ class TestCustomRunCoordinator(TestQueuedRunCoordinator):
             instance,
             external_pipeline,
             run_id=run_id,
-            status=PipelineRunStatus.NOT_STARTED,
+            status=DagsterRunStatus.NOT_STARTED,
         )
         returned_run = coordinator.submit_run(SubmitRunContext(run, workspace))
 
         assert returned_run.run_id == run_id
-        assert returned_run.status == PipelineRunStatus.QUEUED
+        assert returned_run.status == DagsterRunStatus.QUEUED
 
         fetched_run = instance.get_run_by_id(run_id)
         assert len(fetched_run.tags) == 1

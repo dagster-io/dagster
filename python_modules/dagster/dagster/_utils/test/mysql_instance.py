@@ -71,12 +71,15 @@ class TestMySQLInstance:
         )
         from dagster_mysql.utils import get_conn_string  # pylint: disable=import-error
 
+        env_name = (
+            "MYSQL_TEST_BACKCOMPAT_DB_HOST" if kwargs.get("port") == 3307 else "MYSQL_TEST_DB_HOST"
+        )
         return get_conn_string(
             **dict(
                 dict(
                     username="test",
                     password="test",
-                    hostname=TestMySQLInstance.get_hostname(),
+                    hostname=TestMySQLInstance.get_hostname(env_name),
                     db_name="test",
                 ),
                 **kwargs,

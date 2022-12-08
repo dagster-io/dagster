@@ -10,7 +10,7 @@ import pytest
 import requests
 import yaml
 from dagster_aws_tests.aws_credential_test_utils import get_aws_creds
-from dagster_k8s.utils import wait_for_pod
+from dagster_k8s.client import DagsterKubernetesClient
 
 import dagster._check as check
 from dagster._utils import find_free_port, git_repository_root, merge_dicts
@@ -493,7 +493,7 @@ def _helm_chart_helper(
         assert p.returncode == 0
 
         # Wait for Dagit pod to be ready (won't actually stay up w/out js rebuild)
-        kube_api = kubernetes.client.CoreV1Api()
+        api_client = DagsterKubernetesClient.production_client()
 
         if chart_name == "helm/dagster":
             print("Waiting for Dagit pod to be ready...")
@@ -502,11 +502,11 @@ def _helm_chart_helper(
                 if time.time() - start_time > 120:
                     raise Exception("No dagit pod after 2 minutes")
 
-                pods = kube_api.list_namespaced_pod(namespace=namespace)
+                pods = api_client.core_api.list_namespaced_pod(namespace=namespace)
                 pod_names = [p.metadata.name for p in pods.items if "dagit" in p.metadata.name]
                 if pod_names:
                     dagit_pod = pod_names[0]
-                    wait_for_pod(dagit_pod, namespace=namespace)
+                    api_client.wait_for_pod(dagit_pod, namespace=namespace)
                     break
                 time.sleep(1)
 
@@ -517,11 +517,11 @@ def _helm_chart_helper(
                 if time.time() - start_time > 120:
                     raise Exception("No daemon pod after 2 minutes")
 
-                pods = kube_api.list_namespaced_pod(namespace=namespace)
+                pods = api_client.core_api.list_namespaced_pod(namespace=namespace)
                 pod_names = [p.metadata.name for p in pods.items if "daemon" in p.metadata.name]
                 if pod_names:
                     daemon_pod = pod_names[0]
-                    wait_for_pod(daemon_pod, namespace=namespace)
+                    api_client.wait_for_pod(daemon_pod, namespace=namespace)
                     break
                 time.sleep(1)
 
@@ -568,7 +568,7 @@ def _helm_chart_helper(
                 print("Waiting for celery workers")
                 for pod_name in pod_names:
                     print("Waiting for Celery worker pod %s" % pod_name)
-                    wait_for_pod(pod_name, namespace=namespace)
+                    api_client.wait_for_pod(pod_name, namespace=namespace)
 
                 rabbitmq_enabled = "rabbitmq" in helm_config and helm_config["rabbitmq"].get(
                     "enabled"
@@ -582,7 +582,7 @@ def _helm_chart_helper(
                         if time.time() - start_time > 120:
                             raise Exception("No rabbitmq pod after 2 minutes")
 
-                        pods = kube_api.list_namespaced_pod(namespace=namespace)
+                        pods = api_client.core_api.list_namespaced_pod(namespace=namespace)
                         pod_names = [
                             p.metadata.name for p in pods.items if "rabbitmq" in p.metadata.name
                         ]
@@ -590,7 +590,7 @@ def _helm_chart_helper(
                             assert len(pod_names) == 1
                             print("Waiting for rabbitmq pod to be ready: " + str(pod_names[0]))
 
-                            wait_for_pod(pod_names[0], namespace=namespace)
+                            api_client.wait_for_pod(pod_names[0], namespace=namespace)
                             break
                         time.sleep(1)
 
@@ -601,14 +601,14 @@ def _helm_chart_helper(
                         if time.time() - start_time > 120:
                             raise Exception("No redis pods after 2 minutes")
 
-                        pods = kube_api.list_namespaced_pod(namespace=namespace)
+                        pods = api_client.core_api.list_namespaced_pod(namespace=namespace)
                         pod_names = [
                             p.metadata.name for p in pods.items if "redis" in p.metadata.name
                         ]
                         if pod_names and len(pod_names) >= 1:
                             for pod_name in pod_names:
                                 print("Waiting for redis pod to be ready: " + str(pod_name))
-                                wait_for_pod(pod_name, namespace=namespace)
+                                api_client.wait_for_pod(pod_name, namespace=namespace)
                             break
                         time.sleep(5)
 
@@ -627,13 +627,13 @@ def _helm_chart_helper(
         ):
             # Wait for user code deployments to be ready
             print("Waiting for user code deployments")
-            pods = kubernetes.client.CoreV1Api().list_namespaced_pod(namespace=namespace)
+            pods = api_client.core_api.list_namespaced_pod(namespace=namespace)
             pod_names = [
                 p.metadata.name for p in pods.items if "user-code-deployment" in p.metadata.name
             ]
             for pod_name in pod_names:
                 print("Waiting for user code deployment pod %s" % pod_name)
-                wait_for_pod(pod_name, namespace=namespace)
+                api_client.wait_for_pod(pod_name, namespace=namespace)
 
         print("Helm chart successfully installed in namespace %s" % namespace)
         yield

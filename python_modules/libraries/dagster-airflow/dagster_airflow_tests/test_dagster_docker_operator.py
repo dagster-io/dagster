@@ -57,7 +57,7 @@ def test_init_modified_docker_operator(dagster_docker_image):
             instance_ref=instance.get_ref(),
             recon_repo=recon_repo_for_tests,
         )
-        DagsterDockerOperator(dagster_operator_parameters)
+        DagsterDockerOperator(dagster_operator_parameters=dagster_operator_parameters)
 
 
 @requires_airflow_db
@@ -78,7 +78,7 @@ def test_modified_docker_operator_bad_docker_conn(dagster_docker_image):
             instance_ref=instance.get_ref(),
             recon_repo=recon_repo_for_tests,
         )
-        operator = DagsterDockerOperator(dagster_operator_parameters)
+        operator = DagsterDockerOperator(dagster_operator_parameters=dagster_operator_parameters)
 
         with pytest.raises(AirflowException, match="The conn_id `foo_conn` isn't defined"):
             operator.execute({})
@@ -100,7 +100,7 @@ def test_modified_docker_operator_env(dagster_docker_image):
             instance_ref=instance.get_ref(),
             recon_repo=recon_repo_for_tests,
         )
-        operator = DagsterDockerOperator(dagster_operator_parameters)
+        operator = DagsterDockerOperator(dagster_operator_parameters=dagster_operator_parameters)
         with pytest.raises(AirflowException, match="Could not parse response"):
             operator.execute({})
 
@@ -121,7 +121,7 @@ def test_modified_docker_operator_bad_command(dagster_docker_image):
             instance_ref=instance.get_ref(),
             recon_repo=recon_repo_for_tests,
         )
-        operator = DagsterDockerOperator(dagster_operator_parameters)
+        operator = DagsterDockerOperator(dagster_operator_parameters=dagster_operator_parameters)
         with pytest.raises(AirflowException, match="Usage: dagster"):
             operator.execute({})
 
@@ -154,7 +154,9 @@ def test_modified_docker_operator_url(dagster_docker_image):
                 instance_ref=instance.get_ref(),
                 recon_repo=recon_repo_for_tests,
             )
-            operator = DagsterDockerOperator(dagster_operator_parameters)
+            operator = DagsterDockerOperator(
+                dagster_operator_parameters=dagster_operator_parameters
+            )
 
             with pytest.raises(AirflowException, match="Could not parse response"):
                 operator.execute({})

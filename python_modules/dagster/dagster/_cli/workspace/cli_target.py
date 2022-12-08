@@ -107,7 +107,7 @@ def get_workspace_load_target(kwargs: Mapping[str, str]):
         if os.path.exists("workspace.yaml"):
             return WorkspaceFileTarget(paths=["workspace.yaml"])
         raise click.UsageError(
-            "No arguments given and no [tools.dagster] block in pyproject.toml found."
+            "No arguments given and no [tool.dagster] block in pyproject.toml found."
         )
 
     if kwargs.get("workspace"):

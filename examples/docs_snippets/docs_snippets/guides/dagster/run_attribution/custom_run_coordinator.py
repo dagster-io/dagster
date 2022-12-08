@@ -4,7 +4,7 @@ from json import JSONDecodeError, loads
 from typing import Optional
 
 from dagster._core.run_coordinator import QueuedRunCoordinator, SubmitRunContext
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 
 
 class CustomRunCoordinator(QueuedRunCoordinator):
@@ -28,7 +28,7 @@ class CustomRunCoordinator(QueuedRunCoordinator):
     # end_email_marker
 
     # start_submit_marker
-    def submit_run(self, context: SubmitRunContext) -> PipelineRun:
+    def submit_run(self, context: SubmitRunContext) -> DagsterRun:
         pipeline_run = context.pipeline_run
         jwt_claims_header = context.get_request_header("X-Amzn-Oidc-Data")
         email = self.get_email(jwt_claims_header)

@@ -3,6 +3,7 @@ from tempfile import TemporaryDirectory
 
 import pytest
 import responses
+from airflow import __version__ as airflow_version
 from airflow.models import Connection
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.http_operator import SimpleHttpOperator
@@ -68,7 +69,9 @@ def test_failure_bash_task():
 def test_http_task():
     http_task = SimpleHttpOperator(task_id="http_task", endpoint="foo")
 
-    connections = [Connection(conn_id="http_default", host="https://mycoolwebsite.com")]
+    connections = [
+        Connection(conn_id="http_default", host="https://mycoolwebsite.com", conn_type="http")
+    ]
 
     dagster_op = airflow_operator_to_op(http_task, connections=connections)
 
@@ -114,7 +117,9 @@ def test_capture_op_logs():
 def test_capture_hook_logs():
     http_task = SimpleHttpOperator(task_id="capture_logs_http_task", endpoint="foo")
 
-    connections = [Connection(conn_id="http_default", host="https://mycoolwebsite.com")]
+    connections = [
+        Connection(conn_id="http_default", host="https://mycoolwebsite.com", conn_type="http")
+    ]
 
     dagster_op = airflow_operator_to_op(http_task, connections=connections)
 
@@ -140,9 +145,14 @@ def test_return_output_xcom():
     def my_python_func():
         return "foo"
 
-    simple_python_task = PythonOperator(
-        task_id="python_task", python_callable=my_python_func, xcom_push=True
-    )
+    if airflow_version >= "2.0.0":
+        simple_python_task = PythonOperator(
+            task_id="python_task", python_callable=my_python_func, do_xcom_push=True
+        )
+    else:
+        simple_python_task = PythonOperator(
+            task_id="python_task", python_callable=my_python_func, xcom_push=True
+        )
 
     dagster_op = airflow_operator_to_op(simple_python_task, return_output=True)
 
@@ -183,6 +193,7 @@ def test_sqlite_operator(capsys):
                 host=f"{tmpdir}/example.db",
                 login="",
                 password="",
+                conn_type="sqlite",
             )
         ]
 

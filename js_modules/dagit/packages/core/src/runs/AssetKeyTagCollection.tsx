@@ -99,8 +99,13 @@ export const AssetKeyTagCollection: React.FC<{
   return (
     <Box flex={{direction: 'row', gap: 8, wrap: 'wrap', alignItems: 'center'}}>
       <Icon color={Colors.Gray400} name="asset" size={16} />
-      {`${displayed.map(displayNameForAssetKey).join(', ')}${
-        hidden > 0 ? ` + ${hidden} more` : ''
+      {`${displayed.map(displayNameForAssetKey).join(', ')}
+      ${
+        hidden > 0 && displayed.length > 0
+          ? ` + ${hidden} more`
+          : hidden > 0
+          ? `${hidden} assets`
+          : ''
       }`}
     </Box>
   );

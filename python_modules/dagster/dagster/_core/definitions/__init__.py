@@ -1,3 +1,5 @@
+from dagster._core.definitions.node_definition import NodeDefinition
+
 from .composition import PendingNodeInvocation
 from .config import ConfigMapping
 from .dependency import (
@@ -5,10 +7,9 @@ from .dependency import (
     MultiDependencyDefinition,
     Node,
     NodeHandle,
+    NodeInput,
     NodeInvocation,
-    SolidInputHandle,
-    SolidInvocation,
-    SolidOutputHandle,
+    NodeOutput,
 )
 from .events import (
     AssetKey,
@@ -102,7 +103,6 @@ from .assets_job import build_assets_job
 from .decorators import (
     asset,
     asset_sensor,
-    composite_solid,
     config_mapping,
     daily_schedule,
     failure_hook,
@@ -161,7 +161,6 @@ from .run_status_sensor_definition import (
     run_failure_sensor,
     run_status_sensor,
 )
-from .solid_definition import CompositeSolidDefinition, NodeDefinition, SolidDefinition
 from .source_asset import SourceAsset
 from .time_window_partition_mapping import TimeWindowPartitionMapping
 from .time_window_partitions import (

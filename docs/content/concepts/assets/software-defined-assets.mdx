@@ -260,6 +260,34 @@ def downstream(may_not_materialize):
     return may_not_materialize + [5]
 ```
 
+### Asset code versions
+
+Assets may be assigned a `code_version`. Versions let you help Dagster track what assets are stale and avoid performing redundant computation.
+
+```python file=/concepts/assets/code_versions.py startafter=start_single_asset endbefore=end_single_asset
+@asset(code_version="1")
+def asset_with_version():
+    return 100
+```
+
+When an asset with a code version is materialized, the generated `AssetMaterialization` is tagged with the version. An asset that has a different code version than the code version used for its most recent materialization will be considered stale. Any assets downstream of a stale asset are also considered stale.
+
+Multi-assets may assign different code versions for each of their outputs:
+
+```python file=/concepts/assets/code_versions.py startafter=start_multi_asset endbefore=end_multi_asset
+@multi_asset(
+    outs={
+        "a": AssetOut(code_version="1"),
+        "b": AssetOut(code_version="2"),
+    }
+)
+def multi_asset_with_versions():
+    yield Output(100, "a")
+    yield Output(200, "b")
+```
+
+Just as with regular assets, these versions are attached to the `AssetMaterialization` objects for each of the constituent assets and accounted for when determining asset staleness.
+
 ---
 
 ## Viewing and materializing assets in Dagit

@@ -45,6 +45,14 @@ const USED_ATTRIBUTES = [
 
 const attributeURLToBase64Map: {[attrURL: string]: string} = {};
 
+async function convertURLToBase64Data(url: string) {
+  if (!attributeURLToBase64Map[url]) {
+    const data = await fetch(url);
+    attributeURLToBase64Map[url] = btoa(await data.text());
+  }
+  return `data:image/svg+xml;base64,${attributeURLToBase64Map[url]}`;
+}
+
 async function makeAttributeValuePortable(attrValue: string) {
   // If the attribute value references a url(http:...), fetch it and convert
   // it to an inline base64 data url. (This replaces our dependency on icon SVGs)
@@ -52,14 +60,8 @@ async function makeAttributeValuePortable(attrValue: string) {
     const match = attrValue.match(/url\(['"]?(http[^'"]+)['"]?\)/);
     if (match) {
       const url = match[1];
-      if (!attributeURLToBase64Map[url]) {
-        const data = await fetch(url);
-        attributeURLToBase64Map[url] = btoa(await data.text());
-      }
-      attrValue = attrValue.replace(
-        url,
-        `data:image/svg+xml;base64,${attributeURLToBase64Map[url]}`,
-      );
+      const data = await convertURLToBase64Data(url);
+      attrValue = attrValue.replace(url, data);
     }
   }
   return attrValue;
@@ -87,6 +89,12 @@ export async function makeSVGPortable(svg: SVGElement) {
       }
       if (node instanceof HTMLElement) {
         node.style.boxSizing = 'border-box';
+      }
+    }
+    if (node instanceof HTMLImageElement) {
+      const src = node.getAttribute('src');
+      if (src && !src.startsWith('data:')) {
+        node.setAttribute('src', await convertURLToBase64Data(src));
       }
     }
   }
