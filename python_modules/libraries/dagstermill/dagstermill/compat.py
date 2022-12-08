@@ -1,12 +1,10 @@
 import papermill
-from packaging.version import LegacyVersion, parse
+from packaging.version import parse
 from papermill.exceptions import PapermillExecutionError
 
 
 def is_papermill_2():
     version = parse(papermill.__version__)
-    if isinstance(version, LegacyVersion):
-        return False
     return version.major == 2
 
 

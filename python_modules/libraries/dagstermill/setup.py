@@ -44,7 +44,7 @@ setup(
         # incidentally brought ipython_genutils, but in v5.1 it was dropped, so as
         # a workaround we need to manually specify it here
         "ipython_genutils>=0.2.0",
-        "packaging>=20.5",
+        "packaging>=22",
         "papermill>=1.0.0",
         "scrapbook>=0.5.0",
         "nbconvert",
