@@ -32,6 +32,7 @@ import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {explorerPathFromString} from './PipelinePathUtils';
@@ -66,11 +67,14 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
     ].filter(Boolean) as TokenizingFieldValue[];
   }, [isJob, pipelineName, snapshotId]);
 
-  const repoToken = {
-    token: 'tag',
-    value: `${DagsterTag.RepositoryLabelTag}=${repoAddress?.name}@${repoAddress?.location}`,
-  };
-  const allTokens = [...filterTokens, ...permanentTokens, repoToken];
+  const allTokens = [...filterTokens, ...permanentTokens];
+  if (repoAddress) {
+    const repoToken = {
+      token: 'tag',
+      value: `${DagsterTag.RepositoryLabelTag}=${repoAddressAsTag(repoAddress)}`,
+    };
+    allTokens.push(repoToken);
+  }
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     PipelineRunsRootQuery,

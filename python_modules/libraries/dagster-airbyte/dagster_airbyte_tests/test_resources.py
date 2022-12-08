@@ -3,7 +3,7 @@ import responses
 from dagster_airbyte import AirbyteOutput, AirbyteState, airbyte_resource
 from dagster_airbyte.utils import generate_materializations
 
-from dagster import Failure, MetadataEntry
+from dagster import DagsterExecutionInterruptedError, Failure, MetadataEntry
 from dagster import _check as check
 from dagster import build_init_resource_context
 
@@ -148,7 +148,11 @@ def test_get_connection_details_bad_out_fail():
 
 
 @responses.activate
-def test_get_job_status_bad_out_fail():
+@pytest.mark.parametrize(
+    "forward_logs",
+    [True, False],
+)
+def test_get_job_status_bad_out_fail(forward_logs):
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
@@ -157,42 +161,43 @@ def test_get_job_status_bad_out_fail():
             }
         )
     )
-    responses.add(
-        method=responses.POST,
-        url=ab_resource.api_base_url + "/jobs/get",
-        json=None,
-        status=204,
-    )
-    with pytest.raises(check.CheckError):
-        ab_resource.get_job_status("some_connection", 5)
-
-    # Test no-forward-logs config
-    ab_resource = airbyte_resource(
-        build_init_resource_context(
-            config={
-                "host": "some_host",
-                "port": "8000",
-                "forward_logs": False,
-            }
+    if forward_logs:
+        responses.add(
+            method=responses.POST,
+            url=ab_resource.api_base_url + "/jobs/get",
+            json=None,
+            status=204,
         )
-    )
-    responses.add(
-        method=responses.POST,
-        url=ab_resource.api_base_url + "/jobs/list",
-        json=None,
-        status=204,
-    )
-    with pytest.raises(check.CheckError):
-        ab_resource.get_job_status("some_connection", 5)
+        with pytest.raises(check.CheckError):
+            ab_resource.get_job_status("some_connection", 5)
+    else:
+        # Test no-forward-logs config
+        ab_resource = airbyte_resource(
+            build_init_resource_context(
+                config={
+                    "host": "some_host",
+                    "port": "8000",
+                    "forward_logs": False,
+                }
+            )
+        )
+        responses.add(
+            method=responses.POST,
+            url=ab_resource.api_base_url + "/jobs/list",
+            json=None,
+            status=204,
+        )
+        with pytest.raises(check.CheckError):
+            ab_resource.get_job_status("some_connection", 5)
 
-    responses.add(
-        method=responses.POST,
-        url=ab_resource.api_base_url + "/jobs/list",
-        json={"jobs": []},
-        status=200,
-    )
-    with pytest.raises(check.CheckError):
-        ab_resource.get_job_status("some_connection", 5)
+        responses.add(
+            method=responses.POST,
+            url=ab_resource.api_base_url + "/jobs/list",
+            json={"jobs": []},
+            status=200,
+        )
+        with pytest.raises(check.CheckError):
+            ab_resource.get_job_status("some_connection", 5)
 
 
 @responses.activate
@@ -328,16 +333,83 @@ def test_assets(forward_logs):
 
 @responses.activate
 @pytest.mark.parametrize(
-    "forward_logs",
-    [True, False],
+    "forward_logs,cancel_sync_on_run_termination",
+    [
+        (True, True),
+        (True, False),
+        (False, True),
+        (False, False),
+    ],
 )
-def test_sync_and_poll_timeout(forward_logs):
+def test_sync_and_poll_termination(forward_logs, cancel_sync_on_run_termination):
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
                 "host": "some_host",
                 "port": "8000",
                 "forward_logs": forward_logs,
+                "cancel_sync_on_run_termination": cancel_sync_on_run_termination,
+            }
+        )
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/get",
+        json={},
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/sync",
+        json={"job": {"id": 1}},
+        status=200,
+    )
+
+    # Simulate job interruption when we poll for job status
+    def callback(*_, **__):
+        raise DagsterExecutionInterruptedError()
+
+    if forward_logs:
+        responses.add_callback(
+            method=responses.POST,
+            url=ab_resource.api_base_url + "/jobs/get",
+            callback=callback,
+        )
+    else:
+        responses.add_callback(
+            method=responses.POST,
+            url=ab_resource.api_base_url + "/jobs/list",
+            callback=callback,
+        )
+    responses.add(responses.POST, f"{ab_resource.api_base_url}/jobs/cancel", status=204)
+    poll_wait_second = 2
+    timeout = 1
+    with pytest.raises(DagsterExecutionInterruptedError):
+        ab_resource.sync_and_poll("some_connection", poll_wait_second, timeout)
+        if cancel_sync_on_run_termination:
+            assert responses.assert_call_count(f"{ab_resource.api_base_url}/jobs/cancel", 1) is True
+        else:
+            assert responses.assert_call_count(f"{ab_resource.api_base_url}/jobs/cancel", 0) is True
+
+
+@responses.activate
+@pytest.mark.parametrize(
+    "forward_logs,cancel_sync_on_run_termination",
+    [
+        (True, True),
+        (True, False),
+        (False, True),
+        (False, False),
+    ],
+)
+def test_sync_and_poll_timeout(forward_logs, cancel_sync_on_run_termination):
+    ab_resource = airbyte_resource(
+        build_init_resource_context(
+            config={
+                "host": "some_host",
+                "port": "8000",
+                "forward_logs": forward_logs,
+                "cancel_sync_on_run_termination": cancel_sync_on_run_termination,
             }
         )
     )
@@ -396,3 +468,7 @@ def test_sync_and_poll_timeout(forward_logs):
     timeout = 1
     with pytest.raises(Failure, match="Timeout: Airbyte job"):
         ab_resource.sync_and_poll("some_connection", poll_wait_second, timeout)
+        if cancel_sync_on_run_termination:
+            assert responses.assert_call_count(f"{ab_resource.api_base_url}/jobs/cancel", 1) is True
+        else:
+            assert responses.assert_call_count(f"{ab_resource.api_base_url}/jobs/cancel", 0) is True

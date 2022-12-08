@@ -51,8 +51,7 @@ export const AssetWipeDialog: React.FC<{
           </ul>
           <div>
             Assets defined only by their historical materializations will disappear from the Asset
-            Catalog. Software-defined assets will remain unless their definition is also deleted
-            from the repository.
+            Catalog. Software-defined assets will remain unless their definition is also deleted.
           </div>
           <strong>This action cannot be undone.</strong>
         </Group>

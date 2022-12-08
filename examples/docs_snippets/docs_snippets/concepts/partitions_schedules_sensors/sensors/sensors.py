@@ -287,3 +287,12 @@ def instance_sensor():
 
 
 # end_instance_sensor
+
+# start_sensor_logging
+@sensor(job=the_job)
+def logs_then_skips(context):
+    context.log.info("Logging from a sensor!")
+    return SkipReason("Nothing to do")
+
+
+# end_sensor_logging

@@ -24,7 +24,7 @@ import {UnloadableSchedules} from '../instigation/Unloadable';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {OverviewScheduleTable} from './OverviewSchedulesTable';
@@ -52,7 +52,7 @@ export const OverviewSchedulesRoot = () => {
   const repoBuckets = React.useMemo(() => {
     const visibleKeys = visibleRepoKeys(visibleRepos);
     return buildBuckets(data).filter(({repoAddress}) =>
-      visibleKeys.has(repoAddressAsString(repoAddress)),
+      visibleKeys.has(repoAddressAsHumanString(repoAddress)),
     );
   }, [data, visibleRepos]);
 
@@ -94,12 +94,12 @@ export const OverviewSchedulesRoot = () => {
                 anyReposHidden ? (
                   <div>
                     No schedules matching <strong>{searchValue}</strong> were found in the selected
-                    repositories
+                    code locations
                   </div>
                 ) : (
                   <div>
-                    No schedules matching <strong>{searchValue}</strong> were found in this
-                    workspace
+                    No schedules matching <strong>{searchValue}</strong> were found in your
+                    definitions
                   </div>
                 )
               }
@@ -115,8 +115,8 @@ export const OverviewSchedulesRoot = () => {
             title="No schedules"
             description={
               anyReposHidden
-                ? 'No schedules were found in the selected repositories'
-                : 'No schedules were found in this workspace'
+                ? 'No schedules were found in the selected code locations'
+                : 'No schedules were found in your definitions'
             }
           />
         </Box>
@@ -193,8 +193,8 @@ const UnloadableSchedulesAlert: React.FC<{
             <Box flex={{direction: 'column', gap: 12, alignItems: 'flex-start'}}>
               <div>
                 Schedules were previously started but now cannot be loaded. They may be part of a
-                different workspace or from a schedule or repository that no longer exists in code.
-                You can turn them off, but you cannot turn them back on.
+                code locations that no longer exist. You can turn them off, but you cannot turn them
+                back on.
               </div>
               <Button onClick={() => setIsOpen(true)}>
                 {count === 1 ? 'View unloadable schedule' : 'View unloadable schedules'}

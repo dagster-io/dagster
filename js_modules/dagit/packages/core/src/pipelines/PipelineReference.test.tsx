@@ -49,7 +49,7 @@ describe('PipelineReference', () => {
       await waitFor(() => {
         const link = screen.getByRole('link', {name: /foobar/i});
         expect(link).toBeVisible();
-        expect(link.getAttribute('href')).toBe('/workspace/jobs/foobar/');
+        expect(link.getAttribute('href')).toBe('/locations/jobs/foobar/');
       });
     });
 
@@ -58,7 +58,7 @@ describe('PipelineReference', () => {
       await waitFor(() => {
         const link = screen.getByRole('link', {name: /foobar/i});
         expect(link).toBeVisible();
-        expect(link.getAttribute('href')).toBe('/workspace/lorem@ipsum/jobs/foobar/');
+        expect(link.getAttribute('href')).toBe('/locations/lorem@ipsum/jobs/foobar/');
       });
     });
 

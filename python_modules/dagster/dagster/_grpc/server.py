@@ -60,6 +60,7 @@ from .types import (
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
     GetCurrentImageResult,
+    GetCurrentRunsResult,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
     PartitionArgs,
@@ -777,6 +778,16 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
         )
+
+    def GetCurrentRuns(self, request, context):
+        with self._execution_lock:
+            return api_pb2.GetCurrentRunsReply(
+                serialized_current_runs=serialize_dagster_namedtuple(
+                    GetCurrentRunsResult(
+                        current_runs=list(self._executions.keys()), serializable_error_info=None
+                    )
+                )
+            )
 
 
 @whitelist_for_serdes

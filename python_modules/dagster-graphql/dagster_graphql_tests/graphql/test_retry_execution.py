@@ -14,7 +14,7 @@ from dagster_graphql.test.utils import (
 )
 
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._core.utils import make_new_run_id
@@ -511,7 +511,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
             os.remove(output_file)
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
-        assert graphql_context.instance.get_run_by_id(run_id).status == PipelineRunStatus.FAILURE
+        assert graphql_context.instance.get_run_by_id(run_id).status == DagsterRunStatus.FAILURE
 
         retry = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -523,7 +523,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
             "launchPipelineReexecution"
         ]
         run_id = retry.data["launchPipelineReexecution"]["run"]["runId"]
-        assert graphql_context.instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
+        assert graphql_context.instance.get_run_by_id(run_id).status == DagsterRunStatus.SUCCESS
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"
         ]["messages"]
@@ -558,7 +558,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
 
         parent_run_id = result.data["launchPipelineExecution"]["run"]["runId"]
         parent_run = graphql_context.instance.get_run_by_id(parent_run_id)
-        assert parent_run.status == PipelineRunStatus.FAILURE
+        assert parent_run.status == DagsterRunStatus.FAILURE
 
         # override run config to make it fail
         graphql_context.instance.delete_run(parent_run_id)
@@ -601,7 +601,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
             os.remove(output_file)
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
-        assert graphql_context.instance.get_run_by_id(run_id).status == PipelineRunStatus.FAILURE
+        assert graphql_context.instance.get_run_by_id(run_id).status == DagsterRunStatus.FAILURE
 
         retry = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -610,7 +610,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         )
 
         run_id = retry.data["launchPipelineReexecution"]["run"]["runId"]
-        assert graphql_context.instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
+        assert graphql_context.instance.get_run_by_id(run_id).status == DagsterRunStatus.SUCCESS
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"
         ]["messages"]
@@ -720,7 +720,7 @@ class TestRetryExecutionAsyncOnlyBehavior(ExecutingGraphQLContextTestMatrix):
 
         # Wait for the original run to finish
         poll_for_finished_run(instance, run_id, timeout=30)
-        assert instance.get_run_by_id(run_id).status == PipelineRunStatus.CANCELED
+        assert instance.get_run_by_id(run_id).status == DagsterRunStatus.CANCELED
 
         # Start retry
         new_run_id = make_new_run_id()
