@@ -48,7 +48,7 @@ export const useRepositoryForRun = (
     }
 
     const pipelineName = run.pipelineName;
-    const snapshotId = run.pipelineSnapshotId;
+    const snapshotId = run.parentPipelineSnapshotId ?? run.pipelineSnapshotId;
 
     // Find the repository that contains the specified pipeline name and snapshot ID, if any.
     if (pipelineName && snapshotId) {

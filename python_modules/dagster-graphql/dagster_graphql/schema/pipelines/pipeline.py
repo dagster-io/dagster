@@ -263,6 +263,7 @@ class GrapheneRun(graphene.ObjectType):
     runId = graphene.NonNull(graphene.String)
     # Nullable because of historical runs
     pipelineSnapshotId = graphene.String()
+    parentPipelineSnapshotId = graphene.String()
     repositoryOrigin = graphene.Field(GrapheneRepositoryOrigin)
     status = graphene.NonNull(GrapheneRunStatus)
     pipeline = graphene.NonNull(GraphenePipelineReference)
@@ -349,7 +350,11 @@ class GrapheneRun(graphene.ObjectType):
         return self._pipeline_run.pipeline_snapshot_id
 
     def resolve_parentPipelineSnapshotId(self, graphene_info):
-        return self._pipeline_run.pipeline_snapshot_id
+        if graphene_context.instance.has_pipeline_snapshot(self.pipelineSnapshotId):
+            snapshot = graphene_context.instance.get_pipeline_snapshot(self.pipelineSnapshotId)
+            if snapshot.lineage_snapshot is not None:
+                return snapshot.lineage_snapshot.parent_snapshot_id
+        return None
 
     def resolve_stats(self, graphene_info):
         return get_stats(graphene_info, self.run_id)
