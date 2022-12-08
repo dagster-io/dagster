@@ -403,140 +403,35 @@ def airflow_examples_repo():
     return make_dagster_repo_from_airflow_example_dags()
 
 
-test_airflow_example_dags_params = [
-    pytest.param("airflow_dataset_consumes_1", False, id="airflow_dataset_consumes_1"),
-    pytest.param("airflow_dataset_consumes_1_and_2", False, id="airflow_dataset_consumes_1_and_2"),
-    pytest.param(
-        "airflow_dataset_consumes_1_never_scheduled",
-        False,
-        id="airflow_dataset_consumes_1_never_scheduled",
-    ),
-    pytest.param(
-        "airflow_dataset_consumes_unknown_never_scheduled",
-        False,
-        id="airflow_dataset_consumes_unknown_never_scheduled",
-    ),
-    pytest.param("airflow_dataset_produces_1", False, id="airflow_dataset_produces_1"),
-    pytest.param("airflow_dataset_produces_2", False, id="airflow_dataset_produces_2"),
-    pytest.param(
-        "airflow_example_branch_datetime_operator",
-        False,
-        id="airflow_example_branch_datetime_operator",
-    ),
-    pytest.param(
-        "airflow_example_branch_datetime_operator_2",
-        False,
-        id="airflow_example_branch_datetime_operator_2",
-    ),
-    pytest.param(
-        "airflow_example_branch_datetime_operator_3",
-        False,
-        id="airflow_example_branch_datetime_operator_3",
-    ),
-    pytest.param(
-        "airflow_example_branch_dop_operator_v3", False, id="airflow_example_branch_dop_operator_v3"
-    ),
-    pytest.param("airflow_example_branch_labels", False, id="airflow_example_branch_labels"),
-    pytest.param("airflow_example_branch_operator", False, id="airflow_example_branch_operator"),
-    pytest.param(
-        "airflow_example_branch_python_operator_decorator",
-        False,
-        id="airflow_example_branch_python_operator_decorator",
-    ),
-    pytest.param("airflow_example_complex", False, id="airflow_example_complex"),
-    # requires email server to work
-    pytest.param("airflow_example_dag_decorator", True, id="airflow_example_dag_decorator"),
-    pytest.param(
-        "airflow_example_external_task_marker_child",
-        False,
-        id="airflow_example_external_task_marker_child",
-    ),
-    pytest.param(
-        "airflow_example_external_task_marker_parent",
-        False,
-        id="airflow_example_external_task_marker_parent",
-    ),
-    # requires k8s environment to work
-    # FileNotFoundError: [Errno 2] No such file or directory: '/foo/volume_mount_test.txt'
-    pytest.param(
-        "airflow_example_kubernetes_executor", True, id="airflow_example_kubernetes_executor"
-    ),
-    pytest.param(
-        "airflow_example_local_kubernetes_executor",
-        False,
-        id="airflow_example_local_kubernetes_executor",
-    ),
-    pytest.param(
-        "airflow_example_nested_branch_dag", False, id="airflow_example_nested_branch_dag"
-    ),
-    # requires params to be passed in to work
-    pytest.param(
+def get_examples_airflow_repo_params():
+    repo = make_dagster_repo_from_airflow_example_dags()
+    assert repo.name == "airflow_example_dags_repo"
+    params = []
+    no_job_run_dags = [
+        # requires k8s environment to work
+        # FileNotFoundError: [Errno 2] No such file or directory: '/foo/volume_mount_test.txt'
+        "airflow_example_kubernetes_executor",
+        # requires params to be passed in to work
         "airflow_example_passing_params_via_test_command",
-        True,
-        id="airflow_example_passing_params_via_test_command",
-    ),
-    # requires template files to exist
-    pytest.param("airflow_example_python_operator", True, id="airflow_example_python_operator"),
-    pytest.param(
-        "airflow_example_short_circuit_decorator",
-        False,
-        id="airflow_example_short_circuit_decorator",
-    ),
-    pytest.param(
-        "airflow_example_short_circuit_operator", False, id="airflow_example_short_circuit_operator"
-    ),
-    pytest.param("airflow_example_skip_dag", False, id="airflow_example_skip_dag"),
-    pytest.param("airflow_example_sla_dag", False, id="airflow_example_sla_dag"),
-    # runs slow
-    pytest.param("airflow_example_subdag_operator", True, id="airflow_example_subdag_operator"),
-    pytest.param(
-        "airflow_example_subdag_operator_section_1",
-        False,
-        id="airflow_example_subdag_operator_section_1",
-    ),
-    pytest.param(
-        "airflow_example_subdag_operator_section_2",
-        False,
-        id="airflow_example_subdag_operator_section_2",
-    ),
-    pytest.param("airflow_example_task_group", False, id="airflow_example_task_group"),
-    pytest.param(
-        "airflow_example_task_group_decorator", False, id="airflow_example_task_group_decorator"
-    ),
-    pytest.param(
-        "airflow_example_time_delta_sensor_async",
-        False,
-        id="airflow_example_time_delta_sensor_async",
-    ),
-    # airflow.exceptions.DagNotFound: Dag id example_trigger_target_dag not found in DagModel
-    pytest.param(
-        "airflow_example_trigger_controller_dag", True, id="airflow_example_trigger_controller_dag"
-    ),
-    pytest.param(
-        "airflow_example_trigger_target_dag", True, id="airflow_example_trigger_target_dag"
-    ),
-    pytest.param(
-        "airflow_example_weekday_branch_operator",
-        False,
-        id="airflow_example_weekday_branch_operator",
-    ),
-    pytest.param("airflow_example_xcom", False, id="airflow_example_xcom"),
-    pytest.param("airflow_example_xcom_args", False, id="airflow_example_xcom_args"),
-    pytest.param(
-        "airflow_example_xcom_args_with_operators",
-        False,
-        id="airflow_example_xcom_args_with_operators",
-    ),
-    pytest.param("airflow_latest_only", False, id="airflow_latest_only"),
-    pytest.param("airflow_latest_only_with_trigger", False, id="airflow_latest_only_with_trigger"),
-    pytest.param("airflow_tutorial", False, id="airflow_tutorial"),
-    pytest.param("airflow_tutorial_taskflow_api", False, id="airflow_tutorial_taskflow_api"),
-    pytest.param(
-        "airflow_tutorial_taskflow_api_virtualenv",
-        False,
-        id="airflow_tutorial_taskflow_api_virtualenv",
-    ),
-]
+        # requires template files to exist
+        "airflow_example_python_operator",
+        # requires email server to work
+        "airflow_example_dag_decorator",
+        # airflow.exceptions.DagNotFound: Dag id example_trigger_target_dag not found in DagModel
+        "airflow_example_trigger_target_dag",
+        "airflow_example_trigger_controller_dag",
+        # runs slow
+        "airflow_example_subdag_operator",
+    ]
+    for job_name in repo.job_names:
+        params.append(
+            pytest.param(job_name, True if job_name in no_job_run_dags else False, id=job_name),
+        )
+
+    return params
+
+
+test_airflow_example_dags_params = get_examples_airflow_repo_params()
 
 
 @pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
