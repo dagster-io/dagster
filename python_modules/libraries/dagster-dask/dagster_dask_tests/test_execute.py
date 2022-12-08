@@ -66,7 +66,7 @@ def test_execute_on_dask_local():
                 instance=instance,
                 mode="filesystem",
             )
-            assert result.result_for_solid("simple").output_value() == 1
+            assert result.result_for_node("simple").output_value() == 1
 
 
 def dask_composite_pipeline():
@@ -185,7 +185,7 @@ def test_execute_on_dask_local_without_io_manager():
                 instance=instance,
                 mode="default",
             )
-            assert result.result_for_solid("simple").output_value() == 1
+            assert result.result_for_node("simple").output_value() == 1
 
 
 @solid(input_defs=[InputDefinition("df", DataFrame)])
@@ -271,7 +271,7 @@ def test_existing_scheduler():
                         None, _execute, scheduler.address, instance
                     )
                     assert result.success
-                    assert result.result_for_solid("simple").output_value() == 1
+                    assert result.result_for_node("simple").output_value() == 1
 
     asyncio.get_event_loop().run_until_complete(_run_test())
 
@@ -307,7 +307,7 @@ def test_dask_executor_memoization():
             run_config={"execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}}},
         )
         assert result.success
-        assert result.output_for_solid("foo_solid") == "foo"
+        assert result.output_for_node("foo_solid") == "foo"
 
         result = execute_pipeline(
             reconstructable(foo_pipeline),
@@ -336,4 +336,4 @@ def test_dask_executor_job():
             run_config={"execution": {"config": {"cluster": {"local": {"timeout": 30}}}}},
         )
         assert result.success
-        assert result.output_for_solid("the_op") == 5
+        assert result.output_for_node("the_op") == 5

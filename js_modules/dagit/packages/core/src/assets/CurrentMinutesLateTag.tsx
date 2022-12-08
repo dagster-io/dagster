@@ -9,8 +9,18 @@ import {humanCronString} from '../schedules/humanCronString';
 const STALE_OVERDUE_MSG = `A materialization incorporating more recent upstream data is overdue.`;
 const STALE_UNMATERIALIZED_MSG = `This asset has never been materialized.`;
 
-export const isAssetLate = (liveData?: LiveDataForNode) =>
-  liveData?.freshnessInfo && (liveData?.freshnessInfo.currentMinutesLate || 0) > 0;
+type LiveDataWithMinutesLate = LiveDataForNode & {
+  freshnessInfo: NonNullable<LiveDataForNode['freshnessInfo']> & {currentMinutesLate: number};
+};
+
+export function isAssetLate(liveData?: LiveDataForNode): liveData is LiveDataWithMinutesLate {
+  return (
+    (liveData?.freshnessInfo && (liveData?.freshnessInfo.currentMinutesLate || 0) > 0) || false
+  );
+}
+
+export const humanizedLateString = (minLate: number) =>
+  `${moment.duration(minLate, 'minute').humanize(false, {m: 120, h: 48})} late`;
 
 export const CurrentMinutesLateTag: React.FC<{
   liveData: LiveDataForNode;
@@ -52,10 +62,7 @@ export const CurrentMinutesLateTag: React.FC<{
   return (
     <Tooltip content={<div style={{maxWidth: 400}}>{`${STALE_OVERDUE_MSG} ${description}`}</div>}>
       <Tag intent="danger" icon="warning">
-        {moment
-          .duration(freshnessInfo.currentMinutesLate, 'minute')
-          .humanize(false, {m: 120, h: 48})}
-        {' late'}
+        {humanizedLateString(freshnessInfo.currentMinutesLate)}
       </Tag>
     </Tooltip>
   );
@@ -69,7 +76,7 @@ export const freshnessPolicyDescription = (
   }
 
   const {cronSchedule, maximumLagMinutes} = freshnessPolicy;
-
+  const nbsp = '\xa0';
   const cronDesc = cronSchedule ? humanCronString(cronSchedule, 'UTC').replace(/^At /, '') : '';
   const lagDesc =
     maximumLagMinutes % 30 === 0
@@ -77,8 +84,8 @@ export const freshnessPolicyDescription = (
       : `${maximumLagMinutes} min`;
 
   if (cronDesc) {
-    return `By ${cronDesc}, this asset should incorporate all data up to ${lagDesc} before that time.`;
+    return `By ${cronDesc}, this asset should incorporate all data up to ${lagDesc} before that${nbsp}time.`;
   } else {
-    return `At any point in time, this asset should incorporate all data up to ${lagDesc} before that time.`;
+    return `At any point in time, this asset should incorporate all data up to ${lagDesc} before that${nbsp}time.`;
   }
 };
