@@ -41,7 +41,7 @@ def test_slack_run_failure_sensor_def():
         "minutes_late",
         "previous_minutes_late",
         "warn_after_minutes",
-        "notify_when_on_time",
+        "notify_when_back_on_time",
         "should_output",
     ],
     [
@@ -54,9 +54,9 @@ def test_slack_run_failure_sensor_def():
         (8, 0, 10, False, False),
         # should notify because you're now > 10 minutes late
         (11, 8, 10, False, True),
-        # should not notify because notify_when_on_time=False
+        # should not notify because notify_when_back_on_time=False
         (0, 1, 0, False, False),
-        # should notify because notify_when_on_time=True
+        # should notify because notify_when_back_on_time=True
         (0, 1, 0, True, True),
         # should not notify because you previously did
         (0, 0, 0, True, False),
@@ -66,7 +66,7 @@ def test_slack_freshness_polciy_status(
     minutes_late: Optional[float],
     previous_minutes_late: Optional[float],
     warn_after_minutes: float,
-    notify_when_on_time: bool,
+    notify_when_back_on_time: bool,
     should_output: bool,
 ):
 
@@ -76,7 +76,7 @@ def test_slack_freshness_polciy_status(
             slack_token="blah",
             asset_selection=AssetSelection.all(),
             warn_after_minutes_late=warn_after_minutes,
-            notify_when_on_time=notify_when_on_time,
+            notify_when_back_on_time=notify_when_back_on_time,
         )
         my_sensor(
             build_freshness_policy_sensor_context(

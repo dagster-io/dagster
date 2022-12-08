@@ -213,17 +213,17 @@ def make_slack_on_freshness_policy_status_change_sensor(
     slack_token: str,
     asset_selection: AssetSelection,
     warn_after_minutes_late: float = 0,
-    notify_when_on_time: bool = False,
+    notify_when_back_on_time: bool = False,
     text_fn: Callable[[FreshnessPolicySensorContext], str] = _default_freshness_message_text_fn,
     blocks_fn: Optional[Callable[[FreshnessPolicySensorContext], List[Dict[Any, Any]]]] = None,
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
-    """Create a that will message the given Slack channel whenever an asset in the provided
+    """Create a sensor that will message the given Slack channel whenever an asset in the provided
     AssetSelection becomes out of date. Messages are only fired when the state changes, meaning
     only a single slack message will be sent (when the asset begins to be out of date). If
-    `notify_when_on_time` is set to `True`, a second slack message will be sent once the asset
+    `notify_when_back_on_time` is set to `True`, a second slack message will be sent once the asset
     is on time again.
 
     Args:
@@ -236,7 +236,7 @@ def make_slack_on_freshness_policy_status_change_sensor(
         warn_after_minutes_late (float): How many minutes past the specified FreshnessPolicy this
             sensor will wait before firing an alert (by default, an alert will be fired as soon as
             the policy is violated).
-        notify_when_on_time (bool): If a success message should be sent when the asset becomes on
+        notify_when_back_on_time (bool): If a success message should be sent when the asset becomes on
             time again.
         text_fn (Optional(Callable[[RunFailureSensorContext], str])): Function which
             takes in the ``FreshnessPolicySensorContext`` and outputs the message you want to send.
@@ -297,7 +297,9 @@ def make_slack_on_freshness_policy_status_change_sensor(
             context.minutes_late > warn_after_minutes_late
             and context.previous_minutes_late <= warn_after_minutes_late
         ) or (
-            notify_when_on_time and context.minutes_late == 0 and context.previous_minutes_late != 0
+            notify_when_back_on_time
+            and context.minutes_late == 0
+            and context.previous_minutes_late != 0
         ):
             blocks, main_body_text = _build_slack_blocks_and_text(
                 context=context, text_fn=text_fn, blocks_fn=blocks_fn, dagit_base_url=dagit_base_url
