@@ -24,13 +24,13 @@ def test_from_intermediates_from_multiple_outputs():
     assert result
     assert result.success
     assert (
-        result.result_for_solid("gather")
+        result.result_for_node("gather")
         .compute_input_event_dict["stuff"]
         .event_specific_data[1]
         .label
         == "stuff"
     )
-    assert result.result_for_solid("gather").output_value() == "x and y"
+    assert result.result_for_node("gather").output_value() == "x and y"
 
 
 def test_from_intermediates_from_config():
@@ -49,10 +49,10 @@ def test_from_intermediates_from_config():
     assert result
     assert result.success
     assert (
-        result.result_for_solid("x")
+        result.result_for_node("x")
         .compute_input_event_dict["string_input"]
         .event_specific_data[1]
         .label
         == "string_input"
     )
-    assert result.result_for_solid("x").output_value() == "Dagster is great!"
+    assert result.result_for_node("x").output_value() == "Dagster is great!"

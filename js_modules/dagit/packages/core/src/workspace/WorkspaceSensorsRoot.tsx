@@ -8,7 +8,7 @@ import {useTrackPageView} from '../app/analytics';
 
 import {VirtualizedSensorTable} from './VirtualizedSensorTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
-import {repoAddressAsString} from './repoAddressAsString';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {WorkspaceSensorsQuery, WorkspaceSensorsQueryVariables} from './types/WorkspaceSensorsQuery';
@@ -57,7 +57,7 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
       );
     }
 
-    const repoName = repoAddressAsString(repoAddress);
+    const repoName = repoAddressAsHumanString(repoAddress);
 
     if (!filteredBySearch.length) {
       if (anySearch) {

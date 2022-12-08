@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
+from dagstermill.factory import _clean_path_for_windows
+
 import dagster._check as check
 from dagster import AssetKey, AssetMaterialization
 from dagster._config import Field
@@ -50,7 +52,11 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
         with open(output_notebook_path, self.write_mode) as dest_file_obj:
             dest_file_obj.write(obj)
 
-        metadata = {"Executed notebook": MetadataValue.notebook(output_notebook_path)}
+        metadata = {
+            "Executed notebook": MetadataValue.notebook(
+                _clean_path_for_windows(output_notebook_path)
+            )
+        }
 
         if context.has_asset_key:
             context.add_output_metadata(metadata)

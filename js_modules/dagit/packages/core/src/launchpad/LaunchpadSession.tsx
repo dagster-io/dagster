@@ -36,7 +36,7 @@ import {
 } from '../configeditor/ConfigEditorUtils';
 import {DagsterTag} from '../runs/RunTag';
 import {PipelineSelector, RepositorySelector} from '../types/globalTypes';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -658,7 +658,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
                 <Group direction="row" spacing={8} alignItems="center">
                   <Icon name="warning" color={Colors.Yellow500} />
                   <div>
-                    {repoAddressAsString(repoAddress)} has been manually refreshed, and this
+                    {repoAddressAsHumanString(repoAddress)} has been manually refreshed, and this
                     configuration may now be out of date.
                   </div>
                   <Button

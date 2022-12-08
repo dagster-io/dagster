@@ -11,6 +11,7 @@ import {
 import {usePartitionHealthData} from '../assets/usePartitionHealthData';
 import {useViewport} from '../gantt/useViewport';
 import {DagsterTag} from '../runs/RunTag';
+import {RepositorySelector} from '../types/globalTypes';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -71,7 +72,7 @@ export const AssetJobPartitionsView: React.FC<{
     dimensionIdx = 0; // may as well show something
   }
 
-  const dimension = merged.dimensions[dimensionIdx];
+  const dimension = merged.dimensions[dimensionIdx] ? merged.dimensions[dimensionIdx] : null;
   const dimensionKeys = dimension?.partitionKeys || [];
 
   const selectedDimensionKeys = dimensionKeys.slice(
@@ -108,7 +109,7 @@ export const AssetJobPartitionsView: React.FC<{
         <div {...containerProps}>
           <PartitionStatus
             partitionNames={dimensionKeys}
-            splitPartitions={!isTimeseriesDimension(dimension)}
+            splitPartitions={dimension ? !isTimeseriesDimension(dimension) : false}
             partitionStateForKey={(key) => merged.stateForSingleDimension(dimensionIdx, key)}
             selected={selectedDimensionKeys}
             selectionWindowSize={pageSize}
@@ -139,16 +140,19 @@ export const AssetJobPartitionsView: React.FC<{
           </Box>
         )}
       </Box>
-      <AssetJobPartitionGraphs
-        pipelineName={pipelineName}
-        partitionSetName={partitionSetName}
-        multidimensional={(merged?.dimensions.length || 0) > 1}
-        dimensionName={dimension?.name}
-        dimensionKeys={dimensionKeys}
-        selected={selectedDimensionKeys}
-        offset={offset}
-        pageSize={pageSize}
-      />
+      {showAssets && (
+        <AssetJobPartitionGraphs
+          repositorySelector={repositorySelector}
+          pipelineName={pipelineName}
+          partitionSetName={partitionSetName}
+          multidimensional={(merged?.dimensions.length || 0) > 1}
+          dimensionName={dimension ? dimension.name : null}
+          dimensionKeys={dimensionKeys}
+          selected={selectedDimensionKeys}
+          offset={offset}
+          pageSize={pageSize}
+        />
+      )}
       <Box
         padding={{horizontal: 24, vertical: 16}}
         border={{side: 'horizontal', color: Colors.KeylineGray, width: 1}}
@@ -169,15 +173,17 @@ export const AssetJobPartitionsView: React.FC<{
 };
 
 export const AssetJobPartitionGraphs: React.FC<{
+  repositorySelector: RepositorySelector;
   pipelineName: string;
   partitionSetName: string;
   multidimensional: boolean;
-  dimensionName: string;
+  dimensionName: string | null;
   dimensionKeys: string[];
   selected: string[];
   pageSize: number;
   offset: number;
 }> = ({
+  repositorySelector,
   dimensionKeys,
   dimensionName,
   selected,
@@ -187,16 +193,19 @@ export const AssetJobPartitionGraphs: React.FC<{
   pipelineName,
   offset,
 }) => {
-  const partitions = usePartitionStepQuery(
+  const partitions = usePartitionStepQuery({
     partitionSetName,
-    multidimensional ? `${DagsterTag.Partition}/${dimensionName}` : DagsterTag.Partition,
-    dimensionKeys,
+    partitionTagName: multidimensional
+      ? `${DagsterTag.Partition}/${dimensionName}`
+      : DagsterTag.Partition,
+    partitionNames: dimensionKeys,
+    repositorySelector,
     pageSize,
-    [],
-    pipelineName,
+    runsFilter: [],
+    jobName: pipelineName,
     offset,
-    !dimensionName,
-  );
+    skipQuery: !dimensionName,
+  });
 
   const {stepDurationData, runDurationData} = usePartitionDurations(partitions);
 

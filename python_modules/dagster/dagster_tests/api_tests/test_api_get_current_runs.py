@@ -1,6 +1,6 @@
 import time
 
-from dagster._core.host_representation.handle import PipelineHandle
+from dagster._core.host_representation.handle import JobHandle
 from dagster._core.test_utils import instance_for_test, poll_for_event
 from dagster._grpc.server import ExecuteExternalPipelineArgs
 from dagster._grpc.types import CancelExecutionRequest
@@ -13,12 +13,10 @@ def test_launch_run_grpc():
     with instance_for_test() as instance:
         with get_bar_repo_repository_location(instance) as repository_location:
 
-            pipeline_handle = PipelineHandle(
-                "forever", repository_location.get_repository("bar_repo").handle
-            )
+            job_handle = JobHandle("forever", repository_location.get_repository("bar_repo").handle)
             api_client = repository_location.client
 
-            pipeline_run = instance.create_run(
+            run = instance.create_run(
                 pipeline_name="forever",
                 run_id=None,
                 run_config={},
@@ -33,14 +31,14 @@ def test_launch_run_grpc():
                 execution_plan_snapshot=None,
                 parent_pipeline_snapshot=None,
             )
-            run_id = pipeline_run.run_id
+            run_id = run.run_id
 
             assert repository_location.get_current_runs() == []
 
             res = deserialize_json_to_dagster_namedtuple(
                 api_client.start_run(
                     ExecuteExternalPipelineArgs(
-                        pipeline_origin=pipeline_handle.get_external_origin(),
+                        pipeline_origin=job_handle.get_external_origin(),
                         pipeline_run_id=run_id,
                         instance_ref=instance.get_ref(),
                     )

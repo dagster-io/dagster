@@ -8,7 +8,7 @@ import {useTrackPageView} from '../app/analytics';
 
 import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
-import {repoAddressAsString} from './repoAddressAsString';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {
@@ -60,7 +60,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
       );
     }
 
-    const repoName = repoAddressAsString(repoAddress);
+    const repoName = repoAddressAsHumanString(repoAddress);
 
     if (!filteredBySearch.length) {
       if (anySearch) {

@@ -20,14 +20,13 @@ from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
-from dagster._core.definitions.solid_definition import SolidDefinition
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import DagsterRun, PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.forked_pdb import ForkedPdb
 
@@ -81,19 +80,23 @@ class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
         """The parsed config specific to this op."""
 
 
-class SolidExecutionContext(AbstractComputeExecutionContext):
-    """The ``context`` object that can be made available as the first argument to a solid's compute
+class OpExecutionContext(AbstractComputeExecutionContext):
+    """The ``context`` object that can be made available as the first argument to an op's compute
     function.
 
-    The context object provides system information such as resources, config, and logging to a
-    solid's compute function. Users should not instantiate this object directly.
+    The context object provides system information such as resources, config,
+    and logging to an op's compute function. Users should not instantiate this
+    object directly. To construct an `OpExecutionContext` for testing
+    purposes, use :py:func:`dagster.build_op_context`.
 
     Example:
 
     .. code-block:: python
 
-        @solid
-        def hello_world(context: SolidExecutionContext):
+        from dagster import op
+
+        @op
+        def hello_world(context: OpExecutionContext):
             context.log.info("Hello, world!")
 
     """
@@ -120,7 +123,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return self.solid_config
 
     @property
-    def pipeline_run(self) -> PipelineRun:
+    def pipeline_run(self) -> DagsterRun:
         """PipelineRun: The current pipeline run"""
         return self._step_execution_context.pipeline_run
 
@@ -262,23 +265,11 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """
         return self.solid
 
-    @property
-    def solid_def(self) -> SolidDefinition:
-        """SolidDefinition: The current solid definition."""
-        return self._step_execution_context.pipeline_def.get_solid(self.solid_handle).definition
-
     @public  # type: ignore
     @property
     def op_def(self) -> OpDefinition:
         """OpDefinition: The current op definition."""
-        return cast(
-            OpDefinition,
-            check.inst(
-                self.solid_def,
-                OpDefinition,
-                "Called op_def on a legacy solid. Use solid_def instead.",
-            ),
-        )
+        return cast(OpDefinition, self.op.definition)
 
     @public  # type: ignore
     @property
@@ -609,28 +600,6 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
         """
         return self._step_execution_context.step.get_mapping_key()
-
-
-class OpExecutionContext(SolidExecutionContext):
-    """The ``context`` object that can be made available as the first argument to an op's compute
-    function.
-
-    The context object provides system information such as resources, config,
-    and logging to an op's compute function. Users should not instantiate this
-    object directly. To construct an `OpExecutionContext` for testing
-    purposes, use :py:func:`dagster.build_op_context`.
-
-    Example:
-
-    .. code-block:: python
-
-        from dagster import op
-
-        @op
-        def hello_world(context: OpExecutionContext):
-            context.log.info("Hello, world!")
-
-    """
 
 
 SourceAssetObserveContext: TypeAlias = OpExecutionContext

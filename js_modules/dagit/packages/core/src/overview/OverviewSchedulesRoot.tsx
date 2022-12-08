@@ -24,7 +24,7 @@ import {UnloadableSchedules} from '../instigation/Unloadable';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {OverviewScheduleTable} from './OverviewSchedulesTable';
@@ -52,7 +52,7 @@ export const OverviewSchedulesRoot = () => {
   const repoBuckets = React.useMemo(() => {
     const visibleKeys = visibleRepoKeys(visibleRepos);
     return buildBuckets(data).filter(({repoAddress}) =>
-      visibleKeys.has(repoAddressAsString(repoAddress)),
+      visibleKeys.has(repoAddressAsHumanString(repoAddress)),
     );
   }, [data, visibleRepos]);
 

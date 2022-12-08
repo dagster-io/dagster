@@ -37,7 +37,7 @@ from ..errors import (
 )
 from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
-from ..storage.pipeline_run import PipelineRun
+from ..storage.pipeline_run import DagsterRun
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
@@ -619,7 +619,7 @@ class ScheduleDefinition:
             RunRequest(
                 run_key=request.run_key,
                 run_config=request.run_config,
-                tags=merge_dicts(request.tags, PipelineRun.tags_for_schedule(self)),
+                tags=merge_dicts(request.tags, DagsterRun.tags_for_schedule(self)),
                 asset_selection=request.asset_selection,
             )
             for request in run_requests

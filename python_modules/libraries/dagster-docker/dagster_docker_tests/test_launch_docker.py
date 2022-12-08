@@ -18,7 +18,7 @@ from dagster_test.test_project import (
     get_test_project_workspace_and_external_pipeline,
 )
 
-from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.test_utils import environ, poll_for_finished_run, poll_for_step_start
 from dagster._utils.yaml_utils import merge_yamls
 
@@ -79,7 +79,7 @@ def test_launch_docker_no_network(aws_env):
 
             run = instance.get_run_by_id(run.run_id)
 
-            assert run.status == PipelineRunStatus.STARTING
+            assert run.status == DagsterRunStatus.STARTING
             assert run.tags[DOCKER_IMAGE_TAG] == docker_image
             client = docker.client.from_env()
 
@@ -158,7 +158,7 @@ def test_launch_docker_image_on_pipeline_config(aws_env):
 
                 run = instance.get_run_by_id(run.run_id)
 
-                assert run.status == PipelineRunStatus.SUCCESS
+                assert run.status == DagsterRunStatus.SUCCESS
 
                 assert run.tags[DOCKER_IMAGE_TAG] == docker_image
 
@@ -228,7 +228,7 @@ def test_terminate_launched_docker_run(aws_env):
 
             terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
             terminated_pipeline_run = instance.get_run_by_id(run_id)
-            assert terminated_pipeline_run.status == PipelineRunStatus.CANCELED
+            assert terminated_pipeline_run.status == DagsterRunStatus.CANCELED
 
             run_logs = instance.all_logs(run_id)
 
@@ -417,14 +417,14 @@ def _test_launch(
             if not terminate:
                 poll_for_finished_run(instance, run.run_id, timeout=60)
 
-                assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
+                assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
             else:
                 start_time = time.time()
 
                 filters = RunsFilter(
                     run_ids=[run.run_id],
                     statuses=[
-                        PipelineRunStatus.STARTED,
+                        DagsterRunStatus.STARTED,
                     ],
                 )
 
@@ -441,4 +441,4 @@ def _test_launch(
                 assert launcher.terminate(run.run_id)
 
                 poll_for_finished_run(instance, run.run_id, timeout=60)
-                assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.CANCELED
+                assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.CANCELED

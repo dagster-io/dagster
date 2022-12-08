@@ -30,6 +30,7 @@ from ..utils import (
 )
 
 MINIMUM_MYSQL_BUCKET_VERSION = "8.0.0"
+MINIMUM_MYSQL_INTERSECT_VERSION = "8.0.31"
 
 
 class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
@@ -155,6 +156,10 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
             return False
 
         return parse(self._mysql_version) >= parse(MINIMUM_MYSQL_BUCKET_VERSION)
+
+    @property
+    def supports_intersect(self):
+        return parse(self._mysql_version) >= parse(MINIMUM_MYSQL_INTERSECT_VERSION)
 
     def add_daemon_heartbeat(self, daemon_heartbeat):
         with self.connect() as conn:
