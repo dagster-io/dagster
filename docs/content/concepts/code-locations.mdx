@@ -5,12 +5,23 @@ description: ""
 
 # Code locations
 
+<center>
+  <Image
+    alt="Code locations"
+    src="/images/concepts/code-locations/code-locations-diagram.png"
+    width={601}
+    height={431}
+  />
+</center>
+
 A code location is a collection of Dagster definitions loadable and accessible by Dagster's tools, such as the CLI, Dagit, and Dagster Cloud. A code location comprises:
 
 - A reference to a Python module or package that has an instance of <PyObject object="Definitions" /> in a top-level variable
 - A Python environment that can successfully load that module or package
 
 Definitions within a code location have a common namespace and must have unique names. This allows them to be grouped and organized by code location in tools.
+
+A single deployment can have one or multiple code locations.
 
 <Note>
   Before the introduction of the <PyObject object="Definitions" />
@@ -149,6 +160,8 @@ The `workspace.yaml` file is used to load code locations for open source (OSS) d
 
 ## Definitions versus repositories
 
+Interested in how `Definitions` and repositories differ? Check out the following table for a high-level comparison:
+
 <table
   className="table"
   style={{
@@ -180,7 +193,7 @@ The `workspace.yaml` file is used to load code locations for open source (OSS) d
         <strong>Minimum Dagster version</strong>
       </td>
       <td>1.1.6</td>
-      <td>0.11.16</td>
+      <td>0.6</td>
     </tr>
     <tr>
       <td>
@@ -244,11 +257,9 @@ The `workspace.yaml` file is used to load code locations for open source (OSS) d
         <strong>Multiple Python environments</strong>
       </td>
       <td>
-        Supported (If using{" "}
-        <code>
-          <a href="#open-source-deployments">workspace.yaml</a>
-        </code>
-        )
+        Supported for <a href="#open-source-deployments">OSS deployments</a>{" "}
+        (via
+        <code>workspace.yaml</code>)
       </td>
       <td>Supported</td>
     </tr>
