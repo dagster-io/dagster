@@ -1,7 +1,8 @@
 from dagster import In, Out, job, op
+from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.snap import create_pipeline_snapshot_id, snapshot_from_execution_plan
-from dagster._legacy import OutputDefinition, composite_solid
+from dagster._legacy import OutputDefinition
 from dagster._serdes import serialize_pp
 
 
@@ -51,7 +52,7 @@ def test_create_execution_plan_with_dep(snapshot):
     )
 
 
-def test_create_with_composite(snapshot):
+def test_create_with_graph(snapshot):
     @op(out={"out_num": Out(dagster_type=int)})
     def return_one(_):
         return 1
@@ -63,11 +64,11 @@ def test_create_with_composite(snapshot):
     def add_one(_, num):
         return num + 1
 
-    @composite_solid(output_defs=[OutputDefinition(name="named_output", dagster_type=int)])
+    @graph(output_defs=[OutputDefinition(name="named_output", dagster_type=int)])
     def comp_1():
         return add_one(return_one())
 
-    @composite_solid(output_defs=[OutputDefinition(name="named_output", dagster_type=int)])
+    @graph(output_defs=[OutputDefinition(name="named_output", dagster_type=int)])
     def comp_2():
         return add_one(return_one())
 

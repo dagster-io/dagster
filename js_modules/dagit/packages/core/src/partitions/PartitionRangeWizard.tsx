@@ -34,16 +34,15 @@ export const PartitionRangeWizard: React.FC<{
           All
         </Button>
       </Box>
-      {isTimeseries && (
-        <Box margin={{bottom: 8}}>
-          <PartitionStatus
-            partitionNames={partitionKeys}
-            partitionStateForKey={partitionStateForKey}
-            selected={selected}
-            onSelect={setSelected}
-          />
-        </Box>
-      )}
+      <Box margin={{bottom: 8}}>
+        <PartitionStatus
+          partitionNames={partitionKeys}
+          partitionStateForKey={partitionStateForKey}
+          splitPartitions={!isTimeseries}
+          selected={selected}
+          onSelect={setSelected}
+        />
+      </Box>
     </>
   );
 };

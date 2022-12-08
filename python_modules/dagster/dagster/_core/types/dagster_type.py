@@ -10,7 +10,7 @@ from typing import Sequence
 from typing import Type as TypingType
 from typing import cast
 
-from typing_compat import get_args, get_origin
+from typing_extensions import get_args, get_origin
 
 import dagster._check as check
 from dagster._annotations import public

@@ -20,7 +20,7 @@ export const LaunchpadSetupRoot: React.FC<{repoAddress: RepoAddress}> = (props) 
   const {repoPath, pipelinePath} = useParams<{repoPath: string; pipelinePath: string}>();
 
   if (!canLaunchPipelineExecution.enabled) {
-    return <Redirect to={`/workspace/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
+    return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
   }
   return <LaunchpadSetupAllowedRoot pipelinePath={pipelinePath} repoAddress={repoAddress} />;
 };

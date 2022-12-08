@@ -7,14 +7,12 @@ import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 
 import {buildStorageKey, useRepoExpansionState} from './useRepoExpansionState';
 
-const TEMP_EXPANDED_STORAGE_KEY = 'temp-expanded-key';
 const COLLAPSED_STORAGE_KEY = 'collapsed-key';
-const ALL_REPO_KEYS = ['lorem@ipsum', 'dolorsit@amet', 'consectetur@adipiscing'];
+const ALL_REPO_KEYS = ['ipsum:lorem', 'amet:dolorsit', 'adipiscing:consectetur'];
 
 describe('useRepoExpansionState', () => {
   const Test = () => {
     const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
-      TEMP_EXPANDED_STORAGE_KEY,
       COLLAPSED_STORAGE_KEY,
       ALL_REPO_KEYS,
     );
@@ -55,39 +53,39 @@ describe('useRepoExpansionState', () => {
     });
 
     // Expect all keys to be expanded
-    expect(screen.getByText('lorem@ipsum expanded')).toBeVisible();
-    expect(screen.getByText('dolorsit@amet expanded')).toBeVisible();
-    expect(screen.getByText('consectetur@adipiscing expanded')).toBeVisible();
+    expect(screen.getByText('ipsum:lorem expanded')).toBeVisible();
+    expect(screen.getByText('amet:dolorsit expanded')).toBeVisible();
+    expect(screen.getByText('adipiscing:consectetur expanded')).toBeVisible();
   });
 
   it('tracks collapsed keys', async () => {
     window.localStorage.setItem(
       buildStorageKey('', COLLAPSED_STORAGE_KEY),
-      JSON.stringify(['lorem@ipsum']),
+      JSON.stringify(['ipsum:lorem']),
     );
     await act(async () => {
       render(<Test />);
     });
 
     // Expect keys to have appropriate state. One collapsed!
-    expect(screen.getByText('lorem@ipsum collapsed')).toBeVisible();
-    expect(screen.getByText('dolorsit@amet expanded')).toBeVisible();
-    expect(screen.getByText('consectetur@adipiscing expanded')).toBeVisible();
+    expect(screen.getByText('ipsum:lorem collapsed')).toBeVisible();
+    expect(screen.getByText('amet:dolorsit expanded')).toBeVisible();
+    expect(screen.getByText('adipiscing:consectetur expanded')).toBeVisible();
   });
 
   it('toggles a key to expanded', async () => {
     const fullCollapsedKey = buildStorageKey('', COLLAPSED_STORAGE_KEY);
-    window.localStorage.setItem(fullCollapsedKey, JSON.stringify(['lorem@ipsum']));
+    window.localStorage.setItem(fullCollapsedKey, JSON.stringify(['ipsum:lorem']));
     await act(async () => {
       render(<Test />);
     });
 
-    const button = screen.getByRole('button', {name: 'toggle lorem@ipsum'});
+    const button = screen.getByRole('button', {name: 'toggle ipsum:lorem'});
     await act(async () => {
       userEvent.click(button);
     });
 
-    expect(screen.getByText('lorem@ipsum expanded')).toBeVisible();
+    expect(screen.getByText('ipsum:lorem expanded')).toBeVisible();
     expect(window.localStorage.getItem(fullCollapsedKey)).toEqual('[]');
   });
 
@@ -98,18 +96,18 @@ describe('useRepoExpansionState', () => {
       render(<Test />);
     });
 
-    const button = screen.getByRole('button', {name: 'toggle lorem@ipsum'});
+    const button = screen.getByRole('button', {name: 'toggle ipsum:lorem'});
     await act(async () => {
       userEvent.click(button);
     });
 
-    expect(screen.getByText('lorem@ipsum collapsed')).toBeVisible();
-    expect(window.localStorage.getItem(fullCollapsedKey)).toEqual(JSON.stringify(['lorem@ipsum']));
+    expect(screen.getByText('ipsum:lorem collapsed')).toBeVisible();
+    expect(window.localStorage.getItem(fullCollapsedKey)).toEqual(JSON.stringify(['ipsum:lorem']));
   });
 
   it('toggles all to expanded', async () => {
     const fullCollapsedKey = buildStorageKey('', COLLAPSED_STORAGE_KEY);
-    window.localStorage.setItem(fullCollapsedKey, JSON.stringify(['lorem@ipsum', 'dolorsit@amet']));
+    window.localStorage.setItem(fullCollapsedKey, JSON.stringify(['ipsum:lorem', 'amet:dolorsit']));
     await act(async () => {
       render(<Test />);
     });
@@ -120,14 +118,14 @@ describe('useRepoExpansionState', () => {
     });
 
     // Everything expanded!
-    expect(screen.getByText('lorem@ipsum expanded')).toBeVisible();
-    expect(screen.getByText('dolorsit@amet expanded')).toBeVisible();
-    expect(screen.getByText('consectetur@adipiscing expanded')).toBeVisible();
+    expect(screen.getByText('ipsum:lorem expanded')).toBeVisible();
+    expect(screen.getByText('amet:dolorsit expanded')).toBeVisible();
+    expect(screen.getByText('adipiscing:consectetur expanded')).toBeVisible();
   });
 
   it('toggles all to collapsed', async () => {
     const fullCollapsedKey = buildStorageKey('', COLLAPSED_STORAGE_KEY);
-    window.localStorage.setItem(fullCollapsedKey, JSON.stringify(['lorem@ipsum']));
+    window.localStorage.setItem(fullCollapsedKey, JSON.stringify(['ipsum:lorem']));
     await act(async () => {
       render(<Test />);
     });
@@ -138,28 +136,8 @@ describe('useRepoExpansionState', () => {
     });
 
     // Everything collapsed!
-    expect(screen.getByText('lorem@ipsum collapsed')).toBeVisible();
-    expect(screen.getByText('dolorsit@amet collapsed')).toBeVisible();
-    expect(screen.getByText('consectetur@adipiscing collapsed')).toBeVisible();
-  });
-
-  // Temporary! Todo dish: Delete in November 2022.
-  it('must convert "expanded" state to "collapsed" state if no stored collapsed state', async () => {
-    const fullExpandedKey = buildStorageKey('', TEMP_EXPANDED_STORAGE_KEY);
-    const fullCollapsedKey = buildStorageKey('', COLLAPSED_STORAGE_KEY);
-
-    window.localStorage.setItem(fullExpandedKey, JSON.stringify(['lorem@ipsum', 'dolorsit@amet']));
-    await act(async () => {
-      render(<Test />);
-    });
-
-    expect(window.localStorage.getItem(fullCollapsedKey)).toEqual(
-      JSON.stringify(['consectetur@adipiscing']),
-    );
-
-    // Expanded/collapsed state matches stored state.
-    expect(screen.getByText('lorem@ipsum expanded')).toBeVisible();
-    expect(screen.getByText('dolorsit@amet expanded')).toBeVisible();
-    expect(screen.getByText('consectetur@adipiscing collapsed')).toBeVisible();
+    expect(screen.getByText('ipsum:lorem collapsed')).toBeVisible();
+    expect(screen.getByText('amet:dolorsit collapsed')).toBeVisible();
+    expect(screen.getByText('adipiscing:consectetur collapsed')).toBeVisible();
   });
 });

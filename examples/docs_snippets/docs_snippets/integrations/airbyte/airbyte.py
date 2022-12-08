@@ -9,7 +9,7 @@ def scope_define_instance():
     airbyte_instance = airbyte_resource.configured(
         {
             "host": "localhost",
-            "port": 8000,
+            "port": "8000",
             # If using basic auth, include username and password:
             "username": "airbyte",
             "password": {"env": "AIRBYTE_PASSWORD"},

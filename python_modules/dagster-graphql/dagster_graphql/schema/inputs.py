@@ -1,7 +1,7 @@
 import graphene
 import pendulum
 
-from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 
 from .pipelines.status import GrapheneRunStatus
 from .runs import GrapheneRunConfigData
@@ -46,7 +46,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
 
         if self.statuses:
             statuses = [
-                PipelineRunStatus[status.value]  # type: ignore
+                DagsterRunStatus[status.value]  # type: ignore
                 for status in self.statuses  # pylint: disable=not-an-iterable
             ]
         else:
@@ -80,6 +80,7 @@ class GraphenePipelineSelector(graphene.InputObjectType):
     repositoryName = graphene.NonNull(graphene.String)
     repositoryLocationName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
+    assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
 
     class Meta:
         description = """This type represents the fields necessary to identify a

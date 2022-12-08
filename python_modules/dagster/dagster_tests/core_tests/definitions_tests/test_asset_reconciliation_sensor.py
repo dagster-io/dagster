@@ -506,6 +506,17 @@ scenarios = {
             run_request(asset_keys=["asset1"], partition_key="2013-01-06"),
         ],
     ),
+    "one_asset_daily_partitions_two_years_never_materialized": AssetReconciliationScenario(
+        assets=one_asset_daily_partitions,
+        unevaluated_runs=[],
+        current_time=create_pendulum_time(year=2015, month=1, day=7, hour=4),
+        expected_run_requests=[
+            run_request(asset_keys=["asset1"], partition_key=partition_key)
+            for partition_key in daily_partitions_def.get_partition_keys(
+                current_time=create_pendulum_time(year=2015, month=1, day=7, hour=4)
+            )
+        ],
+    ),
     ################################################################################################
     # Exotic partition-mappings
     ################################################################################################

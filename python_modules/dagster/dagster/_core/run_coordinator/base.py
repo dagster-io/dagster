@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import NamedTuple, Optional
 
 from dagster._core.instance import MayHaveInstanceWeakref
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.workspace.context import IWorkspace, WorkspaceRequestContext
 
 
@@ -11,7 +11,7 @@ class SubmitRunContext(NamedTuple):
     Context available within a run coordinator's submit_run method
     """
 
-    pipeline_run: PipelineRun
+    pipeline_run: DagsterRun
     workspace: IWorkspace
 
     def get_request_header(self, key: str) -> Optional[str]:
@@ -29,7 +29,7 @@ class SubmitRunContext(NamedTuple):
 
 class RunCoordinator(ABC, MayHaveInstanceWeakref):
     @abstractmethod
-    def submit_run(self, context: SubmitRunContext) -> PipelineRun:
+    def submit_run(self, context: SubmitRunContext) -> DagsterRun:
         """
         Submit a run to the run coordinator for execution.
 

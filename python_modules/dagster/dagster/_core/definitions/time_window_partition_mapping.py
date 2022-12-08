@@ -1,4 +1,4 @@
-from typing import Optional, cast
+from typing import NamedTuple, Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -6,9 +6,11 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._serdes import whitelist_for_serdes
 
 
-class TimeWindowPartitionMapping(PartitionMapping):
+@whitelist_for_serdes
+class TimeWindowPartitionMapping(PartitionMapping, NamedTuple("_TimeWindowPartitionMapping", [])):
     """
     The default mapping between two TimeWindowPartitionsDefinitions.
 

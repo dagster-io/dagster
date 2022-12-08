@@ -185,7 +185,7 @@ def test_basic_materialization_event():
         )
 
         assert result.success
-        solid_result = result.result_for_solid("return_one")
+        solid_result = result.result_for_node("return_one")
         step_events = solid_result.step_events_by_kind[StepKind.COMPUTE]
         mat_event = list(
             filter(

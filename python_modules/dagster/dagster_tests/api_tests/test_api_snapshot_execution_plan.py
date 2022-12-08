@@ -4,7 +4,7 @@ import pytest
 
 from dagster._api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.host_representation.handle import PipelineHandle
+from dagster._core.host_representation.handle import JobHandle
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 
 from .utils import get_bar_repo_repository_location
@@ -12,9 +12,7 @@ from .utils import get_bar_repo_repository_location
 
 def test_execution_plan_error_grpc(instance):
     with get_bar_repo_repository_location(instance) as repository_location:
-        pipeline_handle = PipelineHandle(
-            "foo", repository_location.get_repository("bar_repo").handle
-        )
+        job_handle = JobHandle("foo", repository_location.get_repository("bar_repo").handle)
         api_client = repository_location.client
 
         with pytest.raises(
@@ -23,7 +21,7 @@ def test_execution_plan_error_grpc(instance):
         ):
             sync_get_external_execution_plan_grpc(
                 api_client,
-                pipeline_handle.get_external_origin(),
+                job_handle.get_external_origin(),
                 run_config={},
                 mode="made_up_mode",
                 pipeline_snapshot_id="12345",
@@ -32,14 +30,12 @@ def test_execution_plan_error_grpc(instance):
 
 def test_execution_plan_snapshot_api_grpc(instance):
     with get_bar_repo_repository_location(instance) as repository_location:
-        pipeline_handle = PipelineHandle(
-            "foo", repository_location.get_repository("bar_repo").handle
-        )
+        job_handle = JobHandle("foo", repository_location.get_repository("bar_repo").handle)
         api_client = repository_location.client
 
         execution_plan_snapshot = sync_get_external_execution_plan_grpc(
             api_client,
-            pipeline_handle.get_external_origin(),
+            job_handle.get_external_origin(),
             run_config={},
             mode="default",
             pipeline_snapshot_id="12345",
@@ -55,14 +51,12 @@ def test_execution_plan_snapshot_api_grpc(instance):
 
 def test_execution_plan_with_step_keys_to_execute_snapshot_api_grpc(instance):
     with get_bar_repo_repository_location(instance) as repository_location:
-        pipeline_handle = PipelineHandle(
-            "foo", repository_location.get_repository("bar_repo").handle
-        )
+        job_handle = JobHandle("foo", repository_location.get_repository("bar_repo").handle)
         api_client = repository_location.client
 
         execution_plan_snapshot = sync_get_external_execution_plan_grpc(
             api_client,
-            pipeline_handle.get_external_origin(),
+            job_handle.get_external_origin(),
             run_config={},
             mode="default",
             pipeline_snapshot_id="12345",
@@ -78,14 +72,12 @@ def test_execution_plan_with_step_keys_to_execute_snapshot_api_grpc(instance):
 
 def test_execution_plan_with_subset_snapshot_api_grpc(instance):
     with get_bar_repo_repository_location(instance) as repository_location:
-        pipeline_handle = PipelineHandle(
-            "foo", repository_location.get_repository("bar_repo").handle
-        )
+        job_handle = JobHandle("foo", repository_location.get_repository("bar_repo").handle)
         api_client = repository_location.client
 
         execution_plan_snapshot = sync_get_external_execution_plan_grpc(
             api_client,
-            pipeline_handle.get_external_origin(),
+            job_handle.get_external_origin(),
             run_config={"solids": {"do_input": {"inputs": {"x": {"value": "test"}}}}},
             mode="default",
             pipeline_snapshot_id="12345",

@@ -14,7 +14,7 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
 from dagster import AssetMaterialization, Output, job, op, repository
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import execute_run
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import execute_pipeline, lambda_solid, pipeline
@@ -661,10 +661,10 @@ def test_filtered_runs_status():
     with instance_for_test() as instance:
         repo = get_repo_at_time_1()
         _ = instance.create_run_for_pipeline(
-            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.STARTED
+            repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.STARTED
         ).run_id
         run_id_2 = instance.create_run_for_pipeline(
-            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.FAILURE
+            repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.FAILURE
         ).run_id
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
             result = execute_dagster_graphql(
@@ -682,13 +682,13 @@ def test_filtered_runs_multiple_statuses():
     with instance_for_test() as instance:
         repo = get_repo_at_time_1()
         _ = instance.create_run_for_pipeline(
-            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.STARTED
+            repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.STARTED
         ).run_id
         run_id_2 = instance.create_run_for_pipeline(
-            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.FAILURE
+            repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.FAILURE
         ).run_id
         run_id_3 = instance.create_run_for_pipeline(
-            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.SUCCESS
+            repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.SUCCESS
         ).run_id
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
             result = execute_dagster_graphql(
@@ -709,17 +709,17 @@ def test_filtered_runs_multiple_filters():
 
         started_run_with_tags = instance.create_run_for_pipeline(
             repo.get_pipeline("foo_pipeline"),
-            status=PipelineRunStatus.STARTED,
+            status=DagsterRunStatus.STARTED,
             tags={"foo": "bar"},
         )
         failed_run_with_tags = instance.create_run_for_pipeline(
             repo.get_pipeline("foo_pipeline"),
-            status=PipelineRunStatus.FAILURE,
+            status=DagsterRunStatus.FAILURE,
             tags={"foo": "bar"},
         )
         started_run_without_tags = instance.create_run_for_pipeline(
             repo.get_pipeline("foo_pipeline"),
-            status=PipelineRunStatus.STARTED,
+            status=DagsterRunStatus.STARTED,
             tags={"baz": "boom"},
         )
 
@@ -746,10 +746,10 @@ def test_filtered_runs_count():
     with instance_for_test() as instance:
         repo = get_repo_at_time_1()
         instance.create_run_for_pipeline(  # pylint: disable=expression-not-assigned
-            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.STARTED
+            repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.STARTED
         ).run_id
         instance.create_run_for_pipeline(  # pylint: disable=expression-not-assigned
-            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.FAILURE
+            repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.FAILURE
         ).run_id
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
             result = execute_dagster_graphql(
