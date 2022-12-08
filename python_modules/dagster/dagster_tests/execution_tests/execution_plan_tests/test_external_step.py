@@ -373,8 +373,8 @@ def test_pipeline(mode):
             mode=mode,
             run_config=make_run_config(tmpdir, mode),
         )
-        assert result.result_for_solid("return_two").output_value() == 2
-        assert result.result_for_solid("add_one").output_value() == 3
+        assert result.result_for_node("return_two").output_value() == 2
+        assert result.result_for_node("add_one").output_value() == 3
 
 
 @pytest.mark.parametrize(
@@ -403,7 +403,7 @@ def test_dynamic_job(job_fn):
                 },
                 instance=instance,
             )
-            assert result.output_for_solid("total") == 6
+            assert result.output_for_node("total") == 6
 
 
 @pytest.mark.parametrize(
@@ -434,7 +434,7 @@ def test_reexecution(job_fn):
                 instance=instance,
             )
             assert run1.success
-            assert run1.result_for_solid("combine").output_value() == 3
+            assert run1.result_for_node("combine").output_value() == 3
             run2 = reexecute_pipeline(
                 pipeline=reconstructable(job_fn),
                 parent_run_id=run1.run_id,
@@ -443,7 +443,7 @@ def test_reexecution(job_fn):
                 step_selection=["combine"],
             )
             assert run2.success
-            assert run2.result_for_solid("combine").output_value() == 3
+            assert run2.result_for_node("combine").output_value() == 3
 
 
 def test_retry_policy():
@@ -461,7 +461,7 @@ def test_retry_policy():
                 instance=instance,
             )
             assert run.success
-            assert run.result_for_solid("retry_op").output_value() == 3
+            assert run.result_for_node("retry_op").output_value() == 3
             step_retry_events = [
                 e for e in run.event_list if e.event_type_value == "STEP_RESTARTED"
             ]
@@ -483,7 +483,7 @@ def test_explicit_failure():
                 instance=instance,
                 raise_on_error=False,
             )
-            fd = run.result_for_solid("retry_op").failure_data
+            fd = run.result_for_node("retry_op").failure_data
             assert fd.user_failure_data.description == "some failure description"
             assert fd.user_failure_data.metadata_entries == [
                 MetadataEntry.float(label="foo", value=1.23)
@@ -507,7 +507,7 @@ def test_arbitrary_error():
             )
             failure_events = [e for e in run.event_list if e.event_type_value == "STEP_FAILURE"]
             assert len(failure_events) == 1
-            fd = run.result_for_solid("retry_op").failure_data
+            fd = run.result_for_node("retry_op").failure_data
             assert fd.error.cause.cls_name == "TypeError"
 
 
@@ -520,8 +520,8 @@ def test_launcher_requests_retry():
             run_config=make_run_config(tmpdir, mode),
         )
         assert result.success
-        assert result.result_for_solid("return_two").output_value() == 2
-        assert result.result_for_solid("add_one").output_value() == 3
+        assert result.result_for_node("return_two").output_value() == 2
+        assert result.result_for_node("add_one").output_value() == 3
         for step_key, events in result.events_by_step_key.items():
             if step_key:
                 event_types = [event.event_type for event in events]
@@ -580,8 +580,8 @@ def test_multiproc_launcher_requests_retry():
             run_config=run_config,
         )
         assert result.success
-        assert result.result_for_solid("return_two").output_value() == 2
-        assert result.result_for_solid("add_one").output_value() == 3
+        assert result.result_for_node("return_two").output_value() == 2
+        assert result.result_for_node("add_one").output_value() == 3
         for step_key, events in result.events_by_step_key.items():
             if step_key:
                 event_types = [event.event_type for event in events]
