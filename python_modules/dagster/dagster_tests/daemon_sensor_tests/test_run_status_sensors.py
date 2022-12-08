@@ -7,9 +7,10 @@ import pendulum
 import pytest
 
 from dagster import DagsterRunStatus
+from dagster import _check as check
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
-from dagster._core.host_representation.external import ExternalRepository
+from dagster._core.host_representation import ExternalRepository, RepositoryLocation
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.event_log.base import EventRecordsFilter
@@ -60,7 +61,11 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
 class CodeLocationInfoForSensorTest(NamedTuple):
     instance: DagsterInstance
     context: WorkspaceProcessContext
-    repositories: Dict[str, ExternalRepository]
+    repository_location: RepositoryLocation
+
+    @property
+    def repositories(self) -> Dict[str, ExternalRepository]:
+        return {**self.repository_location.get_repositories()}
 
 
 @contextmanager
@@ -86,9 +91,11 @@ def instance_with_multiple_code_locations(overrides=None, workspace_load_target=
             ):
                 test_tuples.append(
                     CodeLocationInfoForSensorTest(
-                        instance,
-                        workspace_context,
-                        {**repository_location_entry.repository_location.get_repositories()},
+                        instance=instance,
+                        context=workspace_context,
+                        repository_location=check.not_none(
+                            repository_location_entry.repository_location
+                        ),
                     )
                 )
 
