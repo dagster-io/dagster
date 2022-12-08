@@ -17,6 +17,7 @@ import {WorkspacePipelineRoot} from './WorkspacePipelineRoot';
 import {WorkspaceRepoRoot} from './WorkspaceRepoRoot';
 import {WorkspaceSchedulesRoot} from './WorkspaceSchedulesRoot';
 import {WorkspaceSensorsRoot} from './WorkspaceSensorsRoot';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressFromPath} from './repoAddressFromPath';
 
 const RepoRouteContainer = () => {
@@ -67,7 +68,7 @@ const RepoRouteContainer = () => {
           description={
             <div>
               <div>
-                <strong>{repoPath}</strong>
+                <strong>{repoAddressAsHumanString(addressForPath)}</strong>
               </div>
               {'  is not loaded in the current workspace.'}
             </div>

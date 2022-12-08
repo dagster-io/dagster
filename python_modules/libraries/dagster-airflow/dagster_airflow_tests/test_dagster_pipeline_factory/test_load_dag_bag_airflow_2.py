@@ -398,94 +398,56 @@ def test_make_repo(
         assert set(repo.job_names) == set(expected_job_names)
 
 
-test_airflow_example_dags_inputs = [
-    (
-        [
-            "airflow_dataset_consumes_1",
-            "airflow_dataset_consumes_1_and_2",
-            "airflow_dataset_consumes_1_never_scheduled",
-            "airflow_dataset_consumes_unknown_never_scheduled",
-            "airflow_dataset_produces_1",
-            "airflow_dataset_produces_2",
-            "airflow_example_bash_operator",
-            "airflow_example_branch_datetime_operator",
-            "airflow_example_branch_datetime_operator_2",
-            "airflow_example_branch_datetime_operator_3",
-            "airflow_example_branch_dop_operator_v3",
-            "airflow_example_branch_labels",
-            "airflow_example_branch_operator",
-            "airflow_example_branch_python_operator_decorator",
-            "airflow_example_complex",
-            "airflow_example_dag_decorator",
-            "airflow_example_external_task_marker_child",
-            "airflow_example_external_task_marker_parent",
-            "airflow_example_kubernetes_executor",
-            "airflow_example_local_kubernetes_executor",
-            "airflow_example_nested_branch_dag",
-            "airflow_example_passing_params_via_test_command",
-            "airflow_example_python_operator",
-            "airflow_example_short_circuit_decorator",
-            "airflow_example_short_circuit_operator",
-            "airflow_example_skip_dag",
-            "airflow_example_sla_dag",
-            "airflow_example_subdag_operator",
-            "airflow_example_subdag_operator_section_1",
-            "airflow_example_subdag_operator_section_2",
-            "airflow_example_task_group",
-            "airflow_example_task_group_decorator",
-            "airflow_example_time_delta_sensor_async",
-            "airflow_example_trigger_controller_dag",
-            "airflow_example_trigger_target_dag",
-            "airflow_example_weekday_branch_operator",
-            "airflow_example_xcom",
-            "airflow_example_xcom_args",
-            "airflow_example_xcom_args_with_operators",
-            "airflow_latest_only",
-            "airflow_latest_only_with_trigger",
-            "airflow_tutorial",
-            "airflow_tutorial_dag",
-            "airflow_tutorial_taskflow_api",
-            "airflow_tutorial_taskflow_api_virtualenv",
-        ],
-        [
-            # requires k8s environment to work
-            # FileNotFoundError: [Errno 2] No such file or directory: '/foo/volume_mount_test.txt'
-            "airflow_example_kubernetes_executor",
-            # requires params to be passed in to work
-            "airflow_example_passing_params_via_test_command",
-            # requires template files to exist
-            "airflow_example_python_operator",
-            # requires email server to work
-            "airflow_example_dag_decorator",
-            # airflow.exceptions.DagNotFound: Dag id example_trigger_target_dag not found in DagModel
-            "airflow_example_trigger_target_dag",
-            "airflow_example_trigger_controller_dag",
-            # runs slow
-            "airflow_example_subdag_operator",
-        ],
-    ),
-]
+@pytest.fixture(scope="module")
+def airflow_examples_repo():
+    return make_dagster_repo_from_airflow_example_dags()
+
+
+def get_examples_airflow_repo_params():
+    repo = make_dagster_repo_from_airflow_example_dags()
+    assert repo.name == "airflow_example_dags_repo"
+    params = []
+    no_job_run_dags = [
+        # requires k8s environment to work
+        # FileNotFoundError: [Errno 2] No such file or directory: '/foo/volume_mount_test.txt'
+        "airflow_example_kubernetes_executor",
+        # requires params to be passed in to work
+        "airflow_example_passing_params_via_test_command",
+        # requires template files to exist
+        "airflow_example_python_operator",
+        # requires email server to work
+        "airflow_example_dag_decorator",
+        # airflow.exceptions.DagNotFound: Dag id example_trigger_target_dag not found in DagModel
+        "airflow_example_trigger_target_dag",
+        "airflow_example_trigger_controller_dag",
+        # runs slow
+        "airflow_example_subdag_operator",
+        # runs slow
+        "airflow_example_sensors",
+    ]
+    for job_name in repo.job_names:
+        params.append(
+            pytest.param(job_name, True if job_name in no_job_run_dags else False, id=job_name),
+        )
+
+    return params
 
 
 @pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
 @pytest.mark.parametrize(
-    "expected_job_names, exclude_from_execution_tests",
-    test_airflow_example_dags_inputs,
+    "job_name, exclude_from_execution_tests",
+    get_examples_airflow_repo_params(),
 )
 @requires_airflow_db
 def test_airflow_example_dags(
-    expected_job_names,
+    airflow_examples_repo,
+    job_name,
     exclude_from_execution_tests,
 ):
-    repo = make_dagster_repo_from_airflow_example_dags()
-
-    for job_name in expected_job_names:
-        assert repo.name == "airflow_example_dags_repo"
-        assert repo.has_job(job_name)
-
-        if job_name not in exclude_from_execution_tests:
-            job = repo.get_job(job_name)
-            result = job.execute_in_process()
-            assert result.success
-
-    assert set(repo.job_names) == set(expected_job_names)
+    assert airflow_examples_repo.has_job(job_name)
+    if not exclude_from_execution_tests:
+        job = airflow_examples_repo.get_job(job_name)
+        result = job.execute_in_process()
+        assert result.success
+        for event in result.all_events:
+            assert event.event_type_value != "STEP_FAILURE"

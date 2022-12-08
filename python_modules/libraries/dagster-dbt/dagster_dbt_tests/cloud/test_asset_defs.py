@@ -1,4 +1,6 @@
 import json
+from copy import deepcopy
+from typing import List, Optional
 
 import pytest
 import responses
@@ -13,10 +15,12 @@ from dagster import (
     AssetSelection,
     DailyPartitionsDefinition,
     MetadataValue,
+    asset,
     build_init_resource_context,
     define_asset_job,
     file_relative_path,
 )
+from dagster._core.test_utils import instance_for_test
 
 from ..utils import assert_assets_match_project
 
@@ -55,7 +59,11 @@ def dbt_cloud_service_fixture():
     )
 
 
-def _add_dbt_cloud_job_responses(dbt_cloud_api_base_url: str, dbt_command: str):
+def _add_dbt_cloud_job_responses(
+    dbt_cloud_api_base_url: str, dbt_commands: List[str], run_results_json: Optional[dict] = None
+):
+    run_results_json = run_results_json or RUN_RESULTS_JSON
+
     responses.add(
         method=responses.GET,
         url=f"{dbt_cloud_api_base_url}{DBT_CLOUD_ACCOUNT_ID}/jobs/{DBT_CLOUD_JOB_ID}/",
@@ -63,7 +71,9 @@ def _add_dbt_cloud_job_responses(dbt_cloud_api_base_url: str, dbt_command: str):
             "data": {
                 "project_id": DBT_CLOUD_PROJECT_ID,
                 "generate_docs": True,
-                "execute_steps": [dbt_command],
+                "execute_steps": dbt_commands,
+                "name": "A dbt Cloud job",
+                "id": DBT_CLOUD_JOB_ID,
             }
         },
         status=200,
@@ -89,7 +99,7 @@ def _add_dbt_cloud_job_responses(dbt_cloud_api_base_url: str, dbt_command: str):
     responses.add(
         method=responses.GET,
         url=f"{dbt_cloud_api_base_url}{DBT_CLOUD_ACCOUNT_ID}/runs/{DBT_CLOUD_RUN_ID}/artifacts/run_results.json",
-        json=RUN_RESULTS_JSON,
+        json=run_results_json,
         status=200,
     )
     responses.add(
@@ -107,9 +117,11 @@ def _add_dbt_cloud_job_responses(dbt_cloud_api_base_url: str, dbt_command: str):
 
 
 @responses.activate
-@pytest.mark.parametrize("dbt_command", ["dbt run", "dbt build"])
+@pytest.mark.parametrize("before_dbt_materialization_command", [[], ["dbt test"]])
+@pytest.mark.parametrize("dbt_materialization_command", ["dbt run", "dbt build"])
+@pytest.mark.parametrize("after_dbt_materialization_command", [[], ["dbt test"]])
 @pytest.mark.parametrize(
-    ["dbt_command_options", "expected_dbt_command_options"],
+    ["dbt_materialization_command_options", "expected_dbt_materialization_command_options"],
     [
         ("-s a:b c:d *x", "--select a:b c:d *x"),
         ("--exclude e:f g:h", "--exclude e:f g:h"),
@@ -122,15 +134,22 @@ def _add_dbt_cloud_job_responses(dbt_cloud_api_base_url: str, dbt_command: str):
 )
 def test_load_assets_from_dbt_cloud_job(
     mocker,
-    dbt_command,
-    dbt_command_options,
-    expected_dbt_command_options,
+    before_dbt_materialization_command,
+    dbt_materialization_command,
+    after_dbt_materialization_command,
+    dbt_materialization_command_options,
+    expected_dbt_materialization_command_options,
     dbt_cloud,
     dbt_cloud_service,
 ):
+    dbt_commands = (
+        before_dbt_materialization_command
+        + [f"{dbt_materialization_command} {dbt_materialization_command_options}"]
+        + after_dbt_materialization_command
+    )
     _add_dbt_cloud_job_responses(
         dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
-        dbt_command=f"{dbt_command} {dbt_command_options}",
+        dbt_commands=dbt_commands,
     )
 
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
@@ -150,10 +169,12 @@ def test_load_assets_from_dbt_cloud_job(
     mock_run_job_and_poll.assert_called_once_with(
         job_id=DBT_CLOUD_JOB_ID,
         cause="Generating software-defined assets for Dagster.",
-        steps_override=[f"dbt compile {expected_dbt_command_options}"],
+        steps_override=[f"dbt compile {expected_dbt_materialization_command_options}"],
     )
 
     assert_assets_match_project(dbt_cloud_assets, has_non_argument_deps=True)
+
+    mock_run_job_and_poll.reset_mock()
 
     # Assert that the outputs have the correct metadata
     for output in dbt_cloud_assets[0].op.output_dict.values():
@@ -169,63 +190,59 @@ def test_load_assets_from_dbt_cloud_job(
         selection=AssetSelection.assets(*dbt_cloud_assets),
     ).resolve(assets=dbt_cloud_assets, source_assets=[])
 
-    assert materialize_cereal_assets.execute_in_process().success
+    with instance_for_test() as instance:
+        assert materialize_cereal_assets.execute_in_process(instance=instance).success
+
+    mock_run_job_and_poll.assert_called_once_with(
+        job_id=DBT_CLOUD_JOB_ID,
+        steps_override=dbt_commands,
+    )
 
 
 @responses.activate
-def test_invalid_dbt_cloud_job(dbt_cloud, dbt_cloud_service):
+@pytest.mark.parametrize(
+    "invalid_dbt_commands",
+    [
+        [],
+        ["dbt deps"],
+        ["dbt deps", "dbt test"],
+        [f"dbt build --vars '{json.dumps({'static_variable': 'bad'})}'"],
+    ],
+    ids=[
+        "empty commands",
+        "no run/build step",
+        "multiple commands, no run/build step",
+        "has static variables",
+    ],
+)
+def test_invalid_dbt_cloud_job_commands(dbt_cloud, dbt_cloud_service, invalid_dbt_commands):
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
         dbt_cloud=dbt_cloud, job_id=DBT_CLOUD_JOB_ID
     )
 
-    responses.add(
-        method=responses.GET,
-        url=f"{dbt_cloud_service.api_base_url}{DBT_CLOUD_ACCOUNT_ID}/jobs/{DBT_CLOUD_JOB_ID}/",
-        json={
-            "data": {
-                "project_id": DBT_CLOUD_PROJECT_ID,
-                "generate_docs": True,
-                "execute_steps": [],
-                "name": "A dbt Cloud job",
-                "id": "1",
-            }
-        },
-        status=200,
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_commands=invalid_dbt_commands,
     )
+
     with pytest.raises(DagsterDbtCloudJobInvariantViolationError):
         dbt_cloud_cacheable_assets.compute_cacheable_data()
 
-    responses.add(
-        method=responses.GET,
-        url=f"{dbt_cloud_service.api_base_url}{DBT_CLOUD_ACCOUNT_ID}/jobs/{DBT_CLOUD_JOB_ID}/",
-        json={
-            "data": {
-                "project_id": DBT_CLOUD_PROJECT_ID,
-                "generate_docs": True,
-                "execute_steps": ["dbt deps"],
-                "name": "A dbt Cloud job",
-                "id": "1",
-            }
-        },
-        status=200,
-    )
-    with pytest.raises(DagsterDbtCloudJobInvariantViolationError):
-        dbt_cloud_cacheable_assets.compute_cacheable_data()
 
-    responses.add(
-        method=responses.GET,
-        url=f"{dbt_cloud_service.api_base_url}{DBT_CLOUD_ACCOUNT_ID}/jobs/{DBT_CLOUD_JOB_ID}/",
-        json={
-            "data": {
-                "project_id": DBT_CLOUD_PROJECT_ID,
-                "generate_docs": True,
-                "execute_steps": ["dbt deps", "dbt build"],
-                "name": "A dbt Cloud job",
-                "id": "1",
-            }
-        },
-        status=200,
+@responses.activate
+def test_empty_assets_dbt_cloud_job(dbt_cloud, dbt_cloud_service):
+    empty_run_results_json = deepcopy(RUN_RESULTS_JSON)
+    empty_run_results_json["results"] = []
+    dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
+        dbt_cloud=dbt_cloud, job_id=DBT_CLOUD_JOB_ID
     )
+
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_commands=["dbt build"],
+        run_results_json=empty_run_results_json,
+    )
+
     with pytest.raises(DagsterDbtCloudJobInvariantViolationError):
         dbt_cloud_cacheable_assets.compute_cacheable_data()
 
@@ -234,7 +251,7 @@ def test_invalid_dbt_cloud_job(dbt_cloud, dbt_cloud_service):
 def test_custom_groups(dbt_cloud, dbt_cloud_service):
     _add_dbt_cloud_job_responses(
         dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
-        dbt_command="dbt build",
+        dbt_commands=["dbt build"],
     )
 
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
@@ -259,7 +276,7 @@ def test_custom_groups(dbt_cloud, dbt_cloud_service):
 def test_node_info_to_asset_key(dbt_cloud, dbt_cloud_service):
     _add_dbt_cloud_job_responses(
         dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
-        dbt_command="dbt build",
+        dbt_commands=["dbt build"],
     )
 
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
@@ -281,20 +298,16 @@ def test_node_info_to_asset_key(dbt_cloud, dbt_cloud_service):
 
 
 @responses.activate
-def test_partitions(mocker, testrun_uid, dbt_cloud, dbt_cloud_service):
+def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
     _add_dbt_cloud_job_responses(
         dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
-        dbt_command="dbt build",
+        dbt_commands=["dbt build"],
     )
 
     partition_def = DailyPartitionsDefinition(start_date="2022-01-01")
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
         dbt_cloud=dbt_cloud,
         job_id=DBT_CLOUD_JOB_ID,
-        # HACK: we should refactor to materialize_to_memory, and fix the bug regarding io managers.
-        node_info_to_asset_key=lambda node_info: AssetKey(
-            ["foo", f"{node_info['name']}-{testrun_uid}"]
-        ),
         partitions_def=partition_def,
         partition_key_to_vars_fn=lambda partition_key: {"run_date": partition_key},
     )
@@ -324,9 +337,91 @@ def test_partitions(mocker, testrun_uid, dbt_cloud, dbt_cloud_service):
         selection=AssetSelection.assets(*dbt_cloud_assets),
     ).resolve(assets=dbt_cloud_assets, source_assets=[])
 
-    assert materialize_cereal_assets.execute_in_process(partition_key="2022-02-01").success
+    with instance_for_test() as instance:
+        assert materialize_cereal_assets.execute_in_process(
+            instance=instance,
+            partition_key="2022-02-01",
+        ).success
 
     mock_run_job_and_poll.assert_called_once_with(
         job_id=DBT_CLOUD_JOB_ID,
         steps_override=[f"dbt build --vars '{json.dumps({'run_date': '2022-02-01'})}'"],
+    )
+
+
+@responses.activate
+@pytest.mark.parametrize(
+    "asset_selection, expected_dbt_asset_names",
+    [
+        (
+            "*",
+            "",  # All dbt assets are chosen, so no selection is made
+        ),
+        (
+            "sort_by_calories+",
+            "",  # All dbt assets are chosen, so no selection is made
+        ),
+        (
+            "*hanger2",
+            "dagster_dbt_test_project.sort_by_calories,dagster_dbt_test_project.subdir.least_caloric",
+        ),
+        (
+            [
+                "cold_schema/sort_cold_cereals_by_calories",
+                "subdir_schema/least_caloric",
+            ],
+            "dagster_dbt_test_project.sort_cold_cereals_by_calories,dagster_dbt_test_project.subdir.least_caloric",
+        ),
+    ],
+)
+def test_subsetting(
+    mocker, dbt_cloud, dbt_cloud_service, asset_selection, expected_dbt_asset_names
+):
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_commands=["dbt build"],
+    )
+
+    dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
+        dbt_cloud=dbt_cloud,
+        job_id=DBT_CLOUD_JOB_ID,
+    )
+
+    mock_run_job_and_poll = mocker.patch(
+        "dagster_dbt.cloud.resources.DbtCloudResourceV2.run_job_and_poll",
+        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # pylint: disable=protected-access
+    )
+
+    dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
+    dbt_cloud_assets = dbt_cloud_cacheable_assets.build_definitions(
+        dbt_assets_definition_cacheable_data
+    )
+
+    mock_run_job_and_poll.reset_mock()
+
+    @asset(non_argument_deps={AssetKey("sort_by_calories")})
+    def hanger1():
+        return None
+
+    @asset(non_argument_deps={AssetKey(["subdir_schema", "least_caloric"])})
+    def hanger2():
+        return None
+
+    materialize_cereal_assets = define_asset_job(
+        name="materialize_cereal_assets",
+        selection=asset_selection,
+    ).resolve(assets=list(dbt_cloud_assets) + [hanger1, hanger2], source_assets=[])
+
+    with instance_for_test() as instance:
+        assert materialize_cereal_assets.execute_in_process(instance=instance).success
+
+    expected_dbt_asset_names = (
+        expected_dbt_asset_names.split(",") if expected_dbt_asset_names else []
+    )
+    dbt_filter_option = (
+        f"--select {' '.join(expected_dbt_asset_names)}" if expected_dbt_asset_names else ""
+    )
+    mock_run_job_and_poll.assert_called_once_with(
+        job_id=DBT_CLOUD_JOB_ID,
+        steps_override=[f"dbt build {dbt_filter_option}".strip()],
     )

@@ -18,7 +18,7 @@ from dagster._core.definitions.events import AssetMaterialization, Failure, Retr
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.utils import validate_tags
-from dagster._core.execution.context.compute import SolidExecutionContext
+from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.input import build_input_context
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.execution.plan.outputs import StepOutputHandle
@@ -31,6 +31,13 @@ from .compat import ExecutionError
 from .engine import DagstermillEngine
 from .errors import DagstermillError
 from .translator import DagsterTranslator
+
+
+def _clean_path_for_windows(notebook_path: str) -> str:
+    """In windows, the notebook cant render in dagit unless the C: prefix is removed.
+    os.path.splitdrive will split the path into (drive, tail), so just return the tail
+    """
+    return os.path.splitdrive(notebook_path)[1]
 
 
 # https://github.com/nteract/papermill/blob/17d4bbb3960c30c263bca835e48baf34322a3530/papermill/parameterize.py
@@ -161,7 +168,7 @@ def _dm_compute(
     check.opt_str_param(output_notebook, "output_notebook")
 
     def _t_fn(step_context, inputs):
-        check.inst_param(step_context, "step_context", SolidExecutionContext)
+        check.inst_param(step_context, "step_context", OpExecutionContext)
         check.param_invariant(
             isinstance(step_context.run_config, dict),
             "context",
@@ -401,7 +408,7 @@ def define_dagstermill_op(
             "kind" not in tags,
             "user-defined op tags contains the `kind` key, but the `kind` key is reserved for use by Dagster",
         )
-    default_tags = {"notebook_path": notebook_path, "kind": "ipynb"}
+    default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}
 
     return OpDefinition(
         name=name,

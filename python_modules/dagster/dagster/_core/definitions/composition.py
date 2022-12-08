@@ -20,6 +20,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -40,10 +41,10 @@ from .hook_definition import HookDefinition
 from .inference import infer_output_props
 from .input import InputDefinition, InputMapping
 from .logger_definition import LoggerDefinition
+from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .policy import RetryPolicy
 from .resource_definition import ResourceDefinition
-from .solid_definition import NodeDefinition, SolidDefinition
 from .utils import check_valid_name, validate_tags
 from .version_strategy import VersionStrategy
 
@@ -335,19 +336,19 @@ class PendingNodeInvocation:
             current_context().add_pending_invocation(self)
 
     def __call__(self, *args, **kwargs):
-        from ..execution.context.invocation import UnboundSolidExecutionContext
-        from .decorators.solid_decorator import DecoratedSolidFunction
-        from .solid_invocation import solid_invocation_result
+        from ..execution.context.invocation import UnboundOpExecutionContext
+        from .decorators.solid_decorator import DecoratedOpFunction
+        from .solid_invocation import op_invocation_result
 
         node_name = self.given_alias if self.given_alias else self.node_def.name
 
         # If PendingNodeInvocation is not within composition context, and underlying node definition
         # is a solid definition, then permit it to be invoked and executed like a solid definition.
-        if not is_in_composition() and isinstance(self.node_def, SolidDefinition):
+        if not is_in_composition() and isinstance(self.node_def, OpDefinition):
             node_label = (
                 self.node_def.node_type_str
             )  # will be the string "solid" for solids, and the string "ops" for ops
-            if not isinstance(self.node_def.compute_fn, DecoratedSolidFunction):
+            if not isinstance(self.node_def.compute_fn, DecoratedOpFunction):
                 raise DagsterInvalidInvocationError(
                     f"Attemped to invoke {node_label} that was not constructed using the `@{node_label}` "
                     f"decorator. Only {node_label}s constructed using the `@{node_label}` decorator can be "
@@ -359,20 +360,20 @@ class PendingNodeInvocation:
                         f"Compute function of {node_label} '{self.given_alias}' has context argument, but no context "
                         "was provided when invoking."
                     )
-                elif args[0] is not None and not isinstance(args[0], UnboundSolidExecutionContext):
+                elif args[0] is not None and not isinstance(args[0], UnboundOpExecutionContext):
                     raise DagsterInvalidInvocationError(
                         f"Compute function of {node_label} '{self.given_alias}' has context argument, but no context "
                         "was provided when invoking."
                     )
                 context = args[0]
-                return solid_invocation_result(self, context, *args[1:], **kwargs)
+                return op_invocation_result(self, context, *args[1:], **kwargs)
             else:
-                if len(args) > 0 and isinstance(args[0], UnboundSolidExecutionContext):
+                if len(args) > 0 and isinstance(args[0], UnboundOpExecutionContext):
                     raise DagsterInvalidInvocationError(
                         f"Compute function of {node_label} '{self.given_alias}' has no context argument, but "
                         "context was provided when invoking."
                     )
-                return solid_invocation_result(self, None, *args, **kwargs)
+                return op_invocation_result(self, None, *args, **kwargs)
 
         assert_in_composition(node_name, self.node_def)
         input_bindings = {}
@@ -1035,7 +1036,7 @@ def do_composition(
             This should be removed in 0.11.0.
     """
     from .decorators.solid_decorator import (
-        NoContextDecoratedSolidFunction,
+        NoContextDecoratedOpFunction,
         resolve_checked_solid_fn_inputs,
     )
 
@@ -1050,7 +1051,7 @@ def do_composition(
         outputs_are_explicit = True
         actual_output_defs = provided_output_defs
 
-    compute_fn = NoContextDecoratedSolidFunction(fn)
+    compute_fn = NoContextDecoratedOpFunction(fn)
 
     actual_input_defs = resolve_checked_solid_fn_inputs(
         decorator_name=decorator_name,

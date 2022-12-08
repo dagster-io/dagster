@@ -11,7 +11,7 @@ from dagster._utils.log import get_dagster_logger
 if TYPE_CHECKING:
     from dagster import DagsterInstance
     from dagster._core.events import DagsterEvent
-    from dagster._legacy import PipelineRun
+    from dagster._legacy import DagsterRun
 
 DAGSTER_META_KEY = "dagster_meta"
 
@@ -319,7 +319,7 @@ class DagsterLogManager(logging.Logger):
         loggers: Sequence[logging.Logger],
         handlers: Optional[Sequence[logging.Handler]] = None,
         instance: Optional["DagsterInstance"] = None,
-        pipeline_run: Optional["PipelineRun"] = None,
+        pipeline_run: Optional["DagsterRun"] = None,
     ) -> "DagsterLogManager":
         """Create a DagsterLogManager with a set of subservient loggers."""
 

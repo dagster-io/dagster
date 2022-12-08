@@ -21,7 +21,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
-from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -446,9 +446,9 @@ class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
                 logging.exception("Exception in callback for event watch on run %s.", self._run_id)
 
             if (
-                status == PipelineRunStatus.SUCCESS
-                or status == PipelineRunStatus.FAILURE
-                or status == PipelineRunStatus.CANCELED
+                status == DagsterRunStatus.SUCCESS
+                or status == DagsterRunStatus.FAILURE
+                or status == DagsterRunStatus.CANCELED
             ):
                 self._event_log_storage.end_watch(self._run_id, self._cb)
 

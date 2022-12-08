@@ -7,7 +7,7 @@ def make_dagster_job_from_airflow_dag(
     use_airflow_template_context=False,
     unique_id=None,
     mock_xcom=False,
-    use_emphemeral_airflow_db=False,
+    use_ephemeral_airflow_db=False,
 ):
     """Construct a Dagster job corresponding to a given Airflow DAG.
 
@@ -47,13 +47,13 @@ def make_dagster_job_from_airflow_dag(
             execution of Airflow Operators.
         use_airflow_template_context (bool): If True, will call get_template_context() on the
             Airflow TaskInstance model which requires and modifies the DagRun table. The use_airflow_template_context
-            setting is ignored if use_emphemeral_airflow_db is True.
+            setting is ignored if use_ephemeral_airflow_db is True.
             (default: False)
         unique_id (int): If not None, this id will be postpended to generated op names. Used by
             framework authors to enforce unique op names within a repo.
         mock_xcom (bool): If True, dagster will mock out all calls made to xcom, features that
             depend on xcom may not work as expected. (default: False)
-        use_emphemeral_airflow_db (bool): If True, dagster will create an emphemeral sqlite airflow
+        use_ephemeral_airflow_db (bool): If True, dagster will create an ephemeral sqlite airflow
             database for each run. (default: False)
 
     Returns:
@@ -61,12 +61,17 @@ def make_dagster_job_from_airflow_dag(
 
     """
     pipeline_def = make_dagster_pipeline_from_airflow_dag(
-        dag, tags, use_airflow_template_context, unique_id, mock_xcom, use_emphemeral_airflow_db
+        dag=dag,
+        tags=tags,
+        use_airflow_template_context=use_airflow_template_context,
+        unique_id=unique_id,
+        mock_xcom=mock_xcom,
+        use_ephemeral_airflow_db=use_ephemeral_airflow_db,
     )
     # pass in tags manually because pipeline_def.graph doesn't have it threaded
     return pipeline_def.graph.to_job(
         tags={**pipeline_def.tags},
         resource_defs={"airflow_db": pipeline_def.mode_definitions[0].resource_defs["airflow_db"]}
-        if use_emphemeral_airflow_db
+        if use_ephemeral_airflow_db
         else {},
     )

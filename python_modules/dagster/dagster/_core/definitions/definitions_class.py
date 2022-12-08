@@ -16,6 +16,7 @@ from .repository_definition import (
 from .resource_definition import ResourceDefinition
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
+from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 
 @experimental
@@ -27,7 +28,7 @@ class Definitions:
         ] = None,
         schedules: Optional[Iterable[ScheduleDefinition]] = None,
         sensors: Optional[Iterable[SensorDefinition]] = None,
-        jobs: Optional[Iterable[JobDefinition]] = None,
+        jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
         resources: Optional[Mapping[str, Any]] = None,
     ):
         """
@@ -77,7 +78,7 @@ class Definitions:
             check.iterable_param(sensors, "sensors", SensorDefinition)
 
         if jobs:
-            check.iterable_param(jobs, "jobs", JobDefinition)
+            check.iterable_param(jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition))
 
         if resources:
             check.mapping_param(resources, "resources", key_type=str)

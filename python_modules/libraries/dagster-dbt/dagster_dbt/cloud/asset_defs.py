@@ -1,4 +1,5 @@
 import json
+import shlex
 from typing import (
     Any,
     Callable,
@@ -57,8 +58,8 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._job_id = job_id
         self._project_id: int
         self._has_generate_docs: bool
-        self._dbt_cloud_job_command: str
-        self._job_command_step: int
+        self._job_commands: List[str]
+        self._job_materialization_command_step: int
         self._node_info_to_asset_key = node_info_to_asset_key
         self._node_info_to_group_fn = node_info_to_group_fn
         self._partitions_def = partitions_def
@@ -93,12 +94,10 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._project_id = job["project_id"]
         self._has_generate_docs = job["generate_docs"]
 
-        # Initially, we'll constraint the kinds of dbt Cloud jobs that we support running.
-        # A simple constraint to is that we only support jobs that run a single command,
-        # as defined in the dbt Cloud job's execution settings.
+        # We constraint the kinds of dbt Cloud jobs that we support running.
         #
-        # TODO: For the moment, we'll support either `dbt run` or `dbt build`.
-        # In the future, we can adjust this to support multiple commands.
+        # A simple constraint is that we only support jobs that run multiple steps,
+        # but it must contain one of either `dbt run` or `dbt build`.
         #
         # As a reminder, `dbt deps` is automatically run before the job's configured commands.
         # And if the settings are enabled, `dbt docs generate` and `dbt source freshness` can
@@ -106,19 +105,23 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         #
         # These commands that execute before and after the job's configured commands do not count
         # towards the single command constraint.
-        commands = job["execute_steps"]
-        if len(commands) != 1 or not commands[0].lower().startswith(("dbt run", "dbt build")):
+        self._job_commands = job["execute_steps"]
+        materialization_command_filter = [
+            command.lower().startswith(("dbt run", "dbt build")) for command in self._job_commands
+        ]
+        if sum(materialization_command_filter) != 1:
             raise DagsterDbtCloudJobInvariantViolationError(
-                f"The dbt Cloud job '{job['name']}' ({job['id']}) must have a single command. "
-                "It must one of `dbt run` or `dbt build`. Received commands: {commands}."
+                f"The dbt Cloud job '{job['name']}' ({job['id']}) must have a single `dbt run` "
+                f"or `dbt build` in its commands. Received commands: {self._job_commands}."
             )
 
-        self._dbt_cloud_job_command = commands[0]
+        self._job_materialization_command_step = materialization_command_filter.index(True)
 
-        # Retrieve the filters options from the dbt Cloud job's command.
+        # Retrieve the filters options from the dbt Cloud job's materialization command.
         #
         # There are three filters: `--select`, `--exclude`, and `--selector`.
-        parsed_args = dbt_parse_args(args=commands[0].split()[1:])
+        materialization_command = self._job_commands[self._job_materialization_command_step]
+        parsed_args = dbt_parse_args(args=shlex.split(materialization_command)[1:])
         dbt_compile_options: List[str] = []
 
         selected_models = parsed_args.select or []
@@ -132,18 +135,27 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         if parsed_args.selector_name:
             dbt_compile_options.append(f"--selector {parsed_args.selector_name}")
 
-        # Pass the partition variable to the dbt Cloud job's command.
+        # Add the partition variable as a variable to the dbt Cloud job command.
+        #
+        # If existing variables passed through the dbt Cloud job's command, an error will be
+        # raised. Since these are static variables anyways, they can be moved to the
+        # `dbt_project.yml` without loss of functionality.
         #
         # Since we're only doing this to generate the dependency structure, just use an arbitrary
         # partition key (e.g. the last one) to retrieve the partition variable.
-        #
-        # TODO: Do not assume that `--vars` is empty. Instead, merge the partition variable with the
-        # existing vars passed into the dbt Cloud job's command.
+        dbt_vars = json.loads(parsed_args.vars or "{}")
+        if dbt_vars:
+            raise DagsterDbtCloudJobInvariantViolationError(
+                f"The dbt Cloud job '{job['name']}' ({job['id']}) must not have variables defined "
+                "from `--vars` in its `dbt run` or `dbt build` command. Instead, declare the "
+                f"variables in the `dbt_project.yml` file. Received commands: {self._job_commands}."
+            )
+
         if self._partitions_def and self._partition_key_to_vars_fn:
             partition_key = self._partitions_def.get_last_partition_key()
-            dbt_vars = self._partition_key_to_vars_fn(partition_key)
+            partition_var = self._partition_key_to_vars_fn(partition_key)
 
-            dbt_compile_options.append(f"--vars '{json.dumps(dbt_vars)}'")
+            dbt_compile_options.append(f"--vars '{json.dumps(partition_var)}'")
 
         # We need to retrieve the dependency structure for the assets in the dbt Cloud project.
         # However, we can't just use the dependency structure from the latest run, because
@@ -163,18 +175,20 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         # that the last step is the correct target.
         #
         # Here, we ignore the `dbt docs generate` step.
-        self._job_command_step = len(compile_run_dbt_output.run_details.get("run_steps", []))
-        if self._job_command_step > 0 and self._has_generate_docs:
-            self._job_command_step -= 1
+        compile_job_materialization_command_step = len(
+            compile_run_dbt_output.run_details.get("run_steps", [])
+        )
+        if self._has_generate_docs:
+            compile_job_materialization_command_step -= 1
 
         # Fetch the compilation run's manifest and run results.
         compile_run_id = compile_run_dbt_output.run_id
 
         manifest_json = self._dbt_cloud.get_manifest(
-            run_id=compile_run_id, step=self._job_command_step
+            run_id=compile_run_id, step=compile_job_materialization_command_step
         )
         run_results_json = self._dbt_cloud.get_run_results(
-            run_id=compile_run_id, step=self._job_command_step
+            run_id=compile_run_id, step=compile_job_materialization_command_step
         )
 
         # Filter the manifest to only include the nodes that were executed.
@@ -186,6 +200,16 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         executed_node_ids: Set[str] = set(
             result["unique_id"] for result in run_results_json["results"]
         )
+
+        # If there are no executed nodes, then there are no assets to generate.
+        # Inform the user to inspect their dbt Cloud job's command.
+        if not executed_node_ids:
+            raise DagsterDbtCloudJobInvariantViolationError(
+                f"The dbt Cloud job '{job['name']}' ({job['id']}) does not generate any "
+                "software-defined assets. Ensure that your dbt project has nodes to execute, "
+                "and that your dbt Cloud job's materialization command has the proper filter "
+                f"options applied. Received commands: {self._job_commands}."
+            )
 
         # Generate the dependency structure for the executed nodes.
         dbt_dependencies = _get_deps(
@@ -209,7 +233,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             asset_ins,
             asset_outs,
             group_names_by_key,
-            _,
+            fqns_by_output_name,
             metadata_by_output_name,
         ) = _get_asset_deps(
             dbt_nodes=dbt_nodes,
@@ -243,17 +267,16 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             },
             # TODO: In the future, we should allow the key prefix to be specified.
             key_prefix=None,
-            # TODO: In the future, we should allow these assets to be subset, but this requires
-            # ad-hoc overrides to the job's run/build step to materialize only the subset.
-            can_subset=False,
+            can_subset=True,
             extra_metadata={
                 "job_id": self._job_id,
-                "job_command": self._dbt_cloud_job_command,
-                "job_command_step": self._job_command_step,
+                "job_commands": self._job_commands,
+                "job_materialization_command_step": self._job_materialization_command_step,
                 "group_names_by_output_name": {
                     asset_outs[asset_key][0]: group_name
                     for asset_key, group_name in group_names_by_key.items()
                 },
+                "fqns_by_output_name": fqns_by_output_name,
             },
         )
 
@@ -283,9 +306,10 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
     ) -> AssetsDefinition:
         metadata = cast(Mapping[str, Any], assets_definition_cacheable_data.extra_metadata)
         job_id = cast(int, metadata["job_id"])
-        job_command = cast(str, metadata["job_command"])
-        job_command_step = cast(int, metadata["job_command_step"])
+        job_commands = cast(List[str], list(metadata["job_commands"]))
+        job_materialization_command_step = cast(int, metadata["job_materialization_command_step"])
         group_names_by_output_name = cast(Mapping[str, str], metadata["group_names_by_output_name"])
+        fqns_by_output_name = cast(Mapping[str, List[str]], metadata["fqns_by_output_name"])
 
         @multi_asset(
             name=f"dbt_cloud_job_{job_id}",
@@ -299,6 +323,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                     metadata=(assets_definition_cacheable_data.metadata_by_output_name or {}).get(
                         output_name
                     ),
+                    is_required=False,
                 )
                 for output_name, asset_key in (
                     assets_definition_cacheable_data.keys_by_output_name or {}
@@ -311,33 +336,67 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 ).items()
             },
             partitions_def=self._partitions_def,
+            can_subset=assets_definition_cacheable_data.can_subset,
             required_resource_keys={"dbt_cloud"},
             compute_kind="dbt",
         )
         def _assets(context: OpExecutionContext):
             dbt_cloud = cast(DbtCloudResourceV2, context.resources.dbt_cloud)
 
-            # TODO: Do not assume that `--vars` is empty. Instead, merge the partition variable with the
-            # existing vars passed into the dbt Cloud job's command.
+            # Add the partition variable as a variable to the dbt Cloud job command.
             dbt_options: List[str] = []
             if context.has_partition_key and self._partition_key_to_vars_fn:
-                dbt_vars = self._partition_key_to_vars_fn(context.partition_key)
+                partition_var = self._partition_key_to_vars_fn(context.partition_key)
 
-                dbt_options.append(f"--vars '{json.dumps(dbt_vars)}'")
+                dbt_options.append(f"--vars '{json.dumps(partition_var)}'")
+
+            # Map the selected outputs to dbt models that should be materialized.
+            #
+            # HACK: This selection filter works even if an existing `--select` is specified in the
+            # dbt Cloud job. We take advantage of the fact that the last `--select` will be used.
+            #
+            # This is not ideal, as the triggered run for the dbt Cloud job will still have both
+            # `--select` options when displayed in the UI, but parsing the command line argument
+            # to remove the initial select using argparse.
+            if len(context.selected_output_names) != len(
+                assets_definition_cacheable_data.keys_by_output_name or {}
+            ):
+                selected_models = [
+                    ".".join(fqns_by_output_name[output_name])
+                    for output_name in context.selected_output_names
+                ]
+
+                dbt_options.append(f"--select {' '.join(sorted(selected_models))}")
+
+            # Override the materialization step with the selection filter
+            materialization_command = job_commands[job_materialization_command_step]
+            job_commands[
+                job_materialization_command_step
+            ] = f"{materialization_command} {' '.join(dbt_options)}".strip()
 
             # Run the dbt Cloud job to rematerialize the assets.
             dbt_cloud_output = dbt_cloud.run_job_and_poll(
                 job_id=job_id,
-                steps_override=[f"{job_command} {' '.join(dbt_options)}"],
+                steps_override=job_commands,
             )
+
+            # Target the materialization step when retrieving run artifacts, rather than assuming
+            # that the last step is the correct target.
+            #
+            # We ignore the commands in front of the materialization command. And again, we ignore
+            # the `dbt docs generate` step.
+            materialization_command_step = len(dbt_cloud_output.run_details.get("run_steps", []))
+            materialization_command_step -= len(job_commands) - job_materialization_command_step - 1
+            if dbt_cloud_output.run_details.get("job", {}).get("generate_docs"):
+                materialization_command_step -= 1
 
             # TODO: Assume the run completely fails or completely succeeds.
             # In the future, we can relax this assumption.
             manifest_json = dbt_cloud.get_manifest(
-                run_id=dbt_cloud_output.run_id, step=job_command_step
+                run_id=dbt_cloud_output.run_id, step=materialization_command_step
             )
             run_results_json = self._dbt_cloud.get_run_results(
-                run_id=dbt_cloud_output.run_id, step=job_command_step
+                run_id=dbt_cloud_output.run_id, step=materialization_command_step
             )
 
             for result in run_results_json.get("results", []):

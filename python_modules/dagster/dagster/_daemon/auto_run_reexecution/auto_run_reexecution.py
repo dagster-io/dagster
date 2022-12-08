@@ -1,11 +1,11 @@
 import sys
 from typing import Iterator, Optional, Sequence, Tuple, cast
 
-from dagster import DagsterRun, MetadataEntry, MetadataValue
+from dagster._core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster._core.events import EngineEventData
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRunStatus, PipelineRun, RunRecord
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunRecord
 from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_NUMBER_TAG, RETRY_STRATEGY_TAG
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -64,7 +64,7 @@ def filter_runs_to_should_retry(
 
 
 def get_reexecution_strategy(
-    run: PipelineRun, instance: DagsterInstance
+    run: DagsterRun, instance: DagsterInstance
 ) -> Optional[ReexecutionStrategy]:
     raw_strategy_tag = run.tags.get(RETRY_STRATEGY_TAG)
     if raw_strategy_tag is None:

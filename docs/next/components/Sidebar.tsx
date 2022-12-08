@@ -194,13 +194,14 @@ const RecursiveNavigation = ({
 const TopLevelNavigation = () => {
   const navigation = useNavigation();
 
+  const map = {};
   const [navKeysToExpanded, setNavKeysToExpanded] = useState<{
     [key: string]: boolean;
   }>(
     flatten(navigation).reduce((map, obj) => {
       map[obj.key] = obj.isDefaultOpen;
       return map;
-    }),
+    }, map),
   );
 
   return (

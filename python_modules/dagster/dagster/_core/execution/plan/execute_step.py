@@ -26,7 +26,7 @@ from dagster._core.definitions import (
     OutputDefinition,
     TypeCheck,
 )
-from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
+from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
 from dagster._core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster._core.definitions.logical_version import (
     CODE_VERSION_TAG_KEY,
@@ -72,7 +72,7 @@ from dagster._utils.timing import time_execution_scope
 
 from .compute import SolidOutputUnion
 from .compute_generator import create_solid_compute_wrapper
-from .utils import solid_execution_error_boundary
+from .utils import op_execution_error_boundary
 
 
 def _step_output_error_checked_user_event_sequence(
@@ -369,7 +369,7 @@ def core_dagster_event_sequence_for_step(
     # was generated from the @solid or @lambda_solid decorator, then compute_fn needs to be coerced
     # into this format. If the solid definition was created directly, then it is expected that the
     # compute_fn is already in this format.
-    if isinstance(step_context.solid_def.compute_fn, DecoratedSolidFunction):
+    if isinstance(step_context.solid_def.compute_fn, DecoratedOpFunction):
         core_gen = create_solid_compute_wrapper(step_context.solid_def)
     else:
         core_gen = step_context.solid_def.compute_fn
@@ -574,7 +574,7 @@ def _build_logical_version_tags(
     asset_key: AssetKey, step_context: StepExecutionContext
 ) -> Dict[str, str]:
     asset_layer = step_context.pipeline_def.asset_layer
-    code_version = asset_layer.op_version_for_asset(asset_key) or step_context.pipeline_run.run_id
+    code_version = asset_layer.code_version_for_asset(asset_key) or step_context.pipeline_run.run_id
     input_logical_versions: Dict[AssetKey, LogicalVersion] = {}
     tags: Dict[str, str] = {}
     tags[CODE_VERSION_TAG_KEY] = code_version
@@ -634,7 +634,7 @@ def _store_output(
         handle_output_gen = output_manager.handle_output(output_context, output.value)
 
     for elt in iterate_with_context(
-        lambda: solid_execution_error_boundary(
+        lambda: op_execution_error_boundary(
             DagsterExecutionHandleOutputError,
             msg_fn=lambda: (
                 f'Error occurred while handling output "{output_context.name}" of '

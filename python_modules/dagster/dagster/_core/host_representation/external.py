@@ -51,7 +51,7 @@ from .external_data import (
     ExternalSensorMetadata,
     ExternalTargetData,
 )
-from .handle import InstigatorHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
+from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
 from .selector import InstigatorSelector, RepositorySelector
@@ -284,7 +284,7 @@ class ExternalPipeline(RepresentedPipeline):
         else:
             check.failed("Expected either job data or ref, got neither")
 
-        self._handle = PipelineHandle(self._name, repository_handle)
+        self._handle = JobHandle(self._name, repository_handle)
 
     @property
     def _pipeline_index(self) -> PipelineIndex:
@@ -400,7 +400,7 @@ class ExternalPipeline(RepresentedPipeline):
         return self._snapshot_id
 
     @property
-    def handle(self) -> PipelineHandle:
+    def handle(self) -> JobHandle:
         return self._handle
 
     def get_python_origin(self) -> PipelinePythonOrigin:

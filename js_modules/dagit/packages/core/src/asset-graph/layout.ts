@@ -222,14 +222,11 @@ export const extendBounds = (a: IBounds, b: IBounds) => {
 };
 
 export const ASSET_NODE_ICON_WIDTH = 20;
-export const ASSET_NODE_ANNOTATIONS_MAX_WIDTH = 32;
 export const ASSET_NODE_NAME_MAX_LENGTH = 32;
 const DISPLAY_NAME_PX_PER_CHAR = 8.0;
 
 export const assetNameMaxlengthForWidth = (width: number) => {
-  return (
-    (width - ASSET_NODE_ANNOTATIONS_MAX_WIDTH - ASSET_NODE_ICON_WIDTH) / DISPLAY_NAME_PX_PER_CHAR
-  );
+  return (width - ASSET_NODE_ICON_WIDTH) / DISPLAY_NAME_PX_PER_CHAR;
 };
 
 export const getAssetNodeDimensions = (def: {
@@ -241,34 +238,25 @@ export const getAssetNodeDimensions = (def: {
   description?: string | null;
   computeKind: string | null;
 }) => {
-  const computeName = def.graphName || def.opNames[0] || null;
   const displayName = def.assetKey.path[def.assetKey.path.length - 1];
   const width =
     Math.max(
-      200,
+      230,
       Math.min(ASSET_NODE_NAME_MAX_LENGTH, displayName.length) * DISPLAY_NAME_PX_PER_CHAR,
-    ) +
-    ASSET_NODE_ICON_WIDTH +
-    ASSET_NODE_ANNOTATIONS_MAX_WIDTH;
+    ) + ASSET_NODE_ICON_WIDTH;
 
   if (def.isSource && !def.isObservable) {
     return {width, height: 40};
   } else {
-    let height = 35; // name
+    let height = 60; // name + description
 
-    if (def.description) {
-      height += 25; // description shown
-    }
-    if (computeName && displayName !== computeName) {
-      height += 25; // op name shown
-    }
     if (def.isSource) {
       height += 36; // observed
     } else {
-      height += 60; // last run + status row
+      height += 36; // status row
     }
     if (def.computeKind) {
-      height += 30;
+      height += 30; // tag
     }
     return {width, height};
   }

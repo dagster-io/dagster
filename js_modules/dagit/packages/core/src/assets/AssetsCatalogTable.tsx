@@ -23,7 +23,7 @@ import {AssetGroupSelector} from '../types/globalTypes';
 import {ClearButton} from '../ui/ClearButton';
 import {LoadingSpinner} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
-import {buildRepoPath} from '../workspace/buildRepoAddress';
+import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
 import {AssetTable, ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTable';
 import {AssetsEmptyState} from './AssetsEmptyState';
@@ -271,7 +271,10 @@ const AssetGroupSuggest: React.FC<{
               {assetGroup.groupName}
               {repoContextNeeded[assetGroup.groupName] ? (
                 <span style={{opacity: 0.5, paddingLeft: 4}}>
-                  {buildRepoPath(assetGroup.repositoryName, assetGroup.repositoryLocationName)}
+                  {buildRepoPathForHuman(
+                    assetGroup.repositoryName,
+                    assetGroup.repositoryLocationName,
+                  )}
                 </span>
               ) : undefined}
             </>
