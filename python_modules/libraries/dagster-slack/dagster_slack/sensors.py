@@ -24,7 +24,11 @@ from dagster._core.definitions.unresolved_asset_job_definition import Unresolved
 from dagster._utils.backcompat import deprecation_warning
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.selector import JobSelector, RepositorySelector
+    from dagster._core.host_representation.selector import (
+        CodeLocationSelector,
+        JobSelector,
+        RepositorySelector,
+    )
 
 T = TypeVar("T", bound=RunStatusSensorContext)
 
@@ -91,6 +95,7 @@ def make_slack_on_run_failure_sensor(
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",
                 "JobSelector",
+                "CodeLocationSelector",
             ]
         ]
     ] = None,
@@ -102,6 +107,7 @@ def make_slack_on_run_failure_sensor(
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",
                 "JobSelector",
+                "CodeLocationSelector",
             ]
         ]
     ] = None,
