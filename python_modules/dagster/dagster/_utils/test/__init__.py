@@ -213,7 +213,7 @@ def execute_solids_within_pipeline(
         instance=instance,
     )
 
-    return {sr.solid.name: sr for sr in result.solid_result_list}
+    return {sr.node.name: sr for sr in result.node_result_list}
 
 
 def wrap_op_in_graph(

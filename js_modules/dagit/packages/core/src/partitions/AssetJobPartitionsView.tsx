@@ -11,6 +11,7 @@ import {
 import {usePartitionHealthData} from '../assets/usePartitionHealthData';
 import {useViewport} from '../gantt/useViewport';
 import {DagsterTag} from '../runs/RunTag';
+import {RepositorySelector} from '../types/globalTypes';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -141,6 +142,7 @@ export const AssetJobPartitionsView: React.FC<{
       </Box>
       {showAssets && (
         <AssetJobPartitionGraphs
+          repositorySelector={repositorySelector}
           pipelineName={pipelineName}
           partitionSetName={partitionSetName}
           multidimensional={(merged?.dimensions.length || 0) > 1}
@@ -171,6 +173,7 @@ export const AssetJobPartitionsView: React.FC<{
 };
 
 export const AssetJobPartitionGraphs: React.FC<{
+  repositorySelector: RepositorySelector;
   pipelineName: string;
   partitionSetName: string;
   multidimensional: boolean;
@@ -180,6 +183,7 @@ export const AssetJobPartitionGraphs: React.FC<{
   pageSize: number;
   offset: number;
 }> = ({
+  repositorySelector,
   dimensionKeys,
   dimensionName,
   selected,
@@ -189,16 +193,19 @@ export const AssetJobPartitionGraphs: React.FC<{
   pipelineName,
   offset,
 }) => {
-  const partitions = usePartitionStepQuery(
+  const partitions = usePartitionStepQuery({
     partitionSetName,
-    multidimensional ? `${DagsterTag.Partition}/${dimensionName}` : DagsterTag.Partition,
-    dimensionKeys,
+    partitionTagName: multidimensional
+      ? `${DagsterTag.Partition}/${dimensionName}`
+      : DagsterTag.Partition,
+    partitionNames: dimensionKeys,
+    repositorySelector,
     pageSize,
-    [],
-    pipelineName,
+    runsFilter: [],
+    jobName: pipelineName,
     offset,
-    !dimensionName,
-  );
+    skipQuery: !dimensionName,
+  });
 
   const {stepDurationData, runDurationData} = usePartitionDurations(partitions);
 

@@ -109,7 +109,7 @@ def test_retries(environment):
             instance=instance,
         )
         assert second_result.success
-        downstream_of_failed = second_result.result_for_solid("downstream_of_failed").output_value()
+        downstream_of_failed = second_result.result_for_node("downstream_of_failed").output_value()
         assert downstream_of_failed == "okay perfect"
 
         will_be_skipped = [
@@ -286,7 +286,7 @@ def test_basic_retry_policy():
 
     result = execute_pipeline(policy_test, raise_on_error=False)
     assert not result.success
-    assert result.result_for_solid("throws").retry_attempts == 1
+    assert result.result_for_node("throws").retry_attempts == 1
 
 
 def test_retry_policy_rules():
@@ -315,12 +315,12 @@ def test_retry_policy_rules():
 
     result = execute_pipeline(policy_test, raise_on_error=False)
     assert not result.success
-    assert result.result_for_solid("throw_no_policy").retry_attempts == 3
-    assert result.result_for_solid("throw_with_policy").retry_attempts == 2
-    assert result.result_for_solid("override_no").retry_attempts == 1
-    assert result.result_for_solid("override_with").retry_attempts == 1
-    assert result.result_for_solid("config_override_no").retry_attempts == 1
-    assert result.result_for_solid("override_fail").retry_attempts == 1
+    assert result.result_for_node("throw_no_policy").retry_attempts == 3
+    assert result.result_for_node("throw_with_policy").retry_attempts == 2
+    assert result.result_for_node("override_no").retry_attempts == 1
+    assert result.result_for_node("override_with").retry_attempts == 1
+    assert result.result_for_node("config_override_no").retry_attempts == 1
+    assert result.result_for_node("override_fail").retry_attempts == 1
 
 
 def test_delay():
@@ -339,7 +339,7 @@ def test_delay():
     elapsed_time = time.time() - start
     assert not result.success
     assert elapsed_time > delay
-    assert result.result_for_solid("throws").retry_attempts == 1
+    assert result.result_for_node("throws").retry_attempts == 1
 
 
 def test_policy_delay_calc():

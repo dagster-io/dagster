@@ -44,6 +44,7 @@ For each deployment, you can configure settings for:
 - [Run monitoring](#run-monitoring-run_monitoring)
 - [Run retries](#run-retries-run_retries)
 - [SSO default role](#sso-default-role)
+- [Non-isolated runs](#non-isolated-runs)
 
 ### Run queue (run_queue)
 
@@ -172,6 +173,38 @@ sso_default_role: EDITOR
     <ul>
       <li>
         <strong>Default</strong> - <code>VIEWER</code>
+      </li>
+    </ul>
+  </ReferenceTableItem>
+</ReferenceTable>
+
+### Non-isolated runs
+
+Configure [non-isolated runs](/dagster-cloud/deployment/serverless) on your deployment.
+
+```yaml
+non_isolated_runs:
+  enabled: True
+  max_concurrent_non_isolated_runs: 1
+```
+
+<ReferenceTable>
+  <ReferenceTableItem propertyName="enabled">
+    If enabled, the `Isolate run environment` checkbox will appear in the
+    Launchpad.
+    <ul>
+      <li>
+        <strong>Default</strong> - <code>False</code>
+      </li>
+    </ul>
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="max_concurrent_non_isolated_runs">
+    A limit for how many non-isolated runs to launch at once. Once this limit is
+    reached, the checkbox will be greyed out and all runs will be isolated. This
+    helps to avoid running out of RAM on the code location server.
+    <ul>
+      <li>
+        <strong>Default</strong> - <code>1</code>
       </li>
     </ul>
   </ReferenceTableItem>

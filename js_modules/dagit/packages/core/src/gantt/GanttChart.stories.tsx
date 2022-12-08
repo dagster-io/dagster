@@ -194,6 +194,22 @@ const LOGS: RunMetadataProviderMessageFragment[] = [
     __typename: 'ExecutionStepSuccessEvent',
   },
   {
+    message: 'Starting initialization of resources [io_manager].',
+    timestamp: '0',
+    markerStart: `c-resource-1`,
+    markerEnd: null,
+    stepKey: 'C',
+    __typename: 'ResourceInitStartedEvent',
+  },
+  {
+    message: 'Finished initialization of resources [io_manager].',
+    timestamp: '0',
+    markerStart: null,
+    markerEnd: `c-resource-1`,
+    stepKey: 'C',
+    __typename: 'ResourceInitSuccessEvent',
+  },
+  {
     message: 'Started execution of step "C".',
     timestamp: '0',
     stepKey: 'C',
