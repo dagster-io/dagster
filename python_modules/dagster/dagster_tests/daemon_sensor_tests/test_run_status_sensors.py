@@ -1,7 +1,7 @@
 import tempfile
 import time
 from contextlib import contextmanager
-from typing import Dict, NamedTuple
+from typing import Dict, Generator, NamedTuple
 
 import pendulum
 import pytest
@@ -61,45 +61,49 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
 class CodeLocationInfoForSensorTest(NamedTuple):
     instance: DagsterInstance
     context: WorkspaceProcessContext
+    repositories: Dict[str, ExternalRepository]
     repository_location: RepositoryLocation
-
-    @property
-    def repositories(self) -> Dict[str, ExternalRepository]:
-        return {**self.repository_location.get_repositories()}
 
 
 @contextmanager
 def instance_with_single_code_location_multiple_repos_with_sensors(
     overrides=None, workspace_load_target=None
-):
+) -> Generator[tuple, None, None]:
     with instance_with_multiple_code_locations(overrides, workspace_load_target) as many_tuples:
         assert len(many_tuples) == 1
-        yield many_tuples[0]
+        location_info = next(iter(many_tuples.values()))
+        yield (
+            location_info.instance,
+            location_info.context,
+            location_info.repositories,
+        )
 
 
 @contextmanager
-def instance_with_multiple_code_locations(overrides=None, workspace_load_target=None):
+def instance_with_multiple_code_locations(
+    overrides=None, workspace_load_target=None
+) -> Generator[Dict[str, CodeLocationInfoForSensorTest], None, None]:
     with instance_for_test(overrides) as instance:
         with create_test_daemon_workspace_context(
             workspace_load_target or create_workspace_load_target(None), instance=instance
         ) as workspace_context:
 
-            test_tuples = []
+            location_infos: Dict[str, CodeLocationInfoForSensorTest] = {}
 
             for repository_location_entry in (
                 workspace_context.create_request_context().get_workspace_snapshot().values()
             ):
-                test_tuples.append(
-                    CodeLocationInfoForSensorTest(
-                        instance=instance,
-                        context=workspace_context,
-                        repository_location=check.not_none(
-                            repository_location_entry.repository_location
-                        ),
-                    )
+                repository_location: RepositoryLocation = check.not_none(
+                    repository_location_entry.repository_location
+                )
+                location_infos[repository_location.name] = CodeLocationInfoForSensorTest(
+                    instance=instance,
+                    context=workspace_context,
+                    repositories={**repository_location.get_repositories()},
+                    repository_location=repository_location,
                 )
 
-            yield test_tuples
+            yield location_infos
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
