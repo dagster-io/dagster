@@ -7,7 +7,7 @@ description: Several Dagster features require a long-running daemon process with
 
 Several Dagster features, like [schedules](/concepts/partitions-schedules-sensors/schedules), [sensors](/concepts/partitions-schedules-sensors/sensors), and [run queueing](/deployment/run-coordinator#limiting-run-concurrency), require a long-running `dagster-daemon` process to be included with your deployment.
 
-To start the `dagster-daemon` process locally, launch the following command in the same folder as your [`workspace.yaml`](/concepts/repositories-workspaces/workspaces#defining-a-workspace) file and keep the process running:
+To start the `dagster-daemon` process locally, launch the following command in the same folder as your [`workspace.yaml`](/concepts/repositories-workspaces/workspaces#understanding-workspace-files) file and keep the process running:
 
 ```shell
 $ dagster-daemon run

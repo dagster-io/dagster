@@ -1,20 +1,17 @@
 ---
-title: Workspaces | Dagster Docs
-description: Dagster Workspaces are collections of user-defined code locations and information about where they reside.
+title: Workspace files | Dagster Docs
+description: Dagster workspace files are used to define collections of code locations and information about where they reside.
 ---
 
-# Workspaces
+# Workspace files
 
-A workspace is a collection of user-defined [code locations](/concepts/code-locations) and information about where to find them. Workspaces can accept code locations defined using a <PyObject object="Definitions" /> object or a <PyObject object="repository" decorator /> decorator.
+<Note>This guide is applicable only to Dagster Open Source (OS).</Note>
 
-Prior to the introduction of <PyObject object="Definitions" />, workspaces were used to enable Dagster tools to load user code in tools like Dagit or the CLI. In a `Definitions` world, workspaces are only required to load multiple code locations as part of an [open source (OSS) deployment](/deployment). For local development, `Definitions` users can utilize a [`pyproject.toml` file](/concepts/code-locations).
+Workspace files contain a collection of user-defined [code locations](/concepts/code-locations) and information about where to find them. Workspace files can accept code locations defined using a <PyObject object="Definitions" /> object or a <PyObject object="repository" decorator /> decorator.
 
-<!-- Code locations in a workspace are loaded in a different process and communicate with Dagster system processes over an RPC mechanism. This architecture provides several advantages:
+Prior to the introduction of <PyObject object="Definitions" />, workspace files were used to enable Dagster tools to load user code in tools like Dagit or the CLI. In a <PyObject object="Definitions" /> world, workspace files are only required to load multiple code locations in customized environments, such as part of an OSS deployment.
 
-- When there is an update to user code, Dagit can pick up the change without a restart.
-- You can use multiple code locations to organize jobs, but still work on all of your code locations using a single instance of Dagit.
-- The Dagit process can run in a separate Python environment from user code so job dependencies don't need to be installed into the Dagit environment.
-- Each code location can be sourced from a separate Python environment, so teams can manage their dependencies (or even their Python versions) separately. -->
+For local development within a single Python environment, <PyObject object="Definitions" /> users can use the `-m` or `-f` flags with our CLI tools, or set the `pyproject.toml` file to avoid using command line flags entirely.
 
 ---
 
@@ -27,9 +24,9 @@ Prior to the introduction of <PyObject object="Definitions" />, workspaces were 
 
 ---
 
-## Defining a workspace
+## Understanding workspace files
 
-The structure of a workspace is encoded in a YAML document, named `workspace.yaml` by default, that tells Dagster where to find code locations. For example:
+A workspace file tells Dagster where to find code locations. By default, this is a YAML document named `workspace.yaml`. For example:
 
 ```yaml file=/concepts/repositories_workspaces/workspace.yaml
 # workspace.yaml
@@ -38,13 +35,13 @@ load_from:
   - python_file: my_file.py
 ```
 
-Each entry in `workspace.yaml` is considered a code location.
+Each entry in a workspace file is considered a code location.
 
 Each code location is loaded in its own process that Dagster tools use an RPC protocol to communicate with. This process separation allows multiple code locations in different environments to be loaded independently, and ensures that errors in user code can't impact Dagster system code.
 
 ---
 
-## Loading code locations
+## Configuring code locations
 
 <TabGroup>
 <TabItem name="From a file">
@@ -103,9 +100,9 @@ load_from:
 
 ---
 
-## Loading a workspace
+## Loading workspace files into Dagit
 
-Both Dagit and the [dagster-daemon process](/deployment/dagster-daemon) need to know how to load your workspace. By default, they look for the `workspace.yaml` file in the current directory, allowing you to launch from that directory without the need for command line arguments:
+By default, Dagit and the [Dagster daemon process](/deployment/dagster-daemon) look for workspace files (by default, `workspace.yaml`) in the current directory when invoked. This allows you to launch from that directory without the need for command line arguments:
 
 ```shell
 dagit
@@ -117,13 +114,13 @@ To load the `workspace.yaml` file from a different folder, use the `-w` argument
 dagit -w path/to/workspace.yaml
 ```
 
-When `dagit` is run, Dagit will load all the code locations defined by the workspace. Refer to the [CLI reference](/\_apidocs/cli#dagit) for more info and examples.
+When `dagit` is run, Dagit will load all the code locations defined by the workspace file. Refer to the [CLI reference](/\_apidocs/cli#dagit) for more info and examples.
 
 If a code location can't be loaded - for example, due to a syntax or some other unrecoverable error - a warning message will display in Dagit. You'll be directed to a status page with a descriptive error and stack trace for any locations Dagit was unable to load.
 
-**Note**: If a code location is re-named or its configuration is modified in `workspace.yaml`, you'll need to stop and re-start any running schedules or sensors in that code location. You can do this in Dagit by navigating to the [**Instance status** page](/concepts/dagit/dagit#instance-status) and using the **Schedules** and **Sensors** tabs.
+**Note**: If a code location is re-named or its configuration in a workspace file is modified, you'll need to stop and re-start any running schedules or sensors in that code location. You can do this in Dagit by navigating to the [**Instance status** page](/concepts/dagit/dagit#instance-status) and using the **Schedules** and **Sensors** tabs.
 
-This is required because when you start chedule or a sensor, a serialized representation of the entry in your `workspace.yaml` file is stored in a database. The dagster-daemon process uses this serialized representation to identify and load your schedule or sensor. If the code location is modified and its schedules and sensors aren't restarted, the dagster-daemon process will use an outdated serialized representation, resulting in issues.
+This is required because when you start a schedule or a sensor, a serialized representation of the entry in your workspace file is stored in a database. The Dagster daemon process uses this serialized representation to identify and load your schedule or sensor. If the code location is modified and its schedules and sensors aren't restarted, the Dagster daemon process will use an outdated serialized representation, resulting in issues.
 
 ---
 
@@ -138,7 +135,7 @@ By default, Dagster tools automatically create a process on your local machine f
 
 To initialize the Dagster gRPC server, run the `dagster api grpc` command and include:
 
-- A target file or module. Similar to `workspace.yaml`, the target can either be a Python file or package.
+- A target file or module. Similar to a workspace file, the target can either be a Python file or package.
 - Host address
 - Port or socket
 
@@ -204,7 +201,7 @@ dagster api grpc --python-file /path/to/file.py --working-directory /var/my_work
 
 Refer to the [API docs](/\_apidocs/cli#dagster-api-grpc) for the full list of options that can be set when running a new gRPC server.
 
-Then, in your `workspace.yaml`, configure a new gRPC server code location to load:
+Then, in your workspace file, configure a new gRPC server code location to load:
 
 ```yaml file=/concepts/repositories_workspaces/workspace_grpc.yaml
 # workspace.yaml
@@ -275,7 +272,7 @@ load_from:
       executable_path: venvs/path/to/ml_tensorflow/bin/python
 ```
 
-The example above also illustrates the `location_name` key. Each code location in a workspace has a unique name that is displayed in Dagit, and is also used to disambiguate definitions with the same name across multiple code locations. Dagster will supply a default name for each location based on its workspace entry if a custom one is not supplied.
+The example above also illustrates the `location_name` key. Each code location in a workspace file has a unique name that is displayed in Dagit, and is also used to disambiguate definitions with the same name across multiple code locations. Dagster will supply a default name for each location based on its workspace entry if a custom one is not supplied.
 
 </TabItem>
 </TabGroup>
