@@ -1,11 +1,18 @@
+from typing import Sequence
+
 import pytest
 
 from dagster import DagsterEventType, DagsterInvariantViolationError, ExpectationResult
+from dagster._core.events import DagsterEvent
+from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult
 from dagster._legacy import PipelineDefinition, execute_pipeline, solid
 
 
-def expt_results_for_compute_step(result, solid_name):
-    solid_result = result.result_for_solid(solid_name)
+def expt_results_for_compute_step(
+    result: PipelineExecutionResult, solid_name: str
+) -> Sequence[DagsterEvent]:
+    solid_result = result.result_for_node(solid_name)
+    assert isinstance(solid_result, OpExecutionResult)
     return [
         compute_step_event
         for compute_step_event in solid_result.compute_step_events
