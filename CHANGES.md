@@ -1,5 +1,95 @@
 # Changelog
 
+# 1.1.6 (core) / 0.17.6 (libraries)
+
+### New
+
+- [dagit] Throughout Dagit, when the default repository name `__repository__` is used for a repo, only the code location name will be shown. This change also applies to URL paths.
+- [dagster-dbt] When attempting to generate software-defined assets from a dbt Cloud job, an error is now raised if none are created.
+- [dagster-dbt] Software-defined assets can now be generated for dbt Cloud jobs that execute multiple commands.
+
+### Bugfixes
+
+- Fixed a bug that caused `load_asset_value` to error with the default IO manager when a `partition_key` argument was provided.
+- Previously, trying to access `context.partition_key` or `context.asset_partition_key_for_output` when invoking an asset directly (e.g. in a unit test) would result in an error. This has been fixed.
+- Failure hooks now receive the original exception instead of `RetryRequested` when using a retry policy.
+- The LocationStateChange GraphQL subscription has been fixed (thanks @****[roeij](https://github.com/roeij) !)**
+- Fixed a bug where a `sqlite3.ProgrammingError` error was raised when creating an ephemeral `DagsterInstance`, most commonly when `build_resources` was called without passing in an instance parameter.
+- [dagstermill] Jupyter notebooks now correctly render in Dagit on Windows machines.
+- [dagster-duckdb-pyspark] New `duckdb_pyspark_io_manager` helper to automatically create a DuckDB I/O manager that can store and load PySpark DataFrames.
+- [dagster-mysql] Fixed a bug where versions of mysql < `8.0.31` would raise an error on some run queries.
+- [dagster-postgres] connection url param “options“ are no longer overwritten in dagit.
+- [dagit] Dagit now allows backfills to be launched for asset jobs that have partitions and required config.
+- [dagit] Dagit no longer renders the "Job in repo@location" label incorrectly in Chrome v109.
+- [dagit] Dagit's run list now shows improved labels on asset group runs of more than three assets
+- [dagit] Dagit's run gantt chart now renders per-step resource initialization markers correctly.
+- [dagit] In op and asset descriptions in Dagit, rendered markdown no longer includes extraneous escape slashes.
+- Assorted typos and omissions fixed in the docs — thanks @[C0DK](https://github.com/C0DK) and @[akan72](https://github.com/akan72)!
+
+
+### Experimental
+
+- As an optional replacement of the workspace/repository concepts, a new `Definitions` entrypoint for tools and the UI has been added. A single `Definitions` object per code location may be instantiated, and accepts typed, named arguments, rather than the heterogenous list of definitions returned from an `@repository`-decorated function. To learn more about this feature, and provide feedback, please refer to the [Github Discussion](https://github.com/dagster-io/dagster/discussions/10772).
+- [dagster-slack] A new `make_slack_on_freshness_policy_status_change_sensor` allows you to create a sensor to alert you when an asset is out of date with respect to its freshness policy (and when it’s back on time!)
+
+### Documentation
+
+- Refreshed `dagstermill` guide and reference page [https://docs.dagster.io/integrations/dagstermill](https://docs.dagster.io/integrations/dagstermill)
+- New declarative scheduling guide: [https://docs.dagster.io/guides/dagster/scheduling-assets](https://docs.dagster.io/guides/dagster/scheduling-assets)
+- New `dagster-snowflake` guide: [https://docs.dagster.io/integrations/snowflake](https://docs.dagster.io/integrations/snowflake)
+- Added docs for asset code versioning: [https://docs.dagster.io/concepts/assets/software-defined-assets#asset-code-versions](https://docs.dagster.io/concepts/assets/software-defined-assets#asset-code-versions)
+- Added docs for observable source assets: [https://docs.dagster.io/concepts/assets/asset-observations#observable-source-assets](https://docs.dagster.io/concepts/assets/asset-observations#observable-source-assets)
+
+
+# 1.1.5 (core) / 0.17.5 (libraries)
+
+### Bugfixes
+
+- [dagit] Fixed an issue where the Partitions tab sometimes failed to load for asset jobs.
+
+# 1.1.4 (core) / 0.17.4 (libraries)
+
+### Community Contributions
+
+- Fixed a typo in GCSComputeLogManager docstring (thanks [reidab](https://github.com/reidab))!
+- [dagster-airbyte] job cancellation on run termination is now optional. (Thanks [adam-bloom](https://github.com/adam-bloom))!
+- [dagster-snowflake] Can now specify snowflake role in config to snowflake io manager (Thanks [binhnefits](https://github.com/binhnefits))!
+- [dagster-aws] A new AWS systems manager resource (thanks [zyd14](https://github.com/zyd14))!
+- [dagstermill] Retry policy can now be set on dagstermill assets (thanks [nickvazz](https://github.com/nickvazz))!
+- Corrected typo in docs on metadata (thanks [C0DK](https://github.com/C0dk))!
+
+### New
+
+- Added a `job_name` parameter to `InputContext`
+- Fixed inconsistent io manager behavior when using `execute_in_process` on a `GraphDefinition` (it would use the `fs_io_manager` instead of the in-memory io manager)
+- Compute logs will now load in Dagit even when websocket connections are not supported.
+- [dagit] A handful of changes have been made to our URLs:
+    - The `/instance` URL path prefix has been removed. E.g. `/instance/runs` can now be found at `/runs`.
+    - The `/workspace` URL path prefix has been changed to `/locations`. E.g. the URL for job `my_job` in repository `foo@bar` can now be found at `/locations/foo@bar/jobs/my_job`.
+- [dagit] The “Workspace” navigation item in the top nav has been moved to be a tab under the “Deployment” section of the app, and is renamed to “Definitions”.
+- [dagstermill] Dagster events can now be yielded from asset notebooks using `dagstermill.yield_event`.
+- [dagstermill] Failed notebooks can be saved for inspection and debugging using the new `save_on_notebook_failure` parameter.
+- [dagster-airflow] Added a new option `use_ephemeral_airflow_db` which will create a job run scoped airflow db for airflow dags running in dagster
+- [dagster-dbt] Materializing software-defined assets using dbt Cloud jobs now supports partitions.
+- [dagster-dbt] Materializing software-defined assets using dbt Cloud jobs now supports subsetting. Individual dbt Cloud models can be materialized, and the proper filters will be passed down to the dbt Cloud job.
+- [dagster-dbt] Software-defined assets from dbt Cloud jobs now support configurable group names.
+- [dagster-dbt] Software-defined assets from dbt Cloud jobs now support configurable `AssetKey`s.
+
+### Bugfixes
+
+- Fixed regression starting in `1.0.16` for some compute log managers where an exception in the compute log manager setup/teardown would cause runs to fail.
+- The S3 / GCS / Azure compute log managers now sanitize the optional `prefix` argument to prevent badly constructed paths.
+- [dagit] The run filter typeahead no longer surfaces key-value pairs when searching for `tag:`. This resolves an issue where retrieving the available tags could cause significant performance problems. Tags can still be searched with freeform text, and by adding them via click on individual run rows.
+- [dagit] Fixed an issue in the Runs tab for job snapshots, where the query would fail and no runs were shown.
+- [dagit] Schedules defined with cron unions displayed “Invalid cron string” in Dagit. This has been resolved, and human-readable versions of all members of the union will now be shown.
+### Breaking Changes
+
+- You can no longer set an output’s asset key by overriding `get_output_asset_key` on the `IOManager` handling the output. Previously, this was experimental and undocumented.
+
+### Experimental
+
+- Sensor and schedule evaluation contexts now have an experimental `log` property, which log events that can later be viewed in Dagit.  To enable these log views in dagit, navigate to the user settings and enable the `Experimental schedule/sensor logging view` option.  Log links will now be available for sensor/schedule ticks where logs were emitted.  Note: this feature is not available for users using the `NoOpComputeLogManager`.
+
 # 1.1.3 (core) / 0.17.3 (libraries)
 
 ### Bugfixes

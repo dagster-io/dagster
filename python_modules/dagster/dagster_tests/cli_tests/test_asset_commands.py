@@ -1,22 +1,23 @@
+import tempfile
+
 import pytest
 from click.testing import CliRunner
 
 from dagster import AssetKey, AssetMaterialization, Output
 from dagster._cli.asset import asset_wipe_command
-from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import instance_for_test
 from dagster._legacy import execute_pipeline, pipeline, solid
 from dagster._seven import json
 
 
-@pytest.fixture(name="asset_instance")
-def mock_asset_instance(mocker):
-    # can use the ephemeral instance, since the default InMemoryEventLogStorage is asset aware
-    instance = DagsterInstance.ephemeral()
-    mocker.patch(
-        "dagster._core.instance.DagsterInstance.get",
-        return_value=instance,
-    )
-    yield instance
+@pytest.fixture(name="instance_runner")
+def mock_instance_runner():
+    with tempfile.TemporaryDirectory() as dagster_home_temp:
+        with instance_for_test(
+            temp_dir=dagster_home_temp,
+        ) as instance:
+            runner = CliRunner(env={"DAGSTER_HOME": dagster_home_temp})
+            yield instance, runner
 
 
 @solid
@@ -50,8 +51,8 @@ def pipeline_two():
     solid_two()
 
 
-def test_asset_wipe_errors(asset_instance):  # pylint: disable=unused-argument
-    runner = CliRunner()
+def test_asset_wipe_errors(instance_runner):  # pylint: disable=unused-argument
+    _, runner = instance_runner
     result = runner.invoke(asset_wipe_command)
     assert result.exit_code == 2
     assert (
@@ -64,18 +65,18 @@ def test_asset_wipe_errors(asset_instance):  # pylint: disable=unused-argument
     assert "Error, cannot use more than one of: asset key, `--all`." in result.output
 
 
-def test_asset_exit(asset_instance):  # pylint: disable=unused-argument
-    runner = CliRunner()
+def test_asset_exit(instance_runner):  # pylint: disable=unused-argument
+    _, runner = instance_runner
     result = runner.invoke(asset_wipe_command, ["--all"], input="NOT_DELETE\n")
     assert result.exit_code == 0
     assert "Exiting without removing asset indexes" in result.output
 
 
-def test_asset_single_wipe(asset_instance):
-    runner = CliRunner()
-    execute_pipeline(pipeline_one, instance=asset_instance)
-    execute_pipeline(pipeline_two, instance=asset_instance)
-    asset_keys = asset_instance.all_asset_keys()
+def test_asset_single_wipe(instance_runner):
+    instance, runner = instance_runner
+    execute_pipeline(pipeline_one, instance=instance)
+    execute_pipeline(pipeline_two, instance=instance)
+    asset_keys = instance.all_asset_keys()
     assert len(asset_keys) == 4
 
     result = runner.invoke(
@@ -90,15 +91,15 @@ def test_asset_single_wipe(asset_instance):
     assert result.exit_code == 0
     assert "Removed asset indexes from event logs" in result.output
 
-    asset_keys = asset_instance.all_asset_keys()
+    asset_keys = instance.all_asset_keys()
     assert len(asset_keys) == 2
 
 
-def test_asset_multi_wipe(asset_instance):
-    runner = CliRunner()
-    execute_pipeline(pipeline_one, instance=asset_instance)
-    execute_pipeline(pipeline_two, instance=asset_instance)
-    asset_keys = asset_instance.all_asset_keys()
+def test_asset_multi_wipe(instance_runner):
+    instance, runner = instance_runner
+    execute_pipeline(pipeline_one, instance=instance)
+    execute_pipeline(pipeline_two, instance=instance)
+    asset_keys = instance.all_asset_keys()
     assert len(asset_keys) == 4
 
     result = runner.invoke(
@@ -108,29 +109,29 @@ def test_asset_multi_wipe(asset_instance):
     )
     assert result.exit_code == 0
     assert "Removed asset indexes from event logs" in result.output
-    asset_keys = asset_instance.all_asset_keys()
+    asset_keys = instance.all_asset_keys()
     assert len(asset_keys) == 2
 
 
-def test_asset_wipe_all(asset_instance):
-    runner = CliRunner()
-    execute_pipeline(pipeline_one, instance=asset_instance)
-    execute_pipeline(pipeline_two, instance=asset_instance)
-    asset_keys = asset_instance.all_asset_keys()
+def test_asset_wipe_all(instance_runner):
+    instance, runner = instance_runner
+    execute_pipeline(pipeline_one, instance=instance)
+    execute_pipeline(pipeline_two, instance=instance)
+    asset_keys = instance.all_asset_keys()
     assert len(asset_keys) == 4
 
     result = runner.invoke(asset_wipe_command, ["--all"], input="DELETE\n")
     assert result.exit_code == 0
     assert "Removed asset indexes from event logs" in result.output
-    asset_keys = asset_instance.all_asset_keys()
+    asset_keys = instance.all_asset_keys()
     assert len(asset_keys) == 0
 
 
-def test_asset_single_wipe_noprompt(asset_instance):
-    runner = CliRunner()
-    execute_pipeline(pipeline_one, instance=asset_instance)
-    execute_pipeline(pipeline_two, instance=asset_instance)
-    asset_keys = asset_instance.all_asset_keys()
+def test_asset_single_wipe_noprompt(instance_runner):
+    instance, runner = instance_runner
+    execute_pipeline(pipeline_one, instance=instance)
+    execute_pipeline(pipeline_two, instance=instance)
+    asset_keys = instance.all_asset_keys()
     assert len(asset_keys) == 4
 
     result = runner.invoke(
@@ -139,5 +140,5 @@ def test_asset_single_wipe_noprompt(asset_instance):
     assert result.exit_code == 0
     assert "Removed asset indexes from event logs" in result.output
 
-    asset_keys = asset_instance.all_asset_keys()
+    asset_keys = instance.all_asset_keys()
     assert len(asset_keys) == 3

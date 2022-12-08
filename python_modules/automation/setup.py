@@ -18,10 +18,11 @@ setup(
     ],
     packages=find_packages(exclude=["automation_tests*"]),
     install_requires=[
-        "dagster==0+dev",
         "autoflake",
         "boto3",
-        "packaging>=20.9",
+        # packaging v22 has build compatibility issues with dbt as of 2022-12-07
+        # upper bound can be removed as soon as BK passes with packaging >=22
+        "packaging>=20.9,<22",
         "pandas",
         "pytablereader",
         "requests",
@@ -30,6 +31,11 @@ setup(
         "wheel==0.33.6",
         "urllib3",
     ],
+    extras_require={
+        "buildkite": [
+            "dagster",  # Support buildkite conditional running of tests
+        ]
+    },
     entry_points={
         "console_scripts": [
             "dagster-image = automation.docker.cli:main",

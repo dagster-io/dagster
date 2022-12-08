@@ -19,8 +19,17 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from airflow.contrib.kubernetes import kube_client, pod_generator, pod_launcher
-from airflow.contrib.kubernetes.pod import Resources
+from airflow import __version__ as airflow_version
+
+# pylint: disable=no-name-in-module,import-error
+if airflow_version >= "2.0.0":
+    from airflow.providers.cncf.kubernetes import Resources, kube_client, pod_generator
+    from airflow.providers.cncf.kubernetes.pod import Resources
+    from airflow.providers.cncf.kubernetes.utils.pod_launcher import pod_launcher
+else:
+    from airflow.contrib.kubernetes import kube_client, pod_generator, pod_launcher
+    from airflow.contrib.kubernetes.pod import Resources
+# pylint: enable=no-name-in-module,import-error
 from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults

@@ -258,7 +258,7 @@ const AssetNoDefinitionState = () => (
   <Box padding={{vertical: 32}}>
     <NonIdealState
       title="No definition"
-      description="This asset doesn't have a software definition in any of your loaded repositories."
+      description="This asset doesn't have a software definition in any of your code locations."
       icon="materialization"
     />
   </Box>

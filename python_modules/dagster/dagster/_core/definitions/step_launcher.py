@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional
 import dagster._check as check
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.state import KnownExecutionState
@@ -15,7 +15,7 @@ class StepRunRef(
         "_StepRunRef",
         [
             ("run_config", Mapping[str, object]),
-            ("pipeline_run", PipelineRun),
+            ("pipeline_run", DagsterRun),
             ("run_id", str),
             ("retry_mode", RetryMode),
             ("step_key", str),
@@ -34,7 +34,7 @@ class StepRunRef(
     def __new__(
         cls,
         run_config: Mapping[str, object],
-        pipeline_run: PipelineRun,
+        pipeline_run: DagsterRun,
         run_id: str,
         retry_mode: RetryMode,
         step_key: str,
@@ -46,7 +46,7 @@ class StepRunRef(
         return super(StepRunRef, cls).__new__(
             cls,
             check.mapping_param(run_config, "run_config", key_type=str),
-            check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
+            check.inst_param(pipeline_run, "pipeline_run", DagsterRun),
             check.str_param(run_id, "run_id"),
             check.inst_param(retry_mode, "retry_mode", RetryMode),
             check.str_param(step_key, "step_key"),

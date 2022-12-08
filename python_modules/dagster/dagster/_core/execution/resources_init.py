@@ -38,7 +38,7 @@ from dagster._core.execution.plan.plan import ExecutionPlan, StepHandleUnion
 from dagster._core.execution.plan.step import ExecutionStep, IExecutionStep
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig
 from dagster._core.utils import toposort
 from dagster._utils import EventGenerationManager, ensure_gen
@@ -53,7 +53,7 @@ def resource_initialization_manager(
     resource_configs: Mapping[str, ResourceConfig],
     log_manager: DagsterLogManager,
     execution_plan: Optional[ExecutionPlan],
-    pipeline_run: Optional[PipelineRun],
+    pipeline_run: Optional[DagsterRun],
     resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
@@ -129,7 +129,7 @@ def _core_resource_initialization_event_generator(
     resource_log_manager: DagsterLogManager,
     resource_managers: Deque[EventGenerationManager],
     execution_plan: Optional[ExecutionPlan],
-    pipeline_run: Optional[PipelineRun],
+    pipeline_run: Optional[DagsterRun],
     resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
@@ -142,7 +142,7 @@ def _core_resource_initialization_event_generator(
             pipeline_run and execution_plan,
             "If emit_persistent_events is enabled, then pipeline_run and execution_plan must be provided",
         )
-        pipeline_name = cast(PipelineRun, pipeline_run).pipeline_name
+        pipeline_name = cast(DagsterRun, pipeline_run).pipeline_name
     resource_keys_to_init = check.opt_set_param(resource_keys_to_init, "resource_keys_to_init")
     resource_instances: Dict[str, "InitializedResource"] = {}
     resource_init_times = {}
@@ -225,7 +225,7 @@ def resource_initialization_event_generator(
     resource_configs: Mapping[str, ResourceConfig],
     log_manager: DagsterLogManager,
     execution_plan: Optional[ExecutionPlan],
-    pipeline_run: Optional[PipelineRun],
+    pipeline_run: Optional[DagsterRun],
     resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
@@ -235,7 +235,7 @@ def resource_initialization_event_generator(
         resource_keys_to_init, "resource_keys_to_init", of_type=str
     )
     check.opt_inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    check.opt_inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.opt_inst_param(pipeline_run, "pipeline_run", DagsterRun)
     check.opt_inst_param(instance, "instance", DagsterInstance)
 
     if execution_plan and execution_plan.step_handle_for_single_step_plans():
@@ -281,7 +281,7 @@ def resource_initialization_event_generator(
                     error = dagster_user_error
             if error and emit_persistent_events:
                 yield DagsterEvent.resource_teardown_failure(
-                    cast(PipelineRun, pipeline_run).pipeline_name,
+                    cast(DagsterRun, pipeline_run).pipeline_name,
                     cast(ExecutionPlan, execution_plan),
                     resource_log_manager,
                     resource_keys_to_init,

@@ -21,7 +21,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
-from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -172,8 +172,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     "table asset_keys already exists" in err_msg
                     or "table secondary_indexes already exists" in err_msg
                     or "table event_logs already exists" in err_msg
-                    or "database is locked" in err_msg
+                    or "table asset_event_tags already exists" in err_msg
                     or "table alembic_version already exists" in err_msg
+                    or "database is locked" in err_msg
                     or "UNIQUE constraint failed: alembic_version.version_num" in err_msg
                 ):
                     raise
@@ -445,9 +446,9 @@ class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
                 logging.exception("Exception in callback for event watch on run %s.", self._run_id)
 
             if (
-                status == PipelineRunStatus.SUCCESS
-                or status == PipelineRunStatus.FAILURE
-                or status == PipelineRunStatus.CANCELED
+                status == DagsterRunStatus.SUCCESS
+                or status == DagsterRunStatus.FAILURE
+                or status == DagsterRunStatus.CANCELED
             ):
                 self._event_log_storage.end_watch(self._run_id, self._cb)
 

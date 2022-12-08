@@ -160,13 +160,13 @@ def generate_dep_graph(pipeline_def: "PipelineDefinition") -> DependencyGraph:
     graph: Dict[str, Dict[str, MutableSet[str]]] = {"upstream": {}, "downstream": {}}
     for item_name in item_names:
         graph["upstream"][item_name] = set()
-        upstream_dep = dependency_structure.input_to_upstream_outputs_for_solid(item_name)
+        upstream_dep = dependency_structure.input_to_upstream_outputs_for_node(item_name)
         for upstreams in upstream_dep.values():
             for up in upstreams:
-                graph["upstream"][item_name].add(up.solid_name)
+                graph["upstream"][item_name].add(up.node_name)
 
         graph["downstream"][item_name] = set()
-        downstream_dep = dependency_structure.output_to_downstream_inputs_for_solid(item_name)
+        downstream_dep = dependency_structure.output_to_downstream_inputs_for_node(item_name)
         for downstreams in downstream_dep.values():
             for down in downstreams:
                 graph["downstream"][item_name].add(down.solid_name)

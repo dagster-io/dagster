@@ -120,8 +120,10 @@ class FreshnessPolicySensorContext(
             sensor_name=check.str_param(sensor_name, "sensor_name"),
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             freshness_policy=check.inst_param(freshness_policy, "FreshnessPolicy", FreshnessPolicy),
-            minutes_late=float(minutes_late) if minutes_late else None,
-            previous_minutes_late=float(previous_minutes_late) if previous_minutes_late else None,
+            minutes_late=float(minutes_late) if minutes_late is not None else None,
+            previous_minutes_late=float(previous_minutes_late)
+            if previous_minutes_late is not None
+            else None,
             instance=check.inst_param(instance, "instance", DagsterInstance),
         )
 
@@ -154,12 +156,12 @@ def build_freshness_policy_sensor_context(
         .. code-block:: python
 
             context = build_freshness_policy_sensor_context(
-                sensor_name="run_status_sensor_to_invoke",
+                sensor_name="freshness_policy_sensor_to_invoke",
                 asset_key=AssetKey("some_asset"),
                 freshness_policy=FreshnessPolicy(maximum_lag_minutes=30)<
                 minutes_late=10.0,
             )
-            run_status_sensor_to_invoke(context)
+            freshness_policy_sensor_to_invoke(context)
     """
 
     return FreshnessPolicySensorContext(
@@ -303,7 +305,9 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
                         f"Freshness policy sensor invocation expected argument '{context_param_name}'."
                     )
                 context = check.opt_inst_param(
-                    kwargs[context_param_name], context_param_name, FreshnessPolicySensorContext
+                    kwargs[context_param_name],
+                    context_param_name,
+                    FreshnessPolicySensorContext,
                 )
 
             if not context:

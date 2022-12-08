@@ -4,7 +4,6 @@ import sys
 from typing import TYPE_CHECKING, Any, AsyncIterator, Optional, Sequence, Tuple, Union
 
 from dagster_graphql.schema.util import HasContext
-from graphene import ResolveInfo
 from starlette.concurrency import (
     run_in_threadpool,  # can provide this indirectly if we dont want starlette dep in dagster-graphql
 )
@@ -15,7 +14,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.captured_log_manager import CapturedLogManager, CapturedLogSubscription
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster._core.storage.event_log.base import EventLogCursor
-from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from ..external import ExternalPipeline, ensure_valid_config, get_external_pipeline_or_raise
@@ -83,9 +82,7 @@ def terminate_pipeline_execution(instance: DagsterInstance, run_id, terminate_po
     run = record.pipeline_run
     graphene_run = GrapheneRun(record)
 
-    can_cancel_run = (
-        run.status == PipelineRunStatus.STARTED or run.status == PipelineRunStatus.QUEUED
-    )
+    can_cancel_run = run.status == DagsterRunStatus.STARTED or run.status == DagsterRunStatus.QUEUED
 
     valid_status = not run.is_finished and (force_mark_as_canceled or can_cancel_run)
 
@@ -140,7 +137,7 @@ def get_chunk_size() -> int:
 
 
 async def gen_events_for_run(
-    graphene_info: ResolveInfo,
+    graphene_info: HasContext,
     run_id: str,
     after_cursor: Optional[str] = None,
 ) -> AsyncIterator[
@@ -156,10 +153,9 @@ async def gen_events_for_run(
     )
     from ..events import from_event_record
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.str_param(run_id, "run_id")
     after_cursor = check.opt_str_param(after_cursor, "after_cursor")
-    instance: DagsterInstance = graphene_info.context.instance
+    instance = graphene_info.context.instance
     records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
 
     if not records:
@@ -224,7 +220,7 @@ async def gen_events_for_run(
 
 
 async def gen_compute_logs(
-    graphene_info: ResolveInfo,
+    graphene_info: HasContext,
     run_id: str,
     step_key: str,
     io_type: ComputeIOType,
@@ -232,12 +228,11 @@ async def gen_compute_logs(
 ) -> AsyncIterator[Optional["GrapheneComputeLogFile"]]:
     from ...schema.logs.compute_logs import from_compute_log_file
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.str_param(run_id, "run_id")
     check.str_param(step_key, "step_key")
     check.inst_param(io_type, "io_type", ComputeIOType)
     check.opt_str_param(cursor, "cursor")
-    instance: DagsterInstance = graphene_info.context.instance
+    instance = graphene_info.context.instance
 
     obs = instance.compute_log_manager.observable(run_id, step_key, io_type, cursor)
 
@@ -289,7 +284,7 @@ async def gen_captured_log_data(
 
 
 @capture_error
-def wipe_assets(graphene_info, asset_keys):
+def wipe_assets(graphene_info: HasContext, asset_keys):
     from ...schema.roots.mutation import GrapheneAssetWipeSuccess
 
     instance = graphene_info.context.instance

@@ -16,7 +16,7 @@ export const FailedRunsSinceMaterializationBanner: React.FC<{
     return (
       <Box padding={{vertical: 16, left: 24, right: 12}} border={border}>
         <Alert
-          intent="warning"
+          intent="error"
           title={
             <div style={{fontWeight: 400}}>
               Run{' '}

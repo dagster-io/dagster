@@ -1,5 +1,5 @@
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {buildRepoAddress, DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 import {sortRepoBuckets} from './sortRepoBuckets';
 
@@ -31,6 +31,19 @@ describe('sortRepoBuckets', () => {
     expect(sorted).toEqual([boston, chicago, newyork]);
   });
 
+  it('sorts by repo location when dunder repo names are used', () => {
+    const newyork = {repoAddress: buildRepoAddress(DUNDER_REPO_NAME, 'newyork')};
+    const chicago = {repoAddress: buildRepoAddress(DUNDER_REPO_NAME, 'chicago')};
+    const boston = {repoAddress: buildRepoAddress('lorem', 'boston')};
+    const list = [newyork, chicago, boston];
+
+    const sorted = sortRepoBuckets(list);
+
+    // Same repo bucket objects. Repo locations are used for sort order when dunder repo
+    // names are used, which puts `chicago` ahead of `lorem@boston`.
+    expect(sorted).toEqual([chicago, boston, newyork]);
+  });
+
   it('sorts correctly with regard to capitalization and diacritics', () => {
     // Would be sorted after "lorem" because of `ä`, in spite of `a` being after `o`.
     const umlaut = {repoAddress: buildRepoAddress('lärem', 'ipsum')};
@@ -45,7 +58,7 @@ describe('sortRepoBuckets', () => {
     const list = [umlaut, capitalizedWithU, capitalizedWithO, normal];
 
     // Sanity check default sorting, which does not give us the ideal result.
-    expect(list.map(({repoAddress}) => repoAddressAsString(repoAddress)).sort()).toEqual([
+    expect(list.map(({repoAddress}) => repoAddressAsHumanString(repoAddress)).sort()).toEqual([
       'Lorem@upsum',
       'Lurem@ipsum',
       'lorem@ipsum',

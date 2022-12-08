@@ -62,13 +62,6 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
                 "Cannot have more than one Definitions object defined at module scope"
             )
 
-        # currently this is super strict and requires that it be named defs
-        symbol = loadable_defs[0].attribute
-        if symbol != "defs":
-            raise DagsterInvariantViolationError(
-                f"Found Definitions object at {symbol}. This object must be at a top-level variable named 'defs'."
-            )
-
         return loadable_defs
 
     loadable_repos = _loadable_targets_of_type(

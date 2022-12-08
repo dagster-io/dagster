@@ -10,11 +10,11 @@ from dagster import (
     Output,
 )
 from dagster import _check as check
+from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.output import Out
 from dagster._legacy import (
     InputDefinition,
-    OutputDefinition,
     PipelineDefinition,
-    SolidDefinition,
     execute_pipeline,
     execute_solid,
     lambda_solid,
@@ -50,7 +50,7 @@ def test_compute_failure_pipeline():
 
     assert not pipeline_result.success
 
-    result_list = pipeline_result.solid_result_list
+    result_list = pipeline_result.node_result_list
 
     assert len(result_list) == 1
     assert not result_list[0].success
@@ -84,19 +84,18 @@ def test_failure_midstream():
 
     pipeline_result = execute_pipeline(pipeline_def, raise_on_error=False)
 
-    assert pipeline_result.result_for_solid("solid_a").success
-    assert pipeline_result.result_for_solid("solid_b").success
-    assert not pipeline_result.result_for_solid("solid_c").success
+    assert pipeline_result.result_for_node("solid_a").success
+    assert pipeline_result.result_for_node("solid_b").success
+    assert not pipeline_result.result_for_node("solid_c").success
     assert (
-        pipeline_result.result_for_solid("solid_c").failure_data.error.cls_name
+        pipeline_result.result_for_node("solid_c").failure_data.error.cls_name
         == "DagsterExecutionStepExecutionError"
     )
     assert (
-        pipeline_result.result_for_solid("solid_c").failure_data.error.cause.cls_name
-        == "CheckError"
+        pipeline_result.result_for_node("solid_c").failure_data.error.cause.cls_name == "CheckError"
     )
-    assert not pipeline_result.result_for_solid("solid_d").success
-    assert pipeline_result.result_for_solid("solid_d").skipped
+    assert not pipeline_result.result_for_node("solid_d").success
+    assert pipeline_result.result_for_node("solid_d").skipped
 
 
 def test_failure_propagation():
@@ -137,31 +136,29 @@ def test_failure_propagation():
 
     pipeline_result = execute_pipeline(pipeline_def, raise_on_error=False)
 
-    assert pipeline_result.result_for_solid("solid_a").success
-    assert pipeline_result.result_for_solid("solid_b").success
-    assert pipeline_result.result_for_solid("solid_c").success
-    assert not pipeline_result.result_for_solid("solid_d").success
+    assert pipeline_result.result_for_node("solid_a").success
+    assert pipeline_result.result_for_node("solid_b").success
+    assert pipeline_result.result_for_node("solid_c").success
+    assert not pipeline_result.result_for_node("solid_d").success
     assert (
-        pipeline_result.result_for_solid("solid_d").failure_data.error.cause.cls_name
-        == "CheckError"
+        pipeline_result.result_for_node("solid_d").failure_data.error.cause.cls_name == "CheckError"
     )
-    assert not pipeline_result.result_for_solid("solid_e").success
-    assert pipeline_result.result_for_solid("solid_e").skipped
-    assert not pipeline_result.result_for_solid("solid_f").success
-    assert pipeline_result.result_for_solid("solid_f").skipped
+    assert not pipeline_result.result_for_node("solid_e").success
+    assert pipeline_result.result_for_node("solid_e").skipped
+    assert not pipeline_result.result_for_node("solid_f").success
+    assert pipeline_result.result_for_node("solid_f").skipped
 
 
 def test_do_not_yield_result():
-    solid_inst = SolidDefinition(
+    solid_inst = OpDefinition(
         name="do_not_yield_result",
-        input_defs=[],
-        output_defs=[OutputDefinition()],
+        outs={"result": Out()},
         compute_fn=lambda *_args, **_kwargs: Output("foo"),
     )
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match='Compute function for solid "do_not_yield_result" returned an Output',
+        match='Compute function for op "do_not_yield_result" returned an Output',
     ):
         execute_solid(solid_inst)
 
@@ -173,7 +170,7 @@ def test_yield_non_result():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape('Compute function for solid "yield_wrong_thing" yielded a value of type <')
+        match=re.escape('Compute function for op "yield_wrong_thing" yielded a value of type <')
         + r"(class|type)"
         + re.escape(
             " 'str'> rather than an instance of Output, AssetMaterialization, or ExpectationResult."
@@ -183,11 +180,10 @@ def test_yield_non_result():
 
 
 def test_single_compute_fn_returning_result():
-    test_return_result = SolidDefinition(
+    test_return_result = OpDefinition(
         name="test_return_result",
-        input_defs=[],
         compute_fn=lambda *args, **kwargs: Output(None),
-        output_defs=[OutputDefinition()],
+        outs={"result": Out()},
     )
 
     with pytest.raises(DagsterInvariantViolationError):

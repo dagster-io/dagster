@@ -12,7 +12,7 @@ import {RepositoryAssetsList} from './RepositoryAssetsList';
 import {RepositoryGraphsList} from './RepositoryGraphsList';
 import {RepositoryPipelinesList} from './RepositoryPipelinesList';
 import {useRepository} from './WorkspaceContext';
-import {repoAddressAsString} from './repoAddressAsString';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {RepoAddress} from './types';
 import {workspacePathFromAddress} from './workspacePath';
 
@@ -24,7 +24,7 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
   const {repoAddress} = props;
   const {tab} = useParams<{tab?: string}>();
 
-  const path = repoAddressAsString(repoAddress);
+  const path = repoAddressAsHumanString(repoAddress);
   const repo = useRepository(repoAddress);
 
   const anyPipelines = React.useMemo(() => {
@@ -91,32 +91,32 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
       />
       <Container>
         <Switch>
-          <Route path="/workspace/:repoPath/schedules">
+          <Route path="/locations/:repoPath/schedules">
             <SchedulesRoot repoAddress={repoAddress} />
           </Route>
-          <Route path="/workspace/:repoPath/sensors">
+          <Route path="/locations/:repoPath/sensors">
             <SensorsRoot repoAddress={repoAddress} />
           </Route>
-          <Route path="/workspace/:repoPath/assets(/?.*)">
+          <Route path="/locations/:repoPath/assets(/?.*)">
             <RepositoryAssetsList repoAddress={repoAddress} />
           </Route>
-          <Route path="/workspace/:repoPath/ops/:name?">
+          <Route path="/locations/:repoPath/ops/:name?">
             <OpsRoot repoAddress={repoAddress} />
           </Route>
           <Route
-            path="/workspace/:repoPath/solids/:name?"
+            path="/locations/:repoPath/solids/:name?"
             render={(props) => <Redirect to={props.match.url.replace(/\/solids\/?/, '/ops/')} />}
           />
-          <Route path="/workspace/:repoPath/pipelines">
+          <Route path="/locations/:repoPath/pipelines">
             <RepositoryPipelinesList display="pipelines" repoAddress={repoAddress} />
           </Route>
-          <Route path="/workspace/:repoPath/jobs">
+          <Route path="/locations/:repoPath/jobs">
             <RepositoryPipelinesList display="jobs" repoAddress={repoAddress} />
           </Route>
-          <Route path="/workspace/:repoPath/graphs" exact>
+          <Route path="/locations/:repoPath/graphs" exact>
             <RepositoryGraphsList repoAddress={repoAddress} />
           </Route>
-          <Route path="/workspace/:repoPath/(.*)?" render={() => <Redirect to={tabs[0].href} />} />
+          <Route path="/locations/:repoPath/(.*)?" render={() => <Redirect to={tabs[0].href} />} />
         </Switch>
       </Container>
     </Box>

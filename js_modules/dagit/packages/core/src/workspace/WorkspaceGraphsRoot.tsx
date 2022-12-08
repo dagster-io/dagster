@@ -9,6 +9,7 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 
 import {Graph, VirtualizedGraphTable} from './VirtualizedGraphTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {WorkspaceGraphsQuery, WorkspaceGraphsQueryVariables} from './types/WorkspaceGraphsQuery';
@@ -81,6 +82,8 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
       );
     }
 
+    const repoName = repoAddressAsHumanString(repoAddress);
+
     if (!filteredBySearch.length) {
       if (anySearch) {
         return (
@@ -90,7 +93,7 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
               title="No matching graphs"
               description={
                 <div>
-                  No graphs matching <strong>{searchValue}</strong> were found in this repository
+                  No graphs matching <strong>{searchValue}</strong> were found in {repoName}
                 </div>
               }
             />
@@ -103,7 +106,7 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
           <NonIdealState
             icon="search"
             title="No graphs"
-            description="No graphs were found in this repository"
+            description={`No graphs were found in ${repoName}`}
           />
         </Box>
       );
