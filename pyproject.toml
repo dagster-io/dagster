@@ -154,7 +154,9 @@ ignore = [
   "D415",  # (docstring summary should end with a period)
   "D417",  # (missing arg in docstring)
 
-  # (buggy docstring rules) These rules should be enabled when bugs with them are fixed.
+  # (indent docstring rules) These rules should be enabled when ruff lands
+  # on/off style comments, which would allow turning them off for specific
+  # docstrings.
   "D207", # (under-indented docstring)
   "D208", # (over-indented docstring)
   "D402", # (first line should not be the function's "signature")

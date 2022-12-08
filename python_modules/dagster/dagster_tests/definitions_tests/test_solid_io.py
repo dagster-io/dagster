@@ -125,11 +125,11 @@ def test_dynamic():
     def dyn_desc(_) -> Iterator[DynamicOutput]:
         """
         Returns:
-            numbers.
+            numbers
         """
         yield DynamicOutput(4, "4")
 
-    assert dyn_desc.output_defs[0].description == "numbers."
+    assert dyn_desc.output_defs[0].description == "numbers"
     assert dyn_desc.output_defs[0].is_dynamic
 
 
