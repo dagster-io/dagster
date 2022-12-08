@@ -40,7 +40,7 @@ def test_multiple_outputs():
     result = execute_pipeline(multiple_outputs_pipeline)
     solid_result = result.solid_result_list[0]
 
-    assert solid_result.solid.name == "multiple_outputs"
+    assert solid_result.node.name == "multiple_outputs"
     assert solid_result.output_value("output_one") == "foo"
     assert solid_result.output_value("output_two") == "bar"
 
