@@ -650,11 +650,12 @@ def test_run_failure_sensor_empty_run_records(storage_config_fn, executor):
 def test_cross_code_location_run_status_sensor(executor):
     freeze_datetime = pendulum.now()
 
-    # we have no good pit for compositing load targets so forced to use a workspace file
+    # we have no good api for compositing load targets so forced to use a workspace file
     workspace_load_target = WorkspaceFileTarget(
         [file_relative_path(__file__, "daemon_sensor_defs_test_workspace.yaml")]
     )
 
+    # the name of the location by default is the fully-qualified module name
     daemon_sensor_defs_name = (
         "dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.daemon_sensor_defs"
     )
@@ -662,18 +663,26 @@ def test_cross_code_location_run_status_sensor(executor):
         "dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.success_job_def"
     )
 
-    assert workspace_load_target
     with instance_with_multiple_code_locations(
         workspace_load_target=workspace_load_target
     ) as location_infos:
         assert len(location_infos) == 2
+
         daemon_sensor_defs_location_info = location_infos[daemon_sensor_defs_name]
         success_job_def_location_info = location_infos[success_job_defs_name]
-        instance = daemon_sensor_defs_location_info.instance
+
         sensor_repo = daemon_sensor_defs_location_info.get_single_repository()
         job_repo = success_job_def_location_info.get_single_repository()
+
+        # verify assumption that the instances are the same
+        assert daemon_sensor_defs_location_info.instance == success_job_def_location_info.instance
+        instance = daemon_sensor_defs_location_info.instance
+
+        # verify assumption that the contexts are the same
+        assert daemon_sensor_defs_location_info.context == success_job_def_location_info.context
         workspace_context = daemon_sensor_defs_location_info.context
 
+        # This remainder is largely copied from test_cross_repo_run_status_sensor
         with pendulum.test(freeze_datetime):
             sensor_repo = daemon_sensor_defs_location_info.get_single_repository()
             success_sensor = sensor_repo.get_external_sensor("success_sensor")
@@ -699,6 +708,10 @@ def test_cross_code_location_run_status_sensor(executor):
 
         with pendulum.test(freeze_datetime):
             external_success_job = job_repo.get_full_external_job("success_job")
+
+            # this unfortunate API (create_run_for_pipeline) requires the importation
+            # of the in-memory job object even though it is dealing mostly with
+            # "external" objects
             from .locations_for_xlocation_sensor_test.success_job_def import success_job
 
             run = instance.create_run_for_pipeline(
@@ -706,6 +719,7 @@ def test_cross_code_location_run_status_sensor(executor):
                 external_pipeline_origin=external_success_job.get_external_origin(),
                 pipeline_code_origin=external_success_job.get_python_origin(),
             )
+
             instance.submit_run(run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
             run = list(instance.get_runs())[0]
