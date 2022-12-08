@@ -49,18 +49,18 @@ class RepositoryHandle(
         return self.repository_python_origin
 
 
-class PipelineHandle(
-    NamedTuple("_PipelineHandle", [("pipeline_name", str), ("repository_handle", RepositoryHandle)])
+class JobHandle(
+    NamedTuple("_PipelineHandle", [("job_name", str), ("repository_handle", RepositoryHandle)])
 ):
-    def __new__(cls, pipeline_name: str, repository_handle: RepositoryHandle):
-        return super(PipelineHandle, cls).__new__(
+    def __new__(cls, job_name: str, repository_handle: RepositoryHandle):
+        return super(JobHandle, cls).__new__(
             cls,
-            check.str_param(pipeline_name, "pipeline_name"),
+            check.str_param(job_name, "job_name"),
             check.inst_param(repository_handle, "repository_handle", RepositoryHandle),
         )
 
     def to_string(self):
-        return "{self.location_name}.{self.repository_name}.{self.pipeline_name}".format(self=self)
+        return f"{self.location_name}.{self.repository_name}.{self.job_name}"
 
     @property
     def repository_name(self):
@@ -71,13 +71,13 @@ class PipelineHandle(
         return self.repository_handle.location_name
 
     def get_external_origin(self):
-        return self.repository_handle.get_external_origin().get_pipeline_origin(self.pipeline_name)
+        return self.repository_handle.get_external_origin().get_pipeline_origin(self.job_name)
 
     def get_python_origin(self):
-        return self.repository_handle.get_python_origin().get_pipeline_origin(self.pipeline_name)
+        return self.repository_handle.get_python_origin().get_pipeline_origin(self.job_name)
 
     def to_selector(self):
-        return PipelineSelector(self.location_name, self.repository_name, self.pipeline_name, None)
+        return PipelineSelector(self.location_name, self.repository_name, self.job_name, None)
 
 
 class InstigatorHandle(

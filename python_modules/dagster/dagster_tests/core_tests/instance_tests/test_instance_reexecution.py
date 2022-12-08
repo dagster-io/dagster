@@ -4,7 +4,7 @@ import pytest
 
 from dagster import DagsterInstance, job, op, reconstructable, repository
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.test_utils import (
     environ,
@@ -110,7 +110,7 @@ def test_create_reexecuted_run_from_failure(
     instance.launch_run(run.run_id, workspace)
     run = poll_for_finished_run(instance, run.run_id)
 
-    assert run.status == PipelineRunStatus.SUCCESS
+    assert run.status == DagsterRunStatus.SUCCESS
     assert step_did_not_run(instance, run, "before_failure")
     assert step_succeeded(instance, run, "conditional_fail")
     assert step_succeeded(instance, run, "after_failure")
@@ -165,7 +165,7 @@ def test_create_reexecuted_run_all_steps(
     instance.launch_run(run.run_id, workspace)
     run = poll_for_finished_run(instance, run.run_id)
 
-    assert run.status == PipelineRunStatus.SUCCESS
+    assert run.status == DagsterRunStatus.SUCCESS
     assert step_succeeded(instance, run, "before_failure")
     assert step_succeeded(instance, run, "conditional_fail")
     assert step_succeeded(instance, run, "after_failure")

@@ -48,7 +48,7 @@ def core_execute_in_process(
     output_capture: Dict[StepOutputHandle, Any] = {}
 
     with ephemeral_instance_if_missing(instance) as execute_instance:
-        pipeline_run = execute_instance.create_run_for_pipeline(
+        run = execute_instance.create_run_for_pipeline(
             pipeline_def=job_def,
             run_config=run_config,
             mode=mode_def.name,
@@ -57,7 +57,7 @@ def core_execute_in_process(
             asset_selection=asset_selection,
             execution_plan=execution_plan,
         )
-        run_id = pipeline_run.run_id
+        run_id = run.run_id
 
         execute_run_iterable = ExecuteRunWithPlanIterable(
             execution_plan=execution_plan,
@@ -66,7 +66,7 @@ def core_execute_in_process(
                 context_event_generator=orchestration_context_event_generator,
                 pipeline=pipeline,
                 execution_plan=execution_plan,
-                pipeline_run=pipeline_run,
+                pipeline_run=run,
                 instance=execute_instance,
                 run_config=run_config,
                 executor_defs=None,
@@ -74,13 +74,13 @@ def core_execute_in_process(
                 raise_on_error=raise_on_error,
             ),
         )
-
         event_list = list(execute_run_iterable)
+        run = execute_instance.get_run_by_id(run_id)
 
     return ExecuteInProcessResult(
         job_def=ephemeral_pipeline,
         event_list=event_list,
-        dagster_run=cast(DagsterRun, execute_instance.get_run_by_id(run_id)),
+        dagster_run=cast(DagsterRun, run),
         output_capture=output_capture,
     )
 

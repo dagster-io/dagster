@@ -24,8 +24,8 @@ if TYPE_CHECKING:
     from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
     from dagster._core.snap.pipeline_snapshot import PipelineSnapshot
     from dagster._core.storage.pipeline_run import (
+        DagsterRun,
         JobBucket,
-        PipelineRun,
         PipelineRunStatsSnapshot,
         RunRecord,
         RunsFilter,
@@ -144,7 +144,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         ).rehydrate()
         return LegacyRunStorage(storage, inst_data=inst_data)
 
-    def add_run(self, pipeline_run: "PipelineRun") -> "PipelineRun":
+    def add_run(self, pipeline_run: "DagsterRun") -> "DagsterRun":
         return self._storage.run_storage.add_run(pipeline_run)
 
     def handle_run_event(self, run_id: str, event: "DagsterEvent"):
@@ -156,13 +156,13 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union["JobBucket", "TagBucket"]] = None,
-    ) -> Iterable["PipelineRun"]:
+    ) -> Iterable["DagsterRun"]:
         return self._storage.run_storage.get_runs(filters, cursor, limit, bucket_by)
 
     def get_runs_count(self, filters: Optional["RunsFilter"] = None) -> int:
         return self._storage.run_storage.get_runs_count(filters)
 
-    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable["PipelineRun"]]]:
+    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable["DagsterRun"]]]:
         return self._storage.run_storage.get_run_group(run_id)
 
     def get_run_groups(
@@ -170,10 +170,10 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         filters: Optional["RunsFilter"] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Mapping[str, Mapping[str, Union[Iterable["PipelineRun"], int]]]:
+    ) -> Mapping[str, Mapping[str, Union[Iterable["DagsterRun"], int]]]:
         return self._storage.run_storage.get_run_groups(filters, cursor, limit)
 
-    def get_run_by_id(self, run_id: str) -> Optional["PipelineRun"]:
+    def get_run_by_id(self, run_id: str) -> Optional["DagsterRun"]:
         return self._storage.run_storage.get_run_by_id(run_id)
 
     def get_run_records(

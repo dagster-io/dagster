@@ -6,7 +6,7 @@ from typing import Callable, List, Mapping, Optional, Union
 
 import pkg_resources
 from dagster_buildkite.git import ChangedFiles
-from dagster_buildkite.python_packages import PythonPackages
+from dagster_buildkite.python_packages import PythonPackages, changed_filetypes
 
 from .python_version import AvailablePythonVersion
 from .step_builder import BuildkiteQueue
@@ -281,7 +281,7 @@ class PackageSpec:
                 (Path(self.directory) in change.parents)
                 # The file can alter behavior - exclude things like README changes
                 # which we tend to include in .md files
-                and change.suffix in [".py", ".cfg", ".toml", ".ini", ".txt", ".yaml", ".yml"]
+                and change.suffix in changed_filetypes
             ):
                 logging.info(f"Building {self.name} because it has changed")
                 self._should_skip = False

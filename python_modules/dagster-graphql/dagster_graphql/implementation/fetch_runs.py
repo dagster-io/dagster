@@ -13,7 +13,7 @@ from dagster._core.execution.stats import RunStepKeyStatsSnapshot, StepEventStat
 from dagster._core.host_representation import PipelineSelector
 from dagster._core.storage.pipeline_run import RunRecord, RunsFilter
 from dagster._core.storage.tags import TagType, get_tag_type
-from dagster._legacy import PipelineDefinition, PipelineRunStatus
+from dagster._legacy import DagsterRunStatus, PipelineDefinition
 
 from .events import from_event_record
 from .external import ensure_valid_config, get_external_pipeline_or_raise
@@ -114,16 +114,16 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
 
 
 PENDING_STATUSES = [
-    PipelineRunStatus.STARTING,
-    PipelineRunStatus.MANAGED,
-    PipelineRunStatus.NOT_STARTED,
-    PipelineRunStatus.QUEUED,
-    PipelineRunStatus.STARTED,
-    PipelineRunStatus.CANCELING,
+    DagsterRunStatus.STARTING,
+    DagsterRunStatus.MANAGED,
+    DagsterRunStatus.NOT_STARTED,
+    DagsterRunStatus.QUEUED,
+    DagsterRunStatus.STARTED,
+    DagsterRunStatus.CANCELING,
 ]
 IN_PROGRESS_STATUSES = [
-    PipelineRunStatus.STARTED,
-    PipelineRunStatus.CANCELING,
+    DagsterRunStatus.STARTED,
+    DagsterRunStatus.CANCELING,
 ]
 
 

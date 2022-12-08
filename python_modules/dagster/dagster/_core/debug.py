@@ -3,7 +3,7 @@ from typing import NamedTuple, Sequence
 import dagster._check as check
 from dagster._core.events.log import EventLogEntry
 from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._serdes import serialize_dagster_namedtuple, whitelist_for_serdes
 
 
@@ -13,7 +13,7 @@ class DebugRunPayload(
         "_DebugRunPayload",
         [
             ("version", str),
-            ("pipeline_run", PipelineRun),
+            ("pipeline_run", DagsterRun),
             ("event_list", Sequence[EventLogEntry]),
             ("pipeline_snapshot", PipelineSnapshot),
             ("execution_plan_snapshot", ExecutionPlanSnapshot),
@@ -23,7 +23,7 @@ class DebugRunPayload(
     def __new__(
         cls,
         version: str,
-        pipeline_run: PipelineRun,
+        pipeline_run: DagsterRun,
         event_list: Sequence[EventLogEntry],
         pipeline_snapshot: PipelineSnapshot,
         execution_plan_snapshot: ExecutionPlanSnapshot,
@@ -31,7 +31,7 @@ class DebugRunPayload(
         return super(DebugRunPayload, cls).__new__(
             cls,
             version=check.str_param(version, "version"),
-            pipeline_run=check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
+            pipeline_run=check.inst_param(pipeline_run, "pipeline_run", DagsterRun),
             event_list=check.sequence_param(event_list, "event_list", EventLogEntry),
             pipeline_snapshot=check.inst_param(
                 pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot

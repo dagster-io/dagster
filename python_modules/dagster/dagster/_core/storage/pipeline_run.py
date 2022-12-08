@@ -95,31 +95,30 @@ class DagsterRunStatus(Enum):
     CANCELED = "CANCELED"
 
 
-PipelineRunStatus = DagsterRunStatus
 register_serdes_enum_fallbacks({"PipelineRunStatus": DagsterRunStatus})
 
 # These statuses that indicate a run may be using compute resources
 IN_PROGRESS_RUN_STATUSES = [
-    PipelineRunStatus.STARTING,
-    PipelineRunStatus.STARTED,
-    PipelineRunStatus.CANCELING,
+    DagsterRunStatus.STARTING,
+    DagsterRunStatus.STARTED,
+    DagsterRunStatus.CANCELING,
 ]
 
 # This serves as an explicit list of run statuses that indicate that the run is not using compute
 # resources. This and the enum above should cover all run statuses.
 NON_IN_PROGRESS_RUN_STATUSES = [
-    PipelineRunStatus.QUEUED,
-    PipelineRunStatus.NOT_STARTED,
-    PipelineRunStatus.SUCCESS,
-    PipelineRunStatus.FAILURE,
-    PipelineRunStatus.MANAGED,
-    PipelineRunStatus.CANCELED,
+    DagsterRunStatus.QUEUED,
+    DagsterRunStatus.NOT_STARTED,
+    DagsterRunStatus.SUCCESS,
+    DagsterRunStatus.FAILURE,
+    DagsterRunStatus.MANAGED,
+    DagsterRunStatus.CANCELED,
 ]
 
 FINISHED_STATUSES = [
-    PipelineRunStatus.SUCCESS,
-    PipelineRunStatus.FAILURE,
-    PipelineRunStatus.CANCELED,
+    DagsterRunStatus.SUCCESS,
+    DagsterRunStatus.FAILURE,
+    DagsterRunStatus.CANCELED,
 ]
 
 
@@ -313,9 +312,10 @@ def pipeline_run_from_storage(
     )
 
 
-class PipelineRun(
+@whitelist_for_serdes(serializer=DagsterRunSerializer)
+class DagsterRun(
     NamedTuple(
-        "_PipelineRun",
+        "_DagsterRun",
         [
             ("pipeline_name", str),
             ("run_id", str),
@@ -325,7 +325,7 @@ class PipelineRun(
             ("solid_selection", Optional[Sequence[str]]),
             ("solids_to_execute", Optional[FrozenSet[str]]),
             ("step_keys_to_execute", Optional[Sequence[str]]),
-            ("status", PipelineRunStatus),
+            ("status", DagsterRunStatus),
             ("tags", Mapping[str, str]),
             ("root_run_id", Optional[str]),
             ("parent_run_id", Optional[str]),
@@ -337,7 +337,7 @@ class PipelineRun(
         ],
     )
 ):
-    """Serializable internal representation of a pipeline run, as stored in a
+    """Serializable internal representation of a dagster run, as stored in a
     :py:class:`~dagster._core.storage.runs.RunStorage`.
     """
 
@@ -351,7 +351,7 @@ class PipelineRun(
         solid_selection: Optional[Sequence[str]] = None,
         solids_to_execute: Optional[FrozenSet[str]] = None,
         step_keys_to_execute: Optional[Sequence[str]] = None,
-        status: Optional[PipelineRunStatus] = None,
+        status: Optional[DagsterRunStatus] = None,
         tags: Optional[Mapping[str, str]] = None,
         root_run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
@@ -388,7 +388,7 @@ class PipelineRun(
         # https://github.com/dagster-io/dagster/issues/3181
         from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
-        if status == PipelineRunStatus.QUEUED:
+        if status == DagsterRunStatus.QUEUED:
             check.inst_param(
                 external_pipeline_origin,
                 "external_pipeline_origin",
@@ -399,7 +399,7 @@ class PipelineRun(
         if run_id is None:
             run_id = make_new_run_id()
 
-        return super(PipelineRun, cls).__new__(
+        return super(DagsterRun, cls).__new__(
             cls,
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             run_id=check.str_param(run_id, "run_id"),
@@ -410,7 +410,7 @@ class PipelineRun(
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=check.opt_inst_param(
-                status, "status", PipelineRunStatus, PipelineRunStatus.NOT_STARTED
+                status, "status", DagsterRunStatus, DagsterRunStatus.NOT_STARTED
             ),
             tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
             root_run_id=check.opt_str_param(root_run_id, "root_run_id"),
@@ -431,7 +431,7 @@ class PipelineRun(
         )
 
     def with_status(self, status):
-        if status == PipelineRunStatus.QUEUED:
+        if status == DagsterRunStatus.QUEUED:
             # Placing this with the other imports causes a cyclic import
             # https://github.com/dagster-io/dagster/issues/3181
             from dagster._core.host_representation.origin import ExternalPipelineOrigin
@@ -484,17 +484,17 @@ class PipelineRun(
     @public  # type: ignore
     @property
     def is_success(self):
-        return self.status == PipelineRunStatus.SUCCESS
+        return self.status == DagsterRunStatus.SUCCESS
 
     @public  # type: ignore
     @property
     def is_failure(self):
-        return self.status == PipelineRunStatus.FAILURE
+        return self.status == DagsterRunStatus.FAILURE
 
     @public  # type: ignore
     @property
     def is_failure_or_canceled(self):
-        return self.status == PipelineRunStatus.FAILURE or self.status == PipelineRunStatus.CANCELED
+        return self.status == DagsterRunStatus.FAILURE or self.status == DagsterRunStatus.CANCELED
 
     @public  # type: ignore
     @property
@@ -537,15 +537,6 @@ class PipelineRun(
             tags[PARTITION_NAME_TAG] = partition.name
 
         return tags
-
-
-@whitelist_for_serdes(serializer=DagsterRunSerializer)
-class DagsterRun(PipelineRun):
-    """Serializable internal representation of a dagster run, as stored in a
-    :py:class:`~dagster._core.storage.runs.RunStorage`.
-
-    Subclasses PipelineRun for backcompat purposes. DagsterRun is the actual initialized class used throughout the system.
-    """
 
 
 # DagsterRun is serialized as PipelineRun so that it can be read by older (pre 0.13.x) version of
@@ -647,7 +638,7 @@ class RunsFilter(
             cls,
             run_ids=check.opt_sequence_param(run_ids, "run_ids", of_type=str),
             job_name=check.opt_str_param(job_name, "job_name"),
-            statuses=check.opt_sequence_param(statuses, "statuses", of_type=PipelineRunStatus),
+            statuses=check.opt_sequence_param(statuses, "statuses", of_type=DagsterRunStatus),
             tags=check.opt_mapping_param(tags, "tags", key_type=str),
             snapshot_id=check.opt_str_param(snapshot_id, "snapshot_id"),
             updated_after=check.opt_inst_param(updated_after, "updated_after", datetime),
@@ -661,19 +652,19 @@ class RunsFilter(
 
     @staticmethod
     def for_schedule(schedule):
-        return RunsFilter(tags=PipelineRun.tags_for_schedule(schedule))
+        return RunsFilter(tags=DagsterRun.tags_for_schedule(schedule))
 
     @staticmethod
     def for_partition(partition_set, partition):
-        return RunsFilter(tags=PipelineRun.tags_for_partition_set(partition_set, partition))
+        return RunsFilter(tags=DagsterRun.tags_for_partition_set(partition_set, partition))
 
     @staticmethod
     def for_sensor(sensor):
-        return RunsFilter(tags=PipelineRun.tags_for_sensor(sensor))
+        return RunsFilter(tags=DagsterRun.tags_for_sensor(sensor))
 
     @staticmethod
     def for_backfill(backfill_id):
-        return RunsFilter(tags=PipelineRun.tags_for_backfill_id(backfill_id))
+        return RunsFilter(tags=DagsterRun.tags_for_backfill_id(backfill_id))
 
 
 register_serdes_tuple_fallbacks({"PipelineRunsFilter": RunsFilter})
@@ -697,7 +688,7 @@ class RunRecord(
         "_RunRecord",
         [
             ("storage_id", int),
-            ("pipeline_run", PipelineRun),
+            ("pipeline_run", DagsterRun),
             ("create_timestamp", datetime),
             ("update_timestamp", datetime),
             ("start_time", Optional[float]),
@@ -723,7 +714,7 @@ class RunRecord(
         return super(RunRecord, cls).__new__(
             cls,
             storage_id=check.int_param(storage_id, "storage_id"),
-            pipeline_run=check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
+            pipeline_run=check.inst_param(pipeline_run, "pipeline_run", DagsterRun),
             create_timestamp=check.inst_param(create_timestamp, "create_timestamp", datetime),
             update_timestamp=check.inst_param(update_timestamp, "update_timestamp", datetime),
             # start_time and end_time fields will be populated once the run has started and ended, respectively, but will be None beforehand.

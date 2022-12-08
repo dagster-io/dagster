@@ -15,7 +15,7 @@ from dagster_graphql.test.utils import (
 
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.test_utils import wait_for_runs_to_finish
-from dagster._legacy import PipelineRunStatus
+from dagster._legacy import DagsterRunStatus
 from dagster._utils import file_relative_path
 from dagster._utils.test import get_temp_file_name
 
@@ -831,7 +831,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         wait_for_runs_to_finish(graphql_context.instance)
 
-        assert graphql_context.instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
+        assert graphql_context.instance.get_run_by_id(run_id).status == DagsterRunStatus.SUCCESS
 
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"
@@ -856,7 +856,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         wait_for_runs_to_finish(graphql_context.instance)
 
-        assert graphql_context.instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
+        assert graphql_context.instance.get_run_by_id(run_id).status == DagsterRunStatus.SUCCESS
 
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"

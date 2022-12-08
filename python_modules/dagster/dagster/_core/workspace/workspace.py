@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional
+from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence
 
 from dagster._utils.error import SerializableErrorInfo
 
@@ -22,6 +22,16 @@ class WorkspaceLocationEntry(NamedTuple):
     update_timestamp: float
 
 
+class WorkspaceLocationStatusEntry(NamedTuple):
+    """
+    Slimmer version of WorkspaceLocationEntry, containing the minimum set of information required
+    to know whether the workspace needs reloading."""
+
+    location_name: str
+    load_status: WorkspaceLocationLoadStatus
+    update_timestamp: float
+
+
 class IWorkspace(ABC):
     """
     Manages a set of RepositoryLocations.
@@ -34,3 +44,17 @@ class IWorkspace(ABC):
     @abstractmethod
     def get_workspace_snapshot(self) -> Mapping[str, WorkspaceLocationEntry]:
         """Return an entry for each location in the workspace."""
+
+    @abstractmethod
+    def get_location_statuses(self) -> Sequence[WorkspaceLocationStatusEntry]:
+        pass
+
+
+def location_status_from_location_entry(
+    entry: WorkspaceLocationEntry,
+) -> WorkspaceLocationStatusEntry:
+    return WorkspaceLocationStatusEntry(
+        location_name=entry.origin.location_name,
+        load_status=entry.load_status,
+        update_timestamp=entry.update_timestamp,
+    )
