@@ -536,11 +536,76 @@ def test_kwargs():
     @asset(ins={"upstream": AssetIn()})
     def my_asset(**kwargs):
         del kwargs
+        return 7
 
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
     assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
+    assert my_asset(upstream=5) == 7
+    assert my_asset.op(upstream=5) == 7
+
+
+def test_kwargs_with_context():
+    @asset(ins={"upstream": AssetIn()})
+    def my_asset(context, **kwargs):
+        assert context
+        del kwargs
+        return 7
+
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.output_defs) == 1
+    assert len(my_asset.op.input_defs) == 1
+    assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
+    assert my_asset(build_op_context(), upstream=5) == 7
+    assert my_asset.op(build_op_context(), upstream=5) == 7
+
+    @asset
+    def upstream():
+        ...
+
+    assert materialize_to_memory([upstream, my_asset]).success
+
+
+def test_kwargs_multi_asset():
+    @multi_asset(ins={"upstream": AssetIn()}, outs={"a": AssetOut()})
+    def my_asset(**kwargs):
+        del kwargs
+        return (7,)
+
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.output_defs) == 1
+    assert len(my_asset.op.input_defs) == 1
+    assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
+    assert my_asset(upstream=5) == (7,)
+    assert my_asset.op(upstream=5) == (7,)
+
+    @asset
+    def upstream():
+        ...
+
+    assert materialize_to_memory([upstream, my_asset]).success
+
+
+def test_kwargs_multi_asset_with_context():
+    @multi_asset(ins={"upstream": AssetIn()}, outs={"a": AssetOut()})
+    def my_asset(context, **kwargs):
+        assert context
+        del kwargs
+        return (7,)
+
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.output_defs) == 1
+    assert len(my_asset.op.input_defs) == 1
+    assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
+    assert my_asset(build_op_context(), upstream=5) == (7,)
+    assert my_asset.op(build_op_context(), upstream=5) == (7,)
+
+    @asset
+    def upstream():
+        ...
+
+    assert materialize_to_memory([upstream, my_asset]).success
 
 
 def test_multi_asset_resource_defs():

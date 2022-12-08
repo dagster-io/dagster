@@ -59,18 +59,18 @@ def test_mode_from_resources():
     def pipeline_def():
         ret_three()
 
-    assert execute_pipeline(pipeline_def).result_for_solid("ret_three").output_value() == 3
+    assert execute_pipeline(pipeline_def).result_for_node("ret_three").output_value() == 3
 
 
 def test_execute_single_mode():
     single_mode_pipeline = define_single_mode_pipeline()
     assert single_mode_pipeline.is_single_mode is True
 
-    assert execute_pipeline(single_mode_pipeline).result_for_solid("return_two").output_value() == 2
+    assert execute_pipeline(single_mode_pipeline).result_for_node("return_two").output_value() == 2
 
     assert (
         execute_pipeline(single_mode_pipeline, mode="the_mode")
-        .result_for_solid("return_two")
+        .result_for_node("return_two")
         .output_value()
         == 2
     )
@@ -80,7 +80,7 @@ def test_wrong_single_mode():
     with pytest.raises(DagsterInvariantViolationError):
         assert (
             execute_pipeline(pipeline=define_single_mode_pipeline(), mode="wrong_mode")
-            .result_for_solid("return_two")
+            .result_for_node("return_two")
             .output_value()
             == 2
         )
@@ -119,14 +119,14 @@ def test_execute_multi_mode():
 
     assert (
         execute_pipeline(pipeline=multi_mode_pipeline, mode="mode_one")
-        .result_for_solid("return_three")
+        .result_for_node("return_three")
         .output_value()
         == 3
     )
 
     assert (
         execute_pipeline(pipeline=multi_mode_pipeline, mode="mode_two")
-        .result_for_solid("return_three")
+        .result_for_node("return_three")
         .output_value()
         == 3
     )
@@ -151,7 +151,7 @@ def test_execute_multi_mode_with_resources():
         run_config={"resources": {"op": {"config": 2}}},
     )
 
-    assert add_mode_result.result_for_solid("apply_to_three").output_value() == 5
+    assert add_mode_result.result_for_node("apply_to_three").output_value() == 5
 
     mult_mode_result = execute_pipeline(
         pipeline=pipeline_def,
@@ -159,7 +159,7 @@ def test_execute_multi_mode_with_resources():
         run_config={"resources": {"op": {"config": 3}}},
     )
 
-    assert mult_mode_result.result_for_solid("apply_to_three").output_value() == 9
+    assert mult_mode_result.result_for_node("apply_to_three").output_value() == 9
 
 
 def test_mode_with_resource_deps():
