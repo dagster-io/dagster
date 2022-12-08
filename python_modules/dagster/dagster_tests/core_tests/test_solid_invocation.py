@@ -1064,6 +1064,33 @@ def test_kwarg_inputs():
     assert the_op_2("foo", kwarg_in="bar", kwarg_in_two="baz") == "foobarbaz"
 
 
+def test_kwarg_inputs_context():
+    context = build_op_context()
+
+    @op(ins={"the_in": In(str)})
+    def the_op(context, **kwargs) -> str:
+        assert context
+        return kwargs["the_in"] + "foo"
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="op 'the_op' has 0 positional inputs, but 1 positional inputs were provided.",
+    ):
+        the_op(context, "bar")
+
+    assert the_op(context, the_in="bar") == "barfoo"
+
+    with pytest.raises(KeyError):
+        the_op(context, bad_val="bar")
+
+    @op(ins={"the_in": In(), "kwarg_in": In(), "kwarg_in_two": In()})
+    def the_op_2(context, the_in, **kwargs):
+        assert context
+        return the_in + kwargs["kwarg_in"] + kwargs["kwarg_in_two"]
+
+    assert the_op_2(context, "foo", kwarg_in="bar", kwarg_in_two="baz") == "foobarbaz"
+
+
 def test_default_kwarg_inputs():
     @op
     def the_op(x=1, y=2):

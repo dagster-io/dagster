@@ -283,7 +283,7 @@ def execute_run(
         pipeline.get_definition(),
         pipeline_run.run_id,
         event_list,
-        lambda: scoped_pipeline_context(
+        lambda: scoped_pipeline_context(  # type: ignore
             execution_plan,
             pipeline,
             pipeline_run.run_config,

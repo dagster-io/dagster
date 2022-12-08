@@ -269,7 +269,7 @@ def test_composite_config_field():
 
     res = execute_pipeline(test_pipeline, {"solids": {"test": {"config": {"override": 5}}}})
     assert res.result_for_handle("test.inner_solid").output_value() == "5"
-    assert res.result_for_solid("test").output_value() == "5"
+    assert res.result_for_node("test").output_value() == "5"
 
 
 def test_nested_composite_config_field():
@@ -303,7 +303,7 @@ def test_nested_composite_config_field():
     assert res.success
     assert res.result_for_handle("test.outer.inner_solid").output_value() == "5"
     assert res.result_for_handle("test.outer").output_value() == "5"
-    assert res.result_for_solid("test").output_value() == "5"
+    assert res.result_for_node("test").output_value() == "5"
 
 
 def test_nested_with_inputs():
@@ -350,7 +350,7 @@ def test_nested_with_inputs():
     )
 
     assert result.success
-    assert result.result_for_solid("pipe").output_value() == "override.foo - foobar"
+    assert result.result_for_node("pipe").output_value() == "override.foo - foobar"
 
 
 def test_wrap_none_config_and_inputs():
@@ -407,7 +407,7 @@ def test_wrap_none_config_and_inputs():
     )
     assert result.success
     assert (
-        result.result_for_solid("pipe").output_value()
+        result.result_for_node("pipe").output_value()
         == "set_config_a.set_config_b.set_input_a.set_input_b"
     )
 
@@ -538,7 +538,7 @@ def test_wrap_all_config_no_inputs():
     )
     assert result.success
     assert (
-        result.result_for_solid("pipe").output_value()
+        result.result_for_node("pipe").output_value()
         == "override_a.override_b.set_input_a.set_input_b"
     )
 
@@ -654,7 +654,7 @@ def test_wrap_all_config_one_input():
     )
     assert result.success
     assert (
-        result.result_for_solid("pipe").output_value()
+        result.result_for_node("pipe").output_value()
         == "override_a.override_b.set_input_a.set_input_b"
     )
 
@@ -766,7 +766,7 @@ def test_wrap_all_config_and_inputs():
 
     assert result.success
     assert (
-        result.result_for_solid("pipe").output_value()
+        result.result_for_node("pipe").output_value()
         == "override_a.override_b.override_input_a.override_input_b"
     )
 
@@ -815,10 +815,10 @@ def test_empty_config():
         wrap_solid()
 
     res = execute_pipeline(wrap_pipeline, run_config={"solids": {}})
-    assert res.result_for_solid("wrap_solid").output_values == {"result": "an input"}
+    assert res.result_for_node("wrap_solid").output_values == {"result": "an input"}
 
     res = execute_pipeline(wrap_pipeline)
-    assert res.result_for_solid("wrap_solid").output_values == {"result": "an input"}
+    assert res.result_for_node("wrap_solid").output_values == {"result": "an input"}
 
 
 def test_nested_empty_config():
@@ -840,10 +840,10 @@ def test_nested_empty_config():
         double_wrap()
 
     res = execute_pipeline(wrap_pipeline, run_config={"solids": {}})
-    assert res.result_for_solid("double_wrap").output_values == {"result": "an input"}
+    assert res.result_for_node("double_wrap").output_values == {"result": "an input"}
 
     res = execute_pipeline(wrap_pipeline)
-    assert res.result_for_solid("double_wrap").output_values == {"result": "an input"}
+    assert res.result_for_node("double_wrap").output_values == {"result": "an input"}
 
 
 def test_nested_empty_config_input():
@@ -874,7 +874,7 @@ def test_nested_empty_config_input():
         run_config={"solids": {"double_wrap": {"inputs": {"num": {"value": 2}}}}},
     )
     assert res.result_for_handle("double_wrap.number").output_value() == 2
-    assert res.result_for_solid("double_wrap").output_values == {"result": 4}
+    assert res.result_for_node("double_wrap").output_values == {"result": 4}
 
 
 def test_default_config_schema():
