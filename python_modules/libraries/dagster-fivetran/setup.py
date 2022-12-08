@@ -32,7 +32,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_fivetran_tests*"]),
-    install_requires=[f"dagster{pin}"],
+    install_requires=["dagster==1.1.6"],
     zip_safe=False,
     entry_points={
         "console_scripts": [
