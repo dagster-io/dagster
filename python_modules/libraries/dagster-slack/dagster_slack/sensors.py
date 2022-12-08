@@ -23,7 +23,6 @@ from dagster._annotations import experimental
 from dagster._core.definitions import GraphDefinition, PipelineDefinition
 from dagster._core.definitions.run_status_sensor_definition import (
     RunFailureSensorContext,
-    RunStatusSensorContext,
     run_failure_sensor,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
@@ -32,7 +31,7 @@ from dagster._utils.backcompat import deprecation_warning
 if TYPE_CHECKING:
     from dagster._core.host_representation.selector import JobSelector, RepositorySelector
 
-T = TypeVar("T", RunStatusSensorContext, FreshnessPolicySensorContext)
+T = TypeVar("T", RunFailureSensorContext, FreshnessPolicySensorContext)
 
 
 def _build_slack_blocks_and_text(
@@ -46,12 +45,10 @@ def _build_slack_blocks_and_text(
     if blocks_fn:
         blocks.extend(blocks_fn(context))
     else:
-        text = (
-            f'*Job "{context.pipeline_run.pipeline_name}" failed. `{context.pipeline_run.run_id.split("-")[0]}`*'
-            if isinstance(context, RunStatusSensorContext)
-            else f'*Asset "{context.asset_key.to_user_string()}" is now '
-            f'{"on time" if context.minutes_late == 0 else f"{context.minutes_late:.2f} minutes late.*"}'
-        )
+        if isinstance(context, RunFailureSensorContext):
+            text = f'*Job "{context.pipeline_run.pipeline_name}" failed. `{context.pipeline_run.run_id.split("-")[0]}`*'
+        else:
+            text = f'*Asset "{context.asset_key.to_user_string()}" is now {"on time" if context.minutes_late == 0 else f"{context.minutes_late:.2f} minutes late.*"}'
 
         blocks.extend(
             [
@@ -70,11 +67,10 @@ def _build_slack_blocks_and_text(
         )
 
     if dagit_base_url:
-        url = (
-            f"{dagit_base_url}/instance/runs/{context.pipeline_run.run_id}"
-            if isinstance(context, RunStatusSensorContext)
-            else f"{dagit_base_url}/assets/{'/'.join(context.asset_key.path)}"
-        )
+        if isinstance(context, RunFailureSensorContext):
+            url = f"{dagit_base_url}/instance/runs/{context.pipeline_run.run_id}"
+        else:
+            url = f"{dagit_base_url}/assets/{'/'.join(context.asset_key.path)}"
         blocks.append(
             {
                 "type": "actions",
