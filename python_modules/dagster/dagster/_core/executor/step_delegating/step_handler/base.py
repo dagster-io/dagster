@@ -6,7 +6,7 @@ from dagster import _check as check
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.system import IStepContext, PlanOrchestrationContext
 from dagster._core.execution.plan.step import ExecutionStep
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._grpc.types import ExecuteStepArgs
 
 
@@ -17,7 +17,7 @@ class StepHandlerContext:
         plan_context: PlanOrchestrationContext,
         steps: Sequence[ExecutionStep],
         execute_step_args: ExecuteStepArgs,
-        pipeline_run: Optional[PipelineRun] = None,
+        pipeline_run: Optional[DagsterRun] = None,
     ) -> None:
         self._instance = instance
         self._plan_context = plan_context
@@ -30,7 +30,7 @@ class StepHandlerContext:
         return self._execute_step_args
 
     @property
-    def pipeline_run(self) -> PipelineRun:
+    def pipeline_run(self) -> DagsterRun:
         # lazy load
         if not self._pipeline_run:
             run_id = self.execute_step_args.pipeline_run_id

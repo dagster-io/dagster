@@ -1,7 +1,7 @@
 import sys
 import time
 from abc import abstractmethod
-from typing import Mapping
+from typing import Mapping, Sequence
 
 import dagster._check as check
 from dagster._core.errors import DagsterRepositoryLocationLoadError
@@ -16,6 +16,8 @@ from dagster._core.workspace.workspace import (
     IWorkspace,
     WorkspaceLocationEntry,
     WorkspaceLocationLoadStatus,
+    WorkspaceLocationStatusEntry,
+    location_status_from_location_entry,
 )
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -41,6 +43,13 @@ class BaseDaemonWorkspace(IWorkspace):
         if self._location_entries == None:
             self._location_entries = self._load_workspace()
         return self._location_entries.copy()
+
+    def get_location_statuses(self) -> Sequence[WorkspaceLocationStatusEntry]:
+        if self._location_entries == None:
+            self._location_entries = self._load_workspace()
+        return [
+            location_status_from_location_entry(entry) for entry in self._location_entries.values()
+        ]
 
     @abstractmethod
     def _load_workspace(self) -> Mapping[str, WorkspaceLocationEntry]:

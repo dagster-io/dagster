@@ -8,6 +8,7 @@ import {useTrackPageView} from '../app/analytics';
 
 import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {
@@ -59,6 +60,8 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
       );
     }
 
+    const repoName = repoAddressAsHumanString(repoAddress);
+
     if (!filteredBySearch.length) {
       if (anySearch) {
         return (
@@ -68,7 +71,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
               title="No matching schedules"
               description={
                 <div>
-                  No schedules matching <strong>{searchValue}</strong> were found in this repository
+                  No schedules matching <strong>{searchValue}</strong> were found in {repoName}
                 </div>
               }
             />
@@ -81,7 +84,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
           <NonIdealState
             icon="search"
             title="No schedules"
-            description="No schedules were found in this repository"
+            description={`No schedules were found in ${repoName}`}
           />
         </Box>
       );

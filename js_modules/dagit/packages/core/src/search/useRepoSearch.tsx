@@ -5,7 +5,7 @@ import * as React from 'react';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {buildRepoPath} from '../workspace/buildRepoAddress';
+import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
 import {SearchResult, SearchResultType} from './types';
@@ -42,7 +42,7 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
       ...repos.reduce((inner, repo) => {
         const {name: repoName, partitionSets, pipelines, schedules, sensors} = repo;
         const {name: locationName} = repoLocation;
-        const repoPath = buildRepoPath(repoName, locationName);
+        const repoPath = buildRepoPathForHuman(repoName, locationName);
 
         const allPipelinesAndJobs = pipelines
           .filter((item) => !isHiddenAssetGroupJob(item.name))

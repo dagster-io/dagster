@@ -1,11 +1,7 @@
 from dagster import Output
 from dagster import _check as check
-from dagster._core.definitions import (
-    InputDefinition,
-    OutputDefinition,
-    SolidDefinition,
-    lambda_solid,
-)
+from dagster._core.definitions import In, InputDefinition, OpDefinition, lambda_solid
+from dagster._core.definitions.output import Out
 
 
 def _compute_fn(context, inputs):
@@ -38,22 +34,22 @@ def create_root_solid(name):
     input_name = name + "_input"
     inp = InputDefinition(input_name)
 
-    return SolidDefinition(
+    return OpDefinition(
         name=name,
-        input_defs=[inp],
+        ins={inp.name: In.from_definition(inp)},
         compute_fn=_compute_fn,
-        output_defs=[OutputDefinition()],
+        outs={"result": Out()},
     )
 
 
 def create_solid_with_deps(name, *solid_deps):
     inputs = [InputDefinition(solid_dep.name) for solid_dep in solid_deps]
 
-    return SolidDefinition(
+    return OpDefinition(
         name=name,
-        input_defs=inputs,
+        ins={input_def.name: In.from_definition(input_def) for input_def in inputs},
         compute_fn=_compute_fn,
-        output_defs=[OutputDefinition()],
+        outs={"result": Out()},
     )
 
 

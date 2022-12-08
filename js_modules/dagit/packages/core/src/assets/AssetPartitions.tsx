@@ -12,7 +12,7 @@ import {AssetPartitionList} from './AssetPartitionList';
 import {AssetViewParams} from './AssetView';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunsSinceMaterializationBanner} from './FailedRunsSinceMaterializationBanner';
-import {explodePartitionKeysInRanges, isTimeseriesPartition} from './MultipartitioningSupport';
+import {explodePartitionKeysInRanges, isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
 import {usePartitionDimensionRanges} from './usePartitionDimensionRanges';
 import {PartitionHealthDimensionRange, usePartitionHealthData} from './usePartitionHealthData';
@@ -49,7 +49,7 @@ export const AssetPartitions: React.FC<Props> = ({
     PartitionState.SUCCESS,
   ]);
 
-  const timeRangeIdx = ranges.findIndex((r) => isTimeseriesPartition(r.dimension.partitionKeys[0]));
+  const timeRangeIdx = ranges.findIndex((r) => isTimeseriesDimension(r.dimension));
   const timeRange = timeRangeIdx !== -1 ? ranges[timeRangeIdx] : null;
 
   const allInRanges = React.useMemo(() => {
@@ -68,9 +68,7 @@ export const AssetPartitions: React.FC<Props> = ({
     : [];
 
   const dimensionKeysOrdered = (range: PartitionHealthDimensionRange) => {
-    return isTimeseriesPartition(range.selected[0])
-      ? [...range.selected].reverse()
-      : range.selected;
+    return isTimeseriesDimension(range.dimension) ? [...range.selected].reverse() : range.selected;
   };
   const dimensionRowsForRange = (range: PartitionHealthDimensionRange, idx: number) => {
     if (timeRange && timeRange.selected.length === 0) {

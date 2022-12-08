@@ -41,7 +41,7 @@ from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
     snapshot_from_execution_plan,
 )
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._grpc.types import ExecutionPlanSnapshotArgs
 from dagster._serdes import deserialize_as
 from dagster._serdes.ipc import IPCErrorMessage
@@ -72,13 +72,13 @@ def _report_run_failed_if_not_finished(
 
 def core_execute_run(
     recon_pipeline: ReconstructablePipeline,
-    pipeline_run: PipelineRun,
+    pipeline_run: DagsterRun,
     instance: DagsterInstance,
     inject_env_vars: bool,
     resume_from_failure: bool = False,
 ) -> Generator[DagsterEvent, None, None]:
     check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
-    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
     if inject_env_vars:

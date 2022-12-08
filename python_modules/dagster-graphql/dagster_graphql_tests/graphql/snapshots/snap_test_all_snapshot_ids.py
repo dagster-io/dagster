@@ -29194,15 +29194,9 @@ snapshots['test_all_snapshot_ids 27'] = '''{
         "input_dep_snaps": [
           {
             "__class__": "InputDependencySnap",
-            "input_name": "y",
+            "input_name": "should_fail",
             "is_dynamic_collect": false,
-            "upstream_output_snaps": [
-              {
-                "__class__": "OutputHandleSnap",
-                "output_name": "result",
-                "solid_name": "emit"
-              }
-            ]
+            "upstream_output_snaps": []
           },
           {
             "__class__": "InputDependencySnap",
@@ -29218,9 +29212,15 @@ snapshots['test_all_snapshot_ids 27'] = '''{
           },
           {
             "__class__": "InputDependencySnap",
-            "input_name": "should_fail",
+            "input_name": "y",
             "is_dynamic_collect": false,
-            "upstream_output_snaps": []
+            "upstream_output_snaps": [
+              {
+                "__class__": "OutputHandleSnap",
+                "output_name": "result",
+                "solid_name": "emit"
+              }
+            ]
           }
         ],
         "is_dynamic_mapped": true,
@@ -29404,7 +29404,7 @@ snapshots['test_all_snapshot_ids 27'] = '''{
             "__class__": "InputDefSnap",
             "dagster_type_key": "Any",
             "description": null,
-            "name": "y"
+            "name": "should_fail"
           },
           {
             "__class__": "InputDefSnap",
@@ -29416,7 +29416,7 @@ snapshots['test_all_snapshot_ids 27'] = '''{
             "__class__": "InputDefSnap",
             "dagster_type_key": "Any",
             "description": null,
-            "name": "should_fail"
+            "name": "y"
           }
         ],
         "name": "multiply_inputs",
@@ -29472,7 +29472,7 @@ snapshots['test_all_snapshot_ids 27'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 28'] = '4ff7ab0a1094a28a24422cd9479c4e210162dd0b'
+snapshots['test_all_snapshot_ids 28'] = '63e29031f6d85984eb642819d2f25b31f3e6c889'
 
 snapshots['test_all_snapshot_ids 29'] = '''{
   "__class__": "PipelineSnapshot",

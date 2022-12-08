@@ -21,19 +21,23 @@ function useMatchMedia(query: string) {
 
 type LayoutContextValue = {
   nav: {
+    canOpen: boolean;
     isOpen: boolean;
     isSmallScreen: boolean;
     open: () => void;
     close: () => void;
+    setCanOpen: (canOpen: boolean) => void;
   };
 };
 
 export const LayoutContext = React.createContext<LayoutContextValue>({
   nav: {
+    canOpen: true,
     isOpen: false,
     isSmallScreen: false,
     open: () => {},
     close: () => {},
+    setCanOpen: (_canOpen: boolean) => {},
   },
 });
 
@@ -74,16 +78,20 @@ export const LayoutProvider: React.FC = (props) => {
 
   const isOpen = isSmallScreen ? navOpenIfSmallScreen : navOpenIfLargeScreen;
 
+  const [canOpen, setCanOpen] = React.useState(true);
+
   const value = React.useMemo(
     () => ({
       nav: {
-        isOpen,
+        isOpen: canOpen && isOpen,
         isSmallScreen,
         open,
         close,
+        canOpen,
+        setCanOpen,
       },
     }),
-    [isOpen, isSmallScreen, open, close],
+    [isOpen, isSmallScreen, open, close, canOpen, setCanOpen],
   );
 
   return <LayoutContext.Provider value={value}>{props.children}</LayoutContext.Provider>;

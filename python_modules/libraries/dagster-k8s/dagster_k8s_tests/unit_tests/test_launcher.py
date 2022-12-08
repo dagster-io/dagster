@@ -400,8 +400,8 @@ def test_check_run_health(kubeconfig_file):
     labels = {"foo_label_key": "bar_label_value"}
 
     # Construct a K8s run launcher in a fake k8s environment.
-    mock_k8s_client_batch_api = mock.Mock(spec_set=["read_namespaced_job"])
-    mock_k8s_client_batch_api.read_namespaced_job.side_effect = [
+    mock_k8s_client_batch_api = mock.Mock(spec_set=["read_namespaced_job_status"])
+    mock_k8s_client_batch_api.read_namespaced_job_status.side_effect = [
         V1Job(status=V1JobStatus(failed=0, succeeded=0)),
         V1Job(status=V1JobStatus(failed=0, succeeded=1)),
         V1Job(status=V1JobStatus(failed=1, succeeded=0)),
@@ -448,6 +448,9 @@ def test_check_run_health(kubeconfig_file):
             k8s_run_launcher.register_instance(instance)
 
             # same order as side effects
-            assert k8s_run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
-            assert k8s_run_launcher.check_run_worker_health(run).status == WorkerStatus.SUCCESS
-            assert k8s_run_launcher.check_run_worker_health(run).status == WorkerStatus.FAILED
+            health = k8s_run_launcher.check_run_worker_health(run)
+            assert health.status == WorkerStatus.RUNNING, health.msg
+            health = k8s_run_launcher.check_run_worker_health(run)
+            assert health.status == WorkerStatus.SUCCESS, health.msg
+            health = k8s_run_launcher.check_run_worker_health(run)
+            assert health.status == WorkerStatus.FAILED, health.msg

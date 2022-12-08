@@ -12,7 +12,7 @@ from dagster_test.test_project import (
     get_test_project_workspace_and_external_pipeline,
 )
 
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
@@ -98,7 +98,7 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
             for log in instance.all_logs(run.run_id):
                 print(log)  # pylint: disable=print-call
 
-            assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
+            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
 
 def test_container_context_on_pipeline(aws_env):
@@ -172,7 +172,7 @@ def test_container_context_on_pipeline(aws_env):
             for log in instance.all_logs(run.run_id):
                 print(log)  # pylint: disable=print-call
 
-            assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
+            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
 
 def test_recovery(aws_env):
@@ -238,9 +238,9 @@ def test_recovery(aws_env):
             start_time = time.time()
             while time.time() - start_time < 60:
                 run = instance.get_run_by_id(run.run_id)
-                if run.status == PipelineRunStatus.STARTED:
+                if run.status == DagsterRunStatus.STARTED:
                     break
-                assert run.status == PipelineRunStatus.STARTING
+                assert run.status == DagsterRunStatus.STARTING
                 time.sleep(1)
 
             time.sleep(3)
@@ -253,4 +253,4 @@ def test_recovery(aws_env):
 
             for log in instance.all_logs(run.run_id):
                 print(str(log) + "\n")  # pylint: disable=print-call
-            assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
+            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
