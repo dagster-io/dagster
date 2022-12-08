@@ -29,7 +29,7 @@
 
 ### Experimental
 
-- The `Definitions` object may now be assigned to a top-level variable of any name. Previously, an error would be raised if it was assigned to a variable not named `defs`.
+- As an optional replacement of the workspace/repository concepts, a new `Definitions` entrypoint for tools and the UI has been added. A single `Definitions` object per code location may be instantiated, and accepts typed, named arguments, rather than the heterogenous list of definitions returned from an `@repository`-decorated function. To learn more about this feature, and provide feedback, please refer to the [Github Discussion](https://github.com/dagster-io/dagster/discussions/10772).
 - [dagster-slack] A new `make_slack_on_freshness_policy_status_change_sensor` allows you to create a sensor to alert you when an asset is out of date with respect to its freshness policy (and when it’s back on time!)
 
 ### Documentation
