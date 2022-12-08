@@ -13,7 +13,7 @@ from dagster_test.test_project import (
 )
 
 from dagster import _seven
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run
 from dagster._daemon.controller import all_daemons_healthy
 from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
@@ -140,9 +140,9 @@ def test_docker_monitoring():
                     start_time = time.time()
                     while time.time() - start_time < 60:
                         run = instance.get_run_by_id(run.run_id)
-                        if run.status == PipelineRunStatus.STARTED:
+                        if run.status == DagsterRunStatus.STARTED:
                             break
-                        assert run.status == PipelineRunStatus.STARTING
+                        assert run.status == DagsterRunStatus.STARTING
                         time.sleep(1)
 
                     time.sleep(3)
@@ -153,7 +153,7 @@ def test_docker_monitoring():
 
                     # daemon resumes the run
                     poll_for_finished_run(instance, run.run_id, timeout=300)
-                    assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
+                    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
 
 def test_docker_monitoring_run_out_of_attempts():
@@ -229,9 +229,9 @@ def test_docker_monitoring_run_out_of_attempts():
                     start_time = time.time()
                     while time.time() - start_time < 60:
                         run = instance.get_run_by_id(run.run_id)
-                        if run.status == PipelineRunStatus.STARTED:
+                        if run.status == DagsterRunStatus.STARTED:
                             break
-                        assert run.status == PipelineRunStatus.STARTING
+                        assert run.status == DagsterRunStatus.STARTING
                         time.sleep(1)
 
                     time.sleep(3)
@@ -241,4 +241,4 @@ def test_docker_monitoring_run_out_of_attempts():
                     ).stop(timeout=0)
 
                     poll_for_finished_run(instance, run.run_id, timeout=60)
-                    assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.FAILURE
+                    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.FAILURE

@@ -14,7 +14,7 @@ from dagster._core.execution.resources_init import resource_initialization_manag
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.system_config.objects import ResourceConfig, config_map_resources
 
 from .api import ephemeral_instance_if_missing
@@ -43,7 +43,7 @@ def build_resources(
     resources: Mapping[str, Any],
     instance: Optional[DagsterInstance] = None,
     resource_config: Optional[Mapping[str, Any]] = None,
-    pipeline_run: Optional[PipelineRun] = None,
+    pipeline_run: Optional[DagsterRun] = None,
     log_manager: Optional[DagsterLogManager] = None,
 ) -> Generator[Resources, None, None]:
     """Context manager that yields resources using provided resource definitions and run config.

@@ -6,6 +6,7 @@ import {usePartitionStepQuery} from '../partitions/usePartitionStepQuery';
 import {DagsterTag} from '../runs/RunTag';
 import {RunFilterToken} from '../runs/RunsFilterInput';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {
@@ -68,21 +69,23 @@ export const BackfillStepStatusDialogContent = ({
 }: ContentProps) => {
   const [pageSize, setPageSize] = React.useState(60);
   const [offset, setOffset] = React.useState<number>(0);
+
   const runsFilter = React.useMemo(() => {
     const token: RunFilterToken = {token: 'tag', value: `dagster/backfill=${backfill.backfillId}`};
     return [token];
   }, [backfill.backfillId]);
 
-  const partitions = usePartitionStepQuery(
-    partitionSet.name,
-    DagsterTag.Partition,
-    backfill.partitionNames,
+  const partitions = usePartitionStepQuery({
+    partitionSetName: partitionSet.name,
+    partitionTagName: DagsterTag.Partition,
+    partitionNames: backfill.partitionNames,
     pageSize,
     runsFilter,
-    partitionSet.pipelineName,
+    repositorySelector: repoAddressToSelector(repoAddress),
+    jobName: partitionSet.pipelineName,
     offset,
-    !backfill,
-  );
+    skipQuery: !backfill,
+  });
 
   return (
     <PartitionPerOpStatus

@@ -7,7 +7,11 @@ from typing import Any, Mapping, Optional, Set, Union
 
 import papermill
 from dagstermill.compat import ExecutionError
-from dagstermill.factory import get_papermill_parameters, replace_parameters
+from dagstermill.factory import (
+    _clean_path_for_windows,
+    get_papermill_parameters,
+    replace_parameters,
+)
 from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
 
@@ -25,7 +29,7 @@ from dagster import (
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.utils import validate_tags
-from dagster._core.execution.context.compute import SolidExecutionContext
+from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._utils import safe_tempfile_path
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -42,7 +46,7 @@ def _dm_compute(
     check.str_param(notebook_path, "notebook_path")
 
     def _t_fn(context, **inputs):
-        check.inst_param(context, "context", SolidExecutionContext)
+        check.inst_param(context, "context", OpExecutionContext)
         check.param_invariant(
             isinstance(context.run_config, dict),
             "context",
@@ -251,7 +255,8 @@ def define_dagstermill_asset(
             "kind" not in op_tags,
             "user-defined op tags contains the `kind` key, but the `kind` key is reserved for use by Dagster",
         )
-    default_tags = {"notebook_path": notebook_path, "kind": "ipynb"}
+
+    default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}
 
     return asset(
         name=name,

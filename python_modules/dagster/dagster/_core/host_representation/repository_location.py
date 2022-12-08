@@ -39,7 +39,7 @@ from dagster._core.host_representation.external_data import (
     ExternalSensorExecutionErrorData,
 )
 from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
-from dagster._core.host_representation.handle import PipelineHandle, RepositoryHandle
+from dagster._core.host_representation.handle import JobHandle, RepositoryHandle
 from dagster._core.host_representation.origin import (
     GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
@@ -744,10 +744,10 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         )
 
         external_repository = self.get_repository(selector.repository_name)
-        pipeline_handle = PipelineHandle(selector.pipeline_name, external_repository.handle)
+        job_handle = JobHandle(selector.pipeline_name, external_repository.handle)
         return sync_get_external_pipeline_subset_grpc(
             self.client,
-            pipeline_handle.get_external_origin(),
+            job_handle.get_external_origin(),
             selector.solid_selection,
             selector.asset_selection,
         )

@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -17,7 +17,7 @@ export const RepositoryLink: React.FC<{
 }> = ({repoAddress, showIcon = false, showRefresh = true}) => {
   const {location} = repoAddress;
   const {canReloadRepositoryLocation} = usePermissions();
-  const repoString = repoAddressAsString(repoAddress);
+  const repoString = repoAddressAsHumanString(repoAddress);
 
   return (
     <Box flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}} title={repoString}>

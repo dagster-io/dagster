@@ -554,7 +554,17 @@
     "children": [
       {
         "title": "Airbyte",
-        "path": "/integrations/airbyte"
+        "path": "/integrations/airbyte",
+        "children": [
+          {
+            "title": "Airbyte + Dagster",
+            "path": "/integrations/airbyte"
+          },
+          {
+            "title": "Ingestion as code",
+            "path": "/guides/dagster/airbyte-ingestion-as-code"
+          }
+        ]
       },
       {
         "title": "Airflow",
@@ -606,7 +616,17 @@
       },
       {
         "title": "Jupyter / Papermill",
-        "path": "/integrations/dagstermill"
+        "path": "/integrations/dagstermill",
+        "children": [
+          {
+            "title": "Jupyter, Papermill + Dagster tutorial",
+            "path": "/integrations/dagstermill/using-notebooks-with-dagster"
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/dagstermill/reference"
+          }
+        ]
       },
       {
         "title": "Pandas",
@@ -619,6 +639,10 @@
       {
         "title": "PySpark",
         "path": "/integrations/spark"
+      },
+      {
+        "title": "Snowflake",
+        "path": "/integrations/snowflake"
       },
       {
         "title": "All integrations",
@@ -642,6 +666,10 @@
           {
             "title": "Software-defined assets with Pandas & PySpark",
             "path": "/guides/dagster/software-defined-assets"
+          },
+          {
+            "title": "Declarative scheduling for Software-defined assets",
+            "path": "/guides/dagster/scheduling-assets"
           },
           {
             "title": "Re-executing jobs",
@@ -691,6 +719,10 @@
           {
             "title": "Using custom run coordinators",
             "path": "/guides/dagster/run-attribution"
+          },
+          {
+            "title": "Airbyte ingestion as code",
+            "path": "/guides/dagster/airbyte-ingestion-as-code"
           }
         ]
       }

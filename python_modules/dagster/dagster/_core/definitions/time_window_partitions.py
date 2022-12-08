@@ -1038,6 +1038,8 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
                         del result_windows[i + 1]
                     elif merge_with_range:
                         result_windows[i] = TimeWindow(included_window.start, window.end)
+                    elif merge_with_later_range:
+                        result_windows[i + 1] = TimeWindow(window.start, result_windows[i + 1].end)
                     else:
                         result_windows.insert(i + 1, window)
 

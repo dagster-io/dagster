@@ -11,7 +11,7 @@ import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSensors} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -30,7 +30,7 @@ export const SensorsRoot = (props: Props) => {
 
   const {repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
-  const repoName = repoAddressAsString(repoAddress);
+  const repoName = repoAddressAsHumanString(repoAddress);
 
   const queryResult = useQuery<SensorsRootQuery, SensorsRootQueryVariables>(SENSORS_ROOT_QUERY, {
     variables: {

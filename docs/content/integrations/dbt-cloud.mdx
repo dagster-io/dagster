@@ -78,7 +78,8 @@ dbt_cloud_assets = load_assets_from_dbt_cloud_job(
 ```
 
 <Note>
-  We currently require that your dbt Cloud job only has one command: one of
+  We support dbt Cloud jobs with multiple commands, but we require one of the
+  commands be a materialization command. A materialization command is one of
   either `dbt run` or `dbt build`, along with any optional command line
   arguments.
 </Note>

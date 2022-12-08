@@ -23,7 +23,7 @@ import {RunStatus} from '../types/globalTypes';
 import {AnchorButton} from '../ui/AnchorButton';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
 
@@ -76,7 +76,7 @@ export const RunTimeline = (props: Props) => {
 
   const buckets = jobs.reduce((accum, job) => {
     const {repoAddress} = job;
-    const repoKey = repoAddressAsString(repoAddress);
+    const repoKey = repoAddressAsURLString(repoAddress);
     const jobsForRepo = accum[repoKey] || [];
     return {...accum, [repoKey]: [...jobsForRepo, job]};
   }, {});
