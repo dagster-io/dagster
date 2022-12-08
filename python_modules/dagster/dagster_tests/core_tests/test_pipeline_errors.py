@@ -50,7 +50,7 @@ def test_compute_failure_pipeline():
 
     assert not pipeline_result.success
 
-    result_list = pipeline_result.solid_result_list
+    result_list = pipeline_result.node_result_list
 
     assert len(result_list) == 1
     assert not result_list[0].success
@@ -84,19 +84,18 @@ def test_failure_midstream():
 
     pipeline_result = execute_pipeline(pipeline_def, raise_on_error=False)
 
-    assert pipeline_result.result_for_solid("solid_a").success
-    assert pipeline_result.result_for_solid("solid_b").success
-    assert not pipeline_result.result_for_solid("solid_c").success
+    assert pipeline_result.result_for_node("solid_a").success
+    assert pipeline_result.result_for_node("solid_b").success
+    assert not pipeline_result.result_for_node("solid_c").success
     assert (
-        pipeline_result.result_for_solid("solid_c").failure_data.error.cls_name
+        pipeline_result.result_for_node("solid_c").failure_data.error.cls_name
         == "DagsterExecutionStepExecutionError"
     )
     assert (
-        pipeline_result.result_for_solid("solid_c").failure_data.error.cause.cls_name
-        == "CheckError"
+        pipeline_result.result_for_node("solid_c").failure_data.error.cause.cls_name == "CheckError"
     )
-    assert not pipeline_result.result_for_solid("solid_d").success
-    assert pipeline_result.result_for_solid("solid_d").skipped
+    assert not pipeline_result.result_for_node("solid_d").success
+    assert pipeline_result.result_for_node("solid_d").skipped
 
 
 def test_failure_propagation():
@@ -137,18 +136,17 @@ def test_failure_propagation():
 
     pipeline_result = execute_pipeline(pipeline_def, raise_on_error=False)
 
-    assert pipeline_result.result_for_solid("solid_a").success
-    assert pipeline_result.result_for_solid("solid_b").success
-    assert pipeline_result.result_for_solid("solid_c").success
-    assert not pipeline_result.result_for_solid("solid_d").success
+    assert pipeline_result.result_for_node("solid_a").success
+    assert pipeline_result.result_for_node("solid_b").success
+    assert pipeline_result.result_for_node("solid_c").success
+    assert not pipeline_result.result_for_node("solid_d").success
     assert (
-        pipeline_result.result_for_solid("solid_d").failure_data.error.cause.cls_name
-        == "CheckError"
+        pipeline_result.result_for_node("solid_d").failure_data.error.cause.cls_name == "CheckError"
     )
-    assert not pipeline_result.result_for_solid("solid_e").success
-    assert pipeline_result.result_for_solid("solid_e").skipped
-    assert not pipeline_result.result_for_solid("solid_f").success
-    assert pipeline_result.result_for_solid("solid_f").skipped
+    assert not pipeline_result.result_for_node("solid_e").success
+    assert pipeline_result.result_for_node("solid_e").skipped
+    assert not pipeline_result.result_for_node("solid_f").success
+    assert pipeline_result.result_for_node("solid_f").skipped
 
 
 def test_do_not_yield_result():

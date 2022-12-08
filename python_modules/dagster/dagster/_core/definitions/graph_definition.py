@@ -1,3 +1,5 @@
+# pyright: strict
+
 from collections import OrderedDict, defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -6,6 +8,7 @@ from typing import (
     Dict,
     Iterable,
     Iterator,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -52,7 +55,6 @@ from .solid_container import create_execution_structure, validate_dependency_dic
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
-    from dagster._core.execution.context.init import InitResourceContext
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.instance import DagsterInstance
 
@@ -71,7 +73,7 @@ def _check_node_defs_arg(
 
     _node_defs = check.opt_sequence_param(node_defs, "node_defs")
     for node_def in _node_defs:
-        if isinstance(node_def, NodeDefinition):
+        if isinstance(node_def, NodeDefinition):  # type: ignore
             continue
         elif callable(node_def):
             raise DagsterInvalidDefinitionError(
@@ -315,7 +317,7 @@ class GraphDefinition(NodeDefinition):
     def get_solid(self, handle: NodeHandle) -> Node:
         check.inst_param(handle, "handle", NodeHandle)
         current = handle
-        lineage = []
+        lineage: List[str] = []
         while current:
             lineage.append(current.name)
             current = current.parent
@@ -907,9 +909,9 @@ def _validate_out_mappings(
     name: str,
     class_name: str,
 ) -> Tuple[Sequence[OutputMapping], Sequence[OutputDefinition]]:
-    output_defs = []
+    output_defs: List[OutputDefinition] = []
     for mapping in output_mappings:
-        if isinstance(mapping, OutputMapping):
+        if isinstance(mapping, OutputMapping):  # type: ignore
 
             target_solid = solid_dict.get(mapping.maps_from.solid_name)
             if target_solid is None:
