@@ -1,9 +1,9 @@
-import {buildRepoPath} from './buildRepoAddress';
+import {buildRepoPathForURL} from './buildRepoAddress';
 import {RepoAddress} from './types';
 
 export const workspacePath = (repoName: string, repoLocation: string, path = '') => {
   const finalPath = path.startsWith('/') ? path : `/${path}`;
-  return `/locations/${buildRepoPath(repoName, repoLocation)}${finalPath}`;
+  return `/locations/${buildRepoPathForURL(repoName, repoLocation)}${finalPath}`;
 };
 
 type PathConfig = {
@@ -22,7 +22,7 @@ export const workspacePipelinePath = ({
   path = '',
 }: PathConfig) => {
   const finalPath = path.startsWith('/') ? path : `/${path}`;
-  return `/locations/${buildRepoPath(repoName, repoLocation)}/${
+  return `/locations/${buildRepoPathForURL(repoName, repoLocation)}/${
     isJob ? 'jobs' : 'pipelines'
   }/${pipelineName}${finalPath}`;
 };

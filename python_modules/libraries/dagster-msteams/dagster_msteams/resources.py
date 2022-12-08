@@ -32,28 +32,24 @@ def msteams_resource(context):
 
         import os
 
-        from dagster import ModeDefinition, execute_pipeline
-        from dagster._legacy import pipeline, solid
+        from dagster import op, job
         from dagster_msteams import Card, msteams_resource
 
 
-        @solid(required_resource_keys={"msteams"})
-        def teams_solid(context):
+        @op(required_resource_keys={"msteams"})
+        def teams_op(context):
             card = Card()
             card.add_attachment(text_message="Hello There !!")
             context.resources.msteams.post_message(payload=card.payload)
 
 
-        @pipeline(
-            mode_defs=[ModeDefinition(resource_defs={"msteams": msteams_resource})],
-        )
-        def teams_pipeline():
-            teams_solid()
+        @job(resource_defs={"msteams": msteams_resource})
+        def teams_job():
+            teams_op()
 
 
-        execute_pipeline(
-            teams_pipeline,
-            {"resources": {"msteams": {"config": {"hook_url": os.getenv("TEAMS_WEBHOOK_URL")}}}},
+        teams_job.execute_in_process(
+            {"resources": {"msteams": {"config": {"hook_url": os.getenv("TEAMS_WEBHOOK_URL")}}}}
         )
 
     """

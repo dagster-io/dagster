@@ -25,8 +25,12 @@ def build_resources_for_manager(
     return step_context.scoped_resources_builder.build(required_resource_keys)
 
 
+class RetryRequestedFromPolicy(RetryRequested):
+    """Subclass to indicate origin of retry request is policy"""
+
+
 @contextmanager
-def solid_execution_error_boundary(
+def op_execution_error_boundary(
     error_cls: Type[DagsterUserCodeExecutionError],
     msg_fn: Callable[[], str],
     step_context: "StepExecutionContext",
@@ -67,7 +71,7 @@ def solid_execution_error_boundary(
                 if isinstance(e, Failure) and not e.allow_retries:
                     raise e
 
-                raise RetryRequested(
+                raise RetryRequestedFromPolicy(
                     max_retries=retry_policy.max_retries,
                     seconds_to_wait=retry_policy.calculate_delay(
                         step_context.previous_attempt_count + 1

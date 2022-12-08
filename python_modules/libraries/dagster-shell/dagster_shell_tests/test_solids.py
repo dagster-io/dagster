@@ -4,7 +4,9 @@ import pytest
 from dagster_shell import create_shell_command_op, create_shell_script_op, shell_op
 
 from dagster import Failure, job, op
-from dagster._legacy import OutputDefinition, composite_solid, execute_solid
+from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._legacy import OutputDefinition, execute_solid
 
 
 @pytest.mark.parametrize("factory", [create_shell_command_op])
@@ -120,9 +122,11 @@ def test_shell_script_solid_no_config_composite(factory):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     solid = factory(os.path.join(script_dir, "test.sh"), name="foobar")
 
-    @composite_solid(
-        config_schema={},
-        config_fn=lambda cfg: {},
+    @graph(
+        config=ConfigMapping(
+            config_schema={},
+            config_fn=lambda cfg: {},
+        ),
         output_defs=[OutputDefinition(str, "result")],
     )
     def composite():
@@ -162,9 +166,11 @@ def test_shell_script_solid_run_time_config_composite(factory, monkeypatch):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     solid = factory(os.path.join(script_dir, "test.sh"), name="foobar")
 
-    @composite_solid(
-        config_schema={},
-        config_fn=lambda cfg: {},
+    @graph(
+        config=ConfigMapping(
+            config_schema={},
+            config_fn=lambda cfg: {},
+        ),
         output_defs=[OutputDefinition(str, "result")],
     )
     def composite():

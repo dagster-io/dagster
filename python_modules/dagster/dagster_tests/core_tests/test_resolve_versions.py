@@ -32,14 +32,7 @@ from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import (
-    ModeDefinition,
-    OutputDefinition,
-    composite_solid,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, OutputDefinition, execute_pipeline, pipeline, solid
 
 
 class VersionedInMemoryIOManager(MemoizableIOManager):
@@ -198,9 +191,9 @@ def test_memoization_no_code_version_for_solid():
 
         with pytest.raises(
             DagsterInvariantViolationError,
-            match="While using memoization, version for solid 'solid_takes_input' was None. Please "
+            match="While using memoization, version for op 'solid_takes_input' was None. Please "
             "either provide a versioning strategy for your job, or provide a version using the "
-            "solid decorator.",
+            "op decorator.",
         ):
             create_execution_plan(partially_versioned_pipeline, instance_ref=instance.get_ref())
 
@@ -410,12 +403,12 @@ def test_memoized_plan_custom_io_manager_key():
         assert len(memoized_plan.step_keys_to_execute) == 0
 
 
-def test_unmemoized_inner_solid():
+def test_unmemoized_inner_op():
     @solid
     def solid_no_version():
         pass
 
-    @composite_solid
+    @graph
     def wrap():
         return solid_no_version()
 
@@ -436,19 +429,19 @@ def test_unmemoized_inner_solid():
     with instance_for_test() as instance:
         with pytest.raises(
             DagsterInvariantViolationError,
-            match="While using memoization, version for solid 'solid_no_version' was None. Please "
+            match="While using memoization, version for op 'solid_no_version' was None. Please "
             "either provide a versioning strategy for your job, or provide a version using the "
-            "solid decorator.",
+            "op decorator.",
         ):
             create_execution_plan(wrap_pipeline, instance_ref=instance.get_ref())
 
 
-def test_memoized_inner_solid():
+def test_memoized_inner_op():
     @solid(version="versioned")
     def solid_versioned():
         pass
 
-    @composite_solid
+    @graph
     def wrap():
         return solid_versioned()
 
