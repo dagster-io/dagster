@@ -105,7 +105,7 @@ class Definitions:
         check.str_param(name, "name")
         return self.get_resolved_repo().get_job(name)
 
-    def get_resolved_repo(self):
+    def get_resolved_repo(self) -> RepositoryDefinition:
         if isinstance(self._created_repo, PendingRepositoryDefinition):
             self._created_repo = self._created_repo.compute_repository_definition()
         return self._created_repo
