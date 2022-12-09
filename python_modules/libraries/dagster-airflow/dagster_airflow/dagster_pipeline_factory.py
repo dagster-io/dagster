@@ -14,6 +14,7 @@ import pendulum
 from airflow import __version__ as airflow_version
 from airflow.models import TaskInstance
 from airflow.models.baseoperator import BaseOperator
+from airflow.models.connection import Connection
 from airflow.models.dag import DAG
 from airflow.models.dagbag import DagBag
 from airflow.settings import LOG_FORMAT
@@ -21,6 +22,7 @@ from airflow.utils import db
 from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 
 from dagster import (
+    Array,
     DagsterInvariantViolationError,
     DependencyDefinition,
     Field,
@@ -87,6 +89,11 @@ class Locker:
         self.fp.close()
 
 
+def create_airflow_connections(connections):
+    for connection in connections:
+        os.environ[f"AIRFLOW_CONN_{connection.conn_id}"] = connection.get_uri()
+
+
 def contains_duplicate_task_names(dag_bag, refresh_from_airflow_db):
     check.inst_param(dag_bag, "dag_bag", DagBag)
     check.bool_param(refresh_from_airflow_db, "refresh_from_airflow_db")
@@ -111,6 +118,7 @@ def make_dagster_repo_from_airflow_dag_bag(
     use_airflow_template_context=False,
     mock_xcom=False,
     use_ephemeral_airflow_db=False,
+    connections=[],
 ):
     """Construct a Dagster repository corresponding to Airflow DAGs in DagBag.
 
@@ -151,6 +159,7 @@ def make_dagster_repo_from_airflow_dag_bag(
     use_ephemeral_airflow_db = check.opt_bool_param(
         use_ephemeral_airflow_db, "use_ephemeral_airflow_db"
     )
+    connections = check.opt_list_param(connections, "connections", of_type=Connection)
 
     use_unique_id = contains_duplicate_task_names(dag_bag, refresh_from_airflow_db)
 
@@ -170,6 +179,7 @@ def make_dagster_repo_from_airflow_dag_bag(
                 use_airflow_template_context=use_airflow_template_context,
                 mock_xcom=mock_xcom,
                 use_ephemeral_airflow_db=use_ephemeral_airflow_db,
+                connections=connections,
             )
         else:
             pipeline_def = make_dagster_pipeline_from_airflow_dag(
@@ -179,6 +189,7 @@ def make_dagster_repo_from_airflow_dag_bag(
                 unique_id=count,
                 mock_xcom=mock_xcom,
                 use_ephemeral_airflow_db=use_ephemeral_airflow_db,
+                connections=connections,
             )
             count += 1
         # pass in tags manually because pipeline_def.graph doesn't have it threaded
@@ -304,6 +315,7 @@ def make_dagster_repo_from_airflow_dags_path(
     use_airflow_template_context=False,
     mock_xcom=False,
     use_ephemeral_airflow_db=True,
+    connections=[],
 ):
     """Construct a Dagster repository corresponding to Airflow DAGs in dag_path.
 
@@ -340,6 +352,7 @@ def make_dagster_repo_from_airflow_dags_path(
             depend on xcom may not work as expected. (default: False)
         use_ephemeral_airflow_db (bool): If True, dagster will create an ephemeral sqlite airflow
             database for each run. (default: False)
+        connections (List[Connection]): List of Airflow connections to add to the Airflow DB.
 
     Returns:
         RepositoryDefinition
@@ -353,6 +366,9 @@ def make_dagster_repo_from_airflow_dags_path(
     use_ephemeral_airflow_db = check.opt_bool_param(
         use_ephemeral_airflow_db, "use_ephemeral_airflow_db"
     )
+    connections = check.opt_list_param(connections, "connections", of_type=Connection)
+    # add connections as environment variables so that dag evaluation works
+    create_airflow_connections(connections)
     try:
         dag_bag = DagBag(
             dag_folder=dag_path,
@@ -368,6 +384,7 @@ def make_dagster_repo_from_airflow_dags_path(
         use_airflow_template_context=use_airflow_template_context,
         mock_xcom=mock_xcom,
         use_ephemeral_airflow_db=use_ephemeral_airflow_db,
+        connections=connections,
     )
 
 
@@ -378,6 +395,7 @@ def make_dagster_pipeline_from_airflow_dag(
     unique_id=None,
     mock_xcom=False,
     use_ephemeral_airflow_db=False,
+    connections=[],
 ):
     """Construct a Dagster pipeline corresponding to a given Airflow DAG.
 
@@ -445,6 +463,7 @@ def make_dagster_pipeline_from_airflow_dag(
     use_ephemeral_airflow_db = check.opt_bool_param(
         use_ephemeral_airflow_db, "use_ephemeral_airflow_db"
     )
+    connections = check.opt_list_param(connections, "connections", of_type=Connection)
 
     if IS_AIRFLOW_INGEST_PIPELINE_STR not in tags:
         tags[IS_AIRFLOW_INGEST_PIPELINE_STR] = "true"
@@ -463,6 +482,24 @@ def make_dagster_pipeline_from_airflow_dag(
         config_schema={
             "dag_location": Field(str, default_value=dag.fileloc),
             "dag_id": Field(str, default_value=dag.dag_id),
+            "connections": Field(
+                Array(inner_type=dict),
+                default_value=[
+                    {
+                        "conn_id": c.conn_id,
+                        "conn_type": c.conn_type,
+                        "description": c.description,
+                        "host": c.host,
+                        "login": c.login,
+                        "password": c.password,
+                        "schema": c.schema,
+                        "port": c.port,
+                        "extra": c.extra if c.extra else "{}",
+                    }
+                    for c in connections
+                ],
+                is_required=False,
+            ),
         }
     )
     def airflow_db(context):
@@ -481,9 +518,11 @@ def make_dagster_pipeline_from_airflow_dag(
 
             if not airflow_initialized:
                 db.initdb()
+                for c in context.resource_config["connections"]:
+                    db.merge_conn(Connection(**c))
 
             dag_bag = airflow.models.dagbag.DagBag(
-                dag_folder=context.resource_config["dag_location"], include_examples=True
+                dag_folder=context.resource_config["dag_location"], include_examples=False
             )
             dag = dag_bag.get_dag(context.resource_config["dag_id"])
             execution_date_str = context.dagster_run.tags.get(AIRFLOW_EXECUTION_DATE_STR)
