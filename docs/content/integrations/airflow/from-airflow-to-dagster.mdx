@@ -11,39 +11,15 @@ In this tutorial, we'll help you make the switch from Airflow to Dagster. Map th
 
 By the end of this tutorial, you will:
 
-- Understand how concepts in Airflow map onto Dagster
 - Understand how to author a Dagster Pipeline similiar to a Scheduled Airflow DAG
 
 ---
 
-## Terminology
-
-The first thing you need to do when approaching Dagster from Airflow is to learn the terminology. While the two systems have significant differences, there are some overlapping concepts. Here’s a quick cheat sheet to help you get started.
-
-| Airflow concept       | Dagster concept                                                                                                                                                                                                                                                                                 | Notes                                                                                                                                                                                             |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DAG                   | [Job](/concepts/ops-jobs-graphs/jobs)                                                                                                                                                                                                                                                           |                                                                                                                                                                                                   |
-| Task                  | [Op](/concepts/ops-jobs-graphs/ops)                                                                                                                                                                                                                                                             |                                                                                                                                                                                                   |
-| Operator              | None                                                                                                                                                                                                                                                                                            | Dagster uses normal Python functions instead of framework-specific Operator classes. For off-the-shelf functionality with 3rd party tools Dagster provides [integration libraries](/integrations) |
-| Scheduler             | [Scheduler](/concepts/partitions-schedules-sensors/schedules)                                                                                                                                                                                                                                   |                                                                                                                                                                                                   |
-| Executor              | [Executor](/deployment/executors)                                                                                                                                                                                                                                                               |                                                                                                                                                                                                   |
-| Instance              | [Workspace](/concepts/repositories-workspaces/workspaces)                                                                                                                                                                                                                                       | Dagster workspaces can share the same dagit UI and operate in isolation of each other.                                                                                                            |
-| SubDAGs / TaskGroups  | [Graphs](/concepts/ops-jobs-graphs/graphs), [Tags](/concepts/ops-jobs-graphs/metadata-tags#tags) and [AssetGroups](/concepts/assets/software-defined-assets#grouping-assets)                                                                                                                    | Dagster provides rich, searchable metadata and tagging support well beyond what’s offered by Airflow. See the docs to learn more.                                                                 |
-| Hooks                 | [Resources](/concepts/resources)                                                                                                                                                                                                                                                                | Dagster Resources contain a superset of the functionality of hooks and have much stronger composition guarantees; see the docs to learn more.                                                     |
-| Pools                 | [Run Coordinator](/deployment/run-coordinator)                                                                                                                                                                                                                                                  |                                                                                                                                                                                                   |
-| XComs                 | [IO Manager](/concepts/io-management/io-managers)                                                                                                                                                                                                                                               | IO managers are much more powerful than XComs and allow passing large datasets between jobs                                                                                                       |
-| Trigger               | [LaunchPad](/concepts/dagit/dagit#launchpad)                                                                                                                                                                                                                                                    | Triggering and configuring ad-hoc runs is easier in Dagster which allows them to be initiated through the UI, graphql API or the CLI                                                              |
-| Sensor                | [Sensor](/concepts/partitions-schedules-sensors/sensors)                                                                                                                                                                                                                                        |                                                                                                                                                                                                   |
-| DAG Run               | Job Run                                                                                                                                                                                                                                                                                         |                                                                                                                                                                                                   |
-| Plugins/Providers     | [Integrations](/integrations)                                                                                                                                                                                                                                                                   |                                                                                                                                                                                                   |
-| Datasets              | [Software-Defined Assets](/concepts/assets/software-defined-assets)                                                                                                                                                                                                                             | SDAs are much more powerful and mature than datasets, include support for things like partitioning                                                                                                |
-| Connections/Variables | [Run Config](/concepts/configuration/config-schema), [Configured APIs](/concepts/configuration/configured) and [Environment Variables](https://docs.dagster.io/dagster-cloud/developing-testing/environment-variables-and-secrets#dagster-cloud-environment-variables-and-secrets) (cloud only) |                                                                                                                                                                                                   |
-
 ## Comparing an Airflow Dag to Dagster
 
-In this guide we will rewrite an Airflow Dag as a Dagster [Job](/concepts/ops-jobs-graphs/jobs).
+In this guide we will rewrite an [Airflow DAG](https://airflow.apache.org/docs/apache-airflow/stable/tutorial/fundamentals.html) as a Dagster [Job](/concepts/ops-jobs-graphs/jobs). Starting with a basic Airflow DAG:
 
-```python
+```python file=/integrations/airflow/dags/tutorial.py
 from datetime import datetime, timedelta
 from textwrap import dedent
 
@@ -118,17 +94,18 @@ with DAG(
 
 In order to rewrite this DAG in Dagster we will break it down into three parts
 
-1. The graph of compute
-2. The definition of the schedule
-3. The configuration of that graph and schedule
+1. Define the computations: "the ops" - in Airflow, the operators
+2. Define the graph: the job - in Airflow, the DAG
+3. Define the schedule - In Airflow, the schedule (how simple!)
 
-### Defining the graph
+
+### Step 1: Defining the computations
 
 A [Job](/concepts/ops-jobs-graphs/jobs) is made up of a [Graph](/concepts/ops-jobs-graphs/graphs) of [Ops](/concepts/ops-jobs-graphs/ops). If you've used the Airflow taskflow api this will feel familiar, With ops you will be focused on writing a graph with python functions as the nodes with the data dependencies between those as edges.
 
 After rewriting the core compute of the tutorial Airflow Dag in Dagster we're left with:
 
-```python
+```python file=/integrations/airflow/tutorial_rewrite.py startafter=start_imports endbefore=end_ops
 import time
 from datetime import date, timedelta
 
@@ -149,28 +126,14 @@ def templated(dt: date):
     for i in range(5):
         print(dt)
         print(dt - timedelta(days=7))
-
-@job
-def tutorial_job():
-    dt = print_date()
-    sleep(dt)
-    templated(dt)
-
-@repository
-def rewrite_repo():
-    return [tutorial_job]
 ```
 
 ### Defining the schedule
 
 next we'll add a schedule, in dagster unlike airflow schedules are defined seperately from the definition of compute
 
-```python
+```python file=/integrations/airflow/tutorial_rewrite.py startafter=start_schedule endbefore=end_schedule
 schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
-
-@repository
-def rewrite_repo():
-    return [tutorial_job, schedule]
 ```
 
 At this point we've done a basic rewrite of the tutorial dag but have left out a few features
@@ -219,7 +182,7 @@ def tutorial_job():
 
 ### The final product
 
-```python
+```python python file=/integrations/airflow/tutorial_rewrite.py
 import time
 from datetime import date, timedelta
 
