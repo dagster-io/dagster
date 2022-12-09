@@ -1,15 +1,10 @@
 import os
 
-from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+from dagster_snowflake_pandas import snowflake_pandas_io_manager
 from development_to_production.assets import comments, items, stories
 from development_to_production.resources import hn_api_client
 
 from dagster import repository, with_resources
-
-# the snowflake io manager can be initialized to handle different data types
-# here we use the pandas type handler so we can store pandas DataFrames
-snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
 
 
 @repository
@@ -17,7 +12,7 @@ def repo():
     resource_defs = {
         "local": {
             "hn_client": hn_api_client,
-            "snowflake_io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_pandas_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
                     "user": {"env": "DEV_SNOWFLAKE_USER"},
@@ -29,7 +24,7 @@ def repo():
         },
         "staging": {
             "hn_client": hn_api_client,
-            "snowflake_io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_pandas_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
                     "user": "system@company.com",
@@ -41,7 +36,7 @@ def repo():
         },
         "production": {
             "hn_client": hn_api_client,
-            "snowflake_io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_pandas_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
                     "user": "system@company.com",
