@@ -1,7 +1,7 @@
 from typing import Any, Dict, Iterable, Mapping, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import experimental
+from dagster._annotations import experimental, public
 from dagster._core.execution.with_resources import with_resources
 
 from .assets import AssetsDefinition, SourceAsset
@@ -95,6 +95,18 @@ class Definitions:
             ]
 
         self._created_repo = created_repo
+
+    @public
+    def get_job_def(self, name: str) -> JobDefinition:
+        """Get a job definition by name. If you passed in a an UnresolvedAssetJobDefinition
+        (return value of define_asset_job) it will be resolved to a JobDefinition when returned
+        from this function."""
+        return self.get_resolved_repo().get_job(name)
+
+    def get_resolved_repo(self):
+        if isinstance(self._created_repo, PendingRepositoryDefinition):
+            self._created_repo = self._created_repo.compute_repository_definition()
+        return self._created_repo
 
     def get_inner_repository(self) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
         return self._created_repo
