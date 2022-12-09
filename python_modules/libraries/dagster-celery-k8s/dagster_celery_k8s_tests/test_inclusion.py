@@ -5,7 +5,7 @@ from dagster import ExecutorDefinition
 
 
 def test_include_launcher_works():
-    assert CeleryK8sRunLauncher
+    assert CeleryK8sRunLauncher  # type: ignore
 
 
 def test_include_executor_works():

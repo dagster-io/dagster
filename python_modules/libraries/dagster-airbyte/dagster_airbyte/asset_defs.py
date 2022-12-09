@@ -56,7 +56,9 @@ def _build_airbyte_asset_defn_metadata(
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
 ) -> AssetsDefinitionCacheableData:
 
-    asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str) or []
+    asset_key_prefix = (
+        check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str) or []
+    )
 
     # Generate a list of outputs, the set of destination tables plus any affiliated
     # normalization tables
@@ -69,8 +71,7 @@ def _build_airbyte_asset_defn_metadata(
     )
 
     outputs = {
-        table: AssetKey(asset_key_prefix + list(table_to_asset_key_fn(table).path))
-        for table in tables
+        table: AssetKey([*asset_key_prefix, *table_to_asset_key_fn(table).path]) for table in tables
     }
 
     internal_deps: Dict[str, Set[AssetKey]] = {}
@@ -85,7 +86,7 @@ def _build_airbyte_asset_defn_metadata(
         for base_table, derived_tables in normalization_tables.items():
             for derived_table in derived_tables:
                 internal_deps[derived_table] = {
-                    AssetKey(asset_key_prefix + list(table_to_asset_key_fn(base_table).path))
+                    AssetKey([*asset_key_prefix, *table_to_asset_key_fn(base_table).path])
                 }
 
     # All non-normalization tables depend on any user-provided upstream assets
@@ -721,10 +722,10 @@ def load_assets_from_airbyte_instance(
         connection_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
             group name for a given Airbyte connection name. If None, no groups will be created. Defaults
             to a basic sanitization function.
-        io_manager_key (Optional[str]): The IO manager key to use for all assets. Defaults to "io_manager".
+        io_manager_key (Optional[str]): The I/O manager key to use for all assets. Defaults to "io_manager".
             Use this if all assets should be loaded from the same source, otherwise use connection_to_io_manager_key_fn.
         connection_to_io_manager_key_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an
-            IO manager key for a given Airbyte connection name. When other ops are downstream of the loaded assets,
+            I/O manager key for a given Airbyte connection name. When other ops are downstream of the loaded assets,
             the IOManager specified determines how the inputs to those ops are loaded. Defaults to "io_manager".
         connection_filter (Optional[Callable[[AirbyteConnectionMetadata], bool]]): Optional function which takes
             in connection metadata and returns False if the connection should be excluded from the output assets.
@@ -822,10 +823,10 @@ def load_assets_from_airbyte_project(
         connection_to_group_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an asset
             group name for a given Airbyte connection name. If None, no groups will be created. Defaults
             to a basic sanitization function.
-        io_manager_key (Optional[str]): The IO manager key to use for all assets. Defaults to "io_manager".
+        io_manager_key (Optional[str]): The I/O manager key to use for all assets. Defaults to "io_manager".
             Use this if all assets should be loaded from the same source, otherwise use connection_to_io_manager_key_fn.
         connection_to_io_manager_key_fn (Optional[Callable[[str], Optional[str]]]): Function which returns an
-            IO manager key for a given Airbyte connection name. When other ops are downstream of the loaded assets,
+            I/O manager key for a given Airbyte connection name. When other ops are downstream of the loaded assets,
             the IOManager specified determines how the inputs to those ops are loaded. Defaults to "io_manager".
         connection_filter (Optional[Callable[[AirbyteConnectionMetadata], bool]]): Optional function which
             takes in connection metadata and returns False if the connection should be excluded from the output assets.

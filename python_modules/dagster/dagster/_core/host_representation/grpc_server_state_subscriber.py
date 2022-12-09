@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import NamedTuple, Optional
+from typing import Callable, NamedTuple, Optional
 
 import dagster._check as check
 
@@ -39,10 +39,10 @@ class LocationStateChangeEvent(
 
 
 class LocationStateSubscriber:
-    def __init__(self, callback):
+    def __init__(self, callback: Callable[[LocationStateChangeEvent], None]):
         check.callable_param(callback, "callback")
         self._callback = callback
 
-    def handle_event(self, event):
+    def handle_event(self, event: LocationStateChangeEvent):
         check.inst_param(event, "event", LocationStateChangeEvent)
         self._callback(event)

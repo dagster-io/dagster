@@ -11,7 +11,7 @@ import pytest
 import requests
 from dagster_graphql import DagsterGraphQLClient
 
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._utils import (
     file_relative_path,
     library_version_from_core_version,
@@ -51,8 +51,8 @@ def assert_run_success(client, run_id):
             raise Exception("Timed out waiting for launched run to complete")
 
         status = client.get_run_status(run_id)
-        assert status and status != PipelineRunStatus.FAILURE
-        if status == PipelineRunStatus.SUCCESS:
+        assert status and status != DagsterRunStatus.FAILURE
+        if status == DagsterRunStatus.SUCCESS:
             break
 
         time.sleep(1)

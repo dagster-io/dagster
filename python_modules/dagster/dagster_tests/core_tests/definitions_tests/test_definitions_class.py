@@ -37,7 +37,7 @@ def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefi
 
 
 def test_basic_asset():
-    assert Definitions
+    assert Definitions  # type: ignore
 
     @asset
     def an_asset():
@@ -48,6 +48,16 @@ def test_basic_asset():
     all_assets = get_all_assets_from_defs(defs)
     assert len(all_assets) == 1
     assert all_assets[0].key.to_user_string() == "an_asset"
+
+
+def test_basic_job_definition():
+    @asset
+    def an_asset():
+        pass
+
+    defs = Definitions(assets=[an_asset], jobs=[define_asset_job(name="an_asset_job")])
+
+    assert resolve_pending_repo_if_required(defs).get_job("an_asset_job")
 
 
 def test_basic_schedule_definition():

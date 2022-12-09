@@ -115,7 +115,7 @@ class SourceAsset(ResourceAddable):
             experimental_arg_warning("io_manager_def", "SourceAsset.__new__")
 
         self.key = AssetKey.from_coerceable(key)
-        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self.metadata_entries = _metadata_entries or normalize_metadata(
             metadata, [], allow_invalid=True
         )
@@ -180,7 +180,7 @@ class SourceAsset(ResourceAddable):
     @property
     def node_def(self) -> Optional[OpDefinition]:
         """Op that generates observation metadata for a source asset."""
-        from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
+        from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
 
         if self.observe_fn is None:
             return None
@@ -202,7 +202,7 @@ class SourceAsset(ResourceAddable):
                     )
                 )
 
-            compute_fn = DecoratedSolidFunction(decorated_fn=fn)
+            compute_fn = DecoratedOpFunction(decorated_fn=fn)
 
             self._node_def = OpDefinition(
                 compute_fn=compute_fn,

@@ -45,7 +45,7 @@ def _build_fivetran_assets(
     }
     user_facing_asset_keys = table_to_asset_key_map or tracked_asset_keys
 
-    metadata_by_table_name = check.opt_dict_param(
+    _metadata_by_table_name = check.opt_mapping_param(
         metadata_by_table_name, "metadata_by_table_name", key_type=str
     )
 
@@ -55,7 +55,7 @@ def _build_fivetran_assets(
             "_".join(key.path): AssetOut(
                 io_manager_key=io_manager_key,
                 key=user_facing_asset_keys[table],
-                metadata=metadata_by_table_name.get(table),
+                metadata=_metadata_by_table_name.get(table),
             )
             for table, key in tracked_asset_keys.items()
         },

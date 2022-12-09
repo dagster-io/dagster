@@ -70,7 +70,7 @@ def asset(
     output_required: bool = ...,
     freshness_policy: Optional[FreshnessPolicy] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
-    op_version: Optional[str] = ...,
+    code_version: Optional[str] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -97,7 +97,7 @@ def asset(
     output_required: bool = True,
     freshness_policy: Optional[FreshnessPolicy] = None,
     retry_policy: Optional[RetryPolicy] = None,
-    op_version: Optional[str] = None,
+    code_version: Optional[str] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -155,8 +155,9 @@ def asset(
         freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is intended to be updated
             with respect to its root data.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
-        op_version (Optional[str]): (Experimental) Version string passed to the op underlying the
-            asset.
+        code_version (Optional[str]): (Experimental) Version of the code that generates this asset. In
+            general, versions should be set only for code that deterministically produces the same
+            output when given the same inputs.
 
     Examples:
 
@@ -199,7 +200,7 @@ def asset(
             output_required=output_required,
             freshness_policy=freshness_policy,
             retry_policy=retry_policy,
-            op_version=op_version,
+            code_version=code_version,
         )(fn)
 
     return inner
@@ -226,7 +227,7 @@ class _Asset:
         output_required: bool = True,
         freshness_policy: Optional[FreshnessPolicy] = None,
         retry_policy: Optional[RetryPolicy] = None,
-        op_version: Optional[str] = None,
+        code_version: Optional[str] = None,
     ):
         self.name = name
 
@@ -251,7 +252,7 @@ class _Asset:
         self.output_required = output_required
         self.freshness_policy = freshness_policy
         self.retry_policy = retry_policy
-        self.op_version = op_version
+        self.code_version = code_version
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -283,6 +284,7 @@ class _Asset:
                 dagster_type=self.dagster_type if self.dagster_type else NoValueSentinel,
                 description=self.description,
                 is_required=self.output_required,
+                code_version=self.code_version,
             )
 
             op = _Op(
@@ -297,7 +299,7 @@ class _Asset:
                 },
                 config_schema=self.config_schema,
                 retry_policy=self.retry_policy,
-                version=self.op_version,
+                code_version=self.code_version,
             )(fn)
 
         keys_by_input_name = {
@@ -306,7 +308,7 @@ class _Asset:
         partition_mappings = {
             keys_by_input_name[input_name]: asset_in.partition_mapping
             for input_name, asset_in in self.ins.items()
-            if asset_in.partition_mapping
+            if asset_in.partition_mapping is not None
         }
 
         return AssetsDefinition(
@@ -340,6 +342,7 @@ def multi_asset(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     group_name: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
+    code_version: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -380,6 +383,8 @@ def multi_asset(
         group_name (Optional[str]): A string name used to organize multiple assets into groups. This
             group name will be applied to all assets produced by this multi_asset.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
+        code_version (Optional[str]): (Experimental) Version of the code encapsulated by the multi-asset. If set,
+            this is used as a default code version for all defined assets.
     """
     if resource_defs is not None:
         experimental_arg_warning("resource_defs", "multi_asset")
@@ -393,8 +398,8 @@ def multi_asset(
     resource_defs = check.opt_mapping_param(
         resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
     )
-    config_schema = check.opt_dict_param(
-        config_schema,
+    _config_schema = check.opt_mapping_param(
+        config_schema,  # type: ignore
         "config_schema",
         additional_message="Only dicts are supported for asset config_schema.",
     )
@@ -445,8 +450,9 @@ def multi_asset(
                     **({"kind": compute_kind} if compute_kind else {}),
                     **(op_tags or {}),
                 },
-                config_schema=config_schema,
+                config_schema=_config_schema,
                 retry_policy=retry_policy,
+                code_version=code_version,
             )(fn)
 
         keys_by_input_name = {
@@ -475,7 +481,7 @@ def multi_asset(
         partition_mappings = {
             keys_by_input_name[input_name]: asset_in.partition_mapping
             for input_name, asset_in in (ins or {}).items()
-            if asset_in.partition_mapping
+            if asset_in.partition_mapping is not None
         }
 
         return AssetsDefinition(

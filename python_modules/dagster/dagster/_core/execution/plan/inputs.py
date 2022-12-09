@@ -34,7 +34,7 @@ from dagster._utils import ensure_gen
 
 from .objects import TypeCheckData
 from .outputs import StepOutputHandle, UnresolvedStepOutputHandle
-from .utils import build_resources_for_manager, solid_execution_error_boundary
+from .utils import build_resources_for_manager, op_execution_error_boundary
 
 if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent
@@ -537,8 +537,6 @@ class FromStepOutput(
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
     ) -> Sequence[AssetLineageInfo]:
-        source_handle = self.step_output_handle
-        input_manager = step_context.get_io_manager(source_handle)
         load_context = self.get_load_context(step_context, input_def)
 
         # check input_def
@@ -547,15 +545,6 @@ class FromStepOutput(
                 load_context, input_def.get_asset_key, input_def.get_asset_partitions
             )
             return [lineage_info] if lineage_info else []
-
-        # check io manager
-        io_lineage_info = _get_asset_lineage_from_fns(
-            load_context,
-            input_manager.get_input_asset_key,
-            input_manager.get_input_asset_partitions,
-        )
-        if io_lineage_info is not None:
-            return [io_lineage_info]
 
         # check output_def
         upstream_output = step_context.execution_plan.get_step_output(self.step_output_handle)
@@ -854,7 +843,7 @@ def _load_input_with_input_manager(input_manager: "InputManager", context: "Inpu
     from dagster._core.execution.context.system import StepExecutionContext
 
     step_context = cast(StepExecutionContext, context.step_context)
-    with solid_execution_error_boundary(
+    with op_execution_error_boundary(
         DagsterExecutionLoadInputError,
         msg_fn=lambda: (
             f'Error occurred while loading input "{context.name}" of '

@@ -44,7 +44,7 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
             env={
                 "DAGSTER_BRANCH": branch_name,
                 "DAGSTER_COMMIT_HASH": commit_hash,
-                "DAGIT_ONLY_OSS_CHANGE": "1" if not skip_if_no_dagit_changes else "",
+                "DAGIT_ONLY_OSS_CHANGE": "1" if not skip_if_no_dagit_changes() else "",
             },
         ),
     )

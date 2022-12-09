@@ -8,8 +8,8 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
-    PipelineRun,
-    PipelineRunStatus,
+    DagsterRun,
+    DagsterRunStatus,
     RunsFilter,
 )
 from dagster._core.storage.tags import PRIORITY_TAG
@@ -23,13 +23,20 @@ class _TagConcurrencyLimitsCounter:
     Helper object that keeps track of when the tag concurrency limits are met
     """
 
+    _key_limits: Dict[str, int]
+    _key_value_limits: Dict[Tuple[str, str], int]
+    _unique_value_limits: Dict[str, int]
+    _key_counts: Dict[str, int]
+    _key_value_counts: Dict[Tuple[str, str], int]
+    _unique_value_counts: Dict[Tuple[str, str], int]
+
     def __init__(self, tag_concurrency_limits, in_progress_runs):
         check.opt_list_param(tag_concurrency_limits, "tag_concurrency_limits", of_type=dict)
-        check.list_param(in_progress_runs, "in_progress_runs", of_type=PipelineRun)
+        check.list_param(in_progress_runs, "in_progress_runs", of_type=DagsterRun)
 
-        self._key_limits: Dict[str, int] = {}
-        self._key_value_limits: Dict[Tuple[str, str], int] = {}
-        self._unique_value_limits: Dict[str, int] = {}
+        self._key_limits = {}
+        self._key_value_limits = {}
+        self._unique_value_limits = {}
 
         for tag_limit in tag_concurrency_limits:
             key = tag_limit["key"]
@@ -43,9 +50,9 @@ class _TagConcurrencyLimitsCounter:
             else:
                 self._unique_value_limits[key] = limit
 
-        self._key_counts: Dict[str, int] = defaultdict(lambda: 0)
-        self._key_value_counts: Dict[Tuple[str, str], int] = defaultdict(lambda: 0)
-        self._unique_value_counts: Dict[Tuple[str, str], int] = defaultdict(lambda: 0)
+        self._key_counts = defaultdict(lambda: 0)
+        self._key_value_counts = defaultdict(lambda: 0)
+        self._unique_value_counts = defaultdict(lambda: 0)
 
         # initialize counters based on current in progress runs
         for run in in_progress_runs:
@@ -180,7 +187,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             self._logger.info("Launched %d runs.", num_dequeued_runs)
 
     def _get_queued_runs(self, instance):
-        queued_runs_filter = RunsFilter(statuses=[PipelineRunStatus.QUEUED])
+        queued_runs_filter = RunsFilter(statuses=[DagsterRunStatus.QUEUED])
 
         # Reversed for fifo ordering
         # Note: should add a maximum fetch limit https://github.com/dagster-io/dagster/issues/3339
@@ -205,13 +212,13 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
     def _dequeue_run(
         self,
         instance: DagsterInstance,
-        run: PipelineRun,
+        run: DagsterRun,
         workspace_process_context: IWorkspaceProcessContext,
     ):
         # double check that the run is still queued before dequeing
         reloaded_run = check.not_none(instance.get_run_by_id(run.run_id))
 
-        if reloaded_run.status != PipelineRunStatus.QUEUED:
+        if reloaded_run.status != DagsterRunStatus.QUEUED:
             self._logger.info(
                 "Run %s is now %s instead of QUEUED, skipping",
                 reloaded_run.run_id,

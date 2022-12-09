@@ -7,7 +7,7 @@ import styled from 'styled-components/macro';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 
-import {repoAddressAsString} from './repoAddressAsString';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {
@@ -116,13 +116,15 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
     return null;
   }
 
+  const repoName = repoAddressAsHumanString(repoAddress);
+
   if (error || !graphsForTable) {
     return (
       <Box padding={{vertical: 64}}>
         <NonIdealState
           icon="error"
           title="Unable to load graphs"
-          description={`Could not load graphs for ${repoAddressAsString(repoAddress)}`}
+          description={`Could not load graphs for ${repoName}`}
         />
       </Box>
     );
@@ -134,7 +136,7 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
         <NonIdealState
           icon="schema"
           title="No graphs found"
-          description={<div>This repository does not have any graphs defined.</div>}
+          description={`${repoName} does not have any graphs defined.`}
         />
       </Box>
     );
@@ -149,7 +151,7 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
       </thead>
       <tbody>
         {graphsForTable.map(({name, description, path, repoAddress}) => (
-          <tr key={`${name}-${repoAddressAsString(repoAddress)}`}>
+          <tr key={`${name}-${repoAddressAsHumanString(repoAddress)}`}>
             <td>
               <Group direction="column" spacing={4}>
                 <Link to={workspacePath(repoAddress.name, repoAddress.location, path)}>{name}</Link>

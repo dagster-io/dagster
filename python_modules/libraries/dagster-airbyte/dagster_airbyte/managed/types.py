@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Union
 
 import dagster._check as check
+from dagster._annotations import public
 
 
 class AirbyteSyncMode(ABC):
@@ -33,15 +34,17 @@ class AirbyteSyncMode(ABC):
             }
         )
 
+    @public
     @classmethod
     def full_refresh_append(cls) -> "AirbyteSyncMode":
         """
-        Syncs the entire data stream from the source, appending to the destination.
+        Syncs the entire data stream from the source, appending rows to the destination.
 
         https://docs.airbyte.com/understanding-airbyte/connections/full-refresh-append/
         """
         return cls({"syncMode": "full_refresh", "destinationSyncMode": "append"})
 
+    @public
     @classmethod
     def full_refresh_overwrite(cls) -> "AirbyteSyncMode":
         """
@@ -52,13 +55,14 @@ class AirbyteSyncMode(ABC):
         """
         return cls({"syncMode": "full_refresh", "destinationSyncMode": "overwrite"})
 
+    @public
     @classmethod
     def incremental_append(
         cls,
         cursor_field: Optional[str] = None,
     ) -> "AirbyteSyncMode":
         """
-        Syncs only new records from the source, appending to the destination.
+        Syncs only new records from the source, appending rows to the destination.
         May optionally specify the cursor field used to determine which records
         are new.
 
@@ -74,6 +78,7 @@ class AirbyteSyncMode(ABC):
             }
         )
 
+    @public
     @classmethod
     def incremental_append_dedup(
         cls,
@@ -110,10 +115,19 @@ class AirbyteSource:
     Represents a user-defined Airbyte source.
     """
 
+    @public
     def __init__(self, name: str, source_type: str, source_configuration: Mapping[str, Any]):
+        """
+        Args:
+            name (str): The display name of the source.
+            source_type (str): The type of the source, from Airbyte's list
+                of sources https://airbytehq.github.io/category/sources/.
+            source_configuration (Mapping[str, Any]): The configuration for the
+                source, as defined by Airbyte's API.
+        """
         self.name = check.str_param(name, "name")
         self.source_type = check.str_param(source_type, "source_type")
-        self.source_configuration = check.dict_param(
+        self.source_configuration = check.mapping_param(
             source_configuration, "source_configuration", key_type=str
         )
 
@@ -149,12 +163,21 @@ class AirbyteDestination:
     Represents a user-defined Airbyte destination.
     """
 
+    @public
     def __init__(
         self, name: str, destination_type: str, destination_configuration: Mapping[str, Any]
     ):
+        """
+        Args:
+            name (str): The display name of the destination.
+            destination_type (str): The type of the destination, from Airbyte's list
+                of destinations https://airbytehq.github.io/category/destinations/.
+            destination_configuration (Mapping[str, Any]): The configuration for the
+                destination, as defined by Airbyte's API.
+        """
         self.name = check.str_param(name, "name")
         self.destination_type = check.str_param(destination_type, "destination_type")
-        self.destination_configuration = check.dict_param(
+        self.destination_configuration = check.mapping_param(
             destination_configuration, "destination_configuration", key_type=str
         )
 
@@ -204,7 +227,8 @@ class AirbyteDestinationNamespace(Enum):
 
 class AirbyteConnection:
     """
-    User-defined Airbyte connection.
+    A user-defined Airbyte connection, pairing an Airbyte source and destination and configuring
+    which streams to sync.
     """
 
     def __init__(
@@ -218,10 +242,45 @@ class AirbyteConnection:
             Union[AirbyteDestinationNamespace, str]
         ] = AirbyteDestinationNamespace.SAME_AS_SOURCE,
     ):
+
+        """
+        Args:
+            name (str): The display name of the connection.
+            source (AirbyteSource): The source to sync from.
+            destination (AirbyteDestination): The destination to sync to.
+            stream_config (Mapping[str, AirbyteSyncMode]): A mapping from stream name to
+                the sync mode for that stream, including any additional configuration
+                of primary key or cursor field.
+            normalize_data (Optional[bool]): Whether to normalize the data in the
+                destination.
+            destination_namespace (Optional[Union[AirbyteDestinationNamespace, str]]):
+                The namespace to sync to in the destination. If set to
+                AirbyteDestinationNamespace.SAME_AS_SOURCE, the namespace will be the
+                same as the source namespace. If set to
+                AirbyteDestinationNamespace.DESTINATION_DEFAULT, the namespace will be
+                the default namespace for the destination. If set to a string, the
+                namespace will be that string.
+
+        Example:
+        .. code-block:: python
+            from dagster_airbyte.managed.generated.sources import FileSource
+            from dagster_airbyte.managed.generated.destinations import LocalJsonDestination
+            from dagster_airbyte import AirbyteConnection, AirbyteSyncMode
+
+            cereals_csv_source = FileSource(...)
+            local_json_destination = LocalJsonDestination(...)
+
+            cereals_connection = AirbyteConnection(
+                name="download-cereals",
+                source=cereals_csv_source,
+                destination=local_json_destination,
+                stream_config={"cereals": AirbyteSyncMode.full_refresh_overwrite()},
+            )
+        """
         self.name = check.str_param(name, "name")
         self.source = check.inst_param(source, "source", AirbyteSource)
         self.destination = check.inst_param(destination, "destination", AirbyteDestination)
-        self.stream_config = check.dict_param(
+        self.stream_config = check.mapping_param(
             stream_config, "stream_config", key_type=str, value_type=AirbyteSyncMode
         )
         self.normalize_data = check.opt_bool_param(normalize_data, "normalize_data")

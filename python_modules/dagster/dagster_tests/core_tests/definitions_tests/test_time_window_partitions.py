@@ -395,10 +395,13 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
         )
         == expected_keys_not_in_subset
     )
-    assert partitions_def.deserialize_subset(subset.serialize()).key_ranges == subset.key_ranges
+    assert (
+        partitions_def.deserialize_subset(subset.serialize()).included_time_windows
+        == subset.included_time_windows
+    )
 
     expected_range_count = case_str.count("-+") + (1 if case_str[0] == "+" else 0)
-    assert len(subset.key_ranges) == expected_range_count, case_str
+    assert len(subset.included_time_windows) == expected_range_count, case_str
 
 
 @pytest.mark.parametrize(
@@ -464,6 +467,10 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
             "--+++---+++--",
             "++---+++---++",
         ),
+        (
+            "+--+",
+            "--+-",
+        ),
     ],
 )
 def test_partition_subset_with_partition_keys(initial: str, added: str):
@@ -500,4 +507,4 @@ def test_partition_subset_with_partition_keys(initial: str, added: str):
     expected_range_count = updated_subset_str.count("-+") + (
         1 if updated_subset_str[0] == "+" else 0
     )
-    assert len(updated_subset.key_ranges) == expected_range_count, updated_subset_str
+    assert len(updated_subset.included_time_windows) == expected_range_count, updated_subset_str

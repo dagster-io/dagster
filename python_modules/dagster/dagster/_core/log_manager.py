@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 import logging
 from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union
@@ -9,7 +11,7 @@ from dagster._utils.log import get_dagster_logger
 if TYPE_CHECKING:
     from dagster import DagsterInstance
     from dagster._core.events import DagsterEvent
-    from dagster._legacy import PipelineRun
+    from dagster._legacy import DagsterRun
 
 DAGSTER_META_KEY = "dagster_meta"
 
@@ -59,7 +61,7 @@ class DagsterMessageProps(
 
         error = getattr(event_specific_data, "error", None)
         if error:
-            return "\n\n" + getattr(event_specific_data, "error_display_string", error.to_string())
+            return f'\n\n{getattr(event_specific_data, "error_display_string", error.to_string())}'
         return None
 
     @property
@@ -199,7 +201,7 @@ class DagsterLogHandler(logging.Handler):
     def logging_metadata(self):
         return self._logging_metadata
 
-    def with_tags(self, **new_tags):
+    def with_tags(self, **new_tags: str) -> DagsterLogHandler:
         return DagsterLogHandler(
             logging_metadata=self.logging_metadata._replace(**new_tags),
             loggers=self._loggers,
@@ -317,7 +319,7 @@ class DagsterLogManager(logging.Logger):
         loggers: Sequence[logging.Logger],
         handlers: Optional[Sequence[logging.Handler]] = None,
         instance: Optional["DagsterInstance"] = None,
-        pipeline_run: Optional["PipelineRun"] = None,
+        pipeline_run: Optional["DagsterRun"] = None,
     ) -> "DagsterLogManager":
         """Create a DagsterLogManager with a set of subservient loggers."""
 
@@ -362,15 +364,17 @@ class DagsterLogManager(logging.Logger):
     def logging_metadata(self) -> DagsterLoggingMetadata:
         return self._dagster_handler.logging_metadata
 
-    def begin_python_log_capture(self):
+    def begin_python_log_capture(self) -> None:
         for logger in self._managed_loggers:
             logger.addHandler(self._dagster_handler)
 
-    def end_python_log_capture(self):
+    def end_python_log_capture(self) -> None:
         for logger in self._managed_loggers:
             logger.removeHandler(self._dagster_handler)
 
-    def log_dagster_event(self, level: Union[str, int], msg: str, dagster_event: "DagsterEvent"):
+    def log_dagster_event(
+        self, level: Union[str, int], msg: str, dagster_event: "DagsterEvent"
+    ) -> None:
         """Log a DagsterEvent at the given level. Attributes about the context it was logged in
         (such as the solid name or pipeline name) will be automatically attached to the created record.
 
@@ -382,7 +386,7 @@ class DagsterLogManager(logging.Logger):
         """
         self.log(level=level, msg=msg, extra={DAGSTER_META_KEY: dagster_event})
 
-    def log(self, level, msg, *args, **kwargs):
+    def log(self, level: Union[str, int], msg: object, *args: Any, **kwargs: Any) -> None:
         """Log a message at the given level. Attributes about the context it was logged in (such as
         the solid name or pipeline name) will be automatically attached to the created record.
 
@@ -397,7 +401,7 @@ class DagsterLogManager(logging.Logger):
         if self.isEnabledFor(level) or ("extra" in kwargs and DAGSTER_META_KEY in kwargs["extra"]):
             self._log(level, msg, args, **kwargs)
 
-    def with_tags(self, **new_tags):
+    def with_tags(self, **new_tags: str) -> DagsterLogManager:
         """Add new tags in "new_tags" to the set of tags attached to this log manager instance, and
         return a new DagsterLogManager with the merged set of tags.
 

@@ -35,7 +35,11 @@ from .events import AssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
 from .partition import PartitionsDefinition
-from .partition_mapping import PartitionMapping, infer_partition_mapping
+from .partition_mapping import (
+    PartitionMapping,
+    get_builtin_partition_mapping_types,
+    infer_partition_mapping,
+)
 from .resource_definition import ResourceDefinition
 from .resource_requirement import (
     ResourceAddable,
@@ -77,6 +81,8 @@ class AssetsDefinition(ResourceAddable):
     _selected_asset_keys: AbstractSet[AssetKey]
     _can_subset: bool
     _metadata_by_key: Mapping[AssetKey, MetadataUserInput]
+    _freshness_policies_by_key: Mapping[AssetKey, FreshnessPolicy]
+    _code_versions_by_key: Mapping[AssetKey, Optional[str]]
 
     def __init__(
         self,
@@ -117,6 +123,20 @@ class AssetsDefinition(ResourceAddable):
 
         self._partitions_def = partitions_def
         self._partition_mappings = partition_mappings or {}
+        builtin_partition_mappings = get_builtin_partition_mapping_types()
+        for partition_mapping in self._partition_mappings.values():
+            if not isinstance(partition_mapping, builtin_partition_mappings):
+                warnings.warn(
+                    f"Non-built-in PartitionMappings, such as {type(partition_mapping).__name__} "
+                    "are deprecated and will not work with asset reconciliation. The built-in "
+                    "partition mappings are "
+                    + ", ".join(
+                        builtin_partition_mapping.__name__
+                        for builtin_partition_mapping in builtin_partition_mappings
+                    )
+                    + ".",
+                    category=DeprecationWarning,
+                )
 
         # if not specified assume all output assets depend on all input assets
         all_asset_keys = set(keys_by_output_name.values())
@@ -149,16 +169,20 @@ class AssetsDefinition(ResourceAddable):
             self._selected_asset_keys = all_asset_keys
         self._can_subset = can_subset
 
+        self._code_versions_by_key = {}
         self._metadata_by_key = dict(
             check.opt_mapping_param(
                 metadata_by_key, "metadata_by_key", key_type=AssetKey, value_type=dict
             )
         )
         for output_name, asset_key in keys_by_output_name.items():
+            output_def, _ = node_def.resolve_output_to_origin(output_name, None)
             self._metadata_by_key[asset_key] = merge_dicts(
-                node_def.resolve_output_to_origin(output_name, None)[0].metadata,
+                output_def.metadata,
                 self._metadata_by_key.get(asset_key, {}),
             )
+            self._code_versions_by_key[asset_key] = output_def.code_version
+
         for key, freshness_policy in (freshness_policies_by_key or {}).items():
             check.param_invariant(
                 not (freshness_policy and self._partitions_def),
@@ -166,15 +190,15 @@ class AssetsDefinition(ResourceAddable):
                 "FreshnessPolicies are currently unsupported for partitioned assets.",
             )
 
-        self._freshness_policies_by_key = check.opt_dict_param(
+        self._freshness_policies_by_key = check.opt_mapping_param(
             freshness_policies_by_key,
             "freshness_policies_by_key",
             key_type=AssetKey,
             value_type=FreshnessPolicy,
         )
 
-    def __call__(self, *args, **kwargs):
-        from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
+    def __call__(self, *args: object, **kwargs: object) -> object:
+        from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
         from dagster._core.execution.context.compute import OpExecutionContext
 
         from .graph_definition import GraphDefinition
@@ -188,13 +212,13 @@ class AssetsDefinition(ResourceAddable):
             new_args = [provided_context, *args[1:]]
             return solid_def(*new_args, **kwargs)
         elif (
-            isinstance(solid_def.compute_fn.decorated_fn, DecoratedSolidFunction)
+            isinstance(solid_def.compute_fn, DecoratedOpFunction)
             and solid_def.compute_fn.has_context_arg()
         ):
             context_param_name = get_function_params(solid_def.compute_fn.decorated_fn)[0].name
             if context_param_name in kwargs:
                 provided_context = _build_invocation_context_with_included_resources(
-                    self, kwargs[context_param_name]
+                    self, cast(OpExecutionContext, kwargs[context_param_name])
                 )
                 new_kwargs = dict(kwargs)
                 new_kwargs[context_param_name] = provided_context
@@ -533,15 +557,18 @@ class AssetsDefinition(ResourceAddable):
         return self._partitions_def
 
     @property
-    def is_versioned(self) -> bool:
-        return self.op.version is not None
-
-    @property
     def metadata_by_key(self):
         return self._metadata_by_key
 
+    @property
+    def code_versions_by_key(self):
+        return self._code_versions_by_key
+
     @public
-    def get_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
+    def get_partition_mapping(self, in_asset_key: AssetKey) -> Optional[PartitionMapping]:
+        return self._partition_mappings.get(in_asset_key)
+
+    def infer_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
@@ -642,6 +669,10 @@ class AssetsDefinition(ResourceAddable):
             group_names_by_key={
                 **replaced_group_names_by_key,
                 **group_names_by_key,
+            },
+            metadata_by_key={
+                output_asset_key_replacements.get(key, key): value
+                for key, value in self.metadata_by_key.items()
             },
             freshness_policies_by_key=replaced_freshness_policies_by_key,
         )
@@ -750,6 +781,7 @@ class AssetsDefinition(ResourceAddable):
                 selected_asset_keys=selected_asset_keys & self.keys,
                 resource_defs=self.resource_defs,
                 group_names_by_key=self.group_names_by_key,
+                metadata_by_key=self.metadata_by_key,
                 freshness_policies_by_key=self.freshness_policies_by_key,
             )
         else:
@@ -766,6 +798,8 @@ class AssetsDefinition(ResourceAddable):
                 selected_asset_keys=asset_subselection,
                 resource_defs=self.resource_defs,
                 group_names_by_key=self.group_names_by_key,
+                metadata_by_key=self.metadata_by_key,
+                freshness_policies_by_key=self.freshness_policies_by_key,
             )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
@@ -858,6 +892,7 @@ class AssetsDefinition(ResourceAddable):
             can_subset=self._can_subset,
             resource_defs=relevant_resource_defs,
             group_names_by_key=self.group_names_by_key,
+            metadata_by_key=self.metadata_by_key,
             freshness_policies_by_key=self.freshness_policies_by_key,
         )
 
@@ -923,7 +958,7 @@ def _build_invocation_context_with_included_resources(
     context: "OpExecutionContext",
 ) -> "OpExecutionContext":
     from dagster._core.execution.context.invocation import (
-        UnboundSolidExecutionContext,
+        UnboundOpExecutionContext,
         build_op_context,
     )
 
@@ -938,8 +973,7 @@ def _build_invocation_context_with_included_resources(
             )
     all_resources = merge_dicts(resource_defs, invocation_resources)
 
-    if isinstance(context, UnboundSolidExecutionContext):
-        context = cast(UnboundSolidExecutionContext, context)
+    if isinstance(context, UnboundOpExecutionContext):
         # pylint: disable=protected-access
         return build_op_context(
             resources=all_resources,

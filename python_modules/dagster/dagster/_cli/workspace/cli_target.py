@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Generator, Iterable, List, Mapping, Optional, Tuple, Union, cast
 
 import click
+import tomli
 from click import UsageError
 
 import dagster._check as check
@@ -73,8 +74,6 @@ WORKSPACE_CLI_ARGS = (
     "grpc_socket",
 )
 
-import tomli
-
 
 def get_target_from_toml(path) -> Optional[PackageTarget]:
     with open(path, "rb") as f:
@@ -108,7 +107,7 @@ def get_workspace_load_target(kwargs: Mapping[str, str]):
         if os.path.exists("workspace.yaml"):
             return WorkspaceFileTarget(paths=["workspace.yaml"])
         raise click.UsageError(
-            "No arguments given and no [tools.dagster] block in pyproject.toml found."
+            "No arguments given and no [tool.dagster] block in pyproject.toml found."
         )
 
     if kwargs.get("workspace"):

@@ -38,7 +38,7 @@ from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._legacy import SolidExecutionContext
+from dagster._legacy import OpExecutionContext
 from dagster._utils.backcompat import experimental_arg_warning
 
 
@@ -255,7 +255,7 @@ def _get_asset_deps(
     Dict[AssetKey, Tuple[str, In]],
     Dict[AssetKey, Tuple[str, Out]],
     Dict[AssetKey, str],
-    Dict[str, str],
+    Dict[str, List[str]],
     Dict[str, Dict[str, Any]],
 ]:
     asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
@@ -265,7 +265,7 @@ def _get_asset_deps(
     # These dicts could be refactored as a single dict, mapping from output name to arbitrary
     # metadata that we need to store for reference.
     group_names_by_key: Dict[AssetKey, str] = {}
-    fqns_by_output_name: Dict[str, str] = {}
+    fqns_by_output_name: Dict[str, List[str]] = {}
     metadata_by_output_name: Dict[str, Dict[str, Any]] = {}
 
     for unique_id, parent_unique_ids in deps.items():
@@ -290,6 +290,9 @@ def _get_asset_deps(
                 metadata=_get_node_metadata(node_info),
                 is_required=False,
                 dagster_type=Nothing,
+                code_version=hashlib.sha1(
+                    (node_info.get("raw_sql") or node_info.get("raw_code", "")).encode("utf-8")
+                ).hexdigest(),
             ),
         )
 
@@ -325,11 +328,11 @@ def _get_dbt_op(
     select: str,
     exclude: str,
     use_build_command: bool,
-    fqns_by_output_name: Mapping[str, str],
+    fqns_by_output_name: Mapping[str, List[str]],
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
     runtime_metadata_fn: Optional[
-        Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
+        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ],
 ):
     @op(
@@ -400,7 +403,7 @@ def _dbt_nodes_to_assets(
     selected_unique_ids: AbstractSet[str],
     project_id: str,
     runtime_metadata_fn: Optional[
-        Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
+        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ] = None,
     io_manager_key: Optional[str] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
@@ -470,7 +473,7 @@ def load_assets_from_dbt_project(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     runtime_metadata_fn: Optional[
-        Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
+        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
     io_manager_key: Optional[str] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
@@ -563,7 +566,7 @@ def load_assets_from_dbt_manifest(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     runtime_metadata_fn: Optional[
-        Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
+        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
     io_manager_key: Optional[str] = None,
     selected_unique_ids: Optional[AbstractSet[str]] = None,

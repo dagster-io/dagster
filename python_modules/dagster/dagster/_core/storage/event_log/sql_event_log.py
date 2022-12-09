@@ -18,7 +18,6 @@ from dagster._core.errors import (
 )
 from dagster._core.event_api import RunShardedEventsCursor
 from dagster._core.events import ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
-from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import build_run_step_stats_from_events
 from dagster._serdes import (
     deserialize_as,
@@ -34,6 +33,7 @@ from .base import (
     AssetRecord,
     EventLogConnection,
     EventLogCursor,
+    EventLogEntry,
     EventLogRecord,
     EventLogStorage,
     EventRecordsFilter,
@@ -157,7 +157,7 @@ class SqlEventLogStorage(EventLogStorage):
             except db.exc.IntegrityError:
                 conn.execute(update_statement)
 
-    def _get_asset_entry_values(self, event, has_asset_key_index_cols):
+    def _get_asset_entry_values(self, event: EventLogEntry, has_asset_key_index_cols):
         # The AssetKeyTable contains a `last_materialization_timestamp` column that is exclusively
         # used to determine if an asset exists (last materialization timestamp > wipe timestamp).
         # This column is used nowhere else, and as of AssetObservation/AssetMaterializationPlanned
@@ -171,7 +171,8 @@ class SqlEventLogStorage(EventLogStorage):
         # https://github.com/dagster-io/dagster/pull/7319
 
         entry_values: Dict[str, Any] = {}
-        if event.dagster_event.is_step_materialization:
+        dagster_event = check.not_none(event.dagster_event)
+        if dagster_event.is_step_materialization:
             entry_values.update(
                 {
                     "last_materialization": serialize_dagster_namedtuple(event),
@@ -186,7 +187,7 @@ class SqlEventLogStorage(EventLogStorage):
                         ),
                     }
                 )
-        elif event.dagster_event.is_asset_materialization_planned:
+        elif dagster_event.is_asset_materialization_planned:
             # The AssetKeyTable also contains a `last_run_id` column that is updated upon asset
             # materialization. This column was not being used until the below PR. This new change
             # writes to the column upon `ASSET_MATERIALIZATION_PLANNED` events to fetch the last
@@ -201,7 +202,7 @@ class SqlEventLogStorage(EventLogStorage):
                         ),
                     }
                 )
-        elif event.dagster_event.is_asset_observation:
+        elif dagster_event.is_asset_observation:
             if has_asset_key_index_cols:
                 entry_values.update(
                     {
@@ -228,7 +229,7 @@ class SqlEventLogStorage(EventLogStorage):
         check.inst_param(asset_key, "asset_key", AssetKey)
         check.mapping_param(new_tags, "new_tags", key_type=str, value_type=str)
 
-        if not self.supports_add_asset_event_tags:
+        if not self.supports_add_asset_event_tags():
             raise DagsterInvalidInvocationError(
                 "In order to add asset event tags, you must run `dagster instance migrate` to "
                 "create the AssetEventTags table."
@@ -795,25 +796,44 @@ class SqlEventLogStorage(EventLogStorage):
                 isinstance(event_records_filter.asset_key, AssetKey),
                 "Asset key must be set in event records filter to filter by tags.",
             )
-            intersections = [
-                db.select([AssetEventTagsTable.c.event_id]).where(
-                    db.and_(
-                        AssetEventTagsTable.c.asset_key
-                        == event_records_filter.asset_key.to_string(),
-                        AssetEventTagsTable.c.key == key,
-                        (
-                            AssetEventTagsTable.c.value == value
-                            if isinstance(value, str)
-                            else AssetEventTagsTable.c.value.in_(value)
-                        ),
+            if self.supports_intersect:
+                intersections = [
+                    db.select([AssetEventTagsTable.c.event_id]).where(
+                        db.and_(
+                            AssetEventTagsTable.c.asset_key
+                            == event_records_filter.asset_key.to_string(),
+                            AssetEventTagsTable.c.key == key,
+                            (
+                                AssetEventTagsTable.c.value == value
+                                if isinstance(value, str)
+                                else AssetEventTagsTable.c.value.in_(value)
+                            ),
+                        )
                     )
-                )
-                for key, value in event_records_filter.tags.items()
-            ]
-
-            query = query.where(SqlEventLogStorageTable.c.id.in_(db.intersect(*intersections)))
+                    for key, value in event_records_filter.tags.items()
+                ]
+                query = query.where(SqlEventLogStorageTable.c.id.in_(db.intersect(*intersections)))
 
         return query
+
+    def _apply_tags_table_joins(self, table, tags, asset_key):
+        event_id_col = table.c.id if table == SqlEventLogStorageTable else table.c.event_id
+        for key, value in tags.items():
+            tags_table = AssetEventTagsTable.alias()
+            table = table.join(
+                tags_table,
+                db.and_(
+                    event_id_col == tags_table.c.event_id,
+                    not asset_key or tags_table.c.asset_key == asset_key.to_string(),
+                    tags_table.c.key == key,
+                    (
+                        tags_table.c.value == value
+                        if isinstance(value, str)
+                        else tags_table.c.value.in_(value)
+                    ),
+                ),
+            )
+        return table
 
     def get_event_records(
         self,
@@ -826,12 +846,21 @@ class SqlEventLogStorage(EventLogStorage):
         check.opt_int_param(limit, "limit")
         check.bool_param(ascending, "ascending")
 
-        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
-
         if event_records_filter.asset_key:
             asset_details = next(iter(self._get_assets_details([event_records_filter.asset_key])))
         else:
             asset_details = None
+
+        if event_records_filter.tags and not self.supports_intersect:
+            table = self._apply_tags_table_joins(
+                SqlEventLogStorageTable, event_records_filter.tags, event_records_filter.asset_key
+            )
+        else:
+            table = SqlEventLogStorageTable
+
+        query = db.select(
+            [SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]
+        ).select_from(table)
 
         query = self._apply_filter_to_query(
             query=query,
@@ -868,6 +897,10 @@ class SqlEventLogStorage(EventLogStorage):
         return event_records
 
     def supports_event_consumer_queries(self):
+        return True
+
+    @property
+    def supports_intersect(self):
         return True
 
     def get_logs_for_all_runs_by_log_id(
@@ -1334,7 +1367,7 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetEventTagsTable.c.event_timestamp
                     > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
                 )
-        else:
+        elif self.supports_intersect:
 
             def get_tag_filter_query(tag_key, tag_value):
                 filter_query = db.select([AssetEventTagsTable.c.event_id]).where(
@@ -1367,6 +1400,21 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetEventTagsTable.c.event_id.in_(db.intersect(*intersections)),
                 )
             )
+        else:
+            table = self._apply_tags_table_joins(AssetEventTagsTable, filter_tags, asset_key)
+            tags_query = db.select(
+                [
+                    AssetEventTagsTable.c.key,
+                    AssetEventTagsTable.c.value,
+                    AssetEventTagsTable.c.event_id,
+                ]
+            ).select_from(table)
+
+            if asset_details and asset_details.last_wipe_timestamp:
+                tags_query = tags_query.where(
+                    AssetEventTagsTable.c.event_timestamp
+                    > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+                )
 
         if filter_event_id is not None:
             tags_query = tags_query.where(AssetEventTagsTable.c.event_id == filter_event_id)

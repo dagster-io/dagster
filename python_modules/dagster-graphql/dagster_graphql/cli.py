@@ -35,7 +35,7 @@ def execute_query(
         workspace_process_context, "workspace_process_context", WorkspaceProcessContext
     )
     check.str_param(query, "query")
-    check.opt_dict_param(variables, "variables")
+    check.opt_mapping_param(variables, "variables")
 
     query = query.strip("'\" \n\t")
 
