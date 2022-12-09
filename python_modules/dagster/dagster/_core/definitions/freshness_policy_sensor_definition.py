@@ -77,9 +77,9 @@ class FreshnessPolicySensorCursor(
         return cast(FreshnessPolicySensorCursor, deserialize_json_to_dagster_namedtuple(json_str))
 
 
-class FreshnessPolicySensorEvaluationContext(
+class FreshnessPolicySensorContext(
     NamedTuple(
-        "_FreshnessPolicySensorEvaluationContext",
+        "_FreshnessPolicySensorContext",
         [
             ("sensor_name", PublicAttr[str]),
             ("asset_key", PublicAttr[AssetKey]),
@@ -115,13 +115,15 @@ class FreshnessPolicySensorEvaluationContext(
         previous_minutes_late = check.opt_numeric_param(
             previous_minutes_late, "previous_minutes_late"
         )
-        return super(FreshnessPolicySensorEvaluationContext, cls).__new__(
+        return super(FreshnessPolicySensorContext, cls).__new__(
             cls,
             sensor_name=check.str_param(sensor_name, "sensor_name"),
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             freshness_policy=check.inst_param(freshness_policy, "FreshnessPolicy", FreshnessPolicy),
-            minutes_late=float(minutes_late) if minutes_late else None,
-            previous_minutes_late=float(previous_minutes_late) if previous_minutes_late else None,
+            minutes_late=float(minutes_late) if minutes_late is not None else None,
+            previous_minutes_late=float(previous_minutes_late)
+            if previous_minutes_late is not None
+            else None,
             instance=check.inst_param(instance, "instance", DagsterInstance),
         )
 
@@ -134,7 +136,7 @@ def build_freshness_policy_sensor_context(
     minutes_late: Optional[float],
     previous_minutes_late: Optional[float] = None,
     instance: Optional[DagsterInstance] = None,
-) -> FreshnessPolicySensorEvaluationContext:
+) -> FreshnessPolicySensorContext:
     """
     Builds freshness policy sensor context from provided parameters.
 
@@ -162,7 +164,7 @@ def build_freshness_policy_sensor_context(
             freshness_policy_sensor_to_invoke(context)
     """
 
-    return FreshnessPolicySensorEvaluationContext(
+    return FreshnessPolicySensorContext(
         sensor_name=sensor_name,
         asset_key=asset_key,
         freshness_policy=freshness_policy,
@@ -179,8 +181,8 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
 
     Args:
         name (str): The name of the sensor. Defaults to the name of the decorated function.
-        freshness_policy_sensor_fn (Callable[[FreshnessPolicySensorEvaluationContext], None]): The core
-            evaluation function for the sensor. Takes a :py:class:`~dagster.FreshnessPolicySensorEvaluationContext`.
+        freshness_policy_sensor_fn (Callable[[FreshnessPolicySensorContext], None]): The core
+            evaluation function for the sensor. Takes a :py:class:`~dagster.FreshnessPolicySensorContext`.
         asset_selection (AssetSelection): The asset selection monitored by the sensor.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
@@ -193,7 +195,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
         self,
         name: str,
         asset_selection: AssetSelection,
-        freshness_policy_sensor_fn: Callable[[FreshnessPolicySensorEvaluationContext], None],
+        freshness_policy_sensor_fn: Callable[[FreshnessPolicySensorContext], None],
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
@@ -251,7 +253,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
                     lambda: f'Error occurred during the execution of sensor "{name}".',
                 ):
                     result = freshness_policy_sensor_fn(
-                        FreshnessPolicySensorEvaluationContext(
+                        FreshnessPolicySensorContext(
                             sensor_name=name,
                             asset_key=asset_key,
                             freshness_policy=freshness_policy,
@@ -295,7 +297,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
 
             if args:
                 context = check.opt_inst_param(
-                    args[0], context_param_name, FreshnessPolicySensorEvaluationContext
+                    args[0], context_param_name, FreshnessPolicySensorContext
                 )
             else:
                 if context_param_name not in kwargs:
@@ -305,7 +307,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
                 context = check.opt_inst_param(
                     kwargs[context_param_name],
                     context_param_name,
-                    FreshnessPolicySensorEvaluationContext,
+                    FreshnessPolicySensorContext,
                 )
 
             if not context:
@@ -329,10 +331,7 @@ def freshness_policy_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-) -> Callable[
-    [Callable[[FreshnessPolicySensorEvaluationContext], None]],
-    FreshnessPolicySensorDefinition,
-]:
+) -> Callable[[Callable[[FreshnessPolicySensorContext], None]], FreshnessPolicySensorDefinition,]:
     """
     Define a sensor that reacts to the status of a given set of asset freshness policies, where the
     decorated function will be evaluated on every tick for each asset in the selection that has a
@@ -340,13 +339,13 @@ def freshness_policy_sensor(
 
     Note: returning or yielding a value from the annotated function will result in an error.
 
-    Takes a :py:class:`~dagster.FreshnessPolicySensorEvaluationContext`.
+    Takes a :py:class:`~dagster.FreshnessPolicySensorContext`.
 
     Args:
         asset_selection (AssetSelection): The asset selection monitored by the sensor.
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated function.
-        freshness_policy_sensor_fn (Callable[[FreshnessPolicySensorEvaluationContext], None]): The core
-            evaluation function for the sensor. Takes a :py:class:`~dagster.FreshnessPolicySensorEvaluationContext`.
+        freshness_policy_sensor_fn (Callable[[FreshnessPolicySensorContext], None]): The core
+            evaluation function for the sensor. Takes a :py:class:`~dagster.FreshnessPolicySensorContext`.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
@@ -355,7 +354,7 @@ def freshness_policy_sensor(
     """
 
     def inner(
-        fn: Callable[[FreshnessPolicySensorEvaluationContext], None]
+        fn: Callable[[FreshnessPolicySensorContext], None]
     ) -> FreshnessPolicySensorDefinition:
 
         check.callable_param(fn, "fn")
