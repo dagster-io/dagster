@@ -1423,6 +1423,7 @@ class RepositoryDefinition:
         python_type: Optional[Type] = None,
         instance: Optional[DagsterInstance] = None,
         partition_key: Optional[str] = None,
+        config: Optional[Any] = None
     ) -> object:
         """
         Load the contents of an asset as a Python object.
@@ -1446,7 +1447,7 @@ class RepositoryDefinition:
 
         with AssetValueLoader(self._assets_defs_by_key, instance=instance) as loader:
             return loader.load_asset_value(
-                asset_key, python_type=python_type, partition_key=partition_key
+                asset_key, python_type=python_type, partition_key=partition_key, config=config
             )
 
     @public
