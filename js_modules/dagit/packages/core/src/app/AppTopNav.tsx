@@ -82,19 +82,17 @@ export const AppTopNav: React.FC<Props> = ({
         element: (
           <ShortcutHandler
             key="deployment"
-            onShortcut={() => history.push('/code-locations')}
+            onShortcut={() => history.push('/locations')}
             shortcutLabel="⌥4"
             shortcutFilter={(e) => e.altKey && e.code === 'Digit4'}
           >
             <TopNavLink
-              to="/code-locations"
+              to="/locations"
               data-cy="AppTopNav_StatusLink"
               isActive={(_, location) => {
                 const {pathname} = location;
                 return (
-                  pathname.startsWith('/code-locations') ||
                   pathname.startsWith('/locations') ||
-                  pathname.startsWith('/definitions') ||
                   pathname.startsWith('/health') ||
                   pathname.startsWith('/config')
                 );
