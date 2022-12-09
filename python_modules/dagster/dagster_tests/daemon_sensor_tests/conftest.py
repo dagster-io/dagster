@@ -25,7 +25,7 @@ def instance_fixture(instance_module_scoped):
     yield instance_module_scoped
 
 
-def workspace_load_target(attribute="the_repo"):
+def create_workspace_load_target(attribute="the_repo"):
     return ModuleTarget(
         module_name="dagster_tests.daemon_sensor_tests.test_sensor_run",
         attribute=attribute,
@@ -37,7 +37,7 @@ def workspace_load_target(attribute="the_repo"):
 @pytest.fixture(name="workspace_context", scope="module")
 def workspace_fixture(instance_module_scoped):
     with create_test_daemon_workspace_context(
-        workspace_load_target=workspace_load_target(),
+        workspace_load_target=create_workspace_load_target(),
         instance=instance_module_scoped,
     ) as workspace:
         yield workspace
