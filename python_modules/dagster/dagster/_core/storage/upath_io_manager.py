@@ -152,9 +152,9 @@ class UPathIOManager(MemoizableIOManager):
 
                 if not self._has_multiple_partitions(context):
                     if (
-                            hasattr(context.dagster_type.typing_type, "__origin__")
-                            and context.dagster_type.typing_type.__origin__ in (Dict, dict)
-                            and context.dagster_type.typing_type.__args__[1] == expected_type
+                        hasattr(context.dagster_type.typing_type, "__origin__")
+                        and context.dagster_type.typing_type.__origin__ in (Dict, dict)
+                        and context.dagster_type.typing_type.__args__[1] == expected_type
                     ):
                         # the asset type annotation is accidentally a Dict[str, expected_type]
                         # even tho no partition mappings are used
@@ -175,8 +175,13 @@ class UPathIOManager(MemoizableIOManager):
                 else:
                     # we are dealing with multiple partitions of an asset
 
-                    if context.dagster_type.typing_type != Any:  # skip type checking if the type is Any
-                        if context.dagster_type.typing_type == expected_type and self._has_multiple_partitions(context):
+                    if (
+                        context.dagster_type.typing_type != Any
+                    ):  # skip type checking if the type is Any
+                        if (
+                            context.dagster_type.typing_type == expected_type
+                            and self._has_multiple_partitions(context)
+                        ):
                             # error message if the user forgot to specify a Dict type
                             # this case is checked separately because this type of mistake can be very common
                             return check.failed(
@@ -187,9 +192,9 @@ class UPathIOManager(MemoizableIOManager):
                             )
 
                         elif (
-                                hasattr(context.dagster_type.typing_type, "__origin__")
-                                and context.dagster_type.typing_type.__origin__ in (Dict, dict)
-                                and context.dagster_type.typing_type.__args__[1] == expected_type
+                            hasattr(context.dagster_type.typing_type, "__origin__")
+                            and context.dagster_type.typing_type.__origin__ in (Dict, dict)
+                            and context.dagster_type.typing_type.__args__[1] == expected_type
                         ):
                             # type checking passed
                             return self._load_multiple_inputs(context)
