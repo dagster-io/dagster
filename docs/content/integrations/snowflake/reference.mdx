@@ -7,10 +7,10 @@ description: Store your Dagster assets in Snowflake
 
 This reference page provides information for working with [`dagster-snowflake`](/\_apidocs/libraries/dagster-snowflake) features that are not covered as part of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
 
-* [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
-* [Storing tables in multiple schemas](#storing-tables-in-multiple-schemas)
-* [Using the Snowflake I/O manager with other I/O managers](#using-the-snowflake-io-manager-with-other-io-managers)
-* [Executing custom SQL commands with the Snowflake Resource](#executing-custom-sql-commands-with-the-snowflake-resource)
+- [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
+- [Storing tables in multiple schemas](#storing-tables-in-multiple-schemas)
+- [Using the Snowflake I/O manager with other I/O managers](#using-the-snowflake-io-manager-with-other-io-managers)
+- [Executing custom SQL commands with the Snowflake Resource](#executing-custom-sql-commands-with-the-snowflake-resource)
 
 ---
 
@@ -117,7 +117,9 @@ def iris_dataset() -> pd.DataFrame:
 
 @asset(io_manager_key="blob_io_manager")
 def iris_plots(iris_dataset):
-    return plot_iris_data(iris_dataset)
+    # plot_data is a function we've defined somewhere else
+    # that plots the data in a DataFrame
+    return plot_data(iris_dataset)
 
 
 @repository
