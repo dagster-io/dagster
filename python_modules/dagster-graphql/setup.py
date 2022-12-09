@@ -34,7 +34,7 @@ setup(
     packages=find_packages(exclude=["dagster_graphql_tests*"]),
     install_requires=[
         f"dagster{pin}",
-        "graphene>=3,<3.2",
+        "graphene>=3",
         "gql[requests]",
         "requests",
         "starlette",  # used for run_in_threadpool utility fn

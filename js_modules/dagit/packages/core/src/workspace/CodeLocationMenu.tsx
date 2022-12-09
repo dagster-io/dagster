@@ -29,21 +29,35 @@ export const CodeLocationMenu: React.FC<{locationNode: WorkspaceRepositoryLocati
       >
         <Button icon={<Icon name="expand_more" />}></Button>
       </Popover>
-      <Dialog
-        title="Code location configuration"
-        icon="info"
+      <CodeLocationConfigDialog
+        metadata={locationNode.displayMetadata}
         isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        style={{width: '600px'}}
-      >
-        <CodeLocationConfig displayMetadata={locationNode.displayMetadata} />
-        <DialogFooter topBorder>
-          <Button onClick={() => setIsOpen(false)} intent="primary">
-            Done
-          </Button>
-        </DialogFooter>
-      </Dialog>
+        setIsOpen={setIsOpen}
+      />
     </>
+  );
+};
+
+export const CodeLocationConfigDialog: React.FC<{
+  isOpen: boolean;
+  setIsOpen: (next: boolean) => void;
+  metadata: WorkspaceRepositoryLocationNode['displayMetadata'];
+}> = ({isOpen, setIsOpen, metadata}) => {
+  return (
+    <Dialog
+      title="Code location configuration"
+      icon="info"
+      isOpen={isOpen}
+      onClose={() => setIsOpen(false)}
+      style={{width: '600px'}}
+    >
+      <CodeLocationConfig displayMetadata={metadata} />
+      <DialogFooter topBorder>
+        <Button onClick={() => setIsOpen(false)} intent="primary">
+          Done
+        </Button>
+      </DialogFooter>
+    </Dialog>
   );
 };
 
