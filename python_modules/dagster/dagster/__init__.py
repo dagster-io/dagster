@@ -188,7 +188,7 @@ from dagster._core.definitions.freshness_policy import (
     FreshnessPolicy as FreshnessPolicy,
 )
 from dagster._core.definitions.freshness_policy_sensor_definition import (
-    FreshnessPolicySensorEvaluationContext as FreshnessPolicySensorEvaluationContext,
+    FreshnessPolicySensorContext as FreshnessPolicySensorContext,
     FreshnessPolicySensorDefinition as FreshnessPolicySensorDefinition,
     build_freshness_policy_sensor_context as build_freshness_policy_sensor_context,
     freshness_policy_sensor as freshness_policy_sensor,
