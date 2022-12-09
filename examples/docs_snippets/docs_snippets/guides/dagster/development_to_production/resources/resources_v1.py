@@ -4,8 +4,6 @@ from typing import Any, Dict, Optional
 
 import requests
 
-from dagster import resource
-
 
 class HNAPIClient:
     """
@@ -23,11 +21,6 @@ class HNAPIClient:
         return requests.get(
             "https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5
         ).json()
-
-
-@resource
-def hn_api_client():
-    return HNAPIClient()
 
 
 # end_resource

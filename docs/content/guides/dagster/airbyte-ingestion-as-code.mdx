@@ -20,7 +20,7 @@ To use this feature, you'll need to install the `dagster-airbyte` and `dagster-m
 pip install dagster-airbyte dagster-managed-elements
 ```
 
-Available as `dagster-me`, the `dagster-managed-elements` library includes the base config reconciliation APIs and a CLI.
+The `dagster-managed-elements` library includes the base config reconciliation APIs and a CLI.
 
 ---
 
@@ -107,12 +107,12 @@ airbyte_reconciler = AirbyteManagedElementReconciler(
 
 ## Step 4. Validate changes
 
-Next, we'll use the `dagster-me` CLI to sanity-check our reconciler and apply any changes.
+Next, we'll use the `dagster-airbyte` CLI to sanity-check our reconciler and apply any changes.
 
 The `check` command prints out differences between the current state of the Airbyte instance and the desired state specified in the reconciler. To invoke the CLI, point it at a module containing the reconciler:
 
 ```bash
-dagster-me check --module my_python_module.my_submodule:reconciler
+dagster-airbyte check --module my_python_module.my_submodule:reconciler
 
 Found 1 reconciler, checking...
 + cereals-csv:
@@ -139,7 +139,7 @@ Found 1 reconciler, checking...
 As the changes printed out by the `check` command in the previous step look like what we expect, we can now apply them:
 
 ```bash
-dagster-me apply --module my_python_module.my_submodule:reconciler
+dagster-airbyte apply --module my_python_module.my_submodule:reconciler
 ```
 
 Now, we should see our new connection in the Airbyte UI:
