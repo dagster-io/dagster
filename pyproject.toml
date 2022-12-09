@@ -123,7 +123,6 @@ ignore = [
   "D202",
   "D411",
   "D412",
-  "D419",
   "D415",
 
   # (module level import not at top) There are several places where we use e.g.
