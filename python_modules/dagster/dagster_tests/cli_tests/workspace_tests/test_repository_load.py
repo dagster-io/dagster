@@ -96,7 +96,7 @@ def test_multiple_module_load_with_attribute():
 
     executed = {}
 
-    def wrapped_workspace_assert(workspace_context):
+    def wrapped_workspace_assert(_):
         executed["yes"] = True
 
     result = load_workspace_via_cli_runner(

@@ -165,7 +165,7 @@ def get_workspace_load_target(kwargs: Mapping[str, str]):
 
             if kwargs.get("attribute"):
                 raise UsageError(
-                    "If you are specifying multiple modules you cannot specify an attribute"
+                    "If you are specifying multiple modules you cannot specify an attribute."
                 )
 
             return CompositeTarget(
@@ -271,7 +271,9 @@ def python_target_click_options():
             "--module-name",
             "-m",
             multiple=True,
-            help="Specify module where repository or job function lives",
+            help="Specify module or modules (flag can be used multiple times) where "
+            "dagster definitions reside as top-level symbols/variables and load each "
+            "module as a code location in the current python environment.",
             envvar="DAGSTER_MODULE_NAME",
         ),
         click.option(
