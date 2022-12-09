@@ -148,10 +148,10 @@ def make_slack_on_run_failure_sensor(
         name: (Optional[str]): The name of the sensor. Defaults to "slack_on_run_failure".
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
             messages to include deeplinks to the failed job run.
-        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector]]]): The jobs in the
+        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSensor]]]): The jobs in the
             current repository that will be monitored by this failure sensor. Defaults to None, which
             means the alert will be sent when any job in the repository fails. To monitor jobs in external repositories, use RepositorySelector and JobSelector
-        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector]]]): (deprecated in favor of monitored_jobs)
+        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSensor]]]): (deprecated in favor of monitored_jobs)
             The jobs in the current repository that will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
