@@ -40,6 +40,18 @@ export const ContentRoot = React.memo(() => {
             return <Redirect to={url.replace('/instance', '')} />;
           }}
         />
+        {/* todo dish: These /workspace routes are for backward compatibility. Remove them
+        in November or December 2022. */}
+        <Route path="/workspace" exact render={() => <Redirect to="/code-locations" />} />
+        <Route path="/locations" exact render={() => <Redirect to="/code-locations" />} />
+        <Route
+          path="/workspace/*"
+          exact
+          render={({match}) => {
+            const {url} = match;
+            return <Redirect to={url.replace('/workspace', '/locations')} />;
+          }}
+        />
         <Route path="/asset-groups(/?.*)">
           <React.Suspense fallback={<div />}>
             <AssetsGroupsGlobalGraphRoot />
@@ -85,7 +97,7 @@ export const ContentRoot = React.memo(() => {
             <CodeLocationsPage />
           </React.Suspense>
         </Route>
-        <Route path="/workspace">
+        <Route path="/locations">
           <React.Suspense fallback={<div />}>
             <WorkspaceRoot />
           </React.Suspense>

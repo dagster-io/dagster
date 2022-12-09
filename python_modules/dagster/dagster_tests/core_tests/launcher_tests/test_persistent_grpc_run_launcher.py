@@ -10,7 +10,7 @@ from dagster_tests.core_tests.launcher_tests.test_default_run_launcher import (
 
 from dagster import _seven, file_relative_path
 from dagster._core.errors import DagsterLaunchFailedError
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -58,7 +58,7 @@ def test_run_always_finishes():  # pylint: disable=redefined-outer-name
                 )
                 run_id = pipeline_run.run_id
 
-                assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+                assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
                 instance.launch_run(run_id=run_id, workspace=workspace)
 
@@ -69,7 +69,7 @@ def test_run_always_finishes():  # pylint: disable=redefined-outer-name
 
         # Server should wait until run finishes, then shutdown
         pipeline_run = poll_for_finished_run(instance, run_id)
-        assert pipeline_run.status == PipelineRunStatus.SUCCESS
+        assert pipeline_run.status == DagsterRunStatus.SUCCESS
 
         start_time = time.time()
         while server_process.server_process.poll() is None:
@@ -151,7 +151,7 @@ def test_run_from_pending_repository():
 
                 run_id = pipeline_run.run_id
 
-                assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+                assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
                 instance.launch_run(run_id=run_id, workspace=workspace)
 
@@ -162,7 +162,7 @@ def test_run_from_pending_repository():
 
         # Server should wait until run finishes, then shutdown
         pipeline_run = poll_for_finished_run(instance, run_id)
-        assert pipeline_run.status == PipelineRunStatus.SUCCESS
+        assert pipeline_run.status == DagsterRunStatus.SUCCESS
 
         start_time = time.time()
         while server_process.server_process.poll() is None:

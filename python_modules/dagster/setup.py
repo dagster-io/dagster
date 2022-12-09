@@ -43,6 +43,7 @@ setup(
         "YouTube": "https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q",
         "Slack": "https://dagster.io/slack",
         "Blog": "https://dagster.io/blog",
+        "Newsletter": "https://dagster.io/newsletter-signup",
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
@@ -76,7 +77,9 @@ setup(
         # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
         "grpcio>=1.32.0,<1.48.1",
         "grpcio-health-checking>=1.32.0,<1.44.0",
-        "packaging>=20.9",
+        # packaging v22 has build compatibility issues with dbt as of 2022-12-07
+        # upper bound can be removed as soon as BK passes with packaging >=22
+        "packaging>=20.9,<22",
         "pendulum",
         "protobuf>=3.13.0,<4",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
         "python-dateutil",
@@ -87,7 +90,6 @@ setup(
         "tabulate",
         "tomli",
         "tqdm",
-        "typing_compat",
         "typing_extensions>=4.0.1",
         "sqlalchemy>=1.0",
         "toposort>=1.0",
@@ -129,7 +131,7 @@ setup(
             "isort==5.10.1",
         ],
         "mypy": [
-            "mypy==0.950",
+            "mypy==0.991",
             "types-backports",  # version will be resolved against backports
             "types-certifi",  # version will be resolved against certifi
             "types-chardet",  # chardet is a 2+-order dependency of some Dagster libs

@@ -31,8 +31,11 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionScheduleDefinition, ScheduleType
+from dagster._core.definitions.partition_mapping import (
+    PartitionMapping,
+    get_builtin_partition_mapping_types,
+)
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorDefinition
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
@@ -249,7 +252,7 @@ class ExternalJobRef(
             cls,
             name=check.str_param(name, "name"),
             snapshot_id=check.str_param(snapshot_id, "snapshot_id"),
-            active_presets=check.list_param(
+            active_presets=check.sequence_param(
                 active_presets, "active_presets", of_type=ExternalPresetData
             ),
             parent_snapshot_id=check.opt_str_param(parent_snapshot_id, "parent_snapshot_id"),
@@ -771,6 +774,7 @@ class ExternalAssetDependency(
             ("upstream_asset_key", AssetKey),
             ("input_name", Optional[str]),
             ("output_name", Optional[str]),
+            ("partition_mapping", Optional[PartitionMapping]),
         ],
     )
 ):
@@ -785,12 +789,14 @@ class ExternalAssetDependency(
         upstream_asset_key: AssetKey,
         input_name: Optional[str] = None,
         output_name: Optional[str] = None,
+        partition_mapping: Optional[PartitionMapping] = None,
     ):
         return super(ExternalAssetDependency, cls).__new__(
             cls,
             upstream_asset_key=upstream_asset_key,
             input_name=input_name,
             output_name=output_name,
+            partition_mapping=partition_mapping,
         )
 
 
@@ -836,7 +842,7 @@ class ExternalAssetNode(
             ("compute_kind", Optional[str]),
             ("op_name", Optional[str]),
             ("op_names", Optional[Sequence[str]]),
-            ("op_version", Optional[str]),
+            ("code_version", Optional[str]),
             ("node_definition_name", Optional[str]),
             ("graph_name", Optional[str]),
             ("op_description", Optional[str]),
@@ -865,7 +871,7 @@ class ExternalAssetNode(
         compute_kind: Optional[str] = None,
         op_name: Optional[str] = None,
         op_names: Optional[Sequence[str]] = None,
-        op_version: Optional[str] = None,
+        code_version: Optional[str] = None,
         node_definition_name: Optional[str] = None,
         graph_name: Optional[str] = None,
         op_description: Optional[str] = None,
@@ -901,7 +907,7 @@ class ExternalAssetNode(
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
             op_name=check.opt_str_param(op_name, "op_name"),
             op_names=check.opt_sequence_param(op_names, "op_names"),
-            op_version=check.opt_str_param(op_version, "op_version"),
+            code_version=check.opt_str_param(code_version, "code_version"),
             node_definition_name=check.opt_str_param(node_definition_name, "node_definition_name"),
             graph_name=check.opt_str_param(graph_name, "graph_name"),
             op_description=check.opt_str_param(
@@ -984,11 +990,12 @@ def external_asset_graph_from_defs(
     dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
     all_upstream_asset_keys: Set[AssetKey] = set()
     op_names_by_asset_key: Dict[AssetKey, Sequence[str]] = {}
-    op_version_by_asset_key: Dict[AssetKey, Optional[str]] = dict()
+    code_version_by_asset_key: Dict[AssetKey, Optional[str]] = dict()
     group_name_by_asset_key: Dict[AssetKey, str] = {}
 
     for pipeline_def in pipelines:
-        asset_info_by_node_output = pipeline_def.asset_layer.asset_info_by_node_output_handle
+        asset_layer = pipeline_def.asset_layer
+        asset_info_by_node_output = asset_layer.asset_info_by_node_output_handle
 
         for node_output_handle, asset_info in asset_info_by_node_output.items():
             if not asset_info.is_required:
@@ -997,32 +1004,35 @@ def external_asset_graph_from_defs(
             if output_key not in op_names_by_asset_key:
                 op_names_by_asset_key[output_key] = [
                     str(handle)
-                    for handle in pipeline_def.asset_layer.dependency_node_handles_by_asset_key.get(
+                    for handle in asset_layer.dependency_node_handles_by_asset_key.get(
                         output_key, []
                     )
                 ]
-            upstream_asset_keys = pipeline_def.asset_layer.upstream_assets_for_asset(output_key)
+            code_version_by_asset_key[output_key] = asset_info.code_version
+            upstream_asset_keys = asset_layer.upstream_assets_for_asset(output_key)
             all_upstream_asset_keys.update(upstream_asset_keys)
             node_defs_by_asset_key[output_key].append((node_output_handle, pipeline_def))
             asset_info_by_asset_key[output_key] = asset_info
 
-            node_def = pipeline_def.get_solid(node_output_handle.node_handle).definition
-            if isinstance(node_def, OpDefinition):
-                op_version_by_asset_key[output_key] = node_def.version
-
             for upstream_key in upstream_asset_keys:
+                partition_mapping = asset_layer.partition_mapping_for_asset_dep(
+                    output_key, upstream_key
+                )
                 deps[output_key][upstream_key] = ExternalAssetDependency(
-                    upstream_asset_key=upstream_key
+                    upstream_asset_key=upstream_key,
+                    partition_mapping=partition_mapping
+                    if partition_mapping is None
+                    or isinstance(partition_mapping, get_builtin_partition_mapping_types())
+                    else None,
                 )
                 dep_by[upstream_key][output_key] = ExternalAssetDependedBy(
                     downstream_asset_key=output_key
                 )
 
-        # for assets_def in pipeline_def.asset_layer.assets_defs_by_key.values():
-        for assets_def in pipeline_def.asset_layer.assets_defs_by_key.values():
+        for assets_def in asset_layer.assets_defs_by_key.values():
             metadata_by_asset_key.update(assets_def.metadata_by_key)
             freshness_policy_by_asset_key.update(assets_def.freshness_policies_by_key)
-        group_name_by_asset_key.update(pipeline_def.asset_layer.group_names_by_assets())
+        group_name_by_asset_key.update(asset_layer.group_names_by_assets())
 
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
         node_defs_by_asset_key.keys()
@@ -1035,7 +1045,7 @@ def external_asset_graph_from_defs(
             depended_by=list(dep_by[asset_key].values()),
             job_names=[],
             group_name=group_name_by_asset_key.get(asset_key),
-            op_version=op_version_by_asset_key.get(asset_key),
+            code_version=code_version_by_asset_key.get(asset_key),
         )
         for asset_key in asset_keys_without_definitions
     ]
@@ -1108,7 +1118,7 @@ def external_asset_graph_from_defs(
                 or node_def.name,
                 graph_name=graph_name,
                 op_names=op_names_by_asset_key[asset_key],
-                op_version=op_version_by_asset_key.get(asset_key),
+                code_version=code_version_by_asset_key.get(asset_key),
                 op_description=node_def.description or output_def.description,
                 node_definition_name=node_def.name,
                 job_names=job_names,

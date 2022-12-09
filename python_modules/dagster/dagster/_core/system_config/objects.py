@@ -25,9 +25,9 @@ from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils import ensure_single_item
 
 
-class SolidConfig(
+class OpConfig(
     NamedTuple(
-        "_SolidConfig",
+        "_OpConfig",
         [
             ("config", object),
             ("inputs", Mapping[str, object]),
@@ -36,7 +36,7 @@ class SolidConfig(
     )
 ):
     def __new__(cls, config, inputs: Mapping[str, object], outputs: "OutputsConfig"):
-        return super(SolidConfig, cls).__new__(
+        return super(OpConfig, cls).__new__(
             cls,
             config,
             check.opt_mapping_param(inputs, "inputs", key_type=str),
@@ -44,10 +44,10 @@ class SolidConfig(
         )
 
     @staticmethod
-    def from_dict(config: Mapping[str, Any]) -> "SolidConfig":
+    def from_dict(config: Mapping[str, Any]) -> "OpConfig":
         check.mapping_param(config, "config", key_type=str)
 
-        return SolidConfig(
+        return OpConfig(
             config=config.get("config"),
             inputs=config.get("inputs") or {},
             outputs=OutputsConfig(config.get("outputs")),
@@ -99,7 +99,7 @@ class ResolvedRunConfig(
     NamedTuple(
         "_ResolvedRunConfig",
         [
-            ("solids", Mapping[str, SolidConfig]),
+            ("solids", Mapping[str, OpConfig]),
             ("execution", "ExecutionConfig"),
             ("resources", Mapping[str, ResourceConfig]),
             ("loggers", Mapping[str, Mapping[str, object]]),
@@ -111,7 +111,7 @@ class ResolvedRunConfig(
 ):
     def __new__(
         cls,
-        solids: Optional[Mapping[str, SolidConfig]] = None,
+        solids: Optional[Mapping[str, OpConfig]] = None,
         execution: Optional["ExecutionConfig"] = None,
         resources: Optional[Mapping[str, ResourceConfig]] = None,
         loggers: Optional[Mapping[str, Mapping[str, object]]] = None,
@@ -130,7 +130,7 @@ class ResolvedRunConfig(
 
         return super(ResolvedRunConfig, cls).__new__(
             cls,
-            solids=check.opt_mapping_param(solids, "solids", key_type=str, value_type=SolidConfig),
+            solids=check.opt_mapping_param(solids, "solids", key_type=str, value_type=OpConfig),
             execution=execution,
             resources=resources,
             loggers=check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=Mapping),

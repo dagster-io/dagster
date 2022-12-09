@@ -27,7 +27,7 @@ from dagster._core.origin import (
     PipelinePythonOrigin,
     get_python_environment_entry_point,
 )
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import coerce_valid_log_level
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
@@ -95,7 +95,7 @@ def _execute_run_command_body(
             instance, pipeline_run_id
         )
 
-    pipeline_run: PipelineRun = check.not_none(
+    pipeline_run: DagsterRun = check.not_none(
         instance.get_run_by_id(pipeline_run_id),
         "Pipeline run with id '{}' not found for run execution.".format(pipeline_run_id),
     )
@@ -359,7 +359,7 @@ def execute_step_command(input_json, compressed_input_json):
 
 
 def _execute_step_command_body(
-    args: ExecuteStepArgs, instance: DagsterInstance, pipeline_run: PipelineRun
+    args: ExecuteStepArgs, instance: DagsterInstance, pipeline_run: DagsterRun
 ):
     single_step_key = (
         args.step_keys_to_execute[0]
@@ -369,7 +369,7 @@ def _execute_step_command_body(
     try:
         check.inst(
             pipeline_run,
-            PipelineRun,
+            DagsterRun,
             "Pipeline run with id '{}' not found for step execution".format(args.pipeline_run_id),
         )
         check.inst(
@@ -654,7 +654,10 @@ def grpc_command(
         maybe_module = kwargs["module_name"]
         if maybe_module:
             check.is_tuple(maybe_module, of_type=str)
-            check.invariant(len(maybe_module) <= 1)
+            check.invariant(
+                len(maybe_module) <= 1,
+                "The dagster grpc server cannot serve more than one code location at a time",
+            )
             module_name = maybe_module[0]
         else:
             module_name = None

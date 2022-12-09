@@ -2,7 +2,7 @@ import keyword
 import os
 import re
 from glob import glob
-from typing import Any, Mapping, Optional, Sequence, Tuple
+from typing import Any, Dict, Mapping, Optional, Sequence, Tuple, cast
 
 import yaml
 
@@ -165,7 +165,7 @@ def config_from_files(config_files: Sequence[str]) -> Mapping[str, Any]:
             f"loaded by file/patterns {config_files}."
         ) from err
 
-    return run_config
+    return check.is_dict(cast(Dict[str, object], run_config), key_type=str)
 
 
 def config_from_yaml_strings(yaml_strings: Sequence[str]) -> Mapping[str, Any]:
@@ -190,7 +190,7 @@ def config_from_yaml_strings(yaml_strings: Sequence[str]) -> Mapping[str, Any]:
             f"Encountered error attempting to parse yaml. Parsing YAMLs {yaml_strings} "
         ) from err
 
-    return run_config
+    return check.is_dict(cast(Dict[str, object], run_config), key_type=str)
 
 
 def config_from_pkg_resources(pkg_resource_defs: Sequence[Tuple[str, str]]) -> Mapping[str, Any]:

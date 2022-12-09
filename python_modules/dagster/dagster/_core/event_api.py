@@ -3,7 +3,7 @@ from typing import Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
@@ -51,6 +51,19 @@ class EventLogRecord(NamedTuple):
         dagster_event = self.event_log_entry.dagster_event
         if dagster_event:
             return dagster_event.partition
+
+        return None
+
+    @property
+    def asset_materialization(self) -> Optional[AssetMaterialization]:
+        dagster_event = self.event_log_entry.dagster_event
+        if (
+            dagster_event
+            and dagster_event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION
+        ):
+            materialization = dagster_event.step_materialization_data.materialization
+            if isinstance(materialization, AssetMaterialization):
+                return materialization
 
         return None
 
@@ -107,7 +120,7 @@ class EventRecordsFilter(
         storage_ids: Optional[Sequence[int]] = None,
         tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None,
     ):
-        check.opt_list_param(asset_partitions, "asset_partitions", of_type=str)
+        check.opt_sequence_param(asset_partitions, "asset_partitions", of_type=str)
         check.inst_param(event_type, "event_type", DagsterEventType)
 
         tags = check.opt_mapping_param(tags, "tags", key_type=str)
@@ -130,6 +143,6 @@ class EventRecordsFilter(
             ),
             after_timestamp=check.opt_float_param(after_timestamp, "after_timestamp"),
             before_timestamp=check.opt_float_param(before_timestamp, "before_timestamp"),
-            storage_ids=check.opt_list_param(storage_ids, "storage_ids", of_type=int),
+            storage_ids=check.opt_sequence_param(storage_ids, "storage_ids", of_type=int),
             tags=check.opt_mapping_param(tags, "tags", key_type=str),
         )

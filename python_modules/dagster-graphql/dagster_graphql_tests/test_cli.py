@@ -8,7 +8,7 @@ from click.testing import CliRunner
 from dagster_graphql.cli import ui
 
 from dagster import _seven
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 
@@ -315,7 +315,7 @@ def test_logs_in_start_execution_predefined():
             # assert that the watching run storage captured the run correctly from the other process
             run = instance.get_run_by_id(run_id)
 
-            assert run.status == PipelineRunStatus.SUCCESS
+            assert run.status == DagsterRunStatus.SUCCESS
 
 
 def _is_done(instance, run_id):

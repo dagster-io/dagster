@@ -278,58 +278,6 @@ def test_build_input_context_add_input_metadata():
     context.add_input_metadata({"foo": "bar"})
 
 
-def test_io_manager_single_partition_materialization():
-
-    entry1 = MetadataEntry("nrows", value=123)
-    entry2 = MetadataEntry("some value", value=3.21)
-
-    class MyIOManager(IOManager):
-        def handle_output(self, context, obj):
-            # store asset
-            yield entry1
-
-        def load_input(self, context):
-            return None
-
-        def get_output_asset_key(self, context):
-            return AssetKey([context.step_key])
-
-    @io_manager
-    def my_io_manager(_):
-        return MyIOManager()
-
-    @op(out={"output1": Out()})
-    def op1(_):
-        return Output(None, "output1")
-
-    @op(out={"output2": Out()})
-    def op2(_, _input1):
-        yield Output(
-            7,
-            "output2",
-            metadata_entries=[entry2],
-        )
-
-    @job(resource_defs={"io_manager": my_io_manager})
-    def my_job():
-        op2(op1())
-
-    result = my_job.execute_in_process()
-    events = result.filter_events(lambda evt: evt.is_step_event)
-    materializations = [
-        event for event in events if event.event_type_value == "ASSET_MATERIALIZATION"
-    ]
-    assert len(materializations) == 2
-
-    check_materialization(materializations[0], AssetKey(["op1"]), metadata_entries=[entry1])
-    check_materialization(
-        materializations[1],
-        AssetKey(["op2"]),
-        metadata_entries=[entry1, entry2],
-        parent_assets=[AssetLineageInfo(AssetKey(["op1"]))],
-    )
-
-
 def test_partition_specific_fails_on_na_partitions():
     @op(out=Out(asset_key=AssetKey("key"), asset_partitions=set(["1", "2"])))
     def fail_op(_):

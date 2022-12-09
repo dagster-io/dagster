@@ -13,6 +13,7 @@ from typing_extensions import Literal, TypeAlias, TypedDict
 BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
     "rex@elementl.com": "eng-buildkite-rex",
     "dish@elementl.com": "eng-buildkite-dish",
+    "johann@elementl.com": "eng-buildkite-johann",
 }
 
 # ########################

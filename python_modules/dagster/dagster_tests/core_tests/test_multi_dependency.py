@@ -10,12 +10,12 @@ from dagster import (
     Nothing,
 )
 from dagster._core.definitions.composition import MappedInputPlaceholder
-from dagster._core.definitions.solid_definition import CompositeSolidDefinition
+from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._legacy import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    composite_solid,
     execute_pipeline,
     lambda_solid,
     pipeline,
@@ -60,7 +60,7 @@ def test_simple_values():
         )
     )
     assert result.success
-    assert result.result_for_solid("sum_num").output_value() == 6
+    assert result.result_for_node("sum_num").output_value() == 6
 
 
 @solid(input_defs=[InputDefinition("stuff", List[Any])])
@@ -134,15 +134,15 @@ def test_collect_one():
 
 def test_fan_in_manual():
     # manually building up this guy
-    @composite_solid
+    @graph
     def _target_composite_dsl(str_in, none_in):
         num = emit_num()
         return collect([num, str_in, none_in])
 
     # base case works
-    _target_composite_manual = CompositeSolidDefinition(
+    _target_graph_manual = GraphDefinition(
         name="manual_composite",
-        solid_defs=[emit_num, collect],
+        node_defs=[emit_num, collect],
         input_mappings=[
             InputDefinition("str_in").mapping_to("collect", "stuff", 1),
             InputDefinition("none_in").mapping_to("collect", "stuff", 2),
@@ -165,9 +165,9 @@ def test_fan_in_manual():
         DagsterInvalidDefinitionError,
         match="index 2 in the MultiDependencyDefinition is not a MappedInputPlaceholder",
     ):
-        _missing_placeholder = CompositeSolidDefinition(
-            name="manual_composite",
-            solid_defs=[emit_num, collect],
+        _missing_placeholder = GraphDefinition(
+            name="manual_graph",
+            node_defs=[emit_num, collect],
             input_mappings=[
                 InputDefinition("str_in").mapping_to("collect", "stuff", 1),
                 InputDefinition("none_in").mapping_to("collect", "stuff", 2),
@@ -186,9 +186,9 @@ def test_fan_in_manual():
         )
 
     with pytest.raises(DagsterInvalidDefinitionError, match="is not a MultiDependencyDefinition"):
-        _bad_target = CompositeSolidDefinition(
-            name="manual_composite",
-            solid_defs=[emit_num, collect],
+        _bad_target = GraphDefinition(
+            name="manual_graph",
+            node_defs=[emit_num, collect],
             input_mappings=[
                 InputDefinition("str_in").mapping_to("collect", "stuff", 1),
                 InputDefinition("none_in").mapping_to("collect", "stuff", 2),
@@ -201,9 +201,9 @@ def test_fan_in_manual():
         DagsterInvalidDefinitionError,
         match="Unsatisfied MappedInputPlaceholder at index 3",
     ):
-        _missing_placeholder = CompositeSolidDefinition(
-            name="manual_composite",
-            solid_defs=[emit_num, collect],
+        _missing_placeholder = GraphDefinition(
+            name="manual_graph",
+            node_defs=[emit_num, collect],
             input_mappings=[
                 InputDefinition("str_in").mapping_to("collect", "stuff", 1),
                 InputDefinition("none_in").mapping_to("collect", "stuff", 2),

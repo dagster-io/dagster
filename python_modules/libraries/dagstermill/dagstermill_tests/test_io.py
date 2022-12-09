@@ -28,8 +28,8 @@ def test_no_output_notebook_yes_file_manager():
         ]
         assert len(materializations) == 0
 
-        assert result.result_for_solid("hello_world_no_output_notebook").success
-        assert not result.result_for_solid("hello_world_no_output_notebook").output_values
+        assert result.result_for_node("hello_world_no_output_notebook").success
+        assert not result.result_for_node("hello_world_no_output_notebook").output_values
 
 
 @pytest.mark.notebook_test
@@ -43,8 +43,8 @@ def test_no_output_notebook_no_file_manager():
         ]
         assert len(materializations) == 0
 
-        assert result.result_for_solid("hello_world_no_output_notebook").success
-        assert not result.result_for_solid("hello_world_no_output_notebook").output_values
+        assert result.result_for_node("hello_world_no_output_notebook").success
+        assert not result.result_for_node("hello_world_no_output_notebook").output_values
 
 
 @pytest.mark.notebook_test
@@ -60,8 +60,8 @@ def test_yes_output_notebook_yes_io_manager():
         ]
         assert len(materializations) == 1
 
-        assert result.result_for_solid("hello_world").success
-        assert "notebook" in result.result_for_solid("hello_world").output_values
+        assert result.result_for_node("hello_world").success
+        assert "notebook" in result.result_for_node("hello_world").output_values
 
         output_path = (
             materializations[0]
@@ -70,6 +70,6 @@ def test_yes_output_notebook_yes_io_manager():
         )
         assert os.path.exists(output_path)
 
-        assert result.result_for_solid("load_notebook").success
+        assert result.result_for_node("load_notebook").success
         with open(output_path, "rb") as f:
-            assert f.read() == result.result_for_solid("load_notebook").output_value()
+            assert f.read() == result.result_for_node("load_notebook").output_value()

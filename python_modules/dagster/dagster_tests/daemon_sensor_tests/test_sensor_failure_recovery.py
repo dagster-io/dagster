@@ -6,7 +6,7 @@ import pytest
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
@@ -20,7 +20,7 @@ from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._seven import IS_WINDOWS
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
-from .test_sensor_run import wait_for_all_runs_to_start, workspace_load_target
+from .test_sensor_run import create_workspace_load_target, wait_for_all_runs_to_start
 
 spawn_ctx = multiprocessing.get_context("spawn")
 
@@ -29,7 +29,7 @@ def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, deb
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
             with pendulum.test(execution_datetime), create_test_daemon_workspace_context(
-                workspace_load_target=workspace_load_target(),
+                workspace_load_target=create_workspace_load_target(),
                 instance=instance,
             ) as workspace_context:
                 logger = get_default_daemon_logger("SensorDaemon")
@@ -165,7 +165,7 @@ def test_failure_after_run_created_before_run_launched(
 
         run = instance.get_runs()[0]
         # Run was created, but hasn't launched yet
-        assert run.status == PipelineRunStatus.NOT_STARTED
+        assert run.status == DagsterRunStatus.NOT_STARTED
         assert run.tags.get(SENSOR_NAME_TAG) == "run_key_sensor"
         assert run.tags.get(RUN_KEY_TAG) == "only_once"
 

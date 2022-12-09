@@ -266,13 +266,13 @@ def test_asset_with_dagster_type():
     assert my_asset.op.output_defs[0].dagster_type.display_name == "String"
 
 
-def test_asset_with_op_version():
-    @asset(op_version="foo")
+def test_asset_with_code_version():
+    @asset(code_version="foo")
     def my_asset(arg1):
         return arg1
 
-    assert my_asset.is_versioned
     assert my_asset.op.version == "foo"
+    assert my_asset.op.output_def_named("result").code_version == "foo"
 
 
 def test_asset_with_key_prefix():
@@ -432,7 +432,7 @@ def test_infer_input_dagster_type():
 def test_infer_output_dagster_type():
     @asset
     def my_asset() -> str:
-        pass
+        return "foo"
 
     assert my_asset.op.outs["result"].dagster_type.display_name == "String"
     assert my_asset.op.outs["result"].dagster_type.typing_type == str
@@ -536,11 +536,76 @@ def test_kwargs():
     @asset(ins={"upstream": AssetIn()})
     def my_asset(**kwargs):
         del kwargs
+        return 7
 
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
     assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
+    assert my_asset(upstream=5) == 7
+    assert my_asset.op(upstream=5) == 7
+
+
+def test_kwargs_with_context():
+    @asset(ins={"upstream": AssetIn()})
+    def my_asset(context, **kwargs):
+        assert context
+        del kwargs
+        return 7
+
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.output_defs) == 1
+    assert len(my_asset.op.input_defs) == 1
+    assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
+    assert my_asset(build_op_context(), upstream=5) == 7
+    assert my_asset.op(build_op_context(), upstream=5) == 7
+
+    @asset
+    def upstream():
+        ...
+
+    assert materialize_to_memory([upstream, my_asset]).success
+
+
+def test_kwargs_multi_asset():
+    @multi_asset(ins={"upstream": AssetIn()}, outs={"a": AssetOut()})
+    def my_asset(**kwargs):
+        del kwargs
+        return (7,)
+
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.output_defs) == 1
+    assert len(my_asset.op.input_defs) == 1
+    assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
+    assert my_asset(upstream=5) == (7,)
+    assert my_asset.op(upstream=5) == (7,)
+
+    @asset
+    def upstream():
+        ...
+
+    assert materialize_to_memory([upstream, my_asset]).success
+
+
+def test_kwargs_multi_asset_with_context():
+    @multi_asset(ins={"upstream": AssetIn()}, outs={"a": AssetOut()})
+    def my_asset(context, **kwargs):
+        assert context
+        del kwargs
+        return (7,)
+
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.output_defs) == 1
+    assert len(my_asset.op.input_defs) == 1
+    assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
+    assert my_asset(build_op_context(), upstream=5) == (7,)
+    assert my_asset.op(build_op_context(), upstream=5) == (7,)
+
+    @asset
+    def upstream():
+        ...
+
+    assert materialize_to_memory([upstream, my_asset]).success
 
 
 def test_multi_asset_resource_defs():
@@ -571,6 +636,22 @@ def test_multi_asset_resource_defs():
     ensure_requirements_satisfied(
         my_asset.resource_defs, list(my_asset.get_resource_requirements())
     )
+
+
+def test_multi_asset_code_versions():
+    @multi_asset(
+        outs={
+            "key1": AssetOut(key=AssetKey("key1"), code_version="foo"),
+            "key2": AssetOut(key=AssetKey("key2"), code_version="bar"),
+        },
+    )
+    def my_asset():
+        pass
+
+    assert my_asset.code_versions_by_key == {
+        AssetKey("key1"): "foo",
+        AssetKey("key2"): "bar",
+    }
 
 
 def test_asset_io_manager_def():

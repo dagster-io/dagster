@@ -19,55 +19,52 @@ from .events import (
 from .output import DynamicOutputDefinition
 
 if TYPE_CHECKING:
-    from ..execution.context.invocation import (
-        BoundSolidExecutionContext,
-        UnboundSolidExecutionContext,
-    )
+    from ..execution.context.invocation import BoundOpExecutionContext, UnboundOpExecutionContext
     from .composition import PendingNodeInvocation
-    from .decorators.solid_decorator import DecoratedSolidFunction
+    from .decorators.solid_decorator import DecoratedOpFunction
+    from .op_definition import OpDefinition
     from .output import OutputDefinition
-    from .solid_definition import SolidDefinition
 
 
-def solid_invocation_result(
-    solid_def_or_invocation: Union["SolidDefinition", "PendingNodeInvocation"],
-    context: Optional["UnboundSolidExecutionContext"],
+def op_invocation_result(
+    op_def_or_invocation: Union["OpDefinition", "PendingNodeInvocation"],
+    context: Optional["UnboundOpExecutionContext"],
     *args,
     **kwargs,
 ) -> Any:
-    from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
+    from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
     from dagster._core.execution.context.invocation import build_solid_context
 
     from .composition import PendingNodeInvocation
 
-    solid_def = (
-        solid_def_or_invocation.node_def.ensure_solid_def()
-        if isinstance(solid_def_or_invocation, PendingNodeInvocation)
-        else solid_def_or_invocation
+    op_def = (
+        op_def_or_invocation.node_def.ensure_op_def()
+        if isinstance(op_def_or_invocation, PendingNodeInvocation)
+        else op_def_or_invocation
     )
 
-    _check_invocation_requirements(solid_def, context)
+    _check_invocation_requirements(op_def, context)
 
-    context = (context or build_solid_context()).bind(solid_def_or_invocation)
+    bound_context = (context or build_solid_context()).bind(op_def_or_invocation)
 
-    input_dict = _resolve_inputs(solid_def, args, kwargs, context)
+    input_dict = _resolve_inputs(op_def, args, kwargs, bound_context)
 
-    compute_fn = solid_def.compute_fn
-    if not isinstance(compute_fn, DecoratedSolidFunction):
+    compute_fn = op_def.compute_fn
+    if not isinstance(compute_fn, DecoratedOpFunction):
         check.failed("solid invocation only works with decorated solid fns")
 
-    compute_fn = cast(DecoratedSolidFunction, compute_fn)
+    compute_fn = cast(DecoratedOpFunction, compute_fn)
     result = (
-        compute_fn.decorated_fn(context, **input_dict)
+        compute_fn.decorated_fn(bound_context, **input_dict)
         if compute_fn.has_context_arg()
         else compute_fn.decorated_fn(**input_dict)
     )
 
-    return _type_check_output_wrapper(solid_def, result, context)
+    return _type_check_output_wrapper(op_def, result, bound_context)
 
 
 def _check_invocation_requirements(
-    solid_def: "SolidDefinition", context: Optional["UnboundSolidExecutionContext"]
+    solid_def: "OpDefinition", context: Optional["UnboundOpExecutionContext"]
 ) -> None:
     """Ensure that provided context fulfills requirements of solid definition.
 
@@ -77,7 +74,7 @@ def _check_invocation_requirements(
     # Check resource requirements
     if (
         solid_def.required_resource_keys
-        and cast("DecoratedSolidFunction", solid_def.compute_fn).has_context_arg()
+        and cast("DecoratedOpFunction", solid_def.compute_fn).has_context_arg()
         and context is None
     ):
         node_label = solid_def.node_type_str  # string "solid" for solids, "op" for ops
@@ -96,9 +93,7 @@ def _check_invocation_requirements(
         )
 
 
-def _resolve_inputs(
-    solid_def: "SolidDefinition", args, kwargs, context: "BoundSolidExecutionContext"
-):
+def _resolve_inputs(solid_def: "OpDefinition", args, kwargs, context: "BoundOpExecutionContext"):
     from dagster._core.execution.plan.execute_step import do_type_check
 
     nothing_input_defs = [
@@ -127,12 +122,12 @@ def _resolve_inputs(
         if len(nothing_input_defs) > 0:
             suggestion = (
                 "This may be because you attempted to provide a value for a nothing "
-                "dependency. Nothing dependencies are ignored when directly invoking solids."
+                "dependency. Nothing dependencies are ignored when directly invoking ops."
             )
         else:
             suggestion = (
                 "This may be because an argument was provided for the context parameter, "
-                "but no context parameter was defined for the solid."
+                "but no context parameter was defined for the op."
             )
 
         node_label = solid_def.node_type_str
@@ -141,7 +136,7 @@ def _resolve_inputs(
         )
 
     # If more args were provided than the function has positional args, then fail early.
-    positional_inputs = cast("DecoratedSolidFunction", solid_def.compute_fn).positional_inputs()
+    positional_inputs = cast("DecoratedOpFunction", solid_def.compute_fn).positional_inputs()
     if len(args) > len(positional_inputs):
         raise DagsterInvalidInvocationError(
             f"{solid_def.node_type_str} '{solid_def.name}' has {len(positional_inputs)} positional inputs, but {len(args)} positional inputs were provided."
@@ -166,7 +161,7 @@ def _resolve_inputs(
 
     unassigned_kwargs = {k: v for k, v in kwargs.items() if k not in input_dict}
     # If there are unassigned inputs, then they may be intended for use with a variadic keyword argument.
-    if unassigned_kwargs and cast("DecoratedSolidFunction", solid_def.compute_fn).has_var_kwargs():
+    if unassigned_kwargs and cast("DecoratedOpFunction", solid_def.compute_fn).has_var_kwargs():
         for k, v in unassigned_kwargs.items():
             input_dict[k] = v
 
@@ -193,7 +188,7 @@ def _resolve_inputs(
 
 
 def _type_check_output_wrapper(
-    solid_def: "SolidDefinition", result: Any, context: "BoundSolidExecutionContext"
+    solid_def: "OpDefinition", result: Any, context: "BoundOpExecutionContext"
 ) -> Any:
     """Type checks and returns the result of a solid.
 
@@ -292,20 +287,18 @@ def _type_check_output_wrapper(
 
 
 def _type_check_function_output(
-    solid_def: "SolidDefinition", result: Any, context: "BoundSolidExecutionContext"
+    op_def: "OpDefinition", result: Any, context: "BoundOpExecutionContext"
 ):
-    from ..execution.plan.compute_generator import validate_and_coerce_solid_result_to_iterator
+    from ..execution.plan.compute_generator import validate_and_coerce_op_result_to_iterator
 
-    output_defs_by_name = {output_def.name: output_def for output_def in solid_def.output_defs}
-    for event in validate_and_coerce_solid_result_to_iterator(
-        result, context, solid_def.output_defs
-    ):
+    output_defs_by_name = {output_def.name: output_def for output_def in op_def.output_defs}
+    for event in validate_and_coerce_op_result_to_iterator(result, context, op_def.output_defs):
         _type_check_output(output_defs_by_name[event.output_name], event, context)
     return result
 
 
 def _type_check_output(
-    output_def: "OutputDefinition", output: Any, context: "BoundSolidExecutionContext"
+    output_def: "OutputDefinition", output: Any, context: "BoundOpExecutionContext"
 ) -> Any:
     """Validates and performs core type check on a provided output.
 

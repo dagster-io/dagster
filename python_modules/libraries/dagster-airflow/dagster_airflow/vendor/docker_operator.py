@@ -151,7 +151,6 @@ class DockerOperator(BaseOperator):
         *args,
         **kwargs,
     ):
-
         super(DockerOperator, self).__init__(*args, **kwargs)
         self.api_version = api_version
         self.auto_remove = auto_remove

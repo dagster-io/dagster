@@ -10,7 +10,7 @@ from dagster._core.definitions.resource_definition import (
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 
 
 class InitResourceContext:
@@ -52,7 +52,7 @@ class InitResourceContext:
         resources: Resources,
         resource_def: Optional[ResourceDefinition] = None,
         instance: Optional[DagsterInstance] = None,
-        dagster_run: Optional[PipelineRun] = None,
+        dagster_run: Optional[DagsterRun] = None,
         log_manager: Optional[DagsterLogManager] = None,
     ):
         self._resource_config = resource_config
@@ -83,7 +83,7 @@ class InitResourceContext:
         return self._instance
 
     @property
-    def dagster_run(self) -> Optional[PipelineRun]:
+    def dagster_run(self) -> Optional[DagsterRun]:
         return self._dagster_run
 
     @public  # type: ignore
@@ -145,10 +145,11 @@ class UnboundInitResourceContext(InitResourceContext):
         # so ignore lint error
         instance = self._instance_cm.__enter__()  # pylint: disable=no-member
 
-        # Shouldn't actually ever have a resources object directly from this initialization
+        if isinstance(resources, Resources):
+            check.failed("Should not have a Resources object directly from this initialization")
 
         self._resource_defs = wrap_resources_for_execution(
-            check.opt_dict_param(resources, "resources")
+            check.opt_mapping_param(resources, "resources")
         )
 
         self._resources_cm = build_resources(self._resource_defs, instance=instance)
@@ -205,7 +206,7 @@ class UnboundInitResourceContext(InitResourceContext):
         return self._instance
 
     @property
-    def pipeline_run(self) -> Optional[PipelineRun]:
+    def pipeline_run(self) -> Optional[DagsterRun]:
         return None
 
     @property

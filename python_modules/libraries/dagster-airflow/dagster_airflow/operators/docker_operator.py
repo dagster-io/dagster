@@ -36,7 +36,7 @@ class DagsterDockerOperator(DockerOperator):
         be mapped to tmp_dir. If not provided defaults to using the standard system temp directory.
     """
 
-    def __init__(self, dagster_operator_parameters, *args):
+    def __init__(self, dagster_operator_parameters, *args, **kwargs):
         kwargs = dagster_operator_parameters.op_kwargs
         tmp_dir = kwargs.pop("tmp_dir", DOCKER_TEMPDIR)
         host_tmp_dir = kwargs.pop("host_tmp_dir", seven.get_system_temp_directory())
@@ -69,12 +69,10 @@ class DagsterDockerOperator(DockerOperator):
 
         if "environment" not in kwargs:
             kwargs["environment"] = get_aws_environment()
-
         super(DagsterDockerOperator, self).__init__(
             task_id=dagster_operator_parameters.task_id,
             dag=dagster_operator_parameters.dag,
             tmp_dir=tmp_dir,
-            host_tmp_dir=host_tmp_dir,
             xcom_push=True,
             # We do this because log lines won't necessarily be emitted in order (!) -- so we can't
             # just check the last log line to see if it's JSON.

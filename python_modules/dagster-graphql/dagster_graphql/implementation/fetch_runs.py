@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, KeysView, List, Mapping, cast
+from typing import TYPE_CHECKING, Dict, KeysView, List, Mapping, Sequence, cast
 
 from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 from graphene import ResolveInfo
@@ -13,7 +13,7 @@ from dagster._core.execution.stats import RunStepKeyStatsSnapshot, StepEventStat
 from dagster._core.host_representation import PipelineSelector
 from dagster._core.storage.pipeline_run import RunRecord, RunsFilter
 from dagster._core.storage.tags import TagType, get_tag_type
-from dagster._legacy import PipelineDefinition, PipelineRunStatus
+from dagster._legacy import DagsterRunStatus, PipelineDefinition
 
 from .events import from_event_record
 from .external import ensure_valid_config, get_external_pipeline_or_raise
@@ -114,16 +114,16 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
 
 
 PENDING_STATUSES = [
-    PipelineRunStatus.STARTING,
-    PipelineRunStatus.MANAGED,
-    PipelineRunStatus.NOT_STARTED,
-    PipelineRunStatus.QUEUED,
-    PipelineRunStatus.STARTED,
-    PipelineRunStatus.CANCELING,
+    DagsterRunStatus.STARTING,
+    DagsterRunStatus.MANAGED,
+    DagsterRunStatus.NOT_STARTED,
+    DagsterRunStatus.QUEUED,
+    DagsterRunStatus.STARTED,
+    DagsterRunStatus.CANCELING,
 ]
 IN_PROGRESS_STATUSES = [
-    PipelineRunStatus.STARTED,
-    PipelineRunStatus.CANCELING,
+    DagsterRunStatus.STARTED,
+    DagsterRunStatus.CANCELING,
 ]
 
 
@@ -147,7 +147,7 @@ def add_all_upstream_keys(
     return required.keys()
 
 
-def get_assets_latest_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, List[str]]):
+def get_assets_latest_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, Sequence[str]]):
     from ..schema.asset_graph import GrapheneAssetLatestInfo
     from ..schema.logs.events import GrapheneMaterializationEvent
     from ..schema.pipelines.pipeline import GrapheneRun
@@ -213,8 +213,8 @@ def get_assets_latest_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, 
 
 def _get_in_progress_runs_for_assets(
     graphene_info,
-    in_progress_records: List[RunRecord],
-    step_keys_by_asset: Mapping[AssetKey, List[str]],
+    in_progress_records: Sequence[RunRecord],
+    step_keys_by_asset: Mapping[AssetKey, Sequence[str]],
 ):
     # Build mapping of step key to the assets it generates
     asset_key_by_step_key = defaultdict(set)
