@@ -113,9 +113,27 @@ ignore = [
   "D101",
   "D102",
   "D103",
+  "D104",
   "D105",
   "D106",
   "D107",
+
+  # (stack ignores) These are here just to make intermediate steps in the stack
+  # green, they will be gone when this is merged.
+  "D202",
+  "D209",
+  "D210",
+  "D212",
+  "D214",
+  "D300",
+  "D301",
+  "D403",
+  "D405",
+  "D411",
+  "D412",
+  "D414",
+  "D419",
+  "D415",
 
   # (module level import not at top) There are several places where we use e.g.
   # warnings.filterwarings calls before imports.
@@ -156,6 +174,7 @@ ignore = [
   # (buggy docstring rules) These rules should be enabled when bugs with them are fixed.
   "D207", # (under-indented docstring)
   "D208", # (over-indented docstring)
+  "D402", # (first line should not be the function's "signature")
 
   # (disallow print statements) Allowing until there are file-scoped error-specific ignores and we
   # can bulk-convert our pylint disables.
