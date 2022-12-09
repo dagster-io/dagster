@@ -465,6 +465,7 @@ from dagster._core.executor.init import (
 )
 
 from dagster._core.host_representation.selector import (
+    CodeLocationSelector as CodeLocationSelector,
     RepositorySelector as RepositorySelector,
     JobSelector as JobSelector,
 )
