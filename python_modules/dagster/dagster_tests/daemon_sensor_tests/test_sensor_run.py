@@ -61,7 +61,7 @@ from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iter
 from dagster._legacy import pipeline, solid
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
-from .conftest import workspace_load_target
+from .conftest import create_workspace_load_target
 
 
 @asset
@@ -2351,7 +2351,7 @@ def test_status_in_code_sensor(executor, instance):
         "US/Central",
     )
     with create_test_daemon_workspace_context(
-        workspace_load_target(attribute="the_status_in_code_repo"),
+        create_workspace_load_target(attribute="the_status_in_code_repo"),
         instance=instance,
     ) as workspace_context:
         external_repo = next(
@@ -2600,7 +2600,7 @@ def test_repository_namespacing(executor):
         instance = exit_stack.enter_context(instance_for_test())
         full_workspace_context = exit_stack.enter_context(
             create_test_daemon_workspace_context(
-                workspace_load_target(attribute=None),  # load all repos
+                create_workspace_load_target(attribute=None),  # load all repos
                 instance=instance,
             )
         )
