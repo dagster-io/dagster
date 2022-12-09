@@ -7,7 +7,7 @@ MODEL_NAME = "my_model"
 
 @asset(
     name=MODEL_NAME,
-    compute_kind="Weights & Biases",
+    compute_kind="wandb",
 )
 def write_model() -> wandb.sdk.wandb_artifacts.Artifact:
     """Write your model.
@@ -23,7 +23,7 @@ def write_model() -> wandb.sdk.wandb_artifacts.Artifact:
 
 
 @asset(
-    compute_kind="Weights & Biases",
+    compute_kind="wandb",
     name="registered-model",
     ins={"artifact": AssetIn(asset_key=MODEL_NAME)},
     output_required=False,

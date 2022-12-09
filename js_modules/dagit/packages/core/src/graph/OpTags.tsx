@@ -17,6 +17,7 @@ import slack from './optag-images/slack.svg';
 import snowflake from './optag-images/snowflake.svg';
 import sql from './optag-images/sql.svg';
 import tensorflow from './optag-images/tensorflow.svg';
+import weights_and_biases from './optag-images/weights_and_biases.svg';
 
 export interface IOpTag {
   label: string;
@@ -54,6 +55,10 @@ const KNOWN_TAGS = {
   sql: {
     color: '#B821FF',
     content: <img src={sql} alt="sql logo" role="img" />,
+  },
+  wandb: {
+    color: '#FCB119',
+    content: <img src={weights_and_biases} alt="Weights & Biases logo" role="img" />,
   },
   Expand: {color: '#D7A540', content: 'Expand'},
 };
