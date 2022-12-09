@@ -62,11 +62,11 @@ Currently, freshness policy sensors do not support returning or yielding values 
 Here is an example of a sensor that will send a single alert once an asset is 10 minutes later than its configured policy allows, and a single alert once that asset is on time again.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_freshness_policy_sensor_marker endbefore=end_freshness_policy_sensor_marker
-from dagster import FreshnessPolicySensorEvaluationContext, freshness_policy_sensor
+from dagster import FreshnessPolicySensorContext, freshness_policy_sensor
 
 
 @freshness_policy_sensor(asset_selection=AssetSelection.all())
-def my_freshness_alerting_sensor(context: FreshnessPolicySensorEvaluationContext):
+def my_freshness_alerting_sensor(context: FreshnessPolicySensorContext):
     if context.current_minutes_late is None or context.previous_minutes_late is None:
         return
 

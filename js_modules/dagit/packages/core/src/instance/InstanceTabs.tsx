@@ -31,7 +31,6 @@ export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TDa
           to="/code-locations"
           icon={<WorkspaceStatus placeholder={false} />}
         />
-        <TabLink id="definitions" title="Definitions" to="/definitions" />
         <TabLink id="health" title={healthTitle} to="/health" icon={<InstanceWarningIcon />} />
         {canSeeConfig ? <TabLink id="config" title="Configuration" to="/config" /> : null}
       </Tabs>
