@@ -478,26 +478,33 @@ def make_dagster_pipeline_from_airflow_dag(
         use_ephemeral_airflow_db=use_ephemeral_airflow_db,
     )
 
+    serialized_connections = []
+    for c in connections:
+        serialized_connection = {
+            "conn_id": c.conn_id,
+            "conn_type": c.conn_type,
+        }
+        if hasattr(c, "login") and c.login:
+            serialized_connection["login"] = c.login
+        if hasattr(c, "password") and c.password:
+            serialized_connection["password"] = c.password
+        if hasattr(c, "schema") and c.schema:
+            serialized_connection["schema"] = c.schema
+        if hasattr(c, "port") and c.port:
+            serialized_connection["port"] = c.port
+        if hasattr(c, "extra") and c.extra:
+            serialized_connection["extra"] = c.extra
+        if hasattr(c, "description") and c.description:
+            serialized_connection["description"] = c.description
+        serialized_connections.append(serialized_connection)
+
     @resource(
         config_schema={
             "dag_location": Field(str, default_value=dag.fileloc),
             "dag_id": Field(str, default_value=dag.dag_id),
             "connections": Field(
                 Array(inner_type=dict),
-                default_value=[
-                    {
-                        "conn_id": c.conn_id,
-                        "conn_type": c.conn_type,
-                        "description": c.description,
-                        "host": c.host,
-                        "login": c.login,
-                        "password": c.password,
-                        "schema": c.schema,
-                        "port": c.port,
-                        "extra": c.extra if c.extra else "{}",
-                    }
-                    for c in connections
-                ],
+                default_value=serialized_connections,
                 is_required=False,
             ),
         }
