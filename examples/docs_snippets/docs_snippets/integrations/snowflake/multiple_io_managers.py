@@ -1,5 +1,4 @@
-plot_iris_data = None
-blob_storage_io_manager = None
+plot_data = None
 
 # start_example
 
@@ -26,7 +25,9 @@ def iris_dataset() -> pd.DataFrame:
 
 @asset(io_manager_key="blob_io_manager")
 def iris_plots(iris_dataset):
-    return plot_iris_data(iris_dataset)
+    # plot_data is a function we've defined somewhere else
+    # that plots the data in a DataFrame
+    return plot_data(iris_dataset)
 
 
 @repository
