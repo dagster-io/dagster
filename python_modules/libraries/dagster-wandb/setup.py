@@ -33,6 +33,6 @@ if __name__ == "__main__":
             "dagster",
             "wandb>=0.13.5",
         ],
-        extras_require={"dev": ["cloudpickle", "joblib"]},
+        extras_require={"dev": ["cloudpickle", "joblib", "callee"]},
         zip_safe=False,
     )

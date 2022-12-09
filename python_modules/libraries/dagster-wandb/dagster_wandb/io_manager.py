@@ -105,7 +105,7 @@ class ArtifactsIOManager(IOManager):
         # augments the run tags
         wandb_run_tags = config["wandb_run_tags"] or []
         if "dagster_wandb" not in wandb_run_tags:
-            wandb_run_tags.append("dagster_wandb")
+            wandb_run_tags = [*wandb_run_tags, "dagster_wandb"]
         self.wandb_run_tags = wandb_run_tags
 
         self.base_dir = config["base_dir"]
@@ -118,7 +118,10 @@ class ArtifactsIOManager(IOManager):
         )
 
     def _get_local_storage_path(self):
-        path = os.path.join(self.base_dir, "storage", "wandb_artifacts_manager")
+        path = self.base_dir
+        if os.path.basename(path) != "storage":
+            path = os.path.join(path, "storage")
+        path = os.path.join(path, "wandb_artifacts_manager")
         os.makedirs(path, exist_ok=True)
         return path
 
@@ -209,8 +212,7 @@ class ArtifactsIOManager(IOManager):
                         "A 'type' property was provided in the 'wandb_artifact_configuration' metadata dictionary. A 'type' property can only be provided for output that is not already an Artifact object."
                     )
 
-                if "PYTEST_CURRENT_TEST" not in os.environ and context.has_partition_key:
-                    # Big code smell but at this time we can't mock the partition key
+                if context.has_partition_key:
                     raise WandbArtifactsIOManagerError(
                         "A partitioned job was detected for an output of type Artifact. This is not currently supported. We would love to hear about your use case. Please contact W&B Support."
                     )
@@ -245,8 +247,7 @@ class ArtifactsIOManager(IOManager):
                         )
                     artifact_name = parameters.get("name")  # type: ignore
 
-                if "PYTEST_CURRENT_TEST" not in os.environ and context.has_partition_key:
-                    # Big code smell but at this time we can't mock the partition key
+                if context.has_partition_key:
                     artifact_name = f"{artifact_name}.{context.partition_key}"
 
                 # Creates an artifact to hold the obj
@@ -453,9 +454,8 @@ class ArtifactsIOManager(IOManager):
                         "Missing 'name' property in the 'wandb_artifact_configuration' metadata dictionary. A 'name' property is required for Artifacts used in an @op. Alternatively you can use an @asset."
                     )
 
-                if "PYTEST_CURRENT_TEST" not in os.environ and context.has_partition_key:
-                    # Big code smell but at this time we can't mock the partition key
-                    artifact_name = f"{artifact_name}.{context.partition_key}"
+            if context.has_partition_key:
+                artifact_name = f"{artifact_name}.{context.partition_key}"
 
             artifact = run.use_artifact(
                 f"{run.entity}/{run.project}/{artifact_name}:{artifact_identifier}"
