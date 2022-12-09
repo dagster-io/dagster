@@ -11,7 +11,7 @@ from dagster import AssetIn, AssetOut, OpExecutionContext, asset, multi_asset
 
 @asset(
     name="my_joblib_serialized_model",
-    compute_kind="Python",
+    compute_kind="Weights & Biases",
     metadata={
         "wandb_artifact_configuration": {
             "type": "model",
@@ -29,7 +29,7 @@ def create_model_serialized_with_joblib():
 
 @asset(
     name="inference_result_from_joblib_serialized_model",
-    compute_kind="Python",
+    compute_kind="Weights & Biases",
     ins={"my_joblib_serialized_model": AssetIn()},
     metadata={
         "wandb_artifact_configuration": {
@@ -46,7 +46,7 @@ def use_model_serialized_with_joblib(
 
 
 @multi_asset(
-    compute_kind="Python",
+    compute_kind="Weights & Biases",
     outs={
         "my_onnx_model": AssetOut(
             metadata={
@@ -85,7 +85,7 @@ def create_onnx_model():
 
 @asset(
     name="experiment_results",
-    compute_kind="Python",
+    compute_kind="Weights & Biases",
     ins={
         "my_onnx_model": AssetIn(),
         "my_test_set": AssetIn(),

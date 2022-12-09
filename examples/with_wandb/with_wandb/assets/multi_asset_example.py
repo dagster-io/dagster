@@ -7,6 +7,7 @@ from dagster import AssetOut, multi_asset
 
 @multi_asset(
     name="write_multiple_artifacts",
+    compute_kind="Weights & Biases",
     outs={
         "first_table": AssetOut(
             metadata={

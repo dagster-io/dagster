@@ -3,7 +3,7 @@ from dagster import AssetIn, asset
 
 @asset(
     name="my_first_list",
-    compute_kind="Python",
+    compute_kind="Weights & Biases",
     metadata={
         "wandb_artifact_configuration": {
             "type": "dataset",
@@ -24,7 +24,7 @@ def create_my_first_list() -> list[int]:
 
 @asset(
     name="my_final_list",
-    compute_kind="Python",
+    compute_kind="Weights & Biases",
     ins={"my_first_list": AssetIn()},
     metadata={
         "wandb_artifact_configuration": {

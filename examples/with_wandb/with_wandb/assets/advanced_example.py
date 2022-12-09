@@ -30,7 +30,7 @@ MY_TABLE = "my_table"
 
 @asset(
     name=MY_ASSET,
-    compute_kind="Python",
+    compute_kind="Weights & Biases",
     metadata={"wandb_artifact_configuration": wandb_artifact_configuration},
 )
 def write_advanced_artifact() -> wandb.sdk.wandb_artifacts.Artifact:
@@ -67,7 +67,7 @@ def write_advanced_artifact() -> wandb.sdk.wandb_artifacts.Artifact:
 
 
 @asset(
-    compute_kind="Python",
+    compute_kind="Weights & Biases",
     ins={
         "table": AssetIn(
             asset_key=MY_ASSET,
@@ -96,7 +96,7 @@ def get_table(context: OpExecutionContext, table: wandb.Table) -> None:
 
 
 @asset(
-    compute_kind="Python",
+    compute_kind="Weights & Biases",
     ins={
         "path": AssetIn(
             asset_key=MY_ASSET,
@@ -125,7 +125,7 @@ def get_path(context: OpExecutionContext, path: str) -> None:
 
 
 @asset(
-    compute_kind="Python",
+    compute_kind="Weights & Biases",
     ins={
         "artifact": AssetIn(
             asset_key=MY_ASSET,
