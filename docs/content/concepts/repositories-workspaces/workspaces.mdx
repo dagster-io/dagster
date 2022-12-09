@@ -7,11 +7,9 @@ description: Dagster workspace files are used to define collections of code loca
 
 <Note>This guide is applicable only to Dagster Open Source (OS).</Note>
 
-Workspace files contain a collection of user-defined [code locations](/concepts/code-locations) and information about where to find them. Workspace files can accept code locations defined using a <PyObject object="Definitions" /> object or a <PyObject object="repository" decorator /> decorator.
+Workspace files contain a collection of user-defined [code locations](/concepts/code-locations) and information about where to find them. Code locations loaded via workspace files can contain either a <PyObject object="Definitions" /> object or multiple [repositories](/concepts/repositories-workspaces/repositories).
 
-Prior to the introduction of <PyObject object="Definitions" />, workspace files were used to enable Dagster tools to load user code in tools like Dagit or the CLI. In a <PyObject object="Definitions" /> world, workspace files are only required to load multiple code locations in customized environments, such as part of an OSS deployment.
-
-For local development within a single Python environment, <PyObject object="Definitions" /> users can use the `-m` or `-f` flags with our CLI tools, or set the `pyproject.toml` file to avoid using command line flags entirely.
+Workspace files are used by Dagit and other CLI tools to load code locations in complex or customized environments, such as a production OSS deployment. For local development within a single Python environment, <PyObject object="Definitions" /> users can use the `-m` or `-f` flags with our CLI tools, or set the `pyproject.toml` file to avoid using command line flags entirely.
 
 ---
 
@@ -35,7 +33,7 @@ load_from:
   - python_file: my_file.py
 ```
 
-Each entry in a workspace file is considered a code location.
+Each entry in a workspace file is considered a code location. A code location can contain either a single <PyObject object="Definitions" /> object, a repository, or multiple repositories.
 
 Each code location is loaded in its own process that Dagster tools use an RPC protocol to communicate with. This process separation allows multiple code locations in different environments to be loaded independently, and ensures that errors in user code can't impact Dagster system code.
 
