@@ -15,7 +15,6 @@ from dagster import (
     AssetMaterialization,
     AssetObservation,
     AssetSelection,
-    CodeLocationSelector,
     DagsterRunStatus,
     ExperimentalWarning,
     Field,
@@ -2699,19 +2698,3 @@ def test_sensor_logging(executor, instance, workspace_context, external_repo):
     record = records[0]
     assert record[DAGSTER_META_KEY]["orig_message"] == "hello hello"
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
-
-
-def test_code_location_construction():
-    # this just gets code coverage in in the run status sensor definition constructor
-    @run_status_sensor(
-        monitored_jobs=[
-            CodeLocationSelector(
-                location_name="test_location",
-            )
-        ],
-        run_status=DagsterRunStatus.SUCCESS,
-    )
-    def cross_code_location_sensor(context):
-        raise Exception("never executed")
-
-    assert cross_code_location_sensor
