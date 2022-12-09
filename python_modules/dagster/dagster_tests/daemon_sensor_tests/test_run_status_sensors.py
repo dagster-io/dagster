@@ -1,16 +1,21 @@
 import tempfile
 import time
 from contextlib import contextmanager
+from typing import Dict, Generator, NamedTuple
 
 import pendulum
 import pytest
 
 from dagster import DagsterRunStatus
+from dagster import _check as check
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
+from dagster._core.host_representation import ExternalRepository, RepositoryLocation
+from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
+from dagster._core.workspace.context import WorkspaceProcessContext
 
 from .conftest import create_workspace_load_target
 from .test_sensor_run import (
@@ -53,21 +58,52 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
             )
 
 
+class CodeLocationInfoForSensorTest(NamedTuple):
+    instance: DagsterInstance
+    context: WorkspaceProcessContext
+    repositories: Dict[str, ExternalRepository]
+    repository_location: RepositoryLocation
+
+
 @contextmanager
-def instance_with_multiple_repos_with_sensors(overrides=None, workspace_load_target=None):
+def instance_with_single_code_location_multiple_repos_with_sensors(
+    overrides=None, workspace_load_target=None
+) -> Generator[tuple, None, None]:
+    with instance_with_multiple_code_locations(overrides, workspace_load_target) as many_tuples:
+        assert len(many_tuples) == 1
+        location_info = next(iter(many_tuples.values()))
+        yield (
+            location_info.instance,
+            location_info.context,
+            location_info.repositories,
+        )
+
+
+@contextmanager
+def instance_with_multiple_code_locations(
+    overrides=None, workspace_load_target=None
+) -> Generator[Dict[str, CodeLocationInfoForSensorTest], None, None]:
     with instance_for_test(overrides) as instance:
         with create_test_daemon_workspace_context(
             workspace_load_target or create_workspace_load_target(None), instance=instance
         ) as workspace_context:
-            yield (
-                instance,
-                workspace_context,
-                next(
-                    iter(
-                        workspace_context.create_request_context().get_workspace_snapshot().values()
-                    )
-                ).repository_location.get_repositories(),
-            )
+
+            location_infos: Dict[str, CodeLocationInfoForSensorTest] = {}
+
+            for repository_location_entry in (
+                workspace_context.create_request_context().get_workspace_snapshot().values()
+            ):
+                repository_location: RepositoryLocation = check.not_none(
+                    repository_location_entry.repository_location
+                )
+                location_infos[repository_location.name] = CodeLocationInfoForSensorTest(
+                    instance=instance,
+                    context=workspace_context,
+                    repositories={**repository_location.get_repositories()},
+                    repository_location=repository_location,
+                )
+
+            yield location_infos
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
@@ -607,7 +643,7 @@ def test_run_failure_sensor_empty_run_records(storage_config_fn, executor):
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_cross_repo_run_status_sensor(executor):
     freeze_datetime = pendulum.now()
-    with instance_with_multiple_repos_with_sensors() as (
+    with instance_with_single_code_location_multiple_repos_with_sensors() as (
         instance,
         workspace_context,
         repos,
@@ -667,7 +703,7 @@ def test_cross_repo_run_status_sensor(executor):
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_cross_repo_job_run_status_sensor(executor):
     freeze_datetime = pendulum.now()
-    with instance_with_multiple_repos_with_sensors() as (
+    with instance_with_single_code_location_multiple_repos_with_sensors() as (
         instance,
         workspace_context,
         repos,
@@ -821,7 +857,7 @@ def test_different_instance_run_status_sensor(executor):
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_instance_run_status_sensor(executor):
     freeze_datetime = pendulum.now()
-    with instance_with_multiple_repos_with_sensors() as (
+    with instance_with_single_code_location_multiple_repos_with_sensors() as (
         instance,
         workspace_context,
         repos,
