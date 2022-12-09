@@ -107,7 +107,8 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         # towards the single command constraint.
         self._job_commands = job["execute_steps"]
         materialization_command_filter = [
-            command.lower().startswith(("dbt run", "dbt build")) for command in self._job_commands
+            dbt_parse_args(shlex.split(command)[1:]).which in ["run", "build"]
+            for command in self._job_commands
         ]
         if sum(materialization_command_filter) != 1:
             raise DagsterDbtCloudJobInvariantViolationError(
