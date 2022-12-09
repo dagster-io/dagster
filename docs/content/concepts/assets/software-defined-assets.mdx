@@ -1,9 +1,9 @@
 ---
-title: Software-Defined Assets | Dagster
+title: Software-defined assets | Dagster
 description: A software-defined asset is a description of how to compute the contents of a particular data asset.
 ---
 
-# Software-Defined Assets
+# Software-defined assets
 
 <Note>
   Prefer videos? Check out our{" "}
@@ -303,9 +303,22 @@ Once you've defined a set of assets, you can:
 
 To view and materialize assets in Dagit, you can point it at a module that contains asset definitions or lists of asset definitions as module-level attributes:
 
-    dagit -m module_with_assets
+```shell
+dagit -m module_with_assets
+```
 
-If you want Dagit to contain both assets and [jobs](/concepts/ops-jobs-graphs/jobs) that target the assets, you can place the assets and jobs together inside a [repository](/concepts/repositories-workspaces/repositories).
+If you want Dagit to contain both assets and [jobs](/concepts/ops-jobs-graphs/jobs) that target the assets, you can place the assets and jobs together inside a <PyObject object="Definitions" /> object. For example:
+
+```python
+defs = Definitions(
+    assets=[asset_1, asset_2],
+    jobs=[asset_job],
+)
+```
+
+<PyObject object="Definitions" /> objects define code locations, which are collections
+of assets, jobs, resources, and schedules. Refer to the [Code locations documentation](/concepts/code-locations)
+for more info.
 
 ### Viewing assets in Dagit
 
@@ -439,7 +452,7 @@ If any of the assets in the module already has a `group_name` explicitly set on 
 
 ### Viewing asset groups in Dagit
 
-To view your asset groups in Dagit, open the left navigation by clicking the **menu icon in the top left corner**. As asset groups are grouped in repositories, you may need to open a repository to view its asset groups:
+To view your asset groups in Dagit, open the left navigation by clicking the **menu icon in the top left corner**. As asset groups are grouped in code locations, you may need to open a code location to view its asset groups:
 
 <Image
 alt="Asset Groups in Dagit left navigation"
@@ -517,6 +530,11 @@ def test_uses_context():
 ---
 
 ## Loading asset values outside of Dagster runs
+
+<Note>
+  This functionality is applicable only to code locations using{" "}
+  <PyObject object="repository" decorator /> definitions.
+</Note>
 
 It's sometimes useful to load an asset as a Python object outside of a Dagster run, e.g. if you want to do exploratory data analysis on it inside a Jupyter notebook. For this, you can use <PyObject object="RepositoryDefinition" method="load_asset_value" />:
 
