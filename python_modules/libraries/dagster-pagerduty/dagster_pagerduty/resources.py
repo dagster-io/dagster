@@ -164,27 +164,27 @@ def pagerduty_resource(context):
     """A resource for posting events (alerts) to PagerDuty.
 
     Example:
-    .. code-block:: python
+        .. code-block:: python
 
-        @op(required_resource_keys={'pagerduty'})
-        def pagerduty_op(context):
-            context.resources.pagerduty.EventV2_create(
-                summary='alert from dagster'
-                source='localhost',
-                severity='error',
-                event_action='trigger',
-            )
+            @op(required_resource_keys={'pagerduty'})
+            def pagerduty_op(context):
+                context.resources.pagerduty.EventV2_create(
+                    summary='alert from dagster'
+                    source='localhost',
+                    severity='error',
+                    event_action='trigger',
+                )
 
-        @job(resource_defs={ 'pagerduty': pagerduty_resource })
-        def pagerduty_test():
-            pagerduty_op()
+            @job(resource_defs={ 'pagerduty': pagerduty_resource })
+            def pagerduty_test():
+                pagerduty_op()
 
-        pagerduty_test.execute_in_process(
-            run_config={
-                "resources": {
-                    'pagerduty': {'config': {'routing_key': '0123456789abcdef0123456789abcdef'}}
+            pagerduty_test.execute_in_process(
+                run_config={
+                    "resources": {
+                        'pagerduty': {'config': {'routing_key': '0123456789abcdef0123456789abcdef'}}
+                    }
                 }
-            }
-        )
+            )
     """
     return PagerDutyService(context.resource_config.get("routing_key"))

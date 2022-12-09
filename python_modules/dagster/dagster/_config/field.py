@@ -258,16 +258,16 @@ class Field:
             A human-readable description of this config field.
 
     Examples:
-    .. code-block:: python
+        .. code-block:: python
 
-        @op(
-            config_schema={
-                'word': Field(str, description='I am a word.'),
-                'repeats': Field(Int, default_value=1, is_required=False),
-            }
-        )
-        def repeat_word(context):
-            return context.op_config['word'] * context.op_config['repeats']
+            @op(
+                config_schema={
+                    'word': Field(str, description='I am a word.'),
+                    'repeats': Field(Int, default_value=1, is_required=False),
+                }
+            )
+            def repeat_word(context):
+                return context.op_config['word'] * context.op_config['repeats']
     """
 
     def _resolve_config_arg(self, config):

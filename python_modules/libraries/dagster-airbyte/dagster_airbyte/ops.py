@@ -68,28 +68,28 @@ def airbyte_sync_op(context):
     communicate with the Airbyte API.
 
     Examples:
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagster import job
-        from dagster_airbyte import airbyte_resource, airbyte_sync_op
+            from dagster import job
+            from dagster_airbyte import airbyte_resource, airbyte_sync_op
 
-        my_airbyte_resource = airbyte_resource.configured(
-            {
-                "host": {"env": "AIRBYTE_HOST"},
-                "port": {"env": "AIRBYTE_PORT"},
-            }
-        )
+            my_airbyte_resource = airbyte_resource.configured(
+                {
+                    "host": {"env": "AIRBYTE_HOST"},
+                    "port": {"env": "AIRBYTE_PORT"},
+                }
+            )
 
-        sync_foobar = airbyte_sync_op.configured({"connection_id": "foobar"}, name="sync_foobar")
+            sync_foobar = airbyte_sync_op.configured({"connection_id": "foobar"}, name="sync_foobar")
 
-        @job(resource_defs={"airbyte": my_airbyte_resource})
-        def my_simple_airbyte_job():
-            sync_foobar()
+            @job(resource_defs={"airbyte": my_airbyte_resource})
+            def my_simple_airbyte_job():
+                sync_foobar()
 
-        @job(resource_defs={"airbyte": my_airbyte_resource})
-        def my_composed_airbyte_job():
-            final_foobar_state = sync_foobar(start_after=some_op())
-            other_op(final_foobar_state)
+            @job(resource_defs={"airbyte": my_airbyte_resource})
+            def my_composed_airbyte_job():
+                final_foobar_state = sync_foobar(start_after=some_op())
+                other_op(final_foobar_state)
     """
     airbyte_output = context.resources.airbyte.sync_and_poll(
         connection_id=context.op_config["connection_id"],

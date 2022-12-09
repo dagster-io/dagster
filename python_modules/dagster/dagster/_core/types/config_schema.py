@@ -211,11 +211,11 @@ def dagster_type_loader(
             another.
 
     Examples:
-    .. code-block:: python
+        .. code-block:: python
 
-        @dagster_type_loader(Permissive())
-        def load_dict(_context, value):
-            return value
+            @dagster_type_loader(Permissive())
+            def load_dict(_context, value):
+                return value
     """
     from dagster._config import resolve_to_config_type
 
@@ -291,19 +291,18 @@ def dagster_type_materializer(
         config_schema (object): The type of the config data expected by the decorated function.
 
     Examples:
-    .. code-block:: python
+        .. code-block:: python
 
-        # Takes a list of dicts such as might be read in using csv.DictReader, as well as a config
-        value, and writes
-        @dagster_type_materializer(str)
-        def materialize_df(_context, path, value):
-            with open(path, 'w') as fd:
-                writer = csv.DictWriter(fd, fieldnames=value[0].keys())
-                writer.writeheader()
-                writer.writerows(rowdicts=value)
+            # Takes a list of dicts such as might be read in using csv.DictReader, as well as a config
+            value, and writes
+            @dagster_type_materializer(str)
+            def materialize_df(_context, path, value):
+                with open(path, 'w') as fd:
+                    writer = csv.DictWriter(fd, fieldnames=value[0].keys())
+                    writer.writeheader()
+                    writer.writerows(rowdicts=value)
 
-            return AssetMaterialization.file(path)
-
+                return AssetMaterialization.file(path)
     """
     from dagster._config import resolve_to_config_type
 

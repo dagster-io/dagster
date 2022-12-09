@@ -212,95 +212,95 @@ def repository(
         description (Optional[str]): A string description of the repository.
 
     Example:
-    .. code-block:: python
+        .. code-block:: python
 
-        ######################################################################
-        # A simple repository using the first form of the decorated function
-        ######################################################################
+            ######################################################################
+            # A simple repository using the first form of the decorated function
+            ######################################################################
 
-        @op(config_schema={n: Field(Int)})
-        def return_n(context):
-            return context.op_config['n']
+            @op(config_schema={n: Field(Int)})
+            def return_n(context):
+                return context.op_config['n']
 
-        @job
-        def simple_job():
-            return_n()
-
-        @job
-        def some_job():
-            ...
-
-        @sensor(job=some_job)
-        def some_sensor():
-            if foo():
-                yield RunRequest(
-                    run_key= ...,
-                    run_config={
-                        'ops': {'return_n': {'config': {'n': bar()}}}
-                    }
-                )
-
-        @job
-        def my_job():
-            ...
-
-        my_schedule = ScheduleDefinition(cron_schedule="0 0 * * *", job=my_job)
-
-        @repository
-        def simple_repository():
-            return [simple_job, some_sensor, my_schedule]
-
-
-        ######################################################################
-        # A lazy-loaded repository
-        ######################################################################
-
-        def make_expensive_job():
             @job
-            def expensive_job():
-                for i in range(10000):
-                    return_n.alias(f'return_n_{i}')()
+            def simple_job():
+                return_n()
 
-            return expensive_job
-
-        def make_expensive_schedule():
             @job
-            def other_expensive_job():
-                for i in range(11000):
-                    return_n.alias(f'my_return_n_{i}')()
+            def some_job():
+                ...
 
-            return ScheduleDefinition(cron_schedule="0 0 * * *", job=other_expensive_job)
-
-        @repository
-        def lazy_loaded_repository():
-            return {
-                'jobs': {'expensive_job': make_expensive_job},
-                'schedules': {'expensive_schedule': make_expensive_schedule}
-            }
-
-
-        ######################################################################
-        # A complex repository that lazily constructs jobs from a directory
-        # of files in a bespoke YAML format
-        ######################################################################
-
-        class ComplexRepositoryData(RepositoryData):
-            def __init__(self, yaml_directory):
-                self._yaml_directory = yaml_directory
-
-            def get_all_pipelines(self):
-                return [
-                    self._construct_job_def_from_yaml_file(
-                      self._yaml_file_for_job_name(file_name)
+            @sensor(job=some_job)
+            def some_sensor():
+                if foo():
+                    yield RunRequest(
+                        run_key= ...,
+                        run_config={
+                            'ops': {'return_n': {'config': {'n': bar()}}}
+                        }
                     )
-                    for file_name in os.listdir(self._yaml_directory)
-                ]
 
-            ...
+            @job
+            def my_job():
+                ...
 
-        @repository
-        def complex_repository():
-            return ComplexRepositoryData('some_directory')
+            my_schedule = ScheduleDefinition(cron_schedule="0 0 * * *", job=my_job)
+
+            @repository
+            def simple_repository():
+                return [simple_job, some_sensor, my_schedule]
+
+
+            ######################################################################
+            # A lazy-loaded repository
+            ######################################################################
+
+            def make_expensive_job():
+                @job
+                def expensive_job():
+                    for i in range(10000):
+                        return_n.alias(f'return_n_{i}')()
+
+                return expensive_job
+
+            def make_expensive_schedule():
+                @job
+                def other_expensive_job():
+                    for i in range(11000):
+                        return_n.alias(f'my_return_n_{i}')()
+
+                return ScheduleDefinition(cron_schedule="0 0 * * *", job=other_expensive_job)
+
+            @repository
+            def lazy_loaded_repository():
+                return {
+                    'jobs': {'expensive_job': make_expensive_job},
+                    'schedules': {'expensive_schedule': make_expensive_schedule}
+                }
+
+
+            ######################################################################
+            # A complex repository that lazily constructs jobs from a directory
+            # of files in a bespoke YAML format
+            ######################################################################
+
+            class ComplexRepositoryData(RepositoryData):
+                def __init__(self, yaml_directory):
+                    self._yaml_directory = yaml_directory
+
+                def get_all_pipelines(self):
+                    return [
+                        self._construct_job_def_from_yaml_file(
+                          self._yaml_file_for_job_name(file_name)
+                        )
+                        for file_name in os.listdir(self._yaml_directory)
+                    ]
+
+                ...
+
+            @repository
+            def complex_repository():
+                return ComplexRepositoryData('some_directory')
 
     """
     if definitions_fn is not None:

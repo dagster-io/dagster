@@ -198,29 +198,29 @@ def define_dagstermill_asset(
             Defaults to False.
 
     Examples:
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagstermill import define_dagstermill_asset
-        from dagster import asset, AssetIn, AssetKey
-        from sklearn import datasets
-        import pandas as pd
-        import numpy as np
+            from dagstermill import define_dagstermill_asset
+            from dagster import asset, AssetIn, AssetKey
+            from sklearn import datasets
+            import pandas as pd
+            import numpy as np
 
-        @asset
-        def iris_dataset():
-            sk_iris = datasets.load_iris()
-            return pd.DataFrame(
-                data=np.c_[sk_iris["data"], sk_iris["target"]],
-                columns=sk_iris["feature_names"] + ["target"],
+            @asset
+            def iris_dataset():
+                sk_iris = datasets.load_iris()
+                return pd.DataFrame(
+                    data=np.c_[sk_iris["data"], sk_iris["target"]],
+                    columns=sk_iris["feature_names"] + ["target"],
+                )
+
+            iris_kmeans_notebook = define_dagstermill_asset(
+                name="iris_kmeans_notebook",
+                notebook_path="/path/to/iris_kmeans.ipynb",
+                ins={
+                    "iris": AssetIn(key=AssetKey("iris_dataset"))
+                }
             )
-
-        iris_kmeans_notebook = define_dagstermill_asset(
-            name="iris_kmeans_notebook",
-            notebook_path="/path/to/iris_kmeans.ipynb",
-            ins={
-                "iris": AssetIn(key=AssetKey("iris_dataset"))
-            }
-        )
 
     """
     check.str_param(name, "name")

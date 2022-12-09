@@ -175,50 +175,49 @@ def local_file_manager(init_context):
     Implements the :py:class:`~dagster._core.storage.file_manager.FileManager` API.
 
     Examples:
-    .. code-block:: python
+        .. code-block:: python
 
-        import tempfile
+            import tempfile
 
-        from dagster import job, local_file_manager, op
-
-
-        @op(required_resource_keys={"file_manager"})
-        def write_files(context):
-            fh_1 = context.resources.file_manager.write_data(b"foo")
-
-            with tempfile.NamedTemporaryFile("w+") as fd:
-                fd.write("bar")
-                fd.seek(0)
-                fh_2 = context.resources.file_manager.write(fd, mode="w", ext=".txt")
-
-            return (fh_1, fh_2)
+            from dagster import job, local_file_manager, op
 
 
-        @op(required_resource_keys={"file_manager"})
-        def read_files(context, file_handles):
-            fh_1, fh_2 = file_handles
-            assert context.resources.file_manager.read_data(fh_2) == b"bar"
-            fd = context.resources.file_manager.read(fh_2, mode="r")
-            assert fd.read() == "foo"
-            fd.close()
+            @op(required_resource_keys={"file_manager"})
+            def write_files(context):
+                fh_1 = context.resources.file_manager.write_data(b"foo")
+
+                with tempfile.NamedTemporaryFile("w+") as fd:
+                    fd.write("bar")
+                    fd.seek(0)
+                    fh_2 = context.resources.file_manager.write(fd, mode="w", ext=".txt")
+
+                return (fh_1, fh_2)
 
 
-        @job(resource_defs={"file_manager": local_file_manager})
-        def files_pipeline():
-            read_files(write_files())
+            @op(required_resource_keys={"file_manager"})
+            def read_files(context, file_handles):
+                fh_1, fh_2 = file_handles
+                assert context.resources.file_manager.read_data(fh_2) == b"bar"
+                fd = context.resources.file_manager.read(fh_2, mode="r")
+                assert fd.read() == "foo"
+                fd.close()
+
+
+            @job(resource_defs={"file_manager": local_file_manager})
+            def files_pipeline():
+                read_files(write_files())
 
     Or to specify the file directory:
 
-    .. code-block:: python
+        .. code-block:: python
 
-        @job(
-            resource_defs={
-                "file_manager": local_file_manager.configured({"base_dir": "/my/base/dir"})
-            }
-        )
-        def files_pipeline():
-            read_files(write_files())
-
+            @job(
+                resource_defs={
+                    "file_manager": local_file_manager.configured({"base_dir": "/my/base/dir"})
+                }
+            )
+            def files_pipeline():
+                read_files(write_files())
     """
     return LocalFileManager(
         base_dir=init_context.resource_config.get(

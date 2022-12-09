@@ -36,34 +36,32 @@ def with_resources(
             dictionary.
 
     Examples:
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagster import asset, resource, with_resources
+            from dagster import asset, resource, with_resources
 
-        @resource(config_schema={"bar": str})
-        def foo_resource():
-            ...
+            @resource(config_schema={"bar": str})
+            def foo_resource():
+                ...
 
-        @asset(required_resource_keys={"foo"})
-        def asset1(context):
-            foo = context.resources.foo
-            ...
+            @asset(required_resource_keys={"foo"})
+            def asset1(context):
+                foo = context.resources.foo
+                ...
 
-        @asset(required_resource_keys={"foo"})
-        def asset2(context):
-            foo = context.resources.foo
-            ...
+            @asset(required_resource_keys={"foo"})
+            def asset2(context):
+                foo = context.resources.foo
+                ...
 
-        asset1_with_foo, asset2_with_foo = with_resources(
-            [the_asset, other_asset],
-            resource_config_by_key={
-                "foo": {
-                    "config": {"bar": ...}
+            asset1_with_foo, asset2_with_foo = with_resources(
+                [the_asset, other_asset],
+                resource_config_by_key={
+                    "foo": {
+                        "config": {"bar": ...}
+                    }
                 }
-            }
-        )
-
-
+            )
     """
     from dagster._config import validate_config
     from dagster._core.definitions.job_definition import (

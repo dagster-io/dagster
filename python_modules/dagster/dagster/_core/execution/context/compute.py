@@ -91,14 +91,13 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     purposes, use :py:func:`dagster.build_op_context`.
 
     Example:
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagster import op
+            from dagster import op
 
-        @op
-        def hello_world(context: OpExecutionContext):
-            context.log.info("Hello, world!")
-
+            @op
+            def hello_world(context: OpExecutionContext):
+                context.log.info("Hello, world!")
     """
 
     __slots__ = ["_step_execution_context"]
@@ -144,12 +143,11 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the op.
 
         Example:
-        .. code-block:: python
+            .. code-block:: python
 
-            @op
-            def debug(context):
-                context.pdb.set_trace()
-
+                @op
+                def debug(context):
+                    context.pdb.set_trace()
         """
         if self._pdb is None:
             self._pdb = ForkedPdb()

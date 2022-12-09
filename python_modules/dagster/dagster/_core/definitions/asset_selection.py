@@ -61,7 +61,6 @@ class AssetSelection(ABC):
         Returns a selection that includes assets with any of the provided keys.
 
         Examples:
-
             .. code-block:: python
 
                 AssetSelection.keys(AssetKey(["a"]))

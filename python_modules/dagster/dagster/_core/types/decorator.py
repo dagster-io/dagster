@@ -56,30 +56,30 @@ def usable_as_dagster_type(  # type: ignore  # bug
             decorator to construct these arguments.
 
     Examples:
-    .. code-block:: python
+        .. code-block:: python
 
-        # dagster_aws.s3.file_manager.S3FileHandle
-        @usable_as_dagster_type
-        class S3FileHandle(FileHandle):
-            def __init__(self, s3_bucket, s3_key):
-                self._s3_bucket = check.str_param(s3_bucket, 's3_bucket')
-                self._s3_key = check.str_param(s3_key, 's3_key')
+            # dagster_aws.s3.file_manager.S3FileHandle
+            @usable_as_dagster_type
+            class S3FileHandle(FileHandle):
+                def __init__(self, s3_bucket, s3_key):
+                    self._s3_bucket = check.str_param(s3_bucket, 's3_bucket')
+                    self._s3_key = check.str_param(s3_key, 's3_key')
 
-            @property
-            def s3_bucket(self):
-                return self._s3_bucket
+                @property
+                def s3_bucket(self):
+                    return self._s3_bucket
 
-            @property
-            def s3_key(self):
-                return self._s3_key
+                @property
+                def s3_key(self):
+                    return self._s3_key
 
-            @property
-            def path_desc(self):
-                return self.s3_path
+                @property
+                def path_desc(self):
+                    return self.s3_path
 
-            @property
-            def s3_path(self):
-                return 's3://{bucket}/{key}'.format(bucket=self.s3_bucket, key=self.s3_key)
+                @property
+                def s3_path(self):
+                    return 's3://{bucket}/{key}'.format(bucket=self.s3_bucket, key=self.s3_key)
     """
     # check for no args, no parens case
     if isinstance(name, type):

@@ -27,30 +27,29 @@ def msteams_resource(context):
     By configuring this resource, you can post messages to MS Teams from any Dagster solid:
 
     Examples:
-    .. code-block:: python
+        .. code-block:: python
 
-        import os
+            import os
 
-        from dagster import op, job
-        from dagster_msteams import Card, msteams_resource
-
-
-        @op(required_resource_keys={"msteams"})
-        def teams_op(context):
-            card = Card()
-            card.add_attachment(text_message="Hello There !!")
-            context.resources.msteams.post_message(payload=card.payload)
+            from dagster import op, job
+            from dagster_msteams import Card, msteams_resource
 
 
-        @job(resource_defs={"msteams": msteams_resource})
-        def teams_job():
-            teams_op()
+            @op(required_resource_keys={"msteams"})
+            def teams_op(context):
+                card = Card()
+                card.add_attachment(text_message="Hello There !!")
+                context.resources.msteams.post_message(payload=card.payload)
 
 
-        teams_job.execute_in_process(
-            {"resources": {"msteams": {"config": {"hook_url": os.getenv("TEAMS_WEBHOOK_URL")}}}}
-        )
+            @job(resource_defs={"msteams": msteams_resource})
+            def teams_job():
+                teams_op()
 
+
+            teams_job.execute_in_process(
+                {"resources": {"msteams": {"config": {"hook_url": os.getenv("TEAMS_WEBHOOK_URL")}}}}
+            )
     """
     return TeamsClient(
         hook_url=context.resource_config.get("hook_url"),

@@ -69,17 +69,17 @@ def build_resources(
             initialization. Defaults to system log manager.
 
     Examples:
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagster import resource, build_resources
+            from dagster import resource, build_resources
 
-        @resource
-        def the_resource():
-            return "foo"
+            @resource
+            def the_resource():
+                return "foo"
 
-        with build_resources(resources={"from_def": the_resource, "from_val": "bar"}) as resources:
-            assert resources.from_def == "foo"
-            assert resources.from_val == "bar"
+            with build_resources(resources={"from_def": the_resource, "from_val": "bar"}) as resources:
+                assert resources.from_def == "foo"
+                assert resources.from_val == "bar"
 
     """
     resources = check.mapping_param(resources, "resource_defs", key_type=str)

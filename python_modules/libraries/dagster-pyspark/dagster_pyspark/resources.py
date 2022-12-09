@@ -33,21 +33,20 @@ def pyspark_resource(init_context):
     """This resource provides access to a PySpark SparkSession for executing PySpark code within Dagster.
 
     Example:
-    .. code-block:: python
+        .. code-block:: python
 
-        @op(required_resource_keys={"pyspark"})
-        def my_op(context):
-            spark_session = context.resources.pyspark.spark_session
-            dataframe = spark_session.read.json("examples/src/main/resources/people.json")
+            @op(required_resource_keys={"pyspark"})
+            def my_op(context):
+                spark_session = context.resources.pyspark.spark_session
+                dataframe = spark_session.read.json("examples/src/main/resources/people.json")
 
-        my_pyspark_resource = pyspark_resource.configured(
-            {"spark_conf": {"spark.executor.memory": "2g"}}
-        )
+            my_pyspark_resource = pyspark_resource.configured(
+                {"spark_conf": {"spark.executor.memory": "2g"}}
+            )
 
-        @job(resource_defs={"pyspark": my_pyspark_resource})
-        def my_spark_job():
-            my_op()
-
+            @job(resource_defs={"pyspark": my_pyspark_resource})
+            def my_spark_job():
+                my_op()
     """
     return PySparkResource(init_context.resource_config["spark_conf"])
 
@@ -80,20 +79,19 @@ def lazy_pyspark_resource(init_context):
     until it is actually needed / accessed by an op or IOManager.
 
     Example:
-    .. code-block:: python
+        .. code-block:: python
 
-        @op(required_resource_keys={"lazy_pyspark"})
-        def my_op(context):
-            spark_session = context.resources.lazy_pyspark.spark_session
-            dataframe = spark_session.read.json("examples/src/main/resources/people.json")
+            @op(required_resource_keys={"lazy_pyspark"})
+            def my_op(context):
+                spark_session = context.resources.lazy_pyspark.spark_session
+                dataframe = spark_session.read.json("examples/src/main/resources/people.json")
 
-        my_pyspark_resource = lazy_pyspark_resource.configured(
-            {"spark_conf": {"spark.executor.memory": "2g"}}
-        )
+            my_pyspark_resource = lazy_pyspark_resource.configured(
+                {"spark_conf": {"spark.executor.memory": "2g"}}
+            )
 
-        @job(resource_defs={"lazy_pyspark": my_pyspark_resource})
-        def my_spark_job():
-            my_op()
-
+            @job(resource_defs={"lazy_pyspark": my_pyspark_resource})
+            def my_spark_job():
+                my_op()
     """
     return LazyPySparkResource(init_context.resource_config["spark_conf"])

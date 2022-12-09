@@ -411,25 +411,25 @@ def reconstructable(target: Callable[..., "PipelineDefinition"]) -> Reconstructa
     specify your own reconstruction strategy.
 
     Examples:
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagster import job, reconstructable
+            from dagster import job, reconstructable
 
-        @job
-        def foo_job():
-            ...
+            @job
+            def foo_job():
+                ...
 
-        reconstructable_foo_job = reconstructable(foo_job)
+            reconstructable_foo_job = reconstructable(foo_job)
 
 
-        @graph
-        def foo():
-            ...
+            @graph
+            def foo():
+                ...
 
-        def make_bar_job():
-            return foo.to_job()
+            def make_bar_job():
+                return foo.to_job()
 
-        reconstructable_bar_job = reconstructable(make_bar_job)
+            reconstructable_bar_job = reconstructable(make_bar_job)
     """
     from dagster._core.definitions import JobDefinition, PipelineDefinition
 
@@ -525,39 +525,39 @@ def build_reconstructable_job(
             job. Values of the dict must be JSON serializable.
 
     Examples:
-    .. code-block:: python
+        .. code-block:: python
 
-        # module: mymodule
+            # module: mymodule
 
-        from dagster import JobDefinition, job, build_reconstructable_job
+            from dagster import JobDefinition, job, build_reconstructable_job
 
-        class JobFactory:
-            def make_job(*args, **kwargs):
+            class JobFactory:
+                def make_job(*args, **kwargs):
 
-                @job
-                def _job(...):
-                    ...
+                    @job
+                    def _job(...):
+                        ...
 
-                return _job
+                    return _job
 
-        def reconstruct_job(*args):
+            def reconstruct_job(*args):
+                factory = JobFactory()
+                return factory.make_job(*args)
+
             factory = JobFactory()
-            return factory.make_job(*args)
 
-        factory = JobFactory()
+            foo_job_args = (...,...)
 
-        foo_job_args = (...,...)
+            foo_job_kwargs = {...:...}
 
-        foo_job_kwargs = {...:...}
+            foo_job = factory.make_job(*foo_job_args, **foo_job_kwargs)
 
-        foo_job = factory.make_job(*foo_job_args, **foo_job_kwargs)
-
-        reconstructable_foo_job = build_reconstructable_job(
-            'mymodule',
-            'reconstruct_job',
-            foo_job_args,
-            foo_job_kwargs,
-        )
+            reconstructable_foo_job = build_reconstructable_job(
+                'mymodule',
+                'reconstruct_job',
+                foo_job_args,
+                foo_job_kwargs,
+            )
     """
     check.str_param(reconstructor_module_name, "reconstructor_module_name")
     check.str_param(reconstructor_function_name, "reconstructor_function_name")
