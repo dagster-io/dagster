@@ -98,7 +98,7 @@ import pandas as pd
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
-from dagster import asset, repository, with_resources
+from dagster import Definitions, asset
 
 
 @asset(io_manager_key="warehouse_io_manager")
@@ -122,26 +122,24 @@ def iris_plots(iris_dataset):
     return plot_data(iris_dataset)
 
 
-@repository
-def flowers_analysis_repository():
-    return with_resources(
-        [iris_dataset, iris_plots],
-        resource_defs={
-            "warehouse_io_manager": snowflake_pandas_io_manager.configured(
-                {
-                    "database": "FLOWERS",
-                    "schema": "IRIS",
-                    "account": "abc1234.us-east-1",
-                    "user": {"env": "SNOWFLAKE_USER"},
-                    "password": {"env": "SNOWFLAKE_PASSWORD"},
-                }
-            ),
-            "blob_io_manager": s3_pickle_io_manager,
-        },
-    )
+defs = Definitions(
+    assets=[iris_dataset, iris_plots],
+    resources={
+        "warehouse_io_manager": snowflake_pandas_io_manager.configured(
+            {
+                "database": "FLOWERS",
+                "schema": "IRIS",
+                "account": "abc1234.us-east-1",
+                "user": {"env": "SNOWFLAKE_USER"},
+                "password": {"env": "SNOWFLAKE_PASSWORD"},
+            }
+        ),
+        "blob_io_manager": s3_pickle_io_manager,
+    },
+)
 ```
 
-In this example, the `iris_dataset` asset uses the I/O manager bound to the key `warehouse_io_manager` and `iris_plots` will use the I/O manager bound to the key `blob_io_manager`. In the repository, we supply the I/O managers for those keys. When materialize these assets, the `iris_dataset` will get stored in Snowflake, and `iris_plots` will get saved in S3.
+In this example, the `iris_dataset` asset uses the I/O manager bound to the key `warehouse_io_manager` and `iris_plots` will use the I/O manager bound to the key `blob_io_manager`. In the <PyObject object="Definitions" />, we supply the I/O managers for those keys. When materialize these assets, the `iris_dataset` will get stored in Snowflake, and `iris_plots` will get saved in S3.
 
 ---
 
@@ -152,7 +150,7 @@ In addition to the Snowflake I/O manager, Dagster also provides a Snowflake [res
 ```python file=/integrations/snowflake/resource.py
 from dagster_snowflake import snowflake_resource
 
-from dagster import asset, repository, with_resources
+from dagster import Definitions, asset
 
 # this example executes a query against the IRIS_DATASET table created in Step 2 of the
 # Using Dagster with Snowflake tutorial
@@ -167,22 +165,20 @@ def small_petals(context):
     )
 
 
-@repository
-def flowers_analysis_repository():
-    return with_resources(
-        [small_petals],
-        resource_defs={
-            "snowflake": snowflake_resource.configured(
-                {
-                    "account": "abc1234.us-east-1",
-                    "user": {"env": "SNOWFLAKE_USER"},
-                    "password": {"env": "SNOWFLAKE_PASSWORD"},
-                    "database": "FLOWERS",
-                    "schema": "IRIS,",
-                }
-            )
-        },
-    )
+defs = Definitions(
+    assets=[small_petals],
+    resources={
+        "snowflake": snowflake_resource.configured(
+            {
+                "account": "abc1234.us-east-1",
+                "user": {"env": "SNOWFLAKE_USER"},
+                "password": {"env": "SNOWFLAKE_PASSWORD"},
+                "database": "FLOWERS",
+                "schema": "IRIS,",
+            }
+        )
+    },
+)
 ```
 
 In this example, we attach the Snowflake resource to the `small_petals` asset. In the body of the asset function, we use the `execute_query` method of the resource to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2: Create tables in Snowflake](/integrations/snowflake/using-snowflake-with-dagster#store-a-dagster-asset-as-a-table-in-snowflake) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).

@@ -6,7 +6,7 @@ import pandas as pd
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
-from dagster import asset, repository, with_resources
+from dagster import Definitions, asset
 
 
 @asset(io_manager_key="warehouse_io_manager")
@@ -30,23 +30,20 @@ def iris_plots(iris_dataset):
     return plot_data(iris_dataset)
 
 
-@repository
-def flowers_analysis_repository():
-    return with_resources(
-        [iris_dataset, iris_plots],
-        resource_defs={
-            "warehouse_io_manager": snowflake_pandas_io_manager.configured(
-                {
-                    "database": "FLOWERS",
-                    "schema": "IRIS",
-                    "account": "abc1234.us-east-1",
-                    "user": {"env": "SNOWFLAKE_USER"},
-                    "password": {"env": "SNOWFLAKE_PASSWORD"},
-                }
-            ),
-            "blob_io_manager": s3_pickle_io_manager,
-        },
-    )
-
+defs = Definitions(
+    assets=[iris_dataset, iris_plots],
+    resources={
+        "warehouse_io_manager": snowflake_pandas_io_manager.configured(
+            {
+                "database": "FLOWERS",
+                "schema": "IRIS",
+                "account": "abc1234.us-east-1",
+                "user": {"env": "SNOWFLAKE_USER"},
+                "password": {"env": "SNOWFLAKE_PASSWORD"},
+            }
+        ),
+        "blob_io_manager": s3_pickle_io_manager,
+    },
+)
 
 # end_example
