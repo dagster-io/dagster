@@ -2,7 +2,6 @@ from typing import NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.repository_definition import SINGLETON_REPOSITORY_NAME
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
 
 
@@ -123,19 +122,6 @@ class RepositorySelector(
         return RepositorySelector(
             location_name=graphql_data["repositoryLocationName"],
             repository_name=graphql_data["repositoryName"],
-        )
-
-
-class CodeLocationSelector(NamedTuple("_CodeLocationSelector", [("location_name", str)])):
-    def __new__(cls, location_name: str):
-        return super(CodeLocationSelector, cls).__new__(
-            cls,
-            location_name=check.str_param(location_name, "location_name"),
-        )
-
-    def to_repository_selector(self) -> RepositorySelector:
-        return RepositorySelector(
-            location_name=self.location_name, repository_name=SINGLETON_REPOSITORY_NAME
         )
 
 
