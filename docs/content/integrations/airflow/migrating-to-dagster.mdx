@@ -1,0 +1,47 @@
+---
+title: "Migrating Airflow to Dagster"
+description: guide for doing a lift and shift migration of airflow to dagster
+---
+
+\#Migrating Airflow to Dagster
+
+Dagster can convert your Airflow DAGs into Dagster jobs, making it possible to a lift and shift migration off of Airflow onto Dagster without any rewriting.
+
+This guide will walk you through the basic steps of doing this migration
+
+<Note>
+  Looking for example of an Airflow to Dagster migration? Check out the{" "}
+  <a href="https://github.com/dagster-io/dagster-airflow-migration-example">
+    dagster-airflow migration example repo on github
+  </a>
+  !
+</Note>
+
+## Prerequisites
+
+To get started, you will need to install the `dagster` and `dagster-airflow` Python packages:
+
+```bash
+pip install dagster dagster-airflow
+```
+
+---
+
+## Step 1: Create a new repository using <PyObject module="dagster_airflow" object="make_dagster_repo_from_airflow_dags_path" />
+
+The first step to migrating is to define a dagster repository, to do this we'll use <PyObject module="dagster_airflow" object="make_dagster_repo_from_airflow_dags_path" /> and pass it the path name of our Airflow Dag Bag. Dagster will then load that DagBag and render them into Jobs
+
+```python
+import os
+from dagster_airflow import make_dagster_repo_from_airflow_dags_path
+migrated_airflow_repo = make_dagster_repo_from_airflow_dags_path(
+    os.path.join(os.getenv("AIRFLOW_HOME"), "dags"),
+    "migrated_airflow_repo",
+)
+```
+
+---
+
+## Step 2: Launching runs
+
+Once we have a Repository defined we can launch dagit, view your newly migrated Jobs and launch runs. Its important to note that things like your old Airflow's instance infrastructure permissions will not have been migrated so in order to have your api calls to external services like AWS or K8s work you may need to do some permissioning work.
