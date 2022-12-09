@@ -21,6 +21,7 @@ from dagster._core.origin import (
 )
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.workspace.load_target import (
+    CompositeTarget,
     EmptyWorkspaceTarget,
     GrpcServerTarget,
     ModuleTarget,
@@ -147,13 +148,38 @@ def get_workspace_load_target(kwargs: Mapping[str, str]):
             "grpc_port",
             "grpc_socket",
         )
+
+        module_names = kwargs["module_name"]
+
         working_directory = get_working_directory_from_kwargs(kwargs)
-        return ModuleTarget(
-            module_name=check.str_elem(kwargs, "module_name"),
-            attribute=check.opt_str_elem(kwargs, "attribute"),
-            working_directory=working_directory,
-            location_name=None,
-        )
+
+        if len(module_names) == 1:
+            return ModuleTarget(
+                module_name=module_names[0],
+                attribute=check.opt_str_elem(kwargs, "attribute"),
+                working_directory=working_directory,
+                location_name=None,
+            )
+        else:
+            # multiple modules
+
+            if kwargs.get("attribute"):
+                raise UsageError(
+                    "If you are specifying multiple modules you cannot specify an attribute."
+                )
+
+            return CompositeTarget(
+                targets=[
+                    ModuleTarget(
+                        module_name=module_name,
+                        attribute=None,
+                        working_directory=working_directory,
+                        location_name=None,
+                    )
+                    for module_name in module_names
+                ]
+            )
+
     if kwargs.get("package_name"):
         _check_cli_arguments_none(
             kwargs,
@@ -244,7 +270,10 @@ def python_target_click_options():
         click.option(
             "--module-name",
             "-m",
-            help="Specify module where repository or job function lives",
+            multiple=True,
+            help="Specify module or modules (flag can be used multiple times) where "
+            "dagster definitions reside as top-level symbols/variables and load each "
+            "module as a code location in the current python environment.",
             envvar="DAGSTER_MODULE_NAME",
         ),
         click.option(
