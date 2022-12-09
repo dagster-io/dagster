@@ -13,12 +13,12 @@ parameters:
     type: object
     default:
       - api_tests
-      - cli_tests
+      # - cli_tests
       - core_tests
-      - general_tests
+      # - general_tests
       - daemon_tests
-      - daemon_sensor_tests
-      - scheduler_tests
+      # - daemon_sensor_tests
+      # - scheduler_tests
 jobs:
   - job: "dagster"
     pool:
