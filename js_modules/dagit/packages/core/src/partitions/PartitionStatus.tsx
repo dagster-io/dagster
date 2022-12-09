@@ -1,5 +1,6 @@
 import {Box, Tooltip, Colors} from '@dagster-io/ui';
 import * as React from 'react';
+import styled from 'styled-components/macro';
 
 import {useViewport} from '../gantt/useViewport';
 import {RunStatus} from '../types/globalTypes';
@@ -93,40 +94,44 @@ export const PartitionStatus: React.FC<{
     if (!currentSelectionRange || !onSelect || !selected) {
       return;
     }
-    const setHoveredSelectionRange = (e: MouseEvent) => {
+    const onMouseMove = (e: MouseEvent) => {
       const end = toPartitionName(e) || currentSelectionRange.end;
       setCurrentSelectionRange({start: currentSelectionRange?.start, end});
     };
-    const setSelectionRange = (e: MouseEvent) => {
+    const onMouseUp = (e: MouseEvent) => {
       if (!currentSelectionRange) {
         return;
       }
-      const end = toPartitionName(e);
-      const currentSelection = getRangeSelection(
-        currentSelectionRange.start,
-        end || currentSelectionRange.end,
-      );
-      const allSelected = currentSelection.every((name) => selected.includes(name));
-      if (allSelected) {
+      const end = toPartitionName(e) || currentSelectionRange.end;
+      const currentSelection = getRangeSelection(currentSelectionRange.start, end);
+
+      const operation = !e.getModifierState('Shift')
+        ? 'replace'
+        : currentSelection.every((name) => selected.includes(name))
+        ? 'subtract'
+        : 'add';
+
+      if (operation === 'replace') {
+        onSelect(currentSelection);
+      } else if (operation === 'subtract') {
         onSelect(selected.filter((x) => !currentSelection.includes(x)));
-      } else {
-        const newSelected = new Set(selected);
-        currentSelection.forEach((name) => newSelected.add(name));
-        onSelect(Array.from(newSelected));
+      } else if (operation === 'add') {
+        onSelect(Array.from(new Set([...selected, ...currentSelection])));
       }
       setCurrentSelectionRange(undefined);
     };
-    window.addEventListener('mousemove', setHoveredSelectionRange);
-    window.addEventListener('mouseup', setSelectionRange);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
     return () => {
-      window.removeEventListener('mousemove', setHoveredSelectionRange);
-      window.removeEventListener('mouseup', setSelectionRange);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
     };
   }, [onSelect, selected, currentSelectionRange, getRangeSelection, toPartitionName]);
 
   const selectedSpans = selected
     ? assembleIntoSpans(partitionNames, (key) => selected.includes(key)).filter((s) => s.status)
     : [];
+
   const spans = splitPartitions
     ? partitionNames.map((name, idx) => ({
         startIdx: idx,
@@ -154,44 +159,33 @@ export const PartitionStatus: React.FC<{
 
   const _onMouseDown = onSelect
     ? (e: React.MouseEvent<any, MouseEvent>) => {
-        const name = toPartitionName(e.nativeEvent);
-        if (!name) {
-          return;
-        }
-        setCurrentSelectionRange({start: name, end: name});
+        const partitionName = toPartitionName(e.nativeEvent);
+        partitionName && setCurrentSelectionRange({start: partitionName, end: partitionName});
       }
     : undefined;
 
   return (
-    <div {...containerProps}>
+    <div
+      {...containerProps}
+      onMouseDown={(e) => e.preventDefault()}
+      onDragStart={(e) => e.preventDefault()}
+    >
       {selected && !selectionWindowSize ? (
-        <div style={{position: 'relative', width: '100%', overflowX: 'hidden', height: 10}}>
+        <SelectionSpansContainer>
           {selectedSpans.map((s) => (
             <div
+              className="selection-span"
               key={s.startIdx}
               style={{
                 left: `min(calc(100% - 2px), ${indexToPct(s.startIdx)})`,
                 width: indexToPct(s.endIdx - s.startIdx + 1),
-                position: 'absolute',
-                top: 0,
-                height: 8,
-                border: `2px solid ${Colors.Blue500}`,
-                borderBottom: 0,
               }}
             />
           ))}
-        </div>
+        </SelectionSpansContainer>
       ) : null}
-      <div
-        style={{
-          position: 'relative',
-          width: '100%',
-          height: small ? 12 : 24,
-          borderRadius: 4,
-          overflow: 'hidden',
-          cursor: 'col-resize',
-          background: Colors.Gray200,
-        }}
+      <PartitionSpansContainer
+        style={{height: small ? 12 : 24}}
         ref={ref}
         onClick={_onClick}
         onMouseDown={_onMouseDown}
@@ -215,12 +209,8 @@ export const PartitionStatus: React.FC<{
           >
             {hideStatusTooltip || tooltipMessage ? (
               <div
-                style={{
-                  width: '100%',
-                  height: 24,
-                  outline: 'none',
-                  ...partitionStateToStyle(s.status),
-                }}
+                className="color-span"
+                style={partitionStateToStyle(s.status)}
                 title={tooltipMessage}
               />
             ) : (
@@ -239,14 +229,7 @@ export const PartitionStatus: React.FC<{
                       } are ${partitionStatusToText(s.status).toLowerCase()}`
                 }
               >
-                <div
-                  style={{
-                    width: '100%',
-                    height: 24,
-                    outline: 'none',
-                    ...partitionStateToStyle(s.status),
-                  }}
-                />
+                <div className="color-span" style={partitionStateToStyle(s.status)} />
               </Tooltip>
             )}
           </div>
@@ -254,22 +237,17 @@ export const PartitionStatus: React.FC<{
         {showSeparators
           ? spans.slice(1).map((s) => (
               <div
+                className="separator"
                 key={`separator_${s.startIdx}`}
                 style={{
                   left: `min(calc(100% - 2px), ${indexToPct(s.startIdx)})`,
-                  width: 1,
                   height: small ? 14 : 24,
-                  position: 'absolute',
-                  zIndex: 4,
-                  background: Colors.KeylineGray,
-                  top: 0,
                 }}
               />
             ))
           : null}
         {currentSelectionRange ? (
-          <div
-            key="currentSelectionRange"
+          <SelectionHoverHighlight
             style={{
               left: `min(calc(100% - 2px), ${indexToPct(
                 Math.min(
@@ -283,20 +261,14 @@ export const PartitionStatus: React.FC<{
                     partitionNames.indexOf(currentSelectionRange.start),
                 ) + 1,
               ),
-              minWidth: 2,
               height: small ? 14 : 24,
-              position: 'absolute',
-              zIndex: 4,
-              background: Colors.White,
-              opacity: 0.7,
-              top: 0,
             }}
           />
         ) : null}
         {selected && selected.length && selectionWindowSize ? (
           <>
-            <div
-              key="selectionRangeBackgroundLeft"
+            <SelectionFade
+              key="selectionFadeLeft"
               style={{
                 left: 0,
                 width: indexToPct(
@@ -306,15 +278,9 @@ export const PartitionStatus: React.FC<{
                   ),
                 ),
                 height: small ? 14 : 24,
-                position: 'absolute',
-                zIndex: 5,
-                background: Colors.White,
-                opacity: 0.5,
-                top: 0,
               }}
             />
-            <div
-              key="selectionRange"
+            <SelectionBorder
               style={{
                 left: `min(calc(100% - 3px), ${indexToPct(
                   Math.min(
@@ -328,17 +294,11 @@ export const PartitionStatus: React.FC<{
                       partitionNames.indexOf(selected[0]),
                   ) + 1,
                 ),
-                minWidth: 2,
                 height: small ? 14 : 24,
-                position: 'absolute',
-                zIndex: 5,
-                border: `3px solid ${Colors.Dark}`,
-                borderRadius: 4,
-                top: 0,
               }}
             />
-            <div
-              key="selectionRangeBackgroundRight"
+            <SelectionFade
+              key="selectionFadeRight"
               style={{
                 right: 0,
                 width: indexToPct(
@@ -350,16 +310,11 @@ export const PartitionStatus: React.FC<{
                     ),
                 ),
                 height: small ? 14 : 24,
-                position: 'absolute',
-                zIndex: 5,
-                background: Colors.White,
-                opacity: 0.5,
-                top: 0,
               }}
             />
           </>
         ) : null}
-      </div>
+      </PartitionSpansContainer>
       {!splitPartitions ? (
         <Box
           flex={{justifyContent: 'space-between'}}
@@ -426,3 +381,67 @@ export const partitionStatusToText = (status: PartitionState) => {
       return 'Missing';
   }
 };
+
+const SelectionSpansContainer = styled.div`
+  position: relative;
+  width: 100%;
+  overflow-x: hidden;
+  height: 10px;
+
+  .selection-span {
+    position: absolute;
+    top: 0;
+    height: 8px;
+    border: 2px solid ${Colors.Blue500};
+    border-bottom: 0;
+  }
+`;
+
+const PartitionSpansContainer = styled.div`
+  position: relative;
+  width: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: col-resize;
+  background: ${Colors.Gray200};
+
+  .color-span {
+    width: 100%;
+    height: 24px;
+    outline: none;
+  }
+
+  .separator {
+    width: 1px;
+    position: absolute;
+    z-index: 4;
+    background: ${Colors.KeylineGray};
+    top: 0;
+  }
+`;
+
+const SelectionFade = styled.div`
+  position: absolute;
+  z-index: 5;
+  background: ${Colors.White};
+  opacity: 0.5;
+  top: 0;
+`;
+
+const SelectionHoverHighlight = styled.div`
+  min-width: 2px;
+  position: absolute;
+  z-index: 4;
+  background: ${Colors.White};
+  opacity: 0.7;
+  top: 0;
+`;
+
+const SelectionBorder = styled.div`
+  min-width: 2px;
+  position: absolute;
+  z-index: 5;
+  border: 3px solid ${Colors.Dark};
+  border-radius: 4px;
+  top: 0;
+`;
