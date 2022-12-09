@@ -1,5 +1,3 @@
-from dagster_tests.api_tests.api_tests_repo import define_other_foo_pipeline
-
 from dagster import (
     AssetKey,
     AssetsDefinition,
