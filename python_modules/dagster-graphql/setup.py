@@ -34,7 +34,7 @@ setup(
     packages=find_packages(exclude=["dagster_graphql_tests*"]),
     install_requires=[
         "dagster==1.1.6",
-        "graphene>=3",
+        "graphene>=3,<3.2",
         "gql[requests]",
         "requests",
         "starlette",  # used for run_in_threadpool utility fn
