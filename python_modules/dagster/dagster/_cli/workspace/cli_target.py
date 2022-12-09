@@ -21,6 +21,7 @@ from dagster._core.origin import (
 )
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.workspace.load_target import (
+    CompositeTarget,
     EmptyWorkspaceTarget,
     GrpcServerTarget,
     ModuleTarget,
@@ -132,13 +133,37 @@ def get_workspace_load_target(kwargs: Mapping[str, str]):
             "grpc_port",
             "grpc_socket",
         )
+        python_files = kwargs["python_file"]
+
         working_directory = get_working_directory_from_kwargs(kwargs)
-        return PythonFileTarget(
-            python_file=check.str_elem(kwargs, "python_file"),
-            attribute=check.opt_str_elem(kwargs, "attribute"),
-            working_directory=working_directory,
-            location_name=None,
-        )
+
+        if len(python_files) == 1:
+            return PythonFileTarget(
+                python_file=python_files[0],
+                attribute=check.opt_str_elem(kwargs, "attribute"),
+                working_directory=working_directory,
+                location_name=None,
+            )
+        else:
+            # multiple files
+
+            if kwargs.get("attribute"):
+                raise UsageError(
+                    "If you are specifying multiple files you cannot specify an attribute."
+                )
+
+            return CompositeTarget(
+                targets=[
+                    PythonFileTarget(
+                        python_file=python_file,
+                        attribute=None,
+                        working_directory=working_directory,
+                        location_name=None,
+                    )
+                    for python_file in python_files
+                ]
+            )
+
     if kwargs.get("module_name"):
         _check_cli_arguments_none(
             kwargs,
@@ -147,13 +172,38 @@ def get_workspace_load_target(kwargs: Mapping[str, str]):
             "grpc_port",
             "grpc_socket",
         )
+
+        module_names = kwargs["module_name"]
+
         working_directory = get_working_directory_from_kwargs(kwargs)
-        return ModuleTarget(
-            module_name=check.str_elem(kwargs, "module_name"),
-            attribute=check.opt_str_elem(kwargs, "attribute"),
-            working_directory=working_directory,
-            location_name=None,
-        )
+
+        if len(module_names) == 1:
+            return ModuleTarget(
+                module_name=module_names[0],
+                attribute=check.opt_str_elem(kwargs, "attribute"),
+                working_directory=working_directory,
+                location_name=None,
+            )
+        else:
+            # multiple modules
+
+            if kwargs.get("attribute"):
+                raise UsageError(
+                    "If you are specifying multiple modules you cannot specify an attribute."
+                )
+
+            return CompositeTarget(
+                targets=[
+                    ModuleTarget(
+                        module_name=module_name,
+                        attribute=None,
+                        working_directory=working_directory,
+                        location_name=None,
+                    )
+                    for module_name in module_names
+                ]
+            )
+
     if kwargs.get("package_name"):
         _check_cli_arguments_none(
             kwargs,
@@ -233,7 +283,10 @@ def python_target_click_options():
             # Checks that the path actually exists lower in the stack, where we
             # are better equipped to surface errors
             type=click.Path(exists=False),
-            help="Specify python file where repository or job function lives",
+            multiple=True,
+            help="Specify python file or files (flag can be used multiple times) where "
+            "dagster definitions reside as top-level symbols/variables and load each "
+            "file as a code location in the current python environment.",
             envvar="DAGSTER_PYTHON_FILE",
         ),
         click.option(
@@ -244,7 +297,10 @@ def python_target_click_options():
         click.option(
             "--module-name",
             "-m",
-            help="Specify module where repository or job function lives",
+            multiple=True,
+            help="Specify module or modules (flag can be used multiple times) where "
+            "dagster definitions reside as top-level symbols/variables and load each "
+            "module as a code location in the current python environment.",
             envvar="DAGSTER_MODULE_NAME",
         ),
         click.option(
