@@ -121,6 +121,7 @@ const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
   padding: 6px 8px 6px 12px;
   transition: background-color 50ms, box-shadow 150ms;
   align-items: flex-start;
+  font-size: 14px;
 
   /**
    * Use margin instead of align-items: center because the contents of the menu item may wrap 
