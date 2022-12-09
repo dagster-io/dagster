@@ -56,7 +56,7 @@ class PagerDutyService:
                 How impacted the affected system is. Displayed to users in lists and influences the
                 priority of any created incidents. Must be one of {info, warning, error, critical}
 
-        Keyword args:
+        Keyword Args:
             event_action (str):
                 There are three types of events that PagerDuty recognizes, and are used to represent
                 different types of activity in your monitored systems. (default: 'trigger')
