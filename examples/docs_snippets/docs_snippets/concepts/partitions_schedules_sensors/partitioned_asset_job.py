@@ -1,9 +1,9 @@
 from dagster import (
     AssetSelection,
+    Definitions,
     HourlyPartitionsDefinition,
     asset,
     define_asset_job,
-    repository,
 )
 
 hourly_partitions_def = HourlyPartitionsDefinition(start_date="2022-05-31-00:00")
@@ -26,6 +26,7 @@ partitioned_asset_job = define_asset_job(
 )
 
 
-@repository
-def repo():
-    return [asset1, asset2, partitioned_asset_job]
+defs = Definitions(
+    assets=[asset1, asset2],
+    jobs=[asset_1_and_2_job],
+)
