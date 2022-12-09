@@ -20,7 +20,7 @@ from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._seven import IS_WINDOWS
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
-from .test_sensor_run import wait_for_all_runs_to_start, workspace_load_target
+from .test_sensor_run import create_workspace_load_target, wait_for_all_runs_to_start
 
 spawn_ctx = multiprocessing.get_context("spawn")
 
@@ -29,7 +29,7 @@ def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, deb
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
             with pendulum.test(execution_datetime), create_test_daemon_workspace_context(
-                workspace_load_target=workspace_load_target(),
+                workspace_load_target=create_workspace_load_target(),
                 instance=instance,
             ) as workspace_context:
                 logger = get_default_daemon_logger("SensorDaemon")
