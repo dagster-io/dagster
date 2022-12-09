@@ -7,6 +7,3 @@ def hello_asset():
 
 
 defs = Definitions(assets=[hello_asset])
-
-
-# get_workspace_from_kwargs
