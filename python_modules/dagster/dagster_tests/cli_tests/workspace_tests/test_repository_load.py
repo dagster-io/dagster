@@ -90,6 +90,25 @@ def test_multiple_module_load():
     assert result.exit_code == 0
 
 
+def test_multiple_module_load_with_attribute():
+    MODULE_ONE = "dagster._utils.test.hello_world_repository"
+    MODULE_TWO = "dagster._utils.test.hello_world_defs"
+
+    executed = {}
+
+    def wrapped_workspace_assert(workspace_context):
+        executed["yes"] = True
+
+    result = load_workspace_via_cli_runner(
+        ["-m", MODULE_ONE, "-m", MODULE_TWO, "-a", "defs"],  # does not accept attribute
+        wrapped_workspace_assert,
+    )
+
+    assert "yes" not in executed
+    assert "If you are specifying multiple modules you cannot specify an attribute" in result.stdout
+    assert result.exit_code != 0
+
+
 @pytest.mark.parametrize(
     "cli_args",
     (
