@@ -54,10 +54,10 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
 
 
 @contextmanager
-def instance_with_multiple_repos_with_sensors(overrides=None):
+def instance_with_multiple_repos_with_sensors(overrides=None, workspace_load_target=None):
     with instance_for_test(overrides) as instance:
         with create_test_daemon_workspace_context(
-            create_workspace_load_target(None), instance=instance
+            workspace_load_target or create_workspace_load_target(None), instance=instance
         ) as workspace_context:
             yield (
                 instance,
