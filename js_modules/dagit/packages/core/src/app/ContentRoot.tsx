@@ -2,7 +2,6 @@ import {MainContent} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
 
-const WorkspaceOverviewRoot = React.lazy(() => import('../workspace/WorkspaceOverviewRoot'));
 const UserSettingsRoot = React.lazy(() => import('./UserSettingsRoot'));
 const WorkspaceRoot = React.lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = React.lazy(() => import('../overview/OverviewRoot'));
@@ -43,8 +42,8 @@ export const ContentRoot = React.memo(() => {
         />
         {/* todo dish: These /workspace routes are for backward compatibility. Remove them
         in November or December 2022. */}
-        <Route path="/workspace" exact render={() => <Redirect to="/definitions" />} />
-        <Route path="/locations" exact render={() => <Redirect to="/definitions" />} />
+        <Route path="/workspace" exact render={() => <Redirect to="/code-locations" />} />
+        <Route path="/locations" exact render={() => <Redirect to="/code-locations" />} />
         <Route
           path="/workspace/*"
           exact
@@ -96,11 +95,6 @@ export const ContentRoot = React.memo(() => {
         <Route path="/code-locations">
           <React.Suspense fallback={<div />}>
             <CodeLocationsPage />
-          </React.Suspense>
-        </Route>
-        <Route path="/definitions">
-          <React.Suspense fallback={<div />}>
-            <WorkspaceOverviewRoot />
           </React.Suspense>
         </Route>
         <Route path="/locations">

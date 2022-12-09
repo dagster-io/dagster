@@ -25,7 +25,7 @@ export const WorkspaceHeader = <TData extends Record<string, any>>(props: Props<
       title={
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <Heading>
-            <Link to="/definitions" style={{color: Colors.Dark}}>
+            <Link to="/code-locations" style={{color: Colors.Dark}}>
               Deployment
             </Link>
           </Heading>
