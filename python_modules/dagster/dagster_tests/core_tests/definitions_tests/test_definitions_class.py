@@ -30,7 +30,7 @@ def get_all_assets_from_defs(defs: Definitions):
 
 
 def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefinition:
-    repo_or_caching_repo = definitions.get_inner_repository()
+    repo_or_caching_repo = definitions.get_inner_repository_for_loading_process()
     return (
         repo_or_caching_repo.compute_repository_definition()
         if isinstance(repo_or_caching_repo, PendingRepositoryDefinition)

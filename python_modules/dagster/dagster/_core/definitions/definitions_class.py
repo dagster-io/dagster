@@ -94,7 +94,8 @@ class Definitions:
                 *(jobs or []),
             ]
 
-        self._created_repo = created_repo
+        self._created_pending_or_normal_repo = created_repo
+        self._resolved_repo: Optional[RepositoryDefinition] = None
 
     @public
     def get_job_def(self, name: str) -> JobDefinition:
@@ -103,15 +104,27 @@ class Definitions:
         from this function."""
 
         check.str_param(name, "name")
-        return self.get_resolved_repo().get_job(name)
+        return self.get_repository_def().get_job(name)
 
-    def get_resolved_repo(self) -> RepositoryDefinition:
-        if isinstance(self._created_repo, PendingRepositoryDefinition):
-            self._created_repo = self._created_repo.compute_repository_definition()
-        return self._created_repo
+    def get_repository_def(self) -> RepositoryDefinition:
+        if self._resolved_repo:
+            return self._resolved_repo
 
-    def get_inner_repository(self) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
-        return self._created_repo
+        self._resolved_repo = (
+            self._created_pending_or_normal_repo.compute_repository_definition()
+            if isinstance(self._created_pending_or_normal_repo, PendingRepositoryDefinition)
+            else self._created_pending_or_normal_repo
+        )
+
+        return self._resolved_repo
+
+    def get_inner_repository_for_loading_process(
+        self,
+    ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
+        """This method is used internally to access the inner repository during the loading process
+        at CLI entry points. We explicitly do not want to resolve the pending repo because the entire
+        point is to defer that resolution until later."""
+        return self._created_pending_or_normal_repo
 
 
 def coerce_resources_to_defs(resources: Mapping[str, Any]) -> Dict[str, ResourceDefinition]:
