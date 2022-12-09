@@ -39,7 +39,7 @@ class AssetGraph(NamedTuple):
     partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]]
     group_names_by_key: Mapping[AssetKey, Optional[str]]
     freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]]
-    required_neighbor_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]]
+    required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]]
 
     @staticmethod
     def from_assets(all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]) -> "AssetGraph":
@@ -51,7 +51,7 @@ class AssetGraph(NamedTuple):
         ] = {}
         group_names_by_key: Dict[AssetKey, Optional[str]] = {}
         freshness_policies_by_key: Dict[AssetKey, Optional[FreshnessPolicy]] = {}
-        required_neighbor_sets_by_key: Dict[AssetKey, AbstractSet[AssetKey]] = {}
+        required_multi_asset_sets_by_key: Dict[AssetKey, AbstractSet[AssetKey]] = {}
 
         for asset in all_assets:
             if isinstance(asset, SourceAsset):
@@ -69,7 +69,7 @@ class AssetGraph(NamedTuple):
                 freshness_policies_by_key.update(asset.freshness_policies_by_key)
                 if len(asset.keys) > 1 and not asset.can_subset:
                     for key in asset.keys:
-                        required_neighbor_sets_by_key[key] = asset.keys
+                        required_multi_asset_sets_by_key[key] = asset.keys
 
             else:
                 check.failed(f"Expected SourceAsset or AssetsDefinition, got {type(asset)}")
@@ -80,7 +80,7 @@ class AssetGraph(NamedTuple):
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
-            required_neighbor_sets_by_key=required_neighbor_sets_by_key,
+            required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
         )
 
     @staticmethod
@@ -120,7 +120,7 @@ class AssetGraph(NamedTuple):
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
-            required_neighbor_sets_by_key=None,
+            required_multi_asset_sets_by_key=None,
         )
 
     @property
@@ -327,14 +327,14 @@ class AssetGraph(NamedTuple):
                     queue.append(parent_key)
                     visited.add(parent_key)
 
-    def get_required_neighbors(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
+    def get_required_multi_asset_keys(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         """For a given asset_key, return the set of asset keys that must be materialized at the same time."""
-        if self.required_neighbor_sets_by_key is None:
+        if self.required_multi_asset_sets_by_key is None:
             raise DagsterInvariantViolationError(
                 "Required neighbor information not set when creating this AssetGraph"
             )
-        if asset_key in self.required_neighbor_sets_by_key:
-            return self.required_neighbor_sets_by_key[asset_key]
+        if asset_key in self.required_multi_asset_sets_by_key:
+            return self.required_multi_asset_sets_by_key[asset_key]
         return set()
 
     def toposort_asset_keys(self) -> Sequence[AbstractSet[AssetKey]]:

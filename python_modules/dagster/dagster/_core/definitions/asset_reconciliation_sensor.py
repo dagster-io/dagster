@@ -386,8 +386,8 @@ def determine_asset_partitions_to_reconcile(
         ):
             to_reconcile.add(candidate)
             # add in all of the neighbor keys which must be materialized alongside this one
-            for neighbor_key in asset_graph.get_required_neighbors(candidate.asset_key):
-                to_reconcile.add(AssetKeyPartitionKey(neighbor_key, candidate.partition_key))
+            for required_key in asset_graph.get_required_multi_asset_keys(candidate.asset_key):
+                to_reconcile.add(AssetKeyPartitionKey(required_key, candidate.partition_key))
 
             for child in asset_graph.get_children_partitions(
                 candidate.asset_key, candidate.partition_key
@@ -672,8 +672,8 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 to_materialize.add(asset_key_partition_key)
                 expected_data_times_by_key[key] = expected_data_times
                 # all required neighbors will be updated on the same tick
-                for neighbor_key in asset_graph.get_required_neighbors(key):
-                    to_materialize.add(AssetKeyPartitionKey(neighbor_key, None))
+                for required_key in asset_graph.get_required_multi_asset_keys(key):
+                    to_materialize.add(AssetKeyPartitionKey(required_key, None))
             else:
                 # if downstream assets consume this, they should expect data times equal to the
                 # current times for this asset, as it's not going to be updated
