@@ -9,19 +9,49 @@ Dagit is a web-based interface for viewing and interacting with Dagster objects.
 
 You can inspect op, job, and graph definitions, launch runs, view launched runs, and view assets produced by those runs.
 
-To launch the Dagit web server, run `dagit`. The command will print out the URL you can access the interface from in the browser, usually on port 3000.
+---
 
-Dagit fetches definitions - jobs, ops, schedules, sensors - from a set of repositories configured in `workspace.yaml`. It fetches runs and assets from storage, configured in an instance's `dagster.yaml`.
+## Launching Dagit
+
+To launch the Dagit web server, run:
+
+```shell
+dagit
+```
+
+The command will print out the URL you can access the interface from in the browser, usually on port 3000.
+
+When invoked, Dagit will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/concepts/repositories-workspaces/workspaces). Refer to the [Code location documentation](/concepts/code-locations) for more info.
+
+---
+
+## Navigating Dagit
 
 These are the main pages inside Dagit:
 
-## Job
+- [Jobs](#jobs)
+- [Runs](#runs)
+- [Assets](#assets)
+- [Schedules and sensors](#schedules-and-sensors)
+- [Instance status](#instance-status)
+
+### Jobs
 
 The Job page offers tools to explore a job definition and launch runs for that job.
 
-### Job Definition
+<TabGroup>
+<TabItem name="Overview tab">
 
-The Overview tab shows the graph of ops that make up a job. Selecting an op reveals detailed metadata about it in the pane to the right.
+#### Overview tab
+
+The **Overview** tab shows the graph of ops that make up a job.
+
+- [Job definition](#job-definition)
+- [Op definition](#op-definition)
+
+##### **Job definition**
+
+In this tab, you can view the definition of a job:
 
 <!-- ![Dagit Job Definition](/images/tutorial/complex-job.png) -->
 
@@ -30,11 +60,11 @@ alt="Dagit Job Definition"
 src="/images/tutorial/complex-job.png"
 width={2662}
 height={1618}
-/>
+/> <br></br>
 
-### Op Definition
+##### **Op definition**
 
-On the Overview tab, clicking an op, you can find detailed information about the op definition.
+To view detailed information about an op in the job, click an op to open a panel on the right side of the page:
 
 <!-- ![Dagit Op Definition](/images/concepts/dagit/op-definition.png) -->
 
@@ -45,9 +75,14 @@ width={2662}
 height={1618}
 />
 
-### Launchpad
+---
 
-The Launchpad tab provides a configuration editor to let you experiment with configuration and launch runs.
+</TabItem>
+<TabItem name="Launchpad tab">
+
+#### Launchpad tab
+
+The **Launchpad tab** provides a configuration editor to let you experiment with configuration and launch runs:
 
 <!-- ![Dagit Launchpad](/images/tutorial/single-op-launchpad.png) -->
 
@@ -58,9 +93,14 @@ width={2662}
 height={1618}
 />
 
-### Runs Tab
+---
 
-The Runs tab shows the list of recent runs for the job.
+</TabItem>
+<TabItem name="Runs tab">
+
+#### Runs tab
+
+The Runs tab displays a list of recent runs for the job:
 
 <Image
 alt="Dagit Job Runs Tab"
@@ -69,9 +109,19 @@ width={2662}
 height={1618}
 />
 
-## Runs
+---
 
-The Runs page lists all job runs. You can filter the list by job name, run ID, execution status, or tag. Click a run ID to view details for that run.
+</TabItem>
+</TabGroup>
+
+### Runs
+
+<TabGroup>
+<TabItem name="All runs">
+
+#### All runs
+
+The Runs page lists all job runs, which can be filtered by job name, run ID, execution status, or tag. Click a run ID to open the [**Run details** page](#run-details) and view details for that run:
 
 <Image
 alt="Dagit Runs Page"
@@ -80,11 +130,14 @@ width={3808}
 height={2414}
 />
 
-### Viewing a single run
+</TabItem>
+<TabItem name="Run details">
 
-The Run page provides details for a single run, including timing information, errors, and logs.
+#### Run details
 
-The upper left pane contains a Gantt chart, indicating how long each op took to execute. The bottom pane displays filterable events and logs emitted during the course of execution.
+The **Run details** page contains details about a single run, including timing information, errors, and logs.
+
+The upper left pane contains a Gantt chart, indicating how long each op took to execute. The bottom pane displays filterable events and logs emitted during the course of execution:
 
 <Image
 alt="Dagit Job Run"
@@ -93,9 +146,7 @@ width={3808}
 height={2414}
 />
 
-### Re-executing a run
-
-The Run page also allows you to re-execute a run with the same configuration. Click the "Re-execution" dropdown button. There are several re-execution options:
+From the **Run details** page, you can also re-execute a run using the same configuration by clicking the **Re-execute** dropdown:
 
 <Image
 alt="Dagit Re-execution"
@@ -104,16 +155,26 @@ width={3808}
 height={2414}
 />
 
+There are several re-execution options:
+
 - **All Steps**: Re-execute the run from scratch.
 - **Selected Steps**: Re-execute the selected steps.
 - **From Selected**: Re-execute the steps downstream from the selected steps
 - **From Failure**: Retry the run, skipping steps completed successfully. This is only enabled when the run has failed.
 
-Related runs (e.g., runs created by re-executing the same previous run) are now grouped together in the right pane for easy reference.
+Related runs (e.g., runs created by re-executing the same previous run) are grouped together in the right pane for easy reference.
 
-## Assets
+</TabItem>
+</TabGroup>
 
-The Assets page lists all assets. You can filter the list by asset key.
+### Assets
+
+<TabGroup>
+<TabItem name="Asset catalog">
+
+#### Asset catalog
+
+The **Asset catalog** page lists all assets, which can be filtered by asset key. Click an asset to open the [**Asset details** page](#asset-details):
 
 <Image
 alt="Dagit Asset Catalog"
@@ -122,9 +183,14 @@ width={3808}
 height={2414}
 />
 
-### Asset Details
+---
 
-The Asset page lists details about a single asset.
+</TabItem>
+<TabItem name="Asset details">
+
+#### Asset details
+
+The **Asset details** page contains details about a single asset:
 
 <Image
 alt="Dagit Asset Details"
@@ -133,11 +199,21 @@ width={3808}
 height={2414}
 />
 
-## Schedules and Sensors
+---
 
-### Schedules
+</TabItem>
+</TabGroup>
+
+### Schedules and sensors
+
+<TabGroup>
+<TabItem name="Schedules">
+
+#### Schedules
 
 The Schedules page lists all schedules defined in your workspace, as well as information about upcoming ticks for anticipated scheduled runs.
+
+Click a schedule to view details about the schedule, including its recent tick history and recent runs.
 
 <Image
 alt="Dagit Schedules"
@@ -146,11 +222,16 @@ width={3808}
 height={2414}
 />
 
-Clicking each schedule, you can find details about a single schedule, its recent tick history, and recent runs.
+---
 
-### Sensors
+</TabItem>
+<TabItem name="Sensors">
+
+#### Sensors
 
 The Sensors page lists all sensors defined in your workspace, as well as information about the sensor's frequency and its last tick.
+
+Click a sensor to view details about the sensor, including its recent tick history and recent runs.
 
 <Image
 alt="Dagit Sensors"
@@ -159,11 +240,14 @@ width={3808}
 height={2414}
 />
 
-Clicking each sensor, you can find details about a single sensor, its recent tick history, and recent runs.
+---
 
-## Instance Status
+</TabItem>
+</TabGroup>
 
-The Instance status page includes information about the status of the repositories in your workspace, daemon health, schedules, sensors, and configuration details.
+### Instance Status
+
+The Instance status page includes information about the status of the code locations in your workspace, daemon health, schedules, sensors, and configuration details:
 
 <Image
 alt="status-instance"
