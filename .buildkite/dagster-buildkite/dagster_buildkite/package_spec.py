@@ -252,10 +252,10 @@ class PackageSpec:
             return set.union(package.install_requires, *package.extras_require.values())
 
         # If we don't have a distribution (like many of our integration test suites)
-        # we can use a requirements.txt file to capture requirements
-        requirements_txt = Path(self.directory) / "requirements.txt"
-        if requirements_txt.exists():
-            parsed = pkg_resources.parse_requirements(requirements_txt.read_text())
+        # we can use a buildkite_deps.txt file to capture requirements
+        buildkite_deps_txt = Path(self.directory) / "buildkite_deps.txt"
+        if buildkite_deps_txt.exists():
+            parsed = pkg_resources.parse_requirements(buildkite_deps_txt.read_text())
             return [requirement for requirement in parsed]
 
         # Otherwise return nothing
