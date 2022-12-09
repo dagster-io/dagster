@@ -1,4 +1,3 @@
-import warnings
 from collections import defaultdict, deque
 from typing import (
     TYPE_CHECKING,
@@ -26,7 +25,6 @@ from .partition import PartitionsDefinition
 from .partition_key_range import PartitionKeyRange
 from .partition_mapping import PartitionMapping, infer_partition_mapping
 from .source_asset import SourceAsset
-from .time_window_partitions import TimeWindowPartitionsDefinition
 
 if TYPE_CHECKING:
     from dagster._core.host_representation.external_data import ExternalAssetNode
@@ -232,18 +230,6 @@ class AssetGraph(
             )
         )
 
-        partition_keys = child_partitions_def.get_partition_keys()
-        if (
-            downstream_partition_key_range.start not in partition_keys
-            or downstream_partition_key_range.end not in partition_keys
-        ):
-            error_msg = f"""Mapped partition key {parent_partition_key} to downstream partition key range
-            [{downstream_partition_key_range.start}...{downstream_partition_key_range.end}] which
-            is not a valid range in the downstream partitions definition."""
-            if not isinstance(child_partitions_def, TimeWindowPartitionsDefinition):
-                raise DagsterInvalidInvocationError(error_msg)
-            else:
-                warnings.warn(error_msg)
         return child_partitions_def.get_partition_keys_in_range(downstream_partition_key_range)
 
     def get_parents_partitions(
@@ -299,18 +285,6 @@ class AssetGraph(
                 upstream_partitions_def=parent_partitions_def,
             )
         )
-        partition_keys = parent_partitions_def.get_partition_keys()
-        if (
-            upstream_partition_key_range.start not in partition_keys
-            or upstream_partition_key_range.end not in partition_keys
-        ):
-            error_msg = f"""Mapped partition key {partition_key} to upstream partition key range
-            [{upstream_partition_key_range.start}...{upstream_partition_key_range.end}] which
-            is not a valid range in the upstream partitions definition."""
-            if not isinstance(child_partitions_def, TimeWindowPartitionsDefinition):
-                raise DagsterInvalidInvocationError(error_msg)
-            else:
-                warnings.warn(error_msg)
 
         return parent_partitions_def.get_partition_keys_in_range(upstream_partition_key_range)
 

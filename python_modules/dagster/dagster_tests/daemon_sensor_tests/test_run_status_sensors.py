@@ -684,7 +684,6 @@ def test_cross_code_location_run_status_sensor(executor):
 
         # This remainder is largely copied from test_cross_repo_run_status_sensor
         with pendulum.test(freeze_datetime):
-            sensor_repo = daemon_sensor_defs_location_info.get_single_repository()
             success_sensor = sensor_repo.get_external_sensor("success_sensor")
             instance.start_sensor(success_sensor)
 
