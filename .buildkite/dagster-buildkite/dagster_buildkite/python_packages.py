@@ -117,7 +117,7 @@ class PythonPackages:
             ignored = git_ignore.read_text().splitlines()
             git_ignore_spec = pathspec.PathSpec.from_lines("gitwildmatch", ignored)
         else:
-            git_ignore_spec = pathspec.PathSpec().from_lines([])
+            git_ignore_spec = pathspec.PathSpec([])
 
         # Consider any setup.py file to be a package
         packages = set(
