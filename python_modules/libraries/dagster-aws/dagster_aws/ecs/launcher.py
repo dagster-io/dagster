@@ -329,7 +329,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         }
         run_task_kwargs["tags"] = [
             *run_task_kwargs.get("tags", []),
-            *self.build_ecs_tags_for_run_task(),
+            *self.build_ecs_tags_for_run_task(run),
         ]
 
         # Run a task using the same network configuration as this processes's
