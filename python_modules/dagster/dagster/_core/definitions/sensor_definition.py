@@ -15,7 +15,6 @@ from typing import (
 )
 
 import pendulum
-from typing_extensions import TypeGuard
 
 import dagster._check as check
 from dagster._annotations import public
@@ -30,7 +29,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._serdes import whitelist_for_serdes
 
-from ..decorator_utils import get_function_params
+from ..decorator_utils import get_function_params, is_context_provided
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
@@ -231,12 +230,6 @@ SensorEvaluationFunction = Callable[
 ]
 
 
-def is_context_provided(
-    fn: "RawSensorEvaluationFunction",
-) -> TypeGuard[Callable[[SensorEvaluationContext], "RawSensorEvaluationFunctionReturn"]]:
-    return len(get_function_params(fn)) == 1
-
-
 class SensorDefinition:
     """Define a sensor that initiates a set of runs based on some external state.
 
@@ -373,7 +366,7 @@ class SensorDefinition:
                     "invocation."
                 )
 
-            return self._raw_fn()  # type: ignore [TypeGuard limitation]
+            return self._raw_fn()
 
     @public  # type: ignore
     @property
@@ -582,8 +575,8 @@ def wrap_sensor_evaluation(
     fn: RawSensorEvaluationFunction,
 ) -> SensorEvaluationFunction:
     def _wrapped_fn(context: SensorEvaluationContext):
-        if is_context_provided(fn):
-            result = fn(context)
+        if is_context_provided(fn):  # type: ignore  # fmt: skip
+            result = fn(context)  # type: ignore  # fmt: skip
         else:
             result = fn()  # type: ignore
 

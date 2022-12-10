@@ -148,8 +148,8 @@ def schedule(
                 ScheduleExecutionError,
                 lambda: f"Error occurred during the evaluation of schedule {schedule_name}",
             ):
-                if is_context_provided(fn):
-                    result = fn(context)
+                if is_context_provided(fn):  # type: ignore  # fmt: skip
+                    result = fn(context)  # type: ignore  # fmt: skip
                 else:
                     result = fn()  # type: ignore
 
@@ -173,7 +173,7 @@ def schedule(
                     # this is a run-request based decorated function
                     yield from cast(RunRequestIterator, ensure_gen(result))
 
-        has_context_arg = is_context_provided(fn)
+        has_context_arg = is_context_provided(fn)  # type: ignore  # fmt: skip
         evaluation_fn = DecoratedScheduleFunction(
             decorated_fn=fn,
             wrapped_fn=_wrapped_fn,
