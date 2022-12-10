@@ -99,7 +99,10 @@ class AssetValueLoader:
             resource_config=resource_config
         )
         io_manager = cast(IOManager, self._resource_instance_cache[io_manager_key])
-        io_resource_config = {io_manager_key: config['resources'][io_manager_key]} if config.get('resources') else {}
+        
+        io_config = resource_config.get(io_manager_key)
+        io_resource_config = {io_manager_key: io_config} if io_config else {}
+        
         io_manager_config = get_mapped_resource_config({io_manager_key: io_manager_def}, io_resource_config)
 
         input_context = build_input_context(
@@ -116,7 +119,7 @@ class AssetValueLoader:
             resources=self._resource_instance_cache,
             resource_config=io_manager_config[io_manager_key].config,
             partition_key=partition_key,
-            config=config
+            config=config,
             asset_partition_key_range=PartitionKeyRange(partition_key, partition_key)
             if partition_key is not None
             else None,
