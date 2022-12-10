@@ -104,6 +104,7 @@ export interface RunActionButtonsTestQuery_pipelineRunOrError_Run {
   solidSelection: string[] | null;
   assetSelection: RunActionButtonsTestQuery_pipelineRunOrError_Run_assetSelection[] | null;
   pipelineSnapshotId: string | null;
+  parentPipelineSnapshotId: string | null;
   executionPlan: RunActionButtonsTestQuery_pipelineRunOrError_Run_executionPlan | null;
   stepKeysToExecute: string[] | null;
   repositoryOrigin: RunActionButtonsTestQuery_pipelineRunOrError_Run_repositoryOrigin | null;

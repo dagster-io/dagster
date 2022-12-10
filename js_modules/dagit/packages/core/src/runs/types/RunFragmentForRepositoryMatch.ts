@@ -19,5 +19,6 @@ export interface RunFragmentForRepositoryMatch {
   id: string;
   pipelineName: string;
   pipelineSnapshotId: string | null;
+  parentPipelineSnapshotId: string | null;
   repositoryOrigin: RunFragmentForRepositoryMatch_repositoryOrigin | null;
 }

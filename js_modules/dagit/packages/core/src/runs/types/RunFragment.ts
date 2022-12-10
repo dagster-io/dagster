@@ -100,6 +100,7 @@ export interface RunFragment {
   solidSelection: string[] | null;
   assetSelection: RunFragment_assetSelection[] | null;
   pipelineSnapshotId: string | null;
+  parentPipelineSnapshotId: string | null;
   executionPlan: RunFragment_executionPlan | null;
   stepKeysToExecute: string[] | null;
   repositoryOrigin: RunFragment_repositoryOrigin | null;
