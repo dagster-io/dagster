@@ -12,7 +12,7 @@ from dagster._core.host_representation.origin import (
     ExternalRepositoryOrigin,
     RepositoryLocationOrigin,
 )
-from dagster._core.instance.ref import InstanceRef
+from dagster._core.instance.ref import DagsterInstanceRef
 from dagster._core.origin import PipelinePythonOrigin, get_python_environment_entry_point
 from dagster._serdes import serialize_dagster_namedtuple, whitelist_for_serdes
 from dagster._utils import frozenlist
@@ -31,7 +31,7 @@ class ExecutionPlanSnapshotArgs(
             ("step_keys_to_execute", Optional[Sequence[str]]),
             ("pipeline_snapshot_id", str),
             ("known_state", Optional[KnownExecutionState]),
-            ("instance_ref", Optional[InstanceRef]),
+            ("instance_ref", Optional[DagsterInstanceRef]),
             ("asset_selection", Optional[FrozenSet[AssetKey]]),
         ],
     )
@@ -45,7 +45,7 @@ class ExecutionPlanSnapshotArgs(
         step_keys_to_execute: Optional[Sequence[str]],
         pipeline_snapshot_id: str,
         known_state: Optional[KnownExecutionState] = None,
-        instance_ref: Optional[InstanceRef] = None,
+        instance_ref: Optional[DagsterInstanceRef] = None,
         asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
@@ -63,7 +63,7 @@ class ExecutionPlanSnapshotArgs(
             ),
             pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
             known_state=check.opt_inst_param(known_state, "known_state", KnownExecutionState),
-            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", DagsterInstanceRef),
             asset_selection=check.opt_nullable_set_param(
                 asset_selection, "asset_selection", of_type=AssetKey
             ),
@@ -86,7 +86,7 @@ class ExecuteRunArgs(
             # Deprecated, only needed for back-compat since it can be pulled from the PipelineRun
             ("pipeline_origin", PipelinePythonOrigin),
             ("pipeline_run_id", str),
-            ("instance_ref", Optional[InstanceRef]),
+            ("instance_ref", Optional[DagsterInstanceRef]),
             ("set_exit_code_on_failure", Optional[bool]),
         ],
     )
@@ -95,7 +95,7 @@ class ExecuteRunArgs(
         cls,
         pipeline_origin: PipelinePythonOrigin,
         pipeline_run_id: str,
-        instance_ref: Optional[InstanceRef],
+        instance_ref: Optional[DagsterInstanceRef],
         set_exit_code_on_failure: Optional[bool] = None,
     ):
         return super(ExecuteRunArgs, cls).__new__(
@@ -106,7 +106,7 @@ class ExecuteRunArgs(
                 PipelinePythonOrigin,
             ),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
-            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", DagsterInstanceRef),
             set_exit_code_on_failure=(
                 True
                 if check.opt_bool_param(set_exit_code_on_failure, "set_exit_code_on_failure")
@@ -131,7 +131,7 @@ class ResumeRunArgs(
             # Deprecated, only needed for back-compat since it can be pulled from the PipelineRun
             ("pipeline_origin", PipelinePythonOrigin),
             ("pipeline_run_id", str),
-            ("instance_ref", Optional[InstanceRef]),
+            ("instance_ref", Optional[DagsterInstanceRef]),
             ("set_exit_code_on_failure", Optional[bool]),
         ],
     )
@@ -140,7 +140,7 @@ class ResumeRunArgs(
         cls,
         pipeline_origin: PipelinePythonOrigin,
         pipeline_run_id: str,
-        instance_ref: Optional[InstanceRef],
+        instance_ref: Optional[DagsterInstanceRef],
         set_exit_code_on_failure: Optional[bool] = None,
     ):
         return super(ResumeRunArgs, cls).__new__(
@@ -151,7 +151,7 @@ class ResumeRunArgs(
                 PipelinePythonOrigin,
             ),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
-            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", DagsterInstanceRef),
             set_exit_code_on_failure=(
                 True
                 if check.opt_bool_param(set_exit_code_on_failure, "set_exit_code_on_failure")
@@ -175,7 +175,7 @@ class ExecuteExternalPipelineArgs(
         [
             ("pipeline_origin", ExternalPipelineOrigin),
             ("pipeline_run_id", str),
-            ("instance_ref", Optional[InstanceRef]),
+            ("instance_ref", Optional[DagsterInstanceRef]),
         ],
     )
 ):
@@ -183,7 +183,7 @@ class ExecuteExternalPipelineArgs(
         cls,
         pipeline_origin: ExternalPipelineOrigin,
         pipeline_run_id: str,
-        instance_ref: Optional[InstanceRef],
+        instance_ref: Optional[DagsterInstanceRef],
     ):
         return super(ExecuteExternalPipelineArgs, cls).__new__(
             cls,
@@ -193,7 +193,7 @@ class ExecuteExternalPipelineArgs(
                 ExternalPipelineOrigin,
             ),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
-            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", DagsterInstanceRef),
         )
 
 
@@ -206,7 +206,7 @@ class ExecuteStepArgs(
             ("pipeline_origin", PipelinePythonOrigin),
             ("pipeline_run_id", str),
             ("step_keys_to_execute", Optional[Sequence[str]]),
-            ("instance_ref", Optional[InstanceRef]),
+            ("instance_ref", Optional[DagsterInstanceRef]),
             ("retry_mode", Optional[RetryMode]),
             ("known_state", Optional[KnownExecutionState]),
             ("should_verify_step", Optional[bool]),
@@ -218,7 +218,7 @@ class ExecuteStepArgs(
         pipeline_origin: PipelinePythonOrigin,
         pipeline_run_id: str,
         step_keys_to_execute: Optional[Sequence[str]],
-        instance_ref: Optional[InstanceRef] = None,
+        instance_ref: Optional[DagsterInstanceRef] = None,
         retry_mode: Optional[RetryMode] = None,
         known_state: Optional[KnownExecutionState] = None,
         should_verify_step: Optional[bool] = None,
@@ -232,7 +232,7 @@ class ExecuteStepArgs(
             step_keys_to_execute=check.opt_nullable_sequence_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
-            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", DagsterInstanceRef),
             retry_mode=check.opt_inst_param(retry_mode, "retry_mode", RetryMode),
             known_state=check.opt_inst_param(known_state, "known_state", KnownExecutionState),
             should_verify_step=check.opt_bool_param(
@@ -487,7 +487,7 @@ class ExternalScheduleExecutionArgs(
         "_ExternalScheduleExecutionArgs",
         [
             ("repository_origin", ExternalRepositoryOrigin),
-            ("instance_ref", Optional[InstanceRef]),
+            ("instance_ref", Optional[DagsterInstanceRef]),
             ("schedule_name", str),
             ("scheduled_execution_timestamp", Optional[float]),
             ("scheduled_execution_timezone", Optional[str]),
@@ -497,7 +497,7 @@ class ExternalScheduleExecutionArgs(
     def __new__(
         cls,
         repository_origin: ExternalRepositoryOrigin,
-        instance_ref: Optional[InstanceRef],
+        instance_ref: Optional[DagsterInstanceRef],
         schedule_name: str,
         scheduled_execution_timestamp: Optional[float] = None,
         scheduled_execution_timezone: Optional[str] = None,
@@ -507,7 +507,7 @@ class ExternalScheduleExecutionArgs(
             repository_origin=check.inst_param(
                 repository_origin, "repository_origin", ExternalRepositoryOrigin
             ),
-            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", DagsterInstanceRef),
             schedule_name=check.str_param(schedule_name, "schedule_name"),
             scheduled_execution_timestamp=check.opt_float_param(
                 scheduled_execution_timestamp, "scheduled_execution_timestamp"
@@ -525,7 +525,7 @@ class SensorExecutionArgs(
         "_SensorExecutionArgs",
         [
             ("repository_origin", ExternalRepositoryOrigin),
-            ("instance_ref", Optional[InstanceRef]),
+            ("instance_ref", Optional[DagsterInstanceRef]),
             ("sensor_name", str),
             ("last_completion_time", Optional[float]),
             ("last_run_key", Optional[str]),
@@ -536,7 +536,7 @@ class SensorExecutionArgs(
     def __new__(
         cls,
         repository_origin: ExternalRepositoryOrigin,
-        instance_ref: Optional[InstanceRef],
+        instance_ref: Optional[DagsterInstanceRef],
         sensor_name: str,
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
@@ -547,7 +547,7 @@ class SensorExecutionArgs(
             repository_origin=check.inst_param(
                 repository_origin, "repository_origin", ExternalRepositoryOrigin
             ),
-            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", DagsterInstanceRef),
             sensor_name=check.str_param(sensor_name, "sensor_name"),
             last_completion_time=check.opt_float_param(
                 last_completion_time, "last_completion_time"
@@ -563,20 +563,20 @@ class ExternalJobArgs(
         "_ExternalJobArgs",
         [
             ("repository_origin", ExternalRepositoryOrigin),
-            ("instance_ref", InstanceRef),
+            ("instance_ref", DagsterInstanceRef),
             ("name", str),
         ],
     )
 ):
     def __new__(
-        cls, repository_origin: ExternalRepositoryOrigin, instance_ref: InstanceRef, name: str
+        cls, repository_origin: ExternalRepositoryOrigin, instance_ref: DagsterInstanceRef, name: str
     ):
         return super(ExternalJobArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
                 repository_origin, "repository_origin", ExternalRepositoryOrigin
             ),
-            instance_ref=check.inst_param(instance_ref, "instance_ref", InstanceRef),
+            instance_ref=check.inst_param(instance_ref, "instance_ref", DagsterInstanceRef),
             name=check.str_param(name, "name"),
         )
 

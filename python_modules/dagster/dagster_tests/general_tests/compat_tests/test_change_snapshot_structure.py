@@ -1,5 +1,5 @@
 from dagster._core.host_representation import ExternalExecutionPlan
-from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.instance import DagsterInstance, DagsterInstanceRef
 from dagster._core.snap import create_execution_plan_snapshot_id, create_pipeline_snapshot_id
 from dagster._utils import file_relative_path
 from dagster._utils.test import copy_directory
@@ -10,7 +10,7 @@ from dagster._utils.test import copy_directory
 def test_run_created_in_0_7_9_snapshot_id_change():
     src_dir = file_relative_path(__file__, "snapshot_0_7_9_shapshot_id_creation_change/sqlite")
     with copy_directory(src_dir) as test_dir:
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+        instance = DagsterInstance.from_ref(DagsterInstanceRef.from_dir(test_dir))
         # run_id = 'e297fa70-49e8-43f8-abfe-1634f02644f6'
 
         old_pipeline_snapshot_id = "88528edde2ed64da3c39cca0da8ba2f7586c1a5d"

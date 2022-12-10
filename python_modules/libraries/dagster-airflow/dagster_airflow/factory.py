@@ -11,7 +11,7 @@ from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.config import is_dagster_home_set
-from dagster._core.instance.ref import InstanceRef
+from dagster._core.instance.ref import DagsterInstanceRef
 from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot, snapshot_from_execution_plan
 from dagster._utils.backcompat import canonicalize_backcompat_args
 
@@ -132,7 +132,7 @@ class DagsterOperatorParameters(
             task_id=check.str_param(task_id, "task_id"),
             step_keys=check.opt_list_param(step_keys, "step_keys", of_type=str),
             dag=check.opt_inst_param(dag, "dag", DAG),
-            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", DagsterInstanceRef),
             op_kwargs=check.opt_dict_param(op_kwargs.copy(), "op_kwargs", key_type=str),
             pipeline_snapshot=check.inst_param(
                 pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot

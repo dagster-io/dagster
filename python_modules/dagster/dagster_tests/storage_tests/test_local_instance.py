@@ -18,7 +18,7 @@ from dagster import (
 )
 from dagster._core.definitions.events import RetryRequested
 from dagster._core.execution.stats import StepEventStatus
-from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
+from dagster._core.instance import DagsterInstance, DagsterInstanceRef, InstanceType
 from dagster._core.launcher import DefaultRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.storage.event_log import SqliteEventLogStorage
@@ -53,7 +53,7 @@ def test_fs_stores():
                 compute_log_manager=compute_log_manager,
                 run_coordinator=DefaultRunCoordinator(),
                 run_launcher=DefaultRunLauncher(),
-                ref=InstanceRef.from_dir(temp_dir),
+                ref=DagsterInstanceRef.from_dir(temp_dir),
                 settings={"telemetry": {"enabled": False}},
             )
 
@@ -79,7 +79,7 @@ def test_init_compute_log_with_bad_config():
             DagsterInvalidConfigError,
             match='Received unexpected config entry "garbage"',
         ):
-            DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
+            DagsterInstance.from_ref(DagsterInstanceRef.from_dir(tmpdir_path))
 
 
 def test_init_compute_log_with_bad_config_override():
@@ -89,7 +89,7 @@ def test_init_compute_log_with_bad_config_override():
             match='Received unexpected config entry "garbage"',
         ):
             DagsterInstance.from_ref(
-                InstanceRef.from_dir(tmpdir_path, overrides={"compute_logs": {"garbage": "flargh"}})
+                DagsterInstanceRef.from_dir(tmpdir_path, overrides={"compute_logs": {"garbage": "flargh"}})
             )
 
 
@@ -102,7 +102,7 @@ def test_init_compute_log_with_bad_config_module():
                 default_flow_style=False,
             )
         with pytest.raises(check.CheckError, match="Couldn't import module"):
-            DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
+            DagsterInstance.from_ref(DagsterInstanceRef.from_dir(tmpdir_path))
 
 
 MOCK_HAS_RUN_CALLED = False
@@ -110,7 +110,7 @@ MOCK_HAS_RUN_CALLED = False
 
 def test_get_run_by_id():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
+        instance = DagsterInstance.from_ref(DagsterInstanceRef.from_dir(tmpdir_path))
 
         assert instance.get_runs() == []
         pipeline_run = DagsterRun("foo_pipeline", "new_run")
@@ -124,7 +124,7 @@ def test_get_run_by_id():
 
     # Run is created after we check whether it exists
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
+        instance = DagsterInstance.from_ref(DagsterInstanceRef.from_dir(tmpdir_path))
         run = DagsterRun(pipeline_name="foo_pipeline", run_id="bar_run")
 
         def _has_run(self, run_id):
@@ -145,7 +145,7 @@ def test_get_run_by_id():
     global MOCK_HAS_RUN_CALLED  # pylint:disable=global-statement
     MOCK_HAS_RUN_CALLED = False
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
+        instance = DagsterInstance.from_ref(DagsterInstanceRef.from_dir(tmpdir_path))
         run = DagsterRun(pipeline_name="foo_pipeline", run_id="bar_run")
 
         def _has_run(self, run_id):
@@ -192,7 +192,7 @@ def test_run_step_stats():
         should_not_execute(should_fail(should_succeed()))
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
+        instance = DagsterInstance.from_ref(DagsterInstanceRef.from_dir(tmpdir_path))
         result = simple.execute_in_process(instance=instance, raise_on_error=False)
         step_stats = sorted(instance.get_run_step_stats(result.run_id), key=lambda x: x.end_time)
         assert len(step_stats) == 2
@@ -238,7 +238,7 @@ def test_run_step_stats_with_retries():
         should_not_execute(should_retry(should_succeed()))
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
+        instance = DagsterInstance.from_ref(DagsterInstanceRef.from_dir(tmpdir_path))
         result = simple.execute_in_process(instance=instance, raise_on_error=False)
         step_stats = instance.get_run_step_stats(result.run_id, step_keys=["should_retry"])
         assert len(step_stats) == 1

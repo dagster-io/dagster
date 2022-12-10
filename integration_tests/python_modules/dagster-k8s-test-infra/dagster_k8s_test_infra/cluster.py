@@ -13,7 +13,7 @@ import psycopg2
 import pytest
 from dagster._cli.debug import export_run
 from dagster._core.instance import DagsterInstance, InstanceType
-from dagster._core.instance.ref import InstanceRef
+from dagster._core.instance.ref import DagsterInstanceRef
 from dagster._core.run_coordinator import DefaultRunCoordinator, QueuedRunCoordinator
 from dagster._core.scheduler import DagsterDaemonScheduler
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
@@ -252,7 +252,7 @@ def dagster_instance_for_k8s_run_launcher(
 ):  # pylint: disable=redefined-outer-name
     tempdir = DagsterInstance.temp_storage()
 
-    instance_ref = InstanceRef.from_dir(tempdir)
+    instance_ref = DagsterInstanceRef.from_dir(tempdir)
 
     with DagsterInstance(
         instance_type=InstanceType.PERSISTENT,
@@ -292,7 +292,7 @@ def dagster_instance(helm_postgres_url):  # pylint: disable=redefined-outer-name
                 compute_log_manager=NoOpComputeLogManager(),
                 run_coordinator=DefaultRunCoordinator(),
                 run_launcher=ExplodingRunLauncher(),  # use graphql to launch any runs
-                ref=InstanceRef.from_dir(tempdir),
+                ref=DagsterInstanceRef.from_dir(tempdir),
             ) as instance:
                 yield instance
 

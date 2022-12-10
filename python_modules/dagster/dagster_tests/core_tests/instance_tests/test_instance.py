@@ -18,7 +18,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.instance import DagsterInstance, DagsterInstanceRef
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
@@ -455,7 +455,7 @@ class TestInstanceSubclass(DagsterInstance):
 
     @staticmethod
     def config_defaults(base_dir):
-        defaults = InstanceRef.config_defaults(base_dir)
+        defaults = DagsterInstanceRef.config_defaults(base_dir)
         defaults["run_coordinator"] = ConfigurableClassData(
             "dagster._core.run_coordinator.queued_run_coordinator",
             "QueuedRunCoordinator",

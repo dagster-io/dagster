@@ -45,7 +45,7 @@ from dagster._core.execution.plan.handle import (
     UnresolvedStepHandle,
 )
 from dagster._core.execution.retries import RetryMode
-from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.instance import DagsterInstance, DagsterInstanceRef
 from dagster._core.storage.mem_io_manager import mem_io_manager
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.utils import toposort
@@ -112,7 +112,7 @@ class _PlanBuilder:
         resolved_run_config: ResolvedRunConfig,
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: KnownExecutionState,
-        instance_ref: Optional[InstanceRef],
+        instance_ref: Optional[DagsterInstanceRef],
         tags: Mapping[str, str],
         repository_load_data: Optional[RepositoryLoadData],
     ):
@@ -1023,7 +1023,7 @@ class ExecutionPlan(
         resolved_run_config: ResolvedRunConfig,
         step_keys_to_execute: Optional[Sequence[str]] = None,
         known_state: Optional[KnownExecutionState] = None,
-        instance_ref: Optional[InstanceRef] = None,
+        instance_ref: Optional[DagsterInstanceRef] = None,
         tags: Optional[Mapping[str, str]] = None,
         repository_load_data: Optional[RepositoryLoadData] = None,
     ) -> "ExecutionPlan":

@@ -1,7 +1,7 @@
 from dagster import AssetKey, AssetMaterialization, Output, job, op
 from dagster._core.definitions.events import parse_asset_key_string
 from dagster._core.events.log import EventLogEntry
-from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.instance import DagsterInstance, DagsterInstanceRef
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._utils import file_relative_path
 from dagster._utils.test import copy_directory
@@ -64,7 +64,7 @@ def test_backcompat_asset_read():
         materialize()
 
     with copy_directory(src_dir) as test_dir:
-        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+        with DagsterInstance.from_ref(DagsterInstanceRef.from_dir(test_dir)) as instance:
             _validate_instance_assets(instance)
             my_job.execute_in_process(instance=instance)
             _validate_instance_assets(instance)
@@ -103,7 +103,7 @@ def test_backcompat_asset_materializations():
     c = AssetKey("c")
 
     with copy_directory(src_dir) as test_dir:
-        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+        with DagsterInstance.from_ref(DagsterInstanceRef.from_dir(test_dir)) as instance:
             storage = instance.event_log_storage
 
             a_mat = storage.get_latest_materialization_events([a]).get(a)
@@ -157,7 +157,7 @@ def test_backcompat_get_asset_records():
     b = AssetKey("b")
 
     with copy_directory(src_dir) as test_dir:
-        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+        with DagsterInstance.from_ref(DagsterInstanceRef.from_dir(test_dir)) as instance:
             storage = instance.event_log_storage
 
             records = storage.get_asset_records([b])
@@ -186,7 +186,7 @@ def test_asset_lazy_migration():
         materialize()
 
     with copy_directory(src_dir) as test_dir:
-        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+        with DagsterInstance.from_ref(DagsterInstanceRef.from_dir(test_dir)) as instance:
             storage = instance.event_log_storage
             assert not storage.has_asset_key_index_cols()
             assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)

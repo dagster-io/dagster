@@ -170,10 +170,10 @@ def configurable_storage_data(
     return [storage_data, run_storage_data, event_storage_data, schedule_storage_data]
 
 
-@whitelist_for_serdes
-class InstanceRef(
+@whitelist_for_serdes(storage_name="InstanceRef")  # storage_name for backcompat
+class DagsterInstanceRef(
     NamedTuple(
-        "_InstanceRef",
+        "_DagsterInstanceRef",
         [
             ("local_artifact_storage_data", ConfigurableClassData),
             ("compute_logs_data", ConfigurableClassData),
@@ -214,7 +214,7 @@ class InstanceRef(
         storage_data: Optional[ConfigurableClassData] = None,
         secrets_loader_data: Optional[ConfigurableClassData] = None,
     ):
-        return super(cls, InstanceRef).__new__(
+        return super(cls, DagsterInstanceRef).__new__(
             cls,
             local_artifact_storage_data=check.inst_param(
                 local_artifact_storage_data, "local_artifact_storage_data", ConfigurableClassData
@@ -329,7 +329,7 @@ class InstanceRef(
             defaults = custom_instance_class.config_defaults(base_dir)
         else:
             custom_instance_class_data = None
-            defaults = InstanceRef.config_defaults(base_dir)
+            defaults = DagsterInstanceRef.config_defaults(base_dir)
 
         local_artifact_storage_data = configurable_class_data_or_default(
             config_value, "local_artifact_storage", defaults["local_artifact_storage"]
@@ -422,7 +422,7 @@ class InstanceRef(
         }
         settings = {key: config_value.get(key) for key in settings_keys if config_value.get(key)}
 
-        return InstanceRef(
+        return DagsterInstanceRef(
             local_artifact_storage_data=local_artifact_storage_data,
             run_storage_data=run_storage_data,
             event_storage_data=event_storage_data,
@@ -446,7 +446,7 @@ class InstanceRef(
                 return v
             return ConfigurableClassData(*v)
 
-        return InstanceRef(**{k: value_for_ref_item(k, v) for k, v in instance_ref_dict.items()})
+        return DagsterInstanceRef(**{k: value_for_ref_item(k, v) for k, v in instance_ref_dict.items()})
 
     @property
     def local_artifact_storage(self):

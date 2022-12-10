@@ -15,7 +15,7 @@ from dagster._core.execution.plan.inputs import (
 )
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.instance import DagsterInstance
-from dagster._core.instance.ref import InstanceRef
+from dagster._core.instance.ref import DagsterInstanceRef
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.root_input_manager import root_input_manager
@@ -187,7 +187,7 @@ def test_execution_plan_snapshot_backcompat():
         print(f"Executing a saved run from {snapshot_dir_path}")  # pylint: disable=print-call
 
         with copy_directory(os.path.join(src_dir, snapshot_dir_path)) as test_dir:
-            with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            with DagsterInstance.from_ref(DagsterInstanceRef.from_dir(test_dir)) as instance:
                 runs = instance.get_runs()
                 assert len(runs) == 1
 

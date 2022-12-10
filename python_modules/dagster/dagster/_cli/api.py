@@ -22,7 +22,7 @@ from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster._core.execution.context_creation_pipeline import create_context_free_log_manager
 from dagster._core.execution.run_cancellation_thread import start_run_cancellation_thread
-from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.instance import DagsterInstance, DagsterInstanceRef
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     PipelinePythonOrigin,
@@ -723,7 +723,7 @@ def grpc_command(
             if container_context is not None
             else None,
             inject_env_vars_from_instance=inject_env_vars_from_instance,
-            instance_ref=deserialize_as(instance_ref, InstanceRef) if instance_ref else None,
+            instance_ref=deserialize_as(instance_ref, DagsterInstanceRef) if instance_ref else None,
             location_name=location_name,
         )
 

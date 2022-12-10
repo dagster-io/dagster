@@ -1,10 +1,10 @@
 from dagster import DagsterInstance
-from dagster._core.instance import InstanceRef
+from dagster._core.instance import DagsterInstanceRef
 from dagster._utils import file_relative_path
 
 
 def test_valid_managed_loggers_instance_yaml():
-    ref = InstanceRef.from_dir(
+    ref = DagsterInstanceRef.from_dir(
         base_dir=file_relative_path(
             __file__, "../../../docs_snippets/concepts/logging"
         ),
@@ -15,7 +15,7 @@ def test_valid_managed_loggers_instance_yaml():
 
 
 def test_valid_log_level_instance_yaml():
-    ref = InstanceRef.from_dir(
+    ref = DagsterInstanceRef.from_dir(
         base_dir=file_relative_path(
             __file__, "../../../docs_snippets/concepts/logging"
         ),
@@ -26,7 +26,7 @@ def test_valid_log_level_instance_yaml():
 
 
 def test_valid_handler_instance_yaml():
-    ref = InstanceRef.from_dir(
+    ref = DagsterInstanceRef.from_dir(
         base_dir=file_relative_path(
             __file__, "../../../docs_snippets/concepts/logging"
         ),
@@ -37,7 +37,7 @@ def test_valid_handler_instance_yaml():
 
 
 def test_valid_file_instance_yaml():
-    ref = InstanceRef.from_dir(
+    ref = DagsterInstanceRef.from_dir(
         base_dir=file_relative_path(
             __file__, "../../../docs_snippets/concepts/logging"
         ),

@@ -36,7 +36,7 @@ from dagster._core.host_representation.external_data import (
     ExternalSensorExecutionErrorData,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.instance.ref import InstanceRef
+from dagster._core.instance.ref import DagsterInstanceRef
 from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
     snapshot_from_execution_plan,
@@ -263,7 +263,7 @@ def get_external_pipeline_subset_result(
 
 def get_external_schedule_execution(
     repo_def: RepositoryDefinition,
-    instance_ref: Optional[InstanceRef],
+    instance_ref: Optional[DagsterInstanceRef],
     schedule_name: str,
     scheduled_execution_timestamp: float,
     scheduled_execution_timezone: str,
@@ -297,7 +297,7 @@ def get_external_schedule_execution(
 
 def get_external_sensor_execution(
     repo_def: RepositoryDefinition,
-    instance_ref: Optional[InstanceRef],
+    instance_ref: Optional[DagsterInstanceRef],
     sensor_name: str,
     last_completion_timestamp: Optional[float],
     last_run_key: Optional[str],

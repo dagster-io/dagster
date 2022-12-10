@@ -5,7 +5,7 @@ import tempfile
 import pendulum
 import pytest
 from dagster import DagsterEventType, job, op
-from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
+from dagster._core.instance import DagsterInstance, DagsterInstanceRef, InstanceType
 from dagster._core.launcher import DefaultRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.storage.compute_log_manager import ComputeIOType
@@ -52,7 +52,7 @@ def test_compute_log_manager(gcs_bucket):
                 compute_log_manager=manager,
                 run_coordinator=DefaultRunCoordinator(),
                 run_launcher=DefaultRunLauncher(),
-                ref=InstanceRef.from_dir(temp_dir),
+                ref=DagsterInstanceRef.from_dir(temp_dir),
                 settings={"telemetry": {"enabled": False}},
             )
             result = simple.execute_in_process(instance=instance)
@@ -146,7 +146,7 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                     compute_log_manager=manager,
                     run_coordinator=DefaultRunCoordinator(),
                     run_launcher=DefaultRunLauncher(),
-                    ref=InstanceRef.from_dir(temp_dir),
+                    ref=DagsterInstanceRef.from_dir(temp_dir),
                     settings={"telemetry": {"enabled": False}},
                 )
                 result = simple.execute_in_process(instance=instance)

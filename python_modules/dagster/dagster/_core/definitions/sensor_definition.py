@@ -27,7 +27,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.instance.ref import InstanceRef
+from dagster._core.instance.ref import DagsterInstanceRef
 from dagster._serdes import whitelist_for_serdes
 
 from ..decorator_utils import get_function_params
@@ -85,7 +85,7 @@ class SensorEvaluationContext:
 
     def __init__(
         self,
-        instance_ref: Optional[InstanceRef],
+        instance_ref: Optional[DagsterInstanceRef],
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
@@ -95,7 +95,7 @@ class SensorEvaluationContext:
         sensor_name: Optional[str] = None,
     ):
         self._exit_stack = ExitStack()
-        self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
+        self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", DagsterInstanceRef)
         self._last_completion_time = check.opt_float_param(
             last_completion_time, "last_completion_time"
         )
@@ -140,7 +140,7 @@ class SensorEvaluationContext:
         return cast(DagsterInstance, self._instance)
 
     @property
-    def instance_ref(self) -> Optional[InstanceRef]:
+    def instance_ref(self) -> Optional[DagsterInstanceRef]:
         return self._instance_ref
 
     @public  # type: ignore

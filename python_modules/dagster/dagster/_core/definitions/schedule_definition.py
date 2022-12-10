@@ -37,7 +37,7 @@ from ..errors import (
     user_code_error_boundary,
 )
 from ..instance import DagsterInstance
-from ..instance.ref import InstanceRef
+from ..instance.ref import DagsterInstanceRef
 from ..storage.pipeline_run import DagsterRun
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
@@ -120,7 +120,7 @@ class ScheduleEvaluationContext:
 
     def __init__(
         self,
-        instance_ref: Optional[InstanceRef],
+        instance_ref: Optional[DagsterInstanceRef],
         scheduled_execution_time: Optional[datetime],
         repository_name: Optional[str] = None,
         schedule_name: Optional[str] = None,
@@ -128,7 +128,7 @@ class ScheduleEvaluationContext:
         self._exit_stack = ExitStack()
         self._instance = None
 
-        self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
+        self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", DagsterInstanceRef)
         self._scheduled_execution_time = check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         )

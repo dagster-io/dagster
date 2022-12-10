@@ -28,7 +28,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.instance.ref import InstanceRef
+from dagster._core.instance.ref import DagsterInstanceRef
 
 from ..decorator_utils import get_function_params
 from .events import AssetKey
@@ -206,7 +206,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
     def __init__(
         self,
-        instance_ref: Optional[InstanceRef],
+        instance_ref: Optional[DagsterInstanceRef],
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],

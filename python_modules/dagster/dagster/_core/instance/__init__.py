@@ -74,7 +74,7 @@ from .config import (
     get_default_tick_retention_settings,
     get_tick_retention_settings,
 )
-from .ref import InstanceRef
+from .ref import DagsterInstanceRef
 
 # 'airflow_execution_date' and 'is_airflow_ingest_pipeline' are hardcoded tags used in the
 # airflow ingestion logic (see: dagster_pipeline_factory.py). 'airflow_execution_date' stores the
@@ -301,7 +301,7 @@ class DagsterInstance:
         schedule_storage: Optional["ScheduleStorage"] = None,
         settings: Optional[Mapping[str, Any]] = None,
         secrets_loader: Optional["SecretsLoader"] = None,
-        ref: Optional[InstanceRef] = None,
+        ref: Optional[DagsterInstanceRef] = None,
     ):
         from dagster._core.launcher import RunLauncher
         from dagster._core.run_coordinator import RunCoordinator
@@ -359,7 +359,7 @@ class DagsterInstance:
         if self._secrets_loader:
             self._secrets_loader.register_instance(self)
 
-        self._ref = check.opt_inst_param(ref, "ref", InstanceRef)
+        self._ref = check.opt_inst_param(ref, "ref", DagsterInstanceRef)
 
         self._subscribers: Dict[str, List[Callable]] = defaultdict(list)
 
@@ -468,19 +468,19 @@ class DagsterInstance:
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
 
-        return DagsterInstance.from_ref(InstanceRef.from_dir(tempdir, overrides=overrides))
+        return DagsterInstance.from_ref(DagsterInstanceRef.from_dir(tempdir, overrides=overrides))
 
     @staticmethod
     def from_config(
         config_dir: str,
         config_filename: str = DAGSTER_CONFIG_YAML_FILENAME,
     ) -> "DagsterInstance":
-        instance_ref = InstanceRef.from_dir(config_dir, config_filename=config_filename)
+        instance_ref = DagsterInstanceRef.from_dir(config_dir, config_filename=config_filename)
         return DagsterInstance.from_ref(instance_ref)
 
     @staticmethod
-    def from_ref(instance_ref: InstanceRef) -> "DagsterInstance":
-        check.inst_param(instance_ref, "instance_ref", InstanceRef)
+    def from_ref(instance_ref: DagsterInstanceRef) -> "DagsterInstance":
+        check.inst_param(instance_ref, "instance_ref", DagsterInstanceRef)
 
         # DagsterInstance doesn't implement ConfigurableClass, but we may still sometimes want to
         # have custom subclasses of DagsterInstance. This machinery allows for those custom
@@ -523,7 +523,7 @@ class DagsterInstance:
     def is_ephemeral(self) -> bool:
         return self._instance_type == InstanceType.EPHEMERAL
 
-    def get_ref(self) -> InstanceRef:
+    def get_ref(self) -> DagsterInstanceRef:
         if self._ref:
             return self._ref
 
@@ -656,7 +656,7 @@ class DagsterInstance:
         # that loads the instance (e.g. The EcsRunLauncher requires boto3)
         if not self._run_launcher:
             check.invariant(self._ref, "Run launcher not provided, and no instance ref available")
-            launcher = cast(InstanceRef, self._ref).run_launcher
+            launcher = cast(DagsterInstanceRef, self._ref).run_launcher
             check.invariant(launcher, "Run launcher not configured in instance ref")
             self._run_launcher = cast(RunLauncher, launcher)
             self._run_launcher.register_instance(self)
