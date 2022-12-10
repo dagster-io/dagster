@@ -325,13 +325,13 @@ class SqlScheduleStorage(ScheduleStorage):
             map(lambda r: InstigatorTick(r[0], deserialize_json_to_dagster_namedtuple(r[1])), rows)
         )
 
-    def get_ticks_for_all_instigators_by_tick_id(
+    def get_ticks_for_all_instigators_by_timestamp(
         self,
-        after_cursor: int = -1,
+        after_cursor: float = -1,
     ) -> List[InstigatorTick]:
         query = (
             db.select([JobTickTable.c.id, JobTickTable.c.tick_body])
-            .where(JobTickTable.c.id > after_cursor)
+            .where(JobTickTable.c.timestamp > after_cursor)
             .select_from(JobTickTable)
             .order_by(JobTickTable.c.id.asc())
         )
@@ -379,6 +379,7 @@ class SqlScheduleStorage(ScheduleStorage):
             "type": tick.instigator_type.value,
             "timestamp": utc_datetime_from_timestamp(tick.timestamp),
             "tick_body": serialize_dagster_namedtuple(tick.tick_data),
+            "update_timestamp": pendulum.now("UTC"),
         }
         if self.has_instigators_table() and tick.selector_id:
             values["selector_id"] = tick.selector_id

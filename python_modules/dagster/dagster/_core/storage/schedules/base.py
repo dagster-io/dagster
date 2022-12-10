@@ -97,9 +97,9 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def get_ticks_for_all_instigators_by_tick_id(
+    def get_ticks_for_all_instigators_by_timestamp(
         self,
-        after_cursor: int = -1,
+        after_cursor: float = -1,
         statuses=None,
     ) -> Sequence[InstigatorTick]:
         """Get all ticks after a given cursor."""
