@@ -252,13 +252,6 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return EcsRunLauncher(inst_data=inst_data, **config_value)
 
-    def _set_ecs_tags(self, run_id, task_arn):
-        try:
-            tags = [{"key": "dagster/run_id", "value": run_id}]
-            self.ecs.tag_resource(resourceArn=task_arn, tags=tags)
-        except ClientError:
-            pass
-
     def _set_run_tags(self, run_id: str, cluster: str, task_arn: str):
         tags = {
             "ecs/task_arn": task_arn,
@@ -358,7 +351,6 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         arn = tasks[0]["taskArn"]
         cluster_arn = tasks[0]["clusterArn"]
         self._set_run_tags(run.run_id, cluster=cluster_arn, task_arn=arn)
-        self._set_ecs_tags(run.run_id, task_arn=arn)
         self.report_launch_events(run, arn, cluster_arn)
 
     def report_launch_events(
