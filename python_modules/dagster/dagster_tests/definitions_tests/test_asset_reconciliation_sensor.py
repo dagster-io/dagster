@@ -462,6 +462,10 @@ two_assets_in_sequence_one_partition = [
     asset_def("asset1", partitions_def=one_partition_partitions_def),
     asset_def("asset2", ["asset1"], partitions_def=one_partition_partitions_def),
 ]
+two_assets_in_sequence_two_partitions = [
+    asset_def("asset1", partitions_def=two_partitions_partitions_def),
+    asset_def("asset2", ["asset1"], partitions_def=two_partitions_partitions_def),
+]
 
 two_assets_in_sequence_fan_in_partitions = [
     asset_def("asset1", partitions_def=fanned_out_partitions_def),

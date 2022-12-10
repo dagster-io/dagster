@@ -238,6 +238,31 @@ class ExternalRepository:
         ]
         return matching[0] if matching else None
 
+    # def get_base_job_name_for_assets(self, asset_keys: Sequence[AssetKey]) -> Optional[str]:
+    #     # TODO: cache this
+    #     print()
+
+    #     from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
+
+    #     asset_keys_by_job_name: Dict[str, Set[AssetKey]] = defaultdict(set)
+    #     for external_asset_node in self.get_external_asset_nodes():
+    #         for job_name in external_asset_node.job_names:
+    #             asset_keys_by_job_name[job_name].add(external_asset_node.asset_key)
+
+    #     if self.has_external_job(ASSET_BASE_JOB_PREFIX):
+    #         if all(key in asset_keys_by_job_name[ASSET_BASE_JOB_PREFIX] for key in asset_keys):
+    #             return ASSET_BASE_JOB_PREFIX
+    #     else:
+    #         i = 0
+    #         while self.has_external_job(f"{ASSET_BASE_JOB_PREFIX}_{i}"):
+    #             base_job_name = f"{ASSET_BASE_JOB_PREFIX}_{i}"
+    #             if all(key in asset_keys_by_job_name[base_job_name] for key in asset_keys):
+    #                 return base_job_name
+
+    #             i += 1
+
+    #     return None
+
     def get_display_metadata(self) -> Mapping[str, str]:
         return self.handle.display_metadata
 
