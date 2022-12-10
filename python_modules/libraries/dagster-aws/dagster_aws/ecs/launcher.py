@@ -252,19 +252,15 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return EcsRunLauncher(inst_data=inst_data, **config_value)
 
-    def _set_ecs_tags(self, run_id, task_arn):
-        try:
-            tags = [{"key": "dagster/run_id", "value": run_id}]
-            self.ecs.tag_resource(resourceArn=task_arn, tags=tags)
-        except ClientError:
-            pass
-
     def _set_run_tags(self, run_id: str, cluster: str, task_arn: str):
         tags = {
             "ecs/task_arn": task_arn,
             "ecs/cluster": cluster,
         }
         self._instance.add_run_tags(run_id, tags)
+
+    def build_ecs_tags_for_run_task(self, run):
+        return [{"key": "dagster/run_id", "value": run.run_id}]
 
     def _get_run_tags(self, run_id):
         run = self._instance.get_run_by_id(run_id)
@@ -331,12 +327,14 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             **cpu_and_memory_overrides,
             **task_overrides,
         }
+        run_task_kwargs["tags"] = [
+            *run_task_kwargs.get("tags", []),
+            *self.build_ecs_tags_for_run_task(),
+        ]
 
         # Run a task using the same network configuration as this processes's
         # task.
-        response = self.ecs.run_task(
-            **run_task_kwargs,
-        )
+        response = self.ecs.run_task(**run_task_kwargs)
 
         tasks = response["tasks"]
 
@@ -353,7 +351,6 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         arn = tasks[0]["taskArn"]
         cluster_arn = tasks[0]["clusterArn"]
         self._set_run_tags(run.run_id, cluster=cluster_arn, task_arn=arn)
-        self._set_ecs_tags(run.run_id, task_arn=arn)
         self.report_launch_events(run, arn, cluster_arn)
 
     def report_launch_events(
