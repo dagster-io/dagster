@@ -1,5 +1,5 @@
 import dagster._check as check
-import pendulum
+import dagster._seven.compat.pendulum as pendulum
 import sqlalchemy as db
 from dagster._core.storage.config import mysql_config
 from dagster._core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage

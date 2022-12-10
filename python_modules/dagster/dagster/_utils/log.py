@@ -6,10 +6,10 @@ from contextlib import contextmanager
 from typing import Mapping, NamedTuple, Optional
 
 import coloredlogs
-import pendulum
 
 import dagster._check as check
 import dagster._seven as seven
+import dagster._seven.compat.pendulum as pendulum
 from dagster._config import Enum, EnumValue
 from dagster._core.definitions.logger_definition import logger
 from dagster._core.utils import PYTHON_LOGGING_LEVELS_MAPPING, coerce_valid_log_level

@@ -1,9 +1,9 @@
 import sys
 import time
 
-import pendulum
 import pytest
 
+import dagster._seven.compat.pendulum as pendulum
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,

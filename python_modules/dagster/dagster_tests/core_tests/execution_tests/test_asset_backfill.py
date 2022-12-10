@@ -1,7 +1,7 @@
 from typing import AbstractSet, Mapping, NamedTuple, Optional, Sequence, Set, Union, cast
 from unittest.mock import MagicMock, patch
 
-import pendulum
+import dagster._seven.compat.pendulum as pendulum
 import pytest
 from dagster import (
     AssetsDefinition,

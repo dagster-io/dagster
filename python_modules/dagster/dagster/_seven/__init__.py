@@ -10,8 +10,9 @@ from datetime import timezone
 from types import ModuleType
 from typing import Any, Callable, List, Sequence, Type
 
-import pendulum
 from typing_extensions import TypeGuard
+
+import dagster._seven.compat.pendulum as pendulum
 
 from .compat.pendulum import PendulumDateTime as PendulumDateTime  # re-exported
 from .json import (

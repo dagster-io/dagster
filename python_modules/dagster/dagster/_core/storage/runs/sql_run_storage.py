@@ -21,12 +21,12 @@ from typing import (
     cast,
 )
 
-import pendulum
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
+import dagster._seven.compat.pendulum as pendulum
 from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,

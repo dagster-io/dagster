@@ -16,13 +16,13 @@ from typing import (
     cast,
 )
 
-import pendulum
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 from typing_extensions import TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
+import dagster._seven.compat.pendulum as pendulum
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import (

@@ -1,9 +1,8 @@
 from datetime import datetime
 from typing import Callable, Optional, Sequence, Union
 
-import pendulum
-
 import dagster._check as check
+import dagster._seven.compat.pendulum as pendulum
 from dagster._core.definitions.partition import Partition, PartitionSetDefinition
 from dagster._core.definitions.run_request import SkipReason
 from dagster._core.definitions.schedule_definition import ScheduleEvaluationContext

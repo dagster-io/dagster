@@ -9,9 +9,8 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
 from typing import Dict, List, Optional, cast
 
-import pendulum
-
 import dagster._check as check
+import dagster._seven.compat.pendulum as pendulum
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import PipelineSelector

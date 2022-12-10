@@ -449,7 +449,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         schedule_name: str,
-        scheduled_execution_time,
+        scheduled_execution_time: PendulumDateTime,
     ) -> "ScheduleExecutionData":
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
@@ -463,7 +463,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             scheduled_execution_timestamp=scheduled_execution_time.timestamp()
             if scheduled_execution_time
             else None,
-            scheduled_execution_timezone=scheduled_execution_time.timezone.name
+            scheduled_execution_timezone=check.not_none(scheduled_execution_time.timezone).name
             if scheduled_execution_time
             else None,
         )

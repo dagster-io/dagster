@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, List, Mapping, Union, cast
 
 import dagster._check as check
-import pendulum
+import dagster._seven.compat.pendulum as pendulum
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.errors import DagsterError

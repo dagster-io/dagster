@@ -21,11 +21,11 @@ from typing import (
     cast,
 )
 
-import pendulum
 from dateutil.relativedelta import relativedelta
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+import dagster._seven.compat.pendulum as pendulum
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.target import ExecutableDefinition
@@ -854,13 +854,13 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         date_param_name = get_function_params(self._decorated_fn)[0].name
 
         if args:
-            date = check.opt_inst_param(args[0], date_param_name, datetime)
+            date = check.inst_param(args[0], date_param_name, datetime)
         else:
             if date_param_name not in kwargs:
                 raise DagsterInvalidInvocationError(
                     f"Schedule invocation expected argument '{date_param_name}'."
                 )
-            date = check.opt_inst_param(kwargs[date_param_name], date_param_name, datetime)
+            date = check.inst_param(kwargs[date_param_name], date_param_name, datetime)
 
         return self._decorated_fn(date)
 

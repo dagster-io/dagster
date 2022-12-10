@@ -17,10 +17,10 @@ from typing import (
     cast,
 )
 
-import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+import dagster._seven.compat.pendulum as pendulum
 from dagster._annotations import public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._serdes import whitelist_for_serdes
@@ -461,7 +461,7 @@ class ScheduleDefinition:
         if self._execution_timezone:
             try:
                 # Verify that the timezone can be loaded
-                pendulum.tz.timezone(self._execution_timezone)
+                pendulum.timezone(self._execution_timezone)
             except Exception as e:
                 raise DagsterInvalidDefinitionError(
                     f"Invalid execution timezone {self._execution_timezone} for {name}"

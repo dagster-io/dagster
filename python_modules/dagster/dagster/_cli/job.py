@@ -5,10 +5,10 @@ import textwrap
 from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, cast
 
 import click
-import pendulum
 from tabulate import tabulate
 
 import dagster._check as check
+import dagster._seven.compat.pendulum as pendulum
 from dagster import __version__ as dagster_version
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,

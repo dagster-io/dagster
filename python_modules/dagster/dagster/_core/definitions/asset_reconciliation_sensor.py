@@ -18,9 +18,8 @@ from typing import (
     cast,
 )
 
-import pendulum
-
 import dagster._check as check
+import dagster._seven.compat.pendulum as pendulum
 from dagster._annotations import experimental
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessConstraint

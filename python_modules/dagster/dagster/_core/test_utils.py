@@ -7,8 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from typing import NamedTuple, Optional, Sequence, TypeVar
 
-import pendulum
-
+import dagster._seven.compat.pendulum as pendulum
 from dagster import (
     Permissive,
     Shape,

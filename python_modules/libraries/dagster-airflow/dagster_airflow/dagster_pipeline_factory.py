@@ -8,9 +8,9 @@ from contextlib import contextmanager, nullcontext
 from unittest.mock import patch
 
 import airflow
+import dagster._seven.compat.pendulum as pendulum
 import dateutil
 import lazy_object_proxy
-import pendulum
 from airflow import __version__ as airflow_version
 from airflow.models import TaskInstance
 from airflow.models.baseoperator import BaseOperator

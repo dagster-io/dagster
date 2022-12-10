@@ -3,11 +3,11 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Callable, Iterable, Mapping, Optional, Sequence, cast
 
-import pendulum
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 
 import dagster._check as check
+import dagster._seven.compat.pendulum as pendulum
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.scheduler.instigation import (

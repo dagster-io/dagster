@@ -1,8 +1,7 @@
 from typing import TYPE_CHECKING, Callable, Dict, Mapping, NamedTuple, Optional, cast
 
-import pendulum
-
 import dagster._check as check
+import dagster._seven.compat.pendulum as pendulum
 from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.events import AssetKey

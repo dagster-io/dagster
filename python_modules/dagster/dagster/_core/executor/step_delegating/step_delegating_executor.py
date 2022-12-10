@@ -3,9 +3,8 @@ import sys
 import time
 from typing import Any, Dict, List, Optional, Sequence, cast
 
-import pendulum
-
 import dagster._check as check
+import dagster._seven.compat.pendulum as pendulum
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.active import ActiveExecution

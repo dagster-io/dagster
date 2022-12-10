@@ -8,8 +8,7 @@ from contextlib import AbstractContextManager
 from threading import Event
 from typing import Generator, Generic, TypeVar, Union
 
-import pendulum
-
+import dagster._seven.compat.pendulum as pendulum
 from dagster import (
     DagsterInstance,
     _check as check,

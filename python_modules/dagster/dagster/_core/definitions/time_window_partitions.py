@@ -17,9 +17,8 @@ from typing import (
     cast,
 )
 
-import pendulum
-
 import dagster._check as check
+import dagster._seven.compat.pendulum as pendulum
 from dagster._annotations import PublicAttr, public
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import cron_string_iterator, reverse_cron_string_iterator
@@ -127,7 +126,12 @@ class TimeWindowPartitionsDefinition(
             )
 
         return super(TimeWindowPartitionsDefinition, cls).__new__(
-            cls, start_dt, timezone or "UTC", fmt, end_offset, cron_schedule
+            cls,
+            start_dt,
+            timezone or "UTC",
+            fmt,
+            end_offset,
+            cast(str, cron_schedule),  # workaround pyright 1.1.283 bug
         )
 
     def get_current_timestamp(self, current_time: Optional[datetime] = None) -> float:
@@ -1272,6 +1276,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             list(partition_keys),
         )
         num_added_partitions = 0
+        included_window = None
         for window in sorted(time_windows):
             # go in reverse order because it's more common to add partitions at the end than the
             # beginning
@@ -1305,7 +1310,9 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
                     break
             else:
                 if result_windows and window.start == result_windows[0].start:
-                    result_windows[0] = TimeWindow(window.start, included_window.end)
+                    result_windows[0] = TimeWindow(
+                        window.start, check.not_none(included_window).end
+                    )
                 else:
                     result_windows.insert(0, window)
 

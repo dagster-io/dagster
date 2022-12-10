@@ -14,9 +14,8 @@ from typing import (
     cast,
 )
 
-import pendulum
-
 import dagster._check as check
+import dagster._seven.compat.pendulum as pendulum
 from dagster._annotations import public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.errors import (

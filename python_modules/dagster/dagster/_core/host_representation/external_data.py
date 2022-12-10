@@ -8,8 +8,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union, cast
 
-import pendulum
-
+import dagster._seven.compat.pendulum as pendulum
 from dagster import (
     StaticPartitionsDefinition,
     _check as check,

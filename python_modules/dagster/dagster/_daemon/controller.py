@@ -6,9 +6,8 @@ import uuid
 from contextlib import AbstractContextManager, ExitStack, contextmanager
 from typing import Callable, Iterator, Sequence
 
-import pendulum
-
 import dagster._check as check
+import dagster._seven.compat.pendulum as pendulum
 from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster._core.instance import DagsterInstance
 from dagster._core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext

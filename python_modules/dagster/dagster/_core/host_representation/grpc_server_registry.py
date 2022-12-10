@@ -5,9 +5,8 @@ from abc import abstractmethod
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Generic, NamedTuple, Optional, TypeVar, Union, cast
 
-import pendulum
-
 import dagster._check as check
+import dagster._seven.compat.pendulum as pendulum
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.origin import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
