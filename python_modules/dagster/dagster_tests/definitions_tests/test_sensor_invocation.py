@@ -20,7 +20,6 @@ from dagster import (
     PartitionMapping,
     PartitionsDefinition,
     RunRequest,
-    SensorEvaluationContext,
     SkipReason,
     StaticPartitionsDefinition,
     asset,
@@ -41,15 +40,17 @@ from dagster import (
     sensor,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.sensor_definition import SensorEvaluationContext
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import SensorExecutionContext
 
 
 def test_sensor_context_backcompat():
     # If an instance of SensorEvaluationContext is a SensorExecutionContext, then annotating as
     # SensorExecutionContext and passing in a SensorEvaluationContext should pass mypy
-    assert isinstance(SensorEvaluationContext(None, None, None, None, None), SensorExecutionContext)
+    assert isinstance(
+        SensorEvaluationContext(None, None, None, None, None), SensorEvaluationContext
+    )
 
 
 def test_sensor_invocation_args():
