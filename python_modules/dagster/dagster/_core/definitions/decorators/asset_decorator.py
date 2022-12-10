@@ -1,4 +1,5 @@
 import warnings
+from inspect import Parameter
 from typing import (
     AbstractSet,
     Any,
@@ -22,7 +23,6 @@ from dagster._core.definitions.resource_output import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.types.dagster_type import DagsterType
-from dagster._seven import funcsigs
 from dagster._utils.backcompat import (
     ExperimentalWarning,
     deprecation_warning,
@@ -565,11 +565,9 @@ def build_asset_ins(
     input_params = new_input_args
 
     non_var_input_param_names = [
-        param.name
-        for param in new_input_args
-        if param.kind == funcsigs.Parameter.POSITIONAL_OR_KEYWORD
+        param.name for param in new_input_args if param.kind == Parameter.POSITIONAL_OR_KEYWORD
     ]
-    has_kwargs = any(param.kind == funcsigs.Parameter.VAR_KEYWORD for param in new_input_args)
+    has_kwargs = any(param.kind == Parameter.VAR_KEYWORD for param in new_input_args)
 
     all_input_names = set(non_var_input_param_names) | asset_ins.keys()
 
