@@ -1,4 +1,4 @@
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Mapping, Sequence, cast
 
 import dagster._check as check
 import graphene
@@ -665,7 +665,8 @@ class GrapheneDagitQuery(graphene.ObjectType):
         ]
 
     def resolve_assetNodeOrError(self, graphene_info, **kwargs):
-        return get_asset_node(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))
+        asset_key_input = cast(Mapping[str, Sequence[str]], kwargs.get("assetKey"))
+        return get_asset_node(graphene_info, AssetKey.from_graphql_input(asset_key_input))
 
     def resolve_assetsOrError(self, graphene_info, **kwargs):
         return get_assets(
@@ -679,9 +680,8 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return get_asset(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))
 
     def resolve_assetNodeDefinitionCollisions(self, graphene_info, **kwargs):
-        asset_keys = set(
-            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
-        )
+        raw_asset_keys = cast(Sequence[Mapping[str, Sequence[str]]], kwargs.get("assetKeys"))
+        asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in raw_asset_keys)
         return get_asset_node_definition_collisions(graphene_info, asset_keys)
 
     def resolve_partitionBackfillOrError(self, graphene_info, backfillId):
@@ -701,10 +701,8 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return [GraphenePermission(permission, value) for permission, value in permissions.items()]
 
     def resolve_assetsLatestInfo(self, graphene_info: HasContext, **kwargs: Any):
-        asset_keys = set(
-            AssetKey.from_graphql_input(asset_key)
-            for asset_key in check.not_none(kwargs.get("assetKeys"))  # type: ignore
-        )
+        raw_asset_keys = cast(Sequence[Mapping[str, Sequence[str]]], kwargs["assetKeys"])
+        asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in raw_asset_keys)
 
         results = get_asset_nodes(graphene_info)
 
