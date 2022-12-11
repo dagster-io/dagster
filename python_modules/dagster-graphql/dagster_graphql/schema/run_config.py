@@ -12,7 +12,7 @@ from .errors import (
 )
 from .pipelines.config_result import GraphenePipelineConfigValidationResult
 from .runs import GrapheneRunConfigData, parse_run_config_input
-from .util import non_null_list
+from .util import ResolveInfo, non_null_list
 
 
 class GrapheneRunConfigSchema(graphene.ObjectType):
@@ -55,7 +55,7 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
         )
         self._mode = check.str_param(mode, "mode")
 
-    def resolve_allConfigTypes(self, _graphene_info):
+    def resolve_allConfigTypes(self, _graphene_info: ResolveInfo):
         return sorted(
             list(
                 map(
@@ -68,13 +68,13 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
             key=lambda ct: ct.key,
         )
 
-    def resolve_rootConfigType(self, _graphene_info):
+    def resolve_rootConfigType(self, _graphene_info: ResolveInfo):
         return to_config_type(
             self._represented_pipeline.config_schema_snapshot,
             self._represented_pipeline.get_mode_def_snap(self._mode).root_config_key,
         )
 
-    def resolve_isRunConfigValid(self, graphene_info, **kwargs):
+    def resolve_isRunConfigValid(self, graphene_info: ResolveInfo, **kwargs):
         return resolve_is_run_config_valid(
             graphene_info,
             self._represented_pipeline,

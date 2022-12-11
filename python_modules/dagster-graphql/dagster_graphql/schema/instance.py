@@ -8,7 +8,7 @@ from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._daemon.types import DaemonStatus
 
 from .errors import GraphenePythonError
-from .util import non_null_list
+from .util import ResolveInfo, non_null_list
 
 
 class GrapheneRunLauncher(graphene.ObjectType):
@@ -21,7 +21,7 @@ class GrapheneRunLauncher(graphene.ObjectType):
         super().__init__()
         self._run_launcher = check.inst_param(run_launcher, "run_launcher", RunLauncher)
 
-    def resolve_name(self, _graphene_info):
+    def resolve_name(self, _graphene_info: ResolveInfo):
         return self._run_launcher.__class__.__name__
 
 
@@ -53,7 +53,7 @@ class GrapheneDaemonStatus(graphene.ObjectType):
             else [],
         )
 
-    def resolve_id(self, _graphene_info):
+    def resolve_id(self, _graphene_info: ResolveInfo):
         return self.daemonType
 
 
@@ -71,16 +71,16 @@ class GrapheneDaemonHealth(graphene.ObjectType):
         super().__init__()
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
 
-    def resolve_id(self, _graphene_info):
+    def resolve_id(self, _graphene_info: ResolveInfo):
         return "daemonHealth"
 
-    def resolve_daemonStatus(self, _graphene_info, daemon_type):
+    def resolve_daemonStatus(self, _graphene_info: ResolveInfo, daemon_type):
         check.str_param(daemon_type, "daemon_type")
         return GrapheneDaemonStatus(
             self._instance.get_daemon_statuses(daemon_types=[daemon_type])[daemon_type]
         )
 
-    def resolve_allDaemonStatuses(self, _graphene_info):
+    def resolve_allDaemonStatuses(self, _graphene_info: ResolveInfo):
         return [
             GrapheneDaemonStatus(daemon_status)
             for daemon_status in self._instance.get_daemon_statuses().values()
@@ -103,29 +103,29 @@ class GrapheneInstance(graphene.ObjectType):
         super().__init__()
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
 
-    def resolve_hasInfo(self, graphene_info) -> bool:
+    def resolve_hasInfo(self, graphene_info: ResolveInfo) -> bool:
         return graphene_info.context.show_instance_config
 
-    def resolve_info(self, graphene_info):
+    def resolve_info(self, graphene_info: ResolveInfo):
         return self._instance.info_str() if graphene_info.context.show_instance_config else None
 
-    def resolve_runLauncher(self, _graphene_info):
+    def resolve_runLauncher(self, _graphene_info: ResolveInfo):
         return (
             GrapheneRunLauncher(self._instance.run_launcher)
             if self._instance.run_launcher
             else None
         )
 
-    def resolve_runQueuingSupported(self, _graphene_info):
+    def resolve_runQueuingSupported(self, _graphene_info: ResolveInfo):
         from dagster._core.run_coordinator import QueuedRunCoordinator
 
         return isinstance(self._instance.run_coordinator, QueuedRunCoordinator)
 
-    def resolve_executablePath(self, _graphene_info):
+    def resolve_executablePath(self, _graphene_info: ResolveInfo):
         return sys.executable
 
-    def resolve_daemonHealth(self, _graphene_info):
+    def resolve_daemonHealth(self, _graphene_info: ResolveInfo):
         return GrapheneDaemonHealth(instance=self._instance)
 
-    def resolve_hasCapturedLogManager(self, _graphene_info):
+    def resolve_hasCapturedLogManager(self, _graphene_info: ResolveInfo):
         return isinstance(self._instance.compute_log_manager, CapturedLogManager)
