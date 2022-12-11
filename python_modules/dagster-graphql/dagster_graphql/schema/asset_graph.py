@@ -106,7 +106,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
         self._depended_by_loader = check.opt_inst_param(
             depended_by_loader, "depended_by_loader", CrossRepoAssetDependedByLoader
         )
-        super().__init__(inputName=input_name)
+        super().__init__(inputName=input_name)  # type: ignore (snake -> camel)
 
     def resolve_asset(self, _graphene_info):
         asset_node = self._external_repository.get_external_asset_node(self._asset_key)
