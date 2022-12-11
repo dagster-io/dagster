@@ -90,6 +90,23 @@ class RootInputManager(InputManager):
             Any: The data object.
         """
 
+@overload
+def root_input_manager(
+    config_schema: InputLoadFn,
+) -> RootInputManagerDefinition:
+    ...
+
+
+@overload
+def root_input_manager(
+    config_schema: Optional[CoercableToConfigSchema] = None,
+    description: Optional[str] = None,
+    input_config_schema: Optional[CoercableToConfigSchema] = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
+    version: Optional[str] = None,
+) -> Callable[[InputLoadFn], RootInputManagerDefinition]:
+    ...
+
 
 @overload
 def root_input_manager(

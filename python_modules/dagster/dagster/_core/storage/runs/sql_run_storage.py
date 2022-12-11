@@ -23,6 +23,7 @@ from typing import (
 
 import pendulum
 import sqlalchemy as db
+import sqlalchemy.exc as db_exc
 
 import dagster._check as check
 from dagster._core.errors import (
@@ -141,7 +142,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         with self.connect() as conn:
             try:
                 conn.execute(runs_insert)
-            except db.exc.IntegrityError as exc:
+            except db_exc.IntegrityError as exc:
                 raise DagsterRunAlreadyExists from exc
 
             tags_to_insert = pipeline_run.tags_for_storage()
@@ -981,7 +982,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         with self.connect() as conn:
             try:
                 conn.execute(query)
-            except db.exc.IntegrityError:
+            except db_exc.IntegrityError:
                 conn.execute(
                     SecondaryIndexMigrationTable.update()  # pylint: disable=no-value-for-parameter
                     .where(SecondaryIndexMigrationTable.c.name == migration_name)
@@ -1016,7 +1017,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                         body=serialize_dagster_namedtuple(daemon_heartbeat),
                     )
                 )
-            except db.exc.IntegrityError:
+            except db_exc.IntegrityError:
                 conn.execute(
                     DaemonHeartbeatsTable.update()  # pylint: disable=no-value-for-parameter
                     .where(DaemonHeartbeatsTable.c.daemon_type == daemon_heartbeat.daemon_type)
@@ -1131,7 +1132,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         with self.connect() as conn:
             try:
                 conn.execute(KeyValueStoreTable.insert().values(db_values))
-            except db.exc.IntegrityError:
+            except db_exc.IntegrityError:
                 conn.execute(
                     KeyValueStoreTable.update()  # pylint: disable=no-value-for-parameter
                     .where(KeyValueStoreTable.c.key.in_(pairs.keys()))
