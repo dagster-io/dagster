@@ -19,6 +19,7 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Union,
     cast,
 )
 
@@ -31,7 +32,7 @@ from graphene import ResolveInfo
 from typing_extensions import ParamSpec, TypeAlias
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.errors import GraphenePythonError
+    from dagster_graphql.schema.errors import GrapheneError, GraphenePythonError
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -95,7 +96,7 @@ class ErrorCapture:
     @staticmethod
     def default_on_exception(
         exc_info: Tuple[Type[BaseException], BaseException, TracebackType]
-    ) -> GraphenePythonError:
+    ) -> "GraphenePythonError":
         from dagster_graphql.schema.errors import GraphenePythonError
 
         # Transform exception in to PythonErron to present to user
@@ -119,8 +120,10 @@ class ErrorCapture:
             ErrorCapture.observer.reset(token)
 
 
-def capture_error(fn: T_Callable) -> T_Callable:
-    def _fn(*args, **kwargs):
+def capture_error(
+    fn: Callable[P, T]
+) -> Callable[P, Union[T, "GrapheneError", "GraphenePythonError"]]:
+    def _fn(*args: P.args, **kwargs: P.kwargs):
         try:
             return fn(*args, **kwargs)
         except UserFacingGraphQLError as de_exception:
@@ -129,7 +132,7 @@ def capture_error(fn: T_Callable) -> T_Callable:
             ErrorCapture.observer.get()(exc)
             return ErrorCapture.on_exception(sys.exc_info())  # type: ignore
 
-    return cast(T_Callable, _fn)
+    return _fn
 
 
 class UserFacingGraphQLError(Exception):
