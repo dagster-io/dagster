@@ -6,7 +6,7 @@ import threading
 import time
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Iterable, Optional
+from typing import Any, Iterable, Optional
 
 import sqlalchemy as db
 from sqlalchemy.pool import NullPool
@@ -213,7 +213,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 conn.close()
             engine.dispose()
 
-    def run_connection(self, run_id=None):
+    def run_connection(self, run_id: Optional[str] = None) -> Any:
         return self._connect(run_id)
 
     def index_connection(self):

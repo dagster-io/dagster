@@ -18,6 +18,8 @@ from typing import (
 
 import pendulum
 import sqlalchemy as db
+import sqlalchemy.exc as db_exc
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
@@ -63,6 +65,11 @@ if TYPE_CHECKING:
 
 MIN_ASSET_ROWS = 25
 
+# We are using third-party library objects for DB connections-- at this time, these libraries are
+# untyped. When/if we upgrade to typed variants, the `Any` here can be replaced or the alias as a
+# whole can be dropped.
+SqlDbConnection: TypeAlias = Any
+
 
 class SqlEventLogStorage(EventLogStorage):
     """Base class for SQL backed event log storages.
@@ -72,7 +79,7 @@ class SqlEventLogStorage(EventLogStorage):
     """
 
     @abstractmethod
-    def run_connection(self, run_id):
+    def run_connection(self, run_id: Optional[str]) -> SqlDbConnection:
         """Context manager yielding a connection to access the event logs for a specific run.
 
         Args:
@@ -81,16 +88,11 @@ class SqlEventLogStorage(EventLogStorage):
         """
 
     @abstractmethod
-    def index_connection(self):
-        """Context manager yielding a connection to access cross-run indexed tables.
-
-        Args:
-            run_id (Optional[str]): Enables those storages which shard based on run_id, e.g.,
-                SqliteEventLogStorage, to connect appropriately.
-        """
+    def index_connection(self) -> SqlDbConnection:
+        """Context manager yielding a connection to access cross-run indexed tables."""
 
     @abstractmethod
-    def upgrade(self):
+    def upgrade(self) -> None:
         """This method should perform any schema migrations necessary to bring an
         out-of-date instance of the storage up to date.
         """
@@ -172,7 +174,7 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             try:
                 conn.execute(insert_statement)
-            except db.exc.IntegrityError:
+            except db_exc.IntegrityError:
                 conn.execute(update_statement)
 
     def _get_asset_entry_values(self, event: EventLogEntry, has_asset_key_index_cols: bool):
@@ -725,7 +727,7 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             try:
                 conn.execute(query)
-            except db.exc.IntegrityError:
+            except db_exc.IntegrityError:
                 conn.execute(
                     SecondaryIndexMigrationTable.update()  # pylint: disable=no-value-for-parameter
                     .where(SecondaryIndexMigrationTable.c.name == name)
@@ -988,7 +990,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def _construct_asset_record_from_row(
         self, row, last_materialization: Optional[EventLogEntry], can_cache_asset_status_data: bool
-    ):
+    ) -> AssetRecord:
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
         asset_key = AssetKey.from_db_string(row[1])
@@ -1005,6 +1007,8 @@ class SqlEventLogStorage(EventLogStorage):
                     else None,
                 ),
             )
+        else:
+            check.failed("Row did not contain asset key.")
 
     def _get_latest_materializations(
         self, raw_asset_rows

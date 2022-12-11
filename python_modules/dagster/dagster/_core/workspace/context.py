@@ -1,7 +1,6 @@
 import sys
 import threading
 import time
-from typing_extensions import Self
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import ExitStack

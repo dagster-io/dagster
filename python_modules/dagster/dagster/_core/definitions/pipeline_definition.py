@@ -52,8 +52,6 @@ from .resource_requirement import ensure_requirements_satisfied
 from .utils import validate_tags
 from .version_strategy import VersionStrategy
 
-from typing_extensions import get_args
-
 if TYPE_CHECKING:
     from dagster._core.host_representation import PipelineIndex
     from dagster._core.snap import ConfigSchemaSnapshot, PipelineSnapshot

@@ -41,10 +41,11 @@ from typing import (
     overload,
 )
 
-import dagster._check as check
-import dagster._seven as seven
 import packaging.version
 from typing_extensions import Literal
+
+import dagster._check as check
+import dagster._seven as seven
 
 if sys.version_info > (3,):
     from pathlib import Path  # pylint: disable=import-error

@@ -41,6 +41,9 @@ class NoOpComputeLogManager(CapturedLogManager, ComputeLogManager, ConfigurableC
     def _watch_logs(self, pipeline_run, step_key=None):
         pass
 
+    def get_local_path(self, run_id: str, key: str, io_type: ComputeIOType) -> str:
+        raise NotImplementedError()
+
     def is_watch_completed(self, run_id, key):
         return True
 

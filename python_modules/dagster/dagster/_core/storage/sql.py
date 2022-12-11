@@ -19,7 +19,11 @@ ALEMBIC_SCRIPTS_LOCATION = "dagster:_core/storage/alembic"
 
 
 @lru_cache(maxsize=3)  # run, event, and schedule storages
-def get_alembic_config(dunder_file: str, config_path: str="alembic/alembic.ini", script_location: Optional[str]=None) -> Config:
+def get_alembic_config(
+    dunder_file: str,
+    config_path: str = "alembic/alembic.ini",
+    script_location: Optional[str] = None,
+) -> Config:
     if not script_location:
         script_location = ALEMBIC_SCRIPTS_LOCATION
 
