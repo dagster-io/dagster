@@ -5,7 +5,18 @@ description: A Dagster schedule submits job runs at a fixed interval.
 
 # Schedules
 
-A Dagster schedule submits [job](/concepts/ops-jobs-graphs/jobs) runs at a fixed interval.
+A schedule is a Dagster definition that is used to execute a [job](/concepts/ops-jobs-graphs/jobs) at a fixed interval. Each time at which a schedule is evaluated is called a tick. The schedule definition can generate run configuration for the job on each tick.
+
+Each schedule:
+
+- Targets a single job
+- Optionally defines a function that returns either:
+  - One or more <PyObject object="RunRequest"/> objects. Each run request launches a run.
+  - An optional <PyObject object="SkipReason"/>, which specifies a message which describes why no runs were requested
+
+Dagster includes a scheduler, which runs as part of the dagster-daemon process. Once you have defined a schedule, see the [dagster-daemon](/deployment/dagster-daemon) page for instructions on how to run the daemon in order to execute your schedules.
+
+---
 
 ## Relevant APIs
 
@@ -17,28 +28,21 @@ A Dagster schedule submits [job](/concepts/ops-jobs-graphs/jobs) runs at a fixed
 | <PyObject object="ScheduleEvaluationContext" />           | The context passed to the schedule definition execution function                                    |
 | <PyObject object="build_schedule_context" />              | A function that constructs a `ScheduleEvaluationContext`, typically used for testing.               |
 
-## Overview
-
-A _schedule_ is a definition in Dagster that is used to execute a [job](/concepts/ops-jobs-graphs/jobs) at a fixed interval. Each time at which a schedule is evaluated is called a _tick_. The schedule definition can generate run configuration for the job on each tick.
-
-Each schedule:
-
-- Targets a single job.
-- Optionally defines a function that returns either:
-  - One or more <PyObject object="RunRequest"/> objects. Each run request launches a run.
-  - An optional <PyObject object="SkipReason"/>, which specifies a message which describes why no runs were requested.
-
-Dagster includes a scheduler, which runs as part of the dagster-daemon process. Once you have defined a schedule, see the [dagster-daemon](/deployment/dagster-daemon) page for instructions on how to run the daemon in order to execute your schedules.
-
 ---
 
 ## Defining schedules
 
-You define a schedule by constructing a <PyObject object="ScheduleDefinition" />.
+You define a schedule by constructing a <PyObject object="ScheduleDefinition" />. In this section:
+
+- [Basic schedules](#basic-schedules)
+- [Schedules that provide custom run config and tags](#schedules-that-provide-custom-run-config-and-tags)
+- [Schedules from partitioned assets and jobs](#schedules-from-partitioned-assets-and-jobs)
+- [Timezones](#timezones)
+- [Daylight Savings Time](#daylight-savings-time)
 
 ### A basic schedule
 
-Here's a simple schedule that runs a job every day, at midnight. The `cron_schedule` accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron). It also accepts `"@hourly"`, `"@daily"`, `"@weekly"`, and `"@monthly"` if your `croniter` dependency's version is >= 1.0.12.
+Here's a simple schedule that runs a job every day, at midnight:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_schedule endbefore=end_basic_schedule
 @job
@@ -49,7 +53,9 @@ def my_job():
 basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
 ```
 
-In order to run schedules for assets, you can [build a job that materializes assets](/concepts/assets/software-defined-assets#building-jobs-that-materialize-assets) and construct a <PyObject object="ScheduleDefinition" /> similarly:
+The `cron_schedule` argument accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron). It also accepts `"@hourly"`, `"@daily"`, `"@weekly"`, and `"@monthly"` if your `croniter` dependency's version is >= 1.0.12.
+
+To run schedules for assets, you can [build a job that materializes assets](/concepts/assets/software-defined-assets#building-jobs-that-materialize-assets) and construct a <PyObject object="ScheduleDefinition" />:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_asset_schedule endbefore=end_basic_asset_schedule
 from dagster import AssetSelection, define_asset_job
@@ -59,9 +65,9 @@ asset_job = define_asset_job("asset_job", AssetSelection.groups("some_asset_grou
 basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
 ```
 
-### A schedule that provides custom run config and tags
+### Schedules that provide custom run config and tags
 
-If you want to vary the behavior of your job based on the time it's scheduled to run, you can use the <PyObject object="schedule" decorator /> decorator, which decorates a function that returns run config based on a provided <PyObject object="ScheduleEvaluationContext" />.
+If you want to vary the behavior of your job based on the time it's scheduled to run, you can use the <PyObject object="schedule" decorator /> decorator, which decorates a function that returns run config based on a provided <PyObject object="ScheduleEvaluationContext" />:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_run_config_schedule endbefore=end_run_config_schedule
 @op(config_schema={"scheduled_date": str})
@@ -90,7 +96,10 @@ If you don't need access to the context parameter, you can omit it from the deco
 
 ### Schedules from partitioned assets and jobs
 
-#### Time partitioned assets and jobs
+- [Time partitioned jobs and assets](#time-partitioned-jobs-and-assets)
+- [Static partitioned job](#static-partitioned-jobs)
+
+#### Time partitioned jobs and assets
 
 When you have a [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job.
 
@@ -194,9 +203,14 @@ def antarctica_schedule():
     yield request
 ```
 
-### Timezones
+### Customizing execution times
 
-You can customize the timezone in which your schedule executes by setting the `execution_timezone` parameter on your schedule to any [tz timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Schedules with no timezone set run in UTC.
+- [Customizing the executing timezone](#customizing-the-executing-timezone)
+- [Execution time and Daylight Savings Time](#execution-time-and-daylight-savings-time)
+
+#### Customizing the executing timezone
+
+You can customize the timezone in which your schedule executes by setting the `execution_timezone` parameter on your schedule to any [`tz` timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Schedules with no timezone set run in UTC.
 
 For example, the following schedule executes daily at 9AM in US/Pacific time:
 
@@ -208,7 +222,7 @@ my_timezone_schedule = ScheduleDefinition(
 
 The <PyObject object="schedule" decorator /> decorator accepts the same argument. Schedules from partitioned jobs execute in the timezone defined on the partitioned config.
 
-### Daylight Savings Time
+#### Execution time and Daylight Savings Time
 
 Because of Daylight Savings Time transitions, it's possible to specify an execution time that does not exist for every scheduled interval. For example, say you have a daily schedule with an execution time of 2:30 AM in the US/Eastern timezone. On 2019/03/10, the time jumps from 2:00 AM to 3:00 AM when Daylight Savings Time begins. Therefore, the time of 2:30 AM did not exist for the day.
 
@@ -217,6 +231,8 @@ If you specify such an execution time, Dagster runs your schedule at the next ti
 It's also possible to specify an execution time that exists twice on one day every year. For example, on 2019/11/03 in US/Eastern time, the hour from 1:00 AM to 2:00 AM repeats, so a daily schedule running at 1:30 AM has two possible times in which it could execute. In this case, Dagster will execute your schedule at the latter of the two possible times.
 
 Hourly schedules will be unaffected by daylight savings time transitions - the schedule will continue to run exactly once every hour, even as the timezone changes. In the example above where the hour from 1:00 AM to 2:00 AM repeats, an hourly schedule running at 30 minutes past the hour would run at 12:30 AM, both instances of 1:30 AM, and then proceed normally from 2:30 AM on.
+
+---
 
 ## Running the scheduler
 
@@ -232,7 +248,9 @@ If you manually start or stop a schedule in Dagit, that will override any defaul
 
 Once your schedule is started, if you're running the [dagster-daemon](/deployment/dagster-daemon) process as part of your deployment, the schedule will begin executing immediately, without needing to restart the dagster-daemon process. See the [Troubleshooting](/concepts/partitions-schedules-sensors/schedules#troubleshooting) section below if your schedule has been started but isn't submitting runs.
 
-## Testing Schedules
+---
+
+## Testing schedules
 
 To test a function decorated by the <PyObject object="schedule" decorator /> decorator, you can invoke the schedule definition like it's a regular Python function. The invocation will return run config, which can then be validated using the <PyObject object="validate_run_config" /> function. Below is a test for the `configurable_job_schedule` that we defined in [an earlier section](#a-schedule-that-provides-custom-run-config-and-tags).
 
@@ -252,11 +270,7 @@ def test_configurable_job_schedule():
 
 If your `@schedule`-decorated function doesn't have a context parameter, you don't need to provide one when invoking it.
 
-## See it in action
-
-For more examples of schedules, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
-
-- [Defining a partitioned asset job and a schedule based on it](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/jobs.py)
+---
 
 ## Troubleshooting
 
@@ -289,3 +303,11 @@ Finally, it's possible that the daemon is running correctly, but there's a probl
 ### Still stuck?
 
 If these steps didn't help and your schedule still isn't running, reach out in Slack or file an issue and we'll be happy to help investigate.
+
+---
+
+## See it in action
+
+For more examples of schedules, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
+
+- [Defining a partitioned asset job and a schedule based on it](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/jobs.py)
