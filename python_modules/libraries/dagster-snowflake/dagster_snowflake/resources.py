@@ -282,9 +282,9 @@ class SnowflakeConnection:
                     cursor.execute(sql, parameters)  # pylint: disable=E1101
                     if fetch_results:
                         if use_pandas_result:
-                            results = results.append(cursor.fetch_pandas_all())
+                            results = results.append(cursor.fetch_pandas_all())  # type: ignore
                         else:
-                            results.append(cursor.fetchall())  # pylint: disable=E1101
+                            results.append(cursor.fetchall())  # type: ignore
 
         return results if fetch_results else None
 
