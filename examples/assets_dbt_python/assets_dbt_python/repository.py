@@ -5,11 +5,11 @@ from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
 from dagster_duckdb_pandas import duckdb_pandas_io_manager
 
 from dagster import (
+    Definitions,
     ScheduleDefinition,
     define_asset_job,
     fs_io_manager,
     load_assets_from_package_module,
-    Definitions,
 )
 from dagster._utils import file_relative_path
 
