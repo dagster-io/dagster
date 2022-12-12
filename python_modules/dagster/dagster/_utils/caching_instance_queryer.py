@@ -41,25 +41,15 @@ class CachingInstanceQueryer:
         # materialization record for a >= cursor, we don't need to query the instance
         self._no_materializations_after_cursor_cache: Dict[AssetKeyPartitionKey, int] = {}
 
-    def get_in_progress_run_time_and_planned_materializations(
-        self, asset_key: AssetKey
-    ) -> Tuple[Optional[datetime.datetime], AbstractSet[AssetKey]]:
-        # the latest asset record is updated when the run is created
+    @cached_method
+    def get_latest_run_record_for_key(self, asset_key: AssetKey) -> Optional[RunRecord]:
+        # the latest asset record is updated whenever a new run is created
         asset_records = self._instance.get_asset_records([asset_key])
         asset_record = next(iter(asset_records), None)
         if asset_record is None or asset_record.asset_entry.last_run_id is None:
-            return (None, set())
+            return None
         run_id = asset_record.asset_entry.last_run_id
-
-        run_record = self._get_run_record_by_id(run_id=run_id)
-        if run_record is not None and run_record.pipeline_run.status in IN_PROGRESS_RUN_STATUSES:
-            data_time = (
-                datetime.datetime.fromtimestamp(run_record.start_time, tz=datetime.timezone.utc)
-                if run_record.start_time
-                else None
-            )
-            return (data_time, self._get_planned_materializations_for_run(run_id=run_id))
-        return (None, set())
+        return self._get_run_record_by_id(run_id=run_id)
 
     def is_asset_partition_in_run(self, run_id: str, asset_partition: AssetKeyPartitionKey) -> bool:
         run = self._get_run_by_id(run_id=run_id)
@@ -72,7 +62,7 @@ class CachingInstanceQueryer:
         if run.asset_selection:
             return asset_partition.asset_key in run.asset_selection
         else:
-            return asset_partition.asset_key in self._get_planned_materializations_for_run(
+            return asset_partition.asset_key in self.get_planned_materializations_for_run(
                 run_id=run_id
             )
 
@@ -90,7 +80,7 @@ class CachingInstanceQueryer:
         )
 
     @cached_method
-    def _get_planned_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
+    def get_planned_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
         materializations_planned = self._instance.get_records_for_run(
             run_id=run_id,
             of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
