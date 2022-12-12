@@ -151,6 +151,8 @@ def get_workspace_load_target(kwargs: Mapping[str, str]):
 
         module_names = kwargs["module_name"]
 
+        check.is_tuple(module_names, of_type=str)
+
         working_directory = get_working_directory_from_kwargs(kwargs)
 
         if len(module_names) == 1:
@@ -165,7 +167,7 @@ def get_workspace_load_target(kwargs: Mapping[str, str]):
 
             if kwargs.get("attribute"):
                 raise UsageError(
-                    "If you are specifying multiple modules you cannot specify an attribute."
+                    f"If you are specifying multiple modules you cannot specify an attribute. Got modules {module_names}."
                 )
 
             return CompositeTarget(
@@ -489,7 +491,11 @@ def get_job_python_origin_from_kwargs(kwargs):
 
 def _get_code_pointer_dict_from_kwargs(kwargs: Mapping[str, str]) -> Mapping[str, CodePointer]:
     python_file = kwargs.get("python_file")
-    module_name = kwargs.get("module_name")
+    module_name = (
+        unwrap_single_code_location_target_cli_arg(kwargs, "module_name")
+        if kwargs.get("module_name")
+        else None
+    )
     package_name = kwargs.get("package_name")
     working_directory = get_working_directory_from_kwargs(kwargs)
     attribute = kwargs.get("attribute")
@@ -540,6 +546,23 @@ def get_working_directory_from_kwargs(kwargs: Mapping[str, str]) -> Optional[str
     return check.opt_str_elem(kwargs, "working_directory") or os.getcwd()
 
 
+def unwrap_single_code_location_target_cli_arg(kwargs: Mapping[str, str], key: str) -> str:
+    """
+    Dagster CLI tools accept multiple code location targets (e.g. multiple -f and -m instances)
+    but sometimes only one makes sense (e.g. when targeting a single job)
+    Use this function to validate that there is only one value in that tuple and then return the tuple itself.
+
+    key can be module_name or python_file
+    """
+    check.is_tuple(kwargs[key], of_type=str)
+    value_tuple = cast(Tuple[str], kwargs[key])
+    check.invariant(
+        len(value_tuple) == 1,
+        "Must specify only one code location when executing this command. Multiple {key} options given",
+    )
+    return value_tuple[0]
+
+
 def get_repository_python_origin_from_kwargs(kwargs: Mapping[str, str]) -> RepositoryPythonOrigin:
     provided_repo_name = cast(str, kwargs.get("repository"))
 
@@ -560,8 +583,9 @@ def get_repository_python_origin_from_kwargs(kwargs: Mapping[str, str]) -> Repos
             )
         elif kwargs.get("module_name"):
             _check_cli_arguments_none(kwargs, "python_file", "package_name")
+            module_name = unwrap_single_code_location_target_cli_arg(kwargs, "module_name")
             code_pointer = CodePointer.from_module(
-                kwargs["module_name"],
+                module_name,
                 kwargs["attribute"],
                 get_working_directory_from_kwargs(kwargs),
             )

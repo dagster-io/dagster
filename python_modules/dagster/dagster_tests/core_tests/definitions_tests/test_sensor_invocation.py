@@ -507,33 +507,6 @@ def my_repo():
     return [july_asset, july_asset_2, august_asset]
 
 
-def test_invalid_partition_mapping():
-    @multi_asset_sensor(asset_keys=[july_asset.key])
-    def asset_sensor(context):
-        partition = next(
-            iter(context.latest_materialization_records_by_partition(july_asset.key).keys())
-        )
-
-        # Line errors because we're trying to map to a partition that doesn't exist
-        context.get_downstream_partition_keys(
-            partition,
-            to_asset_key=august_asset.key,
-            from_asset_key=july_asset.key,
-        )
-
-    with instance_for_test() as instance:
-        materialize(
-            [july_asset],
-            partition_key="2022-07-01",
-            instance=instance,
-        )
-        ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
-        )
-        with pytest.warns(UserWarning):
-            asset_sensor(ctx)
-
-
 def test_multi_asset_sensor_after_cursor_partition_flag():
     @multi_asset_sensor(asset_keys=[july_asset.key])
     def after_cursor_partitions_asset_sensor(context):
