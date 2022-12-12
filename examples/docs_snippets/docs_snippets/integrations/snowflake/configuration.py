@@ -1,4 +1,10 @@
-iris_dataset = None
+from dagster import asset
+
+
+@asset
+def iris_dataset():
+    return None
+
 
 # start_example
 
