@@ -12,6 +12,7 @@ import click
 import dagster._check as check
 import dagster._seven as seven
 from dagster._cli.workspace.cli_target import (
+    unwrap_single_code_location_target_cli_arg,
     get_working_directory_from_kwargs,
     python_origin_target_argument,
 )
@@ -651,16 +652,12 @@ def grpc_command(
         ]
     ):
         # in the gRPC api CLI we never load more than one module at a time
-        maybe_module = kwargs["module_name"]
-        if maybe_module:
-            check.is_tuple(maybe_module, of_type=str)
-            check.invariant(
-                len(maybe_module) <= 1,
-                "The dagster grpc server cannot serve more than one code location at a time",
-            )
-            module_name = maybe_module[0]
-        else:
-            module_name = None
+
+        module_name = (
+            unwrap_single_code_location_target_cli_arg(kwargs, "module_name")
+            if kwargs["module_name"]
+            else None
+        )
 
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,

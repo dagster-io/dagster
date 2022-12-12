@@ -1,7 +1,18 @@
 import os
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Generator, Iterable, List, Mapping, Optional, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generator,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
 import click
 import tomli
@@ -49,12 +60,12 @@ def _cli_load_invariant(condition: object, msg=None) -> None:
         raise UsageError(msg)
 
 
-def _check_cli_arguments_none(kwargs: Mapping[str, str], *keys: str) -> None:
+def _check_cli_arguments_none(kwargs: Mapping[str, Any], *keys: str) -> None:
     for key in keys:
         _cli_load_invariant(not kwargs.get(key))
 
 
-def are_all_keys_empty(kwargs: Mapping[str, str], keys: Iterable[str]) -> bool:
+def are_all_keys_empty(kwargs: Mapping[str, Any], keys: Iterable[str]) -> bool:
     for key in keys:
         if kwargs.get(key):
             return False
@@ -95,7 +106,7 @@ def get_target_from_toml(path) -> Optional[PackageTarget]:
         )
 
 
-def get_workspace_load_target(kwargs: Mapping[str, str]):
+def get_workspace_load_target(kwargs: Mapping[str, Union[str, Tuple[str]]]):
     check.mapping_param(kwargs, "kwargs")
     if are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
         if kwargs.get("empty_workspace"):
@@ -228,7 +239,10 @@ def get_workspace_load_target(kwargs: Mapping[str, str]):
 
 
 def get_workspace_process_context_from_kwargs(
-    instance: DagsterInstance, version: str, read_only: bool, kwargs: Mapping[str, str]
+    instance: DagsterInstance,
+    version: str,
+    read_only: bool,
+    kwargs: Mapping[str, Union[str, Tuple[str]]],
 ) -> "WorkspaceProcessContext":
     from dagster._core.workspace.context import WorkspaceProcessContext
 
@@ -542,7 +556,7 @@ def _get_code_pointer_dict_from_kwargs(kwargs: Mapping[str, str]) -> Mapping[str
         check.failed("Must specify a Python file or module name")
 
 
-def get_working_directory_from_kwargs(kwargs: Mapping[str, str]) -> Optional[str]:
+def get_working_directory_from_kwargs(kwargs: Mapping[str, Any]) -> Optional[str]:
     return check.opt_str_elem(kwargs, "working_directory") or os.getcwd()
 
 
