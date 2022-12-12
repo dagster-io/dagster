@@ -1,10 +1,14 @@
-from typing import NamedTuple, Optional, cast
+from typing import NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import PartitionMapping
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
+    TimeWindowPartitionsDefinition,
+    TimeWindowPartitionsSubset,
+)
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes import whitelist_for_serdes
 
@@ -38,11 +42,20 @@ class TimeWindowPartitionMapping(PartitionMapping, NamedTuple("_TimeWindowPartit
         downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionKeyRange:
-        if downstream_partitions_def is None or downstream_partition_key_range is None:
-            check.failed("downstream asset is not partitioned")
+        raise NotImplementedError()
+
+    def get_upstream_partitions_for_partitions(
+        self,
+        downstream_partitions_subset: Optional[PartitionsSubset],
+        upstream_partitions_def: PartitionsDefinition,
+    ) -> PartitionsSubset:
+        if not isinstance(downstream_partitions_subset, TimeWindowPartitionsSubset):
+            check.failed("downstream_partitions_subset must be a TimeWindowPartitionsSubset")
 
         return self._map_partitions(
-            downstream_partitions_def, upstream_partitions_def, downstream_partition_key_range
+            downstream_partitions_subset.partitions_def,
+            upstream_partitions_def,
+            downstream_partitions_subset.included_time_windows,
         )
 
     def get_downstream_partitions_for_partition_range(
@@ -51,19 +64,31 @@ class TimeWindowPartitionMapping(PartitionMapping, NamedTuple("_TimeWindowPartit
         downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionKeyRange:
-        if downstream_partitions_def is None:
-            check.failed("downstream asset is not partitioned")
+        raise NotImplementedError()
+
+    def get_downstream_partitions_for_partitions(
+        self,
+        upstream_partitions_subset: PartitionsSubset,
+        downstream_partitions_def: Optional[PartitionsDefinition],
+    ) -> PartitionsSubset:
+        if not isinstance(downstream_partitions_def, TimeWindowPartitionsDefinition):
+            check.failed("downstream_partitions_def must be a TimeWindowPartitionsDefinitions")
+
+        if not isinstance(upstream_partitions_subset, TimeWindowPartitionsSubset):
+            check.failed("upstream_partitions_subset must be a TimeWindowPartitionsSubset")
 
         return self._map_partitions(
-            upstream_partitions_def, downstream_partitions_def, upstream_partition_key_range
+            upstream_partitions_subset.partitions_def,
+            downstream_partitions_def,
+            upstream_partitions_subset.included_time_windows,
         )
 
     def _map_partitions(
         self,
         from_partitions_def: PartitionsDefinition,
         to_partitions_def: PartitionsDefinition,
-        from_partition_key_range: PartitionKeyRange,
-    ) -> PartitionKeyRange:
+        from_partition_time_windows: Sequence[TimeWindow],
+    ) -> PartitionsSubset:
         if not isinstance(from_partitions_def, TimeWindowPartitionsDefinition) or not isinstance(
             from_partitions_def, TimeWindowPartitionsDefinition
         ):
@@ -76,16 +101,24 @@ class TimeWindowPartitionMapping(PartitionMapping, NamedTuple("_TimeWindowPartit
         if to_partitions_def.timezone != from_partitions_def.timezone:
             raise DagsterInvalidDefinitionError("Timezones don't match")
 
-        from_start_dt = from_partitions_def.start_time_for_partition_key(
-            from_partition_key_range.start
-        )
-        from_end_dt = from_partitions_def.end_time_for_partition_key(from_partition_key_range.end)
+        time_windows = []
+        for from_partition_time_window in from_partition_time_windows:
+            from_start_dt, from_end_dt = from_partition_time_window
 
-        to_start_partition_key = to_partitions_def.get_partition_key_for_timestamp(
-            from_start_dt.timestamp(), end_closed=False
-        )
-        to_end_partition_key = to_partitions_def.get_partition_key_for_timestamp(
-            from_end_dt.timestamp(), end_closed=True
-        )
+            to_start_partition_key = to_partitions_def.get_partition_key_for_timestamp(
+                from_start_dt.timestamp(), end_closed=False
+            )
+            to_end_partition_key = to_partitions_def.get_partition_key_for_timestamp(
+                from_end_dt.timestamp(), end_closed=True
+            )
+            time_windows.append(
+                TimeWindow(
+                    to_partitions_def.start_time_for_partition_key(to_start_partition_key),
+                    to_partitions_def.end_time_for_partition_key(to_end_partition_key),
+                )
+            )
 
-        return PartitionKeyRange(to_start_partition_key, to_end_partition_key)
+        return TimeWindowPartitionsSubset(
+            to_partitions_def,
+            time_windows,
+        )
