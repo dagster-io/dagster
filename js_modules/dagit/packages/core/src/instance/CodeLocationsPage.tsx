@@ -14,7 +14,19 @@ export const CodeLocationsPage = () => {
 
   const {pageTitle} = React.useContext(InstancePageContext);
   const {locationEntries, loading} = React.useContext(WorkspaceContext);
-  const entryCount = locationEntries.length;
+
+  // Consider each loaded repository to be a "code location".
+  const entryCount = React.useMemo(() => {
+    let count = 0;
+    locationEntries.forEach((entry) => {
+      if (!entry.locationOrLoadError || entry.locationOrLoadError?.__typename === 'PythonError') {
+        count += 1;
+      } else {
+        count += entry.locationOrLoadError.repositories.length;
+      }
+    });
+    return count;
+  }, [locationEntries]);
 
   const subheadingText = () => {
     if (loading || !entryCount) {
@@ -25,10 +37,7 @@ export const CodeLocationsPage = () => {
 
   return (
     <>
-      <PageHeader
-        title={<Heading>{pageTitle}</Heading>}
-        tabs={<InstanceTabs tab="code-locations" />}
-      />
+      <PageHeader title={<Heading>{pageTitle}</Heading>} tabs={<InstanceTabs tab="locations" />} />
       <Box
         padding={{vertical: 16, horizontal: 24}}
         flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}

@@ -1,6 +1,6 @@
 import {Box, MainContent, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
-import {Redirect, Route, Switch, useParams} from 'react-router-dom';
+import {Route, Switch, useParams} from 'react-router-dom';
 
 import {AssetGroupRoot} from '../assets/AssetGroupRoot';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
@@ -138,7 +138,6 @@ export const WorkspaceRoot = () => {
   return (
     <MainContent>
       <Switch>
-        <Route path="/locations" exact render={() => <Redirect to="/definitions" />} />
         <Route path={['/locations/pipelines/:pipelinePath', '/locations/jobs/:pipelinePath']}>
           <WorkspacePipelineRoot />
         </Route>

@@ -11,6 +11,7 @@ from dagster import (
     DagsterEventType,
     DailyPartitionsDefinition,
     EventRecordsFilter,
+    FreshnessPolicy,
     GraphOut,
     IOManager,
     IOManagerDefinition,
@@ -111,6 +112,42 @@ def test_retain_group():
         output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
     )
     assert replaced.group_names_by_key[AssetKey("baz")] == "foo"
+
+
+def test_retain_freshness_policy():
+    fp = FreshnessPolicy(maximum_lag_minutes=24.5)
+
+    @asset(freshness_policy=fp)
+    def bar():
+        pass
+
+    replaced = bar.with_prefix_or_group(
+        output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
+    )
+    assert (
+        replaced.freshness_policies_by_key[AssetKey(["baz"])]
+        == bar.freshness_policies_by_key[AssetKey(["bar"])]
+    )
+
+
+def test_retain_metadata_graph():
+    @op
+    def foo():
+        return 1
+
+    @graph
+    def bar():
+        return foo()
+
+    md = {"foo": "bar", "baz": 12.5}
+    original = AssetsDefinition.from_graph(bar, metadata_by_output_name={"result": md})
+
+    replaced = original.with_prefix_or_group(
+        output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
+    )
+    assert (
+        replaced.metadata_by_key[AssetKey(["baz"])] == original.metadata_by_key[AssetKey(["bar"])]
+    )
 
 
 def test_retain_group_subset():

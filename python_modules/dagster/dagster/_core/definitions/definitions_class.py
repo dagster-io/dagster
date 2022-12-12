@@ -1,8 +1,9 @@
 from typing import Any, Dict, Iterable, Mapping, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import experimental
+from dagster._annotations import experimental, public
 from dagster._core.execution.with_resources import with_resources
+from dagster._utils.cached_method import cached_method
 
 from .assets import AssetsDefinition, SourceAsset
 from .cacheable_assets import CacheableAssetsDefinition
@@ -94,10 +95,32 @@ class Definitions:
                 *(jobs or []),
             ]
 
-        self._created_repo = created_repo
+        self._created_pending_or_normal_repo = created_repo
 
-    def get_inner_repository(self) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
-        return self._created_repo
+    @public
+    def get_job_def(self, name: str) -> JobDefinition:
+        """Get a job definition by name. If you passed in a an UnresolvedAssetJobDefinition
+        (return value of define_asset_job) it will be resolved to a JobDefinition when returned
+        from this function."""
+
+        check.str_param(name, "name")
+        return self.get_repository_def().get_job(name)
+
+    @cached_method
+    def get_repository_def(self) -> RepositoryDefinition:
+        return (
+            self._created_pending_or_normal_repo.compute_repository_definition()
+            if isinstance(self._created_pending_or_normal_repo, PendingRepositoryDefinition)
+            else self._created_pending_or_normal_repo
+        )
+
+    def get_inner_repository_for_loading_process(
+        self,
+    ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
+        """This method is used internally to access the inner repository during the loading process
+        at CLI entry points. We explicitly do not want to resolve the pending repo because the entire
+        point is to defer that resolution until later."""
+        return self._created_pending_or_normal_repo
 
 
 def coerce_resources_to_defs(resources: Mapping[str, Any]) -> Dict[str, ResourceDefinition]:

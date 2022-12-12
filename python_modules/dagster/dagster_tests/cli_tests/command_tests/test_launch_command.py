@@ -6,6 +6,7 @@ from dagster._cli.job import execute_launch_command, job_launch_command
 from dagster._core.errors import DagsterRunAlreadyExists
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import new_cwd
+from dagster._seven import IS_WINDOWS
 from dagster._utils import file_relative_path
 
 from .test_cli_commands import (
@@ -42,6 +43,7 @@ def run_job_launch_cli(execution_args, instance, expected_count=None):
         assert instance.get_runs_count() == expected_count
 
 
+@pytest.mark.skipif(IS_WINDOWS, reason="flaky in windows")
 @pytest.mark.parametrize("gen_pipeline_args", launch_command_contexts())
 def test_launch_pipeline(gen_pipeline_args):
     with gen_pipeline_args as (cli_args, instance):
@@ -56,6 +58,7 @@ def test_launch_non_existant_file():
             run_launch(kwargs, instance)
 
 
+@pytest.mark.skipif(IS_WINDOWS, reason="flaky in windows")
 @pytest.mark.parametrize("job_cli_args", valid_external_job_target_cli_args())
 def test_launch_job_cli(job_cli_args):
     with default_cli_test_instance() as instance:
@@ -196,6 +199,7 @@ def test_job_launch_queued(gen_pipeline_args):
             assert run.status == DagsterRunStatus.QUEUED
 
 
+@pytest.mark.skipif(IS_WINDOWS, reason="flaky in windows")
 def test_default_working_directory():
     runner = CliRunner()
     import os
