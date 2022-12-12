@@ -2,6 +2,7 @@ import {Box, Colors, Icon, Spinner, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {PartitionRangeWizard} from '../partitions/PartitionRangeWizard';
 import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
@@ -19,7 +20,7 @@ import {PartitionHealthDimensionRange, usePartitionHealthData} from './usePartit
 
 interface Props {
   assetKey: AssetKey;
-  assetPartitionNames?: string[];
+  assetPartitionDimensions?: string[];
   liveData?: LiveDataForNode;
   params: AssetViewParams;
   paramsTimeWindowOnly: boolean;
@@ -33,21 +34,29 @@ interface Props {
   opName?: string | null;
 }
 
+const DISPLAYED_STATES = [PartitionState.MISSING, PartitionState.SUCCESS];
+
 export const AssetPartitions: React.FC<Props> = ({
   assetKey,
-  assetPartitionNames,
+  assetPartitionDimensions,
   assetLastMaterializedAt,
   params,
   setParams,
   liveData,
 }) => {
   const [assetHealth] = usePartitionHealthData([assetKey], assetLastMaterializedAt);
-  const [ranges, setRanges] = usePartitionDimensionRanges(assetHealth, assetPartitionNames);
+  const [ranges, setRanges] = usePartitionDimensionRanges(
+    assetHealth,
+    assetPartitionDimensions,
+    true,
+  );
 
-  const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
-    PartitionState.MISSING,
-    PartitionState.SUCCESS,
-  ]);
+  const [stateFilters, setStateFilters] = useQueryPersistedState<PartitionState[]>({
+    defaults: {states: DISPLAYED_STATES.sort().join(',')},
+    encode: (val) => ({states: [...val].sort().join(',')}),
+    decode: (qs) =>
+      (qs.states || '').split(',').filter((s: PartitionState) => DISPLAYED_STATES.includes(s)),
+  });
 
   const timeRangeIdx = ranges.findIndex((r) => isTimeseriesDimension(r.dimension));
   const timeRange = timeRangeIdx !== -1 ? ranges[timeRangeIdx] : null;

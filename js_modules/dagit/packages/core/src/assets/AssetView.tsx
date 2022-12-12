@@ -221,7 +221,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           ) : selectedTab === 'partitions' ? (
             <AssetPartitions
               assetKey={assetKey}
-              assetPartitionNames={definition?.partitionKeysByDimension.map((k) => k.name)}
+              assetPartitionDimensions={definition?.partitionKeysByDimension.map((k) => k.name)}
               assetLastMaterializedAt={lastMaterializedAt}
               params={params}
               paramsTimeWindowOnly={!!params.asOf}
