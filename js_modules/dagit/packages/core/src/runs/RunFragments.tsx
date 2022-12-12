@@ -12,6 +12,7 @@ export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`
     id
     pipelineName
     pipelineSnapshotId
+    parentPipelineSnapshotId
     repositoryOrigin {
       id
       repositoryName
@@ -49,6 +50,7 @@ export const RunFragments = {
         }
       }
       pipelineSnapshotId
+      parentPipelineSnapshotId
       executionPlan {
         artifactsPersisted
         ...ExecutionPlanToGraphFragment

@@ -253,7 +253,7 @@ def test_list_command():
             {
                 "repository_yaml": None,
                 "python_file": None,
-                "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
+                "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
                 "fn_name": "bar",
             },
             no_print,
@@ -264,7 +264,7 @@ def test_list_command():
                 {
                     "repository_yaml": None,
                     "python_file": "foo.py",
-                    "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
+                    "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
                     "fn_name": "bar",
                 },
                 no_print,

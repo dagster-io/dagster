@@ -14,6 +14,7 @@ import dagster._seven as seven
 from dagster._cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
+    unwrap_single_code_location_target_cli_arg,
 )
 from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -650,28 +651,19 @@ def grpc_command(
             "empty_working_directory",
         ]
     ):
-        # in the grpc api CLI we never load more than one module at a time
-        maybe_module = kwargs["module_name"]
-        if maybe_module:
-            check.is_tuple(maybe_module, of_type=str)
-            check.invariant(
-                len(maybe_module) <= 1,
-                "The dagster grpc server cannot serve more than one code location at a time",
-            )
-            module_name = maybe_module[0]
-        else:
-            module_name = None
+        # in the gRPC api CLI we never load more than one module or python file at a time
 
-        maybe_file = kwargs["python_file"]
-        if maybe_file:
-            check.is_tuple(maybe_file, of_type=str)
-            check.invariant(
-                len(maybe_file) <= 1,
-                "The dagster grpc server cannot serve more than one code location at a time",
-            )
-            python_file = maybe_file[0]
-        else:
-            python_file = None
+        module_name = (
+            unwrap_single_code_location_target_cli_arg(kwargs, "module_name")
+            if kwargs["module_name"]
+            else None
+        )
+
+        python_file = (
+            unwrap_single_code_location_target_cli_arg(kwargs, "python_file")
+            if kwargs["python_file"]
+            else None
+        )
 
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,

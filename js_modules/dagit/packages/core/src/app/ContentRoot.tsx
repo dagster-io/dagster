@@ -31,7 +31,7 @@ export const ContentRoot = React.memo(() => {
       <Switch>
         {/* todo dish: These /instance routes are for backward compatibility. Remove them
         in November or December 2022. */}
-        <Route path="/instance" exact render={() => <Redirect to="/code-locations" />} />
+        <Route path="/instance" exact render={() => <Redirect to="/locations" />} />
         <Route
           path="/instance/*"
           exact
@@ -40,10 +40,6 @@ export const ContentRoot = React.memo(() => {
             return <Redirect to={url.replace('/instance', '')} />;
           }}
         />
-        {/* todo dish: These /workspace routes are for backward compatibility. Remove them
-        in November or December 2022. */}
-        <Route path="/workspace" exact render={() => <Redirect to="/code-locations" />} />
-        <Route path="/locations" exact render={() => <Redirect to="/code-locations" />} />
         <Route
           path="/workspace/*"
           exact
@@ -92,7 +88,7 @@ export const ContentRoot = React.memo(() => {
             <InstanceConfig />
           </React.Suspense>
         </Route>
-        <Route path="/code-locations">
+        <Route path="/locations" exact>
           <React.Suspense fallback={<div />}>
             <CodeLocationsPage />
           </React.Suspense>
