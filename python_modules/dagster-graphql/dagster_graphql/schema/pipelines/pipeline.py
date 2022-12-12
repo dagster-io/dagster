@@ -50,7 +50,7 @@ from ..solids import (
     build_solids,
 )
 from ..tags import GraphenePipelineTag
-from ..util import non_null_list
+from ..util import get_compute_log_manager, non_null_list
 from .mode import GrapheneMode
 from .pipeline_ref import GraphenePipelineReference
 from .pipeline_run_stats import GrapheneRunStatsSnapshotOrError
@@ -375,10 +375,11 @@ class GrapheneRun(graphene.ObjectType):
         return GrapheneComputeLogs(runId=self.run_id, stepKey=stepKey)
 
     def resolve_capturedLogs(self, graphene_info, fileKey):
-        log_key = graphene_info.context.instance.compute_log_manager.build_log_key_for_run(
-            self.run_id, fileKey
+        compute_log_manager = get_compute_log_manager(graphene_info)
+        log_key = compute_log_manager.build_log_key_for_run(
+            self.run_id, fileKey  # type: ignore  # (value obj access)
         )
-        log_data = graphene_info.context.instance.compute_log_manager.get_log_data(log_key)
+        log_data = compute_log_manager.get_log_data(log_key)
         return from_captured_log_data(log_data)
 
     def resolve_executionPlan(self, graphene_info):
