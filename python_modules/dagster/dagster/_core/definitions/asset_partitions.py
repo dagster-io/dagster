@@ -21,11 +21,23 @@ def get_upstream_partitions_for_partition_range(
         check.failed("upstream asset is not partitioned")
 
     downstream_partition_mapping = downstream_assets_def.infer_partition_mapping(upstream_asset_key)
-    return downstream_partition_mapping.get_upstream_partitions_for_partition_range(
-        downstream_partition_key_range,
-        downstream_assets_def.partitions_def,
-        upstream_partitions_def,
+    downstream_partitions_def = downstream_assets_def.partitions_def
+    downstream_partitions_subset = (
+        downstream_partitions_def.empty_subset().with_partition_keys(
+            downstream_partitions_def.get_partition_keys_in_range(downstream_partition_key_range)
+        )
+        if downstream_partitions_def and downstream_partition_key_range
+        else None
     )
+    upstream_partitions_subset = (
+        downstream_partition_mapping.get_upstream_partitions_for_partitions(
+            downstream_partitions_subset,
+            upstream_partitions_def,
+        )
+    )
+    upstream_key_ranges = upstream_partitions_subset.get_partition_key_ranges()
+    check.invariant(len(upstream_key_ranges) == 1)
+    return upstream_key_ranges[0]
 
 
 def get_downstream_partitions_for_partition_range(
@@ -44,8 +56,16 @@ def get_downstream_partitions_for_partition_range(
         check.failed("upstream asset is not partitioned")
 
     downstream_partition_mapping = downstream_assets_def.infer_partition_mapping(upstream_asset_key)
-    return downstream_partition_mapping.get_downstream_partitions_for_partition_range(
-        upstream_partition_key_range,
-        downstream_assets_def.partitions_def,
-        upstream_assets_def.partitions_def,
+    upstream_partitions_def = upstream_assets_def.partitions_def
+    upstream_partitions_subset = upstream_partitions_def.empty_subset().with_partition_keys(
+        upstream_partitions_def.get_partition_keys_in_range(upstream_partition_key_range)
     )
+    downstream_partitions_subset = (
+        downstream_partition_mapping.get_downstream_partitions_for_partitions(
+            upstream_partitions_subset,
+            downstream_assets_def.partitions_def,
+        )
+    )
+    downstream_key_ranges = downstream_partitions_subset.get_partition_key_ranges()
+    check.invariant(len(downstream_key_ranges) == 1)
+    return downstream_key_ranges[0]

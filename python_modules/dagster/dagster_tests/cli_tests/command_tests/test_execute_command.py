@@ -234,13 +234,13 @@ def invalid_pipeline_python_origin_target_args():
         {
             "job_name": "foo",
             "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
             "attribute": "bar",
         },
         {
             "job_name": "foo",
             "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
             "attribute": None,
         },
     ]
