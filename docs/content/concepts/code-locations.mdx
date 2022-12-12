@@ -137,20 +137,53 @@ dagit -m your_package_name
 
 ### Cloud deployment
 
-The `dagster_cloud.yaml` file is used to create and deploy code locations for Cloud deployments. For example:
+The `dagster_cloud.yaml` file is used to create and deploy code locations for Cloud deployments. Each code location entry in this file has a `code_source` property, which is used to specify how a code location is sourced. Code locations can be sourced from a Python file, package, or module:
+
+<TabGroup>
+<TabItem name="Using a Python file">
+
+To load a code location from a Python file, use the `python_file` property in your `dagster_cloud.yaml`:
 
 ```yaml
 # dagster_cloud.yaml
 
 locations:
   - location_name: my-code-location
-    code_source: # provide one of python_file, package_name, module_name
-      python_file: my_file.py # load code location from a Python file
-      package_name: my_package_name # load code location from a Python package
-      module_name: my_module_name # load code location from a Python module
+    code_source:
+      python_file: my_file.py
 ```
 
-Refer to the [TODO]() for more info and examples.
+</TabItem>
+<TabItem name="Using a Python package">
+
+To load a code location from a Python package, use the `package_name` property in your `dagster_cloud.yaml`:
+
+```yaml
+# dagster_cloud.yaml
+
+locations:
+  - location_name: my-code-location
+    code_source:
+      package_name: my_package_name
+```
+
+</TabItem>
+<TabItem name="Using a Python module">
+
+To load a code location from a Python module, use the `module_name` property in your `dagster_cloud.yaml`:
+
+```yaml
+# dagster_cloud.yaml
+
+locations:
+  - location_name: my-code-location
+    code_source:
+      module_name: my_module_name
+```
+
+</TabItem>
+</TabGroup>
+
 
 ### Open source deployment
 
