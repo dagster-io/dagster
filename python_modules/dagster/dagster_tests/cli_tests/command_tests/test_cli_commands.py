@@ -482,7 +482,7 @@ def non_existant_python_origin_target_args():
     return {
         "workspace": None,
         "job_name": "foo",
-        "python_file": file_relative_path(__file__, "made_up_file.py"),
+        "python_file": (file_relative_path(__file__, "made_up_file.py"),),
         "module_name": None,
         "attribute": "bar",
     }

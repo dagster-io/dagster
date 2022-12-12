@@ -142,7 +142,7 @@ def test_output_execute_log_stdout(capfd):
     ) as instance:
         execute_execute_command(
             kwargs={
-                "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+                "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
                 "attribute": "stdout_pipeline",
             },
             instance=instance,
@@ -154,7 +154,7 @@ def test_output_execute_log_stdout(capfd):
 
         execute_execute_command(
             kwargs={
-                "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+                "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
                 "attribute": "my_stdout",
             },
             instance=instance,
@@ -176,7 +176,7 @@ def test_output_execute_log_stderr(capfd):
         with pytest.raises(click.ClickException, match=re.escape("resulted in failure")):
             execute_execute_command(
                 kwargs={
-                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+                    "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
                     "attribute": "stderr_pipeline",
                 },
                 instance=instance,
@@ -187,7 +187,7 @@ def test_output_execute_log_stderr(capfd):
         with pytest.raises(click.ClickException, match=re.escape("resulted in failure")):
             execute_execute_command(
                 kwargs={
-                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+                    "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
                     "attribute": "my_stderr",
                 },
                 instance=instance,
@@ -206,7 +206,7 @@ def test_more_than_one_job():
                 kwargs={
                     "repository_yaml": None,
                     "job_name": None,
-                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+                    "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
                     "module_name": None,
                     "attribute": None,
                 },
@@ -221,7 +221,7 @@ def test_more_than_one_job():
                 kwargs={
                     "repository_yaml": None,
                     "job_name": None,
-                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+                    "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
                     "module_name": None,
                     "attribute": None,
                 },
@@ -233,13 +233,13 @@ def invalid_pipeline_python_origin_target_args():
     return [
         {
             "job_name": "foo",
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
             "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
             "attribute": "bar",
         },
         {
             "job_name": "foo",
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
             "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
             "attribute": None,
         },
@@ -277,7 +277,7 @@ def test_attribute_not_found():
                 kwargs={
                     "repository_yaml": None,
                     "job_name": None,
-                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+                    "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
                     "module_name": None,
                     "attribute": "nope",
                 },
@@ -298,7 +298,7 @@ def test_attribute_is_wrong_thing():
                 kwargs={
                     "repository_yaml": None,
                     "job_name": None,
-                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+                    "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
                     "module_name": None,
                     "attribute": "not_a_repo_or_pipeline",
                 },
@@ -319,7 +319,7 @@ def test_attribute_fn_returns_wrong_thing():
                 kwargs={
                     "repository_yaml": None,
                     "job_name": None,
-                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+                    "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
                     "module_name": None,
                     "attribute": "not_a_repo_or_pipeline_fn",
                 },
@@ -330,7 +330,7 @@ def test_attribute_fn_returns_wrong_thing():
 def test_default_memory_run_storage():
     with instance_for_test() as instance:
         cli_args = {
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
             "attribute": "bar",
             "job_name": "foo",
             "module_name": None,
@@ -339,7 +339,7 @@ def test_default_memory_run_storage():
         assert result.success
 
         cli_args = {
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
             "attribute": "bar",
             "job_name": "qux",
             "module_name": None,
