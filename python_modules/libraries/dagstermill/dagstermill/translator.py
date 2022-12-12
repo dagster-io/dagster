@@ -1,4 +1,5 @@
 import papermill
+import papermill.translators
 from dagster import _seven
 
 RESERVED_INPUT_NAMES = [
