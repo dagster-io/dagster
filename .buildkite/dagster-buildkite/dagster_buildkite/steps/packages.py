@@ -306,7 +306,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/docs_snippets",
         pytest_extra_cmds=docs_snippets_extra_cmds,
-        run_mypy=False,
         unsupported_python_versions=[
             # dependency on 3.9-incompatible extension libs
             AvailablePythonVersion.V3_9,
@@ -476,5 +475,4 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ".buildkite/dagster-buildkite",
         run_pytest=False,
     ),
-    PackageSpec("scripts", run_pytest=False),
 ]

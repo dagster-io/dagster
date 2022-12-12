@@ -28,6 +28,7 @@ def build_repo_wide_steps() -> List[BuildkiteStep]:
     return [
         *build_repo_wide_black_steps(),
         *build_repo_wide_check_manifest_steps(),
+        *build_repo_wide_pyright_steps(),
         *build_repo_wide_ruff_steps(),
     ]
 
@@ -67,6 +68,17 @@ def build_repo_wide_ruff_steps() -> List[CommandStep]:
     return [
         CommandStepBuilder(":zap: ruff")
         .run("pip install -e python_modules/dagster[ruff]", "make check_ruff")
+        .on_test_image(AvailablePythonVersion.get_default())
+        .with_skip(skip_if_no_python_changes())
+        .build(),
+    ]
+
+
+def build_repo_wide_pyright_steps() -> List[CommandStep]:
+    return [
+        CommandStepBuilder(":pyright: pyright")
+        .run("pip install -e python_modules/dagster[pyright]")
+        .run("make pyright")
         .on_test_image(AvailablePythonVersion.get_default())
         .with_skip(skip_if_no_python_changes())
         .build(),
