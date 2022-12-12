@@ -2,15 +2,18 @@ import logging
 import sys
 import time
 from enum import Enum
-from typing import Optional
+from typing import Callable, Optional, TypeVar
 
-import kubernetes
+import kubernetes.client
+import kubernetes.client.rest
 from dagster import (
     DagsterInstance,
     _check as check,
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from kubernetes.client.models import V1JobStatus
+
+T = TypeVar("T")
 
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day
 DEFAULT_WAIT_BETWEEN_ATTEMPTS = 10.0  # 10 seconds
@@ -79,11 +82,11 @@ WHITELISTED_TRANSIENT_K8S_STATUS_CODES = [
 
 
 def k8s_api_retry(
-    fn,
-    max_retries,
-    timeout,
+    fn: Callable[..., T],
+    max_retries: int,
+    timeout: float,
     msg_fn=lambda: "Unexpected error encountered in Kubernetes API Client.",
-):
+) -> T:
     check.callable_param(fn, "fn")
     check.int_param(max_retries, "max_retries")
     check.numeric_param(timeout, "timeout")
@@ -117,6 +120,7 @@ def k8s_api_retry(
                     k8s_api_exception=e,
                     original_exc_info=sys.exc_info(),
                 ) from e
+    check.failed("Unreachable.")
 
 
 class KubernetesWaitingReasons:

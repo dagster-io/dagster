@@ -138,7 +138,7 @@ class UserDefinedDagsterK8sConfig(
         }
 
     @classmethod
-    def from_dict(self, config_dict):
+    def from_dict(cls, config_dict):
         return UserDefinedDagsterK8sConfig(
             container_config=config_dict.get("container_config"),
             pod_template_spec_metadata=config_dict.get("pod_template_spec_metadata"),
