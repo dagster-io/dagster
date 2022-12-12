@@ -173,13 +173,10 @@ from typing import List
 
 my_jobs: List[SensorDefinition] = []
 
-# start_repo_marker
-from dagster import repository
+# start_definitions_marker
+from dagster import Definitions
 
 
-@repository
-def my_repository():
-    return my_jobs + [my_slack_on_run_success]
+defs = Definitions(jobs=[my_job1, my_job2], sensors=[my_slack_on_run_success])
 
-
-# end_repo_marker
+# end_definitions_marker
