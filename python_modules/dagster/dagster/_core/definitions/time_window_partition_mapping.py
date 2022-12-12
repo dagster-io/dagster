@@ -1,6 +1,8 @@
+from datetime import datetime
 from typing import NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import PartitionMapping
@@ -14,7 +16,13 @@ from dagster._serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
-class TimeWindowPartitionMapping(PartitionMapping, NamedTuple("_TimeWindowPartitionMapping", [])):
+class TimeWindowPartitionMapping(
+    PartitionMapping,
+    NamedTuple(
+        "_TimeWindowPartitionMapping",
+        [("start_offset", PublicAttr[int]), ("end_offset", PublicAttr[int])],
+    ),
+):
     """
     The default mapping between two TimeWindowPartitionsDefinitions.
 
@@ -34,7 +42,26 @@ class TimeWindowPartitionMapping(PartitionMapping, NamedTuple("_TimeWindowPartit
     downstream asset will map to multiple upstream partitions. E.g. if the downstream is daily and
     the upstream is hourly, then each daily partition in the downstream asset will map to the 24
     hourly partitions in the upstream that occur on that day.
+
+    Attributes:
+        start_offset (int): If not 0, then the starts of the upstream windows are shifted by this
+            offset relative to the starts of the downstream windows. For example, if start_offset=-1
+            and end_offset=0, then the downstream partition "2022-07-04" would map to the upstream
+            partitions "2022-07-03" and "2022-07-04". Only permitted to be non-zero when the
+            upstream and downstream PartitionsDefinitions are the same. Defaults to 0.
+        end_offset (int): If not 0, then the ends of the upstream windows are shifted by this
+            offset relative to the ends of the downstream windows. For example, if start_offset=0
+            and end_offset=1, then the downstream partition "2022-07-04" would map to the upstream
+            partitions "2022-07-04" and "2022-07-05". Only permitted to be non-zero when the
+            upstream and downstream PartitionsDefinitions are the same. Defaults to 0.
     """
+
+    def __new__(cls, start_offset: int = 0, end_offset: int = 0):
+        return super(TimeWindowPartitionMapping, cls).__new__(
+            cls,
+            start_offset=check.int_param(start_offset, "start_offset"),
+            end_offset=check.int_param(end_offset, "end_offset"),
+        )
 
     def get_upstream_partitions_for_partition_range(
         self,
@@ -56,6 +83,8 @@ class TimeWindowPartitionMapping(PartitionMapping, NamedTuple("_TimeWindowPartit
             downstream_partitions_subset.partitions_def,
             upstream_partitions_def,
             downstream_partitions_subset.included_time_windows,
+            self.start_offset,
+            self.end_offset,
         )
 
     def get_downstream_partitions_for_partition_range(
@@ -81,6 +110,8 @@ class TimeWindowPartitionMapping(PartitionMapping, NamedTuple("_TimeWindowPartit
             upstream_partitions_subset.partitions_def,
             downstream_partitions_def,
             upstream_partitions_subset.included_time_windows,
+            -self.start_offset,
+            -self.end_offset,
         )
 
     def _map_partitions(
@@ -88,7 +119,12 @@ class TimeWindowPartitionMapping(PartitionMapping, NamedTuple("_TimeWindowPartit
         from_partitions_def: PartitionsDefinition,
         to_partitions_def: PartitionsDefinition,
         from_partition_time_windows: Sequence[TimeWindow],
+        start_offset: int,
+        end_offset: int,
     ) -> PartitionsSubset:
+        if start_offset != 0 or end_offset != 0:
+            check.invariant(from_partitions_def == to_partitions_def)
+
         if not isinstance(from_partitions_def, TimeWindowPartitionsDefinition) or not isinstance(
             from_partitions_def, TimeWindowPartitionsDefinition
         ):
@@ -104,21 +140,62 @@ class TimeWindowPartitionMapping(PartitionMapping, NamedTuple("_TimeWindowPartit
         time_windows = []
         for from_partition_time_window in from_partition_time_windows:
             from_start_dt, from_end_dt = from_partition_time_window
+            offsetted_start_dt = _offsetted_datetime(
+                from_partitions_def, from_start_dt, start_offset
+            )
+            offsetted_end_dt = _offsetted_datetime(from_partitions_def, from_end_dt, end_offset)
 
-            to_start_partition_key = to_partitions_def.get_partition_key_for_timestamp(
-                from_start_dt.timestamp(), end_closed=False
-            )
-            to_end_partition_key = to_partitions_def.get_partition_key_for_timestamp(
-                from_end_dt.timestamp(), end_closed=True
-            )
-            time_windows.append(
-                TimeWindow(
-                    to_partitions_def.start_time_for_partition_key(to_start_partition_key),
-                    to_partitions_def.end_time_for_partition_key(to_end_partition_key),
+            to_start_partition_key = (
+                to_partitions_def.get_partition_key_for_timestamp(
+                    offsetted_start_dt.timestamp(), end_closed=False
                 )
+                if offsetted_start_dt is not None
+                else None
             )
+            to_end_partition_key = (
+                to_partitions_def.get_partition_key_for_timestamp(
+                    offsetted_end_dt.timestamp(), end_closed=True
+                )
+                if offsetted_end_dt is not None
+                else None
+            )
+
+            if to_start_partition_key is not None or to_end_partition_key is not None:
+                window_start = (
+                    to_partitions_def.start_time_for_partition_key(to_start_partition_key)
+                    if to_start_partition_key
+                    else cast(TimeWindow, to_partitions_def.get_first_partition_window()).start
+                )
+                window_end = (
+                    to_partitions_def.end_time_for_partition_key(to_end_partition_key)
+                    if to_end_partition_key
+                    else to_partitions_def.get_last_partition_window().end
+                )
+
+                time_windows.append(TimeWindow(window_start, window_end))
 
         return TimeWindowPartitionsSubset(
             to_partitions_def,
             time_windows,
         )
+
+
+def _offsetted_datetime(
+    partitions_def: TimeWindowPartitionsDefinition, dt: datetime, offset: int
+) -> Optional[datetime]:
+    for _ in range(abs(offset)):
+        if offset < 0:
+            prev_window = partitions_def.get_prev_partition_window(dt)
+            if prev_window is None:
+                return None
+
+            dt = prev_window.start
+        else:
+            # TODO: what if we're at the end of the line?
+            next_window = partitions_def.get_next_partition_window(dt)
+            if next_window is None:
+                return None
+
+            dt = next_window.end
+
+    return dt
