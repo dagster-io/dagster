@@ -18,7 +18,6 @@ from airflow.models.connection import Connection
 from airflow.models.dag import DAG
 from airflow.models.dagbag import DagBag
 from airflow.settings import LOG_FORMAT
-from airflow.utils import db
 from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 
 from dagster import (
@@ -43,9 +42,11 @@ from dagster._utils.schedules import is_valid_cron_schedule
 
 # pylint: disable=no-name-in-module,import-error
 if str(airflow_version) >= "2.0.0":
+    from airflow.utils.session import create_session
     from airflow.utils.state import DagRunState
     from airflow.utils.types import DagRunType
 else:
+    from airflow.utils.db import create_session
     from airflow.utils.state import State
 # pylint: enable=no-name-in-module,import-error
 
@@ -90,8 +91,15 @@ class Locker:
 
 
 def create_airflow_connections(connections):
-    for connection in connections:
-        os.environ[f"AIRFLOW_CONN_{connection.conn_id}"] = connection.get_uri()
+    with create_session() as session:
+        for connection in connections:
+            if session.query(Connection).filter(Connection.conn_id == connection.conn_id).first():
+                logging.info(f"Could not import connection {connection.conn_id}: connection already exists.")
+                continue
+
+            session.add(connection)
+            session.commit()
+            logging.info(f"Imported connection {connection.conn_id}")
 
 
 def contains_duplicate_task_names(dag_bag, refresh_from_airflow_db):
@@ -493,6 +501,8 @@ def make_dagster_pipeline_from_airflow_dag(
             serialized_connection["login"] = c.login
         if hasattr(c, "password") and c.password:
             serialized_connection["password"] = c.password
+        if hasattr(c, "host") and c.host:
+            serialized_connection["host"] = c.host
         if hasattr(c, "schema") and c.schema:
             serialized_connection["schema"] = c.schema
         if hasattr(c, "port") and c.port:
@@ -527,11 +537,9 @@ def make_dagster_pipeline_from_airflow_dag(
                 importlib.reload(airflow)
             else:
                 importlib.reload(airflow)
-
             if not airflow_initialized:
                 db.initdb()
-                for c in context.resource_config["connections"]:
-                    db.merge_conn(Connection(**c))
+                create_airflow_connections([Connection(**c) for c in context.resource_config["connections"]])
 
             dag_bag = airflow.models.dagbag.DagBag(
                 dag_folder=context.resource_config["dag_location"], include_examples=False

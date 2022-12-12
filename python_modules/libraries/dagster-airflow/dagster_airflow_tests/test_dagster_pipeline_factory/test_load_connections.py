@@ -28,6 +28,21 @@ with DAG(
         run_config={"foo": "bar"},
         dagster_conn_id="dagster_connection_test",
     )
+
+with DAG(
+    "example_connections_duplicate",
+    schedule="@once",
+    start_date=pendulum.datetime(2021, 1, 1, tz="UTC"),
+    catchup=False,
+) as dag:
+    ## never succeeds outside of mocks
+    connection_test = DagsterCloudOperator(
+        task_id="connection_test_duplicate",
+        job_name="connection_test",
+        run_config={"foo": "bar"},
+        dagster_conn_id="dagster_connection_test",
+    )
+
 """
 
 
