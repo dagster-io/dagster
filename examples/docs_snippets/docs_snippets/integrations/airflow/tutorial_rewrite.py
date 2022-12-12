@@ -2,7 +2,16 @@
 import time
 from datetime import date, timedelta
 
-from dagster import RetryPolicy, ScheduleDefinition, job, op, repository
+from dagster import (
+    RetryPolicy,
+    RunRequest,
+    ScheduleDefinition,
+    ScheduleEvaluationContext,
+    job,
+    op,
+    repository,
+    schedule,
+)
 
 
 # start_ops
@@ -35,12 +44,26 @@ def tutorial_job():
     templated(dt)
 # end_job
 
-# start_schedule
+# start_basic_schedule
 schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
+# end_basic_schedule
+
+
+# start_schedule
+@schedule(job=tutorial_job, cron_schedule="@daily")
+def tutorial_job_schedule(context: ScheduleEvaluationContext):
+    scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
+    return RunRequest(
+        run_key=None,
+        run_config={
+            "ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}
+        },
+        tags={"date": scheduled_date},
+    )
 # end_schedule
 
 # start_repo
 @repository
 def rewrite_repo():
-    return [tutorial_job, schedule]
+    return [tutorial_job, tutorial_job_schedule, schedule]
 # end_repo
