@@ -393,10 +393,11 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._external_asset_node.is_source
 
     def resolve_assetMaterializationUsedData(
-        self, graphene_info: ResolveInfo, **kwargs
+        self,
+        graphene_info: ResolveInfo,
+        timestampMillis: str,
     ) -> Sequence[GrapheneMaterializationUpstreamDataVersion]:
-        timestamp_millis: Optional[str] = kwargs.get("timestampMillis")
-        if not timestamp_millis:
+        if not timestampMillis:
             return []
 
         instance = graphene_info.context.instance
@@ -409,8 +410,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         event_records = instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                before_timestamp=int(timestamp_millis) / 1000.0 + 1,
-                after_timestamp=int(timestamp_millis) / 1000.0 - 1,
+                before_timestamp=int(timestampMillis) / 1000.0 + 1,
+                after_timestamp=int(timestampMillis) / 1000.0 - 1,
                 asset_key=asset_key,
             ),
             limit=1,
@@ -438,18 +439,19 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_assetMaterializations(
-        self, graphene_info: ResolveInfo, **kwargs
+        self,
+        graphene_info: ResolveInfo,
+        partitions: Optional[List[str]] = None,
+        beforeTimestampMillis: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> Sequence[GrapheneMaterializationEvent]:
-        beforeTimestampMillis: Optional[str] = kwargs.get("beforeTimestampMillis")
         try:
             before_timestamp = (
-                int(beforeTimestampMillis) / 1000.0 if beforeTimestampMillis else None
+                int(beforeTimestampMillis) / 1000.0 if beforeTimestampMillis is not None else None
             )
         except ValueError:
             before_timestamp = None
 
-        limit = kwargs.get("limit")
-        partitions = kwargs.get("partitions")
         if (
             self._latest_materialization_loader
             and limit == 1
@@ -479,18 +481,18 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_assetObservations(
-        self, graphene_info: ResolveInfo, **kwargs
+        self,
+        graphene_info: ResolveInfo,
+        partitions: Optional[List[str]] = None,
+        beforeTimestampMillis: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> Sequence[GrapheneObservationEvent]:
-        beforeTimestampMillis: Optional[str] = kwargs.get("beforeTimestampMillis")
         try:
             before_timestamp = (
-                int(beforeTimestampMillis) / 1000.0 if beforeTimestampMillis else None
+                int(beforeTimestampMillis) / 1000.0 if beforeTimestampMillis is not None else None
             )
         except ValueError:
             before_timestamp = None
-        limit = kwargs.get("limit")
-        partitions = kwargs.get("partitions")
-
         return [
             GrapheneObservationEvent(event=event)
             for event in get_asset_observations(
@@ -661,13 +663,15 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._external_asset_node.is_observable
 
     def resolve_latestMaterializationByPartition(
-        self, graphene_info: ResolveInfo, **kwargs
+        self,
+        graphene_info: ResolveInfo,
+        partitions: Optional[Sequence[str]] = None,
     ) -> Sequence[Optional[GrapheneMaterializationEvent]]:
         get_partition = (
             lambda event: event.dagster_event.step_materialization_data.materialization.partition
         )
 
-        partitions = kwargs.get("partitions") or self.get_partition_keys()
+        partitions = partitions if partitions is not None else self.get_partition_keys()
 
         events_for_partitions = get_asset_materializations(
             graphene_info,

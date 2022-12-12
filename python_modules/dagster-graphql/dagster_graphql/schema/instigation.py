@@ -1,6 +1,6 @@
 import sys
 import warnings
-from typing import Union
+from typing import Optional, Union
 
 import dagster._check as check
 import graphene
@@ -367,11 +367,10 @@ class GrapheneInstigationState(graphene.ObjectType):
 
         return None
 
-    def resolve_runs(self, graphene_info: ResolveInfo, **kwargs):
+    def resolve_runs(self, graphene_info: ResolveInfo, limit: Optional[int] = None):
         from .pipelines.pipeline import GrapheneRun
 
-        if kwargs.get("limit") and self._batch_loader:
-            limit = kwargs["limit"]
+        if limit and self._batch_loader:
             records = (
                 self._batch_loader.get_run_records_for_sensor(self._instigator_state.name, limit)
                 if self._instigator_state.instigator_type == InstigatorType.SENSOR
@@ -400,7 +399,7 @@ class GrapheneInstigationState(graphene.ObjectType):
             GrapheneRun(record)
             for record in graphene_info.context.instance.get_run_records(
                 filters=filters,
-                limit=kwargs.get("limit"),
+                limit=limit,
             )
         ]
 

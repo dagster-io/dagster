@@ -1,3 +1,5 @@
+from typing import Any, Union
+
 import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
@@ -178,9 +180,10 @@ class GrapheneDeleteRunMutation(graphene.Mutation):
 
     @capture_error
     @require_permission_check(Permissions.DELETE_PIPELINE_RUN)
-    def mutate(self, graphene_info: ResolveInfo, **kwargs):
-        run_id = kwargs["runId"]
-        return delete_pipeline_run(graphene_info, run_id)
+    def mutate(
+        self, graphene_info: ResolveInfo, runId: str
+    ) -> Union[GrapheneRunNotFoundError, GrapheneDeletePipelineRunSuccess]:
+        return delete_pipeline_run(graphene_info, runId)
 
 
 class GrapheneTerminatePipelineExecutionSuccess(graphene.Interface):
@@ -301,8 +304,8 @@ class GrapheneCancelBackfillMutation(graphene.Mutation):
 
     @capture_error
     @require_permission_check(Permissions.CANCEL_PARTITION_BACKFILL)
-    def mutate(self, graphene_info: ResolveInfo, **kwargs):
-        return cancel_partition_backfill(graphene_info, kwargs["backfillId"])
+    def mutate(self, graphene_info: ResolveInfo, backfillId: str):
+        return cancel_partition_backfill(graphene_info, backfillId)
 
 
 class GrapheneResumeBackfillMutation(graphene.Mutation):
@@ -349,9 +352,12 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
 
     @capture_error
     @require_permission_check(Permissions.LAUNCH_PIPELINE_REEXECUTION)
-    def mutate(self, graphene_info: ResolveInfo, **kwargs):
-        execution_params = kwargs.get("executionParams")
-        reexecution_params = kwargs.get("reexecutionParams")
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        execution_params: Any = None,
+        reexecution_params: Any = None,
+    ):
         check.invariant(
             bool(execution_params) != bool(reexecution_params),
             "Must only provide one of either executionParams or reexecutionParams",
@@ -360,7 +366,7 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
         if execution_params:
             return create_execution_params_and_launch_pipeline_reexec(
                 graphene_info,
-                execution_params_dict=kwargs["executionParams"],
+                execution_params_dict=execution_params,
             )
         elif reexecution_params:
             return launch_reexecution_from_parent_run(

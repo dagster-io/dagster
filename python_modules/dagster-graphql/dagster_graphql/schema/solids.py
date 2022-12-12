@@ -696,9 +696,10 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
     def resolve_solid_handle(self, _graphene_info, handleID):
         return build_solid_handles(self._represented_pipeline).get(handleID)
 
-    def resolve_solid_handles(self, _graphene_info, **kwargs):
+    def resolve_solid_handles(
+        self, _graphene_info: HasContext, parentHandleID: Optional[str] = None
+    ) -> Sequence:
         handles = build_solid_handles(self._represented_pipeline)
-        parentHandleID = kwargs.get("parentHandleID")
 
         if parentHandleID == "":
             handles = {key: handle for key, handle in handles.items() if not handle.parent}
