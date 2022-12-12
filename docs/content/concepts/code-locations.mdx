@@ -5,6 +5,14 @@ description: ""
 
 # Code locations
 
+<Note>
+  Before the introduction of the <PyObject object="Definitions" />
+  API, definitions were grouped into repositories, and there could be many repostories
+  in a particular code location. Refer to the <a href="/concepts/repositories-workspaces/repositories">
+    Repositories documentation
+  </a> for info on this previous API and mental model.
+</Note>
+
 <center>
   <Image
     alt="Code locations"
@@ -23,13 +31,12 @@ Definitions within a code location have a common namespace and must have unique 
 
 A single deployment can have one or multiple code locations.
 
-<Note>
-  Before the introduction of the <PyObject object="Definitions" />
-  API, definitions were grouped into repositories, and there could be many repostories
-  in a particular code location. Refer to the <a href="/concepts/repositories-workspaces/repositories">
-    Repositories documentation
-  </a> for info on this previous API and mental model.
-</Note>
+Code locations **in a workspace** are loaded in a different process and communicate with Dagster system processes over an RPC mechanism. This architecture provides several advantages:
+
+- When there is an update to user code, Dagit can pick up the change without a restart.
+- You can use multiple code locations to organize jobs, but still work on all of your code locations using a single instance of Dagit.
+- The Dagit process can run in a separate Python environment from user code so job dependencies don't need to be installed into the Dagit environment.
+- Each code location can be sourced from a separate Python environment, so teams can manage their dependencies (or even their Python versions) separately.
 
 ---
 
@@ -183,7 +190,6 @@ locations:
 
 </TabItem>
 </TabGroup>
-
 
 ### Open source deployment
 
