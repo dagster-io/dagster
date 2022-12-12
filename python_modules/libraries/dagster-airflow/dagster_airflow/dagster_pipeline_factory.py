@@ -94,7 +94,9 @@ def create_airflow_connections(connections):
     with create_session() as session:
         for connection in connections:
             if session.query(Connection).filter(Connection.conn_id == connection.conn_id).first():
-                logging.info(f"Could not import connection {connection.conn_id}: connection already exists.")
+                logging.info(
+                    f"Could not import connection {connection.conn_id}: connection already exists."
+                )
                 continue
 
             session.add(connection)
@@ -539,7 +541,9 @@ def make_dagster_pipeline_from_airflow_dag(
                 importlib.reload(airflow)
             if not airflow_initialized:
                 db.initdb()
-                create_airflow_connections([Connection(**c) for c in context.resource_config["connections"]])
+                create_airflow_connections(
+                    [Connection(**c) for c in context.resource_config["connections"]]
+                )
 
             dag_bag = airflow.models.dagbag.DagBag(
                 dag_folder=context.resource_config["dag_location"], include_examples=False
