@@ -142,46 +142,41 @@ def another_configured_example(config):
   for more configuration examples that use environment variables.
 </Note>
 
-A common pattern in the development cycle is to use different configuration for each environment. For example, you might connect to a local database during local development, and connect to a production database in your cloud environment. You can use the `configured` API to select between different configurations at repository definition time:
+A common pattern in the development cycle is to use different configuration for each environment. For example, you might connect to a local database during local development and to a production database in your cloud environment. You can use the `configured` API to select between different configurations at runtime:
 
-```python file=/concepts/configuration/per_env_config.py startafter=start_database_example endbefore=end_database_example
-@op(required_resource_keys={"database"})
-def get_one(context):
-    context.resources.database.execute_query("SELECT 1")
+```python file=/guides/dagster/using_environment_variables_and_secrets/repository_v2.py startafter=start endbefore=end
+# __init__.py
 
+resources = {
+    "local": {
+        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
+            {
+                "account": "abc1234.us-east-1",
+                "user": {"env": "DEV_SNOWFLAKE_USER"},
+                "password": {"env": "DEV_SNOWFLAKE_PASSWORD"},
+                "database": "LOCAL",
+                "schema": {"env": "DEV_SNOWFLAKE_SCHEMA"},
+            }
+        ),
+    },
+    "production": {
+        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
+            {
+                "account": "abc1234.us-east-1",
+                "user": "system@company.com",
+                "password": {"env": "SYSTEM_SNOWFLAKE_PASSWORD"},
+                "database": "PRODUCTION",
+                "schema": "HACKER_NEWS",
+            }
+        ),
+    },
+}
 
-@graph
-def get_one_from_db():
-    get_one()
+deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
 
-
-@repository
-def my_repo():
-    resources_by_env = {
-        "local": {
-            "database": database_client.configured(
-                {
-                    "username": {"env": "DEV_USER"},
-                    "password": {"env": "DEV_PASSWORD"},
-                    "hostname": "localhost",
-                    "db_name": "DEVELOPMENT",
-                    "port": "5432",
-                }
-            )
-        },
-        "production": {
-            "database": database_client.configured(
-                {
-                    "username": {"env": "SYSTEM_USER"},
-                    "password": {"env": "SYSTEM_PASSWORD"},
-                    "hostname": "abccompany",
-                    "db_name": "PRODUCTION",
-                    "port": "5432",
-                }
-            )
-        },
-    }
-    return [get_one_from_db.to_job(resource_defs=resources_by_env[get_env()])]
+defs = Definitions(
+    assets=[items, comments, stories], resources=resources[deployment_name]
+)
 ```
 
 ---

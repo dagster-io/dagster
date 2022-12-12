@@ -15,6 +15,8 @@ from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
+from dagster._core.definitions.decorators.job_decorator import job
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
@@ -28,7 +30,7 @@ def get_all_assets_from_defs(defs: Definitions):
 
 
 def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefinition:
-    repo_or_caching_repo = definitions.get_inner_repository()
+    repo_or_caching_repo = definitions.get_inner_repository_for_loading_process()
     return (
         repo_or_caching_repo.compute_repository_definition()
         if isinstance(repo_or_caching_repo, PendingRepositoryDefinition)
@@ -50,14 +52,27 @@ def test_basic_asset():
     assert all_assets[0].key.to_user_string() == "an_asset"
 
 
-def test_basic_job_definition():
+def test_basic_asset_job_definition():
     @asset
     def an_asset():
         pass
 
     defs = Definitions(assets=[an_asset], jobs=[define_asset_job(name="an_asset_job")])
 
-    assert resolve_pending_repo_if_required(defs).get_job("an_asset_job")
+    assert isinstance(defs.get_job_def("an_asset_job"), JobDefinition)
+
+
+def test_vanilla_job_definition():
+    @op
+    def an_op():
+        pass
+
+    @job
+    def a_job():
+        pass
+
+    defs = Definitions(jobs=[a_job])
+    assert isinstance(defs.get_job_def("a_job"), JobDefinition)
 
 
 def test_basic_schedule_definition():
@@ -181,3 +196,5 @@ def test_pending_repo():
     all_assets = get_all_assets_from_defs(defs)
     assert len(all_assets) == 1
     assert all_assets[0].key.to_user_string() == "foobar"
+
+    assert isinstance(defs.get_job_def("__ASSET_JOB"), JobDefinition)

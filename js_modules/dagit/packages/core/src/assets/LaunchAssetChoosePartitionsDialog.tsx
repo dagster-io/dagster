@@ -118,9 +118,21 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   ]);
 
   const allInRanges = React.useMemo(
-    () => explodePartitionKeysInRanges(ranges, mergedHealth.stateForKey),
+    () =>
+      explodePartitionKeysInRanges(ranges, (dimensionKeys: string[]) => {
+        // Note: If the merged asset health for a given partition is "partial", we want
+        // to group it into "missing" within the backfill UI. We don't have a fine-grained
+        // way to run just the missing assets within the partition.
+        //
+        // The alternative would be to offer a "Partial" checkbox alongside "Missing",
+        // but defining missing as "missing for /any/ asset I've selected" is simpler.
+        //
+        const state = mergedHealth.stateForKey(dimensionKeys);
+        return state === PartitionState.SUCCESS_MISSING ? PartitionState.MISSING : state;
+      }),
     [ranges, mergedHealth],
   );
+
   const allSelected = React.useMemo(
     () => allInRanges.filter((key) => stateFilters.includes(key.state)),
     [allInRanges, stateFilters],

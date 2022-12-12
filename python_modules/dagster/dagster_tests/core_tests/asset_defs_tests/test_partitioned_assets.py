@@ -64,7 +64,7 @@ def test_assets_with_same_partitioning():
 
     assert get_upstream_partitions_for_partition_range(
         downstream_asset,
-        upstream_asset,
+        upstream_asset.partitions_def,
         AssetKey("upstream_asset"),
         PartitionKeyRange("a", "c"),
     ) == PartitionKeyRange("a", "c")
@@ -354,14 +354,14 @@ def test_multi_assets_with_same_partitioning():
 
     assert get_upstream_partitions_for_partition_range(
         downstream_asset_1,
-        upstream_asset,
+        upstream_asset.partitions_def,
         AssetKey("upstream_asset_1"),
         PartitionKeyRange("a", "c"),
     ) == PartitionKeyRange("a", "c")
 
     assert get_upstream_partitions_for_partition_range(
         downstream_asset_2,
-        upstream_asset,
+        upstream_asset.partitions_def,
         AssetKey("upstream_asset_2"),
         PartitionKeyRange("a", "c"),
     ) == PartitionKeyRange("a", "c")
