@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import cast
 
-import pendulum
+import pendulum.parser
 import pytest
 from dagster import (
     DailyPartitionsDefinition,
@@ -26,7 +26,9 @@ DATE_FORMAT = "%Y-%m-%d"
 
 
 def time_window(start: str, end: str) -> TimeWindow:
-    return TimeWindow(cast(datetime, pendulum.parse(start)), cast(datetime, pendulum.parse(end)))
+    return TimeWindow(
+        cast(datetime, pendulum.parser.parse(start)), cast(datetime, pendulum.parser.parse(end))
+    )
 
 
 def test_daily_partitions():
@@ -37,13 +39,17 @@ def test_daily_partitions():
     partitions_def = my_partitioned_config.partitions_def
     assert partitions_def == DailyPartitionsDefinition(start_date="2021-05-05")
     assert partitions_def.get_next_partition_key("2021-05-05") == "2021-05-06"
-    assert partitions_def.get_last_partition_key(pendulum.parse("2021-05-06")) == "2021-05-05"
     assert (
-        partitions_def.get_last_partition_key(pendulum.parse("2021-05-06").add(minutes=1))
+        partitions_def.get_last_partition_key(pendulum.parser.parse("2021-05-06")) == "2021-05-05"
+    )
+    assert (
+        partitions_def.get_last_partition_key(pendulum.parser.parse("2021-05-06").add(minutes=1))
         == "2021-05-05"
     )
     assert (
-        partitions_def.get_last_partition_key(pendulum.parse("2021-05-07").subtract(minutes=1))
+        partitions_def.get_last_partition_key(
+            pendulum.parser.parse("2021-05-07").subtract(minutes=1)
+        )
         == "2021-05-05"
     )
     assert partitions_def.schedule_type == ScheduleType.DAILY

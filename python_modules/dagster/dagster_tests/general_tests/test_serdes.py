@@ -63,6 +63,7 @@ def test_descent_path():
     class Fizz(NamedTuple):
         buzz: int
 
+    # Arg is not actually a namedtuple but the function still works on it
     ser = _serialize_dagster_namedtuple(
         {"a": {"b": [{}, {}, {"c": Fizz(1)}]}}, whitelist_map=test_map  # type: ignore
     )
@@ -75,7 +76,7 @@ def test_forward_compat_serdes_new_field_with_default():
     test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
-    class Quux(namedtuple("_Quux", "foo bar")):  # type: ignore [reportGeneralTypeIssues]
+    class Quux(namedtuple("_Quux", "foo bar")):  # type: ignore
         def __new__(cls, foo, bar):
             return super(Quux, cls).__new__(cls, foo, bar)  # type: ignore
 
@@ -87,13 +88,12 @@ def test_forward_compat_serdes_new_field_with_default():
 
     serialized = _serialize_dagster_namedtuple(quux, whitelist_map=test_map)
 
-    @_whitelist_for_serdes(whitelist_map=test_map)  # type: ignore [reportGeneralTypeIssues]
+    @_whitelist_for_serdes(whitelist_map=test_map)  # type: ignore
     class Quux(namedtuple("_Quux", "foo bar baz")):
         def __new__(cls, foo, bar, baz=None):
             return super(Quux, cls).__new__(cls, foo, bar, baz=baz)
 
     assert test_map.has_tuple_entry("Quux")
-
     klass, _, _ = test_map.get_tuple_entry("Quux")
     assert klass is Quux
 
@@ -109,7 +109,7 @@ def test_forward_compat_serdes_new_enum_field():
     test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
-    class Corge(Enum):  # type: ignore [reportGeneralTypeIssues]
+    class Corge(Enum):  # type: ignore
         FOO = 1
         BAR = 2
 

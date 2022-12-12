@@ -55,11 +55,15 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
             yield (
                 instance,
                 workspace_context,
-                next(
-                    iter(
-                        workspace_context.create_request_context().get_workspace_snapshot().values()
-                    )
-                ).repository_location.get_repository(attribute),
+                check.not_none(
+                    next(
+                        iter(
+                            workspace_context.create_request_context()
+                            .get_workspace_snapshot()
+                            .values()
+                        )
+                    ).repository_location
+                ).get_repository(attribute),
             )
 
 

@@ -1,3 +1,5 @@
+# type: ignore
+
 from autodiscover_src.pipelines import hello_world_pipeline
 from dagster import repository
 

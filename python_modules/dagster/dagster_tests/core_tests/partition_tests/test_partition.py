@@ -1,7 +1,7 @@
 from datetime import datetime, time
 from typing import Callable, Optional, Sequence
 
-import pendulum
+import pendulum.helpers
 import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
@@ -302,7 +302,7 @@ def test_time_partitions_daily_partitions(
     expected_partitions: Sequence[str],
     timezone: Optional[str],
 ):
-    with pendulum.test(current_time):
+    with pendulum.helpers.test(current_time):
         partitions = ScheduleTimeBasedPartitionsDefinition(
             schedule_type=ScheduleType.DAILY,
             start=start,
@@ -407,7 +407,7 @@ def test_time_partitions_monthly_partitions(
     current_time,
     expected_partitions: Sequence[str],
 ):
-    with pendulum.test(current_time):
+    with pendulum.helpers.test(current_time):
         partitions = ScheduleTimeBasedPartitionsDefinition(
             schedule_type=ScheduleType.MONTHLY,
             start=start,
@@ -512,7 +512,7 @@ def test_time_partitions_weekly_partitions(
     current_time,
     expected_partitions: Sequence[str],
 ):
-    with pendulum.test(current_time):
+    with pendulum.helpers.test(current_time):
         partitions = ScheduleTimeBasedPartitionsDefinition(
             schedule_type=ScheduleType.WEEKLY,
             start=start,
@@ -717,7 +717,7 @@ def test_time_partitions_hourly_partitions(
     current_time,
     expected_partitions: Sequence[str],
 ):
-    with pendulum.test(current_time):
+    with pendulum.helpers.test(current_time):
         partitions = ScheduleTimeBasedPartitionsDefinition(
             schedule_type=ScheduleType.HOURLY,
             start=start,
