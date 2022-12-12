@@ -650,7 +650,7 @@ def grpc_command(
             "empty_working_directory",
         ]
     ):
-        # in the grpc api CLI we never load more than one module at a time
+        # in the gRPC api CLI we never load more than one module at a time
         maybe_module = kwargs["module_name"]
         if maybe_module:
             check.is_tuple(maybe_module, of_type=str)
