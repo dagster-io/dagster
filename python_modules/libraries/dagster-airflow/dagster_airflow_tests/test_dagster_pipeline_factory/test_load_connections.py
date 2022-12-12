@@ -33,7 +33,7 @@ with DAG(
 
 @pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
 @requires_airflow_db
-class TestConnections(unittest.TestCase):
+class TestConnectionsAirflow2(unittest.TestCase):
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.launch_run", return_value="run_id")
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.wait_for_run")
     def test_ingest_airflow_dags_with_connections(self, launch_run, wait_for_run):
@@ -97,7 +97,7 @@ with DAG(
 
 @pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
 @requires_airflow_db
-class TestConnections(unittest.TestCase):
+class TestConnectionsAirflow1(unittest.TestCase):
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.launch_run", return_value="run_id")
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.wait_for_run")
     def test_ingest_airflow_dags_with_connections(self, launch_run, wait_for_run):
