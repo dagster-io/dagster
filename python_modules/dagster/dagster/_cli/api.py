@@ -12,9 +12,9 @@ import click
 import dagster._check as check
 import dagster._seven as seven
 from dagster._cli.workspace.cli_target import (
-    unwrap_single_code_location_target_cli_arg,
     get_working_directory_from_kwargs,
     python_origin_target_argument,
+    unwrap_single_code_location_target_cli_arg,
 )
 from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.errors import DagsterExecutionInterruptedError
