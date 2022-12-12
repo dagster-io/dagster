@@ -104,7 +104,7 @@ def retry_mysql_creation_fn(fn, retry_limit: int = 5, retry_wait: float = 0.2):
                 and exc.orig.errno == mysql_errorcode.ER_TABLE_EXISTS_ERROR
             ) or (
                 isinstance(exc, mysql.ProgrammingError)
-                and exc.errno == mysql_errorcode.ER_TABLE_EXISTS_ERROR
+                and exc.errno == mysql_errorcode.ER_TABLE_EXISTS_ERROR  # type: ignore
             ):
                 raise
             logging.warning("Retrying failed database creation")
