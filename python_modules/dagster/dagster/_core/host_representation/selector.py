@@ -88,7 +88,7 @@ class JobSelector(
                 "job_name",
                 "Must provide job_name argument even though it is marked as optional in the "
                 "function signature. repository_name, a truly optional parameter, is before "
-                "that argument name, and actually optional. Use of keyword arguments is "
+                "that argument and actually optional. Use of keyword arguments is "
                 "recommended to avoid confusion.",
             ),
         )
