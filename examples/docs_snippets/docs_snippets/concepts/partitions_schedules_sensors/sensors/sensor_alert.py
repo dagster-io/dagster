@@ -177,6 +177,6 @@ my_jobs: List[SensorDefinition] = []
 from dagster import Definitions
 
 
-defs = Definitions(jobs=[my_job1, my_job2], sensors=[my_slack_on_run_success])
+defs = Definitions(jobs=[my_jobs], sensors=[my_slack_on_run_success])
 
 # end_definitions_marker
