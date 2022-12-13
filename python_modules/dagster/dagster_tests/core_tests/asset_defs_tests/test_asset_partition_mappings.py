@@ -2,6 +2,10 @@ import inspect
 from typing import Optional
 
 import pendulum
+from dagster_tests.core_tests.asset_defs_tests.test_partitioned_assets import (
+    get_downstream_partitions_for_partition_range,
+    get_upstream_partitions_for_partition_range,
+)
 
 from dagster import (
     AllPartitionMapping,
@@ -21,10 +25,6 @@ from dagster import (
     op,
 )
 from dagster._core.definitions import asset, build_assets_job, multi_asset
-from dagster._core.definitions.asset_partitions import (
-    get_downstream_partitions_for_partition_range,
-    get_upstream_partitions_for_partition_range,
-)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import (

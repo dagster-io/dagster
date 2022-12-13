@@ -1085,6 +1085,13 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
 
         return TimeWindowPartitionsSubset(self._partitions_def, result_windows)
 
+    def with_partition_key_range(
+        self, partition_key_range: PartitionKeyRange
+    ) -> "PartitionsSubset":
+        return self.with_partition_keys(
+            self._partitions_def.get_partition_keys_in_range(partition_key_range)
+        )
+
     @staticmethod
     def from_serialized(
         partitions_def: TimeWindowPartitionsDefinition, serialized: str
