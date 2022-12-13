@@ -24,14 +24,14 @@ description: "A code location is a collection of Dagster definitions loadable an
 
 A code location is a collection of Dagster definitions loadable and accessible by Dagster's tools, such as the CLI, Dagit, and Dagster Cloud. A code location comprises:
 
-- A reference to a Python module or package that has an instance of <PyObject object="Definitions" /> in a top-level variable
-- A Python environment that can successfully load that module or package
+- A reference to a Python module that has an instance of <PyObject object="Definitions" /> in a top-level variable
+- A Python environment that can successfully load that module
 
 Definitions within a code location have a common namespace and must have unique names. This allows them to be grouped and organized by code location in tools.
 
 A single deployment can have one or multiple code locations.
 
-Code locations **in a workspace** are loaded in a different process and communicate with Dagster system processes over an RPC mechanism. This architecture provides several advantages:
+Code locations are loaded in a different process and communicate with Dagster system processes over an RPC mechanism. This architecture provides several advantages:
 
 - When there is an update to user code, Dagit can pick up the change without a restart.
 - You can use multiple code locations to organize jobs, but still work on all of your code locations using a single instance of Dagit.
@@ -63,7 +63,7 @@ defs = Definitions(
 )
 ```
 
-Definitions can be included in a Python file like `my_file.py` or an installed Python package. If using the latter, the <PyObject object="Definitions"/> object should be defined in the package's top-level `__init__.py` file.
+Definitions can be included in a Python file like `my_file.py` or a Python module. If using the latter, the <PyObject object="Definitions"/> object should be defined in the module's top-level `__init__.py` file.
 
 ---
 
@@ -95,22 +95,22 @@ dagit -f my_file.py -f my_second_file.py
 ---
 
 </TabItem>
-<TabItem name="From an installed package">
+<TabItem name="From a module">
 
-Dagit and other Dagster tools can also load installed Python packages as code locations. When this approach is used, Dagster loads the definitions defined at the top-level of the package, in variable containing the <PyObject object="Definitions" /> object of its root `__init__.py` file. As this style of development eliminates an entire class of Python import errors, we strongly recommend it for Dagster projects deployed to production.
+Dagit and other Dagster tools can also load Python modules as code locations. When this approach is used, Dagster loads the definitions defined at the top-level of the module, in a variable containing the <PyObject object="Definitions" /> object of its root `__init__.py` file. As this style of development eliminates an entire class of Python import errors, we strongly recommend it for Dagster projects deployed to production.
 
-In the following example, we used the `-m` argument to supply the name of the package to Dagit:
+In the following example, we used the `-m` argument to supply the name of the module to Dagit:
 
 ```shell
-dagit -m your_package_name
+dagit -m your_module_name
 ```
 
-This command loads the definitions in the variable containing the <PyObject object="Definitions" /> object in the named package - defined as the root `__init__.py` file - in the same virtual environment as Dagit.
+This command loads the definitions in the variable containing the <PyObject object="Definitions" /> object in the named module - defined as the root `__init__.py` file - in the same virtual environment as Dagit.
 
 **Note**: Before getting started, install dependencies as an editable install by running:
 
 ```shell
-pip install -e path/to/your/package_name
+pip install -e path/to/your/module_name
 ```
 
 ---
@@ -118,11 +118,11 @@ pip install -e path/to/your/package_name
 </TabItem>
 <TabItem name="Without command line arguments">
 
-To load definitions without supplying command line arguments, you can use the `pyproject.toml` file. This file, included in all Dagster example projects, contains a `tool.dagster` section with a `python_package` variable:
+To load definitions without supplying command line arguments, you can use the `pyproject.toml` file. This file, included in all Dagster example projects, contains a `tool.dagster` section with a `module_name` variable:
 
 ```shell
 [tool.dagster]
-python_package = "your_package_name"  ## name of project's Python package
+module_name = "your_module_name"  ## name of project's Python module
 ```
 
 When defined, you can run this in the same directory as the `pyproject.toml` file:
@@ -134,7 +134,7 @@ dagit
 Instead of this:
 
 ```shell
-dagit -m your_package_name
+dagit -m your_module_name
 ```
 
 ---
@@ -144,7 +144,7 @@ dagit -m your_package_name
 
 ### Cloud deployment
 
-The `dagster_cloud.yaml` file is used to create and deploy code locations for Cloud deployments. Each code location entry in this file has a `code_source` property, which is used to specify how a code location is sourced. Code locations can be sourced from a Python file, package, or module:
+The `dagster_cloud.yaml` file is used to create and deploy code locations for Cloud deployments. Each code location entry in this file has a `code_source` property, which is used to specify how a code location is sourced. Code locations can be sourced from a Python file or module:
 
 <TabGroup>
 <TabItem name="Using a Python file">
@@ -158,20 +158,6 @@ locations:
   - location_name: my-code-location
     code_source:
       python_file: my_file.py
-```
-
-</TabItem>
-<TabItem name="Using a Python package">
-
-To load a code location from a Python package, use the `package_name` property in your `dagster_cloud.yaml`:
-
-```yaml
-# dagster_cloud.yaml
-
-locations:
-  - location_name: my-code-location
-    code_source:
-      package_name: my_package_name
 ```
 
 </TabItem>
@@ -199,7 +185,7 @@ The `workspace.yaml` file is used to load code locations for open source (OSS) d
 
 ## Definitions versus repositories
 
-Interested in how `Definitions` and repositories differ when it comes to defining code locations? Check out the following table for a high-level comparison:
+If you used <PyObject object="repository" decorator /> in previous Dagster versions, you might be interested in how `Definitions` and repositories differ. Check out the following table for a high-level comparison:
 
 <table
   className="table"
@@ -231,7 +217,7 @@ Interested in how `Definitions` and repositories differ when it comes to definin
       <td>
         <strong>Minimum Dagster version</strong>
       </td>
-      <td>1.1.6</td>
+      <td>1.1.7</td>
       <td>0.6</td>
     </tr>
     <tr>
