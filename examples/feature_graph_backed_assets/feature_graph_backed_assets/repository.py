@@ -4,12 +4,12 @@ from feature_graph_backed_assets import assets
 from dagster import (
     AssetSelection,
     AssetsDefinition,
+    Definitions,
     GraphOut,
     define_asset_job,
     graph,
     load_assets_from_package_module,
     op,
-    repository,
 )
 
 
@@ -55,11 +55,11 @@ def layover_breakdown_2022(us_flights):
 airline_job = define_asset_job("airline_job", AssetSelection.keys("passenger_flights").downstream())
 
 
-@repository
-def feature_graph_backed_assets():
-    return [
-        load_assets_from_package_module(assets),
-        define_asset_job("airline_job", AssetSelection.keys("passenger_flights").downstream()),
+defs = Definitions(
+    assets=[
+        *load_assets_from_package_module(assets),
         AssetsDefinition.from_graph(us_assets),
         AssetsDefinition.from_graph(layover_breakdown_2022),
-    ]
+    ],
+    jobs=[define_asset_job("airline_job", AssetSelection.keys("passenger_flights").downstream())],
+)
