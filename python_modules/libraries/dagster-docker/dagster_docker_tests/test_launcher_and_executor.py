@@ -22,7 +22,6 @@ from . import IS_BUILDKITE, docker_postgres_instance
 
 @pytest.mark.parametrize("from_pending_repository", [True, False])
 def test_image_on_pipeline(aws_env, from_pending_repository):
-    print("A")
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
@@ -38,7 +37,6 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
         launcher_config["registry"] = get_buildkite_registry_config()
     else:
         find_local_test_image(docker_image)
-    print("A2")
 
     executor_config = (
         {
@@ -47,7 +45,6 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
         if not from_pending_repository
         else {}
     )
-    print("B")
 
     env_yamls = [os.path.join(get_test_project_environments_path(), "env_s3.yaml")]
     if not from_pending_repository:
@@ -66,15 +63,12 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
             }
         }
     ) as instance:
-        print("C")
         filename = "pending_repo.py" if from_pending_repository else "repo.py"
         recon_pipeline = get_test_project_recon_pipeline(
             "demo_pipeline_docker", docker_image, filename=filename
         )
-        print("D")
         repository_load_data = recon_pipeline.repository.get_definition().repository_load_data
         recon_pipeline = recon_pipeline.with_repository_load_data(repository_load_data)
-        print("E")
 
         with get_test_project_workspace_and_external_pipeline(
             instance,
@@ -85,31 +79,39 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
             workspace,
             orig_pipeline,
         ):
-            print("F")
             external_pipeline = ReOriginatedExternalPipelineForTest(
                 orig_pipeline, container_image=docker_image, filename=filename
             )
+            kvs_key = "compute_cacheable_data_called"
+            initial_compute_cacheable_data_called = int(
+                instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0")
+            )
 
-            print("G")
             run = instance.create_run_for_pipeline(
                 pipeline_def=recon_pipeline.get_definition(),
                 run_config=run_config,
                 external_pipeline_origin=external_pipeline.get_external_origin(),
                 pipeline_code_origin=external_pipeline.get_python_origin(),
                 repository_load_data=repository_load_data,
+                asset_selection=frozenset({AssetKey("foo"), AssetKey("bar")}),
             )
-            print("H")
 
             instance.launch_run(run.run_id, workspace)
-            print("I")
 
             poll_for_finished_run(instance, run.run_id, timeout=60)
 
             for log in instance.all_logs(run.run_id):
                 print(log)  # pylint: disable=print-call
 
-            print("J")
             assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
+            if from_pending_repository:
+                # because of how we set things up for this test, we actually expect to compute
+                # cacheable data twice. however, the function should not get called after that point
+                assert initial_compute_cacheable_data_called == 2
+                final_compute_cacheable_data_called = int(
+                    instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0")
+                )
+                assert initial_compute_cacheable_data_called == final_compute_cacheable_data_called
 
 
 def test_container_context_on_pipeline(aws_env):
