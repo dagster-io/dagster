@@ -3,13 +3,10 @@ import re
 import subprocess
 from typing import List, Optional, Tuple
 
-from dagster_buildkite.defines import DO_COVERAGE
-from dagster_buildkite.steps.coverage import build_coverage_step
 from dagster_buildkite.steps.dagit_ui import build_dagit_ui_steps, skip_if_no_dagit_changes
 from dagster_buildkite.steps.dagster import build_dagster_steps, build_repo_wide_steps
 from dagster_buildkite.steps.docs import build_docs_steps
 from dagster_buildkite.steps.trigger import build_trigger_step
-from dagster_buildkite.steps.wait import build_wait_step
 from dagster_buildkite.utils import BuildkiteStep, is_release_branch, safe_getenv
 
 
@@ -17,7 +14,6 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
 
     branch_name = safe_getenv("BUILDKITE_BRANCH")
     commit_hash = safe_getenv("BUILDKITE_COMMIT")
-    do_coverage = DO_COVERAGE
 
     steps: List[BuildkiteStep] = []
 
@@ -54,10 +50,6 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
     steps += build_docs_steps()
     steps += build_dagit_ui_steps()
     steps += build_dagster_steps()
-
-    if do_coverage:
-        steps.append(build_wait_step())
-        steps.append(build_coverage_step())
 
     return steps
 
