@@ -107,6 +107,7 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
             for log in instance.all_logs(run.run_id):
                 print(log)  # pylint: disable=print-call
 
+            print("J")
             assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
 
