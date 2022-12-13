@@ -48,7 +48,10 @@ export const useRepositoryForRun = (
     }
 
     const pipelineName = run.pipelineName;
-    const snapshotId = run.pipelineSnapshotId;
+    // When jobs are subsetted (with an opSelection or assetSelection), only their
+    // parentPipelineSnapshotId (the id of the pipelineSnapshot that they were subsetted from) will
+    // be found in the repository, so look for that instead.
+    const snapshotId = run.parentPipelineSnapshotId ?? run.pipelineSnapshotId;
 
     // Find the repository that contains the specified pipeline name and snapshot ID, if any.
     if (pipelineName && snapshotId) {
