@@ -55,7 +55,11 @@ export const RunActionsMenu: React.FC<{
   >('none');
 
   const {rootServerURI} = React.useContext(AppContext);
-  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
+  const {
+    canTerminatePipelineExecution,
+    canDeletePipelineRun,
+    canLaunchPipelineReexecution,
+  } = usePermissions();
   const history = useHistory();
 
   const copyConfig = useCopyToClipboard();
@@ -97,7 +101,8 @@ export const RunActionsMenu: React.FC<{
         content={
           <Menu>
             <MenuItem
-              text={loading ? 'Loading Configuration...' : 'View Configuration...'}
+              tagName="button"
+              text={loading ? 'Loading configuration...' : 'View configuration...'}
               disabled={!runConfigYaml}
               icon="open_in_new"
               onClick={() => setVisibleDialog('config')}
@@ -124,14 +129,19 @@ export const RunActionsMenu: React.FC<{
                 />
               </Tooltip>
               <Tooltip
-                content="Re-execute is unavailable because the pipeline is not present in the current workspace."
+                content={
+                  !canLaunchPipelineReexecution.enabled
+                    ? canLaunchPipelineReexecution.disabledReason
+                    : 'Re-execute is unavailable because the pipeline is not present in the current workspace.'
+                }
                 position="bottom"
-                disabled={infoReady && !!repoMatch}
+                disabled={infoReady && !!repoMatch && canLaunchPipelineReexecution.enabled}
                 targetTagName="div"
               >
                 <MenuItem
+                  tagName="button"
                   text="Re-execute"
-                  disabled={!infoReady || !repoMatch}
+                  disabled={!infoReady || !repoMatch || !canLaunchPipelineReexecution.enabled}
                   icon="refresh"
                   onClick={async () => {
                     if (repoMatch && runConfigYaml) {
@@ -157,6 +167,7 @@ export const RunActionsMenu: React.FC<{
               </Tooltip>
               {isFinished || !canTerminatePipelineExecution.enabled ? null : (
                 <MenuItem
+                  tagName="button"
                   icon="cancel"
                   text="Terminate"
                   onClick={() => setVisibleDialog('terminate')}
@@ -165,13 +176,14 @@ export const RunActionsMenu: React.FC<{
               <MenuDivider />
             </>
             <MenuExternalLink
-              text="Download Debug File"
+              text="Download debug file"
               icon="download_for_offline"
               download
               href={`${rootServerURI}/download_debug/${run.runId}`}
             />
             {canDeletePipelineRun.enabled ? (
               <MenuItem
+                tagName="button"
                 icon="delete"
                 text="Delete"
                 intent="danger"
