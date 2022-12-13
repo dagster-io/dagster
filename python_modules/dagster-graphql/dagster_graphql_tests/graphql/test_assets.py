@@ -130,6 +130,17 @@ GET_ASSET_LATEST_RUN_STATS = """
     }
 """
 
+GET_ASSET_LOGICAL_VERSIONS = """
+    query AssetNodeQuery($pipelineSelector: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
+        assetNodes(pipeline: $pipelineSelector, assetKeys: $assetKeys) {
+            id
+            currentLogicalVersion
+            projectedLogicalVersion
+        }
+    }
+"""
+
+
 
 GET_ASSET_NODES_FROM_KEYS = """
     query AssetNodeQuery($pipelineSelector: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
