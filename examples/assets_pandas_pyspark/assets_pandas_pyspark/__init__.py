@@ -2,15 +2,14 @@ def get_weather_defs():
     # gather_assets_start
 
     # __init__.py
-
-    # imports the module called "assets" from the package containing the current module
-    # the "assets" module contains the asset definitions
     from dagster import Definitions, load_assets_from_modules
 
     from .assets import table_assets
     from .local_filesystem_io_manager import local_filesystem_io_manager
 
     defs = Definitions(
+        # imports the module called "assets" from the package containing the current module
+        # the "assets" module contains the asset definitions
         assets=load_assets_from_modules([table_assets]),
         resources={
             "io_manager": local_filesystem_io_manager,

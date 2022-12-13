@@ -63,7 +63,7 @@ The framework infers asset dependencies by looking at the names of the arguments
 
 ### Connecting assets to external services
 
-Having defined some assets, we can combine them with resources, such as IO managers, to determine how they're stored, and connect them to external services.
+Having defined some assets, we can combine them with resources, such as I/O managers, to determine how they're stored, and connect them to external services.
 
 We use <PyObject object="Definitions" /> to load definitions such as assets and resources. Let's take a closer look at how definitions are loaded:
 
@@ -73,15 +73,14 @@ We use <PyObject object="Definitions" /> to load definitions such as assets and 
 
 ```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/__init__.py startafter=gather_assets_start endbefore=gather_assets_end
 # __init__.py
-
-    # imports the module called "assets" from the package containing the current module
-    # the "assets" module contains the asset definitions
     from dagster import Definitions, load_assets_from_modules
 
     from .assets import table_assets
     from .local_filesystem_io_manager import local_filesystem_io_manager
 
     defs = Definitions(
+        # imports the module called "assets" from the package containing the current module
+        # the "assets" module contains the asset definitions
         assets=load_assets_from_modules([table_assets]),
         resources={
             "io_manager": local_filesystem_io_manager,
@@ -166,7 +165,7 @@ Here's an extended version of `weather_assets` that contains the new asset:
     )
 ```
 
-### Defining a multi-type IO Manager
+### Defining a multi-type I/O Manager
 
 Because the same assets will be written and read into different Python types in different situations, we need to define an <PyObject object="IOManager" /> that can handle both of those types. Here's an extended version of the <PyObject object="IOManager" /> we defined before:
 
