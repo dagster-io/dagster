@@ -94,7 +94,9 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
                 external_pipeline_origin=external_pipeline.get_external_origin(),
                 pipeline_code_origin=external_pipeline.get_python_origin(),
                 repository_load_data=repository_load_data,
-                asset_selection=frozenset({AssetKey("foo"), AssetKey("bar")}),
+                asset_selection=frozenset({AssetKey("foo"), AssetKey("bar")})
+                if from_pending_repository
+                else None,
             )
 
             instance.launch_run(run.run_id, workspace)
