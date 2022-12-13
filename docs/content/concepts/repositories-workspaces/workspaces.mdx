@@ -59,7 +59,7 @@ load_from:
   - python_file: my_file.py
 ```
 
-**If using <PyObject object="repository" decorator /> to define code locations**, you can identify a single repository within the package using the `attribute` key. The value of this key must be the name of a repository or the name of a function that returns a <PyObject object="RepositoryDefinition" />. For example:
+**If using <PyObject object="repository" decorator /> to define code locations**, you can identify a single repository within the module using the `attribute` key. The value of this key must be the name of a repository or the name of a function that returns a <PyObject object="RepositoryDefinition" />. For example:
 
 ```yaml file=/concepts/repositories_workspaces/workspace_one_repository.yaml
 # workspace.yaml
@@ -71,28 +71,17 @@ load_from:
 ```
 
 </TabItem>
-<TabItem name="From a Python package">
+<TabItem name="From a Python module">
 
-### From a Python package
+### From a Python module
 
-To load a code location from a local or installed Python package, use the `python_package` key in `workspace.yaml`:
+To load a code location from a local or installed Python module, use the `module_name` key in `workspace.yaml`:
 
 ```yaml file=/concepts/repositories_workspaces/workspace_python_package.yaml
 # workspace.yaml
 
 load_from:
-  - python_package: hello_world_package
-```
-
-**If using <PyObject object="repository" decorator /> to define code locations**, you can identify a single repository within the package using the `attribute` key:
-
-```yaml
-# workspace.yaml
-
-load_from:
-  - python_package:
-      package_name: yourproject.hello_world_repository
-      attribute: hello_world_repository
+  - module_name: hello_world_package
 ```
 
 </TabItem>
@@ -135,7 +124,7 @@ By default, Dagster tools automatically create a process on your local machine f
 
 To initialize the Dagster gRPC server, run the `dagster api grpc` command and include:
 
-- A target file or module. Similar to a workspace file, the target can either be a Python file or package.
+- A target file or module. Similar to a workspace file, the target can either be a Python file or module.
 - Host address
 - Port or socket
 
@@ -159,12 +148,12 @@ dagster api grpc --python-file /path/to/file.py --host 0.0.0.0 --socket /path/to
 ---
 
 </TabItem>
-<TabItem name="Using a Python package">
+<TabItem name="Using a Python module">
 
-Using a Python package:
+Using a Python module:
 
 ```shell
-dagster api grpc --package-name my_package_name --host 0.0.0.0 --port 4266
+dagster api grpc --module-name my_module_name --host 0.0.0.0 --port 4266
 ```
 
 ---
