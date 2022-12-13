@@ -69,12 +69,19 @@ class JobSelector(
         "_JobSelector", [("location_name", str), ("repository_name", str), ("job_name", str)]
     )
 ):
-    def __new__(cls, location_name: str, repository_name: str, job_name: str):
+    def __new__(
+        cls,
+        location_name: str,
+        repository_name: Optional[str] = None,
+        job_name: Optional[str] = None,
+    ):
         return super(JobSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
-            repository_name=check.str_param(repository_name, "repository_name"),
-            job_name=check.str_param(job_name, "job_name"),
+            repository_name=check.opt_str_param(
+                repository_name, "repository_name", default="__repository__"
+            ),
+            job_name=check.str_param(job_name, "job_name", "Must provide job_name."),
         )
 
     def to_graphql_input(self):

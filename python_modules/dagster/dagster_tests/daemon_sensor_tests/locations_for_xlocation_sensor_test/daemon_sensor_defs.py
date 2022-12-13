@@ -1,5 +1,6 @@
 from dagster import (
     CodeLocationSelector,
+    JobSelector,
     DagsterRunStatus,
     Definitions,
     RunRequest,
@@ -32,4 +33,15 @@ def success_sensor(_):
     return RunRequest(job_name="target_job")
 
 
-defs = Definitions(sensors=[success_sensor], jobs=[target_job])
+@run_status_sensor(
+    run_status=DagsterRunStatus.SUCCESS,
+    monitored_jobs=[
+        JobSelector(location_name=success_job_defs_name, job_name="another_success_job")
+    ],
+    request_job=target_job,
+)
+def success_of_another_job_sensor(_):
+    return RunRequest(job_name="target_job")
+
+
+defs = Definitions(sensors=[success_sensor, success_of_another_job_sensor], jobs=[target_job])
