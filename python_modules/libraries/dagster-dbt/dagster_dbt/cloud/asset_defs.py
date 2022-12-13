@@ -50,6 +50,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         job_id: int,
         node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
         node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]],
+        node_info_to_freshness_policy_fn: Optional[Callable[[str], FreshnessPolicy]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     ):
@@ -62,6 +63,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._job_materialization_command_step: int
         self._node_info_to_asset_key = node_info_to_asset_key
         self._node_info_to_group_fn = node_info_to_group_fn
+        self._node_info_to_freshness_policy_fn = node_info_to_freshness_policy_fn
         self._partitions_def = partitions_def
         self._partition_key_to_vars_fn = partition_key_to_vars_fn
 
@@ -241,6 +243,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             deps=dbt_dependencies,
             node_info_to_asset_key=self._node_info_to_asset_key,
             node_info_to_group_fn=self._node_info_to_group_fn,
+            node_info_to_freshness_policy_fn=self._node_info_to_freshness_policy_fn,
             # TODO: In the future, allow the IO manager to be specified.
             io_manager_key=None,
             # We shouldn't display the raw sql. Instead, inspect if dbt docs were generated,
@@ -421,6 +424,9 @@ def load_assets_from_dbt_cloud_job(
     job_id: int,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_freshness_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[str]
+    ] = _get_node_freshness_policy,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
 ) -> CacheableAssetsDefinition:
@@ -440,7 +446,9 @@ def load_assets_from_dbt_cloud_job(
             dbt source -> AssetKey([source_name, table_name])
         node_info_to_group_fn (Dict[str, Any] -> Optional[str]): A function that takes a
             dictionary of dbt node info and returns the group that this node should be assigned to.
-            for this asset, rather than `dbt run`.
+        node_info_to_freshness_policy_fn (Dict[str, Any] -> Optional[str]): A function that takes a
+            dictionary of dbt node info and optionally returns a FreshnessPolicy that should be
+            applied to this node.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the dbt assets.
         partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given
