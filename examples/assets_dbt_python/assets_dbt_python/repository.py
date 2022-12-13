@@ -57,7 +57,7 @@ resources = {
 }
 
 defs = Definitions(
-    assets=dbt_assets + raw_data_assets + forecasting_assets,
+    assets=[*dbt_assets, *raw_data_assets, *forecasting_assets],
     resources=resources,
     schedules=[
         ScheduleDefinition(job=everything_job, cron_schedule="@weekly"),
