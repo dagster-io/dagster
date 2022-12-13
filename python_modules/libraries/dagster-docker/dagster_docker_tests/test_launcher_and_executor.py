@@ -38,6 +38,7 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
         launcher_config["registry"] = get_buildkite_registry_config()
     else:
         find_local_test_image(docker_image)
+    print("A2")
 
     executor_config = (
         {
