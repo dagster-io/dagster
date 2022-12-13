@@ -1219,6 +1219,7 @@ type Run implements PipelineRun {
   canTerminate: Boolean!
   assets: [Asset!]!
   eventConnection(afterCursor: String): EventConnection!
+  parentPipelineSnapshotId: String
   assetSelection: [AssetKey!]
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!

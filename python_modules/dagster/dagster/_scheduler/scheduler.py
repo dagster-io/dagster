@@ -96,8 +96,15 @@ class _ScheduleLaunchContext:
             )
 
 
-MIN_INTERVAL_LOOP_TIME = 5
+SECONDS_IN_MINUTE = 60
 VERBOSE_LOGS_INTERVAL = 60
+
+
+def _get_next_scheduler_iteration_time(start_time):
+    # Wait until at least the next minute to run again, since the minimum granularity
+    # for a cron schedule is every minute
+    last_minute_time = start_time - (start_time % SECONDS_IN_MINUTE)
+    return last_minute_time + SECONDS_IN_MINUTE
 
 
 def execute_scheduler_iteration_loop(
@@ -141,15 +148,19 @@ def execute_scheduler_iteration_loop(
                 max_tick_retries=max_tick_retries,
                 log_verbose_checks=verbose_logs_iteration,
             )
+            yield
             end_time = pendulum.now("UTC").timestamp()
 
             if verbose_logs_iteration:
                 last_verbose_time = end_time
 
-            loop_duration = end_time - start_time
-            sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
-            time.sleep(sleep_time)
-            yield
+            next_minute_time = _get_next_scheduler_iteration_time(start_time)
+
+            if next_minute_time > end_time:
+                # Sleep until the beginning of the next minute, plus a small epsilon to
+                # be sure that we're past the start of the minute
+                time.sleep(next_minute_time - end_time + 0.001)
+                yield
 
 
 def launch_scheduled_runs(
