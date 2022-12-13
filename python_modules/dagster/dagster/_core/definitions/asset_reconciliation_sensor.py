@@ -492,10 +492,24 @@ def get_in_progress_data_times_for_key(
     ):
         return {upstream_key: None for upstream_key in relevant_upstream_keys}
     else:
-        # if run hasn't started yet
         root_data_time = latest_run_record.start_time or current_time
-        # if the source data key is in this run, then use the run's time as the data time, otherwise
-        # fetch the current time
+        materializing_with = instance_queryer.get_planned_materializations_for_run(run_id)
+        # TODO: this is an optimistic heuristic, and doesn't take into account the following
+        # scenarios (assume graph of A -> B -> C -> D):
+        #
+        # * A run is manually kicked off only `A` and `C`. It will be assumed that when this run
+        #   completes, `C` will contain all data of `A` up until `root_data_time`, which is
+        #   inaccurate.
+        # * A run is kicked off of `B`, `C`, and `D`. `B` executes quickly, but `C` takes a very
+        #   long time to complete, and while it's executing, a new run of `A` completes. It will be
+        #   assumed that at the end of the `B,C,D` run, all assets will contain the newest version
+        #   of `A`, which is inaccurate.
+        #
+        # In either of these scenarios
+        ret = {}
+        for upstream_key in relevant_upstream_keys:
+            pass
+        return ret
 
 
 def get_expected_data_times_for_key(
