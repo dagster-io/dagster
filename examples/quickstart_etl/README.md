@@ -58,7 +58,7 @@ Bootstrap your own Dagster project with this example:
 dagster project from-example --name my-dagster-project --example quickstart_etl
 ```
 
-First, install your Dagster code as a Python package. By using the `--editable` flag, pip will install your code location in ["editable mode"](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs) so that as you develop, local code changes will automatically apply. Check out [Dagster Installation](https://docs.dagster.io/getting-started/install) for more information.
+First, install your Dagster code as a Python package. By using the `--editable` flag, pip will install in ["editable mode"](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs) so that as you develop, local code changes will automatically apply. Check out [Dagster Installation](https://docs.dagster.io/getting-started/install) for more information.
 
 ```bash
 pip install -e ".[dev]"
