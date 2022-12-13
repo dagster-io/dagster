@@ -12,6 +12,7 @@ from dagster_test.test_project import (
     get_test_project_workspace_and_external_pipeline,
 )
 
+from dagster._core.definitions.events import AssetKey
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._utils.merger import merge_dicts
