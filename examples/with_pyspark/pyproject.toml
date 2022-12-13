@@ -3,4 +3,4 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.dagster]
-python_package = "with_pyspark"
+python_package = "with_pyspark.defs"
