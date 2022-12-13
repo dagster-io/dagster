@@ -1,3 +1,4 @@
+# start_example
 import time
 from datetime import datetime, timedelta
 
@@ -45,3 +46,6 @@ schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
 @repository
 def rewrite_repo():
     return [tutorial_job, schedule]
+
+
+# end_example
