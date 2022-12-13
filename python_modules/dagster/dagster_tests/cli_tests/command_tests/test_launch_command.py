@@ -245,7 +245,7 @@ def test_job_launch_handles_pipeline():
     job_kwargs = {
         "workspace": None,
         "job_name": "my_job",
-        "python_file": file_relative_path(__file__, "repo_pipeline_and_job.py"),
+        "python_file": (file_relative_path(__file__, "repo_pipeline_and_job.py"),),
         "module_name": None,
         "attribute": "my_repo",
     }
