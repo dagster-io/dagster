@@ -329,50 +329,62 @@ A <PyObject object="Definitions" /> object defines a code location, which is a c
 
 ### Viewing assets in Dagit
 
-- [All assets](#all-assets)
+- [Viewing all assets](#asset-catalog)
 - [Details for an asset](#asset-details)
 - [Dependency graph](#dependency-graph)
-- [Upstream changes](#upstream-changed-indicator)
+- [Upstream changes](#upstream-changed)
 
-#### All assets
+<TabGroup>
+<TabItem name="Asset catalog (all assets)">
+
+#### Asset catalog
 
 To view a list of all your assets, click **Assets** in the top-right corner of the page. This opens the Assets page:
 
-<Image
-alt="Assets page"
-src="/images/concepts/assets/software-defined-assets/catalog.png"
-width={2662}
-height={1506}
-/>
+<!-- ![Asset catalog page in Dagit](/images/concepts/dagit/all-assets.png) -->
 
-#### Asset Details
+![Asset catalog page in Dagit](/images/concepts/dagit/all-assets.png)
+
+</TabItem>
+<TabItem name="Asset details">
+
+#### Asset details
 
 View the Asset Details page for an asset by clicking on its name:
 
-<Image
-alt="Asset Details"
-src="/images/concepts/assets/software-defined-assets/details.png"
-width={2662}
-height={1506}
-/>
+<!-- ![Asset details page in Dagit](/images/concepts/dagit/asset.png) -->
+
+![Asset details page in Dagit](/images/concepts/dagit/asset.png)
+
+</TabItem>
+<TabItem name="Dependency graph">
 
 #### Dependency graph
 
 To view a graph of all assets and their dependencies, you can:
 
-- Click the graph icon to the upper-left of the Asset Catalog
-- Click **View in Graph** on any asset
+- Click **View global asset lineage** in the [**Asset catalog**](#asset-catalog)
+- Click the **Lineage tab** in the [**Asset details** page](#asset-details)
 
-<Image
-alt="Asset Graph"
-src="/images/concepts/assets/software-defined-assets/graph.png"
-width={2662}
-height={1506}
-/>
+<!-- ![Asset lineage graph](/images/concepts/assets/software-defined-assets/graph.png) -->
 
-#### Upstream changed indicator
+![Asset lineage graph](/images/concepts/assets/software-defined-assets/graph.png)
 
-On occasion, you might see an **upstream changed** indicator on an asset in the dependency graph or on the Asset Details page:
+</TabItem>
+<TabItem name="Upstream changed indicator">
+
+#### Upstream changed
+
+<Note>
+  Currently, the <strong>upstream changed</strong> indicator won't display in
+  the following scenarios:
+  <ul>
+    <li>The upstream asset is in another code location definition or job</li>
+    <li>The assets are partitioned</li>
+  </ul>
+</Note>
+
+On occasion, you might see an **upstream changed** indicator on an asset in the dependency graph or on the **Asset Details** page:
 
 <Image
 alt="Asset Graph with an upstream changed indicator"
@@ -392,20 +404,15 @@ In this case, the contents of `comment_stories` may be outdated, as the most rec
 
 You can resolve this issue by re-materializing the downstream asset. This will re-compute the contents with the most recent data/changes to its upstream dependency.
 
-<Note>
-  Currently, the <strong>upstream changed</strong> indicator won't display in
-  the following scenarios:
-  <ul>
-    <li>The upstream asset is in another repository or job</li>
-    <li>The assets are partitioned</li>
-  </ul>
-</Note>
+</TabItem>
+</TabGroup>
+
 
 ### Materializing assets in Dagit
 
 In Dagit, you can launch runs that materialize assets by:
 
-- Navigating to the [**Asset Details** page](#asset-details) for the asset and click the **Materialize** button in the upper right corner.
+- Navigating to the [**Asset Details** page](#asset-details) for the asset and clicking the **Materialize** button in the upper right corner.
 - Navigating to the graph view of the [**Assets** page](#all-assets) and clicking the **Materialize** button in the upper right corner. You can also click on assets to collect a subset to materialize.
 
 ---
@@ -459,29 +466,19 @@ If any of the assets in the module already has a `group_name` explicitly set on 
 
 ### Viewing asset groups in Dagit
 
-To view your asset groups in Dagit, open the left navigation by clicking the **menu icon in the top left corner**. As asset groups are grouped in code locations, you may need to open a code location to view its asset groups:
+To view your asset groups in Dagit, open the left navigation by clicking the **menu icon in the top left corner**. As asset groups are grouped in code locations, you may need to open a code location to view its asset groups.
 
-<Image
-alt="Asset Groups in Dagit left navigation"
-src="/images/concepts/assets/asset-groups-in-sidenav.png"
-width={903}
-height={454}
-/>
+Click the asset group to open a dependency graph for all assets in the group. For example, in the following image, the dependency graph for the `activity_analytics` asset group is currently displayed:
 
-Click the asset group to open a dependency graph for all assets in the group:
+<!-- ![Dependency graph for an asset group](/images/concepts/assets/asset-group-dependency-graph.png) -->
 
-<Image
-alt="Dependency graph for an asset group"
-src="/images/concepts/assets/asset-group-dependency-graph.png"
-width={1899}
-height={945}
-/>
+![Dependency graph for an asset group](/images/concepts/assets/asset-group-dependency-graph.png)
 
 ---
 
 ## Testing
 
-When writing unit tests, you can treat the function decorated by `@asset` as a regular Python function.
+When writing unit tests, you can treat the function decorated by <PyObject object="asset" decorator /> as a regular Python function.
 
 Consider a simple asset with no upstream dependencies:
 
@@ -538,25 +535,20 @@ def test_uses_context():
 
 ## Loading asset values outside of Dagster runs
 
-<Note>
-  This functionality is applicable only to code locations using{" "}
-  <PyObject object="repository" decorator /> definitions.
-</Note>
+It's sometimes useful to load an asset as a Python object outside of a Dagster run, such as performing exploratory analysis on data inside a Jupyter notebook.
 
-It's sometimes useful to load an asset as a Python object outside of a Dagster run, e.g. if you want to do exploratory data analysis on it inside a Jupyter notebook. For this, you can use <PyObject object="RepositoryDefinition" method="load_asset_value" />:
+For this, you can use <PyObject object="Definitions" method="load_asset_value" />:
 
 ```python file=/concepts/assets/load_asset_values.py startafter=single_asset_start_marker endbefore=single_asset_end_marker dedent=4
-@repository
-def repo():
-    return [load_assets_from_current_module()]
+defs = Definitions(assets=[load_assets_from_current_module()])
 
-asset1_value = repo.load_asset_value(AssetKey("asset1"))
+asset1_value = defs.load_asset_value(AssetKey("asset1"))
 ```
 
-If you want to load the values of multiple assets, it's more efficient to use <PyObject object="RepositoryDefinition" method="get_asset_value_loader" />, which avoids spinning up resources separately for each asset:
+To load the values of multiple assets, use <PyObject object="Definitions" method="get_asset_value_loader" />, which avoids spinning up resources separately for each asset:
 
 ```python file=/concepts/assets/load_asset_values.py startafter=multiple_asset_start_marker endbefore=multiple_asset_end_marker dedent=4
-with repo.get_asset_value_loader() as loader:
+with defs.get_asset_value_loader() as loader:
     asset1_value = loader.load_asset_value(AssetKey("asset1"))
     asset2_value = loader.load_asset_value(AssetKey("asset2"))
 ```
