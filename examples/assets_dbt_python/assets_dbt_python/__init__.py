@@ -1,1 +1,1 @@
-from .repository import assets_dbt_python
+from .repository import defs

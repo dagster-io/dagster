@@ -1,6 +1,6 @@
-from assets_dbt_python import assets_dbt_python
+from assets_dbt_python import defs
 
 
-def test_repo_can_load():
-    assert assets_dbt_python.get_job("everything_everywhere_job")
-    assert assets_dbt_python.get_job("refresh_forecast_model_job")
+def test_def_can_load():
+    assert defs.get_job_def("everything_everywhere_job")
+    assert defs.get_job_def("refresh_forecast_model_job")
