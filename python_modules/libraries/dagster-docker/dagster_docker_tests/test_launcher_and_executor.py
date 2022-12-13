@@ -23,7 +23,7 @@ from . import IS_BUILDKITE, docker_postgres_instance
 
 @pytest.mark.parametrize("from_pending_repository", [True, False])
 def test_image_on_pipeline(aws_env, from_pending_repository):
-    os.environ["IN_EXTERNAL_PROCESS"] = True
+    os.environ["IN_EXTERNAL_PROCESS"] = "yes"
     docker_image = get_test_project_docker_image()
 
     launcher_config = {

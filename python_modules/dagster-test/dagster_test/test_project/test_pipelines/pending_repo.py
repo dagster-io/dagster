@@ -19,7 +19,7 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
 
     def compute_cacheable_data(self):
         # make sure this never gets called in the normal course of a run
-        assert os.getenv("IN_EXTERNAL_PROCESS") == True
+        assert os.getenv("IN_EXTERNAL_PROCESS") == "yes"
         return [self._cacheable_data]
 
     def build_definitions(self, data):
