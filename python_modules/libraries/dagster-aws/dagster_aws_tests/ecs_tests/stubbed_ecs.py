@@ -359,8 +359,12 @@ class StubbedEcs:
             cluster = self._cluster(kwargs.get("cluster"))
             count = kwargs.get("count", 1)
             tasks = []
+            tags = kwargs.get("tags")
             for _ in range(count):
                 arn = self._task_arn(cluster)
+                if tags and self._long_arn_enabled():
+                    self.tags[arn] = tags
+
                 task = {
                     "attachments": [],
                     "clusterArn": self._cluster_arn(cluster),
