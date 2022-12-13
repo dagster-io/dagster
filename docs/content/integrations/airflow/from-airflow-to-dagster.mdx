@@ -23,22 +23,13 @@ In this guide we will rewrite an [Airflow DAG](https://airflow.apache.org/docs/a
 from datetime import datetime, timedelta
 from textwrap import dedent
 
-# The DAG object; we'll need this to instantiate a DAG
 from airflow import DAG
 
-# Operators; we need this to operate!
 from airflow.operators.bash import BashOperator
 with DAG(
     "tutorial",
-    # These args will get passed on to each operator
-    # You can override them on a per-task basis during operator initialization
     default_args={
-        "depends_on_past": False,
-        "email": ["airflow@example.com"],
-        "email_on_failure": False,
-        "email_on_retry": False,
         "retries": 1,
-        "retry_delay": timedelta(minutes=5),
     },
     description="A simple tutorial DAG",
     schedule=timedelta(days=1),
@@ -47,7 +38,6 @@ with DAG(
     tags=["example"],
 ) as dag:
 
-    # t1, t2 and t3 are examples of tasks created by instantiating operators
     t1 = BashOperator(
         task_id="print_date",
         bash_command="date",
@@ -55,25 +45,10 @@ with DAG(
 
     t2 = BashOperator(
         task_id="sleep",
-        depends_on_past=False,
         bash_command="sleep 5",
         retries=3,
     )
-    t1.doc_md = dedent(
-        """\
-    #### Task Documentation
-    You can document your task using the attributes `doc_md` (markdown),
-    `doc` (plain text), `doc_rst`, `doc_json`, `doc_yaml` which gets
-    rendered in the UI's Task Instance Details page.
-    ![img](http://montcs.bloomu.edu/~bobmon/Semesters/2012-01/491/import%20soul.png)
-    **Image Credit:** Randall Munroe, [XKCD](https://xkcd.com/license.html)
-    """
-    )
 
-    dag.doc_md = __doc__  # providing that you have a docstring at the beginning of the DAG; OR
-    dag.doc_md = """
-    This is a documentation placed anywhere
-    """  # otherwise, type it like this
     templated_command = dedent(
         """
     {% for i in range(5) %}
@@ -85,7 +60,6 @@ with DAG(
 
     t3 = BashOperator(
         task_id="templated",
-        depends_on_past=False,
         bash_command=templated_command,
     )
 
@@ -107,7 +81,7 @@ After rewriting the operators of the tutorial Airflow Dag as Ops we're left with
 ```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_ops endbefore=end_ops
 @op
 def print_date(context) -> datetime:
-    ds = datetime.fromisoformat(context.get_tag("date"))
+    ds = datetime.now()
     context.log.info(ds)
     return ds
 
@@ -165,15 +139,8 @@ Job level retries are managed by the [run launcher](/deployment/run-retries) you
 Finally we'll add a schedule
 
 ```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_schedule endbefore=end_schedule
-@schedule(job=tutorial_job, cron_schedule="@daily")
-def schedule(context: ScheduleEvaluationContext):
-    scheduled_date = context.scheduled_execution_time
-    return RunRequest(
-        run_key=None,
-        tags={"date": scheduled_date.isoformat()},
-    )
+schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
 ```
-With Dagster you'll use configuration to propigate scheduler specific properties(like run date) to your job runs. There is no templating engine for assembling Dagster Jobs only a schema enforced configuration system.
 
 ### Step 4: Running locally
 
@@ -197,22 +164,11 @@ for reference here's what the file should look like
 import time
 from datetime import datetime, timedelta
 
-from dagster import (
-    In,
-    Nothing,
-    RetryPolicy,
-    RunRequest,
-    ScheduleEvaluationContext,
-    job,
-    op,
-    repository,
-    schedule,
-)
-
+from dagster import In, Nothing, RetryPolicy, ScheduleDefinition, job, op, repository, schedule
 
 @op
 def print_date(context) -> datetime:
-    ds = datetime.fromisoformat(context.get_tag("date"))
+    ds = datetime.now()
     context.log.info(ds)
     return ds
 
@@ -227,23 +183,17 @@ def sleep():
 
 @op
 def templated(context, ds: datetime):
-    for i in range(5):
+    for _i in range(5):
         context.log.info(ds)
         context.log.info(ds - timedelta(days=7))
 
 @job(tags={"dagster/max_retries": 1, "dag_name": "example"})
 def tutorial_job():
-    dt = print_date()
-    sleep(dt)
-    templated(dt)
+    ds = print_date()
+    sleep(ds)
+    templated(ds)
 
-@schedule(job=tutorial_job, cron_schedule="@daily")
-def schedule(context: ScheduleEvaluationContext):
-    scheduled_date = context.scheduled_execution_time
-    return RunRequest(
-        run_key=None,
-        tags={"date": scheduled_date.isoformat()},
-    )
+schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
 
 @repository
 def rewrite_repo():

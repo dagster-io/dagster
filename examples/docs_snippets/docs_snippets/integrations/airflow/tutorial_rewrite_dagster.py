@@ -2,23 +2,13 @@
 import time
 from datetime import datetime, timedelta
 
-from dagster import (
-    In,
-    Nothing,
-    RetryPolicy,
-    RunRequest,
-    ScheduleEvaluationContext,
-    job,
-    op,
-    repository,
-    schedule,
-)
+from dagster import In, Nothing, RetryPolicy, ScheduleDefinition, job, op, repository, schedule
 
 
 # start_ops
 @op
 def print_date(context) -> datetime:
-    ds = datetime.fromisoformat(context.get_tag("date"))
+    ds = datetime.now()
     context.log.info(ds)
     return ds
 
@@ -33,7 +23,7 @@ def sleep():
 
 @op
 def templated(context, ds: datetime):
-    for i in range(5):
+    for _i in range(5):
         context.log.info(ds)
         context.log.info(ds - timedelta(days=7))
 # end_ops
@@ -41,19 +31,13 @@ def templated(context, ds: datetime):
 # start_job
 @job(tags={"dagster/max_retries": 1, "dag_name": "example"})
 def tutorial_job():
-    dt = print_date()
-    sleep(dt)
-    templated(dt)
+    ds = print_date()
+    sleep(ds)
+    templated(ds)
 # end_job
 
 # start_schedule
-@schedule(job=tutorial_job, cron_schedule="@daily")
-def schedule(context: ScheduleEvaluationContext):
-    scheduled_date = context.scheduled_execution_time
-    return RunRequest(
-        run_key=None,
-        tags={"date": scheduled_date.isoformat()},
-    )
+schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
 # end_schedule
 
 # start_repo
