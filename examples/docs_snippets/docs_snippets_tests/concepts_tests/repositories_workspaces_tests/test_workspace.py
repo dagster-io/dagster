@@ -56,7 +56,7 @@ def test_workspace_yamls():
         [
             file_relative_path(
                 __file__,
-                "../../../docs_snippets/concepts/repositories_workspaces/workspace_python_package.yaml",
+                "../../../docs_snippets/concepts/repositories_workspaces/workspace_python_module.yaml",
             )
         ],
     ) as workspace_process_context:

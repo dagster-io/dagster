@@ -1,0 +1,4 @@
+# workspace.yaml
+
+load_from:
+  - module_name: hello_world_module
