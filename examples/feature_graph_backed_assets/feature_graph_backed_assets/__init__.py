@@ -1,1 +1,1 @@
-from .repository import feature_graph_backed_assets
+from .repository import defs
