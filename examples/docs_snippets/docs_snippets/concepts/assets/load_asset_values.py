@@ -1,10 +1,10 @@
 from dagster import (
     AssetKey,
+    Definitions,
     IOManager,
     IOManagerDefinition,
     asset,
     load_assets_from_current_module,
-    repository,
     with_resources,
 )
 
@@ -28,9 +28,7 @@ def get_assets():
 
     return with_resources(
         [asset1, asset2],
-        resource_defs={
-            "io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())
-        },
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
 
 
@@ -40,11 +38,9 @@ assets = get_assets()
 def load_single_asset_value():
     # single_asset_start_marker
 
-    @repository
-    def repo():
-        return [load_assets_from_current_module()]
+    defs = Definitions(assets=[load_assets_from_current_module()])
 
-    asset1_value = repo.load_asset_value(AssetKey("asset1"))
+    asset1_value = defs.load_asset_value(AssetKey("asset1"))
 
     # single_asset_end_marker
 
@@ -52,13 +48,11 @@ def load_single_asset_value():
 
 
 def load_multiple_asset_values():
-    @repository
-    def repo():
-        return [load_assets_from_current_module()]
+    defs = Definitions(assets=[load_assets_from_current_module()])
 
     # multiple_asset_start_marker
 
-    with repo.get_asset_value_loader() as loader:
+    with defs.get_asset_value_loader() as loader:
         asset1_value = loader.load_asset_value(AssetKey("asset1"))
         asset2_value = loader.load_asset_value(AssetKey("asset2"))
 
