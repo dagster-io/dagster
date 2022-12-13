@@ -1,8 +1,8 @@
 from dagster import (
     CodeLocationSelector,
-    JobSelector,
     DagsterRunStatus,
     Definitions,
+    JobSelector,
     RunRequest,
     job,
     op,
