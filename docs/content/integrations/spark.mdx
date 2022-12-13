@@ -101,7 +101,7 @@ make_and_filter_data_job = make_and_filter_data.to_job(
 
 This example demonstrates how to use the <PyObject module='dagster_aws.emr' object='emr_pyspark_step_launcher' /> to have an op run as a Spark step on an EMR cluster. In it, each of the two ops will be executed as a separate EMR step on the same EMR cluster.
 
-```python file=../../with_pyspark_emr/with_pyspark_emr/repository.py startafter=start-snippet endbefore=end-snippet
+```python file=../../with_pyspark_emr/with_pyspark_emr/definitions.py
 from pathlib import Path
 
 from dagster_aws.emr import emr_pyspark_step_launcher
@@ -110,7 +110,7 @@ from dagster_pyspark import pyspark_resource
 from pyspark.sql import DataFrame, Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
-from dagster import IOManager, ResourceDefinition, graph, io_manager, op, repository
+from dagster import Definitions, IOManager, ResourceDefinition, graph, io_manager, op
 
 
 class ParquetIOManager(IOManager):
@@ -177,6 +177,8 @@ make_and_filter_data_local = make_and_filter_data.to_job(
 )
 
 make_and_filter_data_emr = make_and_filter_data.to_job(name="prod", resource_defs=emr_resource_defs)
+
+defs = Definitions(jobs=[make_and_filter_data_emr, make_and_filter_data_local])
 ```
 
 The EMR PySpark step launcher relies on S3 to shuttle config and events to and from EMR.
