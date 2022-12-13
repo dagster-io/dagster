@@ -68,7 +68,7 @@ Here's a breakdown of the files and directories that are generated:
         A file that specifies package core metadata in static, tool-agnostic
         way.
         <br />
-        It includes a <code>tool.dagster</code> section which references to the python
+        It includes a <code>tool.dagster</code> section which references to the Python
         package with your Dagster definitions defined and discoverable at the top-level.
         This allows you to type just
         <code>dagit</code> without any parameters in order to load your Dagster code.
@@ -131,16 +131,21 @@ Inside of the `my_dagster_project/` directory, the following files and directori
       </td>
     </tr>
     <tr>
-      <td>my_dagster_project/assets/</td>
+      <td>my_dagster_project/assets.py</td>
       <td>
-        A Python package that contains all the{" "}
-        <a href="/concepts/assets/software-defined-assets">assets</a>. It is
-        helpful to include all assets in a subpackage so that you can use{" "}
-        <PyObject object="load_assets_from_package_module" /> to load assets
-        into your project, rather than needing to add assets to the
-        project every time you define one.
+        A Python module that contains {" "}
+        <a href="/concepts/assets/software-defined-assets">software-defined assets</a>.
+        <br />
+        <br />
+        <strong>Note:</strong> As your project grows, we recommend organizing assets in sub-packages or sub-modules.
+        For example, you can put all analytics related assets in a <code>my_dagster_project/assets/analytics/</code>
+        folder and use <PyObject object="load_assets_from_package_module" /> in the top-level definitions
+        to load them, rather than needing to manually add assets to the top-level definitions every time
+        you define one. Similarly, you can also use <PyObject object="load_assets_from_modules" /> to
+        load assets from single Python files. Read more about best practices in the <a href="/guides/dagster/example_project">Fully Featured Project guide</a>.
       </td>
     </tr>
+
   </tbody>
 </table>
 </TabItem>
@@ -193,7 +198,7 @@ dagit
 
 Open <http://localhost:3000> with your browser to see the project.
 
-Now, you can start writing assets in `my_dagster_project/assets/`, define your own ops or jobs, and include them in `my_dagster_project/__init__.py`.
+Now, you can start writing assets in `my_dagster_project/assets.py`.
 
 ---
 

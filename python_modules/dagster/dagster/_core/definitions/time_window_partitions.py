@@ -208,7 +208,7 @@ class TimeWindowPartitionsDefinition(
             return start_time.strftime(self.fmt)
 
     def get_next_partition_window(
-        self, end_dt: datetime, current_time: Optional[datetime]
+        self, end_dt: datetime, current_time: Optional[datetime] = None
     ) -> Optional[TimeWindow]:
         windows_iter = iter(self._iterate_time_windows(end_dt))
         next_window = next(windows_iter)
