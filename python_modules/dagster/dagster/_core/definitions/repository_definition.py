@@ -1444,8 +1444,8 @@ class RepositoryDefinition:
             .. code-block:: python
 
                 with my_repo.get_asset_value_loader() as loader:
-                    asset1 = loader.load_asset_value()
-                    asset1 = loader.load_asset_value()
+                    asset1 = loader.load_asset_value("asset1")
+                    asset2 = loader.load_asset_value("asset2")
 
         """
         from dagster._core.storage.asset_value_loader import AssetValueLoader

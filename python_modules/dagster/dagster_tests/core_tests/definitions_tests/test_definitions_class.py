@@ -7,6 +7,7 @@ from dagster import (
     SourceAsset,
     asset,
     define_asset_job,
+    materialize,
     op,
     repository,
     sensor,
@@ -21,6 +22,7 @@ from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
 )
+from dagster._core.test_utils import instance_for_test
 
 
 def get_all_assets_from_defs(defs: Definitions):
@@ -91,7 +93,7 @@ def test_basic_schedule_definition():
         ],
     )
 
-    assert resolve_pending_repo_if_required(defs).get_schedule_def("daily_an_asset_schedule")
+    assert defs.get_schedule_def("daily_an_asset_schedule")
 
 
 def test_basic_sensor_definition():
@@ -109,9 +111,8 @@ def test_basic_sensor_definition():
         assets=[an_asset],
         sensors=[a_sensor],
     )
-    repo = resolve_pending_repo_if_required(defs)
 
-    assert repo.get_sensor_def("an_asset_sensor")
+    assert defs.get_sensor_def("an_asset_sensor")
 
 
 def test_with_resource_binding():
@@ -198,3 +199,23 @@ def test_pending_repo():
     assert all_assets[0].key.to_user_string() == "foobar"
 
     assert isinstance(defs.get_job_def("__ASSET_JOB"), JobDefinition)
+
+
+def test_asset_loading():
+    @asset
+    def one():
+        return 1
+
+    @asset
+    def two():
+        return 2
+
+    with instance_for_test() as instance:
+        defs = Definitions(assets=[one, two])
+        materialize(assets=[one, two], instance=instance)
+        assert defs.load_asset_value("one", instance=instance) == 1
+        assert defs.load_asset_value("two", instance=instance) == 2
+
+        value_loader = defs.get_asset_value_loader(instance)
+        assert value_loader.load_asset_value("one") == 1
+        assert value_loader.load_asset_value("two") == 2
