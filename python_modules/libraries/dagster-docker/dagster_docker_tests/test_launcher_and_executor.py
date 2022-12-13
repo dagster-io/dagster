@@ -23,6 +23,7 @@ from . import IS_BUILDKITE, docker_postgres_instance
 
 @pytest.mark.parametrize("from_pending_repository", [True, False])
 def test_image_on_pipeline(aws_env, from_pending_repository):
+    os.environ["IN_EXTERNAL_PROCESS"] = True
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
@@ -83,10 +84,6 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
             external_pipeline = ReOriginatedExternalPipelineForTest(
                 orig_pipeline, container_image=docker_image, filename=filename
             )
-            kvs_key = "compute_cacheable_data_called"
-            initial_compute_cacheable_data_called = int(
-                instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0")
-            )
 
             run = instance.create_run_for_pipeline(
                 pipeline_def=recon_pipeline.get_definition(),
@@ -107,14 +104,6 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
                 print(log)  # pylint: disable=print-call
 
             assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
-            if from_pending_repository:
-                # because of how we set things up for this test, we actually expect to compute
-                # cacheable data twice. however, the function should not get called after that point
-                assert initial_compute_cacheable_data_called == 2
-                final_compute_cacheable_data_called = int(
-                    instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0")
-                )
-                assert initial_compute_cacheable_data_called == final_compute_cacheable_data_called
 
 
 def test_container_context_on_pipeline(aws_env):

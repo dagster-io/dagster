@@ -1,7 +1,7 @@
+import os
 from dagster import (
     AssetKey,
     AssetsDefinition,
-    DagsterInstance,
     asset,
     define_asset_job,
     op,
@@ -18,13 +18,8 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
     _cacheable_data = AssetsDefinitionCacheableData(keys_by_output_name={"result": AssetKey("bar")})
 
     def compute_cacheable_data(self):
-        # used for tracking how many times this function gets called over an execution
-        # if this gets called within the step worker, there will be an error as DAGSTER_HOME is not
-        # set in those containers
-        instance = DagsterInstance.get()
-        kvs_key = "compute_cacheable_data_called"
-        num_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
-        instance.run_storage.kvs_set({kvs_key: str(num_called + 1)})
+        # make sure this never gets called in the normal course of a run
+        assert os.getenv("IN_EXTERNAL_PROCESS") == True
         return [self._cacheable_data]
 
     def build_definitions(self, data):
