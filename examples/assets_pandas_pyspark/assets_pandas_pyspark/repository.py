@@ -1,8 +1,5 @@
 from assets_pandas_pyspark.assets.spark_weather_assets import spark_weather_assets
 
-from dagster import repository
+from dagster import Definitions
 
-
-@repository
-def assets_pandas_pyspark():
-    return [spark_weather_assets]
+defs = Definitions(assets=spark_weather_assets)

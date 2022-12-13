@@ -29,7 +29,6 @@ from dagster._core.workspace.load_target import (
     PackageTarget,
     PythonFileTarget,
     WorkspaceFileTarget,
-    WorkspaceLoadTarget,
 )
 from dagster._grpc.utils import get_loadable_targets
 from dagster._utils.hosted_user_process import recon_repository_from_origin
@@ -80,7 +79,7 @@ WORKSPACE_CLI_ARGS = (
 )
 
 
-def get_target_from_toml(path) -> Optional[WorkspaceLoadTarget]:
+def get_target_from_toml(path) -> Optional[ModuleTarget]:
     with open(path, "rb") as f:
         data = tomli.load(f)
         if not isinstance(data, dict):
