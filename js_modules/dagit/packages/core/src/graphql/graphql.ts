@@ -3425,6 +3425,7 @@ export type WorkspaceLocationEntry = {
   loadStatus: RepositoryLocationLoadStatus;
   locationOrLoadError: Maybe<RepositoryLocationOrLoadError>;
   name: Scalars['String'];
+  permissions: Array<Permission>;
   updatedTimestamp: Scalars['Float'];
 };
 

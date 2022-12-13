@@ -30,6 +30,7 @@ from dagster_graphql.implementation.loader import (
 from .asset_graph import GrapheneAssetGroup, GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
 from .partition_sets import GraphenePartitionSet
+from .permissions import GraphenePermission
 from .pipelines.pipeline import GrapheneJob, GraphenePipeline
 from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin
 from .schedules import GrapheneSchedule
@@ -157,6 +158,8 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     updatedTimestamp = graphene.NonNull(graphene.Float)
 
+    permissions = graphene.Field(non_null_list(GraphenePermission))
+
     class Meta:
         name = "WorkspaceLocationEntry"
 
@@ -191,6 +194,10 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
 
     def resolve_updatedTimestamp(self, _):
         return self._location_entry.update_timestamp
+
+    def resolve_permissions(self, graphene_info):
+        permissions = graphene_info.context.permissions_for_location(self.name)
+        return [GraphenePermission(permission, value) for permission, value in permissions.items()]
 
 
 class GrapheneRepository(graphene.ObjectType):

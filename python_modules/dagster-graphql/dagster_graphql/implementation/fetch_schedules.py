@@ -1,11 +1,17 @@
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.host_representation import PipelineSelector, RepositorySelector, ScheduleSelector
+from dagster._core.workspace.permissions import Permissions
 from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from graphene import ResolveInfo
 
 from .loader import RepositoryScopedBatchLoader
-from .utils import UserFacingGraphQLError, capture_error
+from .utils import (
+    UserFacingGraphQLError,
+    assert_permission,
+    assert_permission_for_location,
+    capture_error,
+)
 
 
 @capture_error
@@ -39,8 +45,22 @@ def stop_schedule(graphene_info, schedule_origin_id, schedule_selector_id):
         for job in repository.get_external_schedules()
     }
 
+    external_schedule = external_schedules.get(schedule_origin_id)
+
+    if external_schedule:
+        assert_permission_for_location(
+            graphene_info,
+            Permissions.STOP_RUNNING_SCHEDULE,
+            external_schedule.selector.location_name,
+        )
+    else:
+        assert_permission(
+            graphene_info,
+            Permissions.STOP_RUNNING_SCHEDULE,
+        )
+
     schedule_state = instance.stop_schedule(
-        schedule_origin_id, schedule_selector_id, external_schedules.get(schedule_origin_id)
+        schedule_origin_id, schedule_selector_id, external_schedule
     )
     return GrapheneScheduleStateResult(GrapheneInstigationState(schedule_state))
 

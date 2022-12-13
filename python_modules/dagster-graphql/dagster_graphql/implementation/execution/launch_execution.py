@@ -5,10 +5,16 @@ from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.host_representation.selector import PipelineSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, RunsFilter
+from dagster._core.workspace.permissions import Permissions
 from graphene import ResolveInfo
 
 from ..external import get_external_pipeline_or_raise
-from ..utils import ExecutionMetadata, ExecutionParams, capture_error
+from ..utils import (
+    ExecutionMetadata,
+    ExecutionParams,
+    assert_permission_for_location,
+    capture_error,
+)
 from .run_lifecycle import create_valid_pipeline_run
 
 if TYPE_CHECKING:
@@ -92,6 +98,12 @@ def launch_reexecution_from_parent_run(
         repository_name=origin.external_repository_origin.repository_name,
         pipeline_name=parent_run.pipeline_name,
         solid_selection=None,
+    )
+
+    assert_permission_for_location(
+        graphene_info,
+        Permissions.LAUNCH_PIPELINE_REEXECUTION,
+        selector.location_name,
     )
 
     repo_location = graphene_info.context.get_repository_location(selector.location_name)
