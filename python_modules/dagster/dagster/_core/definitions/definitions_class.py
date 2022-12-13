@@ -1,8 +1,10 @@
-from typing import Any, Dict, Iterable, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Mapping, Optional, Type, Union
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.execution.with_resources import with_resources
+from dagster._core.instance import DagsterInstance
 from dagster._utils.cached_method import cached_method
 
 from .assets import AssetsDefinition, SourceAsset
@@ -18,6 +20,9 @@ from .resource_definition import ResourceDefinition
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+
+if TYPE_CHECKING:
+    from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 
 @experimental
@@ -105,6 +110,74 @@ class Definitions:
 
         check.str_param(name, "name")
         return self.get_repository_def().get_job(name)
+
+    @public
+    def get_sensor_def(self, name: str) -> SensorDefinition:
+        """Get a sensor definition name"""
+        check.str_param(name, "name")
+        return self.get_repository_def().get_sensor_def(name)
+
+    @public
+    def get_schedule_def(self, name: str) -> ScheduleDefinition:
+        check.str_param(name, "name")
+        return self.get_repository_def().get_schedule_def(name)
+
+    @public
+    def load_asset_value(
+        self,
+        asset_key: CoercibleToAssetKey,
+        *,
+        python_type: Optional[Type] = None,
+        instance: Optional[DagsterInstance] = None,
+        partition_key: Optional[str] = None,
+    ) -> object:
+        """
+        Loads the contents of an asset as a Python object.
+
+        Invokes `load_input` on the :py:class:`IOManager` associated with the asset.
+
+        If you want to load the values of multiple assets, it's more efficient to use
+        :py:meth:`~dagster.Definitions.get_asset_value_loader`, which avoids spinning up
+        resources separately for each asset.
+
+        Args:
+            asset_key (Union[AssetKey, Sequence[str], str]): The key of the asset to load.
+            python_type (Optional[Type]): The python type to load the asset as. This is what will
+                be returned inside `load_input` by `context.dagster_type.typing_type`.
+            partition_key (Optional[str]): The partition of the asset to load.
+
+        Returns:
+            The contents of an asset as a Python object.
+        """
+        return self.get_repository_def().load_asset_value(
+            asset_key=asset_key,
+            python_type=python_type,
+            instance=instance,
+            partition_key=partition_key,
+        )
+
+    @public
+    def get_asset_value_loader(
+        self, instance: Optional[DagsterInstance] = None
+    ) -> "AssetValueLoader":
+        """
+        Returns an object that can load the contents of assets as Python objects.
+
+        Invokes `load_input` on the :py:class:`IOManager` associated with the assets. Avoids
+        spinning up resources separately for each asset.
+
+        Usage:
+
+            .. code-block:: python
+
+                with defs.get_asset_value_loader() as loader:
+                    asset1 = loader.load_asset_value("asset1")
+                    asset2 = loader.load_asset_value("asset2")
+
+        """
+        return self.get_repository_def().get_asset_value_loader(
+            instance=instance,
+        )
 
     @cached_method
     def get_repository_def(self) -> RepositoryDefinition:

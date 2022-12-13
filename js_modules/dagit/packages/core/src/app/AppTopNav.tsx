@@ -71,7 +71,15 @@ export const AppTopNav: React.FC<Props> = ({
             shortcutLabel="⌥3"
             shortcutFilter={(e) => e.altKey && e.code === 'Digit3'}
           >
-            <TopNavLink to="/assets" data-cy="AppTopNav_AssetsLink" exact={false}>
+            <TopNavLink
+              to="/assets"
+              data-cy="AppTopNav_AssetsLink"
+              isActive={(_, location) => {
+                const {pathname} = location;
+                return pathname.startsWith('/assets') || pathname.startsWith('/asset-groups');
+              }}
+              exact={false}
+            >
               Assets
             </TopNavLink>
           </ShortcutHandler>

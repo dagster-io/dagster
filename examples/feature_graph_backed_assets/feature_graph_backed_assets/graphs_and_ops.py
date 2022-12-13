@@ -1,16 +1,6 @@
 import pandas as pd
-from feature_graph_backed_assets import assets
 
-from dagster import (
-    AssetSelection,
-    AssetsDefinition,
-    GraphOut,
-    define_asset_job,
-    graph,
-    load_assets_from_package_module,
-    op,
-    repository,
-)
+from dagster import GraphOut, graph, op
 
 
 @op
@@ -50,16 +40,3 @@ def filter_for_2022(flights):
 @graph
 def layover_breakdown_2022(us_flights):
     return layover_percentage_breakdown(filter_for_2022(us_flights))
-
-
-airline_job = define_asset_job("airline_job", AssetSelection.keys("passenger_flights").downstream())
-
-
-@repository
-def feature_graph_backed_assets():
-    return [
-        load_assets_from_package_module(assets),
-        define_asset_job("airline_job", AssetSelection.keys("passenger_flights").downstream()),
-        AssetsDefinition.from_graph(us_assets),
-        AssetsDefinition.from_graph(layover_breakdown_2022),
-    ]

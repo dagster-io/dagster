@@ -1,1 +1,1 @@
-from .repository import assets_pandas_pyspark
+from .repository import defs
