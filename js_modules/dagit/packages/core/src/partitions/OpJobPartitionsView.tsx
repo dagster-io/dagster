@@ -103,16 +103,17 @@ const OpJobPartitionsViewContent: React.FC<{
   const repositorySelector = repoAddressToSelector(repoAddress);
   const [backfillRefetchCounter, setBackfillRefetchCounter] = React.useState(0);
 
-  const partitions = usePartitionStepQuery(
-    partitionSet.name,
-    DagsterTag.Partition,
+  const partitions = usePartitionStepQuery({
+    partitionSetName: partitionSet.name,
+    partitionTagName: DagsterTag.Partition,
     partitionNames,
     pageSize,
-    [],
-    partitionSet.pipelineName,
+    runsFilter: [],
+    repositorySelector,
+    jobName: partitionSet.pipelineName,
     offset,
-    !showSteps,
-  );
+    skipQuery: !showSteps,
+  });
 
   React.useEffect(() => {
     if (viewport.width && !showSteps) {

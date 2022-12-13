@@ -16,7 +16,7 @@ from dagster import (
     repository,
 )
 from dagster._core.errors import DagsterLaunchFailedError
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._core.test_utils import (
     environ,
@@ -167,7 +167,7 @@ def test_successful_run(instance, workspace, run_config):  # pylint: disable=red
     )
     run_id = pipeline_run.run_id
 
-    assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+    assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
     instance.launch_run(run_id=pipeline_run.run_id, workspace=workspace)
 
@@ -176,7 +176,7 @@ def test_successful_run(instance, workspace, run_config):  # pylint: disable=red
     assert pipeline_run.run_id == run_id
 
     pipeline_run = poll_for_finished_run(instance, run_id)
-    assert pipeline_run.status == PipelineRunStatus.SUCCESS
+    assert pipeline_run.status == DagsterRunStatus.SUCCESS
 
 
 def test_successful_run_from_pending(
@@ -228,7 +228,7 @@ def test_successful_run_from_pending(
 
     run_id = created_pipeline_run.run_id
 
-    assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+    assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
     instance.launch_run(run_id=run_id, workspace=pending_workspace)
 
@@ -244,7 +244,7 @@ def test_successful_run_from_pending(
     )
 
     finished_pipeline_run = poll_for_finished_run(instance, run_id)
-    assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
+    assert finished_pipeline_run.status == DagsterRunStatus.SUCCESS
 
     call_counts = instance.run_storage.kvs_get(
         {
@@ -314,7 +314,7 @@ def test_invalid_instance_run():
                             instance.launch_run(run_id=pipeline_run.run_id, workspace=workspace)
 
                         failed_run = instance.get_run_by_id(pipeline_run.run_id)
-                        assert failed_run.status == PipelineRunStatus.FAILURE
+                        assert failed_run.status == DagsterRunStatus.FAILURE
 
 
 @pytest.mark.parametrize(
@@ -341,7 +341,7 @@ def test_crashy_run(instance, workspace, run_config):  # pylint: disable=redefin
 
     run_id = pipeline_run.run_id
 
-    assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+    assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
     instance.launch_run(pipeline_run.run_id, workspace)
 
@@ -351,7 +351,7 @@ def test_crashy_run(instance, workspace, run_config):  # pylint: disable=redefin
     assert failed_pipeline_run.run_id == run_id
 
     failed_pipeline_run = poll_for_finished_run(instance, run_id, timeout=5)
-    assert failed_pipeline_run.status == PipelineRunStatus.FAILURE
+    assert failed_pipeline_run.status == DagsterRunStatus.FAILURE
 
     event_records = instance.all_logs(run_id)
 
@@ -384,7 +384,7 @@ def test_exity_run(run_config, instance, workspace):  # pylint: disable=redefine
 
     run_id = pipeline_run.run_id
 
-    assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+    assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
     instance.launch_run(pipeline_run.run_id, workspace)
 
@@ -394,7 +394,7 @@ def test_exity_run(run_config, instance, workspace):  # pylint: disable=redefine
     assert failed_pipeline_run.run_id == run_id
 
     failed_pipeline_run = poll_for_finished_run(instance, run_id, timeout=5)
-    assert failed_pipeline_run.status == PipelineRunStatus.FAILURE
+    assert failed_pipeline_run.status == DagsterRunStatus.FAILURE
 
     event_records = instance.all_logs(run_id)
 
@@ -424,7 +424,7 @@ def test_terminated_run(instance, workspace, run_config):  # pylint: disable=red
 
     run_id = pipeline_run.run_id
 
-    assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+    assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
     instance.launch_run(pipeline_run.run_id, workspace)
 
@@ -435,7 +435,7 @@ def test_terminated_run(instance, workspace, run_config):  # pylint: disable=red
 
     terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
     terminated_pipeline_run = instance.get_run_by_id(run_id)
-    assert terminated_pipeline_run.status == PipelineRunStatus.CANCELED
+    assert terminated_pipeline_run.status == DagsterRunStatus.CANCELED
 
     poll_for_event(
         instance,
@@ -535,7 +535,7 @@ def test_cleanup_after_force_terminate(run_config, instance, workspace):
 
         time.sleep(1)
 
-    assert instance.get_run_by_id(run_id).status == PipelineRunStatus.CANCELED
+    assert instance.get_run_by_id(run_id).status == DagsterRunStatus.CANCELED
 
 
 def _get_engine_events(event_records):
@@ -597,7 +597,7 @@ def test_single_solid_selection_execution(
     )
     run_id = pipeline_run.run_id
 
-    assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+    assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
     instance.launch_run(pipeline_run.run_id, workspace)
     finished_pipeline_run = poll_for_finished_run(instance, run_id)
@@ -606,7 +606,7 @@ def test_single_solid_selection_execution(
 
     assert finished_pipeline_run
     assert finished_pipeline_run.run_id == run_id
-    assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
+    assert finished_pipeline_run.status == DagsterRunStatus.SUCCESS
 
     assert _get_successful_step_keys(event_records) == {"return_one"}
 
@@ -635,7 +635,7 @@ def test_multi_solid_selection_execution(
     )
     run_id = pipeline_run.run_id
 
-    assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+    assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
     instance.launch_run(pipeline_run.run_id, workspace)
     finished_pipeline_run = poll_for_finished_run(instance, run_id)
@@ -644,7 +644,7 @@ def test_multi_solid_selection_execution(
 
     assert finished_pipeline_run
     assert finished_pipeline_run.run_id == run_id
-    assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
+    assert finished_pipeline_run.status == DagsterRunStatus.SUCCESS
 
     assert _get_successful_step_keys(event_records) == {
         "return_one",
@@ -670,14 +670,14 @@ def test_engine_events(instance, workspace, run_config):  # pylint: disable=rede
     )
     run_id = pipeline_run.run_id
 
-    assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+    assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
     instance.launch_run(pipeline_run.run_id, workspace)
     finished_pipeline_run = poll_for_finished_run(instance, run_id)
 
     assert finished_pipeline_run
     assert finished_pipeline_run.run_id == run_id
-    assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
+    assert finished_pipeline_run.status == DagsterRunStatus.SUCCESS
 
     poll_for_event(
         instance,

@@ -52,7 +52,7 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.base import Executor
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.io_manager import IOManager
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
@@ -101,7 +101,7 @@ class IPlanContext(ABC):
         return self.plan_data.pipeline
 
     @property
-    def pipeline_run(self) -> PipelineRun:
+    def pipeline_run(self) -> DagsterRun:
         return self.plan_data.pipeline_run
 
     @property
@@ -166,7 +166,7 @@ class PlanData(NamedTuple):
     """
 
     pipeline: IPipeline
-    pipeline_run: PipelineRun
+    pipeline_run: DagsterRun
     instance: "DagsterInstance"
     execution_plan: "ExecutionPlan"
     raise_on_error: bool = False
@@ -607,6 +607,15 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         else:
             upstream_output = artificial_output_context
 
+        asset_key = self.pipeline_def.asset_layer.asset_key_for_input(
+            node_handle=self.solid_handle, input_name=name
+        )
+        asset_partition_key_range = (
+            self.asset_partition_key_range_for_input(name)
+            if self.has_asset_partitions_for_input(name)
+            else None
+        )
+
         return InputContext(
             job_name=self.pipeline_def.name,
             name=name,
@@ -619,9 +628,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             step_context=self,
             resource_config=resource_config,
             resources=resources,
-            asset_key=self.pipeline_def.asset_layer.asset_key_for_input(
-                node_handle=self.solid_handle, input_name=name
-            ),
+            asset_key=asset_key,
+            asset_partition_key_range=asset_partition_key_range,
+            asset_partitions_def=self.pipeline_def.asset_layer.partitions_def_for_asset(asset_key)
+            if asset_key
+            else None,
         )
 
     def for_hook(self, hook_def: HookDefinition) -> "HookContext":

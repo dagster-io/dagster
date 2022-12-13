@@ -7,7 +7,7 @@ import styled from 'styled-components/macro';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 
-import {repoAddressAsString} from './repoAddressAsString';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {
@@ -116,7 +116,7 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
     return null;
   }
 
-  const repoName = repoAddressAsString(repoAddress);
+  const repoName = repoAddressAsHumanString(repoAddress);
 
   if (error || !graphsForTable) {
     return (
@@ -151,7 +151,7 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
       </thead>
       <tbody>
         {graphsForTable.map(({name, description, path, repoAddress}) => (
-          <tr key={`${name}-${repoAddressAsString(repoAddress)}`}>
+          <tr key={`${name}-${repoAddressAsHumanString(repoAddress)}`}>
             <td>
               <Group direction="column" spacing={4}>
                 <Link to={workspacePath(repoAddress.name, repoAddress.location, path)}>{name}</Link>

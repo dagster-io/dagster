@@ -9,7 +9,7 @@ import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {RepositoryLink} from '../nav/RepositoryLink';
 
-import {repoAddressAsString} from './repoAddressAsString';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {
@@ -78,13 +78,15 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
     return null;
   }
 
+  const repoName = repoAddressAsHumanString(repoAddress);
+
   if (error || !assetsForTable) {
     return (
       <Box padding={{vertical: 64}}>
         <NonIdealState
           icon="error"
           title="Unable to load graphs"
-          description={`Could not load graphs for ${repoAddressAsString(repoAddress)}`}
+          description={`Could not load graphs for ${repoName}`}
         />
       </Box>
     );
@@ -96,7 +98,7 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
         <NonIdealState
           icon="error"
           title="No assets found"
-          description={`No @asset definitions for ${repoAddressAsString(repoAddress)}`}
+          description={`No @asset definitions for ${repoName}`}
         />
       </Box>
     );

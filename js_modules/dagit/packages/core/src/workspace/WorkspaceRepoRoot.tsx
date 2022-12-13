@@ -12,7 +12,7 @@ import {RepositoryAssetsList} from './RepositoryAssetsList';
 import {RepositoryGraphsList} from './RepositoryGraphsList';
 import {RepositoryPipelinesList} from './RepositoryPipelinesList';
 import {useRepository} from './WorkspaceContext';
-import {repoAddressAsString} from './repoAddressAsString';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {RepoAddress} from './types';
 import {workspacePathFromAddress} from './workspacePath';
 
@@ -24,7 +24,7 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
   const {repoAddress} = props;
   const {tab} = useParams<{tab?: string}>();
 
-  const path = repoAddressAsString(repoAddress);
+  const path = repoAddressAsHumanString(repoAddress);
   const repo = useRepository(repoAddress);
 
   const anyPipelines = React.useMemo(() => {

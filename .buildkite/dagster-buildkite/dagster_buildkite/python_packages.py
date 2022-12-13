@@ -8,6 +8,8 @@ import pathspec
 from dagster_buildkite.git import ChangedFiles, GitInfo
 from pkg_resources import Requirement, parse_requirements
 
+changed_filetypes = [".py", ".cfg", ".toml", ".yaml", ".ipynb", ".yml"]
+
 
 class PythonPackage:
     def __init__(self, setup_py_path: Path):
@@ -115,7 +117,7 @@ class PythonPackages:
             ignored = git_ignore.read_text().splitlines()
             git_ignore_spec = pathspec.PathSpec.from_lines("gitwildmatch", ignored)
         else:
-            git_ignore_spec = pathspec.PathSpec().from_lines([])
+            git_ignore_spec = pathspec.PathSpec([])
 
         # Consider any setup.py file to be a package
         packages = set(
@@ -139,7 +141,7 @@ class PythonPackages:
                     # Our change is in this package's directory
                     (change in package.directory.rglob("*"))
                     # The file can alter behavior - exclude things like README changes
-                    and (change.suffix in [".py", ".cfg", ".toml"])
+                    and (change.suffix in changed_filetypes)
                     # The file is not part of a test suite. We treat this differently
                     # because we don't want to run tests in dependent packages
                     and "_tests/" not in str(change)

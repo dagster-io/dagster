@@ -93,7 +93,7 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     } else if (item.token === 'snapshotId') {
       obj.snapshotId = item.value;
     } else if (item.token === 'tag') {
-      const [key, value] = item.value.split('=');
+      const [key, value = ''] = item.value.split('=');
       if (obj.tags) {
         obj.tags.push({key, value});
       } else {

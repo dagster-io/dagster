@@ -16,7 +16,7 @@ from typing import (
 import dagster._check as check
 from dagster._config import Shape
 from dagster._core.definitions.composition import PendingNodeInvocation
-from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
+from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
     AssetMaterialization,
@@ -46,7 +46,7 @@ from dagster._core.errors import (
 from dagster._core.execution.build_resources import build_resources, wrap_resources_for_execution
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import merge_dicts
 from dagster._utils.forked_pdb import ForkedPdb
@@ -139,7 +139,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
         return self._resources
 
     @property
-    def pipeline_run(self) -> PipelineRun:
+    def pipeline_run(self) -> DagsterRun:
         raise DagsterInvalidPropertyError(_property_msg("pipeline_run", "property"))
 
     @property
@@ -214,8 +214,10 @@ class UnboundOpExecutionContext(OpExecutionContext):
     def partition_key(self) -> str:
         if self._partition_key:
             return self._partition_key
-        else:
-            check.failed("Tried to access partition_key for a non-partitioned run")
+        check.failed("Tried to access partition_key for a non-partitioned run")
+
+    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
+        return self.partition_key
 
     def has_tag(self, key: str) -> bool:
         raise DagsterInvalidPropertyError(_property_msg("has_tag", "method"))
@@ -261,6 +263,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
             user_events=self._user_events,
             output_metadata=self._output_metadata,
             mapping_key=self._mapping_key,
+            partition_key=self._partition_key,
         )
 
     def get_events(self) -> Sequence[UserEvent]:
@@ -314,7 +317,7 @@ def _validate_resource_requirements(
     resource_defs: Mapping[str, ResourceDefinition], op_def: OpDefinition
 ) -> None:
     """Validate correctness of resources against required resource keys"""
-    if cast(DecoratedSolidFunction, op_def.compute_fn).has_context_arg():
+    if cast(DecoratedOpFunction, op_def.compute_fn).has_context_arg():
         for requirement in op_def.get_resource_requirements():
             if not requirement.is_io_manager_requirement:
                 ensure_requirements_satisfied(resource_defs, [requirement])
@@ -369,6 +372,7 @@ class BoundOpExecutionContext(OpExecutionContext):
     _seen_outputs: Dict[str, Union[str, Set[str]]]
     _output_metadata: Dict[str, Any]
     _mapping_key: Optional[str]
+    _partition_key: Optional[str]
 
     def __init__(
         self,
@@ -385,6 +389,7 @@ class BoundOpExecutionContext(OpExecutionContext):
         user_events: List[UserEvent],
         output_metadata: Dict[str, Any],
         mapping_key: Optional[str],
+        partition_key: Optional[str],
     ):
         self._op_def = op_def
         self._op_config = op_config
@@ -400,6 +405,7 @@ class BoundOpExecutionContext(OpExecutionContext):
         self._seen_outputs = {}
         self._output_metadata = output_metadata
         self._mapping_key = mapping_key
+        self._partition_key = partition_key
 
     @property
     def solid_config(self) -> Any:
@@ -410,7 +416,7 @@ class BoundOpExecutionContext(OpExecutionContext):
         return self._resources
 
     @property
-    def pipeline_run(self) -> PipelineRun:
+    def pipeline_run(self) -> DagsterRun:
         raise DagsterInvalidPropertyError(_property_msg("pipeline_run", "property"))
 
     @property
@@ -532,6 +538,15 @@ class BoundOpExecutionContext(OpExecutionContext):
                 output_name in self._seen_outputs and mapping_key in self._seen_outputs[output_name]
             )
         return output_name in self._seen_outputs
+
+    @property
+    def partition_key(self) -> str:
+        if self._partition_key is not None:
+            return self._partition_key
+        check.failed("Tried to access partition_key for a non-partitioned asset")
+
+    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
+        return self.partition_key
 
     def add_output_metadata(
         self,

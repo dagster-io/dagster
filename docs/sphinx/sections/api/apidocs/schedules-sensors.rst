@@ -64,7 +64,7 @@ Sensors
 
 .. autoclass:: FreshnessPolicySensorDefinition
 
-.. autoclass:: FreshnessPolicySensorEvaluationContext
+.. autoclass:: FreshnessPolicySensorContext
    :noindex:
 
 .. autofunction:: build_freshness_policy_sensor_context

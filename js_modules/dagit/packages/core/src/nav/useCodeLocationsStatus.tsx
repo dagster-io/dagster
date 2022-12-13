@@ -60,7 +60,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
             <div>Workspace loaded with errors</div>
-            <ViewButton onClick={() => history.push('/code-locations')} color={Colors.White}>
+            <ViewButton onClick={() => history.push('/locations')} color={Colors.White}>
               View
             </ViewButton>
           </Box>
@@ -106,12 +106,14 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     };
     const previousEntriesByName = _build_entries_by_name(previousEntries);
     const currentEntriesByName = _build_entries_by_name(currentEntries);
-    const hasUpdatedEntries = currentEntries.every(
-      (entry) =>
-        !(entry.id in previousEntriesByName) ||
-        previousEntriesByName[entry.id].updateTimestamp <
-          currentEntriesByName[entry.id].updateTimestamp,
-    );
+    const hasUpdatedEntries =
+      currentEntries.length &&
+      currentEntries.some(
+        (entry) =>
+          !(entry.id in previousEntriesByName) ||
+          previousEntriesByName[entry.id].updateTimestamp <
+            currentEntriesByName[entry.id].updateTimestamp,
+      );
 
     // At least one code location has been removed. Reload, but don't make a big deal about it
     // since this was probably done manually.
@@ -188,12 +190,12 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
             {currentlyLoading.length === 1 ? (
               <span>
-                Updating <strong>{currentlyLoading[0].id}</strong>
+                Updating <strong>{currentlyLoading[0].name}</strong>
               </span>
             ) : (
               <span>Updating {currentlyLoading.length} code locations</span>
             )}
-            <ViewButton onClick={() => history.push('/code-locations')} color={Colors.White}>
+            <ViewButton onClick={() => history.push('/locations')} color={Colors.White}>
               View
             </ViewButton>
           </Box>
@@ -256,6 +258,7 @@ const CODE_LOCATION_STATUS_QUERY = gql`
       ... on WorkspaceLocationStatusEntries {
         entries {
           id
+          name
           loadStatus
           updateTimestamp
         }

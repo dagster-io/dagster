@@ -25,7 +25,7 @@ from dagster._utils import check
 
 from .configurable import ConfigurableDefinition
 from .definition_config_schema import IDefinitionConfigSchema
-from .dependency import DependencyStructure, Node, NodeHandle, NodeInput
+from .dependency import DependencyStructure, GraphNode, Node, NodeHandle, NodeInput
 from .graph_definition import GraphDefinition
 from .logger_definition import LoggerDefinition
 from .mode import ModeDefinition
@@ -137,7 +137,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         )
     )
 
-    top_level_node = Node(
+    top_level_node = GraphNode(
         name=creation_data.graph_def.name,
         definition=creation_data.graph_def,
         graph_definition=creation_data.graph_def,

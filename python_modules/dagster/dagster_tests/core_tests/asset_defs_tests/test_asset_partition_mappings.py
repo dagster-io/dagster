@@ -92,7 +92,7 @@ def test_filter_mapping_partitions_dep():
 
     assert get_upstream_partitions_for_partition_range(
         downstream_asset,
-        upstream_asset,
+        upstream_asset.partitions_def,
         AssetKey("upstream_asset"),
         PartitionKeyRange("ringo", "paul"),
     ) == PartitionKeyRange("southern|ringo", "southern|paul")
@@ -402,7 +402,7 @@ def test_from_graph():
     )
     assert my_job.execute_in_process(partition_key="a").success
     assert partition_mapping.downstream_calls == 0
-    assert partition_mapping.upstream_calls == 2
+    assert partition_mapping.upstream_calls == 3
 
 
 def test_non_partitioned_depends_on_last_partition():

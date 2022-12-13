@@ -16,7 +16,7 @@ from dagster._core.host_representation.origin import (
     GrpcServerRepositoryLocationOrigin,
     RegisteredRepositoryLocationOrigin,
 )
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import (
     create_run_for_test,
     environ,
@@ -337,6 +337,7 @@ def test_load_with_non_existant_file(capfd):
         assert "No such file or directory" in err
 
 
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="flaky in windows")
 def test_load_with_empty_working_directory(capfd):
     port = find_free_port()
     # File that will fail if working directory isn't set to default
@@ -641,7 +642,7 @@ def test_load_with_secrets_loader_instance_ref():
 
                 assert finished_pipeline_run
                 assert finished_pipeline_run.run_id == run_id
-                assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
+                assert finished_pipeline_run.status == DagsterRunStatus.SUCCESS
 
             finally:
                 client.shutdown_server()

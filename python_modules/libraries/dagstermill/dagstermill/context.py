@@ -8,7 +8,7 @@ from dagster._core.execution.context.compute import AbstractComputeExecutionCont
 from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._legacy import PipelineDefinition, PipelineRun
+from dagster._legacy import PipelineDefinition
 from dagster._utils.backcompat import deprecation_warning
 
 
@@ -143,7 +143,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         return cast(DagsterRun, self._pipeline_context.pipeline_run)
 
     @property
-    def pipeline_run(self) -> PipelineRun:
+    def pipeline_run(self) -> DagsterRun:
         deprecation_warning(
             "DagstermillExecutionContext.pipeline_run",
             "0.17.0",

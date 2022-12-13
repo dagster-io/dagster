@@ -1,6 +1,6 @@
 import {Box, MainContent, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
-import {Redirect, Route, Switch, useParams} from 'react-router-dom';
+import {Route, Switch, useParams} from 'react-router-dom';
 
 import {AssetGroupRoot} from '../assets/AssetGroupRoot';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
@@ -17,6 +17,7 @@ import {WorkspacePipelineRoot} from './WorkspacePipelineRoot';
 import {WorkspaceRepoRoot} from './WorkspaceRepoRoot';
 import {WorkspaceSchedulesRoot} from './WorkspaceSchedulesRoot';
 import {WorkspaceSensorsRoot} from './WorkspaceSensorsRoot';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressFromPath} from './repoAddressFromPath';
 
 const RepoRouteContainer = () => {
@@ -67,7 +68,7 @@ const RepoRouteContainer = () => {
           description={
             <div>
               <div>
-                <strong>{repoPath}</strong>
+                <strong>{repoAddressAsHumanString(addressForPath)}</strong>
               </div>
               {'  is not loaded in the current workspace.'}
             </div>
@@ -137,7 +138,6 @@ export const WorkspaceRoot = () => {
   return (
     <MainContent>
       <Switch>
-        <Route path="/locations" exact render={() => <Redirect to="/definitions" />} />
         <Route path={['/locations/pipelines/:pipelinePath', '/locations/jobs/:pipelinePath']}>
           <WorkspacePipelineRoot />
         </Route>

@@ -30,7 +30,7 @@ from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
 )
-from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._core.test_utils import step_did_not_run, step_failed, step_succeeded
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -274,9 +274,9 @@ def wait_for_all_runs_to_start(instance, timeout=10):
         time.sleep(0.5)
 
         pending_states = [
-            PipelineRunStatus.NOT_STARTED,
-            PipelineRunStatus.STARTING,
-            PipelineRunStatus.STARTED,
+            DagsterRunStatus.NOT_STARTED,
+            DagsterRunStatus.STARTING,
+            DagsterRunStatus.STARTED,
         ]
         pending_runs = [run for run in instance.get_runs() if run.status in pending_states]
 
@@ -287,9 +287,9 @@ def wait_for_all_runs_to_start(instance, timeout=10):
 def wait_for_all_runs_to_finish(instance, timeout=10):
     start_time = time.time()
     FINISHED_STATES = [
-        PipelineRunStatus.SUCCESS,
-        PipelineRunStatus.FAILURE,
-        PipelineRunStatus.CANCELED,
+        DagsterRunStatus.SUCCESS,
+        DagsterRunStatus.FAILURE,
+        DagsterRunStatus.CANCELED,
     ]
     while True:
         if time.time() - start_time > timeout:
@@ -398,21 +398,21 @@ def test_failure_backfill(instance, workspace_context, external_repo):
     three, two, one = runs
     assert one.tags[BACKFILL_ID_TAG] == "shouldfail"
     assert one.tags[PARTITION_NAME_TAG] == "one"
-    assert one.status == PipelineRunStatus.FAILURE
+    assert one.status == DagsterRunStatus.FAILURE
     assert step_succeeded(instance, one, "always_succeed")
     assert step_failed(instance, one, "conditionally_fail")
     assert step_did_not_run(instance, one, "after_failure")
 
     assert two.tags[BACKFILL_ID_TAG] == "shouldfail"
     assert two.tags[PARTITION_NAME_TAG] == "two"
-    assert two.status == PipelineRunStatus.FAILURE
+    assert two.status == DagsterRunStatus.FAILURE
     assert step_succeeded(instance, two, "always_succeed")
     assert step_failed(instance, two, "conditionally_fail")
     assert step_did_not_run(instance, two, "after_failure")
 
     assert three.tags[BACKFILL_ID_TAG] == "shouldfail"
     assert three.tags[PARTITION_NAME_TAG] == "three"
-    assert three.status == PipelineRunStatus.FAILURE
+    assert three.status == DagsterRunStatus.FAILURE
     assert step_succeeded(instance, three, "always_succeed")
     assert step_failed(instance, three, "conditionally_fail")
     assert step_did_not_run(instance, three, "after_failure")
@@ -443,21 +443,21 @@ def test_failure_backfill(instance, workspace_context, external_repo):
 
     assert one.tags[BACKFILL_ID_TAG] == "fromfailure"
     assert one.tags[PARTITION_NAME_TAG] == "one"
-    assert one.status == PipelineRunStatus.SUCCESS
+    assert one.status == DagsterRunStatus.SUCCESS
     assert step_did_not_run(instance, one, "always_succeed")
     assert step_succeeded(instance, one, "conditionally_fail")
     assert step_succeeded(instance, one, "after_failure")
 
     assert two.tags[BACKFILL_ID_TAG] == "fromfailure"
     assert two.tags[PARTITION_NAME_TAG] == "two"
-    assert two.status == PipelineRunStatus.SUCCESS
+    assert two.status == DagsterRunStatus.SUCCESS
     assert step_did_not_run(instance, one, "always_succeed")
     assert step_succeeded(instance, one, "conditionally_fail")
     assert step_succeeded(instance, one, "after_failure")
 
     assert three.tags[BACKFILL_ID_TAG] == "fromfailure"
     assert three.tags[PARTITION_NAME_TAG] == "three"
-    assert three.status == PipelineRunStatus.SUCCESS
+    assert three.status == DagsterRunStatus.SUCCESS
     assert step_did_not_run(instance, one, "always_succeed")
     assert step_succeeded(instance, one, "conditionally_fail")
     assert step_succeeded(instance, one, "after_failure")
@@ -490,21 +490,21 @@ def test_partial_backfill(instance, workspace_context, external_repo):
 
     assert one.tags[BACKFILL_ID_TAG] == "full"
     assert one.tags[PARTITION_NAME_TAG] == "one"
-    assert one.status == PipelineRunStatus.SUCCESS
+    assert one.status == DagsterRunStatus.SUCCESS
     assert step_succeeded(instance, one, "step_one")
     assert step_succeeded(instance, one, "step_two")
     assert step_succeeded(instance, one, "step_three")
 
     assert two.tags[BACKFILL_ID_TAG] == "full"
     assert two.tags[PARTITION_NAME_TAG] == "two"
-    assert two.status == PipelineRunStatus.SUCCESS
+    assert two.status == DagsterRunStatus.SUCCESS
     assert step_succeeded(instance, two, "step_one")
     assert step_succeeded(instance, two, "step_two")
     assert step_succeeded(instance, two, "step_three")
 
     assert three.tags[BACKFILL_ID_TAG] == "full"
     assert three.tags[PARTITION_NAME_TAG] == "three"
-    assert three.status == PipelineRunStatus.SUCCESS
+    assert three.status == DagsterRunStatus.SUCCESS
     assert step_succeeded(instance, three, "step_one")
     assert step_succeeded(instance, three, "step_two")
     assert step_succeeded(instance, three, "step_three")
@@ -536,17 +536,17 @@ def test_partial_backfill(instance, workspace_context, external_repo):
     runs = instance.get_runs(filters=partial_filter)
     three, two, one = runs
 
-    assert one.status == PipelineRunStatus.SUCCESS
+    assert one.status == DagsterRunStatus.SUCCESS
     assert step_succeeded(instance, one, "step_one")
     assert step_did_not_run(instance, one, "step_two")
     assert step_did_not_run(instance, one, "step_three")
 
-    assert two.status == PipelineRunStatus.SUCCESS
+    assert two.status == DagsterRunStatus.SUCCESS
     assert step_succeeded(instance, two, "step_one")
     assert step_did_not_run(instance, two, "step_two")
     assert step_did_not_run(instance, two, "step_three")
 
-    assert three.status == PipelineRunStatus.SUCCESS
+    assert three.status == DagsterRunStatus.SUCCESS
     assert step_succeeded(instance, three, "step_one")
     assert step_did_not_run(instance, three, "step_two")
     assert step_did_not_run(instance, three, "step_three")
@@ -691,7 +691,7 @@ def test_backfill_from_failure_for_subselection(instance, workspace_context, ext
     assert instance.get_runs_count() == 1
     wait_for_all_runs_to_finish(instance)
     run = instance.get_runs()[0]
-    assert run.status == PipelineRunStatus.FAILURE
+    assert run.status == DagsterRunStatus.FAILURE
 
     instance.add_backfill(
         PartitionBackfill(

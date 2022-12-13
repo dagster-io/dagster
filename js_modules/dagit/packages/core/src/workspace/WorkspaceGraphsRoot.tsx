@@ -9,7 +9,7 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 
 import {Graph, VirtualizedGraphTable} from './VirtualizedGraphTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
-import {repoAddressAsString} from './repoAddressAsString';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {WorkspaceGraphsQuery, WorkspaceGraphsQueryVariables} from './types/WorkspaceGraphsQuery';
@@ -82,7 +82,7 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
       );
     }
 
-    const repoName = repoAddressAsString(repoAddress);
+    const repoName = repoAddressAsHumanString(repoAddress);
 
     if (!filteredBySearch.length) {
       if (anySearch) {

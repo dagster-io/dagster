@@ -8,7 +8,7 @@ import dagster._check as check
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster._core.host_representation.external_data import ExternalPresetData
-from dagster._core.storage.pipeline_run import PipelineRunStatus, RunRecord, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunRecord, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
 from dagster._utils import datetime_as_float
 from dagster._utils.yaml_utils import dump_run_config_yaml
@@ -52,16 +52,16 @@ from .pipeline_run_stats import GrapheneRunStatsSnapshotOrError
 from .status import GrapheneRunStatus
 
 STARTED_STATUSES = {
-    PipelineRunStatus.STARTED,
-    PipelineRunStatus.SUCCESS,
-    PipelineRunStatus.FAILURE,
-    PipelineRunStatus.CANCELED,
+    DagsterRunStatus.STARTED,
+    DagsterRunStatus.SUCCESS,
+    DagsterRunStatus.FAILURE,
+    DagsterRunStatus.CANCELED,
 }
 
 COMPLETED_STATUSES = {
-    PipelineRunStatus.FAILURE,
-    PipelineRunStatus.SUCCESS,
-    PipelineRunStatus.CANCELED,
+    DagsterRunStatus.FAILURE,
+    DagsterRunStatus.SUCCESS,
+    DagsterRunStatus.CANCELED,
 }
 
 
@@ -263,6 +263,7 @@ class GrapheneRun(graphene.ObjectType):
     runId = graphene.NonNull(graphene.String)
     # Nullable because of historical runs
     pipelineSnapshotId = graphene.String()
+    parentPipelineSnapshotId = graphene.String()
     repositoryOrigin = graphene.Field(GrapheneRepositoryOrigin)
     status = graphene.NonNull(GrapheneRunStatus)
     pipeline = graphene.NonNull(GraphenePipelineReference)
@@ -348,6 +349,17 @@ class GrapheneRun(graphene.ObjectType):
     def resolve_pipelineSnapshotId(self, _graphene_info):
         return self._pipeline_run.pipeline_snapshot_id
 
+    def resolve_parentPipelineSnapshotId(self, graphene_info):
+        pipeline_snapshot_id = self._pipeline_run.pipeline_snapshot_id
+        if (
+            pipeline_snapshot_id is not None
+            and graphene_info.context.instance.has_pipeline_snapshot(pipeline_snapshot_id)
+        ):
+            snapshot = graphene_info.context.instance.get_pipeline_snapshot(pipeline_snapshot_id)
+            if snapshot.lineage_snapshot is not None:
+                return snapshot.lineage_snapshot.parent_snapshot_id
+        return None
+
     def resolve_stats(self, graphene_info):
         return get_stats(graphene_info, self.run_id)
 
@@ -415,8 +427,8 @@ class GrapheneRun(graphene.ObjectType):
         if self._pipeline_run.is_finished:
             return False
         return (
-            self._pipeline_run.status == PipelineRunStatus.QUEUED
-            or self._pipeline_run.status == PipelineRunStatus.STARTED
+            self._pipeline_run.status == DagsterRunStatus.QUEUED
+            or self._pipeline_run.status == DagsterRunStatus.STARTED
         )
 
     def resolve_assets(self, graphene_info):

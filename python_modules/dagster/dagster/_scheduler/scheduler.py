@@ -30,7 +30,7 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
@@ -96,8 +96,15 @@ class _ScheduleLaunchContext:
             )
 
 
-MIN_INTERVAL_LOOP_TIME = 5
+SECONDS_IN_MINUTE = 60
 VERBOSE_LOGS_INTERVAL = 60
+
+
+def _get_next_scheduler_iteration_time(start_time):
+    # Wait until at least the next minute to run again, since the minimum granularity
+    # for a cron schedule is every minute
+    last_minute_time = start_time - (start_time % SECONDS_IN_MINUTE)
+    return last_minute_time + SECONDS_IN_MINUTE
 
 
 def execute_scheduler_iteration_loop(
@@ -141,15 +148,19 @@ def execute_scheduler_iteration_loop(
                 max_tick_retries=max_tick_retries,
                 log_verbose_checks=verbose_logs_iteration,
             )
+            yield
             end_time = pendulum.now("UTC").timestamp()
 
             if verbose_logs_iteration:
                 last_verbose_time = end_time
 
-            loop_duration = end_time - start_time
-            sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
-            time.sleep(sleep_time)
-            yield
+            next_minute_time = _get_next_scheduler_iteration_time(start_time)
+
+            if next_minute_time > end_time:
+                # Sleep until the beginning of the next minute, plus a small epsilon to
+                # be sure that we're past the start of the minute
+                time.sleep(next_minute_time - end_time + 0.001)
+                yield
 
 
 def launch_scheduled_runs(
@@ -599,7 +610,7 @@ def _schedule_runs_at_time(
 
         run = _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request)
         if run:
-            if run.status != PipelineRunStatus.NOT_STARTED:
+            if run.status != DagsterRunStatus.NOT_STARTED:
                 # A run already exists and was launched for this time period,
                 # but the scheduler must have crashed or errored before the tick could be put
                 # into a SUCCESS state
@@ -626,7 +637,7 @@ def _schedule_runs_at_time(
 
         _check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
 
-        if run.status != PipelineRunStatus.FAILURE:
+        if run.status != DagsterRunStatus.FAILURE:
             try:
                 instance.submit_run(run.run_id, workspace_process_context.create_request_context())
                 logger.info(f"Completed scheduled launch of run {run.run_id} for {schedule_name}")
@@ -653,7 +664,7 @@ def _get_existing_run_for_request(
     run_request: RunRequest,
 ):
     tags = merge_dicts(
-        PipelineRun.tags_for_schedule(external_schedule),
+        DagsterRun.tags_for_schedule(external_schedule),
         {
             SCHEDULED_EXECUTION_TIME_TAG: to_timezone(schedule_time, "UTC").isoformat(),
         },
@@ -732,7 +743,7 @@ def _create_scheduler_run(
         solids_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=None,
         solid_selection=external_pipeline.solid_selection,
-        status=PipelineRunStatus.NOT_STARTED,
+        status=DagsterRunStatus.NOT_STARTED,
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
