@@ -91,7 +91,7 @@ def test_basic_schedule_definition():
         ],
     )
 
-    assert resolve_pending_repo_if_required(defs).get_schedule_def("daily_an_asset_schedule")
+    assert defs.get_schedule_def("daily_an_asset_schedule")
 
 
 def test_basic_sensor_definition():
@@ -109,9 +109,8 @@ def test_basic_sensor_definition():
         assets=[an_asset],
         sensors=[a_sensor],
     )
-    repo = resolve_pending_repo_if_required(defs)
 
-    assert repo.get_sensor_def("an_asset_sensor")
+    assert defs.get_sensor_def("an_asset_sensor")
 
 
 def test_with_resource_binding():
