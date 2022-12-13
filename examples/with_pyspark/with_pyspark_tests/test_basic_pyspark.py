@@ -1,4 +1,4 @@
-from with_pyspark.repository import make_and_filter_data_job
+from with_pyspark.defs import make_and_filter_data_job
 
 
 def test_basic_pyspark():

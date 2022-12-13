@@ -1,10 +1,9 @@
-# start_repo_marker_0
 import os
 
 from pyspark.sql import DataFrame, Row, SparkSession
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
-from dagster import IOManager, graph, io_manager, op, repository
+from dagster import IOManager, graph, io_manager, op, Definitions
 
 
 class LocalParquetIOManager(IOManager):
@@ -46,10 +45,4 @@ make_and_filter_data_job = make_and_filter_data.to_job(
     resource_defs={"io_manager": local_parquet_io_manager}
 )
 
-
-# end_repo_marker_0
-
-
-@repository
-def with_pyspark():
-    return [make_and_filter_data_job]
+defs = Definitions(jobs=[make_and_filter_data_job])
