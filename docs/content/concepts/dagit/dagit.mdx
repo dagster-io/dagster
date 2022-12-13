@@ -33,7 +33,7 @@ These are the main pages inside Dagit:
 - [Runs](#runs)
 - [Assets](#assets)
 - [Schedules and sensors](#schedules-and-sensors)
-- [Instance status](#instance-status)
+- [Deployment overview](#deployment-overview)
 
 ### Jobs
 
@@ -58,9 +58,11 @@ In this tab, you can view the definition of a job:
 <Image
 alt="Dagit Job Definition"
 src="/images/tutorial/complex-job.png"
-width={2662}
-height={1618}
-/> <br></br>
+width={2313}
+height={1298}
+/>
+
+<br></br>
 
 ##### **Op definition**
 
@@ -71,8 +73,8 @@ To view detailed information about an op in the job, click an op to open a panel
 <Image
 alt="Dagit Op Definition"
 src="/images/concepts/dagit/op-definition.png"
-width={2662}
-height={1618}
+width={2315}
+height={1299}
 />
 
 ---
@@ -89,8 +91,8 @@ The **Launchpad tab** provides a configuration editor to let you experiment with
 <Image
 alt="Dagit Launchpad"
 src="/images/tutorial/single-op-launchpad.png"
-width={2662}
-height={1618}
+width={1523}
+height={1049}
 />
 
 ---
@@ -102,11 +104,13 @@ height={1618}
 
 The Runs tab displays a list of recent runs for the job:
 
+<!-- ![Dagit Job runs tab](/images/concepts/dagit/runs-tab.png) -->
+
 <Image
-alt="Dagit Job Runs Tab"
+alt="Dagit Job runs tab"
 src="/images/concepts/dagit/runs-tab.png"
-width={2662}
-height={1618}
+width={1446}
+height={754}
 />
 
 ---
@@ -123,11 +127,13 @@ height={1618}
 
 The Runs page lists all job runs, which can be filtered by job name, run ID, execution status, or tag. Click a run ID to open the [**Run details** page](#run-details) and view details for that run:
 
+<!-- ![Dagit Runs page](/images/concepts/dagit/all-runs.png) -->
+
 <Image
-alt="Dagit Runs Page"
+alt="Dagit Runs page"
 src="/images/concepts/dagit/all-runs.png"
-width={3808}
-height={2414}
+width={1861}
+height={1300}
 />
 
 </TabItem>
@@ -139,20 +145,24 @@ The **Run details** page contains details about a single run, including timing i
 
 The upper left pane contains a Gantt chart, indicating how long each op took to execute. The bottom pane displays filterable events and logs emitted during the course of execution:
 
+<!-- ![Dagit Job run](/images/concepts/dagit/single-run.png) -->
+
 <Image
-alt="Dagit Job Run"
+alt="Dagit Job run"
 src="/images/concepts/dagit/single-run.png"
-width={3808}
-height={2414}
+width={2318}
+height={1298}
 />
 
-From the **Run details** page, you can also re-execute a run using the same configuration by clicking the **Re-execute** dropdown:
+From the **Run details** page, you can also re-execute a run using the same configuration by clicking the **Re-execute** button:
+
+<!-- ![Dagit job re-execution button](/images/concepts/dagit/re-execution.png) -->
 
 <Image
-alt="Dagit Re-execution"
-src="/images/concepts/dagit/re-execution.png"
-width={3808}
-height={2414}
+alt="Dagit job re-execution button"
+src="/images/concepts/dagit/single-run.png"
+width={2318}
+height={1298}
 />
 
 There are several re-execution options:
@@ -176,11 +186,13 @@ Related runs (e.g., runs created by re-executing the same previous run) are grou
 
 The **Asset catalog** page lists all assets, which can be filtered by asset key. Click an asset to open the [**Asset details** page](#asset-details):
 
+<!-- ![Dagit Asset Catalog](/images/concepts/dagit/all-assets.png) -->
+
 <Image
 alt="Dagit Asset Catalog"
 src="/images/concepts/dagit/all-assets.png"
-width={3808}
-height={2414}
+width={2317}
+height={1297}
 />
 
 ---
@@ -192,11 +204,13 @@ height={2414}
 
 The **Asset details** page contains details about a single asset:
 
+<!-- ![Dagit Asset Details](/images/concepts/dagit/asset.png) -->
+
 <Image
 alt="Dagit Asset Details"
 src="/images/concepts/dagit/asset.png"
-width={3808}
-height={2414}
+width={2314}
+height={1302}
 />
 
 ---
@@ -215,11 +229,13 @@ The Schedules page lists all schedules defined in your workspace, as well as inf
 
 Click a schedule to view details about the schedule, including its recent tick history and recent runs.
 
+<!-- ![Dagit Schedules page](/images/concepts/dagit/schedules.png) -->
+
 <Image
-alt="Dagit Schedules"
+alt="Dagit Schedules page"
 src="/images/concepts/dagit/schedules.png"
-width={3808}
-height={2414}
+width={2315}
+height={1300}
 />
 
 ---
@@ -233,11 +249,13 @@ The Sensors page lists all sensors defined in your workspace, as well as informa
 
 Click a sensor to view details about the sensor, including its recent tick history and recent runs.
 
+<!-- ![Dagit Sensors page](/images/concepts/dagit/sensors.png) -->
+
 <Image
-alt="Dagit Sensors"
+alt="Dagit Sensors page"
 src="/images/concepts/dagit/sensors.png"
-width={3808}
-height={2414}
+width={2311}
+height={1299}
 />
 
 ---
@@ -245,13 +263,15 @@ height={2414}
 </TabItem>
 </TabGroup>
 
-### Instance Status
+### Deployment overview
 
-The Instance status page includes information about the status of the code locations in your workspace, daemon health, schedules, sensors, and configuration details:
+The Deployment overview page includes information about the status of the code locations in your deployment, daemon (Open Source) or agent (Cloud) health, schedules, sensors, and configuration details:
+
+<!-- ![Dagit Deployment overview page](/images/concepts/dagit/deployment-status.png) -->
 
 <Image
-alt="status-instance"
-src="/images/concepts/dagit/status-instance.png"
-width={3808}
-height={2414}
+alt="Dagit Deployment overview page"
+src="/images/concepts/dagit/deployment-status.png"
+width={2311}
+height={1300}
 />
