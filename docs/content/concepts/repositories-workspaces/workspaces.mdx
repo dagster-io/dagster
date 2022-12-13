@@ -33,7 +33,7 @@ load_from:
   - python_file: my_file.py
 ```
 
-Each entry in a workspace file is considered a code location. A code location can contain either a single <PyObject object="Definitions" /> object, a repository, or multiple repositories.
+Each entry in a workspace file is considered a code location. A code location can contain either a single <PyObject object="Definitions" /> object, a repository, or multiple repositories. Additionally, code locations in a single workspace file can mix and match between <PyObject object="Definitions" /> and repositories. For example, `code-location-1` could load a single <PyObject object="Definitions" /> file and `code-location-2` could load multiple repositories.
 
 Each code location is loaded in its own process that Dagster tools use an RPC protocol to communicate with. This process separation allows multiple code locations in different environments to be loaded independently, and ensures that errors in user code can't impact Dagster system code.
 
