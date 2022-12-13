@@ -231,6 +231,7 @@ class AirbyteConnection:
     which streams to sync.
     """
 
+    @public
     def __init__(
         self,
         name: str,
@@ -242,7 +243,6 @@ class AirbyteConnection:
             Union[AirbyteDestinationNamespace, str]
         ] = AirbyteDestinationNamespace.SAME_AS_SOURCE,
     ):
-
         """
         Args:
             name (str): The display name of the connection.
@@ -262,7 +262,9 @@ class AirbyteConnection:
                 namespace will be that string.
 
         Example:
+
         .. code-block:: python
+
             from dagster_airbyte.managed.generated.sources import FileSource
             from dagster_airbyte.managed.generated.destinations import LocalJsonDestination
             from dagster_airbyte import AirbyteConnection, AirbyteSyncMode
@@ -276,6 +278,7 @@ class AirbyteConnection:
                 destination=local_json_destination,
                 stream_config={"cereals": AirbyteSyncMode.full_refresh_overwrite()},
             )
+
         """
         self.name = check.str_param(name, "name")
         self.source = check.inst_param(source, "source", AirbyteSource)
