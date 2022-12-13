@@ -46,13 +46,13 @@ This example assumes that all the outputs within the dagster job will be PySpark
 
 This example writes out DataFrames to the local file system, but can be tweaked to write to cloud object stores like S3 by changing to the `write` and `read` invocations.
 
-```python file=../../with_pyspark/with_pyspark/repository.py startafter=start_repo_marker_0 endbefore=end_repo_marker_0
+```python file=../../with_pyspark/with_pyspark/definitions.py
 import os
 
 from pyspark.sql import DataFrame, Row, SparkSession
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
-from dagster import IOManager, graph, io_manager, op, repository
+from dagster import Definitions, IOManager, graph, io_manager, op
 
 
 class LocalParquetIOManager(IOManager):
@@ -93,6 +93,8 @@ def make_and_filter_data():
 make_and_filter_data_job = make_and_filter_data.to_job(
     resource_defs={"io_manager": local_parquet_io_manager}
 )
+
+defs = Definitions(jobs=[make_and_filter_data_job])
 ```
 
 ### Submitting PySpark ops on EMR
