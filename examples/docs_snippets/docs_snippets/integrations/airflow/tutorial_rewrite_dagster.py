@@ -1,13 +1,12 @@
 # start_imports
-import os
-from datetime import date, datetime, timedelta
+import time
+from datetime import datetime, timedelta
 
 from dagster import (
     In,
     Nothing,
     RetryPolicy,
     RunRequest,
-    ScheduleDefinition,
     ScheduleEvaluationContext,
     job,
     op,
@@ -18,8 +17,10 @@ from dagster import (
 
 # start_ops
 @op
-def print_date():
-    os.system('date')
+def print_date(context) -> datetime:
+    ds = datetime.fromisoformat(context.get_tag("date"))
+    context.log.info(ds)
+    return ds
 
 @op(
     retry_policy=RetryPolicy(
@@ -28,37 +29,35 @@ def print_date():
     ins={"start": In(Nothing)}
 )
 def sleep():
-    os.system('sleep 5')
+    time.sleep(5)
 
-@op(ins={"start": In(Nothing)})
-def templated(context):
-    ds = context.get_tag("date")
+@op
+def templated(context, ds: datetime):
     for i in range(5):
-        os.system(f'echo {ds}')
-        os.system(f'echo {datetime.strptime(ds, "%Y-%m-%d") + timedelta(days=7)}')
+        context.log.info(ds)
+        context.log.info(ds - timedelta(days=7))
 # end_ops
 
 # start_job
 @job(tags={"dagster/max_retries": 1, "dag_name": "example"})
 def tutorial_job():
-    _dt = print_date()
-    sleep(_dt)
-    templated(_dt)
+    dt = print_date()
+    sleep(dt)
+    templated(dt)
 # end_job
 
 # start_schedule
 @schedule(job=tutorial_job, cron_schedule="@daily")
-def tutorial_job_schedule(context: ScheduleEvaluationContext):
+def schedule(context: ScheduleEvaluationContext):
     scheduled_date = context.scheduled_execution_time
     return RunRequest(
         run_key=None,
-        tags={"date": scheduled_date},
+        tags={"date": scheduled_date.isoformat()},
     )
 # end_schedule
 
-
 # start_repo
 @repository
-def tutorial_repo():
-    return [tutorial_job, tutorial_job_schedule]
+def rewrite_repo():
+    return [tutorial_job, schedule]
 # end_repo
