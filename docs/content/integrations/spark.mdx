@@ -46,7 +46,7 @@ This example assumes that all the outputs within the dagster job will be PySpark
 
 This example writes out DataFrames to the local file system, but can be tweaked to write to cloud object stores like S3 by changing to the `write` and `read` invocations.
 
-```python file=../../with_pyspark/with_pyspark/defs.py
+```python file=../../with_pyspark/with_pyspark/definitions.py
 import os
 
 from pyspark.sql import DataFrame, Row, SparkSession
