@@ -210,14 +210,6 @@ def skip_if_no_helm_changes():
     return "No helm changes"
 
 
-@functools.lru_cache(maxsize=None)
-def skip_coverage_if_feature_branch():
-    if not is_feature_branch():
-        return None
-
-    return "Skip coverage uploads until we're finished with our Buildkite refactor"
-
-
 def message_contains(substring: str) -> bool:
     return any(
         substring in message

@@ -22,7 +22,6 @@ def build_helm_steps() -> List[BuildkiteStep]:
             AvailablePythonVersion.V3_8,
         ],
         name="dagster-helm",
-        upload_coverage=False,
         retries=2,
     )
 
