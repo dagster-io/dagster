@@ -1,1 +1,1 @@
-from .repository import quickstart_etl
+from .repository import defs
