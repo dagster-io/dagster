@@ -110,7 +110,7 @@ from dagster_pyspark import pyspark_resource
 from pyspark.sql import DataFrame, Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
-from dagster import IOManager, ResourceDefinition, graph, io_manager, op, Definitions
+from dagster import Definitions, IOManager, ResourceDefinition, graph, io_manager, op
 
 
 class ParquetIOManager(IOManager):
