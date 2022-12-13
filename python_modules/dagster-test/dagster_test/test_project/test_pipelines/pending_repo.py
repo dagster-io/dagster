@@ -23,10 +23,11 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         # set in those containers
         instance = DagsterInstance.get()
         kvs_key = "compute_cacheable_data_called"
+        print("!!!!HERE")
         num_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
         # a quirk of how we end up launching this run requires us to get the definition twice before
         # the run starts
-        assert num_called < 3
+        assert num_called < 2
         instance.run_storage.kvs_set({kvs_key: str(num_called + 1)})
         return [self._cacheable_data]
 
