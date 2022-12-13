@@ -106,6 +106,17 @@ class Definitions:
         check.str_param(name, "name")
         return self.get_repository_def().get_job(name)
 
+    @public
+    def get_sensor_def(self, name: str) -> SensorDefinition:
+        """Get a sensor definition name"""
+        check.str_param(name, "name")
+        return self.get_repository_def().get_sensor_def(name)
+
+    @public
+    def get_schedule_def(self, name: str) -> ScheduleDefinition:
+        check.str_param(name, "name")
+        return self.get_repository_def().get_schedule_def(name)
+
     @cached_method
     def get_repository_def(self) -> RepositoryDefinition:
         return (
