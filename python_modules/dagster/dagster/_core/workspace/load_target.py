@@ -20,6 +20,16 @@ class WorkspaceLoadTarget(ABC):
         """Reloads the RepositoryLocationOrigins for this workspace."""
 
 
+class CompositeTarget(
+    NamedTuple("CompositeTarget", [("targets", Sequence[WorkspaceLoadTarget])]), WorkspaceLoadTarget
+):
+    def create_origins(self):
+        origins = []
+        for target in self.targets:
+            origins += target.create_origins()
+        return origins
+
+
 class WorkspaceFileTarget(
     NamedTuple("WorkspaceFileTarget", [("paths", Sequence[str])]), WorkspaceLoadTarget
 ):
