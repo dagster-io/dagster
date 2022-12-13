@@ -79,9 +79,11 @@ class JobSelector(
             cls,
             location_name=check.str_param(location_name, "location_name"),
             repository_name=check.opt_str_param(
-                repository_name, "repository_name", default="__repository__"
+                repository_name,
+                "repository_name",
+                default=SINGLETON_REPOSITORY_NAME,
             ),
-            job_name=check.str_param(job_name, "job_name", "Must provide job_name."),
+            job_name=check.str_param(job_name, "job_name", "Must provide job_name argument."),
         )
 
     def to_graphql_input(self):
