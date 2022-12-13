@@ -17,6 +17,7 @@ from typing import (
 import click
 import tomli
 from click import UsageError
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
@@ -49,6 +50,8 @@ if TYPE_CHECKING:
 from dagster._core.host_representation.external import ExternalPipeline
 
 WORKSPACE_TARGET_WARNING = "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port, --grpc-socket."
+
+ClickArgMapping: TypeAlias = Mapping[str, Union[str, Tuple[str]]]
 
 
 def _cli_load_invariant(condition: object, msg=None) -> None:
@@ -106,7 +109,7 @@ def get_target_from_toml(path) -> Optional[PackageTarget]:
         )
 
 
-def get_workspace_load_target(kwargs: Mapping[str, Union[str, Tuple[str]]]):
+def get_workspace_load_target(kwargs: ClickArgMapping):
     check.mapping_param(kwargs, "kwargs")
     if are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
         if kwargs.get("empty_workspace"):
@@ -266,7 +269,7 @@ def get_workspace_process_context_from_kwargs(
     instance: DagsterInstance,
     version: str,
     read_only: bool,
-    kwargs: Mapping[str, Union[str, Tuple[str]]],
+    kwargs: ClickArgMapping,
 ) -> "WorkspaceProcessContext":
     from dagster._core.workspace.context import WorkspaceProcessContext
 
@@ -277,7 +280,9 @@ def get_workspace_process_context_from_kwargs(
 
 @contextmanager
 def get_workspace_from_kwargs(
-    instance: DagsterInstance, version: str, kwargs: Mapping[str, str]
+    instance: DagsterInstance,
+    version: str,
+    kwargs: ClickArgMapping,
 ) -> Generator[WorkspaceRequestContext, None, None]:
     with get_workspace_process_context_from_kwargs(
         instance, version, read_only=False, kwargs=kwargs
@@ -530,7 +535,7 @@ def get_job_python_origin_from_kwargs(kwargs):
     return PipelinePythonOrigin(pipeline_name, repository_origin=repository_origin)
 
 
-def _get_code_pointer_dict_from_kwargs(kwargs: Mapping[str, str]) -> Mapping[str, CodePointer]:
+def _get_code_pointer_dict_from_kwargs(kwargs: ClickArgMapping) -> Mapping[str, CodePointer]:
     python_file = (
         unwrap_single_code_location_target_cli_arg(kwargs, "python_file")
         if kwargs.get("python_file")
@@ -541,7 +546,7 @@ def _get_code_pointer_dict_from_kwargs(kwargs: Mapping[str, str]) -> Mapping[str
         if kwargs.get("module_name")
         else None
     )
-    package_name = kwargs.get("package_name")
+    package_name = check.opt_str_elem(kwargs, "package_name")
     working_directory = get_working_directory_from_kwargs(kwargs)
     attribute = kwargs.get("attribute")
     if python_file:
@@ -587,11 +592,11 @@ def _get_code_pointer_dict_from_kwargs(kwargs: Mapping[str, str]) -> Mapping[str
         check.failed("Must specify a Python file or module name")
 
 
-def get_working_directory_from_kwargs(kwargs: Mapping[str, Any]) -> Optional[str]:
+def get_working_directory_from_kwargs(kwargs: ClickArgMapping) -> Optional[str]:
     return check.opt_str_elem(kwargs, "working_directory") or os.getcwd()
 
 
-def unwrap_single_code_location_target_cli_arg(kwargs: Mapping[str, str], key: str) -> str:
+def unwrap_single_code_location_target_cli_arg(kwargs: ClickArgMapping, key: str) -> str:
     """
     Dagster CLI tools accept multiple code location targets (e.g. multiple -f and -m instances)
     but sometimes only one makes sense (e.g. when targeting a single job)
@@ -608,7 +613,7 @@ def unwrap_single_code_location_target_cli_arg(kwargs: Mapping[str, str], key: s
     return value_tuple[0]
 
 
-def get_repository_python_origin_from_kwargs(kwargs: Mapping[str, str]) -> RepositoryPythonOrigin:
+def get_repository_python_origin_from_kwargs(kwargs: ClickArgMapping) -> RepositoryPythonOrigin:
     provided_repo_name = cast(str, kwargs.get("repository"))
 
     if not (kwargs.get("python_file") or kwargs.get("module_name") or kwargs.get("package_name")):
@@ -624,7 +629,7 @@ def get_repository_python_origin_from_kwargs(kwargs: Mapping[str, str]) -> Repos
             python_file = unwrap_single_code_location_target_cli_arg(kwargs, "python_file")
             code_pointer: CodePointer = CodePointer.from_python_file(
                 python_file,
-                kwargs["attribute"],
+                check.str_elem(kwargs, "attribute"),
                 get_working_directory_from_kwargs(kwargs),
             )
         elif kwargs.get("module_name"):
@@ -632,14 +637,14 @@ def get_repository_python_origin_from_kwargs(kwargs: Mapping[str, str]) -> Repos
             module_name = unwrap_single_code_location_target_cli_arg(kwargs, "module_name")
             code_pointer = CodePointer.from_module(
                 module_name,
-                kwargs["attribute"],
+                check.str_elem(kwargs, "attribute"),
                 get_working_directory_from_kwargs(kwargs),
             )
         elif kwargs.get("package_name"):
             _check_cli_arguments_none(kwargs, "python_file", "module_name")
             code_pointer = CodePointer.from_python_package(
-                kwargs["package_name"],
-                kwargs["attribute"],
+                check.str_elem(kwargs, "package_name"),
+                check.str_elem(kwargs, "attribute"),
                 get_working_directory_from_kwargs(kwargs),
             )
         else:
