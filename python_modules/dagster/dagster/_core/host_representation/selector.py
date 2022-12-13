@@ -83,7 +83,14 @@ class JobSelector(
                 "repository_name",
                 default=SINGLETON_REPOSITORY_NAME,
             ),
-            job_name=check.str_param(job_name, "job_name", "Must provide job_name argument."),
+            job_name=check.str_param(
+                job_name,
+                "job_name",
+                "Must provide job_name argument even though it is marked as optional in the "
+                "function signature. repository_name, a truly optional parameter, is before "
+                "that argument name, and actually optional. Use of keyword arguments is "
+                "recommended to avoid confusion.",
+            ),
         )
 
     def to_graphql_input(self):

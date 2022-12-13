@@ -16,7 +16,7 @@ from typing import (
 import toposort
 
 import dagster._check as check
-from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.selector.subset_selector import DependencyGraph, generate_asset_dep_graph
 
 from .assets import AssetsDefinition
@@ -30,40 +30,14 @@ if TYPE_CHECKING:
     from dagster._core.host_representation.external_data import ExternalAssetNode
 
 
-class AssetGraph(
-    NamedTuple(
-        "_AssetGraph",
-        [
-            ("asset_dep_graph", DependencyGraph),
-            ("source_asset_keys", AbstractSet[AssetKey]),
-            ("partitions_defs_by_key", Mapping[AssetKey, Optional[PartitionsDefinition]]),
-            (
-                "partition_mappings_by_key",
-                Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
-            ),
-            ("group_names_by_key", Mapping[AssetKey, Optional[str]]),
-            ("freshness_policies_by_key", Mapping[AssetKey, Optional[FreshnessPolicy]]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        asset_dep_graph: DependencyGraph,
-        source_asset_keys: AbstractSet[AssetKey],
-        partitions_defs_by_key: Mapping[AssetKey, Optional[PartitionsDefinition]],
-        partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
-        group_names_by_key: Mapping[AssetKey, Optional[str]],
-        freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
-    ):
-        return super(AssetGraph, cls).__new__(
-            cls,
-            asset_dep_graph=asset_dep_graph,
-            source_asset_keys=source_asset_keys,
-            partitions_defs_by_key=partitions_defs_by_key,
-            partition_mappings_by_key=partition_mappings_by_key,
-            group_names_by_key=group_names_by_key,
-            freshness_policies_by_key=freshness_policies_by_key,
-        )
+class AssetGraph(NamedTuple):
+    asset_dep_graph: DependencyGraph
+    source_asset_keys: AbstractSet[AssetKey]
+    partitions_defs_by_key: Mapping[AssetKey, Optional[PartitionsDefinition]]
+    partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]]
+    group_names_by_key: Mapping[AssetKey, Optional[str]]
+    freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]]
+    required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]]
 
     @staticmethod
     def from_assets(all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]) -> "AssetGraph":
@@ -75,6 +49,7 @@ class AssetGraph(
         ] = {}
         group_names_by_key: Dict[AssetKey, Optional[str]] = {}
         freshness_policies_by_key: Dict[AssetKey, Optional[FreshnessPolicy]] = {}
+        required_multi_asset_sets_by_key: Dict[AssetKey, AbstractSet[AssetKey]] = {}
 
         for asset in all_assets:
             if isinstance(asset, SourceAsset):
@@ -90,6 +65,10 @@ class AssetGraph(
                 partitions_defs_by_key.update({key: asset.partitions_def for key in asset.keys})
                 group_names_by_key.update(asset.group_names_by_key)
                 freshness_policies_by_key.update(asset.freshness_policies_by_key)
+                if len(asset.keys) > 1 and not asset.can_subset:
+                    for key in asset.keys:
+                        required_multi_asset_sets_by_key[key] = asset.keys
+
             else:
                 check.failed(f"Expected SourceAsset or AssetsDefinition, got {type(asset)}")
         return AssetGraph(
@@ -99,6 +78,7 @@ class AssetGraph(
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
+            required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
         )
 
     @staticmethod
@@ -138,6 +118,7 @@ class AssetGraph(
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
+            required_multi_asset_sets_by_key=None,
         )
 
     @property
@@ -316,6 +297,16 @@ class AssetGraph(
                     yield parent_key
                     queue.append(parent_key)
                     visited.add(parent_key)
+
+    def get_required_multi_asset_keys(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
+        """For a given asset_key, return the set of asset keys that must be materialized at the same time."""
+        if self.required_multi_asset_sets_by_key is None:
+            raise DagsterInvariantViolationError(
+                "Required neighbor information not set when creating this AssetGraph"
+            )
+        if asset_key in self.required_multi_asset_sets_by_key:
+            return self.required_multi_asset_sets_by_key[asset_key]
+        return set()
 
     def toposort_asset_keys(self) -> Sequence[AbstractSet[AssetKey]]:
         return [
