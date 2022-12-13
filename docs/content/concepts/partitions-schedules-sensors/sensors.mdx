@@ -71,9 +71,7 @@ def my_directory_sensor():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={
-                    "ops": {"process_file": {"config": {"filename": filename}}}
-                },
+                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
             )
 ```
 
@@ -206,9 +204,7 @@ def my_directory_sensor_with_skip_reasons():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={
-                    "ops": {"process_file": {"config": {"filename": filename}}}
-                },
+                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
             )
             has_files = True
     if not has_files:
@@ -323,16 +319,7 @@ width={1280}
 height={376}
 />
 
-Click on any sensor to monitor all sensor evaluations on a timeline and view a table of runs launched by the sensor:
-
-<Image
-alt="Sensor A"
-src="/images/concepts/partitions-schedules-sensors/sensors/sensor-A.png"
-width={1982}
-height={1400}
-/>
-
-<TODO></TODO>
+Click on any sensor to monitor all sensor evaluations on a timeline and view a table of runs launched by the sensor.
 
 ---
 
@@ -408,7 +395,7 @@ This run failure sensor sends a Slack message when it runs:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_alert_sensor_marker endbefore=end_alert_sensor_marker
 import os
-from dagster import run_failure_sensor, RunFailureSensorContext
+from dagster import run_failure_sensor, Definitions, RunFailureSensorContext
 from slack_sdk import WebClient
 
 
@@ -460,35 +447,30 @@ email_on_run_failure = make_email_on_run_failure_sensor(
 
 To set up success or failure handling policies on ops, refer to the [Op hooks](/concepts/ops-jobs-graphs/op-hooks) documentation.
 
-### Cross repository run status sensors
+### Cross-code location run status sensors
 
-Sometimes, you may want to monitor jobs in a repository other than the one where the sensor is defined. You can use special identifiers <PyObject object="RepositorySelector" /> and <PyObject object="JobSelector" /> to tell a run status sensor to monitor jobs in another repository:
+Sometimes, you may want to monitor jobs in a code location other than the one where the sensor is defined. You can use special identifiers <PyObject object="CodeLocationSelector" /> and <PyObject object="JobSelector" /> to tell a run status sensor to monitor jobs in another code location:
 
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_cross_repo_run_status_sensor endbefore=end_cross_repo_run_status_sensor
+```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_cross_code_location_run_status_sensor endbefore=end_cross_code_location_run_status_sensor
 @run_status_sensor(
-    monitored_jobs=[
-        RepositorySelector(
-            location_name="repository.location", repository_name="team_a_repository"
-        )
-    ],
+    monitored_jobs=[CodeLocationSelector(location_name="code_location_a")],
     run_status=DagsterRunStatus.SUCCESS,
 )
-def team_a_repo_sensor():
-    # when any job in team_a_repository succeeds, this sensor will trigger
+def code_location_a_sensor():
+    # when any job in code_location_a succeeds, this sensor will trigger
     send_slack_alert()
 
 
 @run_failure_sensor(
     monitored_jobs=[
         JobSelector(
-            location_name="repository.location",
-            repository_name="team_a_repository",
+            location_name="code_location_a",
             job_name="data_update",
         )
     ],
 )
-def team_a_data_update_failure_sensor():
-    # when the data_update job in team_a_repository fails, this sensor will trigger
+def code_location_a_data_update_failure_sensor():
+    # when the data_update job in code_location_a fails, this sensor will trigger
     send_slack_alert()
 ```
 

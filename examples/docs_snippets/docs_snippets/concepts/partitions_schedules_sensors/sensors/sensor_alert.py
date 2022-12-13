@@ -3,7 +3,7 @@
 
 # start_alert_sensor_marker
 import os
-from dagster import run_failure_sensor, RunFailureSensorContext
+from dagster import run_failure_sensor, Definitions, RunFailureSensorContext
 from slack_sdk import WebClient
 
 

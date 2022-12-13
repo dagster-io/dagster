@@ -2,13 +2,13 @@
 # pylint: disable=unnecessary-ellipsis
 
 from dagster import (
-    repository,
+    Definitions,
     DefaultSensorStatus,
     SkipReason,
     asset,
     define_asset_job,
     JobSelector,
-    RepositorySelector,
+    CodeLocationSelector,
     DagsterRunStatus,
     run_status_sensor,
     run_failure_sensor,
@@ -46,9 +46,7 @@ def my_directory_sensor():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={
-                    "ops": {"process_file": {"config": {"filename": filename}}}
-                },
+                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
             )
 
 
@@ -168,9 +166,7 @@ def my_directory_sensor_with_skip_reasons():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={
-                    "ops": {"process_file": {"config": {"filename": filename}}}
-                },
+                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
             )
             has_files = True
     if not has_files:
@@ -233,47 +229,42 @@ def uses_db_connection():
 
 # end_build_resources_example
 
-
-@repository
-def my_repository():
-    return [my_job, log_file_job, my_directory_sensor, sensor_A, sensor_B]
+code_location_a = Definitions(
+    jobs=[my_job, log_file_job],
+    sensors=[my_directory_sensor, sensor_A, sensor_B],
+)
 
 
 def send_slack_alert():
     pass
 
 
-# start_cross_repo_run_status_sensor
+# start_cross_code_location_run_status_sensor
 
 
 @run_status_sensor(
-    monitored_jobs=[
-        RepositorySelector(
-            location_name="repository.location", repository_name="team_a_repository"
-        )
-    ],
+    monitored_jobs=[CodeLocationSelector(location_name="code_location_a")],
     run_status=DagsterRunStatus.SUCCESS,
 )
-def team_a_repo_sensor():
-    # when any job in team_a_repository succeeds, this sensor will trigger
+def code_location_a_sensor():
+    # when any job in code_location_a succeeds, this sensor will trigger
     send_slack_alert()
 
 
 @run_failure_sensor(
     monitored_jobs=[
         JobSelector(
-            location_name="repository.location",
-            repository_name="team_a_repository",
+            location_name="code_location_a",
             job_name="data_update",
         )
     ],
 )
-def team_a_data_update_failure_sensor():
-    # when the data_update job in team_a_repository fails, this sensor will trigger
+def code_location_a_data_update_failure_sensor():
+    # when the data_update job in code_location_a fails, this sensor will trigger
     send_slack_alert()
 
 
-# end_cross_repo_run_status_sensor
+# end_cross_code_location_run_status_sensor
 
 
 # start_instance_sensor
