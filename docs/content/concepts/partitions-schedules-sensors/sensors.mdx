@@ -395,7 +395,7 @@ This run failure sensor sends a Slack message when it runs:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_alert_sensor_marker endbefore=end_alert_sensor_marker
 import os
-from dagster import run_failure_sensor, Definitions, RunFailureSensorContext
+from dagster import run_failure_sensor, RunFailureSensorContext
 from slack_sdk import WebClient
 
 
