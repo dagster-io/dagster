@@ -64,6 +64,7 @@ with DAG(
     )
 
     t1 >> [t2, t3]
+
 ```
 
 In order to rewrite this DAG in Dagster we will break it down into three parts
@@ -85,12 +86,7 @@ def print_date(context) -> datetime:
     context.log.info(ds)
     return ds
 
-@op(
-    retry_policy=RetryPolicy(
-        max_retries=3
-    ),
-    ins={"start": In(Nothing)}
-)
+@op(retry_policy=RetryPolicy(max_retries=3), ins={"start": In(Nothing)})
 def sleep():
     time.sleep(5)
 
@@ -148,7 +144,7 @@ In order to run our newly defined Dagster Job we'll need to define a Dagster [Re
 
 ```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_repo endbefore=end_repo
 @repository
-def tutorial_repo():
+def rewrite_repo():
     return [tutorial_job, schedule]
 ```
 
@@ -208,5 +204,4 @@ schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
 @repository
 def rewrite_repo():
     return [tutorial_job, schedule]
-
 ```
