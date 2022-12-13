@@ -1,18 +1,7 @@
 import os
 import sys
 from contextlib import contextmanager
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generator,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Generator, Iterable, List, Mapping, Optional, Tuple, Union, cast
 
 import click
 import tomli
@@ -63,12 +52,12 @@ def _cli_load_invariant(condition: object, msg=None) -> None:
         raise UsageError(msg)
 
 
-def _check_cli_arguments_none(kwargs: Mapping[str, Any], *keys: str) -> None:
+def _check_cli_arguments_none(kwargs: ClickArgMapping, *keys: str) -> None:
     for key in keys:
         _cli_load_invariant(not kwargs.get(key))
 
 
-def are_all_keys_empty(kwargs: Mapping[str, Any], keys: Iterable[str]) -> bool:
+def are_all_keys_empty(kwargs: ClickArgMapping, keys: Iterable[str]) -> bool:
     for key in keys:
         if kwargs.get(key):
             return False

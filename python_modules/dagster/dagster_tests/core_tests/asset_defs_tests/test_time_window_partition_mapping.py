@@ -4,11 +4,11 @@ from dagster import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
+    TimeWindowPartitionMapping,
     TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
 
 def subset_with_key(partitions_def: TimeWindowPartitionsDefinition, key: str):
@@ -166,3 +166,44 @@ def test_get_upstream_partitions_for_partition_range_weekly_with_offset():
     assert result.get_partition_keys() == (
         partitions_def.get_partition_keys_in_range(PartitionKeyRange("2022-09-11", "2022-09-11"))
     )
+
+
+def test_daily_to_daily_lag():
+    downstream_partitions_def = upstream_partitions_def = DailyPartitionsDefinition(
+        start_date="2021-05-05"
+    )
+    mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+
+    # single partition key
+    assert mapping.get_upstream_partitions_for_partitions(
+        subset_with_key(downstream_partitions_def, "2021-05-07"), upstream_partitions_def
+    ).get_partition_keys() == ["2021-05-06"]
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_key(upstream_partitions_def, "2021-05-06"), downstream_partitions_def
+    ).get_partition_keys() == ["2021-05-07"]
+
+    # first partition key
+    assert (
+        mapping.get_upstream_partitions_for_partitions(
+            subset_with_key(downstream_partitions_def, "2021-05-05"), upstream_partitions_def
+        ).get_partition_keys()
+        == []
+    )
+
+    # range of partition keys
+    assert mapping.get_upstream_partitions_for_partitions(
+        subset_with_key_range(downstream_partitions_def, "2021-05-07", "2021-05-09"),
+        upstream_partitions_def,
+    ).get_partition_keys() == ["2021-05-06", "2021-05-07", "2021-05-08"]
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_key_range(downstream_partitions_def, "2021-05-06", "2021-05-08"),
+        downstream_partitions_def,
+    ).get_partition_keys() == ["2021-05-07", "2021-05-08", "2021-05-09"]
+
+    # range overlaps start
+    assert mapping.get_upstream_partitions_for_partitions(
+        subset_with_key_range(downstream_partitions_def, "2021-05-05", "2021-05-07"),
+        upstream_partitions_def,
+    ).get_partition_keys() == ["2021-05-05", "2021-05-06"]
