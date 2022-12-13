@@ -1,4 +1,3 @@
-# start_imports
 import time
 from datetime import datetime, timedelta
 
@@ -14,7 +13,6 @@ from dagster import (
 )
 
 
-# start_ops
 @op
 def print_date(context) -> datetime:
     ds = datetime.now()
@@ -34,9 +32,6 @@ def templated(context, ds: datetime):
         context.log.info(ds - timedelta(days=7))
 
 
-# end_ops
-
-# start_job
 @job(tags={"dagster/max_retries": 1, "dag_name": "example"})
 def tutorial_job():
     ds = print_date()
@@ -44,16 +39,9 @@ def tutorial_job():
     templated(ds)
 
 
-# end_job
-
-# start_schedule
 schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
-# end_schedule
 
-# start_repo
+
 @repository
 def rewrite_repo():
     return [tutorial_job, schedule]
-
-
-# end_repo
