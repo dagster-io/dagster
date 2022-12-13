@@ -482,7 +482,7 @@ def non_existant_python_origin_target_args():
     return {
         "workspace": None,
         "job_name": "foo",
-        "python_file": file_relative_path(__file__, "made_up_file.py"),
+        "python_file": (file_relative_path(__file__, "made_up_file.py"),),
         "module_name": None,
         "attribute": "bar",
     }
@@ -496,14 +496,14 @@ def valid_job_python_origin_target_args():
         {
             "workspace": None,
             "job_name": job_name,
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
             "module_name": None,
             "attribute": "bar",
         },
         {
             "workspace": None,
             "job_name": job_name,
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
             "module_name": None,
             "attribute": "bar",
             "working_directory": os.path.dirname(__file__),
@@ -555,14 +555,14 @@ def valid_job_python_origin_target_args():
         {
             "workspace": None,
             "job_name": None,
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
             "module_name": None,
             "attribute": job_def_name,
         },
         {
             "workspace": None,
             "job_name": None,
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
             "module_name": None,
             "attribute": job_def_name,
             "working_directory": os.path.dirname(__file__),
@@ -570,7 +570,7 @@ def valid_job_python_origin_target_args():
         {
             "workspace": None,
             "job_name": None,
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
             "module_name": None,
             "attribute": job_fn_name,
         },

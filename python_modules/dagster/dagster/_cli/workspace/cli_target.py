@@ -136,13 +136,37 @@ def get_workspace_load_target(kwargs: ClickArgMapping):
             "grpc_port",
             "grpc_socket",
         )
+        python_files = kwargs["python_file"]
+
         working_directory = get_working_directory_from_kwargs(kwargs)
-        return PythonFileTarget(
-            python_file=check.str_elem(kwargs, "python_file"),
-            attribute=check.opt_str_elem(kwargs, "attribute"),
-            working_directory=working_directory,
-            location_name=None,
-        )
+
+        if len(python_files) == 1:
+            return PythonFileTarget(
+                python_file=python_files[0],
+                attribute=check.opt_str_elem(kwargs, "attribute"),
+                working_directory=working_directory,
+                location_name=None,
+            )
+        else:
+            # multiple files
+
+            if kwargs.get("attribute"):
+                raise UsageError(
+                    "If you are specifying multiple files you cannot specify an attribute."
+                )
+
+            return CompositeTarget(
+                targets=[
+                    PythonFileTarget(
+                        python_file=python_file,
+                        attribute=None,
+                        working_directory=working_directory,
+                        location_name=None,
+                    )
+                    for python_file in python_files
+                ]
+            )
+
     if kwargs.get("module_name"):
         _check_cli_arguments_none(
             kwargs,
@@ -269,7 +293,10 @@ def python_target_click_options():
             # Checks that the path actually exists lower in the stack, where we
             # are better equipped to surface errors
             type=click.Path(exists=False),
-            help="Specify python file where repository or job function lives",
+            multiple=True,
+            help="Specify python file or files (flag can be used multiple times) where "
+            "dagster definitions reside as top-level symbols/variables and load each "
+            "file as a code location in the current python environment.",
             envvar="DAGSTER_PYTHON_FILE",
         ),
         click.option(
@@ -498,7 +525,11 @@ def get_job_python_origin_from_kwargs(kwargs):
 
 
 def _get_code_pointer_dict_from_kwargs(kwargs: ClickArgMapping) -> Mapping[str, CodePointer]:
-    python_file = check.opt_str_elem(kwargs, "python_file")
+    python_file = (
+        unwrap_single_code_location_target_cli_arg(kwargs, "python_file")
+        if kwargs.get("python_file")
+        else None
+    )
     module_name = (
         unwrap_single_code_location_target_cli_arg(kwargs, "module_name")
         if kwargs.get("module_name")
@@ -584,8 +615,9 @@ def get_repository_python_origin_from_kwargs(kwargs: ClickArgMapping) -> Reposit
     if kwargs.get("attribute") and not provided_repo_name:
         if kwargs.get("python_file"):
             _check_cli_arguments_none(kwargs, "module_name", "package_name")
+            python_file = unwrap_single_code_location_target_cli_arg(kwargs, "python_file")
             code_pointer: CodePointer = CodePointer.from_python_file(
-                check.str_elem(kwargs, "python_file"),
+                python_file,
                 check.str_elem(kwargs, "attribute"),
                 get_working_directory_from_kwargs(kwargs),
             )

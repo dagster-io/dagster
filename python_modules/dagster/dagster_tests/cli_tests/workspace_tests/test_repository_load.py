@@ -94,18 +94,44 @@ def test_multiple_module_load_with_attribute():
     MODULE_ONE = "dagster._utils.test.hello_world_repository"
     MODULE_TWO = "dagster._utils.test.hello_world_defs"
 
+    result = load_workspace_via_cli_runner(
+        ["-m", MODULE_ONE, "-m", MODULE_TWO, "-a", "defs"],  # does not accept attribute
+    )
+
+    assert "If you are specifying multiple modules you cannot specify an attribute" in result.stdout
+    assert result.exit_code != 0
+
+
+def test_multiple_file_load():
+    FILE_ONE = file_relative_path(__file__, "hello_world_in_file/hello_world_repository.py")
+    FILE_TWO = file_relative_path(__file__, "definitions_test_cases/defs_file.py")
+
     executed = {}
 
-    def wrapped_workspace_assert(_):
+    def wrapped_workspace_assert(workspace_context):
+        assert isinstance(workspace_context, WorkspaceRequestContext)
+        assert workspace_context.get_repository_location("hello_world_repository.py")
+        assert workspace_context.get_repository_location("defs_file.py")
         executed["yes"] = True
 
     result = load_workspace_via_cli_runner(
-        ["-m", MODULE_ONE, "-m", MODULE_TWO, "-a", "defs"],  # does not accept attribute
+        ["-f", FILE_ONE, "-f", FILE_TWO],
         wrapped_workspace_assert,
     )
 
-    assert "yes" not in executed
-    assert "If you are specifying multiple modules you cannot specify an attribute" in result.stdout
+    assert result.exit_code == 0
+    assert executed["yes"]
+
+
+def test_multiple_file_load_with_attribute():
+    FILE_ONE = file_relative_path(__file__, "hello_world_in_file/hello_world_repository.py")
+    FILE_TWO = file_relative_path(__file__, "definitions_test_cases/defs_file.py")
+
+    result = load_workspace_via_cli_runner(
+        ["-f", FILE_ONE, "-f", FILE_TWO, "-a", "defs"],
+    )
+
+    assert "If you are specifying multiple files you cannot specify an attribute" in result.stdout
     assert result.exit_code != 0
 
 

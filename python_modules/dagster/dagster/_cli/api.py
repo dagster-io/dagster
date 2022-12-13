@@ -651,11 +651,17 @@ def grpc_command(
             "empty_working_directory",
         ]
     ):
-        # in the gRPC api CLI we never load more than one module at a time
+        # in the gRPC api CLI we never load more than one module or python file at a time
 
         module_name = (
             unwrap_single_code_location_target_cli_arg(kwargs, "module_name")
             if kwargs["module_name"]
+            else None
+        )
+
+        python_file = (
+            unwrap_single_code_location_target_cli_arg(kwargs, "python_file")
+            if kwargs["python_file"]
             else None
         )
 
@@ -668,7 +674,7 @@ def grpc_command(
                 else get_working_directory_from_kwargs(kwargs)
             ),
             module_name=module_name,
-            python_file=kwargs["python_file"],
+            python_file=python_file,
             package_name=kwargs["package_name"],
         )
 
