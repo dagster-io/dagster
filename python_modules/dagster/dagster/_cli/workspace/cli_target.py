@@ -63,12 +63,12 @@ def _cli_load_invariant(condition: object, msg=None) -> None:
         raise UsageError(msg)
 
 
-def _check_cli_arguments_none(kwargs: Mapping[str, Any], *keys: str) -> None:
+def _check_cli_arguments_none(kwargs: ClickArgMapping, *keys: str) -> None:
     for key in keys:
         _cli_load_invariant(not kwargs.get(key))
 
 
-def are_all_keys_empty(kwargs: Mapping[str, Any], keys: Iterable[str]) -> bool:
+def are_all_keys_empty(kwargs: ClickArgMapping, keys: Iterable[str]) -> bool:
     for key in keys:
         if kwargs.get(key):
             return False
