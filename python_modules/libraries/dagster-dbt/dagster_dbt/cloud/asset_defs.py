@@ -446,9 +446,13 @@ def load_assets_from_dbt_cloud_job(
             dbt source -> AssetKey([source_name, table_name])
         node_info_to_group_fn (Dict[str, Any] -> Optional[str]): A function that takes a
             dictionary of dbt node info and returns the group that this node should be assigned to.
-        node_info_to_freshness_policy_fn (Dict[str, Any] -> Optional[str]): A function that takes a
-            dictionary of dbt node info and optionally returns a FreshnessPolicy that should be
-            applied to this node.
+        node_info_to_freshness_policy_fn (Dict[str, Any] -> Optional[FreshnessPolicy]): A function
+            that takes a dictionary of dbt node info and optionally returns a FreshnessPolicy that
+            should be applied to this node. By default, freshness policies will be created from
+            config applied to dbt models, i.e.:
+            `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
+            will result in that model being assigned
+            `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the dbt assets.
         partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given
