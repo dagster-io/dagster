@@ -422,7 +422,7 @@ def _execute_step_command_body(
             recon_pipeline_from_origin(
                 cast(PipelinePythonOrigin, pipeline_run.pipeline_code_origin)
             )
-            .with_repository_load_data(repository_load_dat)
+            .with_repository_load_data(repository_load_data)
             .subset_for_execution_from_existing_pipeline(
                 pipeline_run.solids_to_execute, pipeline_run.asset_selection
             )
