@@ -56,8 +56,8 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         dbt_cloud_resource_def: ResourceDefinition,
         job_id: int,
         node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
-        node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]],
-        node_info_to_freshness_policy_fn: Optional[Callable[[str], FreshnessPolicy]] = None,
+        node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]],
+        node_info_to_freshness_policy_fn: Callable[[Mapping[str, Any]], Optional[FreshnessPolicy]],
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     ):
@@ -442,7 +442,7 @@ def load_assets_from_dbt_cloud_job(
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
     node_info_to_freshness_policy_fn: Callable[
-        [Mapping[str, Any]], Optional[str]
+        [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = _get_node_freshness_policy,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
