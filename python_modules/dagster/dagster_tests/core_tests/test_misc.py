@@ -25,7 +25,7 @@ def test_check_valid_name():
 
 def test_config_from_files():
     run_config = config_from_files(
-        config_files=[file_relative_path(__file__, "./definitions_tests/pass_env.yaml")]
+        config_files=[file_relative_path(__file__, "../definitions_tests/pass_env.yaml")]
     )
 
     assert run_config == {"ops": {"can_fail": {"config": {"error": False}}}}
