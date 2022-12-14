@@ -133,7 +133,7 @@ schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
 
 ### Step 4: Running locally
 
-In order to run our newly defined Dagster Job we'll need to define a Dagster [Repository](/concepts/repositories-workspaces/repositories). A Dagster Repository is a logical grouping of Jobs and Schedules that provides an entrypoint for viewing and executing Jobs.
+In order to run our newly defined Dagster job we'll need to define a Dagster [repository](/concepts/repositories-workspaces/repositories). A Dagster repository is a logical grouping of jobs and schedules that provides an entrypoint for viewing and executing them.
 
 ```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_repo endbefore=end_repo
 @repository
