@@ -657,6 +657,27 @@ scenarios = {
         unevaluated_runs=[run(["asset1", "asset2"])],
         expected_run_requests=[run_request(asset_keys=["asset3", "asset4"])],
     ),
+    "freshness_half_run_with_failure": AssetReconciliationScenario(
+        assets=diamond_freshness,
+        unevaluated_runs=[
+            run(["asset1", "asset2", "asset3", "asset4"]),
+            run(["asset3"], failed_asset_keys=["asset3"]),
+        ],
+        evaluation_delta=datetime.timedelta(minutes=35),
+        # only request 1 and 2 because 3 failed (and 4 is downstream of 3)
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset2"])],
+    ),
+    "freshness_half_run_with_failure2": AssetReconciliationScenario(
+        assets=diamond_freshness,
+        unevaluated_runs=[
+            run(["asset1", "asset2", "asset3", "asset4"]),
+            run(["asset1", "asset3"], failed_asset_keys=["asset3"]),
+        ],
+        evaluation_delta=datetime.timedelta(minutes=35),
+        # same reasoning as above, but make sure asset1 can still execute even though it was part
+        # of a failed run
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset2"])],
+    ),
     "freshness_half_run_stale": AssetReconciliationScenario(
         assets=diamond_freshness,
         unevaluated_runs=[run(["asset1", "asset2"])],

@@ -19,7 +19,6 @@ from typing import (
     Tuple,
     cast,
 )
-from dagster._core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES
 
 import pendulum
 
@@ -255,9 +254,8 @@ def find_stale_candidates(
     ).items():
         # The children of updated assets might now be unreconciled:
         for child in asset_graph.get_children_partitions(asset_key, record.partition_key):
-            if (
-                child.asset_key in target_asset_keys
-                and not instance_queryer.is_asset_partition_in_run(record.run_id, child)
+            if child.asset_key in target_asset_keys and not instance_queryer.is_asset_in_run(
+                record.run_id, child
             ):
                 stale_candidates.add(child)
 
@@ -478,40 +476,6 @@ def get_current_data_times_for_key(
         )
 
 
-def get_in_progress_data_times_for_key(
-    instance_queryer: CachingInstanceQueryer,
-    asset_graph: AssetGraph,
-    relevant_upstream_keys: AbstractSet[AssetKey],
-    asset_key: AssetKey,
-    current_time: datetime.datetime,
-) -> Mapping[AssetKey, Optional[datetime.datetime]]:
-    latest_run_record = instance_queryer.get_latest_run_record_for_key()
-    if (
-        latest_run_record is None
-        or latest_run_record.pipeline_run.status not in IN_PROGRESS_RUN_STATUSES
-    ):
-        return {upstream_key: None for upstream_key in relevant_upstream_keys}
-    else:
-        root_data_time = latest_run_record.start_time or current_time
-        materializing_with = instance_queryer.get_planned_materializations_for_run(run_id)
-        # TODO: this is an optimistic heuristic, and doesn't take into account the following
-        # scenarios (assume graph of A -> B -> C -> D):
-        #
-        # * A run is manually kicked off only `A` and `C`. It will be assumed that when this run
-        #   completes, `C` will contain all data of `A` up until `root_data_time`, which is
-        #   inaccurate.
-        # * A run is kicked off of `B`, `C`, and `D`. `B` executes quickly, but `C` takes a very
-        #   long time to complete, and while it's executing, a new run of `A` completes. It will be
-        #   assumed that at the end of the `B,C,D` run, all assets will contain the newest version
-        #   of `A`, which is inaccurate.
-        #
-        # In either of these scenarios
-        ret = {}
-        for upstream_key in relevant_upstream_keys:
-            pass
-        return ret
-
-
 def get_expected_data_times_for_key(
     asset_graph: AssetGraph,
     current_time: datetime.datetime,
@@ -544,13 +508,10 @@ def get_expected_data_times_for_key(
 
 
 def get_execution_time_window_for_constraints(
-    instance_queryer: CachingInstanceQueryer,
     constraints: AbstractSet[FreshnessConstraint],
-    current_time: datetime.datetime,
     current_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     in_progress_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
-    asset_key: AssetKey,
 ) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
@@ -559,7 +520,7 @@ def get_execution_time_window_for_constraints(
     execution_window_end = None
     for constraint in sorted(constraints, key=lambda c: c.required_by_time):
         current_data_time = current_data_times.get(constraint.asset_key)
-        in_progress_data_time = in_progress_data_times.get(contstraint.asset_key)
+        in_progress_data_time = in_progress_data_times.get(constraint.asset_key)
         expected_data_time = expected_data_times.get(constraint.asset_key)
 
         if not (
@@ -570,12 +531,10 @@ def get_execution_time_window_for_constraints(
                 in_progress_data_time is not None
                 and in_progress_data_time > constraint.required_data_time
             )
-            # this constraint is irrelevant, as materializing on this tick will not satisfy it
-            or (
-                expected_data_time is not None
-                and expected_data_time <= constraint.required_data_time
-            )
+            # this constraint is irrelevant, as materializing on this tick will not make progress
+            # towards satisfying it
             or (expected_data_time is None)
+            or (current_data_time is not None and expected_data_time <= current_data_time)
         ):
             if execution_window_start is None:
                 execution_window_start = constraint.required_data_time
@@ -658,12 +617,8 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 instance_queryer, asset_graph, relevant_upstream_keys, key
             )
 
-            latest_run_record = instance_queryer.get_latest_run_record_for_key(asset_key=key)
-            if key not in target_asset_keys or (
-                # should not execute if previous run failed
-                latest_run_record is not None
-                and run_record.pipeline_run.status == DagsterRunStatus.FAILURE
-            ):
+            # should not execute if key is not targeted or previous run failed
+            if key not in target_asset_keys or instance_queryer.failed_in_latest_run(asset_key=key):
                 # cannot execute this asset, so if something consumes it, it should expect to
                 # recieve the current contents of the asset
                 execution_window_start = None
@@ -673,9 +628,10 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
                 # calculate the data times you would expect if the latest currently-executing run
                 # were to successfully complete
-                in_progress_data_times = get_in_progress_data_times_for_key(
-                    asset_graph, current_time, expected_data_times_by_key, key
+                in_progress_data_times = instance_queryer.get_in_progress_data_times_for_key(
+                    asset_graph, key, relevant_upstream_keys, current_time
                 )
+
                 # calculate the data times you'd expect for this key if you were to run it
                 expected_data_times = get_expected_data_times_for_key(
                     asset_graph, current_time, expected_data_times_by_key, key
@@ -687,13 +643,10 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                     execution_window_start,
                     _execution_window_end,
                 ) = get_execution_time_window_for_constraints(
-                    instance_queryer=instance_queryer,
                     constraints=constraints,
-                    current_time=current_time,
                     current_data_times=current_data_times,
                     in_progress_data_times=in_progress_data_times,
                     expected_data_times=expected_data_times,
-                    key=key,
                 )
 
             # this key should be updated on this tick, as we are within the allowable window
