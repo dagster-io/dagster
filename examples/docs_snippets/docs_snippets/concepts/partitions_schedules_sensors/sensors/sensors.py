@@ -46,7 +46,9 @@ def my_directory_sensor():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
+                run_config={
+                    "ops": {"process_file": {"config": {"filename": filename}}}
+                },
             )
 
 
@@ -166,7 +168,9 @@ def my_directory_sensor_with_skip_reasons():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
+                run_config={
+                    "ops": {"process_file": {"config": {"filename": filename}}}
+                },
             )
             has_files = True
     if not has_files:
