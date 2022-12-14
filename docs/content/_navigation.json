@@ -748,6 +748,10 @@
             "path": "/_apidocs/jobs"
           },
           {
+            "title": "Definitions",
+            "path": "/_apidocs/definitions"
+          },
+          {
             "title": "Ops",
             "path": "/_apidocs/ops"
           },
@@ -762,10 +766,6 @@
           {
             "title": "Loggers",
             "path": "/_apidocs/loggers"
-          },
-          {
-            "title": "Repositories",
-            "path": "/_apidocs/repositories"
           },
           {
             "title": "Config",
@@ -810,6 +810,10 @@
           {
             "title": "Versioning & Memoization",
             "path": "/_apidocs/memoization"
+          },
+          {
+            "title": "Repositories",
+            "path": "/_apidocs/repositories"
           },
           {
             "title": "Utilities",
