@@ -472,8 +472,6 @@ def make_dagster_pipeline_from_airflow_dag(
         os.makedirs(airflow_home_path, exist_ok=True)
         with Locker(airflow_home_path):
             airflow_initialized = os.path.exists(f"{airflow_home_path}/airflow.db")
-            if not airflow_initialized:
-                db.initdb()
             # because AIRFLOW_HOME has been overriden airflow needs to be reloaded
             if airflow_version >= "2.0.0":
                 importlib.reload(airflow.configuration)
@@ -481,6 +479,9 @@ def make_dagster_pipeline_from_airflow_dag(
                 importlib.reload(airflow)
             else:
                 importlib.reload(airflow)
+
+            if not airflow_initialized:
+                db.initdb()
 
             dag_bag = airflow.models.dagbag.DagBag(
                 dag_folder=context.resource_config["dag_location"], include_examples=True
