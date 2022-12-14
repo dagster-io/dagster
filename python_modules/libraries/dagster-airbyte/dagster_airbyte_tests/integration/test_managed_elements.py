@@ -256,7 +256,7 @@ def test_change_source_and_destination(
     check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
     assert check_result == ManagedElementDiff()
 
-    # Change the source, ensure that we get the proper diff ad
+    # Change the source, ensure that we get the proper diff
     expected_diff = diff_dicts(
         {
             "local-json-input": {
@@ -306,6 +306,7 @@ def test_change_source_and_destination(
     apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_dest")
     assert apply_result == expected_diff
     assert _calls_to(track_make_requests, "/destinations/create") == 1
+    assert _calls_to(track_make_requests, "/destinations/update") > 0
 
     check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_dest")
     assert check_result == ManagedElementDiff()
