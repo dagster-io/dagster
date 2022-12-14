@@ -1,3 +1,4 @@
+import multiprocessing
 from os import path
 
 import pytest
@@ -13,7 +14,8 @@ from dagster._core.errors import (
 )
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.retries import RetryMode
-from dagster._core.test_utils import instance_for_test
+from dagster._core.executor.multiprocess import MultiprocessExecutor
+from dagster._core.test_utils import environ, instance_for_test
 
 
 def get_job_for_executor(executor_def, execution_config=None):
@@ -261,3 +263,30 @@ def test_failing_executor_initialization():
         event_records = instance.all_logs(result.run_id)
         assert len(event_records) == 1
         assert event_records[0].dagster_event_type == DagsterEventType.RUN_FAILURE
+
+
+def test_multiprocess_executor_default():
+
+    executor = MultiprocessExecutor(
+        max_concurrent=2,
+        retries=RetryMode.DISABLED,
+    )
+
+    assert executor._max_concurrent == 2  # pylint: disable=protected-access
+
+    executor = MultiprocessExecutor(
+        max_concurrent=0,
+        retries=RetryMode.DISABLED,
+    )
+
+    assert (
+        executor._max_concurrent == multiprocessing.cpu_count()  # pylint: disable=protected-access
+    )
+
+    with environ({"DAGSTER_MULTIPROCESS_EXECUTOR_MAX_CONCURRENT": "12345"}):
+        executor = MultiprocessExecutor(
+            max_concurrent=0,
+            retries=RetryMode.DISABLED,
+        )
+
+        assert executor._max_concurrent == 12345  # pylint: disable=protected-access
