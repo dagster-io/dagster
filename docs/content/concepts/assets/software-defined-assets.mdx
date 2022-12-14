@@ -178,7 +178,7 @@ def repository_b():
 
 Using source assets has a few advantages over having the code inside of an asset's op load the data:
 
-- **Dagit can show asset lineage that includes the source assets**. If a different asset definition in a different repository in the same [workspace](/concepts/repositories-workspaces/workspaces) has the same asset key as a <PyObject object="SourceAsset" />, Dagit can represent the asset lineage across those repositories.
+- **Dagit can show asset lineage that includes the source assets**. If a different asset definition in a different repository in the same [workspace](/concepts/code-locations/workspace-files) has the same asset key as a <PyObject object="SourceAsset" />, Dagit can represent the asset lineage across those repositories.
 - **Dagster can use data-loading code factored into an <PyObject object="IOManager" /> to load the contents of the source asset**.
 - **Asset dependencies can be written in a consistent way,** independent of whether they're downstream from a source asset or a derived asset. This makes it easy to swap out a source asset for a derived asset and vice versa.
 
