@@ -38,7 +38,7 @@ def test_workspace_yamls():
             )
         ],
     ) as workspace_process_context:
-        assert workspace_process_context.repository_locations_count == 2
+        assert workspace_process_context.repository_locations_count == 1
 
     with load_workspace_process_context_from_yaml_paths(
         DagsterInstance.ephemeral(),
@@ -56,7 +56,7 @@ def test_workspace_yamls():
         [
             file_relative_path(
                 __file__,
-                "../../../docs_snippets/concepts/repositories_workspaces/workspace_python_package.yaml",
+                "../../../docs_snippets/concepts/repositories_workspaces/workspace_python_module.yaml",
             )
         ],
     ) as workspace_process_context:
