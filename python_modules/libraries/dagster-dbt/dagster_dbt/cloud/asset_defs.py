@@ -21,6 +21,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    FreshnessPolicy,
     MetadataValue,
     OpExecutionContext,
     PartitionsDefinition,
@@ -37,7 +38,13 @@ from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.backcompat import experimental_arg_warning
 
-from ..asset_defs import _get_asset_deps, _get_deps, _get_node_asset_key, _get_node_group_name
+from ..asset_defs import (
+    _get_asset_deps,
+    _get_deps,
+    _get_node_asset_key,
+    _get_node_freshness_policy,
+    _get_node_group_name,
+)
 from ..errors import DagsterDbtCloudJobInvariantViolationError
 from ..utils import ASSET_RESOURCE_TYPES, result_to_events
 from .resources import DbtCloudResourceV2
@@ -236,6 +243,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             asset_ins,
             asset_outs,
             group_names_by_key,
+            freshness_policies_by_key,
             fqns_by_output_name,
             metadata_by_output_name,
         ) = _get_asset_deps(
@@ -282,6 +290,10 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 },
                 "fqns_by_output_name": fqns_by_output_name,
             },
+            freshness_policies_by_output_name={
+                asset_outs[asset_key][0]: freshness_policy
+                for asset_key, freshness_policy in freshness_policies_by_key.items()
+            },
         )
 
     def _build_dbt_cloud_assets_metadata(self, dbt_metadata: Dict[str, Any]) -> MetadataUserInput:
@@ -324,6 +336,11 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 output_name: AssetOut(
                     key=asset_key,
                     group_name=group_names_by_output_name.get(output_name),
+                    freshness_policy=(
+                        assets_definition_cacheable_data.freshness_policies_by_output_name or {}
+                    ).get(
+                        output_name,
+                    ),
                     metadata=(assets_definition_cacheable_data.metadata_by_output_name or {}).get(
                         output_name
                     ),
@@ -501,6 +518,7 @@ def load_assets_from_dbt_cloud_job(
         job_id=job_id,
         node_info_to_asset_key=node_info_to_asset_key,
         node_info_to_group_fn=node_info_to_group_fn,
+        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
     )

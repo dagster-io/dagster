@@ -313,6 +313,8 @@ def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
         job_id=DBT_CLOUD_JOB_ID,
         partitions_def=partition_def,
         partition_key_to_vars_fn=lambda partition_key: {"run_date": partition_key},
+        # FreshnessPolicies not currently supported for partitioned assets
+        node_info_to_freshness_policy_fn=lambda _: None,
     )
 
     mock_run_job_and_poll = mocker.patch(
