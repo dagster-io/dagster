@@ -75,16 +75,16 @@ final: "result"
 
 def test_config_from_pkg_resources():
     good = (
-        "dagster_tests.core_tests.definitions_tests",
+        "dagster_tests.definitions_tests",
         "pass_env.yaml",
     )
     run_config = config_from_pkg_resources([good])
     assert run_config == {"ops": {"can_fail": {"config": {"error": False}}}}
 
     bad_defs = [
-        ("dagster_tests.core_tests.definitions_tests", "does_not_exist.yaml"),
+        ("dagster_tests.definitions_tests", "does_not_exist.yaml"),
         (
-            "dagster_tests.core_tests.definitions_tests",
+            "dagster_tests.definitions_tests",
             "bad_file_binary.yaml",
         ),
     ]
