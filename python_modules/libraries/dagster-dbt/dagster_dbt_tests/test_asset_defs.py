@@ -12,6 +12,7 @@ from dagster_dbt.types import DbtOutput
 from dagster import (
     AssetIn,
     AssetKey,
+    FreshnessPolicy,
     IOManager,
     MetadataEntry,
     ResourceDefinition,
@@ -249,6 +250,23 @@ def test_custom_groups(
     }
 
 
+def test_custom_freshness_policy():
+    manifest_path = file_relative_path(__file__, "sample_manifest.json")
+    with open(manifest_path, "r", encoding="utf8") as f:
+        manifest_json = json.load(f)
+
+    dbt_assets = load_assets_from_dbt_manifest(
+        manifest_json=manifest_json,
+        node_info_to_freshness_policy_fn=lambda node_info: FreshnessPolicy(
+            maximum_lag_minutes=len(node_info["name"])
+        ),
+    )
+
+    assert dbt_assets[0].freshness_policies_by_key == {
+        key: FreshnessPolicy(maximum_lag_minutes=len(key.path[-1])) for key in dbt_assets[0].keys
+    }
+
+
 def test_partitions(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir
 ):  # pylint: disable=unused-argument
@@ -266,6 +284,8 @@ def test_partitions(
         use_build_command=True,
         partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
         partition_key_to_vars_fn=_partition_key_to_vars,
+        # FreshnessPolicies not currently supported for partitioned assets
+        node_info_to_freshness_policy_fn=lambda _: None,
     )
 
     result = materialize_to_memory(
