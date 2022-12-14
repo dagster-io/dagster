@@ -25,6 +25,53 @@ def raise_on_invalid_config(context: OpExecutionContext):
     config_schema=launch_agent_config(),
 )
 def run_launch_agent(context: OpExecutionContext):
+    """
+    It starts a Launch Agent and runs it as a long running process until stopped manually.
+
+    Agents are processes that poll launch queues and execute the jobs (or dispatch them to external
+    services to be executed) in order.
+
+    **Example:**
+
+    .. code-block:: YAML
+
+        # config.yaml
+
+        resources:
+          wandb_config:
+            config:
+              entity: my_entity
+              project: my_project
+        ops:
+          run_launch_agent:
+            config:
+              max_jobs: -1
+              queues:
+                - my_dagster_queue
+
+    .. code-block:: python
+
+        from dagster_wandb.launch.ops import run_launch_agent
+        from dagster_wandb.resources import wandb_resource
+
+        from dagster import job, make_values_resource
+
+
+        @job(
+            resource_defs={
+                "wandb_config": make_values_resource(
+                    entity=str,
+                    project=str,
+                ),
+                "wandb_resource": wandb_resource.configured(
+                    {"api_key": {"env": "WANDB_API_KEY"}}
+                ),
+            },
+        )
+        def run_launch_agent_example():
+            run_launch_agent()
+
+    """
     raise_on_invalid_config(context)
     config = {
         "entity": context.resources.wandb_config["entity"],
@@ -44,6 +91,56 @@ def run_launch_agent(context: OpExecutionContext):
     config_schema=launch_config(),
 )
 def run_launch_job(context: OpExecutionContext):
+    """
+    Executes a Launch job.
+
+    A Launch job is assigned to a queue in order to be executed. You can create a queue or use the
+    default one. Make sure you have an active agent listening to that queue. You can run an agent
+    inside your Dagster instance but can also consider using a deployable agent in Kubernetes.
+
+    **Example:**
+
+    .. code-block:: YAML
+
+        # config.yaml
+
+        resources:
+          wandb_config:
+            config:
+              entity: my_entity
+              project: my_project
+        ops:
+          my_launched_job:
+            config:
+              entry_point:
+                - python
+                - train.py
+              queue: my_dagster_queue
+              uri: https://github.com/wandb/example-dagster-integration-with-launch
+
+    .. code-block:: python
+
+            from dagster_wandb.launch.ops import run_launch_job
+            from dagster_wandb.resources import wandb_resource
+
+            from dagster import job, make_values_resource
+
+
+            @job(
+                resource_defs={
+                    "wandb_config": make_values_resource(
+                        entity=str,
+                        project=str,
+                    ),
+                    "wandb_resource": wandb_resource.configured(
+                        {"api_key": {"env": "WANDB_API_KEY"}}
+                    ),
+                },
+            )
+            def run_launch_job_example():
+                run_launch_job.alias("my_launched_job")() # we rename the job with an alias
+
+    """
     raise_on_invalid_config(context)
     config = {
         "entity": context.resources.wandb_config["entity"],

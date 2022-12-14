@@ -58,6 +58,7 @@ paths = [
     "../../python_modules/libraries/dagster-duckdb",
     "../../python_modules/libraries/dagster-duckdb-pandas",
     "../../python_modules/libraries/dagster-duckdb-pyspark",
+    "../../python_modules/libraries/dagster-wandb",
     ### autodoc_dagster extension
     "./_ext",
 ]
@@ -148,6 +149,7 @@ autodoc_mock_imports = [
     "sshtunnel",
     "toposort",
     "twilio",
+    "wandb",
 ]
 
 autodoc_typehints = "none"

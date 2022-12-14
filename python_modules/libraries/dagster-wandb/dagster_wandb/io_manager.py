@@ -78,6 +78,8 @@ class Config(TypedDict):
 
 
 class WandbArtifactsIOManagerError(Exception):
+    """Represents an execution error of the W&B Artifacts IO Manager"""
+
     def __init__(self, message="A W&B Artifacts IO Manager error occurred."):
         self.message = message
         super().__init__(self.message)
@@ -564,6 +566,59 @@ class ArtifactsIOManager(IOManager):
     },
 )
 def wandb_artifacts_io_manager(context: InitResourceContext):
+    """
+    Dagster IO Manager to create and consume W&B Artifacts.
+
+    It allows any Dagster @op or @asset to create and consume W&B Artifacts natively.
+
+    For a complete set of documentation, see `Dagster integration <https://docs.wandb.ai/guides/integrations/dagster>`_.
+
+    **Example:**
+
+    .. code-block:: python
+
+            @repository
+            def my_repository():
+                return [
+                    *with_resources(
+                        load_assets_from_current_module(),
+                        resource_defs={
+                            "wandb_config": make_values_resource(
+                                entity=str,
+                                project=str,
+                            ),
+                            "wandb_resource": wandb_resource.configured(
+                                {"api_key": {"env": "WANDB_API_KEY"}}
+                            ),
+                            "wandb_artifacts_manager": wandb_artifacts_io_manager.configured(
+                                {"cache_duration_in_minutes": 60} # only cache files for one hour
+                            ),
+                        },
+                        resource_config_by_key={
+                            "wandb_config": {
+                                "config": {
+                                    "entity": "my_entity",
+                                    "project": "my_project"
+                                }
+                            }
+                        },
+                    ),
+                ]
+
+
+            @asset(
+                name="my_artifact",
+                metadata={
+                    "wandb_artifact_configuration": {
+                        "type": "dataset",
+                    }
+                },
+                io_manager_key="wandb_artifacts_manager",
+            )
+            def create_dataset():
+                return [1, 2, 3]
+
+    """
     wandb_client = context.resources.wandb_resource["sdk"]
     wandb_host = context.resources.wandb_resource["host"]
     wandb_entity = context.resources.wandb_config["entity"]
