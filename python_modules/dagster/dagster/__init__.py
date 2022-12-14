@@ -653,3 +653,6 @@ def __getattr__(name: str) -> TypingAny:
 
 def __dir__(_self: ModuleType) -> Sequence[str]:
     return [*globals(), *_DEPRECATED.keys(), *_DEPRECATED_RENAMED.keys()]
+
+
+# run everything
