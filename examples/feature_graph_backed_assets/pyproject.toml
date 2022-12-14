@@ -3,4 +3,4 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.dagster]
-python_package = "feature_graph_backed_assets"
+module_name = "feature_graph_backed_assets"

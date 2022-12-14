@@ -24,6 +24,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
   const history = useHistory();
 
   const [showSpinner, setShowSpinner] = React.useState(false);
+  const [lastLocationTimestamps, setLastLocationTimestamps] = React.useState({});
 
   const queryData = useQuery<CodeLocationStatusQuery>(CODE_LOCATION_STATUS_QUERY, {
     fetchPolicy: 'network-only',
@@ -34,6 +35,10 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
   useQueryRefreshAtInterval(queryData, POLL_INTERVAL);
 
   const {data, previousData} = queryData;
+
+  const onClickViewButton = React.useCallback(() => {
+    history.push('/locations');
+  }, [history]);
 
   // Reload the workspace, but don't toast about it.
   const reloadWorkspaceQuietly = React.useCallback(async () => {
@@ -54,15 +59,15 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         (entry) => entry.locationOrLoadError?.__typename === 'PythonError',
       );
 
+    const showViewButton = !alreadyViewingCodeLocations();
+
     if (anyErrors) {
       SharedToaster.show({
         intent: 'warning',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
-            <div>Workspace loaded with errors</div>
-            <ViewButton onClick={() => history.push('/locations')} color={Colors.White}>
-              View
-            </ViewButton>
+            <div>Definitions loaded with errors</div>
+            {showViewButton ? <ViewCodeLocationsButton onClick={onClickViewButton} /> : null}
           </Box>
         ),
         icon: 'check_circle',
@@ -73,15 +78,13 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
             <div>Definitions reloaded</div>
-            <ViewButton onClick={() => history.push('/locations')} color={Colors.White}>
-              View
-            </ViewButton>
+            {showViewButton ? <ViewCodeLocationsButton onClick={onClickViewButton} /> : null}
           </Box>
         ),
         icon: 'check_circle',
       });
     }
-  }, [history, refetch]);
+  }, [onClickViewButton, refetch]);
 
   // Given the previous and current code locations, determine whether to show a) a loading spinner
   // and/or b) a toast indicating that a code location is being reloaded.
@@ -111,14 +114,28 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
       currentEntries.some(
         (entry) =>
           !(entry.id in previousEntriesByName) ||
-          previousEntriesByName[entry.id].updateTimestamp <
-            currentEntriesByName[entry.id].updateTimestamp,
+          Math.max(
+            previousEntriesByName[entry.id].updateTimestamp,
+            lastLocationTimestamps[entry.id] || 0,
+          ) < currentEntriesByName[entry.id].updateTimestamp,
       );
+
+    const _updateLocationTimestamps = (entries: LocationStatusEntry[]) => {
+      const timestamps = {};
+      entries.forEach((entry) => {
+        timestamps[entry.id] = Math.max(
+          entry.updateTimestamp,
+          lastLocationTimestamps[entry.id] || 0,
+        );
+      });
+      setLastLocationTimestamps(timestamps);
+    };
 
     // At least one code location has been removed. Reload, but don't make a big deal about it
     // since this was probably done manually.
     if (previousEntries.length > currentEntries.length && !hasUpdatedEntries) {
       reloadWorkspaceQuietly();
+      _updateLocationTimestamps(currentEntries);
       return;
     }
 
@@ -134,6 +151,8 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
       }
       return;
     }
+
+    const showViewButton = !alreadyViewingCodeLocations();
 
     // We have a new entry, and it has already finished loading. Wow! It's surprisingly fast for it
     // to have finished loading so quickly, but go ahead and indicate that the location has
@@ -163,15 +182,14 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
             ) : (
               <span>{addedEntries.length} code locations added</span>
             )}
-            <ViewButton onClick={() => history.push('/locations')} color={Colors.White}>
-              View
-            </ViewButton>
+            {showViewButton ? <ViewCodeLocationsButton onClick={onClickViewButton} /> : null}
           </Box>
         ),
         icon: 'add_circle',
       });
 
       reloadWorkspaceLoudly();
+      _updateLocationTimestamps(currentEntries);
       return;
     }
 
@@ -195,32 +213,41 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
             ) : (
               <span>Updating {currentlyLoading.length} code locations</span>
             )}
-            <ViewButton onClick={() => history.push('/locations')} color={Colors.White}>
-              View
-            </ViewButton>
+            {showViewButton ? <ViewCodeLocationsButton onClick={onClickViewButton} /> : null}
           </Box>
         ),
         icon: 'refresh',
       });
 
+      _updateLocationTimestamps(currentEntries);
       return;
     }
 
     // A location was previously loading, and no longer is. Our workspace is ready. Refetch it.
     if (anyPreviouslyLoading && !anyCurrentlyLoading) {
       reloadWorkspaceLoudly();
+      _updateLocationTimestamps(currentEntries);
       return;
     }
 
     if (hasUpdatedEntries) {
       reloadWorkspaceLoudly();
+      _updateLocationTimestamps(currentEntries);
       return;
     }
 
     // It's unlikely that we've made it to this point, since being inside this effect should
     // indicate that `data` and `previousData` have differences that would have been handled by
     // the conditionals above.
-  }, [data, previousData, reloadWorkspaceQuietly, reloadWorkspaceLoudly, history]);
+  }, [
+    data,
+    previousData,
+    reloadWorkspaceQuietly,
+    reloadWorkspaceLoudly,
+    onClickViewButton,
+    lastLocationTimestamps,
+    setLastLocationTimestamps,
+  ]);
 
   if (showSpinner) {
     return {
@@ -245,6 +272,16 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
   }
 
   return null;
+};
+
+const alreadyViewingCodeLocations = () => document.location.pathname.endsWith('/locations');
+
+const ViewCodeLocationsButton: React.FC<{onClick: () => void}> = ({onClick}) => {
+  return (
+    <ViewButton onClick={onClick} color={Colors.White}>
+      View
+    </ViewButton>
+  );
 };
 
 const ViewButton = styled(ButtonLink)`

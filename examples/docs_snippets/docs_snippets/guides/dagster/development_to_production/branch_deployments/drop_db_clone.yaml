@@ -24,7 +24,6 @@ name: Dagster Branch Deployments
           with:
             location: ${{ toJson(matrix.location) }}
             deployment: ${{ steps.deploy.outputs.deployment }}
-            repository: repo
             job: drop_prod_clone
           env:
             DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}

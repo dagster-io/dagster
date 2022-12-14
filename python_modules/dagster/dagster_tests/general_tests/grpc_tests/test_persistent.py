@@ -337,7 +337,6 @@ def test_load_with_non_existant_file(capfd):
         assert "No such file or directory" in err
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="flaky in windows")
 def test_load_with_empty_working_directory(capfd):
     port = find_free_port()
     # File that will fail if working directory isn't set to default

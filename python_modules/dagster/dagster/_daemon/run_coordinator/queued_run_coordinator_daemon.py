@@ -1,6 +1,6 @@
 import sys
 from collections import defaultdict
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 from dagster import DagsterEvent, DagsterEventType
 from dagster import _check as check
@@ -13,8 +13,8 @@ from dagster._core.storage.pipeline_run import (
     RunsFilter,
 )
 from dagster._core.storage.tags import PRIORITY_TAG
-from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._daemon.daemon import IntervalDaemon
+from dagster._core.workspace.context import IWorkspace, IWorkspaceProcessContext
+from dagster._daemon.daemon import IntervalDaemon, TDaemonGenerator
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 
@@ -110,8 +110,46 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
     def run_iteration(
         self,
         workspace_process_context: IWorkspaceProcessContext,
+    ) -> TDaemonGenerator:
+        instance = workspace_process_context.instance
+        runs_to_dequeue = self._get_runs_to_dequeue(instance)
+        yield from self._dequeue_runs_iter(workspace_process_context, runs_to_dequeue)
+
+    def _dequeue_runs_iter(
+        self,
+        workspace_process_context: IWorkspaceProcessContext,
+        runs_to_dequeue: List[DagsterRun],
     ):
         instance = workspace_process_context.instance
+        request_context = workspace_process_context.create_request_context()
+        num_dequeued_runs = 0
+        for run in runs_to_dequeue:
+            error_info = None
+
+            try:
+                self._dequeue_run(instance, run, request_context)
+                num_dequeued_runs += 1
+            except Exception:
+                error_info = serializable_error_info_from_exc_info(sys.exc_info())
+
+                message = (
+                    f"Caught an error for run {run.run_id} while removing it from the queue."
+                    " Marking the run as failed and dropping it from the queue"
+                )
+                message_with_full_error = f"{message}: {error_info.to_string()}"
+
+                self._logger.error(message_with_full_error)
+                instance.report_run_failed(run, message_with_full_error)
+
+                # modify the original error, so that the extra message appears in heartbeats
+                error_info = error_info._replace(message=f"{message}: {error_info.message}")
+
+            yield error_info
+
+        if num_dequeued_runs > 0:
+            self._logger.info("Launched %d runs.", num_dequeued_runs)
+
+    def _get_runs_to_dequeue(self, instance: DagsterInstance) -> List[DagsterRun]:
         if not isinstance(instance.run_coordinator, QueuedRunCoordinator):
             check.failed(f"Expected QueuedRunCoordinator, got {instance.run_coordinator}")
 
@@ -133,7 +171,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                         len(in_progress_runs), max_concurrent_runs
                     )
                 )
-                return
+                return []
 
         queued_runs = self._get_queued_runs(instance)
 
@@ -144,47 +182,22 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         # place in order
         sorted_runs = self._priority_sort(queued_runs)
-
-        # launch until blocked by limit rules
-        num_dequeued_runs = 0
         tag_concurrency_limits_counter = _TagConcurrencyLimitsCounter(
             tag_concurrency_limits, in_progress_runs
         )
 
+        batch: List[DagsterRun] = []
         for run in sorted_runs:
-            if max_concurrent_runs_enabled and num_dequeued_runs >= max_runs_to_launch:
+            if max_concurrent_runs_enabled and len(batch) >= max_runs_to_launch:
                 break
 
             if tag_concurrency_limits_counter.is_run_blocked(run):
                 continue
 
-            error_info = None
+            tag_concurrency_limits_counter.update_counters_with_launched_run(run)
+            batch.append(run)
 
-            try:
-                self._dequeue_run(instance, run, workspace_process_context)
-            except Exception:
-                error_info = serializable_error_info_from_exc_info(sys.exc_info())
-
-                message = (
-                    f"Caught an error for run {run.run_id} while removing it from the queue."
-                    " Marking the run as failed and dropping it from the queue"
-                )
-                message_with_full_error = f"{message}: {error_info.to_string()}"
-
-                self._logger.error(message_with_full_error)
-                instance.report_run_failed(run, message_with_full_error)
-
-                # modify the original error, so that the extra message appears in heartbeats
-                error_info = error_info._replace(message=f"{message}: {error_info.message}")
-
-            else:
-                tag_concurrency_limits_counter.update_counters_with_launched_run(run)
-                num_dequeued_runs += 1
-
-            yield error_info
-
-        if num_dequeued_runs > 0:
-            self._logger.info("Launched %d runs.", num_dequeued_runs)
+        return batch
 
     def _get_queued_runs(self, instance):
         queued_runs_filter = RunsFilter(statuses=[DagsterRunStatus.QUEUED])
@@ -213,7 +226,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         self,
         instance: DagsterInstance,
         run: DagsterRun,
-        workspace_process_context: IWorkspaceProcessContext,
+        request_context: IWorkspace,
     ):
         # double check that the run is still queued before dequeing
         reloaded_run = check.not_none(instance.get_run_by_id(run.run_id))
@@ -231,4 +244,4 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             pipeline_name=run.pipeline_name,
         )
         instance.report_dagster_event(dequeued_event, run_id=run.run_id)
-        instance.launch_run(run.run_id, workspace_process_context.create_request_context())
+        instance.launch_run(run.run_id, request_context)

@@ -1405,7 +1405,7 @@ class RepositoryDefinition:
         partition_key: Optional[str] = None,
     ) -> object:
         """
-        Loads the contents of an asset as a Python object.
+        Load the contents of an asset as a Python object.
 
         Invokes `load_input` on the :py:class:`IOManager` associated with the asset.
 
@@ -1441,11 +1441,11 @@ class RepositoryDefinition:
 
         Usage:
 
-            .. code-block:: python
+        .. code-block:: python
 
-                with my_repo.get_asset_value_loader() as loader:
-                    asset1 = loader.load_asset_value("asset1")
-                    asset2 = loader.load_asset_value("asset2")
+            with my_repo.get_asset_value_loader() as loader:
+                asset1 = loader.load_asset_value("asset1")
+                asset2 = loader.load_asset_value("asset2")
 
         """
         from dagster._core.storage.asset_value_loader import AssetValueLoader

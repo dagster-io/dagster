@@ -1,7 +1,7 @@
 import os
 import pickle
 import tempfile
-from typing import Tuple
+from typing import Optional, Tuple
 
 import pytest
 
@@ -14,7 +14,10 @@ from dagster import (
     Nothing,
     Out,
     Output,
+    PartitionMapping,
+    PartitionsDefinition,
     StaticPartitionsDefinition,
+    TimeWindowPartitionMapping,
     graph,
     job,
     materialize,
@@ -22,6 +25,7 @@ from dagster import (
     with_resources,
 )
 from dagster._core.definitions import AssetGroup, AssetIn, asset, build_assets_job, multi_asset
+from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.version_strategy import VersionStrategy
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
@@ -276,6 +280,59 @@ def test_fs_io_manager_partitioned():
             assert pickle.load(read_obj) == [1, 2, 3, 4]
 
 
+def test_fs_io_manager_partitioned_no_partitions():
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
+
+        class NoPartitionsPartitionMapping(PartitionMapping):
+            def get_upstream_partitions_for_partitions(
+                self,
+                downstream_partitions_subset: Optional[PartitionsSubset],
+                upstream_partitions_def: PartitionsDefinition,
+            ) -> PartitionsSubset:
+                return upstream_partitions_def.empty_subset()
+
+            def get_downstream_partitions_for_partitions(
+                self, upstream_partitions_subset, downstream_partitions_def
+            ):
+                raise NotImplementedError()
+
+            def get_upstream_partitions_for_partition_range(
+                self,
+                downstream_partition_key_range,
+                downstream_partitions_def,
+                upstream_partitions_def,
+            ):
+                raise NotImplementedError()
+
+            def get_downstream_partitions_for_partition_range(
+                self,
+                upstream_partition_key_range,
+                downstream_partitions_def,
+                upstream_partitions_def,
+            ):
+                raise NotImplementedError()
+
+        partitions_def = DailyPartitionsDefinition(start_date="2020-02-01")
+
+        @asset(partitions_def=partitions_def)
+        def asset1():
+            ...
+
+        @asset(
+            partitions_def=partitions_def,
+            ins={"asset1": AssetIn(partition_mapping=NoPartitionsPartitionMapping())},
+        )
+        def asset2(asset1):
+            assert asset1 is None
+
+        assert materialize(
+            [asset1.to_source_assets()[0], asset2],
+            partition_key="2020-02-01",
+            resources={"io_manager": io_manager_def},
+        ).success
+
+
 def test_fs_io_manager_partitioned_multi_asset():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
@@ -365,6 +422,34 @@ def test_fs_io_manager_partitioned_graph_backed_asset():
         assert os.path.isfile(filepath_b)
         with open(filepath_b, "rb") as read_obj:
             assert pickle.load(read_obj) == 4
+
+
+def test_fs_io_manager_partitioned_self_dep():
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
+
+        @asset(
+            partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+            ins={
+                "a": AssetIn(
+                    partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+                )
+            },
+        )
+        def a(a: Optional[int]) -> int:
+            return 1 if a is None else a + 1
+
+        result = materialize(
+            [a], partition_key="2020-01-01", resources={"io_manager": io_manager_def}
+        )
+        assert result.success
+        assert result.output_for_node("a") == 1
+
+        result2 = materialize(
+            [a], partition_key="2020-01-02", resources={"io_manager": io_manager_def}
+        )
+        assert result2.success
+        assert result2.output_for_node("a") == 2
 
 
 def test_fs_io_manager_none():

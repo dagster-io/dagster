@@ -32,7 +32,7 @@ from dagster._core.definitions.logical_version import (
 )
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.pipeline_base import IPipeline
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
@@ -610,12 +610,15 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         asset_key = self.pipeline_def.asset_layer.asset_key_for_input(
             node_handle=self.solid_handle, input_name=name
         )
-        asset_partition_key_range = (
-            self.asset_partition_key_range_for_input(name)
+        asset_partitions_subset = (
+            self.asset_partitions_subset_for_input(name)
             if self.has_asset_partitions_for_input(name)
             else None
         )
 
+        asset_partitions_def = (
+            self.pipeline_def.asset_layer.partitions_def_for_asset(asset_key) if asset_key else None
+        )
         return InputContext(
             job_name=self.pipeline_def.name,
             name=name,
@@ -629,10 +632,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             resource_config=resource_config,
             resources=resources,
             asset_key=asset_key,
-            asset_partition_key_range=asset_partition_key_range,
-            asset_partitions_def=self.pipeline_def.asset_layer.partitions_def_for_asset(asset_key)
-            if asset_key
-            else None,
+            asset_partitions_subset=asset_partitions_subset,
+            asset_partitions_def=asset_partitions_def,
         )
 
     def for_hook(self, hook_def: HookDefinition) -> "HookContext":
@@ -893,10 +894,18 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
 
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        from dagster._core.definitions.asset_partitions import (
-            get_upstream_partitions_for_partition_range,
-        )
+        subset = self.asset_partitions_subset_for_input(input_name)
+        partition_key_ranges = subset.get_partition_key_ranges()
 
+        if len(partition_key_ranges) != 1:
+            check.failed(
+                "Tried to access asset partition key range, but there are "
+                f"({len(partition_key_ranges)}) key ranges associated with this input.",
+            )
+
+        return partition_key_ranges[0]
+
+    def asset_partitions_subset_for_input(self, input_name: str) -> PartitionsSubset:
         asset_layer = self.pipeline_def.asset_layer
         assets_def = asset_layer.assets_def_for_node(self.solid_handle)
         upstream_asset_key = asset_layer.asset_key_for_input(self.solid_handle, input_name)
@@ -905,14 +914,18 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
 
             if assets_def is not None and upstream_asset_partitions_def is not None:
-                partition_key_range = (
-                    self.asset_partition_key_range if assets_def.partitions_def else None
+                partitions_def = assets_def.partitions_def
+                partitions_subset = (
+                    partitions_def.empty_subset().with_partition_key_range(
+                        self.asset_partition_key_range
+                    )
+                    if partitions_def
+                    else None
                 )
-                return get_upstream_partitions_for_partition_range(
-                    assets_def,
+                partition_mapping = assets_def.infer_partition_mapping(upstream_asset_key)
+                return partition_mapping.get_upstream_partitions_for_partitions(
+                    partitions_subset,
                     upstream_asset_partitions_def,
-                    upstream_asset_key,
-                    partition_key_range,
                 )
 
         check.failed("The input has no asset partitions")

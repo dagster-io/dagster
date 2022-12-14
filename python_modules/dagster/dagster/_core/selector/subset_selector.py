@@ -235,7 +235,8 @@ def fetch_sinks(graph: DependencyGraph, within_selection: AbstractSet[T]) -> Abs
     traverser = Traverser(graph)
     sinks: Set[T] = set()
     for item in within_selection:
-        if len(traverser.fetch_downstream(item, depth=MAX_NUM) & within_selection) == 0:
+        downstream = traverser.fetch_downstream(item, depth=MAX_NUM) & within_selection
+        if len(downstream) == 0 or downstream == {item}:
             sinks.add(item)
     return sinks
 
@@ -248,7 +249,8 @@ def fetch_sources(graph: DependencyGraph, within_selection: AbstractSet[T]) -> A
     traverser = Traverser(graph)
     sources = set()
     for item in within_selection:
-        if len(traverser.fetch_upstream(item, depth=MAX_NUM) & within_selection) == 0:
+        upstream = traverser.fetch_upstream(item, depth=MAX_NUM) & within_selection
+        if len(upstream) == 0 or upstream == {item}:
             sources.add(item)
     return sources
 

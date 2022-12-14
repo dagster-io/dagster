@@ -75,6 +75,14 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
         mkdir_p(base_dir)
         return cls(base_dir, inst_data=inst_data)
 
+    def register_instance(self, instance):
+        if not self._run_storage._instance:  # pylint: disable=protected-access
+            self._run_storage.register_instance(instance)
+        if not self._event_log_storage._instance:  # pylint: disable=protected-access
+            self._event_log_storage.register_instance(instance)
+        if not self._schedule_storage._instance:  # pylint: disable=protected-access
+            self._schedule_storage.register_instance(instance)
+
     @property
     def event_log_storage(self) -> EventLogStorage:
         return self._event_log_storage
@@ -110,3 +118,8 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
             "SqliteScheduleStorage",
             yaml.dump({"base_dir": _schedule_directory(self.base_dir)}, default_flow_style=False),
         )
+
+    def dispose(self):
+        self.event_log_storage.dispose()
+        self.run_storage.dispose()
+        self.schedule_storage.dispose()

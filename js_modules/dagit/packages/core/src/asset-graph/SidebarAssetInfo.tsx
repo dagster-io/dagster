@@ -12,6 +12,7 @@ import {
   metadataForAssetNode,
 } from '../assets/AssetMetadata';
 import {AssetSidebarActivitySummary} from '../assets/AssetSidebarActivitySummary';
+import {DependsOnSelfBanner} from '../assets/DependsOnSelfBanner';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
@@ -25,13 +26,14 @@ import {pluginForMetadata} from '../plugins';
 import {Version} from '../versions/Version';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {LiveDataForNode, displayNameForAssetKey} from './Utils';
+import {LiveDataForNode, displayNameForAssetKey, GraphNode, nodeDependsOnSelf} from './Utils';
 import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetQuery';
 
 export const SidebarAssetInfo: React.FC<{
-  assetKey: AssetKey;
+  assetNode: GraphNode;
   liveData: LiveDataForNode;
-}> = ({assetKey, liveData}) => {
+}> = ({assetNode, liveData}) => {
+  const assetKey = assetNode.assetKey;
   const partitionHealthData = usePartitionHealthData([assetKey]);
   const {data} = useQuery<SidebarAssetQuery, SidebarAssetQueryVariables>(SIDEBAR_ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
@@ -76,6 +78,8 @@ export const SidebarAssetInfo: React.FC<{
       />
 
       <div style={{borderBottom: `2px solid ${Colors.Gray300}`}} />
+
+      {nodeDependsOnSelf(assetNode) && <DependsOnSelfBanner />}
 
       {(asset.description || OpMetadataPlugin?.SidebarComponent || !hasAssetMetadata) && (
         <SidebarSection title="Description">
