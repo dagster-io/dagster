@@ -16,6 +16,7 @@ from .repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
 )
+from dagster._core.storage.io_manager import IOManagerDefinition, IOManager
 from .resource_definition import ResourceDefinition
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
@@ -69,7 +70,9 @@ class Definitions:
         (via with_resources) to any asset passed to it. If you need to apply different
         resources to different assets, use legacy @repository and use with_resources as before.
 
-        (2) The resources dictionary takes raw python objects, not just resource definitions.
+        (2) The resources dictionary takes raw python objects, not just resource definitions. If
+        that raw object inherits from IOManager, it gets coerced at an IOManagerDefinition. Any other
+        object is coerced to a ResourceDefinition
         """
 
         if assets:
@@ -202,6 +205,8 @@ def coerce_resources_to_defs(resources: Mapping[str, Any]) -> Dict[str, Resource
         resource_defs[key] = (
             resource_obj
             if isinstance(resource_obj, ResourceDefinition)
+            else IOManagerDefinition.hardcoded_io_manager(resource_obj)
+            if isinstance(resource_obj, IOManager)
             else ResourceDefinition.hardcoded_resource(resource_obj)
         )
     return resource_defs
