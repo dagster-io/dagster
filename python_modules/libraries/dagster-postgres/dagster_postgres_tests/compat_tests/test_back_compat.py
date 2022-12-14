@@ -780,3 +780,38 @@ def test_add_cached_status_data_column(hostname, conn_string):
             instance.upgrade()
             assert instance.can_cache_asset_status_data() is True
             assert {"cached_status_data"} <= get_columns(instance, "asset_keys")
+
+
+def test_1_1_6_tick_update_timestamp_index(hostname, conn_string):
+
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            __file__,
+            "snapshot_1_1_6_pre_tick_update_timestamp_index/postgres/pg_dump.txt",
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            pre_migration_indexes = set(
+                c["name"]
+                for c in inspect(instance.schedule_storage._engine).get_indexes("job_ticks")
+            )
+            assert "idx_update_timestamp" not in pre_migration_indexes
+
+            instance.upgrade()
+
+            post_migration_indexes = set(
+                c["name"]
+                for c in inspect(instance.schedule_storage._engine).get_indexes("job_ticks")
+            )
+            assert "ix_job_ticks_update_timestamp" in post_migration_indexes
