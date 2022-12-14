@@ -70,7 +70,6 @@ def docker_compose_airbyte_instance_fixture(
                     headers={"Content-Type": "application/json"},
                 )
                 if poll_result.status_code == 200:
-                    time.sleep(RETRY_DELAY_SEC)
                     break
             except requests.exceptions.ConnectionError as e:
                 print(e)
