@@ -1,17 +1,13 @@
-"""isort:skip_file
+# local_filesystem_io_manager.py
 
-Defines a group of weather assets.
-
-Data is locally stored in csv files on the local filesystem.
-"""
 import os
 
 import pandas as pd
 from pandas import DataFrame
 
-from dagster import AssetKey, IOManager, IOManagerDefinition
+from dagster import AssetKey, IOManager, io_manager
 
-# io_manager_start
+
 class LocalFileSystemIOManager(IOManager):
     """Translates between Pandas DataFrames and CSVs on the local filesystem."""
 
@@ -30,19 +26,6 @@ class LocalFileSystemIOManager(IOManager):
         return pd.read_csv(fpath)
 
 
-# io_manager_end
-
-# gather_assets_start
-# imports the module called "assets" from the package containing the current module
-# the "assets" module contains the asset definitions
-from . import table_assets
-from dagster import load_assets_from_modules, with_resources
-
-weather_assets = with_resources(
-    load_assets_from_modules(modules=[table_assets]),
-    resource_defs={
-        "io_manager": IOManagerDefinition.hardcoded_io_manager(LocalFileSystemIOManager())
-    },
-)
-
-# gather_assets_end
+@io_manager
+def local_filesystem_io_manager():
+    return LocalFileSystemIOManager()
