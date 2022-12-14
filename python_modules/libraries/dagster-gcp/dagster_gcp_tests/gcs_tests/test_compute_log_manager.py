@@ -5,7 +5,7 @@ import tempfile
 import pendulum
 import pytest
 from dagster_gcp.gcs import GCSComputeLogManager
-from dagster_tests.core_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
+from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
 from google.cloud import storage  # type: ignore
 
 from dagster import DagsterEventType, job, op
