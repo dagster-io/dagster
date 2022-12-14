@@ -125,7 +125,7 @@ Job level retries are managed by the [run launcher](/deployment/run-retries) you
 
 ### Step 3: Defining the schedule
 
-In Dagster Schedules are defined seperately from your computations, Below we define a schedule that will run the `tutorial_job` daily:
+In Dagster, schedules can be defined for jobs, which determine the cadence at which a job is triggered to be executed. Below we define a schedule that will run the `tutorial_job` daily:
 
 ```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_schedule endbefore=end_schedule
 schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
