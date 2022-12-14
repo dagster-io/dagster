@@ -388,6 +388,11 @@ def build_node_deps(
             upstream_asset_key = resolved_asset_deps.get_resolved_asset_key_for_input(
                 assets_def, input_name
             )
+
+            # ignore self-deps
+            if upstream_asset_key in assets_def.keys:
+                continue
+
             if upstream_asset_key in node_alias_and_output_by_asset_key:
                 upstream_node_alias, upstream_output_name = node_alias_and_output_by_asset_key[
                     upstream_asset_key

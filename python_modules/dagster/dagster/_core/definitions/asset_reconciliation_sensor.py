@@ -34,6 +34,7 @@ from .partition import PartitionsDefinition, PartitionsSubset
 from .repository_definition import RepositoryDefinition
 from .run_request import RunRequest
 from .sensor_definition import DefaultSensorStatus, SensorDefinition
+from .time_window_partitions import TimeWindowPartitionsDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
@@ -85,7 +86,7 @@ class AssetReconciliationCursor(NamedTuple):
 
         for run_request in run_requests:
             for asset_key in cast(Iterable[AssetKey], run_request.asset_selection):
-                if len(asset_graph.get_parents(asset_key)) == 0:
+                if not asset_graph.has_non_source_parents(asset_key):
                     if run_request.partition_key:
                         requested_root_partitions_by_asset_key[asset_key].add(
                             run_request.partition_key
@@ -188,35 +189,55 @@ class ToposortedPriorityQueue:
     @functools.total_ordering
     class QueueItem(NamedTuple):
         level: int
+        partition_sort_key: Optional[float]
         asset_partition: AssetKeyPartitionKey
 
         def __eq__(self, other):
-            return self.level == other.level
+            return self.level == other.level and self.partition_sort_key == other.partition_sort_key
 
         def __lt__(self, other):
-            return self.level < other.level
+            return self.level < other.level or (
+                self.level == other.level
+                and self.partition_sort_key is not None
+                and self.partition_sort_key < other.partition_sort_key
+            )
 
     def __init__(self, asset_graph: AssetGraph, items: Iterable[AssetKeyPartitionKey]):
+        self._asset_graph = asset_graph
         toposorted_asset_keys = asset_graph.toposort_asset_keys()
         self._toposort_level_by_asset_key = {
             asset_key: i
             for i, asset_keys in enumerate(toposorted_asset_keys)
             for asset_key in asset_keys
         }
-        self._heap = [
-            ToposortedPriorityQueue.QueueItem(
-                self._toposort_level_by_asset_key[asset_partition.asset_key], asset_partition
-            )
-            for asset_partition in items
-        ]
+        self._heap = [self._queue_item(asset_partition) for asset_partition in items]
         heapify(self._heap)
 
     def enqueue(self, asset_partition: AssetKeyPartitionKey) -> None:
-        priority = self._toposort_level_by_asset_key[asset_partition.asset_key]
-        heappush(self._heap, ToposortedPriorityQueue.QueueItem(priority, asset_partition))
+        heappush(self._heap, self._queue_item(asset_partition))
 
     def dequeue(self) -> AssetKeyPartitionKey:
         return heappop(self._heap).asset_partition
+
+    def _queue_item(self, asset_partition: AssetKeyPartitionKey):
+        asset_key = asset_partition.asset_key
+        level = self._toposort_level_by_asset_key[asset_key]
+        if self._asset_graph.has_self_dependency(asset_key):
+            partitions_def = self._asset_graph.get_partitions_def(asset_key)
+            if partitions_def is not None and isinstance(
+                partitions_def, TimeWindowPartitionsDefinition
+            ):
+                partition_sort_key = (
+                    cast(TimeWindowPartitionsDefinition, partitions_def)
+                    .time_window_for_partition_key(cast(str, asset_partition.partition_key))
+                    .start.timestamp()
+                )
+            else:
+                check.failed("Assets with self-dependencies must have time-window partitions")
+        else:
+            partition_sort_key = None
+
+        return ToposortedPriorityQueue.QueueItem(level, partition_sort_key, asset_partition)
 
     def __len__(self) -> int:
         return len(self._heap)
@@ -342,6 +363,7 @@ def determine_asset_partitions_to_reconcile(
         target_asset_selection=target_asset_selection,
         asset_graph=asset_graph,
     )
+
     target_asset_keys = target_asset_selection.resolve(asset_graph)
 
     to_reconcile: Set[AssetKeyPartitionKey] = set()
@@ -369,6 +391,7 @@ def determine_asset_partitions_to_reconcile(
                         and asset_graph.have_same_partitioning(
                             parent.asset_key, candidate.asset_key
                         )
+                        and parent.partition_key == candidate.partition_key
                     )
                     or (
                         instance_queryer.is_reconciled(
@@ -385,6 +408,10 @@ def determine_asset_partitions_to_reconcile(
             )
         ):
             to_reconcile.add(candidate)
+            # add in all of the neighbor keys which must be materialized alongside this one
+            for required_key in asset_graph.get_required_multi_asset_keys(candidate.asset_key):
+                to_reconcile.add(AssetKeyPartitionKey(required_key, candidate.partition_key))
+
             for child in asset_graph.get_children_partitions(
                 candidate.asset_key, candidate.partition_key
             ):
@@ -655,10 +682,21 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                     key,
                 )
 
-            # this key should be updated on this tick, as we are within the allowable window
-            if execution_window_start is not None and execution_window_start <= current_time:
-                to_materialize.add(AssetKeyPartitionKey(key, None))
+            # a key may already be in to_materialize by the time we get here if a required
+            # neighbor was selected to be updated
+            asset_key_partition_key = AssetKeyPartitionKey(key, None)
+            if asset_key_partition_key in to_materialize:
                 expected_data_times_by_key[key] = expected_data_times
+            elif (
+                # this key should be updated on this tick, as we are within the allowable window
+                execution_window_start is not None
+                and execution_window_start <= current_time
+            ):
+                to_materialize.add(asset_key_partition_key)
+                expected_data_times_by_key[key] = expected_data_times
+                # all required neighbors will be updated on the same tick
+                for required_key in asset_graph.get_required_multi_asset_keys(key):
+                    to_materialize.add(AssetKeyPartitionKey(required_key, None))
             else:
                 # if downstream assets consume this, they should expect data times equal to the
                 # current times for this asset, as it's not going to be updated

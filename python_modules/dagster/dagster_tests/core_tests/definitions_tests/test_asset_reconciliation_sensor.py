@@ -1,7 +1,7 @@
 import contextlib
 import datetime
 import itertools
-from typing import Iterable, List, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set, Union
 
 import pendulum
 import pytest
@@ -9,22 +9,26 @@ import pytest
 from dagster import (
     AssetIn,
     AssetKey,
+    AssetOut,
     AssetSelection,
     AssetsDefinition,
     DagsterInstance,
     DailyPartitionsDefinition,
     Field,
     Nothing,
+    Output,
     PartitionKeyRange,
     PartitionMapping,
     PartitionsDefinition,
     RunRequest,
     SourceAsset,
     StaticPartitionsDefinition,
+    TimeWindowPartitionMapping,
     asset,
     build_asset_reconciliation_sensor,
     build_sensor_context,
     materialize_to_memory,
+    multi_asset,
     repository,
 )
 from dagster._core.definitions.asset_reconciliation_sensor import (
@@ -70,14 +74,22 @@ class AssetReconciliationScenario(NamedTuple):
                 cursor = AssetReconciliationCursor.empty()
 
             for run in self.unevaluated_runs:
-                assets_in_run = [
-                    asset
-                    if asset.key in run.asset_keys
-                    else (
-                        asset.to_source_assets()[0] if not isinstance(asset, SourceAsset) else asset
-                    )
-                    for asset in self.assets
-                ]
+                assets_in_run = []
+                run_keys = set(run.asset_keys)
+                for asset in self.assets:
+                    if isinstance(asset, SourceAsset):
+                        assets_in_run.append(asset)
+                    else:
+                        selected_keys = run_keys.intersection(asset.keys)
+                        if selected_keys == asset.keys:
+                            assets_in_run.append(asset)
+                        elif not selected_keys:
+                            assets_in_run.extend(asset.to_source_assets())
+                        else:
+                            assets_in_run.append(asset.subset_for(run_keys))
+                            assets_in_run.extend(
+                                asset.subset_for(asset.keys - selected_keys).to_source_assets()
+                            )
                 materialize_to_memory(
                     instance=instance,
                     partition_key=run.partition_key,
@@ -171,6 +183,35 @@ def asset_def(
     return _asset
 
 
+def multi_asset_def(
+    keys: List[str],
+    deps: Optional[Union[List[str], Mapping[str, Set[str]]]] = None,
+    can_subset: bool = False,
+) -> AssetsDefinition:
+    if deps is None:
+        non_argument_deps = set()
+        internal_asset_deps = None
+    elif isinstance(deps, list):
+        non_argument_deps = set(deps)
+        internal_asset_deps = None
+    else:
+        non_argument_deps = set().union(*deps.values())
+        internal_asset_deps = {k: {AssetKey(vv) for vv in v} for k, v in deps.items()}
+
+    @multi_asset(
+        outs={key: AssetOut(is_required=not can_subset) for key in keys},
+        name="_".join(keys),
+        non_argument_deps=non_argument_deps,
+        internal_asset_deps=internal_asset_deps,
+        can_subset=can_subset,
+    )
+    def _assets(context):
+        for output in context.selected_output_names:
+            yield Output(output, output)
+
+    return _assets
+
+
 ######################################################################
 # The cases
 ######################################################################
@@ -257,8 +298,27 @@ diamond = [
     asset_def("asset4", ["asset2", "asset3"]),
 ]
 
-
 three_assets_in_sequence = two_assets_in_sequence + [asset_def("asset3", ["asset2"])]
+
+# multi-assets
+
+multi_asset_in_middle = [
+    asset_def("asset1"),
+    asset_def("asset2"),
+    multi_asset_def(["asset3", "asset4"], {"asset3": {"asset1"}, "asset4": {"asset2"}}),
+    asset_def("asset5", ["asset3"]),
+    asset_def("asset6", ["asset4"]),
+]
+
+multi_asset_in_middle_subsettable = (
+    multi_asset_in_middle[:2]
+    + [
+        multi_asset_def(
+            ["asset3", "asset4"], {"asset3": {"asset1"}, "asset4": {"asset2"}}, can_subset=True
+        ),
+    ]
+    + multi_asset_in_middle[-2:]
+)
 
 # freshness policy
 diamond_freshness = diamond[:-1] + [
@@ -282,6 +342,15 @@ overlapping_freshness_none = diamond + [
     asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
     asset_def("asset6", ["asset4"], freshness_policy=None),
 ]
+
+non_subsettable_multi_asset_on_top = [
+    multi_asset_def(["asset1", "asset2", "asset3"], can_subset=False),
+    asset_def("asset4", ["asset1"]),
+    asset_def("asset5", ["asset2"], freshness_policy=freshness_30m),
+]
+subsettable_multi_asset_on_top = [
+    multi_asset_def(["asset1", "asset2", "asset3"], can_subset=True)
+] + non_subsettable_multi_asset_on_top[1:]
 
 # partitions
 one_asset_one_partition = [asset_def("asset1", partitions_def=one_partition_partitions_def)]
@@ -310,6 +379,13 @@ two_assets_in_sequence_fan_out_partitions = [
 ]
 one_asset_daily_partitions = [asset_def("asset1", partitions_def=daily_partitions_def)]
 
+one_asset_self_dependency = [
+    asset_def(
+        "asset1",
+        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+        deps={"asset1": TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
+    )
+]
 
 scenarios = {
     ################################################################################################
@@ -415,6 +491,28 @@ scenarios = {
         assets=three_assets_in_sequence,
         unevaluated_runs=[single_asset_run("asset1"), single_asset_run("asset2")],
         expected_run_requests=[run_request(asset_keys=["asset3"])],
+    ),
+    ################################################################################################
+    # Multi Assets
+    ################################################################################################
+    "multi_asset_in_middle_single_parent_rematerialized": AssetReconciliationScenario(
+        assets=multi_asset_in_middle,
+        unevaluated_runs=[single_asset_run("asset1")],
+        cursor_from=AssetReconciliationScenario(
+            assets=multi_asset_in_middle,
+            unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
+        ),
+        # don't need to run asset4 for reconciliation but asset4 must run when asset3 does
+        expected_run_requests=[run_request(asset_keys=["asset3", "asset4", "asset5"])],
+    ),
+    "multi_asset_in_middle_single_parent_rematerialized_subsettable": AssetReconciliationScenario(
+        assets=multi_asset_in_middle_subsettable,
+        unevaluated_runs=[single_asset_run("asset1")],
+        cursor_from=AssetReconciliationScenario(
+            assets=multi_asset_in_middle,
+            unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
+        ),
+        expected_run_requests=[run_request(asset_keys=["asset3", "asset5"])],
     ),
     ################################################################################################
     # Partial runs
@@ -619,6 +717,32 @@ scenarios = {
             ),
         ),
     ),
+    "self_dependency_never_materialized": AssetReconciliationScenario(
+        assets=one_asset_self_dependency,
+        unevaluated_runs=[],
+        expected_run_requests=[run_request(asset_keys=["asset1"], partition_key="2020-01-01")],
+        current_time=create_pendulum_time(year=2020, month=1, day=3, hour=4),
+    ),
+    "self_dependency_prior_partition_requested": AssetReconciliationScenario(
+        assets=one_asset_self_dependency,
+        unevaluated_runs=[],
+        cursor_from=AssetReconciliationScenario(
+            assets=one_asset_self_dependency,
+            unevaluated_runs=[],
+        ),
+        expected_run_requests=[],
+        current_time=create_pendulum_time(year=2020, month=1, day=3, hour=4),
+    ),
+    "self_dependency_prior_partition_materialized": AssetReconciliationScenario(
+        assets=one_asset_self_dependency,
+        unevaluated_runs=[single_asset_run(asset_key="asset1", partition_key="2020-01-01")],
+        cursor_from=AssetReconciliationScenario(
+            assets=one_asset_self_dependency,
+            unevaluated_runs=[],
+        ),
+        expected_run_requests=[run_request(asset_keys=["asset1"], partition_key="2020-01-02")],
+        current_time=create_pendulum_time(year=2020, month=1, day=3, hour=4),
+    ),
     ################################################################################################
     # Freshness policies
     ################################################################################################
@@ -701,6 +825,19 @@ scenarios = {
         # same as above
         unevaluated_runs=[run(["asset1"])],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
+    ),
+    "freshness_non_subsettable_multi_asset_on_top": AssetReconciliationScenario(
+        assets=non_subsettable_multi_asset_on_top,
+        unevaluated_runs=[run([f"asset{i}" for i in range(1, 6)])],
+        evaluation_delta=datetime.timedelta(minutes=35),
+        # need to run assets 1, 2 and 3 as they're all part of the same non-subsettable multi asset
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset5"])],
+    ),
+    "freshness_subsettable_multi_asset_on_top": AssetReconciliationScenario(
+        assets=subsettable_multi_asset_on_top,
+        unevaluated_runs=[run([f"asset{i}" for i in range(1, 6)])],
+        evaluation_delta=datetime.timedelta(minutes=35),
+        expected_run_requests=[run_request(asset_keys=["asset2", "asset5"])],
     ),
 }
 

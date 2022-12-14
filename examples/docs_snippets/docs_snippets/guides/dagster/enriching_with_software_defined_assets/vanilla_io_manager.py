@@ -1,6 +1,6 @@
 from pandas import DataFrame
 
-from dagster import In, Out, job, op, repository
+from dagster import Definitions, In, Out, job, op
 
 from .mylib import s3_io_manager, snowflake_io_manager, train_recommender_model
 
@@ -25,6 +25,6 @@ def users_recommender_job():
     build_user_recommender_model(build_users())
 
 
-@repository
-def repo():
-    return [users_recommender_job]
+defs = Definitions(
+    jobs=[users_recommender_job],
+)

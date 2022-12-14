@@ -508,3 +508,11 @@ def test_partition_subset_with_partition_keys(initial: str, added: str):
         1 if updated_subset_str[0] == "+" else 0
     )
     assert len(updated_subset.included_time_windows) == expected_range_count, updated_subset_str
+
+
+def test_time_window_partitions_subset():
+    weekly_partitions_def = WeeklyPartitionsDefinition(start_date="2022-01-01")
+
+    with_keys = ["2022-01-02", "2022-01-09", "2022-01-23", "2022-02-06"]
+    subset = weekly_partitions_def.empty_subset().with_partition_keys(with_keys)
+    assert set(subset.get_partition_keys()) == set(with_keys)

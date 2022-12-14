@@ -144,3 +144,6 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
 
     def alembic_version(self):
         return None
+
+    def dispose(self):
+        """Explicit lifecycle management."""

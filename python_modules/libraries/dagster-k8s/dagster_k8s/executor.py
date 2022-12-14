@@ -228,7 +228,14 @@ class K8sStepHandler(StepHandler):
                 "dagster/op": step_key,
                 "dagster/run-id": step_handler_context.execute_step_args.pipeline_run_id,
             },
-            env_vars=step_handler_context.execute_step_args.get_command_env(),
+            env_vars=[
+                *step_handler_context.execute_step_args.get_command_env(),
+                {
+                    "name": "DAGSTER_RUN_JOB_NAME",
+                    "value": step_handler_context.pipeline_run.pipeline_name,
+                },
+                {"name": "DAGSTER_RUN_STEP_KEY", "value": step_key},
+            ],
         )
 
         yield DagsterEvent.step_worker_starting(

@@ -226,6 +226,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 "dagster/job": pipeline_origin.pipeline_name,
                 "dagster/run-id": run.run_id,
             },
+            env_vars=[
+                {
+                    "name": "DAGSTER_RUN_JOB_NAME",
+                    "value": pipeline_origin.pipeline_name,
+                }
+            ],
         )
 
         self._instance.report_engine_event(
