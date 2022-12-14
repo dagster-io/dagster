@@ -21,7 +21,7 @@ A convenient way to organize your job and other definitions, each repository:
 - Is loaded in a different process than Dagster system processes like Dagit. Any communication between the Dagster system and repository code occurs over an RPC mechanism, ensuring that problems in repository code can't affect Dagster or other repositories.
 - Can be loaded in its own Python environment, so you can manage your dependencies (or even your own Python versions) separately.
 
-You can set up multiple repositories and load them all at once by creating a `workspace.yaml` file. This can be useful for grouping jobs and other artifacts by team for organizational purposes. Refer to the [Workspace documentation](/concepts/repositories-workspaces/workspaces) to learn more about setting up multiple repositories.
+You can set up multiple repositories and load them all at once by creating a `workspace.yaml` file. This can be useful for grouping jobs and other artifacts by team for organizational purposes. Refer to the [Workspace documentation](/concepts/code-locations/workspace-files) to learn more about setting up multiple repositories.
 
 ---
 
@@ -122,4 +122,4 @@ height={2454}
 
 You can also use `-m` to specify a module where the repository lives (See [`dagit`](/\_apidocs/cli#dagit) for the full list of ways to locate a repository).
 
-Loading repositories via the `-f` or `-m` options is actually just a convenience function. The underlying abstraction is the Workspace, which determines all of the available repositories available to Dagit. See [Workspace](/concepts/repositories-workspaces/workspaces) for more details.
+Loading repositories via the `-f` or `-m` options is actually just a convenience function. The underlying abstraction is the Workspace, which determines all of the available repositories available to Dagit. See [Workspace](/concepts/code-locations/workspace-files) for more details.
