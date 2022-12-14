@@ -8,8 +8,10 @@ export const DependsOnSelfBanner: React.FC = () => {
       border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
     >
       <Alert
-        intent="warning"
-        icon={<Icon name="history_toggle_off" size={16} color={Colors.Yellow700} />}
+        intent="info"
+        icon={
+          <Icon name="history_toggle_off" size={16} color={Colors.Blue700} style={{marginTop: 1}} />
+        }
         title={
           <div style={{fontWeight: 400}}>This asset depends on earlier partitions of itself. </div>
         }
