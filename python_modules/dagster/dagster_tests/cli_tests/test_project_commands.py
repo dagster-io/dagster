@@ -11,6 +11,7 @@ from dagster._cli.project import (
     scaffold_repository_command,
 )
 from dagster._cli.workspace.cli_target import get_target_from_toml
+from dagster._core.workspace.load_target import ModuleTarget
 from dagster._generate.download import AVAILABLE_EXAMPLES, EXAMPLES_TO_IGNORE
 from dagster._generate.generate import _should_skip_file
 
@@ -37,7 +38,8 @@ def test_project_scaffold_command_succeeds():
 
         # test target loadable
         target = get_target_from_toml("my_dagster_project/pyproject.toml")
-        assert target.package_name == "my_dagster_project"
+        assert isinstance(target, ModuleTarget)
+        assert target.module_name == "my_dagster_project"
 
 
 def test_scaffold_code_location_scaffold_command_fails_when_dir_path_exists():
@@ -61,7 +63,8 @@ def test_scaffold_code_location_command_succeeds():
 
         # test target loadable
         target = get_target_from_toml("my_dagster_code/pyproject.toml")
-        assert target.package_name == "my_dagster_code"
+        assert isinstance(target, ModuleTarget)
+        assert target.module_name == "my_dagster_code"
 
 
 def test_from_example_command_fails_when_example_not_available():
