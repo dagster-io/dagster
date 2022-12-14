@@ -1,4 +1,2 @@
-# workspace.yaml
-
 load_from:
-  - python_file: my_file.py
+  - python_file: repository.py

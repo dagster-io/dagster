@@ -239,7 +239,7 @@ The Dagster chart repository contains the versioned charts for all Dagster relea
 
 ### Configure your User Deployment
 
-Update the `dagster-user-deployments.deployments` section of the Dagster chart's `values.yaml` to include your deployment. Here, we can specify the configuration of the Kubernetes Deployment that will create the gRPC server for Dagit and the daemon to access the user code. The gRPC server is created through the arguments passed to `dagsterApiGrpcArgs`, which expects a list of arguments for [`dagster api grpc`](/concepts/code-locations/workspace-files#running-your-own-grpc-server).
+Update the `dagster-user-deployments.deployments` section of the Dagster chart's `values.yaml` to include your deployment. Here, we can specify the configuration of the Kubernetes Deployment that will create the gRPC server for Dagit and the daemon to access the user code. The gRPC server is created through the arguments passed to `dagsterApiGrpcArgs`, which expects a list of arguments for [`dagster api grpc`](/concepts/repositories-workspaces/workspaces#running-your-own-grpc-server).
 
 To get access to the Dagster `values.yaml`, run:
 
@@ -262,7 +262,7 @@ dagster-user-deployments:
       port: 3030
 ```
 
-`dagsterApiGrpcArgs` also supports loading repository definitions from a package name. To find the applicable arguments, [read here](/concepts/code-locations/workspace-files#running-your-own-grpc-server).
+`dagsterApiGrpcArgs` also supports loading repository definitions from a package name. To find the applicable arguments, [read here](/concepts/repositories-workspaces/workspaces#running-your-own-grpc-server).
 
 You can also specify configuration like configmaps, secrets, volumes, resource limits, and labels for individual user code deployments:
 

@@ -465,9 +465,9 @@ telemetry:
 
 ### Code servers
 
-The `code_servers` key lets you configure how Dagster loads the code in your [workspace](/concepts/code-locations/workspace-files).
+The `code_servers` key lets you configure how Dagster loads the code in your [workspace](/concepts/repositories-workspaces/workspaces).
 
-When you aren't [running your own gRPC server](/concepts/code-locations/workspace-files#running-your-own-grpc-server), Dagit and the Dagster Daemon load your code from a gRPC server running in a subprocess. By default, if your code takes more than 60 seconds to load, Dagster will assume that it is hanging and stop waiting for it to load. If you expect that your repository code will take longer than 60 seconds to load, you can set the `local_startup_timeout` key:
+When you aren't [running your own gRPC server](/concepts/repositories-workspaces/workspaces#running-your-own-grpc-server), Dagit and the Dagster Daemon load your code from a gRPC server running in a subprocess. By default, if your code takes more than 60 seconds to load, Dagster will assume that it is hanging and stop waiting for it to load. If you expect that your repository code will take longer than 60 seconds to load, you can set the `local_startup_timeout` key:
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_code_servers endbefore=end_marker_code_servers
 # Configures how long Dagster waits for repositories

@@ -1,5 +1,3 @@
-# workspace.yaml
-
 load_from:
   - python_file:
       relative_path: hello_world_repository.py

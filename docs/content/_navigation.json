@@ -219,16 +219,7 @@
       },
       {
         "title": "Code locations",
-        "children": [
-          {
-            "title": "Code locations",
-            "path": "/concepts/code-locations"
-          },
-          {
-            "title": "Workspace files",
-            "path": "/concepts/code-locations/workspace-files"
-          }
-        ]
+        "path": "/concepts/code-locations"
       },
       {
         "title": "Dagit UI & GraphQL API",
