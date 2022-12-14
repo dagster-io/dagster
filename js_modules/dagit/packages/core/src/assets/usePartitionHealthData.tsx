@@ -39,7 +39,7 @@ export type PartitionHealthDimensionRange = {
   selected: string[];
 };
 
-async function loadPartitionHealthData(client: ApolloClient<any>, loadKey: AssetKey) {
+export async function loadPartitionHealthData(client: ApolloClient<any>, loadKey: AssetKey) {
   const {data} = await client.query<PartitionHealthQuery, PartitionHealthQueryVariables>({
     query: PARTITION_HEALTH_QUERY,
     fetchPolicy: 'network-only',
