@@ -219,7 +219,16 @@
       },
       {
         "title": "Code locations",
-        "path": "/concepts/code-locations"
+        "children": [
+          {
+            "title": "Code locations",
+            "path": "/concepts/code-locations"
+          },
+          {
+            "title": "Workspace files",
+            "path": "/concepts/code-locations/workspace-files"
+          }
+        ]
       },
       {
         "title": "Dagit UI & GraphQL API",
@@ -559,7 +568,13 @@
       },
       {
         "title": "Airflow",
-        "path": "/integrations/airflow"
+        "path": "/integrations/airflow",
+        "children": [
+          {
+            "title": "Learning Dagster from Airflow",
+            "path": "/integrations/airflow/from-airflow-to-dagster"
+          }
+        ]
       },
       {
         "title": "dbt",
@@ -742,6 +757,10 @@
             "path": "/_apidocs/jobs"
           },
           {
+            "title": "Definitions",
+            "path": "/_apidocs/definitions"
+          },
+          {
             "title": "Ops",
             "path": "/_apidocs/ops"
           },
@@ -756,10 +775,6 @@
           {
             "title": "Loggers",
             "path": "/_apidocs/loggers"
-          },
-          {
-            "title": "Repositories",
-            "path": "/_apidocs/repositories"
           },
           {
             "title": "Config",
@@ -804,6 +819,10 @@
           {
             "title": "Versioning & Memoization",
             "path": "/_apidocs/memoization"
+          },
+          {
+            "title": "Repositories",
+            "path": "/_apidocs/repositories"
           },
           {
             "title": "Utilities",

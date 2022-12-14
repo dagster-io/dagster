@@ -369,6 +369,13 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 "dagster/op": step_key,
                 "dagster/run-id": execute_step_args.pipeline_run_id,
             },
+            env_vars=[
+                {
+                    "name": "DAGSTER_RUN_JOB_NAME",
+                    "value": pipeline_run.job_name,
+                },
+                {"name": "DAGSTER_RUN_STEP_KEY", "value": step_key},
+            ],
         )
 
         # Running list of events generated from this task execution

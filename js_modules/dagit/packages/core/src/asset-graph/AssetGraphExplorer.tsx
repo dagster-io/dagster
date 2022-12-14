@@ -447,7 +447,7 @@ export const AssetGraphExplorerWithData: React.FC<
           <RightInfoPanel>
             <RightInfoPanelContent>
               <SidebarAssetInfo
-                assetKey={selectedGraphNodes[0].assetKey}
+                assetNode={selectedGraphNodes[0]}
                 liveData={liveDataByNode[selectedGraphNodes[0].id]}
               />
             </RightInfoPanelContent>

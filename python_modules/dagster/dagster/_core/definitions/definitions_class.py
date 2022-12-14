@@ -7,6 +7,7 @@ from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.instance import DagsterInstance
+from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 from dagster._utils.backcompat import experimental_arg_warning
 from dagster._utils.cached_method import cached_method
 
@@ -30,6 +31,39 @@ if TYPE_CHECKING:
 
 @experimental
 class Definitions:
+    """Example usage:
+
+    .. code-block:: python
+
+        defs = Definitions(
+            assets=[asset_one, asset_two],
+            schedules=[a_schedule],
+            sensors=[a_sensor],
+            jobs=[a_job],
+            resources={
+                "a_resource": some_resource,
+            }
+        )
+
+    Create a set of definitions explicitly available and loadable by Dagster tools.
+
+    Dagster separates user-defined code from system tools such the web server and
+    the daemon. Rather than loading code directly into process, a tool such as the
+    webserver interacts with user-defined code over a serialization boundary.
+
+    These tools must be able to locate and load this code when they start. Via CLI
+    arguments or config, they specify a Python module to inspect.
+
+    A Python module is loadable by Dagster tools if there is a top-level variable
+    that is an instance of Definitions.
+
+    Definitions provides a few conveniences for dealing with resources that do not apply to
+    vanilla Dagster definitions:
+
+    * It takes a dictionary of top-level resources which are automatically bound (via with_resources) to any asset passed to it. If you need to apply different resources to different assets, use legacy @repository and use with_resources as before.
+    * The resources dictionary takes raw Python objects, not just instances of :py:class:`ResourceDefinition`. If that raw object inherits from :py:class:`IOManager`, it gets coerced to an :py:class:`IOManagerDefinition`. Any other object is coerced to a ResourceDefinition.
+    """
+
     def __init__(
         self,
         assets: Optional[
@@ -42,40 +76,6 @@ class Definitions:
         executor: Optional[ExecutorDefinition] = None,
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     ):
-        """
-        Example usage:
-
-        defs = Definitions(
-            assets=[asset_one, asset_two],
-            schedules=[a_schedule],
-            sensors=[a_sensor],
-            jobs=[a_job],
-            resources={
-                "a_resource": some_resource,
-            }
-        )
-
-        Create a set of definitions explicitly available and loadable by dagster tools.
-
-        Dagster separates user-defined code from system tools such the web server and
-        the daemon. Rather than loading code directly into process, a tool such as the
-        webserver interacts with user-defined code over a serialization boundary.
-
-        These tools must be able to locate and load this code when they start. Via CLI
-        arguments or config, they specify a python module to inspect.
-
-        A python module is loadable by dagster tools if it there is a top level variable
-        named `defs` that is an instance of Definitions.
-
-        Definitions provides a few conveniences for dealing with resources that do not apply to
-        vanilla dagster definitions:
-
-        (1) It takes a dictionary of top-level resources which are automatically bound
-        (via with_resources) to any asset passed to it. If you need to apply different
-        resources to different assets, use legacy @repository and use with_resources as before.
-
-        (2) The resources dictionary takes raw python objects, not just resource definitions.
-        """
 
         if assets:
             check.iterable_param(
@@ -121,8 +121,8 @@ class Definitions:
 
     @public
     def get_job_def(self, name: str) -> JobDefinition:
-        """Get a job definition by name. If you passed in a an UnresolvedAssetJobDefinition
-        (return value of define_asset_job) it will be resolved to a JobDefinition when returned
+        """Get a job definition by name. If you passed in a an :py:class:`UnresolvedAssetJobDefinition`
+        (return value of :py:func:`define_asset_job`) it will be resolved to a :py:class:`JobDefinition` when returned
         from this function."""
 
         check.str_param(name, "name")
@@ -130,12 +130,13 @@ class Definitions:
 
     @public
     def get_sensor_def(self, name: str) -> SensorDefinition:
-        """Get a sensor definition name"""
+        """Get a sensor definition by name."""
         check.str_param(name, "name")
         return self.get_repository_def().get_sensor_def(name)
 
     @public
     def get_schedule_def(self, name: str) -> ScheduleDefinition:
+        """Get a schedule definition by name."""
         check.str_param(name, "name")
         return self.get_repository_def().get_schedule_def(name)
 
@@ -149,7 +150,7 @@ class Definitions:
         partition_key: Optional[str] = None,
     ) -> object:
         """
-        Loads the contents of an asset as a Python object.
+        Load the contents of an asset as a Python object.
 
         Invokes `load_input` on the :py:class:`IOManager` associated with the asset.
 
@@ -185,12 +186,11 @@ class Definitions:
 
         Usage:
 
-            .. code-block:: python
+        .. code-block:: python
 
-                with defs.get_asset_value_loader() as loader:
-                    asset1 = loader.load_asset_value("asset1")
-                    asset2 = loader.load_asset_value("asset2")
-
+            with defs.get_asset_value_loader() as loader:
+                asset1 = loader.load_asset_value("asset1")
+                asset2 = loader.load_asset_value("asset2")
         """
         return self.get_repository_def().get_asset_value_loader(
             instance=instance,
@@ -198,6 +198,11 @@ class Definitions:
 
     @cached_method
     def get_repository_def(self) -> RepositoryDefinition:
+        """
+        Definitions is implemented by wrapping RepositoryDefinition. Get that underlying object
+        in order to access an functionality which is not exposed on Definitions. This method
+        also resolves a PendingRepositoryDefinition to a RepositoryDefinition.
+        """
         return (
             self._created_pending_or_normal_repo.compute_repository_definition()
             if isinstance(self._created_pending_or_normal_repo, PendingRepositoryDefinition)
@@ -219,6 +224,8 @@ def coerce_resources_to_defs(resources: Mapping[str, Any]) -> Dict[str, Resource
         resource_defs[key] = (
             resource_obj
             if isinstance(resource_obj, ResourceDefinition)
+            else IOManagerDefinition.hardcoded_io_manager(resource_obj)
+            if isinstance(resource_obj, IOManager)
             else ResourceDefinition.hardcoded_resource(resource_obj)
         )
     return resource_defs

@@ -358,6 +358,9 @@ class TestEventLogStorage:
         with create_and_delete_test_runs(instance, [run_id]):
             yield run_id
 
+    def is_sqlite(self, storage):
+        return isinstance(storage, SqliteEventLogStorage)
+
     def test_init_log_storage(self, storage):
         if isinstance(storage, InMemoryEventLogStorage):
             assert not storage.is_persistent
@@ -1194,7 +1197,7 @@ class TestEventLogStorage:
         "cursor_dt", cursor_datetime_args()
     )  # test both tz-aware and naive datetimes
     def test_get_event_records(self, storage, instance, cursor_dt):
-        if isinstance(storage, SqliteEventLogStorage):
+        if self.is_sqlite(storage):
             # test sqlite in test_get_event_records_sqlite
             pytest.skip()
 
@@ -1274,7 +1277,7 @@ class TestEventLogStorage:
             }
 
     def test_get_event_records_sqlite(self, storage):
-        if not isinstance(storage, SqliteEventLogStorage):
+        if not self.is_sqlite(storage):
             pytest.skip()
 
         asset_key = AssetKey(["path", "to", "asset_one"])

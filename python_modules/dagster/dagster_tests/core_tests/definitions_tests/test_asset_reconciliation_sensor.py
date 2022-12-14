@@ -23,6 +23,7 @@ from dagster import (
     RunRequest,
     SourceAsset,
     StaticPartitionsDefinition,
+    TimeWindowPartitionMapping,
     asset,
     build_asset_reconciliation_sensor,
     build_sensor_context,
@@ -378,6 +379,13 @@ two_assets_in_sequence_fan_out_partitions = [
 ]
 one_asset_daily_partitions = [asset_def("asset1", partitions_def=daily_partitions_def)]
 
+one_asset_self_dependency = [
+    asset_def(
+        "asset1",
+        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+        deps={"asset1": TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
+    )
+]
 
 scenarios = {
     ################################################################################################
@@ -708,6 +716,32 @@ scenarios = {
                 unevaluated_runs=[single_asset_run(asset_key="asset1", partition_key="a")],
             ),
         ),
+    ),
+    "self_dependency_never_materialized": AssetReconciliationScenario(
+        assets=one_asset_self_dependency,
+        unevaluated_runs=[],
+        expected_run_requests=[run_request(asset_keys=["asset1"], partition_key="2020-01-01")],
+        current_time=create_pendulum_time(year=2020, month=1, day=3, hour=4),
+    ),
+    "self_dependency_prior_partition_requested": AssetReconciliationScenario(
+        assets=one_asset_self_dependency,
+        unevaluated_runs=[],
+        cursor_from=AssetReconciliationScenario(
+            assets=one_asset_self_dependency,
+            unevaluated_runs=[],
+        ),
+        expected_run_requests=[],
+        current_time=create_pendulum_time(year=2020, month=1, day=3, hour=4),
+    ),
+    "self_dependency_prior_partition_materialized": AssetReconciliationScenario(
+        assets=one_asset_self_dependency,
+        unevaluated_runs=[single_asset_run(asset_key="asset1", partition_key="2020-01-01")],
+        cursor_from=AssetReconciliationScenario(
+            assets=one_asset_self_dependency,
+            unevaluated_runs=[],
+        ),
+        expected_run_requests=[run_request(asset_keys=["asset1"], partition_key="2020-01-02")],
+        current_time=create_pendulum_time(year=2020, month=1, day=3, hour=4),
     ),
     ################################################################################################
     # Freshness policies

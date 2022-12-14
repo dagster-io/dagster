@@ -32,11 +32,11 @@ import {
   ConfigPartitionSelectionQuery,
   ConfigPartitionSelectionQueryVariables,
 } from '../launchpad/types/ConfigPartitionSelectionQuery';
-import {assembleIntoSpans, stringForSpan} from '../partitions/PartitionRangeInput';
 import {PartitionRangeWizard} from '../partitions/PartitionRangeWizard';
 import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
 import {showBackfillErrorToast, showBackfillSuccessToast} from '../partitions/PartitionsBackfill';
+import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation';
 import {RepoAddress} from '../workspace/types';
 
 import {executionParamsForAssetJob} from './LaunchAssetExecutionButton';
@@ -108,10 +108,11 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const assetHealth = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
   const mergedHealth = React.useMemo(() => mergedAssetHealth(assetHealth), [assetHealth]);
 
-  const [ranges, setRanges] = usePartitionDimensionRanges(
-    mergedHealth,
-    partitionedAssets[0].partitionKeysByDimension.map((d) => d.name),
-  );
+  const [ranges, setRanges] = usePartitionDimensionRanges({
+    knownDimensionNames: partitionedAssets[0].partitionKeysByDimension.map((d) => d.name),
+    modifyQueryString: false,
+    assetHealth: mergedHealth,
+  });
 
   const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
     PartitionState.MISSING,

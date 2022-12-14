@@ -4,7 +4,13 @@ from functools import reduce
 
 import pytest
 
-from dagster import DagsterInvalidSubsetError, SourceAsset
+from dagster import (
+    AssetIn,
+    DagsterInvalidSubsetError,
+    DailyPartitionsDefinition,
+    SourceAsset,
+    TimeWindowPartitionMapping,
+)
 from dagster._core.definitions import AssetSelection, asset
 from dagster._core.definitions.events import AssetKey
 
@@ -170,3 +176,22 @@ def test_upstream_include_self(all_assets):
 
     selection = AssetSelection.groups("ladies").upstream(include_self=False)
     assert selection.resolve(all_assets) == _asset_keys_of({danny})
+
+
+def test_self_dep():
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+        ins={
+            "a": AssetIn(
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+            )
+        },
+    )
+    def a(a):
+        ...
+
+    assert AssetSelection.keys("a").resolve([a]) == {a.key}
+    assert AssetSelection.keys("a").upstream().resolve([a]) == {a.key}
+    assert AssetSelection.keys("a").upstream(include_self=False).resolve([a]) == set()
+    assert AssetSelection.keys("a").sources().resolve([a]) == {a.key}
+    assert AssetSelection.keys("a").sinks().resolve([a]) == {a.key}
