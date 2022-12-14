@@ -1,3 +1,6 @@
+from dagster_aws.s3.io_manager import s3_pickle_io_manager
+from dagster_aws.s3.resources import s3_resource
+
 from dagster import (
     ScheduleDefinition,
     define_asset_job,
@@ -5,8 +8,6 @@ from dagster import (
     repository,
     with_resources,
 )
-from dagster_aws.s3.io_manager import s3_pickle_io_manager
-from dagster_aws.s3.resources import s3_resource
 
 from . import assets
 

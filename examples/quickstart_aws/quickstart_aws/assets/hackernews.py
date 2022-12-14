@@ -1,5 +1,5 @@
-import os
 import base64
+import os
 from io import BytesIO
 
 import matplotlib.pyplot as plt
