@@ -56,7 +56,10 @@ def test_default_launcher(
     assert not container_definition.get("entryPoint")
     assert not container_definition.get("dependsOn")
     # But other stuff is inherited from the parent task definition
-    assert container_definition["environment"] == environment
+    assert all(item in container_definition["environment"] for item in environment)
+    assert {"name": "DAGSTER_RUN_JOB_NAME", "value": "pipeline"} in container_definition[
+        "environment"
+    ]
 
     # A new task is launched
     tasks = ecs.list_tasks()["taskArns"]
@@ -149,7 +152,10 @@ def test_launcher_dont_use_current_task(
     assert not container_definition.get("entryPoint")
     assert not container_definition.get("dependsOn")
     # It takes in the environment configured on the instance
-    assert container_definition["environment"] == environment
+    assert all(item in container_definition["environment"] for item in environment)
+    assert {"name": "DAGSTER_RUN_JOB_NAME", "value": "pipeline"} in container_definition[
+        "environment"
+    ]
 
     # A new task is launched
     tasks = ecs.list_tasks(cluster=cluster)["taskArns"]
@@ -246,7 +252,11 @@ def test_reuse_task_definition(instance, ecs):
         {
             "name": "MY_ENV_VAR",
             "value": "MY_VALUE",
-        }
+        },
+        {
+            "name": "MY_OTHER_ENV_VAR",
+            "value": "MY_OTHER_VALUE",
+        },
     ]
 
     container_name = instance.run_launcher.container_name
@@ -282,6 +292,16 @@ def test_reuse_task_definition(instance, ecs):
 
     assert instance.run_launcher._reuse_task_definition(task_definition_config, container_name)
 
+    # Reordering environment is still reused
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][0]["environment"] = list(
+        reversed(task_definition["containerDefinitions"][0]["environment"])
+    )
+    assert instance.run_launcher._reuse_task_definition(
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
+    )
+
     # Changed image fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["image"] = "new-image"
@@ -308,7 +328,9 @@ def test_reuse_task_definition(instance, ecs):
 
     # Changed secrets fails
     task_definition = copy.deepcopy(original_task_definition)
-    task_definition["containerDefinitions"][0]["secrets"].append("new-secrets")
+    task_definition["containerDefinitions"][0]["secrets"].append(
+        {"name": "new-secret", "valueFrom": "fake-arn"}
+    )
     assert not instance.run_launcher._reuse_task_definition(
         DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
         container_name,

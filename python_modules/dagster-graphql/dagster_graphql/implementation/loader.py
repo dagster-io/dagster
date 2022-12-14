@@ -490,7 +490,7 @@ class ProjectedLogicalVersionLoader:
                 if (
                     logical_version is None  # old materialization event before logical versions
                     or provenance is None  # should never happen
-                    or self._is_provenance_stale(provenance)
+                    or self._is_provenance_stale(node, provenance)
                 ):
                     version = self._compute_projected_new_materialization_logical_version(node)
                 else:
@@ -500,11 +500,23 @@ class ProjectedLogicalVersionLoader:
     # Returns true if the current logical version of at least one input asset differs from the
     # recorded logical version for that asset in the provenance. This indicates that a new
     # materialization with up-to-date data would produce a different logical verson.
-    def _is_provenance_stale(self, provenance: LogicalVersionProvenance) -> bool:
-        for k, v in provenance.input_logical_versions.items():
-            if self._get_version(key=k) != v:
-                return True
-        return False
+    def _is_provenance_stale(
+        self, node: ExternalAssetNode, provenance: LogicalVersionProvenance
+    ) -> bool:
+        if self._has_updated_dependencies(node, provenance):
+            return True
+        else:
+            for k, v in provenance.input_logical_versions.items():
+                if self._get_version(key=k) != v:
+                    return True
+            return False
+
+    def _has_updated_dependencies(
+        self, node: ExternalAssetNode, provenance: LogicalVersionProvenance
+    ) -> bool:
+        curr_dep_keys = {dep.upstream_asset_key for dep in node.dependencies}
+        old_dep_keys = set(provenance.input_logical_versions.keys())
+        return curr_dep_keys != old_dep_keys
 
     def _compute_projected_new_materialization_logical_version(
         self, node: ExternalAssetNode

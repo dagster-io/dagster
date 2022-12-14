@@ -174,14 +174,28 @@ class DockerStepHandler(StepHandler):
 
         return step_name
 
-    def _create_step_container(self, client, container_context, step_image, execute_step_args):
+    def _create_step_container(
+        self,
+        client,
+        container_context,
+        step_image,
+        step_handler_context: StepHandlerContext,
+    ):
+        execute_step_args = step_handler_context.execute_step_args
+        step_keys_to_execute = check.not_none(execute_step_args.step_keys_to_execute)
+        assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
+        step_key = step_keys_to_execute[0]
+
+        env_vars = dict([parse_env_var(env_var) for env_var in container_context.env_vars])
+        env_vars["DAGSTER_RUN_JOB_NAME"] = step_handler_context.pipeline_run.job_name
+        env_vars["DAGSTER_RUN_STEP_KEY"] = step_key
         return client.containers.create(
             step_image,
             name=self._get_container_name(execute_step_args),
             detach=True,
             network=container_context.networks[0] if len(container_context.networks) else None,
             command=execute_step_args.get_command_args(),
-            environment=(dict([parse_env_var(env_var) for env_var in container_context.env_vars])),
+            environment=env_vars,
             **container_context.container_kwargs,
         )
 
@@ -195,12 +209,12 @@ class DockerStepHandler(StepHandler):
 
         try:
             step_container = self._create_step_container(
-                client, container_context, step_image, step_handler_context.execute_step_args
+                client, container_context, step_image, step_handler_context
             )
         except docker.errors.ImageNotFound:
             client.images.pull(step_image)
             step_container = self._create_step_container(
-                client, container_context, step_image, step_handler_context.execute_step_args
+                client, container_context, step_image, step_handler_context
             )
 
         if len(container_context.networks) > 1:

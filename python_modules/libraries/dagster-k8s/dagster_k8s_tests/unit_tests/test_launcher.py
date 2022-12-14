@@ -254,6 +254,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
         job_resources = container.resources
         assert job_resources.to_dict() == expected_resources
         assert DAGSTER_PG_PASSWORD_ENV_VAR in [env.name for env in container.env]
+        assert "DAGSTER_RUN_JOB_NAME" in [env.name for env in container.env]
 
         assert kwargs["body"].spec.template.spec.scheduler_name == "test-scheduler-2"
 

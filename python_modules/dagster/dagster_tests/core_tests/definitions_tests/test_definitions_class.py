@@ -1,4 +1,3 @@
-from shutil import ExecError
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -23,8 +22,8 @@ from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
 )
-from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
-from dagster._core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
+from dagster._core.storage.io_manager import IOManagerDefinition
+from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
 
 
