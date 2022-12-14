@@ -23,6 +23,8 @@ Executing Jobs
 .. autoclass:: ReexecutionOptions
   :members: from_failure
 
+.. autofunction:: instance_for_test
+
 Executing Graphs
 ----------------
 
