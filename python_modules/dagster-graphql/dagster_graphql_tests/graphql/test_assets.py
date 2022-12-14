@@ -141,7 +141,6 @@ GET_ASSET_LOGICAL_VERSIONS = """
 """
 
 
-
 GET_ASSET_NODES_FROM_KEYS = """
     query AssetNodeQuery($pipelineSelector: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
         assetNodes(pipeline: $pipelineSelector, assetKeys: $assetKeys) {
