@@ -28,6 +28,7 @@ import {
 } from './AssetMetadata';
 import {AssetNodeList} from './AssetNodeList';
 import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
+import {DependsOnSelfBanner} from './DependsOnSelfBanner';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeDefinition: React.FC<{
@@ -35,7 +36,8 @@ export const AssetNodeDefinition: React.FC<{
   upstream: AssetGraphQuery_assetNodes[] | null;
   downstream: AssetGraphQuery_assetNodes[] | null;
   liveDataByNode: LiveData;
-}> = ({assetNode, upstream, downstream, liveDataByNode}) => {
+  dependsOnSelf: boolean;
+}> = ({assetNode, upstream, downstream, liveDataByNode, dependsOnSelf}) => {
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
   const liveDataForNode = liveDataByNode[toGraphId(assetNode.assetKey)];
 
@@ -117,6 +119,7 @@ export const AssetNodeDefinition: React.FC<{
               </Box>
             </Link>
           </Box>
+          {dependsOnSelf && <DependsOnSelfBanner />}
           <AssetNodeList items={upstream} liveDataByNode={liveDataByNode} />
           <Box
             padding={{vertical: 16, horizontal: 24}}

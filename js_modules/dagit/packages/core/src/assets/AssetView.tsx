@@ -20,7 +20,13 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
-import {GraphData, LiveDataForNode, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
+import {
+  GraphData,
+  LiveDataForNode,
+  nodeDependsOnSelf,
+  toGraphId,
+  tokenForAssetKey,
+} from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {StaleTag} from '../assets/StaleTag';
@@ -79,6 +85,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   });
 
   const {upstream, downstream} = useNeighborsFromGraph(visibleAssetGraph.assetGraphData, assetKey);
+  const node = visibleAssetGraph.assetGraphData?.nodes[toGraphId(assetKey)];
 
   // Observe the live state of the visible assets. Note: We use the "last materialization"
   // provided by this hook to trigger resets of the datasets inside the Activity / Plots tabs
@@ -108,6 +115,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         assetNode={definition}
         upstream={upstream}
         downstream={downstream}
+        dependsOnSelf={node ? nodeDependsOnSelf(node) : false}
         liveDataByNode={liveDataByNode}
       />
     );
