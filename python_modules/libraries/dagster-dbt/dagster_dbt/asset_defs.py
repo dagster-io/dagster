@@ -188,7 +188,6 @@ def _get_node_metadata(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
 
 
 def _get_node_freshness_policy(node_info: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
-
     freshness_policy_config = node_info["config"].get("dagster_freshness_policy")
     if freshness_policy_config:
         return FreshnessPolicy(

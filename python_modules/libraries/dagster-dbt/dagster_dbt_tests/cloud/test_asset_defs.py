@@ -14,6 +14,7 @@ from dagster import (
     AssetKey,
     AssetSelection,
     DailyPartitionsDefinition,
+    FreshnessPolicy,
     MetadataValue,
     asset,
     build_init_resource_context,
@@ -297,6 +298,31 @@ def test_node_info_to_asset_key(dbt_cloud, dbt_cloud_service):
         AssetKey(["foo", "sort_by_calories"]),
         AssetKey(["foo", "sort_hot_cereals_by_calories"]),
         AssetKey(["foo", "least_caloric"]),
+    }
+
+
+@responses.activate
+def test_custom_freshness_policy(dbt_cloud, dbt_cloud_service):
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_commands=["dbt build"],
+    )
+
+    dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
+        dbt_cloud=dbt_cloud,
+        job_id=DBT_CLOUD_JOB_ID,
+        node_info_to_freshness_policy_fn=lambda node_info: FreshnessPolicy(
+            maximum_lag_minutes=len(node_info["name"])
+        ),
+    )
+    dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
+    dbt_cloud_assets = dbt_cloud_cacheable_assets.build_definitions(
+        dbt_assets_definition_cacheable_data
+    )
+
+    assert dbt_cloud_assets[0].freshness_policies_by_key == {
+        key: FreshnessPolicy(maximum_lag_minutes=len(key.path[-1]))
+        for key in dbt_cloud_assets[0].keys
     }
 
 
