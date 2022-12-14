@@ -209,19 +209,6 @@
         ]
       },
       {
-        "title": "Repositories & Workspaces",
-        "children": [
-          {
-            "title": "Repositories",
-            "path": "/concepts/repositories-workspaces/repositories"
-          },
-          {
-            "title": "Workspaces",
-            "path": "/concepts/repositories-workspaces/workspaces"
-          }
-        ]
-      },
-      {
         "title": "Resources",
         "children": [
           {
@@ -229,6 +216,10 @@
             "path": "/concepts/resources"
           }
         ]
+      },
+      {
+        "title": "Code locations",
+        "path": "/concepts/code-locations"
       },
       {
         "title": "Dagit UI & GraphQL API",
@@ -642,7 +633,13 @@
       },
       {
         "title": "Snowflake",
-        "path": "/integrations/snowflake"
+        "path": "/integrations/snowflake",
+        "children": [
+          {
+            "title": "Snowflake+ Dagster tutorial",
+            "path": "/integrations/snowflake/using-snowflake-with-dagster"
+          }
+        ]
       },
       {
         "title": "All integrations",

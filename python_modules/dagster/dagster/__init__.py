@@ -465,6 +465,7 @@ from dagster._core.executor.init import (
 )
 
 from dagster._core.host_representation.selector import (
+    CodeLocationSelector as CodeLocationSelector,
     RepositorySelector as RepositorySelector,
     JobSelector as JobSelector,
 )
@@ -528,6 +529,7 @@ from dagster._core.types.config_schema import (
     DagsterTypeLoader as DagsterTypeLoader,
     dagster_type_loader as dagster_type_loader,
 )
+from dagster._core.test_utils import instance_for_test
 from dagster._core.types.dagster_type import (
     DagsterType as DagsterType,
     List as List,

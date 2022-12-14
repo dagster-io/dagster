@@ -182,6 +182,7 @@ class AssetsDefinition(ResourceAddable):
                 self._metadata_by_key.get(asset_key, {}),
             )
             self._code_versions_by_key[asset_key] = output_def.code_version
+
         for key, freshness_policy in (freshness_policies_by_key or {}).items():
             check.param_invariant(
                 not (freshness_policy and self._partitions_def),
@@ -669,6 +670,10 @@ class AssetsDefinition(ResourceAddable):
                 **replaced_group_names_by_key,
                 **group_names_by_key,
             },
+            metadata_by_key={
+                output_asset_key_replacements.get(key, key): value
+                for key, value in self.metadata_by_key.items()
+            },
             freshness_policies_by_key=replaced_freshness_policies_by_key,
         )
 
@@ -776,6 +781,7 @@ class AssetsDefinition(ResourceAddable):
                 selected_asset_keys=selected_asset_keys & self.keys,
                 resource_defs=self.resource_defs,
                 group_names_by_key=self.group_names_by_key,
+                metadata_by_key=self.metadata_by_key,
                 freshness_policies_by_key=self.freshness_policies_by_key,
             )
         else:
@@ -792,6 +798,8 @@ class AssetsDefinition(ResourceAddable):
                 selected_asset_keys=asset_subselection,
                 resource_defs=self.resource_defs,
                 group_names_by_key=self.group_names_by_key,
+                metadata_by_key=self.metadata_by_key,
+                freshness_policies_by_key=self.freshness_policies_by_key,
             )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
@@ -884,6 +892,7 @@ class AssetsDefinition(ResourceAddable):
             can_subset=self._can_subset,
             resource_defs=relevant_resource_defs,
             group_names_by_key=self.group_names_by_key,
+            metadata_by_key=self.metadata_by_key,
             freshness_policies_by_key=self.freshness_policies_by_key,
         )
 

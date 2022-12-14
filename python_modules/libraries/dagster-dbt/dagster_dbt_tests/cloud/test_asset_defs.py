@@ -119,7 +119,10 @@ def _add_dbt_cloud_job_responses(
 @responses.activate
 @pytest.mark.parametrize("before_dbt_materialization_command", [[], ["dbt test"]])
 @pytest.mark.parametrize("dbt_materialization_command", ["dbt run", "dbt build"])
-@pytest.mark.parametrize("after_dbt_materialization_command", [[], ["dbt test"]])
+@pytest.mark.parametrize(
+    "after_dbt_materialization_command",
+    [[], ["dbt run-operation upload_dbt_artifacts --args '{filenames: [manifest, run_results]}'"]],
+)
 @pytest.mark.parametrize(
     ["dbt_materialization_command_options", "expected_dbt_materialization_command_options"],
     [

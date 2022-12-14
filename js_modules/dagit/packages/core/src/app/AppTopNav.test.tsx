@@ -68,10 +68,7 @@ describe('AppTopNav', () => {
       const runsLink = screen.getByRole('link', {name: /runs/i});
       expect(runsLink.closest('a')).toHaveAttribute('href', '/runs');
       expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/assets');
-      expect(screen.getByText('Deployment').closest('a')).toHaveAttribute(
-        'href',
-        '/code-locations',
-      );
+      expect(screen.getByText('Deployment').closest('a')).toHaveAttribute('href', '/locations');
       expect(screen.getByText('RightOfSearchBar')).toBeVisible();
     });
   });

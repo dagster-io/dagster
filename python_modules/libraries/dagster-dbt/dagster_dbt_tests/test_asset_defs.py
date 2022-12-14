@@ -26,6 +26,27 @@ from dagster._utils import file_relative_path
 from .utils import assert_assets_match_project
 
 
+def test_custom_resource_key_asset_load(
+    dbt_seed, test_project_dir, dbt_config_dir, conn_string
+):  # pylint: disable=unused-argument
+    dbt_assets = load_assets_from_dbt_project(
+        test_project_dir, dbt_config_dir, dbt_resource_key="my_custom_dbt"
+    )
+    assert_assets_match_project(dbt_assets)
+
+    result = build_assets_job(
+        "test_job",
+        dbt_assets,
+        resource_defs={
+            "my_custom_dbt": dbt_cli_resource.configured(
+                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            )
+        },
+    ).execute_in_process()
+
+    assert result.success
+
+
 @pytest.mark.parametrize(
     "prefix",
     [

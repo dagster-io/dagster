@@ -17,7 +17,7 @@ def test_execute_hammer_through_dagit():
             version="",
             read_only=False,
             kwargs={
-                "python_file": file_relative_path(__file__, "hammer_job.py"),
+                "python_file": (file_relative_path(__file__, "hammer_job.py"),),
                 "attribute": "hammer_job",
             },
         ) as workspace_process_context:

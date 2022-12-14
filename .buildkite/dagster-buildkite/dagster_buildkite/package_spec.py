@@ -63,7 +63,7 @@ class PackageSpec:
     Args:
         directory (str): Python directory to test, relative to the repository root. Should contain a
             tox.ini file.
-        name (str, optional): Used in the buildkite label and coverage filename. Defaults to None
+        name (str, optional): Used in the buildkite label. Defaults to None
             (uses the package name as the label).
         package_type (str, optional): Used to determine the emoji attached to the buildkite label.
             Possible values are "core", "example", "extension", and "infrastructure". By default it
@@ -93,7 +93,6 @@ class PackageSpec:
             Defaults to None.
         tox_file (str, optional): The tox file to use. Defaults to {directory}/tox.ini.
         retries (int, optional): Whether to retry these tests on failure
-        upload_coverage (bool, optional): Whether to copy coverage artifacts. By default, enabled
             for packages of type "core" or "library", disabled for other packages.
         timeout_in_minutes (int, optional): Fail after this many minutes.
         queue (BuildkiteQueue, optional): Schedule steps to this queue.
@@ -114,7 +113,6 @@ class PackageSpec:
     env_vars: Optional[List[str]] = None
     tox_file: Optional[str] = None
     retries: Optional[int] = None
-    upload_coverage: Optional[bool] = None
     timeout_in_minutes: Optional[int] = None
     queue: Optional[BuildkiteQueue] = None
     run_pytest: bool = True
@@ -127,10 +125,6 @@ class PackageSpec:
 
         if not self.package_type:
             self.package_type = _infer_package_type(self.directory)
-
-        if not self.upload_coverage:
-            if self.package_type in ("core", "library"):
-                self.upload_coverage = True
 
         self._should_skip = None
         self._skip_reason = None
@@ -175,16 +169,6 @@ class PackageSpec:
                     else:
                         extra_commands_pre = []
 
-                    if self.upload_coverage:
-                        coverage_id = f"{base_name}-{other_factor}" if other_factor else base_name
-                        coverage = f".coverage.{coverage_id}.{py_version}.$BUILDKITE_BUILD_ID"
-                        extra_commands_post = [
-                            f"mv .coverage {coverage}",
-                            f"buildkite-agent artifact upload {coverage}",
-                        ]
-                    else:
-                        extra_commands_post = []
-
                     dependencies = []
                     if not self.skip_reason:
                         if isinstance(self.pytest_step_dependencies, list):
@@ -201,7 +185,6 @@ class PackageSpec:
                             python_version=py_version,
                             env_vars=self.env_vars,
                             extra_commands_pre=extra_commands_pre,
-                            extra_commands_post=extra_commands_post,
                             dependencies=dependencies,
                             tox_file=self.tox_file,
                             timeout_in_minutes=self.timeout_in_minutes,
