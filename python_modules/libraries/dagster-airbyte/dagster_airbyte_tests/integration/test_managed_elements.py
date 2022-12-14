@@ -3,11 +3,14 @@
 import os
 import time
 from datetime import datetime
+from typing import cast
+from dagster._core.events import StepMaterializationData
 
 import mock
 import pytest
 import requests
-from dagster_airbyte import AirbyteResource, airbyte_resource, load_assets_from_connections
+import requests_mock
+from dagster_airbyte import airbyte_resource, load_assets_from_connections
 from dagster_managed_elements import ManagedElementDiff
 from dagster_managed_elements.cli import apply, check
 from dagster_managed_elements.utils import diff_dicts
@@ -16,10 +19,9 @@ from dagster import AssetKey, materialize
 from dagster._core.test_utils import environ
 from dagster._utils import file_relative_path
 
-TEST_ROOT_DIR = str(file_relative_path(__file__, "./example_stacks"))
-import requests_mock
-
 from .example_stacks import example_airbyte_stack
+
+TEST_ROOT_DIR = str(file_relative_path(__file__, "./example_stacks"))
 
 pytest_plugins = ["dagster_test.fixtures"]
 
@@ -194,7 +196,7 @@ def test_basic_integration(
     res = materialize(ab_assets)
 
     materializations = [
-        event.event_specific_data.materialization
+        cast(StepMaterializationData, event.event_specific_data).materialization
         for event in res.all_events
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
@@ -299,6 +301,8 @@ def test_change_source_and_destination(
     check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_dest")
     assert check_result == expected_diff
 
+    # Apply new destination config, ensure that we get the proper diff and that the call count
+    # stays the same since we are just reconfiguring the same destination type
     apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_dest")
     assert apply_result == expected_diff
     assert _calls_to(track_make_requests, "/destinations/create") == 1

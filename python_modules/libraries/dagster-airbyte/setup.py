@@ -41,4 +41,9 @@ setup(
             "dagster-airbyte = dagster_airbyte.cli:main",
         ]
     },
+    extras_require={
+        "test": [
+            "requests_mock",
+        ]
+    },
 )
