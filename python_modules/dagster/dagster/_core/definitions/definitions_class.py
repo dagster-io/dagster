@@ -50,7 +50,7 @@ class Definitions:
     These tools must be able to locate and load this code when they start. Via CLI
     arguments or config, they specify a Python module to inspect.
 
-    A Python module is loadable by Dagster tools if it there is a top-level variable
+    A Python module is loadable by Dagster tools if there is a top-level variable
     that is an instance of Definitions.
 
     Definitions provides a few conveniences for dealing with resources that do not apply to
