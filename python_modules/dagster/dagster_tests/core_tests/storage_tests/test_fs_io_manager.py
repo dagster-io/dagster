@@ -17,6 +17,7 @@ from dagster import (
     PartitionMapping,
     PartitionsDefinition,
     StaticPartitionsDefinition,
+    TimeWindowPartitionMapping,
     graph,
     job,
     materialize,
@@ -421,6 +422,34 @@ def test_fs_io_manager_partitioned_graph_backed_asset():
         assert os.path.isfile(filepath_b)
         with open(filepath_b, "rb") as read_obj:
             assert pickle.load(read_obj) == 4
+
+
+def test_fs_io_manager_partitioned_self_dep():
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
+
+        @asset(
+            partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+            ins={
+                "a": AssetIn(
+                    partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+                )
+            },
+        )
+        def a(a: Optional[int]) -> int:
+            return 1 if a is None else a + 1
+
+        result = materialize(
+            [a], partition_key="2020-01-01", resources={"io_manager": io_manager_def}
+        )
+        assert result.success
+        assert result.output_for_node("a") == 1
+
+        result2 = materialize(
+            [a], partition_key="2020-01-02", resources={"io_manager": io_manager_def}
+        )
+        assert result2.success
+        assert result2.output_for_node("a") == 2
 
 
 def test_fs_io_manager_none():

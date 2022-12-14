@@ -270,7 +270,7 @@ class AssetGraph(NamedTuple):
         """Determines if an asset has any parents which are not source assets"""
         if asset_key in self.source_asset_keys:
             return False
-        return bool(self.get_parents(asset_key) - self.source_asset_keys)
+        return bool(self.get_parents(asset_key) - self.source_asset_keys - {asset_key})
 
     def get_non_source_roots(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         """Returns all assets upstream of the given asset which do not consume any other
@@ -312,6 +312,9 @@ class AssetGraph(NamedTuple):
         return [
             {key for key in level} for level in toposort.toposort(self.asset_dep_graph["upstream"])
         ]
+
+    def has_self_dependency(self, asset_key: AssetKey) -> bool:
+        return asset_key in self.get_parents(asset_key)
 
     def __hash__(self):
         return id(self)

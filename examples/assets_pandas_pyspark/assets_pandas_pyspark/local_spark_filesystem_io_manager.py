@@ -1,13 +1,11 @@
-"""isort:skip_file
+# local_spark_filesystem_io_manager.py
 
-Defines a group of the weather assets.
+# Data is stored in Parquet files using the "Hadoop-style" layout in which each table corresponds to a
+# directory, and each file within the directory contains some of the rows.
 
-Data is stored in Parquet files using the "Hadoop-style" layout in which each table corresponds to a
-directory, and each file within the directory contains some of the rows.
+# The processing options are Pandas and Spark. A table can be created from a Pandas DataFrame
+# and then consumed in a downstream computation as a Spark DataFrame, and vice versa.
 
-The processing options are Pandas and Spark.  A table can be created from a Pandas DataFrame
-and then consumed in a downstream computation as a Spark DataFrame.  And vice versa.
-"""
 import glob
 import os
 from typing import Union
@@ -17,15 +15,17 @@ from pandas import DataFrame as PandasDF
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import SparkSession
 
-from dagster import AssetKey, IOManager, IOManagerDefinition, _check as check
+from dagster import AssetKey, IOManager
+from dagster import _check as check
+from dagster import io_manager
 
-# io_manager_start
+
 class LocalFileSystemIOManager(IOManager):
     def _get_fs_path(self, asset_key: AssetKey) -> str:
         return os.path.abspath(os.path.join(*asset_key.path))
 
     def handle_output(self, context, obj: Union[PandasDF, SparkDF]):
-        """This saves the dataframe as a CSV using the layout written and expected by Spark/Hadoop.
+        """This saves the DataFrame as a CSV using the layout written and expected by Spark/Hadoop.
 
         E.g. if the given storage maps the asset's path to the filesystem path "/a/b/c", a directory
         will be created with two files inside it:
@@ -48,7 +48,7 @@ class LocalFileSystemIOManager(IOManager):
             raise ValueError("Unexpected input type")
 
     def load_input(self, context) -> Union[PandasDF, SparkDF]:
-        """This reads a dataframe from a CSV using the layout written and expected by Spark/Hadoop.
+        """This reads a DataFrame from a CSV using the layout written and expected by Spark/Hadoop.
 
         E.g. if the given storage maps the asset's path to the filesystem path "/a/b/c", and that
         directory contains:
@@ -76,16 +76,6 @@ class LocalFileSystemIOManager(IOManager):
             raise ValueError("Unexpected input type")
 
 
-# io_manager_end
-
-# gather_assets_start
-from . import table_assets, spark_asset
-from dagster import load_assets_from_modules, with_resources
-
-spark_weather_assets = with_resources(
-    load_assets_from_modules(modules=[table_assets, spark_asset]),
-    resource_defs={
-        "io_manager": IOManagerDefinition.hardcoded_io_manager(LocalFileSystemIOManager())
-    },
-)
-# gather_assets_end
+@io_manager
+def local_filesystem_io_manager():
+    return LocalFileSystemIOManager()
