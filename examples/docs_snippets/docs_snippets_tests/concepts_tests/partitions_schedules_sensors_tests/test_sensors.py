@@ -58,10 +58,10 @@ def test_run_failure_sensor_def():
         ]
     )
 
-    assert defs.has_sensor_def("my_slack_on_run_failure")
-    assert defs.has_sensor_def("slack_on_run_failure")
-    assert defs.has_sensor_def("email_on_run_failure")
-    assert defs.has_sensor_def("my_slack_on_run_success")
+    assert defs.get_sensor_def("my_slack_on_run_failure")
+    assert defs.get_sensor_def("slack_on_run_failure")
+    assert defs.get_sensor_def("email_on_run_failure")
+    assert defs.get_sensor_def("my_slack_on_run_success")
 
 
 def test_sensor_testing_example():
