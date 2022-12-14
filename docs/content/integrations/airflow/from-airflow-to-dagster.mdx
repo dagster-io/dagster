@@ -70,7 +70,7 @@ A [Job](/concepts/ops-jobs-graphs/jobs) is made up of a [Graph](/concepts/ops-jo
 
 ### Step 1: Defining the Ops
 
-After rewriting the operators of the tutorial Airflow Dag as Ops we're left with:
+In Dagster, the minimum unit of computation is an op. This directly corresponds to an operator in Airflow. Here, we map the Airflow operators t1, t2, and t3 to their respective Dagster op's.
 
 ```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_ops endbefore=end_ops
 @op
@@ -103,14 +103,13 @@ this yields us the following graph of computations
   />
 </center>
 
-
 ##### Op Level Retries
 
 In the tutorial Dag the sleep task allowed for 3 retries, to configure this in dagster you can use [Op level retry policies](/concepts/ops-jobs-graphs/op-retries)
 
 ### Step 2: Defining the Job
 
-In Dagster, the computations defined in `op`s are composed in `job`s, which define the sequence and dependency structure of the computations you want to execute. This directly corresponds to a DAG in Airflow. Here, we compose the `op`s `print_date`, `sleep` and `templated` to match the dependency structure defined by the Airflow operators `t1`, `t2`, and `t3`.```
+In Dagster, the computations defined in `op`s are composed in `job`s, which define the sequence and dependency structure of the computations you want to execute. This directly corresponds to a DAG in Airflow. Here, we compose the `op`s `print_date`, `sleep` and `templated` to match the dependency structure defined by the Airflow operators `t1`, `t2`, and `t3`.\`\`\`
 
 ```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_job endbefore=end_job
 @job(tags={"dagster/max_retries": 1, "dag_name": "example"})
@@ -126,7 +125,7 @@ Job level retries are managed by the [run launcher](/deployment/run-retries) you
 
 ### Step 3: Defining the schedule
 
-Finally we'll add a schedule
+In Dagster Schedules are defined seperately from your computations, Below we define a schedule that will run the `tutorial_job` daily:
 
 ```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_schedule endbefore=end_schedule
 schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
@@ -134,7 +133,7 @@ schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
 
 ### Step 4: Running locally
 
-In order to run our newly defined Dagster Job we'll need to define a Dagster [Repository](/concepts/repositories-workspaces/repositories).
+In order to run our newly defined Dagster Job we'll need to define a Dagster [Repository](/concepts/repositories-workspaces/repositories). A Dagster Repository is a logical grouping of Jobs and Schedules that provides an entrypoint for viewing and executing Jobs.
 
 ```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_repo endbefore=end_repo
 @repository
@@ -148,7 +147,7 @@ We can now load this file with dagit, the interactive web-ui for dagster
 dagit -f <your_dagster_file>.py
 ```
 
-for reference here's what the file should look like
+## Completed Code Example
 
 ```python file=/integrations/airflow/tutorial_rewrite_complete.py startafter=start_example endbefore=end_example
 import time
