@@ -45,14 +45,14 @@ export const AssetPartitions: React.FC<Props> = ({
   liveData,
 }) => {
   const [assetHealth] = usePartitionHealthData([assetKey], assetLastMaterializedAt);
-  const [ranges, setRanges] = usePartitionDimensionRanges(
+  const [ranges, setRanges] = usePartitionDimensionRanges({
+    knownDimensionNames: assetPartitionDimensions,
+    modifyQueryString: true,
     assetHealth,
-    assetPartitionDimensions,
-    true,
-  );
+  });
 
   const [stateFilters, setStateFilters] = useQueryPersistedState<PartitionState[]>({
-    defaults: {states: DISPLAYED_STATES.sort().join(',')},
+    defaults: {states: [...DISPLAYED_STATES].sort().join(',')},
     encode: (val) => ({states: [...val].sort().join(',')}),
     decode: (qs) =>
       (qs.states || '').split(',').filter((s: PartitionState) => DISPLAYED_STATES.includes(s)),

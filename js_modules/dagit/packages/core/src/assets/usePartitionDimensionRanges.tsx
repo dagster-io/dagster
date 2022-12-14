@@ -31,11 +31,12 @@ const serializer: QueryPersistedStateConfig<DimensionQueryState[]> = {
  * Internally, this hook reads initial state from the query string and (optionally)
  * writes changes back to the query string using the compacted "spans" format.
  */
-export const usePartitionDimensionRanges = (
-  assetHealth: Pick<PartitionHealthData, 'dimensions'>,
-  knownDimensionNames: string[] = [], // improves loading state if available
-  modifyQueryString = true,
-) => {
+export const usePartitionDimensionRanges = (opts: {
+  assetHealth: Pick<PartitionHealthData, 'dimensions'>;
+  modifyQueryString: boolean;
+  knownDimensionNames?: string[]; // improves loading state if available
+}) => {
+  const {assetHealth, knownDimensionNames = [], modifyQueryString} = opts;
   const [query, setQuery] = useQueryPersistedState<DimensionQueryState[]>(serializer);
   const [local, setLocal] = React.useState<DimensionQueryState[]>([]);
 
