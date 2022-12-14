@@ -2,16 +2,17 @@ import json
 
 import pandas as pd
 import pandas_gbq
+from google.oauth2 import service_account
+
 from dagster import (
     Field,
+    IOManager,
     InitResourceContext,
     InputContext,
-    IOManager,
     OutputContext,
     StringSource,
     io_manager,
 )
-from google.oauth2 import service_account
 
 # Learn more about custom I/O managers in Dagster docs:
 # https://docs.dagster.io/concepts/io-management/io-managers#a-custom-io-manager-that-stores-pandas-dataframes-in-tables

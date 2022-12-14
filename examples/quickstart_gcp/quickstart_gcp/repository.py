@@ -1,6 +1,10 @@
-from dagster import (ScheduleDefinition, define_asset_job,
-                     load_assets_from_package_module, repository,
-                     with_resources)
+from dagster import (
+    ScheduleDefinition,
+    define_asset_job,
+    load_assets_from_package_module,
+    repository,
+    with_resources,
+)
 
 from . import assets
 from .io_managers import bigquery_pandas_io_manager
