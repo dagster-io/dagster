@@ -5,6 +5,7 @@ from dagster._annotations import experimental, public
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.instance import DagsterInstance
+from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 from dagster._utils.cached_method import cached_method
 
 from .assets import AssetsDefinition, SourceAsset
@@ -57,8 +58,7 @@ class Definitions:
     vanilla Dagster definitions:
 
     * It takes a dictionary of top-level resources which are automatically bound (via with_resources) to any asset passed to it. If you need to apply different resources to different assets, use legacy @repository and use with_resources as before.
-    * The resources dictionary takes raw Python objects, not just resource definitions.
-
+    * The resources dictionary takes raw Python objects, not just instances of :py:class:`ResourceDefinition`. If that raw object inherits from :py:class:`IOManager`, it gets coerced to an :py:class:`IOManagerDefinition`. Any other object is coerced to a ResourceDefinition.
     """
 
     def __init__(
@@ -207,6 +207,8 @@ def coerce_resources_to_defs(resources: Mapping[str, Any]) -> Dict[str, Resource
         resource_defs[key] = (
             resource_obj
             if isinstance(resource_obj, ResourceDefinition)
+            else IOManagerDefinition.hardcoded_io_manager(resource_obj)
+            if isinstance(resource_obj, IOManager)
             else ResourceDefinition.hardcoded_resource(resource_obj)
         )
     return resource_defs

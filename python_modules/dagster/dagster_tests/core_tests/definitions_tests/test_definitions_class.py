@@ -22,6 +22,8 @@ from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
 )
+from dagster._core.storage.io_manager import IOManagerDefinition
+from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
 
 
@@ -219,3 +221,16 @@ def test_asset_loading():
         value_loader = defs.get_asset_value_loader(instance)
         assert value_loader.load_asset_value("one") == 1
         assert value_loader.load_asset_value("two") == 2
+
+
+def test_io_manager_coercion():
+    @asset(io_manager_key="mem_io_manager")
+    def one():
+        return 1
+
+    defs = Definitions(assets=[one], resources={"mem_io_manager": InMemoryIOManager()})
+
+    asset_job = defs.get_job_def("__ASSET_JOB")
+    assert isinstance(asset_job.resource_defs["mem_io_manager"], IOManagerDefinition)
+    result = asset_job.execute_in_process()
+    assert result.output_for_node("one") == 1

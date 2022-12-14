@@ -24,6 +24,11 @@ from dagster._core.snap import (
     create_pipeline_snapshot_id,
     snapshot_from_execution_plan,
 )
+from dagster._core.storage.sqlite_storage import (
+    _event_logs_directory,
+    _runs_directory,
+    _schedule_directory,
+)
 from dagster._core.test_utils import (
     TestSecretsLoader,
     create_run_for_test,
@@ -89,6 +94,31 @@ def test_unified_storage(tmpdir):
         }
     ) as _instance:
         pass
+
+
+def test_unified_storage_env_var(tmpdir):
+    with environ({"SQLITE_STORAGE_BASE_DIR": str(tmpdir)}):
+        with instance_for_test(
+            overrides={
+                "storage": {
+                    "sqlite": {
+                        "base_dir": {"env": "SQLITE_STORAGE_BASE_DIR"},
+                    }
+                }
+            }
+        ) as instance:
+            assert (
+                _runs_directory(str(tmpdir))
+                in instance.run_storage._conn_string  # pylint: disable=protected-access
+            )
+            assert (
+                _event_logs_directory(str(tmpdir))
+                == instance.event_log_storage._base_dir + "/"  # pylint: disable=protected-access
+            )
+            assert (
+                _schedule_directory(str(tmpdir))
+                in instance.schedule_storage._conn_string  # pylint: disable=protected-access
+            )
 
 
 def test_custom_secrets_manager():
