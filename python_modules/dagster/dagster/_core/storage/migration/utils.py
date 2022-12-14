@@ -309,6 +309,16 @@ def create_tick_selector_index():
     )
 
 
+def create_tick_update_timestamp_index():
+    if not has_table("job_ticks"):
+        return
+
+    if has_index("job_ticks", "idx_update_timestamp"):
+        return
+
+    op.create_index("idx_update_timestamp", "job_ticks", ["update_timestamp"], unique=False)
+
+
 def add_id_based_event_indices():
     if not has_table("event_logs"):
         return

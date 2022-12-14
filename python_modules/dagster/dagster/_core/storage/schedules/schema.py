@@ -42,7 +42,7 @@ JobTickTable = db.Table(
     db.Column("timestamp", db.types.TIMESTAMP),
     db.Column("tick_body", db.Text),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
-    db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp(), index=True),
 )
 
 # Secondary Index migration table, used to track data migrations, event_logs and runs.
