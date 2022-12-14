@@ -2,7 +2,6 @@ import datetime
 import importlib
 import logging
 import os
-import subprocess
 import sys
 import tempfile
 from contextlib import contextmanager, nullcontext
@@ -18,6 +17,7 @@ from airflow.models.baseoperator import BaseOperator
 from airflow.models.dag import DAG
 from airflow.models.dagbag import DagBag
 from airflow.settings import LOG_FORMAT
+from airflow.utils import db
 from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 
 from dagster import (
@@ -85,14 +85,6 @@ class Locker:
     def __exit__(self, _type, value, tb):
         portable_unlock(self.fp)
         self.fp.close()
-
-
-def initialize_airflow_1_database():
-    subprocess.run(["airflow", "initdb"], check=True)
-
-
-def initialize_airflow_2_database():
-    subprocess.run(["airflow", "db", "init"], check=True)
 
 
 def contains_duplicate_task_names(dag_bag, refresh_from_airflow_db):
@@ -479,11 +471,6 @@ def make_dagster_pipeline_from_airflow_dag(
         os.makedirs(airflow_home_path, exist_ok=True)
         with Locker(airflow_home_path):
             airflow_initialized = os.path.exists(f"{airflow_home_path}/airflow.db")
-            if not airflow_initialized:
-                if airflow_version >= "2.0.0":
-                    initialize_airflow_2_database()
-                else:
-                    initialize_airflow_1_database()
             # because AIRFLOW_HOME has been overriden airflow needs to be reloaded
             if airflow_version >= "2.0.0":
                 importlib.reload(airflow.configuration)
@@ -491,6 +478,9 @@ def make_dagster_pipeline_from_airflow_dag(
                 importlib.reload(airflow)
             else:
                 importlib.reload(airflow)
+
+            if not airflow_initialized:
+                db.initdb()
 
             dag_bag = airflow.models.dagbag.DagBag(
                 dag_folder=context.resource_config["dag_location"], include_examples=True
@@ -695,6 +685,8 @@ def make_dagster_solid_from_airflow_task(
         },
     )
     def _solid(context):  # pylint: disable=unused-argument
+        # reloading forces picking up any config that's been set for execution
+        importlib.reload(airflow)
         mock_xcom = context.op_config["mock_xcom"]
         use_ephemeral_airflow_db = context.op_config["use_ephemeral_airflow_db"]
         if AIRFLOW_EXECUTION_DATE_STR not in context.pipeline_run.tags:
