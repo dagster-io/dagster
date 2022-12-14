@@ -29,6 +29,36 @@ if TYPE_CHECKING:
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 
+def create_repository_using_definitions_args(
+    name: str,
+    assets: Optional[
+        Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
+    ] = None,
+    schedules: Optional[Iterable[ScheduleDefinition]] = None,
+    sensors: Optional[Iterable[SensorDefinition]] = None,
+    jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
+    resources: Optional[Mapping[str, Any]] = None,
+    executor: Optional[ExecutorDefinition] = None,
+    loggers: Optional[Mapping[str, LoggerDefinition]] = None,
+):
+    resource_defs = coerce_resources_to_defs(resources or {})
+
+    @repository(
+        name=name,
+        default_executor_def=executor,
+        default_logger_defs=loggers,
+    )
+    def created_repo():
+        return [
+            *with_resources(assets or [], resource_defs),
+            *(schedules or []),
+            *(sensors or []),
+            *(jobs or []),
+        ]
+
+    return created_repo
+
+
 @experimental
 class Definitions:
     """Example usage:
@@ -102,22 +132,16 @@ class Definitions:
             check.mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
             experimental_arg_warning("loggers", "Definitions.__init__")
 
-        resource_defs = coerce_resources_to_defs(resources or {})
-
-        @repository(
+        self._created_pending_or_normal_repo = create_repository_using_definitions_args(
             name=SINGLETON_REPOSITORY_NAME,
-            default_executor_def=executor,
-            default_logger_defs=loggers,
+            assets=assets,
+            schedules=schedules,
+            sensors=sensors,
+            jobs=jobs,
+            resources=resources,
+            executor=executor,
+            loggers=loggers,
         )
-        def created_repo():
-            return [
-                *with_resources(assets or [], resource_defs),
-                *(schedules or []),
-                *(sensors or []),
-                *(jobs or []),
-            ]
-
-        self._created_pending_or_normal_repo = created_repo
 
     @public
     def get_job_def(self, name: str) -> JobDefinition:
