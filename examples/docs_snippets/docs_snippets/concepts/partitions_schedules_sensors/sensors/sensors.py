@@ -46,9 +46,7 @@ def my_directory_sensor():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={
-                    "ops": {"process_file": {"config": {"filename": filename}}}
-                },
+                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
             )
 
 
@@ -168,9 +166,7 @@ def my_directory_sensor_with_skip_reasons():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={
-                    "ops": {"process_file": {"config": {"filename": filename}}}
-                },
+                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
             )
             has_files = True
     if not has_files:
@@ -233,7 +229,7 @@ def uses_db_connection():
 
 # end_build_resources_example
 
-code_location_a = Definitions(
+defs = Definitions(
     jobs=[my_job, log_file_job],
     sensors=[my_directory_sensor, sensor_A, sensor_B],
 )
@@ -247,7 +243,7 @@ def send_slack_alert():
 
 
 @run_status_sensor(
-    monitored_jobs=[CodeLocationSelector(location_name="code_location_a")],
+    monitored_jobs=[CodeLocationSelector(location_name="defs")],
     run_status=DagsterRunStatus.SUCCESS,
 )
 def code_location_a_sensor():
@@ -258,7 +254,7 @@ def code_location_a_sensor():
 @run_failure_sensor(
     monitored_jobs=[
         JobSelector(
-            location_name="code_location_a",
+            location_name="defs",
             repository_name="code_location_a",
             job_name="data_update",
         )

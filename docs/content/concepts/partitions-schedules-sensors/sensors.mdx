@@ -453,7 +453,7 @@ Sometimes, you may want to monitor jobs in a code location other than the one wh
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_cross_code_location_run_status_sensor endbefore=end_cross_code_location_run_status_sensor
 @run_status_sensor(
-    monitored_jobs=[CodeLocationSelector(location_name="code_location_a")],
+    monitored_jobs=[CodeLocationSelector(location_name="defs")],
     run_status=DagsterRunStatus.SUCCESS,
 )
 def code_location_a_sensor():
@@ -464,7 +464,7 @@ def code_location_a_sensor():
 @run_failure_sensor(
     monitored_jobs=[
         JobSelector(
-            location_name="code_location_a",
+            location_name="defs",
             repository_name="code_location_a",
             job_name="data_update",
         )
