@@ -1074,3 +1074,17 @@ def test_1_0_17_add_cached_status_data_column():
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             instance.upgrade()
             assert "cached_status_data" in set(get_sqlite3_columns(db_path, "asset_keys"))
+
+
+def test_1_1_6_tick_update_timestamp_index():
+    src_dir = file_relative_path(__file__, "snapshot_1_1_6_pre_tick_update_timestamp_index/sqlite")
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "schedules", "schedules.db")
+
+        assert get_current_alembic_version(db_path) == "6df03f4b1efb"
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert "idx_update_timestamp" not in get_sqlite3_indexes(db_path, "job_ticks")
+            instance.upgrade()
+            assert "idx_update_timestamp" in get_sqlite3_indexes(db_path, "job_ticks")
