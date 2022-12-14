@@ -319,6 +319,14 @@ run_coordinator:
       - key: "dagster/backfill"
         limit:
           env: DAGSTER_BACKFILL_CONCURRENCY_LIMIT
+
+# for higher dequeue throughput, threading can be enabled:
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    dequeue_use_threads: true
+    dequeue_num_workers: 8
 ```
 
 ### Compute Log Storage

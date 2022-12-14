@@ -2281,6 +2281,31 @@
                             "type": "null"
                         }
                     ]
+                },
+                "dequeueNumWorkers": {
+                    "title": "Dequeuenumworkers",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/definitions/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "dequeueUseThreads": {
+                    "title": "Dequeueusethreads",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "additionalProperties": false
