@@ -559,7 +559,13 @@
       },
       {
         "title": "Airflow",
-        "path": "/integrations/airflow"
+        "path": "/integrations/airflow",
+        "children": [
+          {
+            "title": "Learning Dagster from Airflow",
+            "path": "/integrations/airflow/from-airflow-to-dagster"
+          }
+        ]
       },
       {
         "title": "dbt",
