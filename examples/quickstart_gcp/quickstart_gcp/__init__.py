@@ -1,8 +1,8 @@
 from dagster import (
+    Definitions,
     ScheduleDefinition,
     define_asset_job,
     load_assets_from_package_module,
-    Definitions,
 )
 
 from . import assets
