@@ -252,7 +252,11 @@ def test_reuse_task_definition(instance, ecs):
         {
             "name": "MY_ENV_VAR",
             "value": "MY_VALUE",
-        }
+        },
+        {
+            "name": "MY_OTHER_ENV_VAR",
+            "value": "MY_OTHER_VALUE",
+        },
     ]
 
     container_name = instance.run_launcher.container_name
@@ -288,6 +292,16 @@ def test_reuse_task_definition(instance, ecs):
 
     assert instance.run_launcher._reuse_task_definition(task_definition_config, container_name)
 
+    # Reordering environment is still reused
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][0]["environment"] = list(
+        reversed(task_definition["containerDefinitions"][0]["environment"])
+    )
+    assert instance.run_launcher._reuse_task_definition(
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
+    )
+
     # Changed image fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["image"] = "new-image"
@@ -314,7 +328,9 @@ def test_reuse_task_definition(instance, ecs):
 
     # Changed secrets fails
     task_definition = copy.deepcopy(original_task_definition)
-    task_definition["containerDefinitions"][0]["secrets"].append("new-secrets")
+    task_definition["containerDefinitions"][0]["secrets"].append(
+        {"name": "new-secret", "valueFrom": "fake-arn"}
+    )
     assert not instance.run_launcher._reuse_task_definition(
         DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
         container_name,
