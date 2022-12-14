@@ -259,6 +259,7 @@ def code_location_a_sensor():
     monitored_jobs=[
         JobSelector(
             location_name="code_location_a",
+            repository_name="code_location_a",
             job_name="data_update",
         )
     ],
