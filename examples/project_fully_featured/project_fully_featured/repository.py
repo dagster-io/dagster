@@ -9,7 +9,7 @@ from .sensors import make_slack_on_failure_sensor
 
 all_assets = [*core_assets, *recommender_assets, *dbt_assets, *activity_analytics_assets]
 
-resource_defs_by_deployment_name = {
+resources_by_deployment_name = {
     "prod": RESOURCES_PROD,
     "staging": RESOURCES_STAGING,
     "local": RESOURCES_LOCAL,
@@ -23,7 +23,7 @@ if deployment_name in ["prod", "staging"]:
 
 defs = Definitions(
     assets=all_assets,
-    resources=resource_defs_by_deployment_name[deployment_name],
+    resources=resources_by_deployment_name[deployment_name],
     schedules=[core_assets_schedule],
     sensors=all_sensors,
 )
