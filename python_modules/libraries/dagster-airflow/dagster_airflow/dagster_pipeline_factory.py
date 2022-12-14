@@ -2,7 +2,6 @@ import datetime
 import importlib
 import logging
 import os
-import subprocess
 import sys
 import tempfile
 from contextlib import contextmanager, nullcontext
