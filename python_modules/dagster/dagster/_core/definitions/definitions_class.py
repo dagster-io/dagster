@@ -6,11 +6,9 @@ from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.execution.with_resources import with_resources
-from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
 from dagster._utils.backcompat import experimental_arg_warning
 from dagster._utils.cached_method import cached_method
-from kopf import Logger
 
 from .assets import AssetsDefinition, SourceAsset
 from .cacheable_assets import CacheableAssetsDefinition
