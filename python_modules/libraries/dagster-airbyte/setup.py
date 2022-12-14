@@ -43,7 +43,7 @@ setup(
     },
     extras_require={
         "test": [
-            "requests_mock",
+            "requests-mock",
         ]
     },
 )
