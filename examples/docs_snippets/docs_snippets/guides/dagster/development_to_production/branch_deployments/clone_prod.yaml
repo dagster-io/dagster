@@ -22,8 +22,6 @@ name: Dagster Branch Deployments
           with:
             location: ${{ toJson(matrix.location) }}
             deployment: ${{ steps.deploy.outputs.deployment }}
-            # TODO need to change github action to default to __repository__
-            repository: __repository__
             job: clone_prod
           env:
             DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
