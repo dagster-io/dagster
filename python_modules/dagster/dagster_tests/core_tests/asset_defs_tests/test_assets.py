@@ -1203,3 +1203,40 @@ def test_graph_backed_asset_reused():
             )
             step_keys = get_step_keys_from_run(instance)
             assert set(step_keys) == set(["graph_asset.foo", "duplicate_one_downstream"])
+
+
+def test_self_dependency():
+    from dagster import PartitionKeyRange, TimeWindowPartitionMapping
+
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+        ins={
+            "a": AssetIn(
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+            )
+        },
+    )
+    def a(a):
+        del a
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            ...
+
+        def load_input(self, context):
+            assert context.asset_key.path[-1] == "a"
+            if context.partition_key == "2020-01-01":
+                assert context.asset_partition_keys == []
+                assert context.has_asset_partitions
+            else:
+                assert context.partition_key == "2020-01-02"
+                assert context.asset_partition_keys == ["2020-01-01"]
+                assert context.asset_partition_key == "2020-01-01"
+                assert context.asset_partition_key_range == PartitionKeyRange(
+                    "2020-01-01", "2020-01-01"
+                )
+                assert context.has_asset_partitions
+
+    resources = {"io_manager": MyIOManager()}
+    materialize([a], partition_key="2020-01-01", resources=resources)
+    materialize([a], partition_key="2020-01-02", resources=resources)
