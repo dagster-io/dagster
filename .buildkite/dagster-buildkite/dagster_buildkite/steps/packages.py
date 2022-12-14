@@ -327,6 +327,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "api_tests",
             "cli_tests",
             "core_tests",
+            "storage_tests",
             "core_tests_old_sqlalchemy",
             "daemon_sensor_tests",
             "daemon_tests",
