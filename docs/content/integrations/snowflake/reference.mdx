@@ -41,7 +41,7 @@ def sepal_data(iris_sepal: pd.DataFrame) -> pd.DataFrame:
     return iris_sepal
 ```
 
-In this example, we only use the columns containing sepal data from the `IRIS_DATASET` table created in [Step 2: Create tables in Snowflake](/integrations/snowflake/using-snowflake-with-dagster/#store-a-dagster-asset-as-a-table-in-snowflake) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster). Fetching the entire table would be unnecessarily costly, so to select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter for the `AssetIn` that loads the `iris_dataset` asset. We supply the key `columns` with a list of the column names we want to fetch.
+In this example, we only use the columns containing sepal data from the `IRIS_DATASET` table created in [Step 2: Create tables in Snowflake](/integrations/snowflake/using-snowflake-with-dagster/#store-a-dagster-asset-as-a-table-in-snowflake) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster). Fetching the entire table would be unnecessarily costly, so to select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_dataset` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
 
 When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using the Snowflake I/O manager, it will only fetch the `Sepal length (cm)` and `Sepal width (cm)` columns of the `FLOWERS.IRIS.IRIS_DATASET` table and pass them to `sepal_data` as a Pandas DataFrame.
 
@@ -51,7 +51,7 @@ When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using 
 
 You may want to have different assets stored in different Snowflake schemas. The Snowflake I/O manager allows you to specify the schema in several ways.
 
-If you want all of your assets to be stored in the same schema, you can specify the schema as configuration to the I/O manager, like we did in [Step 1: Configure the Snowflake I/O manager](/integrations/snowflake/using-snowflake-with-dagster#step-1-configure-the-snowflake-io-manager).
+If you want all of your assets to be stored in the same schema, you can specify the schema as configuration to the I/O manager, like we did in [Step 1: Configure the Snowflake I/O manager](/integrations/snowflake/using-snowflake-with-dagster#step-1-configure-the-snowflake-io-manager) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
 
 If you want to store assets in different schemas, you can specify the schema as part of the the asset's asset key:
 
@@ -139,7 +139,7 @@ defs = Definitions(
 )
 ```
 
-In this example, the `iris_dataset` asset uses the I/O manager bound to the key `warehouse_io_manager` and `iris_plots` will use the I/O manager bound to the key `blob_io_manager`. In the <PyObject object="Definitions" />, we supply the I/O managers for those keys. When materialize these assets, the `iris_dataset` will get stored in Snowflake, and `iris_plots` will get saved in S3.
+In this example, the `iris_dataset` asset uses the I/O manager bound to the key `warehouse_io_manager` and `iris_plots` will use the I/O manager bound to the key `blob_io_manager`. In the <PyObject object="Definitions" /> object, we supply the I/O managers for those keys. When materialize these assets, the `iris_dataset` will get stored in Snowflake, and `iris_plots` will get saved in S3.
 
 ---
 
@@ -183,4 +183,4 @@ defs = Definitions(
 
 In this example, we attach the Snowflake resource to the `small_petals` asset. In the body of the asset function, we use the `execute_query` method of the resource to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2: Create tables in Snowflake](/integrations/snowflake/using-snowflake-with-dagster#store-a-dagster-asset-as-a-table-in-snowflake) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
 
-For more information on the Snowflake resource, including additional configuration settings, see the [Snowflake resource API docs](/\_apidocs/libraries/dagster-snowflake#dagster_snowflake.snowflake_resource)
+For more information on the Snowflake resource, including additional configuration settings, see the [Snowflake resource API docs](/\_apidocs/libraries/dagster-snowflake#dagster_snowflake.snowflake_resource).
