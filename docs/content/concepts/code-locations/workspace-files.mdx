@@ -35,7 +35,7 @@ load_from:
 
 Each entry in a workspace file is considered a code location. A code location can contain either a single <PyObject object="Definitions" /> object, a repository, or multiple repositories.
 
-To accommodate incrementally migrating from <PyObject object="repository" decorator /> to <PyObject object="Definitions" />, code locations in a single workspace file can mix and match between definition approaches. For example, `code-location-1` could load a single <PyObject object="Definitions" /> file and `code-location-2` could load multiple repositories.
+To accommodate incrementally migrating from <PyObject object="repository" decorator /> to <PyObject object="Definitions" />, code locations in a single workspace file can mix and match between definition approaches. For example, `code-location-1` could load a single <PyObject object="Definitions" /> object from a file or module, and `code-location-2` could load multiple repositories.
 
 Each code location is loaded in its own process that Dagster tools use an RPC protocol to communicate with. This process separation allows multiple code locations in different environments to be loaded independently, and ensures that errors in user code can't impact Dagster system code.
 
@@ -244,12 +244,12 @@ load_from:
 
 By default, Dagit and other Dagster tools assume that code locations should be loaded using the same Python environment used to load Dagster. However, it's often useful for code locations to use independent environments. For example, a data engineering team running Spark can have dramatically different dependencies than an ML team running Tensorflow.
 
-To enable this use case, Dagster supports customizing the Python environment for each code location, by adding the `executable_path` key to the YAML for a location. These environments can involve distinct sets of installed dependencies, or even completely different Python versions. For example:
+To enable this use case, Dagster supports customizing the Python environment for each code location by adding the `executable_path` key to the YAML for a location. These environments can involve distinct sets of installed dependencies, or even completely different Python versions. For example:
 
 ```yaml file=/concepts/repositories_workspaces/python_environment_example.yaml
 load_from:
   - python_file:
-      relative_path: dataengineering_spark_repository
+      relative_path: path/to/dataengineering_spark_team.py
       location_name: dataengineering_spark_team_py_38_virtual_env
       executable_path: venvs/path/to/dataengineering_spark_team/bin/python
   - python_file:
