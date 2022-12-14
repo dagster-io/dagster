@@ -685,6 +685,8 @@ def make_dagster_solid_from_airflow_task(
         },
     )
     def _solid(context):  # pylint: disable=unused-argument
+        # reloading forces picking up any config that's been set for execution
+        importlib.reload(airflow)
         mock_xcom = context.op_config["mock_xcom"]
         use_ephemeral_airflow_db = context.op_config["use_ephemeral_airflow_db"]
         if AIRFLOW_EXECUTION_DATE_STR not in context.pipeline_run.tags:
