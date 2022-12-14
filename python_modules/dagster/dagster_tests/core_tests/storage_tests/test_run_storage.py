@@ -5,7 +5,9 @@ import mock
 import pytest
 from dagster_tests.core_tests.storage_tests.utils.run_storage import TestRunStorage
 
+from dagster._core.storage.legacy_storage import LegacyRunStorage
 from dagster._core.storage.runs import InMemoryRunStorage, SqliteRunStorage
+from dagster._core.storage.sqlite_storage import DagsterSqliteStorage
 
 
 @contextmanager
@@ -33,6 +35,19 @@ class NonBucketQuerySqliteRunStorage(SqliteRunStorage):
 @contextmanager
 def create_in_memory_storage():
     yield InMemoryRunStorage()
+
+
+@contextmanager
+def create_legacy_run_storage():
+    with tempfile.TemporaryDirectory() as tempdir:
+        # first create the unified storage class
+        storage = DagsterSqliteStorage.from_local(tempdir)
+        # next create the legacy adapter class
+        legacy_storage = LegacyRunStorage(storage)
+        try:
+            yield legacy_storage
+        finally:
+            storage.dispose()
 
 
 class TestSqliteImplementation(TestRunStorage):
@@ -76,6 +91,18 @@ class TestInMemoryImplementation(TestRunStorage):
     __test__ = True
 
     @pytest.fixture(name="storage", params=[create_in_memory_storage])
+    def run_storage(self, request):
+        with request.param() as s:
+            yield s
+
+    def test_storage_telemetry(self, storage):
+        pass
+
+
+class TestLegacyStorage(TestRunStorage):
+    __test__ = True
+
+    @pytest.fixture(name="storage", params=[create_legacy_run_storage])
     def run_storage(self, request):
         with request.param() as s:
             yield s
