@@ -132,7 +132,7 @@ class AirbyteSource:
         )
 
     def must_be_recreated(self, other: "AirbyteSource") -> bool:
-        return self.name != other.name or self.source_configuration != other.source_configuration
+        return self.name != other.name or self.source_type != other.source_type
 
 
 class InitializedAirbyteSource:
@@ -182,10 +182,7 @@ class AirbyteDestination:
         )
 
     def must_be_recreated(self, other: "AirbyteDestination") -> bool:
-        return (
-            self.name != other.name
-            or self.destination_configuration != other.destination_configuration
-        )
+        return self.name != other.name or self.destination_type != other.destination_type
 
 
 class InitializedAirbyteDestination:

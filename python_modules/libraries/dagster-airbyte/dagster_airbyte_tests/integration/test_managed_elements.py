@@ -7,7 +7,7 @@ from datetime import datetime
 import mock
 import pytest
 import requests
-from dagster_airbyte import airbyte_resource, load_assets_from_connections
+from dagster_airbyte import AirbyteResource, airbyte_resource, load_assets_from_connections
 from dagster_managed_elements import ManagedElementDiff
 from dagster_managed_elements.cli import apply, check
 from dagster_managed_elements.utils import diff_dicts
@@ -17,6 +17,8 @@ from dagster._core.test_utils import environ
 from dagster._utils import file_relative_path
 
 TEST_ROOT_DIR = str(file_relative_path(__file__, "./example_stacks"))
+import requests_mock
+
 from .example_stacks import example_airbyte_stack
 
 pytest_plugins = ["dagster_test.fixtures"]
@@ -77,8 +79,14 @@ def docker_compose_airbyte_instance_fixture(
                 + (f"\n{poll_result.status_code}: {poll_result.text}" if poll_result else "")
             )
 
-        with environ({"AIRBYTE_HOSTNAME": webapp_host, "AIRBYTE_PORT": webapp_port}):
+        with environ({"AIRBYTE_HOST`NAME": webapp_host, "AIRBYTE_PORT": webapp_port}):
             yield webapp_host
+
+
+@pytest.fixture(name="track_make_requests")
+def track_make_requests_fixture():
+    with requests_mock.mock(real_http=True) as m:
+        yield m
 
 
 @pytest.fixture(name="empty_airbyte_instance")
@@ -105,13 +113,22 @@ def airbyte_source_files_fixture():
             f.write(contents)
 
 
+def _calls_to(rm: requests_mock.Mocker, url_suffix: str) -> int:
+    return len([call for call in rm.request_history if call.url.endswith(url_suffix)])
+
+
 @pytest.mark.parametrize("filename", ["example_airbyte_stack", "example_airbyte_stack_generated"])
-def test_basic_integration(empty_airbyte_instance, airbyte_source_files, filename):
+def test_basic_integration(
+    empty_airbyte_instance,
+    airbyte_source_files,
+    filename,
+    track_make_requests: requests_mock.Mocker,
+):
 
     ab_instance = airbyte_resource.configured(
         {
-            "host": os.getenv("AIRBYTE_HOSTNAME"),
-            "port": os.getenv("AIRBYTE_PORT"),
+            "host": os.getenv("AIRBYTE_HOSTNAME", "localhost"),
+            "port": os.getenv("AIRBYTE_PORT", "80"),
         }
     )
     ab_cacheable_assets = load_assets_from_connections(
@@ -153,12 +170,14 @@ def test_basic_integration(empty_airbyte_instance, airbyte_source_files, filenam
     )
 
     assert expected_result == check_result
+    assert _calls_to(track_make_requests, "/sources/create") == 0
 
     # Then, apply the diff and check that we get the expected diff again
 
     apply_result = apply(TEST_ROOT_DIR, f"{filename}:reconciler")
 
     assert expected_result == apply_result
+    assert _calls_to(track_make_requests, "/sources/create") == 1
 
     # Now, check that we get no diff after applying the stack
 
@@ -219,15 +238,23 @@ def test_basic_integration(empty_airbyte_instance, airbyte_source_files, filenam
         )
 
 
-def test_change_source_and_destination(empty_airbyte_instance, airbyte_source_files):
+def test_change_source_and_destination(
+    empty_airbyte_instance,
+    airbyte_source_files,
+    track_make_requests: requests_mock.Mocker,
+):
 
-    # Set up example element and ensure no diff
+    # Set up example element and ensure no diff and initial call counts are correct
     apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    assert _calls_to(track_make_requests, "/sources/update") == 0
+    assert _calls_to(track_make_requests, "/destinations/update") == 0
+    assert _calls_to(track_make_requests, "/sources/create") == 1
+    assert _calls_to(track_make_requests, "/destinations/create") == 1
 
     check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
     assert check_result == ManagedElementDiff()
 
-    # Change the source, ensure that we get the proper diff
+    # Change the source, ensure that we get the proper diff ad
     expected_diff = diff_dicts(
         {
             "local-json-input": {
@@ -245,9 +272,12 @@ def test_change_source_and_destination(empty_airbyte_instance, airbyte_source_fi
 
     apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_source")
     assert apply_result == expected_diff
+    assert _calls_to(track_make_requests, "/sources/update") == 1
+    assert _calls_to(track_make_requests, "/sources/create") == 1
 
     check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_source")
     assert check_result == ManagedElementDiff()
+    assert _calls_to(track_make_requests, "/sources/create") == 1
 
     # Return to original state
     apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
@@ -271,9 +301,15 @@ def test_change_source_and_destination(empty_airbyte_instance, airbyte_source_fi
 
     apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_dest")
     assert apply_result == expected_diff
+    assert _calls_to(track_make_requests, "/destinations/create") == 1
 
     check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_different_dest")
     assert check_result == ManagedElementDiff()
+    assert _calls_to(track_make_requests, "/sources/create") == 1
+
+    # Try new destination type, same name, which forces recreation, incrementing the call count
+    apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_csv")
+    assert _calls_to(track_make_requests, "/destinations/create") == 2
 
 
 def test_mark_secrets_as_changed(docker_compose_airbyte_instance, airbyte_source_files):
