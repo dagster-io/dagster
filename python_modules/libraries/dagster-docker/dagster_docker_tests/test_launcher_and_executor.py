@@ -21,9 +21,16 @@ from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
 from . import IS_BUILDKITE, docker_postgres_instance
 
 
-@pytest.mark.parametrize("from_pending_repository", [True, False])
-def test_image_on_pipeline(aws_env, from_pending_repository):
-    os.environ["IN_EXTERNAL_PROCESS"] = "yes"
+@pytest.mark.parametrize(
+    "from_pending_repository, asset_selection",
+    [
+        (False, None),
+        (True, None),
+        (True, {AssetKey("foo"), AssetKey("bar")}),
+    ],
+)
+def test_image_on_pipeline(monkeypatch, aws_env, from_pending_repository, asset_selection):
+    monkeypatch.setenv("IN_EXTERNAL_PROCESS", "yes")
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
@@ -91,9 +98,7 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
                 external_pipeline_origin=external_pipeline.get_external_origin(),
                 pipeline_code_origin=external_pipeline.get_python_origin(),
                 repository_load_data=repository_load_data,
-                asset_selection=frozenset({AssetKey("foo"), AssetKey("bar")})
-                if from_pending_repository
-                else None,
+                asset_selection=frozenset(asset_selection) if asset_selection else None,
             )
 
             instance.launch_run(run.run_id, workspace)
