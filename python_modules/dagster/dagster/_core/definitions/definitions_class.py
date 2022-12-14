@@ -26,7 +26,6 @@ if TYPE_CHECKING:
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 
-@experimental
 class Definitions:
     """Example usage:
 
