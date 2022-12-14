@@ -16,6 +16,7 @@
    sections/api/apidocs/ops
    sections/api/apidocs/io-managers
    sections/api/apidocs/partitions
+   sections/api/apidocs/definitions
    sections/api/apidocs/repositories
    sections/api/apidocs/resources
    sections/api/apidocs/schedules-sensors
