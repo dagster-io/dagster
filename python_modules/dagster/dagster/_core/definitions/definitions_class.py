@@ -41,7 +41,7 @@ class Definitions:
             }
         )
 
-    Create a set of definitions explicitly available and loadable by dagster tools.
+    Create a set of definitions explicitly available and loadable by Dagster tools.
 
     Dagster separates user-defined code from system tools such the web server and
     the daemon. Rather than loading code directly into process, a tool such as the
