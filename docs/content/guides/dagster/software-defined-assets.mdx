@@ -65,7 +65,7 @@ The framework infers asset dependencies by looking at the names of the arguments
 
 Having defined some assets, we can combine them with resources, such as I/O managers, to determine how they're stored, and connect them to external services.
 
-We use <PyObject object="Definitions" /> to load definitions such as assets and resources. Let's take a closer look at how definitions are loaded:
+To load definitions such as assets and resources, we use <PyObject object="Definitions" />. Let's take a closer look at how definitions are loaded:
 
 - We add the assets that we want Dagster to load in the `assets` argument to the <PyObject object="Definitions" /> object. It's common to use a utility like <PyObject object="load_assets_from_modules" /> or <PyObject object="load_assets_from_package_name" /> to pick up all the assets within a module or package, so you don't need to list them individually. The order that we supply the assets doesn't matter, since the dependencies are determined by each asset definition.
 
@@ -170,13 +170,13 @@ Here's an extended version of `weather_assets` that contains the new asset:
 Because the same assets will be written and read into different Python types in different situations, we need to define an <PyObject object="IOManager" /> that can handle both of those types. Here's an extended version of the <PyObject object="IOManager" /> we defined before:
 
 ```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/local_spark_filesystem_io_manager.py
-# local_filesystem_io_manager.py
+# local_spark_filesystem_io_manager.py
 
 # Data is stored in Parquet files using the "Hadoop-style" layout in which each table corresponds to a
 # directory, and each file within the directory contains some of the rows.
 
 # The processing options are Pandas and Spark. A table can be created from a Pandas DataFrame
-# and then consumed in a downstream computation as a Spark DataFrame. And vice versa.
+# and then consumed in a downstream computation as a Spark DataFrame, and vice versa.
 
 import glob
 import os
@@ -195,7 +195,7 @@ class LocalFileSystemIOManager(IOManager):
         return os.path.abspath(os.path.join(*asset_key.path))
 
     def handle_output(self, context, obj: Union[PandasDF, SparkDF]):
-        """This saves the dataframe as a CSV using the layout written and expected by Spark/Hadoop.
+        """This saves the DataFrame as a CSV using the layout written and expected by Spark/Hadoop.
 
         E.g. if the given storage maps the asset's path to the filesystem path "/a/b/c", a directory
         will be created with two files inside it:
@@ -218,7 +218,7 @@ class LocalFileSystemIOManager(IOManager):
             raise ValueError("Unexpected input type")
 
     def load_input(self, context) -> Union[PandasDF, SparkDF]:
-        """This reads a dataframe from a CSV using the layout written and expected by Spark/Hadoop.
+        """This reads a DataFrame from a CSV using the layout written and expected by Spark/Hadoop.
 
         E.g. if the given storage maps the asset's path to the filesystem path "/a/b/c", and that
         directory contains:

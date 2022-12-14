@@ -1,10 +1,10 @@
-# local_filesystem_io_manager.py
+# local_spark_filesystem_io_manager.py
 
 # Data is stored in Parquet files using the "Hadoop-style" layout in which each table corresponds to a
 # directory, and each file within the directory contains some of the rows.
 
 # The processing options are Pandas and Spark. A table can be created from a Pandas DataFrame
-# and then consumed in a downstream computation as a Spark DataFrame. And vice versa.
+# and then consumed in a downstream computation as a Spark DataFrame, and vice versa.
 
 import glob
 import os
@@ -23,7 +23,7 @@ class LocalFileSystemIOManager(IOManager):
         return os.path.abspath(os.path.join(*asset_key.path))
 
     def handle_output(self, context, obj: Union[PandasDF, SparkDF]):
-        """This saves the dataframe as a CSV using the layout written and expected by Spark/Hadoop.
+        """This saves the DataFrame as a CSV using the layout written and expected by Spark/Hadoop.
 
         E.g. if the given storage maps the asset's path to the filesystem path "/a/b/c", a directory
         will be created with two files inside it:
@@ -46,7 +46,7 @@ class LocalFileSystemIOManager(IOManager):
             raise ValueError("Unexpected input type")
 
     def load_input(self, context) -> Union[PandasDF, SparkDF]:
-        """This reads a dataframe from a CSV using the layout written and expected by Spark/Hadoop.
+        """This reads a DataFrame from a CSV using the layout written and expected by Spark/Hadoop.
 
         E.g. if the given storage maps the asset's path to the filesystem path "/a/b/c", and that
         directory contains:
