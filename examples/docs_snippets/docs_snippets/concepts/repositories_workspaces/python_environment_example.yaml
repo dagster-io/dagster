@@ -1,6 +1,6 @@
 load_from:
   - python_file:
-      relative_path: dataengineering_spark_repository
+      relative_path: path/to/dataengineering_spark_team.py
       location_name: dataengineering_spark_team_py_38_virtual_env
       executable_path: venvs/path/to/dataengineering_spark_team/bin/python
   - python_file:
