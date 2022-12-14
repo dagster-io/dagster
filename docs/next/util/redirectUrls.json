@@ -147,10 +147,14 @@
 
   {
     "source": "/overview/repositories-workspaces/workspaces",
-    "destination": "/concepts/repositories-workspaces/workspaces",
+    "destination": "/concepts/code-locations/workspace-files",
     "statusCode": 302
   },
-
+  {
+    "source": "/concepts/repositories-workspaces/workspaces",
+    "destination": "/concepts/code-locations/workspace-files",
+    "statusCode": 302
+  },
   {
     "source": "/overview/logging/logging",
     "destination": "/concepts/logging/loggers",
