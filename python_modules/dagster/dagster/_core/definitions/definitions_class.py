@@ -3,9 +3,14 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, Mapping, Optional, Type, 
 import dagster._check as check
 from dagster._annotations import experimental, public
 from dagster._core.definitions.events import CoercibleToAssetKey
+from dagster._core.definitions.executor_definition import ExecutorDefinition
+from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.execution.with_resources import with_resources
+from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
+from dagster._utils.backcompat import experimental_arg_warning
 from dagster._utils.cached_method import cached_method
+from kopf import Logger
 
 from .assets import AssetsDefinition, SourceAsset
 from .cacheable_assets import CacheableAssetsDefinition
@@ -36,6 +41,8 @@ class Definitions:
         sensors: Optional[Iterable[SensorDefinition]] = None,
         jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
         resources: Optional[Mapping[str, Any]] = None,
+        executor: Optional[ExecutorDefinition] = None,
+        loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     ):
         """
         Example usage:
@@ -89,9 +96,21 @@ class Definitions:
         if resources:
             check.mapping_param(resources, "resources", key_type=str)
 
+        if executor:
+            check.inst_param(executor, "executor", ExecutorDefinition)
+            experimental_arg_warning("executor", "Definitions.__init__")
+
+        if loggers:
+            check.mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
+            experimental_arg_warning("loggers", "Definitions.__init__")
+
         resource_defs = coerce_resources_to_defs(resources or {})
 
-        @repository(name=SINGLETON_REPOSITORY_NAME)
+        @repository(
+            name=SINGLETON_REPOSITORY_NAME,
+            default_executor_def=executor,
+            default_logger_defs=loggers,
+        )
         def created_repo():
             return [
                 *with_resources(assets or [], resource_defs),
