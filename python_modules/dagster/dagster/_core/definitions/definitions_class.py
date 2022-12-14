@@ -48,19 +48,16 @@ class Definitions:
     webserver interacts with user-defined code over a serialization boundary.
 
     These tools must be able to locate and load this code when they start. Via CLI
-    arguments or config, they specify a python module to inspect.
+    arguments or config, they specify a Python module to inspect.
 
-    A python module is loadable by dagster tools if it there is a top level variable
-    named `defs` that is an instance of Definitions.
+    A Python module is loadable by Dagster tools if it there is a top-level variable
+    that is an instance of Definitions.
 
     Definitions provides a few conveniences for dealing with resources that do not apply to
-    vanilla dagster definitions:
+    vanilla Dagster definitions:
 
-    1. It takes a dictionary of top-level resources which are automatically bound
-    (via with_resources) to any asset passed to it. If you need to apply different
-    resources to different assets, use legacy @repository and use with_resources as before.
-
-    2. The resources dictionary takes raw python objects, not just resource definitions.
+    * It takes a dictionary of top-level resources which are automatically bound (via with_resources) to any asset passed to it. If you need to apply different resources to different assets, use legacy @repository and use with_resources as before.
+    * The resources dictionary takes raw Python objects, not just resource definitions.
 
     """
 
@@ -107,8 +104,8 @@ class Definitions:
 
     @public
     def get_job_def(self, name: str) -> JobDefinition:
-        """Get a job definition by name. If you passed in a an UnresolvedAssetJobDefinition
-        (return value of define_asset_job) it will be resolved to a JobDefinition when returned
+        """Get a job definition by name. If you passed in a an :py:class:`UnresolvedAssetJobDefinition`
+        (return value of :py:func:`define_asset_job`) it will be resolved to a :py:class:`JobDefinition` when returned
         from this function."""
 
         check.str_param(name, "name")
@@ -116,12 +113,13 @@ class Definitions:
 
     @public
     def get_sensor_def(self, name: str) -> SensorDefinition:
-        """Get a sensor definition name"""
+        """Get a sensor definition by name."""
         check.str_param(name, "name")
         return self.get_repository_def().get_sensor_def(name)
 
     @public
     def get_schedule_def(self, name: str) -> ScheduleDefinition:
+        """Get a schedule definition by name."""
         check.str_param(name, "name")
         return self.get_repository_def().get_schedule_def(name)
 
@@ -135,7 +133,7 @@ class Definitions:
         partition_key: Optional[str] = None,
     ) -> object:
         """
-        Loads the contents of an asset as a Python object.
+        Load the contents of an asset as a Python object.
 
         Invokes `load_input` on the :py:class:`IOManager` associated with the asset.
 
@@ -171,12 +169,11 @@ class Definitions:
 
         Usage:
 
-            .. code-block:: python
+        .. code-block:: python
 
-                with defs.get_asset_value_loader() as loader:
-                    asset1 = loader.load_asset_value("asset1")
-                    asset2 = loader.load_asset_value("asset2")
-
+            with defs.get_asset_value_loader() as loader:
+                asset1 = loader.load_asset_value("asset1")
+                asset2 = loader.load_asset_value("asset2")
         """
         return self.get_repository_def().get_asset_value_loader(
             instance=instance,
