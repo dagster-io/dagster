@@ -314,7 +314,7 @@ class CachingInstanceQueryer:
         for upstream_key in asset_graph.upstream_key_iterator(start_key):
             if upstream_key in input_keys:
                 ret.add(upstream_key)
-        return ret
+        return frozenset(ret)
 
     @cached_method
     def _calculate_used_data(
@@ -381,7 +381,7 @@ class CachingInstanceQueryer:
                         )
                         or {}
                     ),
-                    required_keys=frozenset(upstream_required_keys),
+                    required_keys=upstream_required_keys,
                 ).items():
                     # if root data is missing, this overrides other values
                     if tup == (None, None) or known_data.get(key) == (None, None):
@@ -470,7 +470,7 @@ class CachingInstanceQueryer:
                     )
                     or {}
                 ),
-                required_keys=frozenset(required_keys),
+                required_keys=required_keys,
             )
             return {
                 key: datetime.datetime.fromtimestamp(timestamp, tz=datetime.timezone.utc)
@@ -496,7 +496,7 @@ class CachingInstanceQueryer:
                 asset_graph=asset_graph,
                 asset_key=parent_key,
                 required_keys=upstream_required_keys,
-            ):
+            ).items():
                 current_value = upstream_data_times.get(upstream_key, upstream_time)
                 if current_value is None or upstream_time is None:
                     upstream_data_times[upstream_key] = None
@@ -526,10 +526,10 @@ class CachingInstanceQueryer:
                 asset_graph=asset_graph,
                 asset_key=asset_key,
                 required_keys=upstream_keys,
-            ):
+            ).items():
                 if upstream_time is not None:
                     in_progress_times[upstream_key] = max(
-                        in_progress_times.get(upstream_key, datetime.datetime.min), upstream_time
+                        in_progress_times.get(upstream_key, upstream_time), upstream_time
                     )
         return in_progress_times
 

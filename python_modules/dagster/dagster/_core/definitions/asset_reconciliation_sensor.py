@@ -629,7 +629,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 # calculate the data times you would expect if the latest currently-executing run
                 # were to successfully complete
                 in_progress_data_times = instance_queryer.get_in_progress_data_times_for_key(
-                    asset_graph, key, relevant_upstream_keys, current_time
+                    asset_graph, key, frozenset(relevant_upstream_keys), current_time
                 )
 
                 # calculate the data times you'd expect for this key if you were to run it
