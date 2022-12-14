@@ -116,19 +116,12 @@ def test_load_from_instance(
         assert len(ab_assets) == 0
         return
 
-    tables = {
-        "dagster_releases",
-        "dagster_tags",
-        "dagster_teams",
-        "dagster_array_test",
-        "dagster_unknown_test",
-    } | (
+    tables = {"dagster_releases", "dagster_tags", "dagster_teams"} | (
         {
             "dagster_releases_assets",
             "dagster_releases_author",
             "dagster_tags_commit",
             "dagster_releases_foo",
-            "dagster_array_test_author",
         }
         if use_normalization_tables
         else set()
