@@ -199,18 +199,20 @@ def get_task_definition_dict_from_current_task(
     # entryPoint and containerOverrides are specified, they're concatenated
     # and the command will fail
     # https://aws.amazon.com/blogs/opensource/demystifying-entrypoint-cmd-docker/
-    new_container_definition = merge_dicts(
-        {
-            **container_definition,
-            "name": container_name,
-            "image": image,
-            "entryPoint": [],
-            "command": command if command else [],
-        },
-        ({"environment": environment} if environment else {}),
-        ({"secrets": secrets} if secrets else {}),
-        {} if include_sidecars else {"dependsOn": []},
-    )
+    new_container_definition = {
+        **container_definition,
+        "name": container_name,
+        "image": image,
+        "entryPoint": [],
+        "command": command if command else [],
+        **({"secrets": secrets} if secrets else {}),
+        **({} if include_sidecars else {"dependsOn": []}),
+    }
+    if environment:
+        new_container_definition["environment"] = [
+            *new_container_definition["environment"],
+            *environment,
+        ]
 
     if include_sidecars:
         container_definitions = current_task_definition_dict.get("containerDefinitions")

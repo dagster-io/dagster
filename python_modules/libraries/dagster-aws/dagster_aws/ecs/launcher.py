@@ -435,6 +435,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         definition if needed.
         """
         environment = self._environment(container_context)
+        environment.append({"name": "DAGSTER_RUN_JOB_NAME", "value": run.job_name})
+
         secrets = self._secrets(container_context)
 
         if container_context.task_definition_arn:
