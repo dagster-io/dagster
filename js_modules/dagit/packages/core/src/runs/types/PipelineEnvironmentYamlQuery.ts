@@ -24,6 +24,7 @@ export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_Run {
   pipelineName: string;
   pipelineSnapshotId: string | null;
   runConfigYaml: string;
+  parentPipelineSnapshotId: string | null;
   repositoryOrigin: PipelineEnvironmentYamlQuery_pipelineRunOrError_Run_repositoryOrigin | null;
 }
 

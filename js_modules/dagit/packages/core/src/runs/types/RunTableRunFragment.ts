@@ -38,6 +38,7 @@ export interface RunTableRunFragment {
   rootRunId: string | null;
   parentRunId: string | null;
   pipelineSnapshotId: string | null;
+  parentPipelineSnapshotId: string | null;
   pipelineName: string;
   repositoryOrigin: RunTableRunFragment_repositoryOrigin | null;
   solidSelection: string[] | null;

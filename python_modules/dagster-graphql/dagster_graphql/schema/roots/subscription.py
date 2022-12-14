@@ -50,7 +50,7 @@ class GrapheneDagitSubscription(graphene.ObjectType):
         return gen_events_for_run(graphene_info, runId, cursor)
 
     def subscribe_computeLogs(self, graphene_info, runId, stepKey, ioType, cursor=None):
-        return gen_compute_logs(graphene_info, runId, stepKey, ComputeIOType(ioType), cursor)
+        return gen_compute_logs(graphene_info, runId, stepKey, ComputeIOType(ioType.value), cursor)
 
     def subscribe_capturedLogs(self, graphene_info, logKey, cursor=None):
         return gen_captured_log_data(graphene_info, logKey, cursor)

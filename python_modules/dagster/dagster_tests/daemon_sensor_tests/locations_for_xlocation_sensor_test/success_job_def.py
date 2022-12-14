@@ -11,4 +11,9 @@ def success_job():
     an_op()
 
 
-defs = Definitions(jobs=[success_job])
+@job
+def another_success_job():
+    an_op()
+
+
+defs = Definitions(jobs=[success_job, another_success_job])

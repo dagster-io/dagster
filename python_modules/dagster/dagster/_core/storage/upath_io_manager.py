@@ -148,7 +148,7 @@ class UPathIOManager(MemoizableIOManager):
                 path = self._get_path(context)
                 return self._load_single_input(path, context)
             else:
-                expected_type = inspect.signature(self.dump_to_path).parameters["obj"].annotation
+                expected_type = inspect.signature(self.load_from_path).return_annotation
 
                 if not self._has_multiple_partitions(context):
                     if (
@@ -161,7 +161,7 @@ class UPathIOManager(MemoizableIOManager):
                         return check.failed(
                             f"Received `{context.dagster_type.typing_type}` type "
                             f"in input of DagsterType {context.dagster_type}, "
-                            f"but `{self.dump_to_path}` has {expected_type} type annotation for obj. "
+                            f"but `{self.load_from_path}` has {expected_type} type annotation for obj. "
                             f"They should match. "
                             f"If you are loading a single partition, the upstream asset type annotation "
                             f"should not be a typing.Dict, but a single partition type."
@@ -203,7 +203,7 @@ class UPathIOManager(MemoizableIOManager):
                             return check.failed(
                                 f"Received `{context.dagster_type.typing_type}` type "
                                 f"in input of DagsterType {context.dagster_type}, "
-                                f"but `{self.dump_to_path}` has {expected_type} type annotation for obj. "
+                                f"but `{self.load_from_path}` has {expected_type} type annotation for obj. "
                                 f"They should be both specified with type annotations and match. "
                                 f"If you are loading multiple partitions, the upstream asset type annotation "
                                 f"should be a typing.Dict."

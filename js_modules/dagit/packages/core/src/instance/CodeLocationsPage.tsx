@@ -37,10 +37,7 @@ export const CodeLocationsPage = () => {
 
   return (
     <>
-      <PageHeader
-        title={<Heading>{pageTitle}</Heading>}
-        tabs={<InstanceTabs tab="code-locations" />}
-      />
+      <PageHeader title={<Heading>{pageTitle}</Heading>} tabs={<InstanceTabs tab="locations" />} />
       <Box
         padding={{vertical: 16, horizontal: 24}}
         flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}

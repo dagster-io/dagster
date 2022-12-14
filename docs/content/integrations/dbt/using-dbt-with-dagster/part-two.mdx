@@ -18,7 +18,7 @@ At this point, you should have a [fully-configured dbt project](/integrations/db
 In this step, you'll finally begin integrating dbt with Dagster! To do this, you'll:
 
 - [Load the dbt models into Dagster as assets](#step-1-load-the-dbt-models-as-assets)
-- [Add a Dagster repository and supply a dbt resource](#step-2-add-a-dagster-repository-and-supply-a-dbt-resource)
+- [Define a Dagster code location](#step-2-define-a-dagster-code-location)
 - [View the assets in Dagit](#step-3-view-the-assets-in-dagit)
 
 ---
@@ -30,6 +30,8 @@ In this step, you'll load the dbt models into Dagster as assets using the [`dags
 Open the `__init__.py` file, located in `/tutorial_template/tutorial_dbt_dagster/assets`, and add the following code:
 
 ```python
+# /tutorial_template/tutorial_dbt_dagster/assets/__init__.py
+
 from dagster_dbt import load_assets_from_dbt_project
 
 from dagster import file_relative_path
@@ -69,43 +71,42 @@ Let's take a look at the arguments we've supplied:
 
 ---
 
-## Step 2: Add a Dagster repository and supply a dbt resource
+## Step 2: Define a Dagster code location
 
-Next, you'll create a Dagster [repository](/concepts/repositories-workspaces/repositories) to supply resources to the dbt assets from the previous step.
+Next, you'll define the code location for your Dagster project. A [code location](/concepts/code-locations), created using the <PyObject object="Definitions" /> object, is a collection of definitions in a Dagster project, such as assets, resources, and so on.
 
 Assets loaded from dbt require a dbt resource, which is responsible for firing off dbt CLI commands. Using the <PyObject module="dagster_dbt" object="dbt_cli_resource" /> resource, we can supply a dbt resource to the dbt project.
 
-Open the `repository.py` file, located in `/tutorial_template/tutorial_dbt_dagster`, and add the following code:
+Open the `__init__.py` file, located in `/tutorial_template/tutorial_dbt_dagster`, and add the following code:
 
 ```python
+# /tutorial_template/tutorial_dbt_dagster/__init__.py
+
 import os
 
 from dagster_dbt import dbt_cli_resource
 from tutorial_dbt_dagster import assets
 from tutorial_dbt_dagster.assets import DBT_PROFILES, DBT_PROJECT_PATH
 
-from dagster import load_assets_from_package_module, repository, with_resources
+from dagster import Definitions, load_assets_from_modules
 
-
-@repository
-def tutorial_dbt_dagster():
-    return with_resources(
-        load_assets_from_package_module(assets),
+resources = {
+    "dbt": dbt_cli_resource.configured(
         {
-            "dbt": dbt_cli_resource.configured(
-                {
-                    "project_dir": DBT_PROJECT_PATH,
-                    "profiles_dir": DBT_PROFILES,
-                },
-            ),
+            "project_dir": DBT_PROJECT_PATH,
+            "profiles_dir": DBT_PROFILES,
         },
-    )
+    ),
+}
+
+defs = Definitions(assets=load_assets_from_modules([assets]), resources=resources)
 ```
 
 Let's take a look at what's happening here:
 
-- Using <PyObject object="with_resources"/>, we've provided resources to the assets in the repository. In this example, that's the <PyObject module="dagster_dbt" object="dbt_cli_resource" /> resource.
-- Using <PyObject object="load_assets_from_package_module" />, we've imported all assets in the `assets` module into the repository. This approach allows any new assets we create to be automatically added to the repository instead of needing to manually add them one by one.
+- In the `resources` key, we've provided configuration info for the <PyObject module="dagster_dbt" object="dbt_cli_resource" /> resource.
+- Added all assets in the assets module and the resources mapped to the `resources` key to the <PyObject object="Definitions" /> object. This supplies the resource we created to our assets.
+- Using <PyObject object="load_assets_from_modules" />, we've added all assets in the `assets` module as definitions. This approach allows any new assets we created to be automatically included in the code location instead of needing to manually add them one by one.
 
 ---
 

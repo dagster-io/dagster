@@ -1,4 +1,4 @@
-import {Box, Icon} from '@dagster-io/ui';
+import {Box, Colors, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
 interface Metadata {
@@ -26,7 +26,7 @@ export const CodeLocationSource: React.FC<{metadata: Metadata[]}> = ({metadata})
   if (url.hostname.includes('github.com')) {
     return (
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="github" />
+        <Icon name="github" color={Colors.Link} />
         <a href={metadataWithURL.value} target="_blank" rel="noreferrer">
           {extractProjectName(url.pathname)}
         </a>
@@ -37,7 +37,7 @@ export const CodeLocationSource: React.FC<{metadata: Metadata[]}> = ({metadata})
   if (url.hostname.includes('gitlab.com')) {
     return (
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="gitlab" />
+        <Icon name="gitlab" color={Colors.Link} />
         <a href={metadataWithURL.value} target="_blank" rel="noreferrer">
           {extractProjectName(url.pathname)}
         </a>

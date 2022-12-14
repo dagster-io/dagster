@@ -104,6 +104,7 @@ export interface RunReExecutionQuery_pipelineRunOrError_Run {
   solidSelection: string[] | null;
   assetSelection: RunReExecutionQuery_pipelineRunOrError_Run_assetSelection[] | null;
   pipelineSnapshotId: string | null;
+  parentPipelineSnapshotId: string | null;
   executionPlan: RunReExecutionQuery_pipelineRunOrError_Run_executionPlan | null;
   stepKeysToExecute: string[] | null;
   repositoryOrigin: RunReExecutionQuery_pipelineRunOrError_Run_repositoryOrigin | null;

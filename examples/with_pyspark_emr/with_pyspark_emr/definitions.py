@@ -1,4 +1,3 @@
-# start-snippet
 from pathlib import Path
 
 from dagster_aws.emr import emr_pyspark_step_launcher
@@ -7,7 +6,7 @@ from dagster_pyspark import pyspark_resource
 from pyspark.sql import DataFrame, Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
-from dagster import IOManager, ResourceDefinition, graph, io_manager, op, repository
+from dagster import Definitions, IOManager, ResourceDefinition, graph, io_manager, op
 
 
 class ParquetIOManager(IOManager):
@@ -75,9 +74,4 @@ make_and_filter_data_local = make_and_filter_data.to_job(
 
 make_and_filter_data_emr = make_and_filter_data.to_job(name="prod", resource_defs=emr_resource_defs)
 
-# end-snippet
-
-
-@repository
-def with_pyspark_emr():
-    return [make_and_filter_data_emr, make_and_filter_data_local]
+defs = Definitions(jobs=[make_and_filter_data_emr, make_and_filter_data_local])
