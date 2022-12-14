@@ -102,7 +102,7 @@ class UPathIOManager(MemoizableIOManager):
         obj = self.load_from_path(context=context, path=path)
 
         metadata = {"path": MetadataValue.path(path)}
-        custom_metadata = self.get_metadata(obj, context)
+        custom_metadata = self.get_metadata(context=context, obj=obj)
         metadata.update(custom_metadata)  # type: ignore
         context.add_input_metadata(metadata)
 
