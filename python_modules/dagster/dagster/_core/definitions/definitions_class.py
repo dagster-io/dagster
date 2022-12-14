@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, Dict, Iterable, Mapping, Optional, Type, Union
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
@@ -29,7 +29,6 @@ if TYPE_CHECKING:
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 
-@experimental
 class Definitions:
     """Example usage:
 
@@ -45,7 +44,7 @@ class Definitions:
             }
         )
 
-    Create a set of definitions explicitly available and loadable by Dagster tools.
+    A set of definitions to be explicitly available and loadable by Dagster tools.
 
     Dagster separates user-defined code from system tools such the web server and
     the daemon. Rather than loading code directly into process, a tool such as the
@@ -57,8 +56,8 @@ class Definitions:
     A Python module is loadable by Dagster tools if there is a top-level variable
     that is an instance of Definitions.
 
-    Definitions provides a few conveniences for dealing with resources that do not apply to
-    vanilla Dagster definitions:
+    Definitions provides a few conveniences for dealing with resources that do
+    not apply to old-style `@repository` declarations:
 
     * It takes a dictionary of top-level resources which are automatically bound (via with_resources) to any asset passed to it. If you need to apply different resources to different assets, use legacy @repository and use with_resources as before.
     * The resources dictionary takes raw Python objects, not just instances of :py:class:`ResourceDefinition`. If that raw object inherits from :py:class:`IOManager`, it gets coerced to an :py:class:`IOManagerDefinition`. Any other object is coerced to a ResourceDefinition.
