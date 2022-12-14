@@ -1,3 +1,6 @@
+from dagster_snowflake import build_snowflake_io_manager
+from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+
 from dagster import (
     ScheduleDefinition,
     define_asset_job,
@@ -5,8 +8,6 @@ from dagster import (
     repository,
     with_resources,
 )
-from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 
 from . import assets
 

@@ -23,6 +23,7 @@ AVAILABLE_EXAMPLES = [
     "quickstart_aws",
     "quickstart_etl",
     "quickstart_gcp",
+    "quickstart_snowflake",
     "tutorial_dbt_dagster",
     "tutorial_notebook_assets",
     "deploy_docker",
