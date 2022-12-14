@@ -15,7 +15,9 @@ from pandas import DataFrame as PandasDF
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import SparkSession
 
-from dagster import AssetKey, IOManager, io_manager, _check as check
+from dagster import AssetKey, IOManager
+from dagster import _check as check
+from dagster import io_manager
 
 
 class LocalFileSystemIOManager(IOManager):
