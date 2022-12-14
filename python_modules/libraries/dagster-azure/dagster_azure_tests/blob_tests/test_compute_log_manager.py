@@ -5,7 +5,7 @@ from unittest import mock
 
 import pytest
 from dagster_azure.blob import AzureBlobComputeLogManager, FakeBlobServiceClient
-from dagster_tests.core_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
+from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
 
 from dagster import DagsterEventType, graph, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
