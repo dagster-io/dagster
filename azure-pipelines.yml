@@ -17,10 +17,8 @@ parameters:
       - core_tests
       - general_tests
       - daemon_tests
-      # All but 1 test in this suite are currently failing or erroring
-      # - daemon_sensor_tests
-      # All but 10 tests in this suite are currently failing or erroring
-      # - scheduler_tests
+      - daemon_sensor_tests
+      - scheduler_tests
 jobs:
   - job: "dagster"
     pool:
@@ -42,7 +40,7 @@ jobs:
       - script: choco install vcpython27 --yes
         condition: eq(variables['python.version'], '2.7')
         displayName: "Install vcpython27"
-      - script: pip install tox
+      - script: pip install "tox<4.0.0"
         displayName: "Install tox"
       - script: cd python_modules\dagster && tox -e %TOXENV% && cd ..\..
         displayName: "Run tests"

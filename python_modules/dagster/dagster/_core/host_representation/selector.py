@@ -69,12 +69,28 @@ class JobSelector(
         "_JobSelector", [("location_name", str), ("repository_name", str), ("job_name", str)]
     )
 ):
-    def __new__(cls, location_name: str, repository_name: str, job_name: str):
+    def __new__(
+        cls,
+        location_name: str,
+        repository_name: Optional[str] = None,
+        job_name: Optional[str] = None,
+    ):
         return super(JobSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
-            repository_name=check.str_param(repository_name, "repository_name"),
-            job_name=check.str_param(job_name, "job_name"),
+            repository_name=check.opt_str_param(
+                repository_name,
+                "repository_name",
+                default=SINGLETON_REPOSITORY_NAME,
+            ),
+            job_name=check.str_param(
+                job_name,
+                "job_name",
+                "Must provide job_name argument even though it is marked as optional in the "
+                "function signature. repository_name, a truly optional parameter, is before "
+                "that argument and actually optional. Use of keyword arguments is "
+                "recommended to avoid confusion.",
+            ),
         )
 
     def to_graphql_input(self):
