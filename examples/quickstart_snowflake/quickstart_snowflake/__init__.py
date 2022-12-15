@@ -1,5 +1,4 @@
-from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
 from dagster import (
     Definitions,
@@ -18,7 +17,7 @@ daily_refresh_schedule = ScheduleDefinition(
 defs = Definitions(
     assets=load_assets_from_package_module(assets),
     resources={
-        "io_manager": build_snowflake_io_manager([SnowflakePandasTypeHandler()]).configured(
+        "io_manager": snowflake_pandas_io_manager.configured(
             # Read about using environment variables and secrets in Dagster:
             # https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets
             {
