@@ -39,10 +39,10 @@ Jobs can be created in several ways:
 
 ### From software-defined assets
 
-Asset jobs materialize a fixed set of assets each time they run. Additionally, multiple jobs can target overlapping sets of assets:
+Asset jobs materialize a fixed set of assets each time they run. Additionally, multiple jobs in the same repository can target overlapping sets of assets:
 
 ```python file=/concepts/assets/build_job.py startafter=start_marker endbefore=end_marker
-from dagster import Definitions, asset, define_asset_job
+from dagster import asset, define_asset_job, repository
 
 
 @asset
@@ -59,10 +59,9 @@ all_assets_job = define_asset_job(name="all_assets_job")
 asset1_job = define_asset_job(name="asset1_job", selection="asset1")
 
 
-defs = Definitions(
-    assets=[asset1, asset2],
-    jobs=[all_assets_job, asset1_job],
-)
+@repository
+def repo():
+    return [asset1, asset2, all_assets_job, asset1_job]
 ```
 
 Unlike jobs created using the <PyObject object="job"/> decorator where you explicitly define the dependencies when you create the job, the topology of an asset-based job is based on the [assets](/concepts/assets/software-defined-assets) and their dependencies.
@@ -219,12 +218,12 @@ if __name__ == "__main__":
 
 ---
 
-## Making jobs available to Dagster tools
+## Including jobs in repositories
 
-You make jobs available to Dagit, GraphQL, and the command line by including them in <PyObject object="Definitions"/> object at the top-level of Python module or file. The tool loads that module as a code location. If you include schedules or sensors, the code location will automatically include jobs that those schedules or sensors target.
+You make jobs available to Dagit, GraphQLs, and the command line by including them inside [repositories](/concepts/repositories-workspaces/repositories). If you include schedules or sensors in a repository, the repository will automatically include jobs that those schedules or sensors target.
 
 ```python file=/concepts/ops_jobs_graphs/repo_with_job.py
-from dagster import Definitions, job
+from dagster import job, repository
 
 
 @job
@@ -232,14 +231,16 @@ def do_it_all():
     ...
 
 
-defs = Definitions(jobs=[do_it_all])
+@repository
+def my_repo():
+    return [do_it_all]
 ```
 
 ---
 
 ## Testing jobs
 
-Dagster has built-in support for testing, including separating business logic from environments and setting explicit expectations on uncontrollable inputs. Refer to the [Testing guide](/concepts/testing) for more info and examples.
+Dagster has built-in support for testing your data applications, including separating business logic from environments and setting explicit expectations on uncontrollable inputs. Refer to the [Testing guide](/concepts/testing) for more info and examples.
 
 ---
 
