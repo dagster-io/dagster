@@ -5,7 +5,18 @@ description: A Dagster schedule submits job runs at a fixed interval.
 
 # Schedules
 
-A Dagster schedule submits [job](/concepts/ops-jobs-graphs/jobs) runs at a fixed interval.
+A schedule is a Dagster definition that is used to execute a [job](/concepts/ops-jobs-graphs/jobs) at a fixed interval. Each time at which a schedule is evaluated is called a tick. The schedule definition can generate run configuration for the job on each tick.
+
+Each schedule:
+
+- Targets a single job
+- Optionally defines a function that returns either:
+  - One or more <PyObject object="RunRequest"/> objects. Each run request launches a run.
+  - An optional <PyObject object="SkipReason"/>, which specifies a message which describes why no runs were requested
+
+Dagster includes a scheduler, which runs as part of the dagster-daemon process. Once you have defined a schedule, see the [dagster-daemon](/deployment/dagster-daemon) page for instructions on how to run the daemon in order to execute your schedules.
+
+---
 
 ## Relevant APIs
 
@@ -17,28 +28,20 @@ A Dagster schedule submits [job](/concepts/ops-jobs-graphs/jobs) runs at a fixed
 | <PyObject object="ScheduleEvaluationContext" />           | The context passed to the schedule definition execution function                                    |
 | <PyObject object="build_schedule_context" />              | A function that constructs a `ScheduleEvaluationContext`, typically used for testing.               |
 
-## Overview
-
-A _schedule_ is a definition in Dagster that is used to execute a [job](/concepts/ops-jobs-graphs/jobs) at a fixed interval. Each time at which a schedule is evaluated is called a _tick_. The schedule definition can generate run configuration for the job on each tick.
-
-Each schedule:
-
-- Targets a single job.
-- Optionally defines a function that returns either:
-  - One or more <PyObject object="RunRequest"/> objects. Each run request launches a run.
-  - An optional <PyObject object="SkipReason"/>, which specifies a message which describes why no runs were requested.
-
-Dagster includes a scheduler, which runs as part of the dagster-daemon process. Once you have defined a schedule, see the [dagster-daemon](/deployment/dagster-daemon) page for instructions on how to run the daemon in order to execute your schedules.
-
 ---
 
 ## Defining schedules
 
-You define a schedule by constructing a <PyObject object="ScheduleDefinition" />.
+You define a schedule by constructing a <PyObject object="ScheduleDefinition" />. In this section:
 
-### A basic schedule
+- [Basic schedules](#basic-schedules)
+- [Schedules that provide custom run config and tags](#schedules-that-provide-custom-run-config-and-tags)
+- [Schedules from partitioned assets and jobs](#schedules-from-partitioned-assets-and-jobs)
+- [Customizing execution times](#customizing-execution-times), including [timezones](#customizing-the-executing-timezone) and accounting for [Daylight Savings Time](#execution-time-and-daylight-savings-time)
 
-Here's a simple schedule that runs a job every day, at midnight. The `cron_schedule` accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron). It also accepts `"@hourly"`, `"@daily"`, `"@weekly"`, and `"@monthly"` if your `croniter` dependency's version is >= 1.0.12.
+### Basic schedules
+
+Here's a simple schedule that runs a job every day, at midnight:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_schedule endbefore=end_basic_schedule
 @job
@@ -49,7 +52,9 @@ def my_job():
 basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
 ```
 
-In order to run schedules for assets, you can [build a job that materializes assets](/concepts/assets/software-defined-assets#building-jobs-that-materialize-assets) and construct a <PyObject object="ScheduleDefinition" /> similarly:
+The `cron_schedule` argument accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron). It also accepts `"@hourly"`, `"@daily"`, `"@weekly"`, and `"@monthly"` if your `croniter` dependency's version is >= 1.0.12.
+
+To run schedules for assets, you can [build a job that materializes assets](/concepts/assets/software-defined-assets#building-jobs-that-materialize-assets) and construct a <PyObject object="ScheduleDefinition" />:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_asset_schedule endbefore=end_basic_asset_schedule
 from dagster import AssetSelection, define_asset_job
@@ -59,9 +64,9 @@ asset_job = define_asset_job("asset_job", AssetSelection.groups("some_asset_grou
 basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
 ```
 
-### A schedule that provides custom run config and tags
+### Schedules that provide custom run config and tags
 
-If you want to vary the behavior of your job based on the time it's scheduled to run, you can use the <PyObject object="schedule" decorator /> decorator, which decorates a function that returns run config based on a provided <PyObject object="ScheduleEvaluationContext" />.
+If you want to vary the behavior of your job based on the time it's scheduled to run, you can use the <PyObject object="schedule" decorator /> decorator, which decorates a function that returns run config based on a provided <PyObject object="ScheduleEvaluationContext" />:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_run_config_schedule endbefore=end_run_config_schedule
 @op(config_schema={"scheduled_date": str})
@@ -90,7 +95,10 @@ If you don't need access to the context parameter, you can omit it from the deco
 
 ### Schedules from partitioned assets and jobs
 
-#### Time partitioned assets and jobs
+- [Time partitioned jobs and assets](#time-partitioned-jobs-and-assets)
+- [Static partitioned jobs](#static-partitioned-jobs)
+
+#### Time partitioned jobs and assets
 
 When you have a [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job.
 
@@ -135,7 +143,7 @@ However, you can use the `end_offset` parameter of <PyObject object="daily_parti
 
 You can use the `minute_of_hour`, `hour_of_day`, `day_of_week`, and `day_of_month` parameters of `build_schedule_from_partitioned_job` to control the timing of the schedule. For example, if you have a job that's partitioned by date, and you set `minute_of_hour` to `30` and `hour_of_day` to `1`, the schedule would submit the run for partition `2020-04-01` at 1:30 AM on `2020-04-02`.
 
-#### Static partitioned job
+#### Static partitioned jobs
 
 You can also create a schedule for a static partition. The Partitioned Jobs concepts page also includes an [example of how to define a static partitioned job](/concepts/partitions-schedules-sensors/partitions#defining-a-job-with-static-partitions). To define a schedule for a static partitioned job, we will construct a schedule from scratch, rather than using a helper function like `build_schedule_from_partitioned_job` this will allow more flexibility in determining which partitions should be run by the schedule.
 
@@ -170,7 +178,7 @@ def continent_job():
     continent_op()
 ```
 
-We can write a schedule that will run this partition
+We can write a schedule that will run this partition:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_static_partition endbefore=end_static_partition
 from dagster import schedule
@@ -183,7 +191,7 @@ def continent_schedule():
         yield request
 ```
 
-Or a schedule that will run a subselection of the partition
+Or a schedule that will run a subselection of the partition:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_single_partition endbefore=end_single_partition
 @schedule(cron_schedule="0 0 * * *", job=continent_job)
@@ -194,9 +202,14 @@ def antarctica_schedule():
     yield request
 ```
 
-### Timezones
+### Customizing execution times
 
-You can customize the timezone in which your schedule executes by setting the `execution_timezone` parameter on your schedule to any [tz timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Schedules with no timezone set run in UTC.
+- [Customizing the executing timezone](#customizing-the-executing-timezone)
+- [Execution time and Daylight Savings Time](#execution-time-and-daylight-savings-time)
+
+#### Customizing the executing timezone
+
+You can customize the timezone in which your schedule executes by setting the `execution_timezone` parameter on your schedule to any [`tz` timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Schedules with no timezone set run in UTC.
 
 For example, the following schedule executes daily at 9AM in US/Pacific time:
 
@@ -208,7 +221,7 @@ my_timezone_schedule = ScheduleDefinition(
 
 The <PyObject object="schedule" decorator /> decorator accepts the same argument. Schedules from partitioned jobs execute in the timezone defined on the partitioned config.
 
-### Daylight Savings Time
+#### Execution time and Daylight Savings Time
 
 Because of Daylight Savings Time transitions, it's possible to specify an execution time that does not exist for every scheduled interval. For example, say you have a daily schedule with an execution time of 2:30 AM in the US/Eastern timezone. On 2019/03/10, the time jumps from 2:00 AM to 3:00 AM when Daylight Savings Time begins. Therefore, the time of 2:30 AM did not exist for the day.
 
@@ -218,23 +231,45 @@ It's also possible to specify an execution time that exists twice on one day eve
 
 Hourly schedules will be unaffected by daylight savings time transitions - the schedule will continue to run exactly once every hour, even as the timezone changes. In the example above where the hour from 1:00 AM to 2:00 AM repeats, an hourly schedule running at 30 minutes past the hour would run at 12:30 AM, both instances of 1:30 AM, and then proceed normally from 2:30 AM on.
 
+---
+
 ## Running the scheduler
 
-In order for a schedule to run, it must be started. You can start or stop the schedule in Dagit, or with the `dagster schedule start` and `dagster schedule stop` commands. You can also start your schedule by setting the default status to `DefaultScheduleStatus.RUNNING` in code:
+Schedules must be started for them to run. Schedules can be started and stopped:
 
-```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_running_in_code endbefore=end_running_in_code
-my_running_schedule = ScheduleDefinition(
-    job=my_job, cron_schedule="0 9 * * *", default_status=DefaultScheduleStatus.RUNNING
-)
-```
+- In Dagit using the **Schedules** tab:
 
-If you manually start or stop a schedule in Dagit, that will override any default status that is set in code.
+  <Image
+  alt="Schedules tab in Dagit"
+  src="/images/concepts/partitions-schedules-sensors/schedules-tab-toggle.png"
+  width={1164}
+  height={280}
+  />
 
-Once your schedule is started, if you're running the [dagster-daemon](/deployment/dagster-daemon) process as part of your deployment, the schedule will begin executing immediately, without needing to restart the dagster-daemon process. See the [Troubleshooting](/concepts/partitions-schedules-sensors/schedules#troubleshooting) section below if your schedule has been started but isn't submitting runs.
+- Using the CLI:
 
-## Testing Schedules
+  ```shell
+  dagster schedule start
+  dagster schedule stop
+  ```
 
-To test a function decorated by the <PyObject object="schedule" decorator /> decorator, you can invoke the schedule definition like it's a regular Python function. The invocation will return run config, which can then be validated using the <PyObject object="validate_run_config" /> function. Below is a test for the `configurable_job_schedule` that we defined in [an earlier section](#a-schedule-that-provides-custom-run-config-and-tags).
+- In code by setting the schedule's default status to `DefaultScheduleStatus.RUNNING`:
+
+  ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_running_in_code endbefore=end_running_in_code
+  my_running_schedule = ScheduleDefinition(
+      job=my_job, cron_schedule="0 9 * * *", default_status=DefaultScheduleStatus.RUNNING
+  )
+  ```
+
+If you manually start or stop a schedule in Dagit, that overrides any default status set in code.
+
+Once the schedule is started, the schedule will begin executing immediately if you're running the [dagster-daemon](/deployment/dagster-daemon) process as part of your deployment. Refer to the [Troubleshooting](/concepts/partitions-schedules-sensors/schedules#troubleshooting) section if your schedule has been started but isn't submitting runs.
+
+---
+
+## Testing schedules
+
+To test a function decorated by the <PyObject object="schedule" decorator /> decorator, you can invoke the schedule definition like it's a regular Python function. The invocation will return run config, which can then be validated using the <PyObject object="validate_run_config" /> function. Below is a test for the `configurable_job_schedule` that we defined in [an earlier section](#schedules-that-provide-custom-run-config-and-tags).
 
 It uses <PyObject object="build_schedule_context" /> to construct a <PyObject object="ScheduleEvaluationContext" /> to provide for the `context` parameter.
 
@@ -252,40 +287,113 @@ def test_configurable_job_schedule():
 
 If your `@schedule`-decorated function doesn't have a context parameter, you don't need to provide one when invoking it.
 
+---
+
+## Troubleshooting
+
+Try these steps if you're trying to run a schedule and are running into problems:
+
+- [Verify the schedule is included as a definition](#verify-the-schedule-is-included-as-a-definition)
+- [Verify the schedule has been started](#verify-that-the-schedule-has-been-started)
+- [Verify schedule interval configuration](#verify-schedule-interval-configuration)
+- [Verify dagster-daemon setup](#verify-dagster-daemon-setup)
+
+### Verify the schedule is included as a definition
+
+First, verify that the schedule has been included in a <PyObject object="Definitions" /> object. This ensures that the schedule is detectable and loadable by Dagster tools like Dagit and the CLI:
+
+```python
+defs = Definitions(
+   assets=[asset_1, asset_2],
+   jobs=[job_1],
+   schedules=[all_assets_job_schedule],
+)
+```
+
+Refer to the [Code locations documentation](/concepts/code-locations) for more info.
+
+### Verify that the schedule has been started
+
+Next, using Dagit, verify the schedule has been started:
+
+1. Open the left sidenav and locate the job attached to the schedule. Schedules that have been started will have a **green clock icon** next to them:
+
+   <Image
+   alt="Started schedule icon next to schedule in left sidenav in Dagit"
+   src="/images/concepts/partitions-schedules-sensors/schedule-started-icon-dagit.png"
+   width={1031}
+   height={391}
+   />
+
+   If the schedule appears in the list but doesn't have the green clock icon, click the schedule. On the page that displays, use the **toggle at the top of the page** to mark it as running:
+
+   <Image
+   alt="Start/stop toggle for schedules in Code Locations tab in Dagit"
+   src="/images/concepts/partitions-schedules-sensors/schedule-page-toggle.png"
+   width={1043}
+   height={302}
+   />
+
+2. Next, verify that Dagit has loaded the latest version of your schedule code:
+
+   1. Click **Deployment** in the top navigation.
+
+   2. In the **Code locations** tab, click **Reload** (local Dagit) or **Redeploy** (Dagster Cloud).
+
+   If Dagit is unable to load the code location - for example, due to a syntax error - an error message with additional info will display in the left sidenav.
+
+   If the code location is loaded successfully but the schedule doesn't appear in the list of schedules, verify that the schedule is included in a <PyObject object="Definitions" /> object.
+
+### Verify schedule interval configuration
+
+Clicking the schedule in the left sidenav in Dagit opens the **Schedule details** page for the schedule.
+
+If the schedule is running, a **Next tick** will display near the top of the page. This indicates when the schedule is next expected to run:
+
+<Image
+alt="Next tick attribute highlighted on Schedule details page in Dagit"
+src="/images/concepts/partitions-schedules-sensors/schedule-details-next-tick.png"
+width={1043}
+height={302}
+/>
+
+Verify that the time is what you expect, including the timezone.
+
+### Verify dagster-daemon setup
+
+<Note>This section is applicable to Open Source (OSS) deployments.</Note>
+
+If the schedule interval is correctly configured but runs aren't being created, it's possible that the dagster-daemon process isn't working correctly. If you haven't set up a Dagster daemon yet, refer to the [Deployment guides](/deployment) for more info.
+
+1. First, check that the daemon is running:
+
+   1. In Dagit, click **Deployment** in the top navigation.
+   2. Click the **Daemons** tab.
+   3. Locate the **Scheduler** row.
+
+   The daemon process periodically sends out a hearbeat from the scheduler. If the scheduler daemon has a status of **Not running**, this indicates that there's an issue with your daemon deployment. If the daemon ran into an error that resulted in an exception, this error will often display in this tab.
+
+   If there isn't a clear error on this page or if the daemon should be sending heartbeans but isn't, move on to step two.
+
+2. Next, check the logs from the daemon process. The steps to do this will depend on your deployment - for example, if you're using Kubernetes, you'll need to get the logs from the pod that's running the daemon. You should be able to search those logs for the name of your schedule (or `SchedulerDaemon` to see all logs associated with the scheduler) to gain an understanding of what's going wrong.
+
+   If the daemon output contains error indicating the schedule couldn't be found, verify that the daemon is using the same `workspace.yaml` file as Dagit. The daemon does not need to restart in order to pick up changes to the `workspace.yaml` file. Refer to the [Workspace files documentation](/concepts/code-locations/workspace-files) for more info.
+
+   If the logs don't indicate the cause of the issue, move on to step three.
+
+3. Lastly, double-check your schedule code:
+
+   1. In Dagit, open the schedule's **Schedule details** page by clicking the schedule in the left sidenav.
+   2. On this page, locate the latest tick for the schedule.
+
+   If there was an error trying to submit runs for the schedule, a red **Failure** badge should display in the **Status** column. Click the badge to display an error and stack trace describing the execution failure.
+
+**Still stuck?** If these steps didn't resolve the issue, reach out in Slack or file an issue on GitHub.
+
+---
+
 ## See it in action
 
 For more examples of schedules, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
 
 - [Defining a partitioned asset job and a schedule based on it](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/jobs.py)
-
-## Troubleshooting
-
-Try these steps if you're trying to run a schedule and are running into problems.
-
-### Step 1: Is your schedule included in your repository and started?
-
-The left-hand navigation bar in Dagit shows all of the schedules for the currently-selected repository, with a green dot next to each schedule that is running. Make sure that your schedule appears in this list with a green dot. To ensure that Dagit has loaded the latest version of your schedule code, you can press the reload button next to your repository name to reload all the code in your repository.
-
-- If Dagit is unable to load the repository containing your schedule (for example, due to a syntax error or a problem with one of your definitions), there should be an error message in the left nav with a link that will give you more information about the error.
-- If the repository is loading, but the schedule doesn't appear in the list of schedules, make sure that your schedule function is included in the list of schedules returned by your repository function.
-- If the schedule appears but doesn't have a green dot next to it, click on the name of the schedule, then toggle the switch at the top of the screen to mark it as running.
-
-### Step 2: Is your schedule interval set up correctly?
-
-When you click on your schedule name in the left-hand nav in Dagit, you'll be take to a page where you can view more information about the schedule. If the schedule is running, there should be a "Next tick" row near the top of the page that tells you when the schedule is expected to run next. Make sure that time is what you expect (including the timezone).
-
-### Step 3: Is the schedule interval configured correctly, but it still isn't creating any runs?
-
-It's possible that the `dagster-daemon` process that submits runs for your schedule is not working correctly. If you haven't set up `dagster-daemon` yet, check the [Deploying Dagster](/deployment) section to find the steps to do so.
-
-First, check that the daemon is running. Click on "Status" in the left nav in Dagit, and examine the "Scheduler" row under the "Daemon statuses" section. The daemon process periodically sends out a heartbeat from the scheduler, so if the scheduler daemon is listed as "Not running", that indicates that there's a problem with your daemon deployment. If the daemon ran into an error that caused it to throw an exception, that error will often appear in this UI as well.
-
-If there isn't a clear error on this page, or if the daemon should be sending heartbeats but isn't, you may need to check the logs from the daemon process. The steps to do this will depend on your deployment - for example, if you're using Kubernetes, you'll need to get the logs from the pod that's running the daemon. You should be able to search those logs for the name of your schedule (or `SchedulerDaemon` to see all logs associated with the scheduler) to gain an understanding of what's going wrong.
-
-If the daemon output shows errors about not being able to find the schedule, make sure the daemon is using the same `workspace.yaml` file as Dagit. The daemon does not need to restart in order to pick up changes to the `workspace.yaml` file.
-
-Finally, it's possible that the daemon is running correctly, but there's a problem with your schedule code. Check the "Latest tick" row on the page for your schedule. If there was an error while trying to submit runs for your schedule, there should be a red "Failure" box next to the time. Clicking on the box should display an error with a stack trace showing you why the schedule couldn't execute. If the schedule is working as expected, it should display a blue box instead with information about any runs that were created by that schedule tick.
-
-### Still stuck?
-
-If these steps didn't help and your schedule still isn't running, reach out in Slack or file an issue and we'll be happy to help investigate.

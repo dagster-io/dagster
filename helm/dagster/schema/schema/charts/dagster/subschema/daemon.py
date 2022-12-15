@@ -33,6 +33,8 @@ class QueuedRunCoordinatorConfig(BaseModel):
     maxConcurrentRuns: Optional[IntSource]
     tagConcurrencyLimits: Optional[List[TagConcurrencyLimit]]
     dequeueIntervalSeconds: Optional[IntSource]
+    dequeueNumWorkers: Optional[IntSource]
+    dequeueUseThreads: Optional[bool]
 
     class Config:
         extra = Extra.forbid

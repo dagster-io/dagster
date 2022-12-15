@@ -1,3 +1,5 @@
+import pytest
+
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -12,16 +14,21 @@ from dagster import (
     repository,
     sensor,
 )
+from dagster._check import CheckError
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.decorators.job_decorator import job
+from dagster._core.definitions.executor_definition import executor
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.logger_definition import logger
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
 )
+from dagster._core.storage.io_manager import IOManagerDefinition
+from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
 
 
@@ -219,3 +226,70 @@ def test_asset_loading():
         value_loader = defs.get_asset_value_loader(instance)
         assert value_loader.load_asset_value("one") == 1
         assert value_loader.load_asset_value("two") == 2
+
+
+def test_io_manager_coercion():
+    @asset(io_manager_key="mem_io_manager")
+    def one():
+        return 1
+
+    defs = Definitions(assets=[one], resources={"mem_io_manager": InMemoryIOManager()})
+
+    asset_job = defs.get_job_def("__ASSET_JOB")
+    assert isinstance(asset_job.resource_defs["mem_io_manager"], IOManagerDefinition)
+    result = asset_job.execute_in_process()
+    assert result.output_for_node("one") == 1
+
+
+def test_bad_executor():
+    with pytest.raises(CheckError):
+        # ignoring type to catch runtime error
+        Definitions(executor="not an executor")  # type: ignore
+
+
+def test_custom_executor_in_definitions():
+    @executor
+    def an_executor(_):
+        raise Exception("not executed")
+
+    @asset
+    def one():
+        return 1
+
+    defs = Definitions(assets=[one], executor=an_executor)
+    asset_job = defs.get_job_def("__ASSET_JOB")
+    assert asset_job.executor_def is an_executor
+
+
+def test_custom_loggers_in_definitions():
+    @logger
+    def a_logger(_):
+        raise Exception("not executed")
+
+    @asset
+    def one():
+        return 1
+
+    defs = Definitions(assets=[one], loggers={"custom_logger": a_logger})
+
+    asset_job = defs.get_job_def("__ASSET_JOB")
+    loggers = asset_job.loggers
+    assert len(loggers) == 1
+    assert "custom_logger" in loggers
+    assert loggers["custom_logger"] is a_logger
+
+
+def test_bad_logger_key():
+    @logger
+    def a_logger(_):
+        raise Exception("not executed")
+
+    with pytest.raises(CheckError):
+        # ignore type to catch runtime error
+        Definitions(loggers={1: a_logger})  # type: ignore
+
+
+def test_bad_logger_value():
+    with pytest.raises(CheckError):
+        # ignore type to catch runtime error
+        Definitions(loggers={"not_a_logger": "not_a_logger"})  # type: ignore

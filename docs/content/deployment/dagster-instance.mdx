@@ -319,6 +319,14 @@ run_coordinator:
       - key: "dagster/backfill"
         limit:
           env: DAGSTER_BACKFILL_CONCURRENCY_LIMIT
+
+# for higher dequeue throughput, threading can be enabled:
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    dequeue_use_threads: true
+    dequeue_num_workers: 8
 ```
 
 ### Compute Log Storage
@@ -465,9 +473,9 @@ telemetry:
 
 ### Code servers
 
-The `code_servers` key lets you configure how Dagster loads the code in your [workspace](/concepts/repositories-workspaces/workspaces).
+The `code_servers` key lets you configure how Dagster loads the code in your [workspace](/concepts/code-locations/workspace-files).
 
-When you aren't [running your own gRPC server](/concepts/repositories-workspaces/workspaces#running-your-own-grpc-server), Dagit and the Dagster Daemon load your code from a gRPC server running in a subprocess. By default, if your code takes more than 60 seconds to load, Dagster will assume that it is hanging and stop waiting for it to load. If you expect that your repository code will take longer than 60 seconds to load, you can set the `local_startup_timeout` key:
+When you aren't [running your own gRPC server](/concepts/code-locations/workspace-files#running-your-own-grpc-server), Dagit and the Dagster Daemon load your code from a gRPC server running in a subprocess. By default, if your code takes more than 60 seconds to load, Dagster will assume that it is hanging and stop waiting for it to load. If you expect that your repository code will take longer than 60 seconds to load, you can set the `local_startup_timeout` key:
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_code_servers endbefore=end_marker_code_servers
 # Configures how long Dagster waits for repositories

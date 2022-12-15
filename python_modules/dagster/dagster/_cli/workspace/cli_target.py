@@ -79,23 +79,21 @@ WORKSPACE_CLI_ARGS = (
 )
 
 
-def get_target_from_toml(path) -> Optional[PackageTarget]:
+def get_target_from_toml(path) -> Optional[ModuleTarget]:
     with open(path, "rb") as f:
         data = tomli.load(f)
         if not isinstance(data, dict):
             return None
 
         dagster_block = data.get("tool", {}).get("dagster", {})
-        return (
-            PackageTarget(
-                package_name=dagster_block["python_package"],
+        if "module_name" in dagster_block:
+            return ModuleTarget(
+                module_name=dagster_block["module_name"],
                 attribute=None,
                 working_directory=os.getcwd(),
                 location_name=None,
             )
-            if "python_package" in dagster_block
-            else None
-        )
+        return None
 
 
 def get_workspace_load_target(kwargs: ClickArgMapping):

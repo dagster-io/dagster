@@ -93,6 +93,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
     def _launch_container_with_command(self, run, docker_image, command):
         container_context = self.get_container_context(run)
         docker_env = dict([parse_env_var(env_var) for env_var in container_context.env_vars])
+        docker_env["DAGSTER_RUN_JOB_NAME"] = run.job_name
 
         client = self._get_client(container_context)
 

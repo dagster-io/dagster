@@ -57,6 +57,10 @@ export const buildGraphData = (assetNodes: AssetNode[]) => {
   };
 
   const addEdge = (upstreamGraphId: string, downstreamGraphId: string) => {
+    if (upstreamGraphId === downstreamGraphId) {
+      // Skip add edges for self-dependencies (eg: assets relying on older partitions of themselves)
+      return;
+    }
     data.downstream[upstreamGraphId] = {
       ...(data.downstream[upstreamGraphId] || {}),
       [downstreamGraphId]: true,
@@ -86,6 +90,11 @@ export const buildGraphData = (assetNodes: AssetNode[]) => {
   return data;
 };
 
+export const nodeDependsOnSelf = (node: GraphNode) => {
+  const id = toGraphId(node.assetKey);
+  return node.definition.dependedByKeys.some((d) => toGraphId(d) === id);
+};
+
 export const graphHasCycles = (graphData: GraphData) => {
   const nodes = new Set(Object.keys(graphData.nodes));
   const search = (stack: string[], node: string): boolean => {
@@ -101,8 +110,8 @@ export const graphHasCycles = (graphData: GraphData) => {
     return false;
   };
   let hasCycles = false;
-  while (nodes.size !== 0) {
-    hasCycles = hasCycles || search([], nodes.values().next().value);
+  while (nodes.size !== 0 && !hasCycles) {
+    hasCycles = search([], nodes.values().next().value);
   }
   return hasCycles;
 };

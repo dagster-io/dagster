@@ -205,7 +205,7 @@ def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOMa
     )
     result = my_job.execute_in_process(partition_key="A")
     downstream_asset_data = result.output_for_node("downstream_asset", "result")
-    assert list(downstream_asset_data.keys()) == ["A", "B"]
+    assert set(downstream_asset_data.keys()) == {"A", "B"}
 
 
 def test_partitioned_io_manager_preserves_single_partition_dependency(

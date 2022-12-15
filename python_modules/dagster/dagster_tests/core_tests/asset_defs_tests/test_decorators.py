@@ -700,3 +700,35 @@ def test_multi_asset_retry_policy():
         ...
 
     assert my_asset.op.retry_policy == retry_policy
+
+
+def test_invalid_self_dep():
+    from dagster import DailyPartitionsDefinition, TimeWindowPartitionMapping
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @asset
+        def a(a):
+            del a
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @asset(
+            partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+            ins={"b": AssetIn(partition_mapping=TimeWindowPartitionMapping())},
+        )
+        def b(b):
+            del b
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @asset(
+            partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+            ins={
+                "c": AssetIn(
+                    partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=0)
+                )
+            },
+        )
+        def c(c):
+            del c

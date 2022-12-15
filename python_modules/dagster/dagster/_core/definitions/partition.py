@@ -1038,6 +1038,12 @@ class PartitionsSubset(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def with_partition_key_range(
+        self, partition_key_range: PartitionKeyRange
+    ) -> "PartitionsSubset":
+        raise NotImplementedError()
+
+    @abstractmethod
     def serialize(self) -> str:
         raise NotImplementedError()
 
@@ -1085,6 +1091,13 @@ class DefaultPartitionsSubset(PartitionsSubset):
 
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "DefaultPartitionsSubset":
         return DefaultPartitionsSubset(self._partitions_def, self._subset | set(partition_keys))
+
+    def with_partition_key_range(
+        self, partition_key_range: PartitionKeyRange
+    ) -> "PartitionsSubset":
+        return self.with_partition_keys(
+            self._partitions_def.get_partition_keys_in_range(partition_key_range)
+        )
 
     def serialize(self) -> str:
         return json.dumps(list(self._subset))

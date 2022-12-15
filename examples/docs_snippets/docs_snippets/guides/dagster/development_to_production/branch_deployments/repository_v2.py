@@ -1,14 +1,12 @@
 import os
 
-from dagster_snowflake import build_snowflake_io_manager, snowflake_resource
-from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+from dagster_snowflake import snowflake_resource
+from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
-from dagster import repository, with_resources
+from dagster import Definitions
 
-from ..assets import comments, items, stories
+from .assets import comments, items, stories
 from .clone_and_drop_db import clone_prod
-
-snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
 
 snowflake_config = {
     "account": {"env": "SNOWFLAKE_ACCOUNT"},
@@ -18,9 +16,9 @@ snowflake_config = {
 }
 
 # start_resources
-resource_defs = {
+resources = {
     "branch": {
-        "snowflake_io_manager": snowflake_io_manager.configured(
+        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
             {
                 **snowflake_config,
                 "database": f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
@@ -34,7 +32,7 @@ resource_defs = {
         ),
     },
     "production": {
-        "snowflake_io_manager": snowflake_io_manager.configured(
+        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
             {
                 **snowflake_config,
                 "database": "PRODUCTION",
@@ -55,22 +53,13 @@ def get_current_env():
 
 
 # start_repository
-@repository
-def repo():
-    ...
-    branch_deployment_jobs = [
-        clone_prod.to_job(resource_defs=resource_defs[get_current_env()])
-    ]
-    return [
-        with_resources(
-            [items, comments, stories], resource_defs=resource_defs[get_current_env()]
-        ),
-        *(
-            branch_deployment_jobs
-            if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
-            else []
-        ),
-    ]
-
+branch_deployment_jobs = [clone_prod.to_job(resource_defs=resources[get_current_env()])]
+defs = Definitions(
+    assets=[items, comments, stories],
+    resources=resources[get_current_env()],
+    jobs=branch_deployment_jobs
+    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
+    else [],
+)
 
 # end_repository

@@ -106,7 +106,12 @@ class MultiprocessExecutor(Executor):
         explicit_forkserver_preload: Optional[Sequence[str]] = None,
     ):
         self._retries = check.inst_param(retries, "retries", RetryMode)
-        max_concurrent = max_concurrent if max_concurrent else multiprocessing.cpu_count()
+        if not max_concurrent:
+            env_var_default = os.getenv("DAGSTER_MULTIPROCESS_EXECUTOR_MAX_CONCURRENT")
+            max_concurrent = (
+                int(env_var_default) if env_var_default else multiprocessing.cpu_count()
+            )
+
         self._max_concurrent = check.int_param(max_concurrent, "max_concurrent")
         start_method = check.opt_str_param(start_method, "start_method")
         valid_starts = multiprocessing.get_all_start_methods()

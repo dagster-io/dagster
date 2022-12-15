@@ -15,7 +15,9 @@ from dagster._core.storage.event_log import (
     SqlEventLogStorageTable,
     SqliteEventLogStorage,
 )
+from dagster._core.storage.legacy_storage import LegacyEventLogStorage
 from dagster._core.storage.sql import create_engine
+from dagster._core.storage.sqlite_storage import DagsterSqliteStorage
 
 from .utils.event_log_storage import TestEventLogStorage
 
@@ -126,3 +128,25 @@ class TestConsolidatedSqliteEventLogStorage(TestEventLogStorage):
                 yield storage
             finally:
                 storage.dispose()
+
+
+class TestLegacyStorage(TestEventLogStorage):
+    __test__ = True
+
+    @pytest.fixture(scope="function", name="storage")
+    def event_log_storage(self):  # pylint: disable=arguments-differ
+        # make the temp dir in the cwd since default temp roots
+        # have issues with FS notif based event log watching
+        with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
+            # first create the unified storage class
+            storage = DagsterSqliteStorage.from_local(tmpdir_path)
+            # next create the legacy adapter class
+            legacy_storage = LegacyEventLogStorage(storage)
+            try:
+                yield legacy_storage
+            finally:
+                legacy_storage.dispose()
+                storage.dispose()
+
+    def is_sqlite(self, storage):
+        return True
