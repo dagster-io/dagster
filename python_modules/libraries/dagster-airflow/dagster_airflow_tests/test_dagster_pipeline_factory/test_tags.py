@@ -100,6 +100,9 @@ def test_pipeline_tags():
             ),
             instance=instance,
         )
+        assert result.success
+        for event in result.step_event_list:
+            assert event.event_type_value != "STEP_FAILURE"
         check_captured_logs(manager, result, EXECUTION_DATE_MINUS_WEEK.strftime("%Y-%m-%d"))
 
 
@@ -116,6 +119,9 @@ def test_pipeline_auto_tag():
             pipeline=make_dagster_pipeline_from_airflow_dag(dag=dag),
             instance=instance,
         )
+        assert result.success
+        for event in result.step_event_list:
+            assert event.event_type_value != "STEP_FAILURE"
 
         capture_events = [
             event

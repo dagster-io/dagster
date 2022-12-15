@@ -380,6 +380,7 @@ def test_queued_run_coordinator_config(
 ):
     tag_concurrency_limits = [TagConcurrencyLimit(key="key", value="value", limit=10)]
     dequeue_interval_seconds = 50
+    dequeue_num_workers = 8
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(
             runCoordinator=RunCoordinator.construct(
@@ -390,6 +391,8 @@ def test_queued_run_coordinator_config(
                         maxConcurrentRuns=max_concurrent_runs,
                         tagConcurrencyLimits=tag_concurrency_limits,
                         dequeueIntervalSeconds=dequeue_interval_seconds,
+                        dequeueUseThreads=True,
+                        dequeueNumWorkers=dequeue_num_workers,
                     )
                 ),
             )
@@ -410,6 +413,9 @@ def test_queued_run_coordinator_config(
 
         assert run_coordinator_config["max_concurrent_runs"] == max_concurrent_runs
         assert run_coordinator_config["dequeue_interval_seconds"] == dequeue_interval_seconds
+
+        assert run_coordinator_config["dequeue_use_threads"]
+        assert run_coordinator_config["dequeue_num_workers"] == dequeue_num_workers
 
         assert len(run_coordinator_config["tag_concurrency_limits"]) == len(tag_concurrency_limits)
         assert run_coordinator_config["tag_concurrency_limits"] == [

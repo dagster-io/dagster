@@ -421,15 +421,16 @@ class AirbyteConnectionMetadata(
                 else stream["stream"]["jsonSchema"]
             )
             normalization_tables: Dict[str, AirbyteTableMetadata] = {}
+            schema_props = schema.get("properties", schema.get("items", {}).get("properties", {}))
             if self.has_basic_normalization and return_normalization_tables:
-                for k, v in schema["properties"].items():
+                for k, v in schema_props.items():
                     for normalization_table_name, meta in _get_normalization_tables_for_schema(
                         k, v, f"{name}_"
                     ).items():
                         prefixed_norm_table_name = f"{self.stream_prefix}{normalization_table_name}"
                         normalization_tables[prefixed_norm_table_name] = meta
             tables[prefixed_name] = AirbyteTableMetadata(
-                schema=generate_table_schema(schema["properties"]),
+                schema=generate_table_schema(schema_props),
                 normalization_tables=normalization_tables,
             )
 
