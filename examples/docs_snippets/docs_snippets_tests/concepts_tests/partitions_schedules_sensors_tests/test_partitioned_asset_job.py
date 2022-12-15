@@ -1,7 +1,7 @@
 from docs_snippets.concepts.partitions_schedules_sensors.partitioned_asset_job import (
-    repo,
+    defs,
 )
 
 
 def test():
-    assert repo.get_job("asset_1_and_2_job")
+    assert defs.get_job_def("asset_1_and_2_job")
