@@ -191,6 +191,9 @@ def test_template_task_dag():
             ),
             instance=instance,
         )
+        assert result.success
+        for event in result.step_event_list:
+            assert event.event_type_value != "STEP_FAILURE"
 
         capture_events = [
             event

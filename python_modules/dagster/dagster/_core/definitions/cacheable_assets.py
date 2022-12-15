@@ -9,6 +9,7 @@ import dagster._seven as seven
 from dagster._config.field_utils import compute_fields_hash
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceAddable
@@ -29,6 +30,7 @@ class AssetsDefinitionCacheableData(
             ("key_prefix", Optional[CoercibleToAssetKeyPrefix]),
             ("can_subset", bool),
             ("extra_metadata", Optional[Mapping[Any, Any]]),
+            ("freshness_policies_by_output_name", Optional[Mapping[str, FreshnessPolicy]]),
         ],
     )
 ):
@@ -46,6 +48,7 @@ class AssetsDefinitionCacheableData(
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         can_subset: bool = False,
         extra_metadata: Optional[Mapping[Any, Any]] = None,
+        freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
     ):
 
         keys_by_input_name = check.opt_nullable_mapping_param(
@@ -62,6 +65,13 @@ class AssetsDefinitionCacheableData(
 
         metadata_by_output_name = check.opt_nullable_mapping_param(
             metadata_by_output_name, "metadata_by_output_name", key_type=str, value_type=dict
+        )
+
+        freshness_policies_by_output_name = check.opt_nullable_mapping_param(
+            freshness_policies_by_output_name,
+            "freshness_policies_by_output_name",
+            key_type=str,
+            value_type=FreshnessPolicy,
         )
 
         key_prefix = check.opt_inst_param(key_prefix, "key_prefix", (str, list))
@@ -89,6 +99,9 @@ class AssetsDefinitionCacheableData(
             key_prefix=frozenlist(key_prefix) if key_prefix else None,
             can_subset=check.opt_bool_param(can_subset, "can_subset", default=False),
             extra_metadata=make_readonly_value(extra_metadata) if extra_metadata else None,
+            freshness_policies_by_output_name=frozendict(freshness_policies_by_output_name)
+            if freshness_policies_by_output_name
+            else None,
         )
 
 

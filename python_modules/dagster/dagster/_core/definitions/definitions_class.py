@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, Dict, Iterable, Mapping, Optional, Type, Union
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
@@ -29,85 +29,6 @@ if TYPE_CHECKING:
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 
-@experimental
-def create_repository_using_definitions_args(
-    name: str,
-    assets: Optional[
-        Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
-    ] = None,
-    schedules: Optional[Iterable[ScheduleDefinition]] = None,
-    sensors: Optional[Iterable[SensorDefinition]] = None,
-    jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
-    resources: Optional[Mapping[str, Any]] = None,
-    executor: Optional[ExecutorDefinition] = None,
-    loggers: Optional[Mapping[str, LoggerDefinition]] = None,
-) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
-    return _create_repository_using_definitions_args(
-        name=name,
-        assets=assets,
-        schedules=schedules,
-        sensors=sensors,
-        jobs=jobs,
-        resources=resources,
-        executor=executor,
-        loggers=loggers,
-    )
-
-
-def _create_repository_using_definitions_args(
-    name: str,
-    assets: Optional[
-        Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
-    ] = None,
-    schedules: Optional[Iterable[ScheduleDefinition]] = None,
-    sensors: Optional[Iterable[SensorDefinition]] = None,
-    jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
-    resources: Optional[Mapping[str, Any]] = None,
-    executor: Optional[ExecutorDefinition] = None,
-    loggers: Optional[Mapping[str, LoggerDefinition]] = None,
-):
-    if assets:
-        check.iterable_param(
-            assets, "assets", (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
-        )
-
-    if schedules:
-        check.iterable_param(schedules, "schedules", ScheduleDefinition)
-
-    if sensors:
-        check.iterable_param(sensors, "sensors", SensorDefinition)
-
-    if jobs:
-        check.iterable_param(jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition))
-
-    if resources:
-        check.mapping_param(resources, "resources", key_type=str)
-
-    if executor:
-        check.inst_param(executor, "executor", ExecutorDefinition)
-
-    if loggers:
-        check.mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
-
-    resource_defs = coerce_resources_to_defs(resources or {})
-
-    @repository(
-        name=name,
-        default_executor_def=executor,
-        default_logger_defs=loggers,
-    )
-    def created_repo():
-        return [
-            *with_resources(assets or [], resource_defs),
-            *(schedules or []),
-            *(sensors or []),
-            *(jobs or []),
-        ]
-
-    return created_repo
-
-
-@experimental
 class Definitions:
     """Example usage:
 
@@ -154,22 +75,48 @@ class Definitions:
         executor: Optional[ExecutorDefinition] = None,
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     ):
+
+        if assets:
+            check.iterable_param(
+                assets, "assets", (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
+            )
+
+        if schedules:
+            check.iterable_param(schedules, "schedules", ScheduleDefinition)
+
+        if sensors:
+            check.iterable_param(sensors, "sensors", SensorDefinition)
+
+        if jobs:
+            check.iterable_param(jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition))
+
+        if resources:
+            check.mapping_param(resources, "resources", key_type=str)
+
         if executor:
+            check.inst_param(executor, "executor", ExecutorDefinition)
             experimental_arg_warning("executor", "Definitions.__init__")
 
         if loggers:
+            check.mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
             experimental_arg_warning("loggers", "Definitions.__init__")
 
-        self._created_pending_or_normal_repo = _create_repository_using_definitions_args(
+        resource_defs = coerce_resources_to_defs(resources or {})
+
+        @repository(
             name=SINGLETON_REPOSITORY_NAME,
-            assets=assets,
-            schedules=schedules,
-            sensors=sensors,
-            jobs=jobs,
-            resources=resources,
-            executor=executor,
-            loggers=loggers,
+            default_executor_def=executor,
+            default_logger_defs=loggers,
         )
+        def created_repo():
+            return [
+                *with_resources(assets or [], resource_defs),
+                *(schedules or []),
+                *(sensors or []),
+                *(jobs or []),
+            ]
+
+        self._created_pending_or_normal_repo = created_repo
 
     @public
     def get_job_def(self, name: str) -> JobDefinition:
