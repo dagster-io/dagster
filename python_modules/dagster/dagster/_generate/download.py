@@ -22,6 +22,7 @@ AVAILABLE_EXAMPLES = [
     "assets_smoke_test",
     "quickstart_aws",
     "quickstart_etl",
+    "quickstart_gcp",
     "tutorial_dbt_dagster",
     "tutorial_notebook_assets",
     "deploy_docker",
