@@ -127,6 +127,10 @@ config:
   schedulerName: {{ $k8sRunLauncherConfig.schedulerName | quote }}
   {{- end }}
 
+  {{- if $k8sRunLauncherConfig.securityContext }}
+  securityContext: {{- $k8sRunLauncherConfig.securityContext | toYaml | nindent 4 }}
+  {{- end }}
+
 {{- end }}
 
 {{- define "dagsterYaml.runLauncher.custom" }}

@@ -76,14 +76,14 @@ To load definitions such as assets and resources, we use <PyObject object="Defin
     from dagster import Definitions, load_assets_from_modules
 
     from .assets import table_assets
-    from .local_filesystem_io_manager import local_filesystem_io_manager
+    from .local_filesystem_io_manager import LocalFileSystemIOManager
 
     defs = Definitions(
         # imports the module called "assets" from the package containing the current module
         # the "assets" module contains the asset definitions
         assets=load_assets_from_modules([table_assets]),
         resources={
-            "io_manager": local_filesystem_io_manager,
+            "io_manager": LocalFileSystemIOManager(),
         },
     )
 ```
@@ -98,7 +98,7 @@ import os
 import pandas as pd
 from pandas import DataFrame
 
-from dagster import AssetKey, IOManager, io_manager
+from dagster import AssetKey, IOManager
 
 
 class LocalFileSystemIOManager(IOManager):
@@ -117,11 +117,6 @@ class LocalFileSystemIOManager(IOManager):
         """This reads a dataframe from a CSV."""
         fpath = self._get_fs_path(context.asset_key)
         return pd.read_csv(fpath)
-
-
-@io_manager
-def local_filesystem_io_manager():
-    return LocalFileSystemIOManager()
 ```
 
 ## Adding in Spark assets
@@ -157,11 +152,11 @@ Here's an extended version of `weather_assets` that contains the new asset:
     from dagster import Definitions, load_assets_from_modules
 
     from .assets import spark_asset, table_assets
-    from .local_spark_filesystem_io_manager import local_filesystem_io_manager
+    from .local_spark_filesystem_io_manager import LocalFileSystemIOManager
 
     defs = Definitions(
         assets=load_assets_from_modules([table_assets, spark_asset]),
-        resources={"io_manager": local_filesystem_io_manager},
+        resources={"io_manager": LocalFileSystemIOManager()},
     )
 ```
 
@@ -189,7 +184,6 @@ from pyspark.sql import SparkSession
 
 from dagster import AssetKey, IOManager
 from dagster import _check as check
-from dagster import io_manager
 
 
 class LocalFileSystemIOManager(IOManager):
@@ -246,9 +240,4 @@ class LocalFileSystemIOManager(IOManager):
             )
         else:
             raise ValueError("Unexpected input type")
-
-
-@io_manager
-def local_filesystem_io_manager():
-    return LocalFileSystemIOManager()
 ```

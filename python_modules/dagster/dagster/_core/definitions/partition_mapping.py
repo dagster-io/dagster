@@ -152,16 +152,27 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
 
 @whitelist_for_serdes
 class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [])):
+    def get_upstream_partitions_for_partitions(
+        self,
+        downstream_partitions_subset: Optional[PartitionsSubset],
+        upstream_partitions_def: PartitionsDefinition,
+    ) -> PartitionsSubset:
+        first = upstream_partitions_def.get_first_partition_key()
+        last = upstream_partitions_def.get_last_partition_key()
+
+        empty_subset = upstream_partitions_def.empty_subset()
+        if first is not None and last is not None:
+            return empty_subset.with_partition_key_range(PartitionKeyRange(first, last))
+        else:
+            return empty_subset
+
     def get_upstream_partitions_for_partition_range(
         self,
         downstream_partition_key_range: Optional[PartitionKeyRange],
         downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionKeyRange:
-        return PartitionKeyRange(
-            upstream_partitions_def.get_first_partition_key(),
-            upstream_partitions_def.get_last_partition_key(),
-        )
+        raise NotImplementedError()
 
     def get_downstream_partitions_for_partition_range(
         self,
@@ -174,14 +185,26 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
 
 @whitelist_for_serdes
 class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping", [])):
+    def get_upstream_partitions_for_partitions(
+        self,
+        downstream_partitions_subset: Optional[PartitionsSubset],
+        upstream_partitions_def: PartitionsDefinition,
+    ) -> PartitionsSubset:
+        last = upstream_partitions_def.get_last_partition_key()
+
+        empty_subset = upstream_partitions_def.empty_subset()
+        if last is not None:
+            return empty_subset.with_partition_keys([last])
+        else:
+            return empty_subset
+
     def get_upstream_partitions_for_partition_range(
         self,
         downstream_partition_key_range: Optional[PartitionKeyRange],
         downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionKeyRange:
-        last_partition_key = upstream_partitions_def.get_last_partition_key()
-        return PartitionKeyRange(last_partition_key, last_partition_key)
+        raise NotImplementedError()
 
     def get_downstream_partitions_for_partition_range(
         self,

@@ -162,8 +162,10 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             )
 
         if self._partitions_def and self._partition_key_to_vars_fn:
-            partition_key = self._partitions_def.get_last_partition_key()
-            partition_var = self._partition_key_to_vars_fn(partition_key)
+            last_partition_key = self._partitions_def.get_last_partition_key()
+            if last_partition_key is None:
+                check.failed("PartitionsDefinition has no partitions")
+            partition_var = self._partition_key_to_vars_fn(last_partition_key)
 
             dbt_compile_options.append(f"--vars '{json.dumps(partition_var)}'")
 

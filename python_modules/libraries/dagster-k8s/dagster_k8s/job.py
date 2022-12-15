@@ -210,7 +210,7 @@ class DagsterK8sJobConfig(
         "_K8sJobTaskConfig",
         "job_image dagster_home image_pull_policy image_pull_secrets service_account_name "
         "instance_config_map postgres_password_secret env_config_maps env_secrets env_vars "
-        "volume_mounts volumes labels resources scheduler_name",
+        "volume_mounts volumes labels resources scheduler_name security_context",
     )
 ):
     """Configuration parameters for launching Dagster Jobs on Kubernetes.
@@ -258,6 +258,8 @@ class DagsterK8sJobConfig(
             https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         scheduler_name (Optional[str]): Use a custom Kubernetes scheduler for launched Pods. See:
             https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
+        security_context (Optional[Dict[str,Any]]): Security settings for the container. See:
+            https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container
     """
 
     def __new__(
@@ -277,6 +279,7 @@ class DagsterK8sJobConfig(
         labels=None,
         resources=None,
         scheduler_name=None,
+        security_context=None,
     ):
         return super(DagsterK8sJobConfig, cls).__new__(
             cls,
@@ -305,6 +308,7 @@ class DagsterK8sJobConfig(
             labels=check.opt_dict_param(labels, "labels", key_type=str, value_type=str),
             resources=check.opt_dict_param(resources, "resources", key_type=str),
             scheduler_name=check.opt_str_param(scheduler_name, "scheduler_name"),
+            security_context=check.opt_dict_param(security_context, "security_context"),
         )
 
     @classmethod
@@ -479,6 +483,12 @@ class DagsterK8sJobConfig(
                 description="Use a custom Kubernetes scheduler for launched Pods. See:"
                 "https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/",
             ),
+            "security_context": Field(
+                dict,
+                is_required=False,
+                description="Security settings for the container. See:"
+                "https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container",
+            ),
         }
 
     @classmethod
@@ -639,6 +649,8 @@ def construct_dagster_k8s_job(
 
     resources = user_defined_resources if user_defined_resources else job_config.resources
 
+    security_context = container_config.pop("security_context", job_config.security_context)
+
     container_config = merge_dicts(
         container_config,
         {
@@ -650,6 +662,7 @@ def construct_dagster_k8s_job(
             "volume_mounts": volume_mounts,
             "resources": resources,
         },
+        {"security_context": security_context} if security_context else {},
     )
 
     pod_spec_config = copy.deepcopy(user_defined_k8s_config.pod_spec_config)
