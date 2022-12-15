@@ -3,7 +3,7 @@ title: Connecting Ops in Jobs | Dagster
 description: A Dagster job is a set of ops which have data dependencies on each other to create a directed acyclic graph.
 ---
 
-# Connecting ops in jobs
+# Connecting Ops in Jobs
 
 <CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_ops/" />
 
@@ -19,7 +19,7 @@ Dagster jobs model a _dataflow_ graph. In data pipelines, the reason that a late
 
 ---
 
-## Let's get serial
+## Let's Get Serial
 
 We'll expand the job we worked with in the first section of the tutorial into two ops that:
 
@@ -74,15 +74,15 @@ Navigate to <http://127.0.0.1:3000>:
 <Image
 alt="serial job"
 src="/images/tutorial/serial-job.png"
-width={3574}
-height={1962}
+width={2662}
+height={1618}
 />
 
 <br />
 
 ---
 
-## A more complex DAG
+## A More Complex DAG
 
 Ops don't need to be wired together serially. The output of one op can be consumed by any number of other ops, and the outputs of several different ops can be consumed by a single op.
 
@@ -131,15 +131,13 @@ Let's visualize this job in Dagit:
 dagit -f complex_job.py
 ```
 
-Which looks like:
-
 <!-- ![complex job](/images/tutorial/complex-job.png) -->
 
 <Image
 alt="complex job"
 src="/images/tutorial/complex-job.png"
-width={3574}
-height={1962}
+width={2662}
+height={1618}
 />
 
 When you execute this example from Dagit, you'll see that `get_file_sizes` executes first, followed by `get_total_size` and `get_largest_size` executing in parallel, since they don't depend on each other's outputs. Finally, `report_file_stats` executes last, only after `get_total_size` and `get_largest_size` have both executed (because `report_file_stats` depends on both of their outputs).
