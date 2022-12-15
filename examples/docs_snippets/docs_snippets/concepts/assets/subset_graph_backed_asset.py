@@ -1,5 +1,6 @@
 from dagster import (
     AssetsDefinition,
+    Definitions,
     GraphOut,
     Out,
     Output,
@@ -42,12 +43,9 @@ def my_graph():
     return {"foo_asset": foo_1, "baz_asset": baz(foo_2, bar_2)}
 
 
-@repository
-def my_repo():
-    return [
-        define_asset_job("graph_asset"),
-        AssetsDefinition.from_graph(my_graph, can_subset=True),
-    ]
-
+defs = Definitions(
+    assets=[AssetsDefinition.from_graph(my_graph, can_subset=True)],
+    jobs=[define_asset_job("graph_asset")],
+)
 
 # end_graph_backed_asset_example
