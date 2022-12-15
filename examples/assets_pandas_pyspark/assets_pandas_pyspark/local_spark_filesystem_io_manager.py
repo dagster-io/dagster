@@ -74,8 +74,3 @@ class LocalFileSystemIOManager(IOManager):
             )
         else:
             raise ValueError("Unexpected input type")
-
-
-@io_manager
-def local_filesystem_io_manager():
-    return LocalFileSystemIOManager()
