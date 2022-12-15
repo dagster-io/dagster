@@ -352,11 +352,6 @@ def test_kitchen_sink_on_create_helper_and_definitions():
     assert isinstance(repo, RepositoryDefinition)
 
     assert repo.name == "foobar"
-    assert set(repo._assets_defs_by_key.keys()) == {
-        AssetKey("an_asset"),
-        AssetKey("another_asset"),
-    }  # pylint: disable=protected-access
-
     assert isinstance(repo.get_job("a_job"), JobDefinition)
     assert repo.get_job("a_job").executor_def is an_executor
     assert repo.get_job("a_job").loggers == {"logger_key": a_logger}
@@ -387,10 +382,6 @@ def test_kitchen_sink_on_create_helper_and_definitions():
         loggers={"logger_key": a_logger},
     )
 
-    assert set(defs.get_repository_def()._assets_defs_by_key.keys()) == {
-        AssetKey("an_asset"),
-        AssetKey("another_asset"),
-    }  # pylint: disable=protected-access
     assert isinstance(defs.get_job_def("a_job"), JobDefinition)
     assert defs.get_job_def("a_job").executor_def is an_executor
     assert defs.get_job_def("a_job").loggers == {"logger_key": a_logger}
