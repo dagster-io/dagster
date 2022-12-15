@@ -221,7 +221,7 @@ if __name__ == "__main__":
 
 ## Making jobs available to Dagster tools
 
-You make jobs available to Dagit, GraphQL, and the command line by including them in <PyObject object="Definitions"/> object at the top-level of Python module or file. When that module is loaded by a tool, it becomes a code location. If you include schedules or sensors, the code location will automatically include jobs that those schedules or sensors target.
+You make jobs available to Dagit, GraphQL, and the command line by including them in <PyObject object="Definitions"/> object at the top-level of Python module or file. The tool loads that module as a code location. If you include schedules or sensors, the code location will automatically include jobs that those schedules or sensors target.
 
 ```python file=/concepts/ops_jobs_graphs/repo_with_job.py
 from dagster import Definitions, job
