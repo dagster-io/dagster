@@ -187,7 +187,7 @@ code_location_2 = Definitions(
 
 Using source assets has a few advantages over having the code inside of an asset's op load the data:
 
-- **Dagit can show asset lineage that includes the source assets**. If different asset definitions in different code locations have the same asset key as a <PyObject object="SourceAsset" /> and both code locations are loaded into Dagit, Dagit can represent the asset lineage across the code locations. This can be accomplished using [workspace files](/concepts/repositories-workspaces/workspaces).
+- **Dagit can show asset lineage that includes the source assets**. If different asset definitions in different code locations have the same asset key as a <PyObject object="SourceAsset" /> and both code locations are loaded into Dagit, Dagit can represent the asset lineage across the code locations. This can be accomplished using [workspace files](/concepts/code-locations/workspace-files).
 - **Dagster can use data-loading code factored into an <PyObject object="IOManager" /> to load the contents of the source asset**.
 - **Asset dependencies can be written in a consistent way,** independent of whether they're downstream from a source asset or a derived asset. This makes it easy to swap out a source asset for a derived asset and vice versa.
 
@@ -355,7 +355,7 @@ height={1962}
 
 #### Asset details
 
-View the Asset Details page for an asset by clicking on its name:
+View the **Asset details** page for an asset by clicking on its name:
 
 <!-- ![Asset details page in Dagit](/images/concepts/dagit/asset.png) -->
 
@@ -426,8 +426,8 @@ You can resolve this issue by re-materializing the downstream asset. This will r
 
 In Dagit, you can launch runs that materialize assets by:
 
-- Navigating to the [**Asset Details** page](#asset-details) for the asset and clicking the **Materialize** button in the upper right corner.
-- Navigating to the graph view of the [**Assets** page](#all-assets) and clicking the **Materialize** button in the upper right corner. You can also click on assets to collect a subset to materialize.
+- Navigating to the [**Asset details** page](#asset-details) for the asset and clicking the **Materialize** button in the upper right corner.
+- Navigating to the graph view of the [**Asset atalog** page](#asset-catalog) and clicking the **Materialize** button in the upper right corner. You can also click on individual assets to collect a subset to materialize.
 
 ---
 
