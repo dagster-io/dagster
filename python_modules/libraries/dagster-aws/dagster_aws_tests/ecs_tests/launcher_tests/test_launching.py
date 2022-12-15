@@ -644,6 +644,56 @@ def test_public_ip_assignment(ecs, ec2, instance, workspace, run, assign_public_
     assert bool(attributes.get("PublicIp")) == assign_public_ip
 
 
+def test_launcher_run_resources(
+    ecs,
+    instance_with_resources,
+    workspace,
+    external_pipeline,
+    pipeline,
+):
+    instance = instance_with_resources
+    run = instance.create_run_for_pipeline(
+        pipeline,
+        external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=external_pipeline.get_python_origin(),
+    )
+
+    existing_tasks = ecs.list_tasks()["taskArns"]
+
+    instance.launch_run(run.run_id, workspace)
+
+    tasks = ecs.list_tasks()["taskArns"]
+    task_arn = list(set(tasks).difference(existing_tasks))[0]
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+    assert task.get("overrides").get("memory") == "2048"
+    assert task.get("overrides").get("cpu") == "1024"
+
+
+def test_container_context_run_resources(
+    ecs,
+    instance,
+    launch_run_with_container_context,
+    container_context_config,
+):
+
+    existing_tasks = ecs.list_tasks()["taskArns"]
+
+    launch_run_with_container_context(instance)
+
+    tasks = ecs.list_tasks()["taskArns"]
+    task_arn = list(set(tasks).difference(existing_tasks))[0]
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+    assert (
+        task.get("overrides").get("memory")
+        == container_context_config["ecs"]["run_resources"]["memory"]
+    )
+    assert (
+        task.get("overrides").get("cpu") == container_context_config["ecs"]["run_resources"]["cpu"]
+    )
+
+
 def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
     # By default
     initial_tasks = ecs.list_tasks()["taskArns"]
