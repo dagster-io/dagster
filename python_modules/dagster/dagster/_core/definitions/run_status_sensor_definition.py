@@ -1,3 +1,4 @@
+import logging
 import warnings
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Sequence, Union, cast
@@ -5,7 +6,8 @@ from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Sequence,
 import pendulum
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
+from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -86,17 +88,7 @@ class RunStatusSensorCursor(
 register_serdes_tuple_fallbacks({"PipelineSensorCursor": RunStatusSensorCursor})
 
 
-class RunStatusSensorContext(
-    NamedTuple(
-        "_RunStatusSensorContext",
-        [
-            ("sensor_name", PublicAttr[str]),
-            ("dagster_run", PublicAttr[DagsterRun]),
-            ("dagster_event", PublicAttr[DagsterEvent]),
-            ("instance", PublicAttr[DagsterInstance]),
-        ],
-    )
-):
+class RunStatusSensorContext:
     """The ``context`` object available to a decorated function of ``run_status_sensor``.
 
     Attributes:
@@ -104,26 +96,57 @@ class RunStatusSensorContext(
         dagster_run (DagsterRun): the run of the job or pipeline.
         dagster_event (DagsterEvent): the event associated with the job or pipeline run status.
         instance (DagsterInstance): the current instance.
+        log (logging.Logger): the logger for the given sensor evaluation
     """
 
-    def __new__(cls, sensor_name, dagster_run, dagster_event, instance):
-
-        return super(RunStatusSensorContext, cls).__new__(
-            cls,
-            sensor_name=check.str_param(sensor_name, "sensor_name"),
-            dagster_run=check.inst_param(dagster_run, "dagster_run", DagsterRun),
-            dagster_event=check.inst_param(dagster_event, "dagster_event", DagsterEvent),
-            instance=check.inst_param(instance, "instance", DagsterInstance),
-        )
+    def __init__(self, sensor_name, dagster_run, dagster_event, instance, context=None):
+        self._sensor_name = check.str_param(sensor_name, "sensor_name")
+        self._dagster_run = check.inst_param(dagster_run, "dagster_run", DagsterRun)
+        self._dagster_event = check.inst_param(dagster_event, "dagster_event", DagsterEvent)
+        self._instance = check.inst_param(instance, "instance", DagsterInstance)
+        self._context = check.opt_inst_param(context, "context", SensorEvaluationContext)
+        self._logger: Optional[logging.Logger] = None
 
     def for_run_failure(self):
         """Converts RunStatusSensorContext to RunFailureSensorContext."""
         return RunFailureSensorContext(
-            sensor_name=self.sensor_name,
-            dagster_run=self.dagster_run,
-            dagster_event=self.dagster_event,
-            instance=self.instance,
+            sensor_name=self._sensor_name,
+            dagster_run=self._dagster_run,
+            dagster_event=self._dagster_event,
+            instance=self._instance,
+            context=self._context,
         )
+
+    @public  # type: ignore
+    @property
+    def sensor_name(self) -> str:
+        return self._sensor_name
+
+    @public  # type: ignore
+    @property
+    def dagster_run(self) -> DagsterRun:
+        return self._dagster_run
+
+    @public  # type: ignore
+    @property
+    def dagster_event(self) -> DagsterRun:
+        return self._dagster_event
+
+    @public  # type: ignore
+    @property
+    def instance(self) -> DagsterRun:
+        return self._instance
+
+    @public  # type: ignore
+    @property
+    def log(self) -> logging.Logger:
+        if self._context:
+            return self._context.log
+
+        if not self._logger:
+            self._logger = InstigationLogger()
+
+        return self._logger
 
     @property
     def pipeline_run(self) -> DagsterRun:
@@ -153,6 +176,7 @@ def build_run_status_sensor_context(
     dagster_event: DagsterEvent,
     dagster_instance: DagsterInstance,
     dagster_run: DagsterRun,
+    context: Optional[SensorEvaluationContext] = None,
 ) -> RunStatusSensorContext:
     """
     Builds run status sensor context from provided parameters.
@@ -190,6 +214,7 @@ def build_run_status_sensor_context(
         instance=dagster_instance,
         dagster_run=dagster_run,
         dagster_event=dagster_event,
+        context=context,
     )
 
 
@@ -542,6 +567,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                                 dagster_run=pipeline_run,
                                 dagster_event=event_log_entry.dagster_event,
                                 instance=context.instance,
+                                context=context,
                             )
                         )
                         if sensor_return is not None:
