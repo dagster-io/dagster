@@ -5,7 +5,7 @@ import os
 import pandas as pd
 from pandas import DataFrame
 
-from dagster import AssetKey, IOManager, io_manager
+from dagster import AssetKey, IOManager
 
 
 class LocalFileSystemIOManager(IOManager):
