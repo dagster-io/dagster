@@ -542,6 +542,10 @@ runLauncher:
       # Whether the launched Kubernetes Jobs and Pods should fail if the Dagster run fails.
       failPodOnRunFailure: false
 
+      # Security settings for the container. See
+      # https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container
+      securityContext: ~
+
     # This configuration will only be used if the CeleryK8sRunLauncher is selected
     celeryK8sRunLauncher:
       # Change with caution! If you're using a fixed tag for pipeline run images, changing the

@@ -1,13 +1,13 @@
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Mapping, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Type, Union
 
 import dagster._check as check
 from dagster._annotations import experimental, public
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 from dagster._utils.backcompat import experimental_arg_warning
 from dagster._utils.cached_method import cached_method
 
@@ -20,7 +20,6 @@ from .repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
 )
-from .resource_definition import ResourceDefinition
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
@@ -95,7 +94,7 @@ def _create_repository_using_definitions_args(
     if loggers:
         check.mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
 
-    resource_defs = coerce_resources_to_defs(resources or {})
+    resource_defs = wrap_resources_for_execution(resources or {})
 
     @repository(
         name=name,
@@ -114,7 +113,10 @@ def _create_repository_using_definitions_args(
 
 
 class Definitions:
-    """Example usage:
+    """
+    A set of definitions to be explicitly available and loadable by Dagster tools.
+
+    Example usage:
 
     .. code-block:: python
 
@@ -128,8 +130,6 @@ class Definitions:
             }
         )
 
-    Create a set of definitions explicitly available and loadable by Dagster tools.
-
     Dagster separates user-defined code from system tools such the web server and
     the daemon. Rather than loading code directly into process, a tool such as the
     webserver interacts with user-defined code over a serialization boundary.
@@ -138,13 +138,22 @@ class Definitions:
     arguments or config, they specify a Python module to inspect.
 
     A Python module is loadable by Dagster tools if there is a top-level variable
-    that is an instance of Definitions.
+    that is an instance of :py:class:`Definitions`.
 
-    Definitions provides a few conveniences for dealing with resources that do not apply to
-    vanilla Dagster definitions:
+    Before the introduction of :py:class:`Definitions`,
+    :py:func:`@repository <repository>` was the API for organizing defintions.
+    :py:class:`Definitions` provides a few conveniences for dealing with resources
+    that do not apply to old-style :py:func:`@repository <repository>` declarations:
 
-    * It takes a dictionary of top-level resources which are automatically bound (via with_resources) to any asset passed to it. If you need to apply different resources to different assets, use legacy @repository and use with_resources as before.
-    * The resources dictionary takes raw Python objects, not just instances of :py:class:`ResourceDefinition`. If that raw object inherits from :py:class:`IOManager`, it gets coerced to an :py:class:`IOManagerDefinition`. Any other object is coerced to a ResourceDefinition.
+    * It takes a dictionary of top-level resources which are automatically bound
+      (via :py:func:`with_resources <with_resources>`) to any asset passed to it.
+      If you need to apply different resources to different assets, use legacy
+      :py:func:`@repository <repository>` and use
+      :py:func:`with_resources <with_resources>` as before.
+    * The resources dictionary takes raw Python objects, not just instances
+      of :py:class:`ResourceDefinition`. If that raw object inherits from
+      :py:class:`IOManager`, it gets coerced to an :py:class:`IOManagerDefinition`.
+      Any other object is coerced to a :py:class:`ResourceDefinition`.
     """
 
     def __init__(
@@ -273,16 +282,3 @@ class Definitions:
         at CLI entry points. We explicitly do not want to resolve the pending repo because the entire
         point is to defer that resolution until later."""
         return self._created_pending_or_normal_repo
-
-
-def coerce_resources_to_defs(resources: Mapping[str, Any]) -> Dict[str, ResourceDefinition]:
-    resource_defs = {}
-    for key, resource_obj in resources.items():
-        resource_defs[key] = (
-            resource_obj
-            if isinstance(resource_obj, ResourceDefinition)
-            else IOManagerDefinition.hardcoded_io_manager(resource_obj)
-            if isinstance(resource_obj, IOManager)
-            else ResourceDefinition.hardcoded_resource(resource_obj)
-        )
-    return resource_defs
