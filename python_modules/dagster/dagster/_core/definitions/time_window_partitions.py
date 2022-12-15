@@ -196,13 +196,17 @@ class TimeWindowPartitionsDefinition(
     def get_next_partition_key(
         self, partition_key: str, current_time: Optional[datetime] = None
     ) -> Optional[str]:
+        last_partition_window = self.get_last_partition_window(current_time)
+        if last_partition_window is None:
+            return None
+
         partition_key_dt = pendulum.instance(
             datetime.strptime(partition_key, self.fmt), tz=self.timezone
         )
         windows_iter = iter(self._iterate_time_windows(partition_key_dt))
         next(windows_iter)
         start_time = next(windows_iter).start
-        if start_time >= self.get_last_partition_window(current_time).end:
+        if start_time >= last_partition_window.end:
             return None
         else:
             return start_time.strftime(self.fmt)
@@ -210,9 +214,13 @@ class TimeWindowPartitionsDefinition(
     def get_next_partition_window(
         self, end_dt: datetime, current_time: Optional[datetime] = None
     ) -> Optional[TimeWindow]:
+        last_partition_window = self.get_last_partition_window(current_time)
+        if last_partition_window is None:
+            return None
+
         windows_iter = iter(self._iterate_time_windows(end_dt))
         next_window = next(windows_iter)
-        if next_window.start >= self.get_last_partition_window(current_time).end:
+        if next_window.start >= last_partition_window.end:
             return None
         else:
             return next_window
@@ -241,7 +249,12 @@ class TimeWindowPartitionsDefinition(
         else:
             return None
 
-    def get_last_partition_window(self, current_time: Optional[datetime] = None) -> TimeWindow:
+    def get_last_partition_window(
+        self, current_time: Optional[datetime] = None
+    ) -> Optional[TimeWindow]:
+        if self.get_first_partition_window(current_time) is None:
+            return None
+
         current_time = (
             pendulum.instance(current_time, tz=self.timezone)
             if current_time
@@ -252,10 +265,19 @@ class TimeWindowPartitionsDefinition(
             return next(iter(self._reverse_iterate_time_windows(current_time)))
         else:
             # TODO: make this efficient
-            return self.time_window_for_partition_key(super().get_last_partition_key(current_time))
+            last_partition_key = super().get_last_partition_key(current_time)
+            return (
+                self.time_window_for_partition_key(last_partition_key)
+                if last_partition_key
+                else None
+            )
 
-    def get_last_partition_key(self, current_time: Optional[datetime] = None) -> str:
-        return self.get_last_partition_window(current_time).start.strftime(self.fmt)
+    def get_last_partition_key(self, current_time: Optional[datetime] = None) -> Optional[str]:
+        last_window = self.get_last_partition_window(current_time)
+        if last_window is None:
+            return None
+
+        return last_window.start.strftime(self.fmt)
 
     def end_time_for_partition_key(self, partition_key: str) -> datetime:
         return self.time_window_for_partition_key(partition_key).end

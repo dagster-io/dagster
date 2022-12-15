@@ -8,7 +8,7 @@ import pathspec
 from dagster_buildkite.git import ChangedFiles, GitInfo
 from pkg_resources import Requirement, parse_requirements
 
-changed_filetypes = [".py", ".cfg", ".toml", ".yaml", ".ipynb", ".yml"]
+changed_filetypes = [".py", ".cfg", ".toml", ".yaml", ".ipynb", ".yml", ".ini"]
 
 
 class PythonPackage:

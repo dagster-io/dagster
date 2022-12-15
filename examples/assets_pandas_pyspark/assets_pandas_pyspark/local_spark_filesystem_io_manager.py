@@ -17,7 +17,6 @@ from pyspark.sql import SparkSession
 
 from dagster import AssetKey, IOManager
 from dagster import _check as check
-from dagster import io_manager
 
 
 class LocalFileSystemIOManager(IOManager):
@@ -74,8 +73,3 @@ class LocalFileSystemIOManager(IOManager):
             )
         else:
             raise ValueError("Unexpected input type")
-
-
-@io_manager
-def local_filesystem_io_manager():
-    return LocalFileSystemIOManager()

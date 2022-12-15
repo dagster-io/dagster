@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 
-from dagster import AssetIn, IOManager, asset, io_manager, repository, with_resources
+from dagster import AssetIn, Definitions, IOManager, asset, io_manager
 
 from .asset_input_managers import (
     load_numpy_array,
@@ -57,17 +57,12 @@ def downstream_asset(upstream):
     return upstream.shape
 
 
-@repository
-def my_repository():
-    return [
-        *with_resources(
-            [upstream_asset, downstream_asset],
-            resource_defs={
-                "pandas_manager": pandas_asset_io_manager,
-                "numpy_manager": numpy_asset_io_manager,
-            },
-        )
-    ]
-
+defs = Definitions(
+    assets=[upstream_asset, downstream_asset],
+    resources={
+        "pandas_manager": pandas_asset_io_manager,
+        "numpy_manager": numpy_asset_io_manager,
+    },
+)
 
 # end_numpy_example

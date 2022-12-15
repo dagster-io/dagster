@@ -24,7 +24,6 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
   const history = useHistory();
 
   const [showSpinner, setShowSpinner] = React.useState(false);
-  const [lastLocationTimestamps, setLastLocationTimestamps] = React.useState({});
 
   const queryData = useQuery<CodeLocationStatusQuery>(CODE_LOCATION_STATUS_QUERY, {
     fetchPolicy: 'network-only',
@@ -114,28 +113,14 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
       currentEntries.some(
         (entry) =>
           !(entry.id in previousEntriesByName) ||
-          Math.max(
-            previousEntriesByName[entry.id].updateTimestamp,
-            lastLocationTimestamps[entry.id] || 0,
-          ) < currentEntriesByName[entry.id].updateTimestamp,
+          previousEntriesByName[entry.id].updateTimestamp <
+            currentEntriesByName[entry.id].updateTimestamp,
       );
-
-    const _updateLocationTimestamps = (entries: LocationStatusEntry[]) => {
-      const timestamps = {};
-      entries.forEach((entry) => {
-        timestamps[entry.id] = Math.max(
-          entry.updateTimestamp,
-          lastLocationTimestamps[entry.id] || 0,
-        );
-      });
-      setLastLocationTimestamps(timestamps);
-    };
 
     // At least one code location has been removed. Reload, but don't make a big deal about it
     // since this was probably done manually.
     if (previousEntries.length > currentEntries.length && !hasUpdatedEntries) {
       reloadWorkspaceQuietly();
-      _updateLocationTimestamps(currentEntries);
       return;
     }
 
@@ -189,7 +174,6 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
       });
 
       reloadWorkspaceLoudly();
-      _updateLocationTimestamps(currentEntries);
       return;
     }
 
@@ -219,35 +203,24 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         icon: 'refresh',
       });
 
-      _updateLocationTimestamps(currentEntries);
       return;
     }
 
     // A location was previously loading, and no longer is. Our workspace is ready. Refetch it.
     if (anyPreviouslyLoading && !anyCurrentlyLoading) {
       reloadWorkspaceLoudly();
-      _updateLocationTimestamps(currentEntries);
       return;
     }
 
     if (hasUpdatedEntries) {
       reloadWorkspaceLoudly();
-      _updateLocationTimestamps(currentEntries);
       return;
     }
 
     // It's unlikely that we've made it to this point, since being inside this effect should
     // indicate that `data` and `previousData` have differences that would have been handled by
     // the conditionals above.
-  }, [
-    data,
-    previousData,
-    reloadWorkspaceQuietly,
-    reloadWorkspaceLoudly,
-    onClickViewButton,
-    lastLocationTimestamps,
-    setLastLocationTimestamps,
-  ]);
+  }, [data, previousData, reloadWorkspaceQuietly, reloadWorkspaceLoudly, onClickViewButton]);
 
   if (showSpinner) {
     return {
