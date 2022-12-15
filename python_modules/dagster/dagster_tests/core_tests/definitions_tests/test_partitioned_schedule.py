@@ -334,3 +334,24 @@ def test_monthly_schedule_with_offsets():
     @repository
     def _repo():
         return [my_schedule]
+
+
+def test_empty_partitions():
+    @daily_partitioned_config(start_date="2021-05-05")
+    def my_partitioned_config(start, end):
+        del start
+        del end
+        assert False
+
+    my_schedule = schedule_for_partitioned_config(
+        my_partitioned_config, hour_of_day=9, minute_of_hour=30
+    )
+
+    result = my_schedule.evaluate_tick(
+        build_schedule_context(
+            scheduled_execution_time=datetime.strptime("2021-05-05", DATE_FORMAT)
+        )
+    )
+
+    assert len(result.run_requests) == 0
+    assert result.skip_message is not None

@@ -598,6 +598,7 @@ def test_multi_asset_sensor_custom_partition_mapping():
                     "Expected downstream_partitions_def to be a PartitionsDefinition"
                 )
             first_partition_key = downstream_partitions_def.get_first_partition_key()
+            assert first_partition_key is not None
             return PartitionKeyRange(first_partition_key, first_partition_key)
 
     @asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))

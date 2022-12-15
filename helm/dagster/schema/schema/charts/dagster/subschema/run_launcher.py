@@ -67,6 +67,7 @@ class K8sRunLauncherConfig(BaseModel):
     failPodOnRunFailure: Optional[bool]
     resources: Optional[kubernetes.ResourceRequirements]
     schedulerName: Optional[str]
+    securityContext: Optional[kubernetes.SecurityContext]
 
     class Config:
         extra = Extra.forbid

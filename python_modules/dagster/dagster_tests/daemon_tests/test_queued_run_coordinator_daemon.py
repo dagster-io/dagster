@@ -285,7 +285,8 @@ def test_tag_limits(use_threads, workspace_context, pipeline_handle, daemon):
 
         list(daemon.run_iteration(bounded_ctx))
 
-        assert get_run_ids(instance.run_launcher.queue()) == ["tiny-1", "large-1"]
+        # exact order non-deterministic due to threaded dequeue
+        assert set(get_run_ids(instance.run_launcher.queue())) == {"tiny-1", "large-1"}
 
 
 @pytest.mark.parametrize(
@@ -326,7 +327,8 @@ def test_tag_limits_just_key(use_threads, workspace_context, pipeline_handle, da
 
         list(daemon.run_iteration(bounded_ctx))
 
-        assert get_run_ids(instance.run_launcher.queue()) == ["tiny-1", "tiny-2"]
+        # exact order non-deterministic due to threaded dequeue
+        assert set(get_run_ids(instance.run_launcher.queue())) == {"tiny-1", "tiny-2"}
 
 
 @pytest.mark.parametrize(
@@ -380,7 +382,8 @@ def test_multiple_tag_limits(
 
         list(daemon.run_iteration(bounded_ctx))
 
-        assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]
+        # exact order non-deterministic due to threaded dequeue
+        assert set(get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-3"}
 
 
 @pytest.mark.parametrize(
@@ -429,6 +432,7 @@ def test_overlapping_tag_limits(use_threads, workspace_context, daemon, pipeline
 
         list(daemon.run_iteration(bounded_ctx))
 
+        # exact order non-deterministic due to threaded dequeue
         assert set(get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-3"}
 
 
@@ -479,7 +483,8 @@ def test_limits_per_unique_value(use_threads, workspace_context, pipeline_handle
 
         list(daemon.run_iteration(bounded_ctx))
 
-        assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]
+        # exact order non-deterministic due to threaded dequeue
+        assert set(get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-3"}
 
 
 @pytest.mark.parametrize(
@@ -533,6 +538,7 @@ def test_limits_per_unique_value_overlapping_limits(
 
         list(daemon.run_iteration(bounded_ctx))
 
+        # exact order non-deterministic due to threaded dequeue
         assert set(get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-3"}
 
     with instance_for_queued_run_coordinator(
@@ -583,6 +589,7 @@ def test_limits_per_unique_value_overlapping_limits(
 
         list(daemon.run_iteration(bounded_ctx))
 
+        # exact order non-deterministic due to threaded dequeue
         assert set(get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-2", "run-4"}
 
 
