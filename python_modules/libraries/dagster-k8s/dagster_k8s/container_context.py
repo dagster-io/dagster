@@ -37,6 +37,7 @@ class K8sContainerContext(
             ("namespace", Optional[str]),
             ("resources", Mapping[str, Any]),
             ("scheduler_name", Optional[str]),
+            ("security_context", Mapping[str, Any]),
         ],
     )
 ):
@@ -59,6 +60,7 @@ class K8sContainerContext(
         namespace: Optional[str] = None,
         resources: Optional[Mapping[str, Any]] = None,
         scheduler_name: Optional[str] = None,
+        security_context: Optional[Mapping[str, Any]] = None,
     ):
         return super(K8sContainerContext, cls).__new__(
             cls,
@@ -80,6 +82,7 @@ class K8sContainerContext(
             namespace=check.opt_str_param(namespace, "namespace"),
             resources=check.opt_mapping_param(resources, "resources"),
             scheduler_name=check.opt_str_param(scheduler_name, "scheduler_name"),
+            security_context=check.opt_mapping_param(security_context, "security_context"),
         )
 
     def merge(self, other: "K8sContainerContext") -> "K8sContainerContext":
@@ -104,6 +107,9 @@ class K8sContainerContext(
             namespace=other.namespace if other.namespace else self.namespace,
             resources=other.resources if other.resources else self.resources,
             scheduler_name=other.scheduler_name if other.scheduler_name else self.scheduler_name,
+            security_context=other.security_context
+            if other.security_context
+            else self.security_context,
         )
 
     def get_environment_dict(self) -> Mapping[str, str]:
@@ -131,6 +137,7 @@ class K8sContainerContext(
                     namespace=run_launcher.job_namespace,
                     resources=run_launcher.resources,
                     scheduler_name=run_launcher.scheduler_name,
+                    security_context=run_launcher.security_context,
                 )
             )
 
@@ -188,6 +195,7 @@ class K8sContainerContext(
                 namespace=processed_context_value.get("namespace"),
                 resources=processed_context_value.get("resources"),
                 scheduler_name=processed_context_value.get("scheduler_name"),
+                security_context=processed_context_value.get("security_context"),
             )
         )
 
@@ -208,4 +216,5 @@ class K8sContainerContext(
             labels=self.labels,
             resources=self.resources,
             scheduler_name=self.scheduler_name,
+            security_context=self.security_context,
         )

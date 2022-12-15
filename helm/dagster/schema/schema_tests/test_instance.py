@@ -255,6 +255,32 @@ def test_k8s_run_launcher_scheduler_name(template: HelmTemplate):
     assert run_launcher_config["config"]["schedulerName"] == "my-scheduler"
 
 
+def test_k8s_run_launcher_security_context(template: HelmTemplate):
+    sacred_rites_of_debugging = {"capabilities": {"add": ["SYS_PTRACE"]}}
+    helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.K8S,
+            config=RunLauncherConfig.construct(
+                k8sRunLauncher=K8sRunLauncherConfig.construct(
+                    imagePullPolicy="Always",
+                    loadInclusterConfig=True,
+                    envConfigMaps=[],
+                    envSecrets=[],
+                    envVars=[],
+                    volumeMounts=[],
+                    volumes=[],
+                    securityContext=sacred_rites_of_debugging,
+                )
+            ),
+        )
+    )
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+
+    assert run_launcher_config["config"]["securityContext"] == sacred_rites_of_debugging
+
+
 def test_celery_k8s_run_launcher_config(template: HelmTemplate):
     image = {"repository": "test_repo", "tag": "test_tag", "pullPolicy": "Always"}
 
