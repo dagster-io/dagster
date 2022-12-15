@@ -3,11 +3,11 @@ title: Software-Defined Assets Tutorial | Dagster
 description: A software-defined specifies an asset that you want to exist and how to compute its contents.
 ---
 
-# A First Asset
-
-## The cereal dataset
+# A first asset
 
 Our assets will represent and transform a simple but scary CSV dataset, `cereal.csv`, which contains nutritional facts about 80 breakfast cereals.
+
+---
 
 ## Hello, asset!
 
@@ -33,6 +33,8 @@ def cereals():
 ```
 
 In this simple case, our asset doesn't depend on any other assets.
+
+---
 
 ## Materializing our asset
 
@@ -61,8 +63,8 @@ You should be able to navigate to <http://127.0.0.1:3000> in your web browser an
 <Image
 alt="Viewing the cereals asset in Dagit"
 src="/images/guides/asset-tutorial/defining_an_asset.png"
-width={1506}
-height={1296}
+width={3574}
+height={1962}
 />
 
 Click the **Materialize** button to launch a run that materializes the asset. After the run completes, the **Events** tab on the **Assets** page will contain information about the run.
@@ -74,8 +76,8 @@ Click the run ID in the **Events** tab to view details about the run. A page inc
 <Image
 alt="Asset materialiazation run"
 src="/images/guides/asset-tutorial/asset_run.png"
-width={1508}
-height={1298}
+width={3574}
+height={1962}
 />
 
 In this view, you can filter and search through the logs corresponding to the run that's materializing your asset.
@@ -87,8 +89,8 @@ Click the **cereals** link in the upper left corner of the page - next to the **
 <Image
 alt="Asset details page"
 src="/images/guides/asset-tutorial/asset_details.png"
-width={1508}
-height={1300}
+width={3574}
+height={1962}
 />
 
 Success!

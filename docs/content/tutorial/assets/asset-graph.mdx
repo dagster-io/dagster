@@ -3,7 +3,7 @@ title: Building Graphs of Assets | Dagster
 description: Software-defined assets can depend on other software-defined assets
 ---
 
-# Building Graphs of Assets
+# Building graphs of assets
 
 Software-defined assets can depend on other software-defined assets. An asset dependency means that the contents of an "upstream" asset are used to compute the contents of the "downstream" asset.
 
@@ -63,8 +63,8 @@ Navigate to <http://127.0.0.1:3000>:
 <Image
 alt="Serial asset graph in Dagit"
 src="/images/guides/asset-tutorial/serial_asset_graph.png"
-width={1506}
-height={1296}
+width={3574}
+height={1962}
 />
 
 <br />
@@ -141,8 +141,8 @@ Navigate to <http://127.0.0.1:3000>:
 <Image
 alt="Complex asset graph"
 src="/images/guides/asset-tutorial/complex_asset_graph.png"
-width={1506}
-height={1296}
+width={3574}
+height={1962}
 />
 
 If you click **Materialize All** button, you'll see that `cereals` executes first, followed by `nabisco_cereals` and `cereal_protein_fractions` executing in parallel, since they don't depend on each other's outputs. Finally, `highest_protein_nabisco_cereal` executes last, only after `nabisco_cereals` and `cereal_protein_fractions` have both executed.
