@@ -146,6 +146,9 @@ class AirbyteResource:
                     return None
                 return response.json()
             except RequestException as e:
+                print(response.text)
+                print(data)
+                print(endpoint)
                 self._log.error("Request to Airbyte API failed: %s", e)
                 if num_retries == self._request_max_retries:
                     break

@@ -1,8 +1,9 @@
 import json
 import re
 from contextlib import AbstractContextManager
-from typing import Any, Dict, List, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
+import pytest
 import responses
 from dagster_fivetran import (
     FivetranConnector,
@@ -36,10 +37,14 @@ def format_callback(callback):
 
 class MockFivetran(AbstractContextManager):
     def __init__(
-        self, connectors: Dict[str, FivetranConnector], destinations: Dict[str, FivetranDestination]
+        self,
+        connectors: Dict[str, FivetranConnector],
+        destinations: Dict[str, FivetranDestination],
+        schemas: Optional[Dict[str, Any]] = None,
     ):
         self.rsps = responses.RequestsMock(assert_all_requests_are_fired=False)
         self.connectors = connectors
+        self.schemas = schemas or {}
         self.destinations = destinations
         self.created_groups: Dict[str, str] = {}
         self.group_id = 1
@@ -70,9 +75,15 @@ class MockFivetran(AbstractContextManager):
             re.compile(r"https://api.fivetran.com/v1/groups/.*/connectors"),
             callback=format_callback(self.mock_connectors),
         )
+
         self.rsps.add_callback(
             responses.GET,
-            re.compile(r"https://api.fivetran.com/v1/connectors/.*"),
+            re.compile(r"https://api.fivetran.com/v1/connectors/.*/schemas$"),
+            callback=format_callback(self.mock_schemas),
+        )
+        self.rsps.add_callback(
+            responses.GET,
+            re.compile(r"https://api.fivetran.com/v1/connectors/[\w-]+$"),
             callback=format_callback(self.mock_connector),
         )
 
@@ -82,8 +93,18 @@ class MockFivetran(AbstractContextManager):
             callback=format_callback(self.mock_patch_destination),
         )
         self.rsps.add_callback(
+            responses.POST,
+            re.compile(r"https://api.fivetran.com/v1/connectors/.*/schemas/reload$"),
+            callback=format_callback(self.mock_post_schemas_reload),
+        )
+        self.rsps.add_callback(
             responses.PATCH,
-            re.compile(r"https://api.fivetran.com/v1/connectors/.*"),
+            re.compile(r"https://api.fivetran.com/v1/connectors/.*/schemas$"),
+            callback=format_callback(self.mock_patch_schemas),
+        )
+        self.rsps.add_callback(
+            responses.PATCH,
+            re.compile(r"https://api.fivetran.com/v1/connectors/[\w-]+$"),
             callback=format_callback(self.mock_patch_connector),
         )
 
@@ -113,12 +134,34 @@ class MockFivetran(AbstractContextManager):
         self.group_id += 1
         return {"code": "Success", "data": {"id": new_group_id}}
 
+    def mock_post_schemas_reload(self, _method, _url, contents):
+        return {"code": "Success"}
+
+    def mock_schemas(self, _method, url, _contents):
+        connector_id = url.split("/")[-2]
+        schema = self.schemas[connector_id] if connector_id in self.schemas else {}
+        return {"code": "Success", "schemas": schema}
+
+    def mock_patch_schemas(self, _method, url, contents):
+        schemas = contents["schemas"]
+        connector_id = url.split("/")[-2]
+
+        schemas_with_name = {
+            schema_name: {**schema_value, "name_in_destination": schema_name}
+            for schema_name, schema_value in schemas.items()
+        }
+
+        self.schemas[connector_id] = schemas_with_name
+        self.operations_log.append(("patch_schemas", schemas))
+        return {"code": "Success"}
+
     def mock_post_destinations(self, _method, _url, contents):
         group_id = contents["group_id"]
         self.operations_log.append(("post_destinations", group_id))
 
         self.destinations[group_id] = InitializedFivetranDestination.from_api_json(
-            name=self.created_groups[group_id], api_json={**contents, "id": "my_new_dest_id"}
+            name=self.created_groups[group_id],
+            api_json={**contents, "id": "my_new_dest_id"},
         ).destination
         self.connectors_by_destination[group_id] = []
         return {"code": "Success"}
@@ -128,14 +171,15 @@ class MockFivetran(AbstractContextManager):
         self.operations_log.append(("post_connectors", group_id))
 
         conn = InitializedFivetranConnector.from_api_json(
-            api_json={**contents, "id": "my_new_conn_id", "schema": contents["config"]["schema"]}
+            api_json={**contents, "id": "my_new_conn_id", "schema": contents["config"]["schema"]},
+            schemas_json={},
         ).connector
         conn.destination = self.destinations[group_id]
         self.connectors["my_new_conn_id"] = conn
 
         self.connectors_by_destination[group_id].append("my_new_conn_id")
 
-        return {"code": "Success"}
+        return {"code": "Success", "data": {"id": "my_new_conn_id"}}
 
     def mock_patch_destination(self, _method, url, contents):
         destination_id = url.split("/")[-1]
@@ -147,6 +191,7 @@ class MockFivetran(AbstractContextManager):
         return {"code": "Success"}
 
     def mock_patch_connector(self, _method, url, contents):
+        print(url)
         connector_id = url.split("/")[-1]
         connector = self.connectors[connector_id]
         connector.source_configuration = contents["config"]
@@ -355,17 +400,9 @@ def add_groups_connectors(
         )
 
 
-@responses.activate
-def test_basic_end_to_end():
-
-    ft_instance = fivetran_resource.configured(
-        {
-            "api_key": "some_key",
-            "api_secret": "some_secret",
-        }
-    )
-
-    snowflake_destination = FivetranDestination(
+@pytest.fixture(name="snowflake_destination")
+def snowflake_destination_fixture():
+    return FivetranDestination(
         name="my_destination",
         destination_type="Snowflake",
         region="GCP_US_EAST4",
@@ -375,7 +412,10 @@ def test_basic_end_to_end():
         },
     )
 
-    github_conn = FivetranConnector(
+
+@pytest.fixture(name="github_connector")
+def github_connector_fixture(snowflake_destination):
+    return FivetranConnector(
         schema_name="my_connector",
         source_type="GitHub",
         source_configuration={
@@ -384,13 +424,26 @@ def test_basic_end_to_end():
         destination=snowflake_destination,
     )
 
+
+@pytest.fixture(name="ft_instance")
+def ft_instance_fixture():
+    return fivetran_resource.configured(
+        {
+            "api_key": "some_key",
+            "api_secret": "some_secret",
+        }
+    )
+
+
+@responses.activate
+def test_basic_end_to_end(snowflake_destination, github_connector, ft_instance):
     reconciler = FivetranManagedElementReconciler(
         fivetran=ft_instance,
-        connectors=[github_conn],
+        connectors=[github_connector],
     )
 
     with MockFivetran(
-        connectors={"my_connector": github_conn},
+        connectors={"my_connector": github_connector},
         destinations={"my_destination": snowflake_destination},
     ) as mock_ft:
 
@@ -400,6 +453,7 @@ def test_basic_end_to_end():
         assert mock_ft.operations_log == [
             ("patch_destination", "my_destination"),
             ("patch_connector", "my_connector"),
+            ("patch_schemas", {}),
         ]
 
     with MockFivetran(
@@ -422,12 +476,53 @@ def test_basic_end_to_end():
             ("post_groups", "my_destination"),
             ("post_destinations", "1"),
             ("post_connectors", "1"),
+            ("patch_schemas", {}),
         ]
 
         assert reconciler.check() == ManagedElementDiff()
         assert reconciler.apply() == ManagedElementDiff()
 
-        assert mock_ft.operations_log[-2:] == [
+        assert mock_ft.operations_log[-3:] == [
             ("patch_destination", "1"),
             ("patch_connector", "my_new_conn_id"),
+            ("patch_schemas", {}),
+        ]
+
+
+@responses.activate
+def test_schema(ft_instance, github_connector, snowflake_destination):
+    github_connector_with_schema = FivetranConnector(
+        schema_name="my_connector",
+        source_type="GitHub",
+        source_configuration={
+            "foo": "bar",
+        },
+        destination=snowflake_destination,
+        schema_configuration={"foo": True},
+    )
+
+    reconciler = FivetranManagedElementReconciler(
+        fivetran=ft_instance,
+        connectors=[github_connector_with_schema],
+    )
+
+    with MockFivetran(
+        connectors={"my_connector": github_connector},
+        destinations={"my_destination": snowflake_destination},
+    ) as mock_ft:
+
+        expected_diff = diff_dicts(
+            {
+                "my_connector": {"schemas": {"foo": True}},
+            },
+            {},
+        )
+
+        assert reconciler.check() == expected_diff
+        assert reconciler.apply() == expected_diff
+
+        assert mock_ft.operations_log == [
+            ("patch_destination", "my_destination"),
+            ("patch_connector", "my_connector"),
+            ("patch_schemas", {"foo": {"enabled": True}}),
         ]

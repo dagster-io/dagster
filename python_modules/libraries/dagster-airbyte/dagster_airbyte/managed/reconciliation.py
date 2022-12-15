@@ -229,6 +229,16 @@ def reconcile_sources(
                         ),
                     )
                     source_id = create_result["sourceId"]
+            if not dry_run:
+                status = res.make_request(
+                    endpoint="/sources/check_connection",
+                    data={"sourceId": source_id},
+                )
+                print(source_id)
+                print(status)
+                import time
+
+                time.sleep(15)
 
             if source_name in initialized_sources:
                 # Preserve to be able to initialize old connection object

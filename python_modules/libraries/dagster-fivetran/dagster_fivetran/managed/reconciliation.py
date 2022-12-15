@@ -1,15 +1,17 @@
 import json
+import time
 from itertools import chain
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
 from dagster_fivetran import FivetranResource
 from dagster_managed_elements import ManagedElementCheckResult, ManagedElementDiff
 from dagster_managed_elements.types import ManagedElementReconciler, is_key_secret
-from dagster_managed_elements.utils import diff_dicts
+from dagster_managed_elements.utils import UNSET, diff_dicts
 
 import dagster._check as check
 from dagster import ResourceDefinition
 from dagster._annotations import experimental
+from dagster._core.definitions.events import Failure
 from dagster._core.execution.context.init import build_init_resource_context
 
 from .types import (
@@ -58,6 +60,16 @@ def diff_destinations(
     return ManagedElementDiff()
 
 
+def _diff_schemas(config_dict: Dict[str, Any], dst_dict: Dict[str, Any]):
+    return diff_dicts(
+        config_dict=config_dict,
+        dst_dict=dst_dict,
+        custom_compare_fn=lambda k, cv, dv: True
+        if (cv is UNSET and dv is True) or (dv is UNSET and cv is False)
+        else None,
+    )
+
+
 def diff_connectors(
     config_conn: Optional[FivetranConnector],
     curr_conn: Optional[FivetranConnector],
@@ -71,6 +83,15 @@ def diff_connectors(
         curr_conn.source_configuration if curr_conn else {},
         ignore_secrets,
     )
+    schema_diff = _diff_schemas(
+        config_conn.schema_configuration if config_conn else {},
+        curr_conn.schema_configuration if curr_conn else {},
+    )
+    if not schema_diff.is_empty():
+        diff = diff.with_nested(
+            "schemas",
+            schema_diff,
+        )
     if not diff.is_empty():
         name = (
             config_conn.schema_name
@@ -82,6 +103,58 @@ def diff_connectors(
         return ManagedElementDiff().with_nested(name, diff)
 
     return ManagedElementDiff()
+
+
+def generate_schema_config_input(schema_config: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Given a compressed schema layout dict, generate the input for the Fivetran API.
+
+    e.g.
+
+    {
+        "my_schema_1": True,
+        "my_schema_2": {
+            "my_table_1": True,
+            "my_table_2": False,
+        },
+    }
+
+    produces
+
+    {
+        "schemas": {
+            "my_schema_1": {
+                "enabled": True,
+            },
+            "my_schema_2": {
+                "enabled": True,
+                "tables": {
+                    "my_table_1": {
+                        "enabled": True,
+                    },
+                    "my_table_2": {
+                        "enabled": False,
+                    },
+                },
+            },
+        },
+    }
+    """
+    schemas = {}
+    for schema_name, schema_value in schema_config.items():
+        schemas[schema_name] = {
+            "enabled": schema_value is not False,
+        }
+
+        if isinstance(schema_value, dict):
+            tables = {}
+            for table_name, table_value in schema_value.items():
+                tables[table_name] = {
+                    "enabled": table_value is not False,
+                }
+            schemas[schema_name]["tables"] = tables
+
+    return {"schemas": schemas}
 
 
 def reconcile_connectors(
@@ -138,25 +211,38 @@ def reconcile_connectors(
             if not dry_run:
                 if existing_connector:
                     connector_id = existing_connector.connector_id
-                    if not dry_run:
-                        res.make_request(
-                            method="PATCH",
-                            endpoint=f"connectors/{connector_id}",
-                            data=json.dumps(base_connector_dict),
-                        )
+                    res.make_request(
+                        method="PATCH",
+                        endpoint=f"connectors/{connector_id}",
+                        data=json.dumps(base_connector_dict),
+                    )
                 else:
-                    if not dry_run:
-                        res.make_request(
-                            method="POST",
-                            endpoint="connectors",
-                            data=json.dumps(
-                                {
-                                    "service": configured_connector.source_type,
-                                    "group_id": group_id,
-                                    **base_connector_dict,
-                                }
-                            ),
-                        )
+                    result = res.make_request(
+                        method="POST",
+                        endpoint="connectors",
+                        data=json.dumps(
+                            {
+                                "service": configured_connector.source_type,
+                                "group_id": group_id,
+                                **base_connector_dict,
+                            }
+                        ),
+                    )
+                    connector_id = result["id"]
+
+                res.make_request(
+                    method="POST",
+                    endpoint=f"connectors/{connector_id}/schemas/reload",
+                )
+
+                schema_input = generate_schema_config_input(
+                    configured_connector.schema_configuration
+                )
+                res.make_request(
+                    method="PATCH",
+                    endpoint=f"connectors/{connector_id}/schemas",
+                    data=json.dumps(schema_input),
+                )
 
     return diff
 
@@ -313,8 +399,13 @@ def reconcile_config(
     existing_connectors_raw = list(
         chain.from_iterable(get_connectors_for_group(res, group["id"]) for group in existing_groups)
     )
+    existing_connectors_schemas = [
+        res.make_request("GET", f"connectors/{connector['id']}/schemas")
+        for connector in existing_connectors_raw
+    ]
     existing_connectors_list = [
-        InitializedFivetranConnector.from_api_json(conn) for conn in existing_connectors_raw
+        InitializedFivetranConnector.from_api_json(conn, schemas_json)
+        for conn, schemas_json in zip(existing_connectors_raw, existing_connectors_schemas)
     ]
     existing_connectors = {conn.connector.schema_name: conn for conn in existing_connectors_list}
 
