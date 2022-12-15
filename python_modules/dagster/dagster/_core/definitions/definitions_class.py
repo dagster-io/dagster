@@ -5,9 +5,9 @@ from dagster._annotations import public
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 from dagster._utils.backcompat import experimental_arg_warning
 from dagster._utils.cached_method import cached_method
 
@@ -20,7 +20,6 @@ from .repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
 )
-from .resource_definition import ResourceDefinition
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
@@ -101,7 +100,7 @@ class Definitions:
             check.mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
             experimental_arg_warning("loggers", "Definitions.__init__")
 
-        resource_defs = coerce_resources_to_defs(resources or {})
+        resource_defs = wrap_resources_for_execution(resources or {})
 
         @repository(
             name=SINGLETON_REPOSITORY_NAME,
@@ -215,16 +214,3 @@ class Definitions:
         at CLI entry points. We explicitly do not want to resolve the pending repo because the entire
         point is to defer that resolution until later."""
         return self._created_pending_or_normal_repo
-
-
-def coerce_resources_to_defs(resources: Mapping[str, Any]) -> Dict[str, ResourceDefinition]:
-    resource_defs = {}
-    for key, resource_obj in resources.items():
-        resource_defs[key] = (
-            resource_obj
-            if isinstance(resource_obj, ResourceDefinition)
-            else IOManagerDefinition.hardcoded_io_manager(resource_obj)
-            if isinstance(resource_obj, IOManager)
-            else ResourceDefinition.hardcoded_resource(resource_obj)
-        )
-    return resource_defs
