@@ -26,7 +26,7 @@
 - Fixed an issue where Python-defined Airbyte sources and destinations were occasionally recreated unnecessarily.
 - Fixed an issue with `build_asset_reconciliation_sensor` that would cause it to ignore in-progress runs in some cases.
 
-- Fixed a bug where GQL errors would be thrown in the asset explorer when a previously materialized asset had its dependencies changed
+- Fixed a bug where GQL errors would be thrown in the asset explorer when a previously materialized asset had its dependencies changed.
 - [dagster-airbyte] Fixed an error when generating assets for normalization table for connections with non-object streams.
 - [dagster-dbt] Fixed an error where dbt Cloud jobs with `dbt run` and `dbt run-operation` were incorrectly validated.
 - [dagster-airflow] `use_ephemeral_airflow_db` now works when running within a PEX deployment artifact.
