@@ -27,7 +27,7 @@ Asset sensors allow you to instigate runs when materializations occur.
 
 An asset sensor checks for new <PyObject object="AssetMaterialization" /> events for a particular asset key. This can be used to kick off a job that computes downstream assets or notifies appropriate stakeholders.
 
-One benefit of this pattern is that it enables cross-job and even cross-repository dependencies. Each job run instigated by an asset sensor is agnostic to the job that caused it.
+One benefit of this pattern is that it enables cross-job and even cross-code-location dependencies. Each job run instigated by an asset sensor is agnostic to the job that caused it.
 
 Dagster provides a special asset sensor definition format for sensors that fire a single <PyObject object="RunRequest"/> based on a single asset materialization. Here is an example of a sensor that generates a <PyObject object="RunRequest"/> for every materialization for the asset key `my_table`:
 
@@ -234,21 +234,18 @@ Dagster provides an out-of-box sensor that will monitor a provided set of assets
 
 The sensor materializes unreconciled assets and avoids materializing assets before their parents are reconciled.
 
-You can create this sensor using the <PyObject object="build_asset_reconciliation_sensor"/> function. This sensor can help you keep your assets up-to-date without needing to write custom schedules or sensors for each asset. To use an asset reconciliation sensor, add it to your repository:
+You can create this sensor using the <PyObject object="build_asset_reconciliation_sensor"/> function. This sensor can help you keep your assets up-to-date without needing to write custom schedules or sensors for each asset.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_reconciliation_sensor.py startafter=start_asset_reconciliation_sensor endbefore=end_asset_reconciliation_sensor
-@repository
-def repository_1():
-    return [
-        asset1,
-        asset2,
-        asset3,
-        asset4,
+defs = Definitions(
+    assets=[asset1, asset2, asset3, asset4],
+    sensors=[
         build_asset_reconciliation_sensor(
             asset_selection=AssetSelection.assets(asset1, asset3, asset4),
             name="asset_reconciliation_sensor",
         ),
-    ]
+    ],
+)
 ```
 
 This sensor will materialize each selected asset `asset1`, `asset3`, and `asset4` whenever any of its parents materialize.
