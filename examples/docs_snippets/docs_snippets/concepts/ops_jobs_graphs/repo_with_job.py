@@ -1,4 +1,4 @@
-from dagster import Definitions, job
+from dagster import job, repository
 
 
 @job
@@ -6,4 +6,6 @@ def do_it_all():
     ...
 
 
-defs = Definitions(jobs=[do_it_all])
+@repository
+def my_repo():
+    return [do_it_all]
