@@ -5,7 +5,7 @@ import os
 import pandas as pd
 from pandas import DataFrame
 
-from dagster import AssetKey, IOManager, io_manager
+from dagster import AssetKey, IOManager
 
 
 class LocalFileSystemIOManager(IOManager):
@@ -24,8 +24,3 @@ class LocalFileSystemIOManager(IOManager):
         """This reads a dataframe from a CSV."""
         fpath = self._get_fs_path(context.asset_key)
         return pd.read_csv(fpath)
-
-
-@io_manager
-def local_filesystem_io_manager():
-    return LocalFileSystemIOManager()
