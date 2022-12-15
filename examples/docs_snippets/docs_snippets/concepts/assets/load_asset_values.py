@@ -28,7 +28,9 @@ def get_assets():
 
     return with_resources(
         [asset1, asset2],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        resource_defs={
+            "io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())
+        },
     )
 
 
