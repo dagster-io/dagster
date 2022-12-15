@@ -169,7 +169,7 @@ class TimeWindowPartitionMapping(
                 window_end = (
                     to_partitions_def.end_time_for_partition_key(to_end_partition_key)
                     if to_end_partition_key
-                    else to_partitions_def.get_last_partition_window().end
+                    else cast(TimeWindow, to_partitions_def.get_last_partition_window()).end
                 )
 
                 time_windows.append(TimeWindow(window_start, window_end))
