@@ -129,12 +129,12 @@ class RunStatusSensorContext:
 
     @public  # type: ignore
     @property
-    def dagster_event(self) -> DagsterRun:
+    def dagster_event(self) -> DagsterEvent:
         return self._dagster_event
 
     @public  # type: ignore
     @property
-    def instance(self) -> DagsterRun:
+    def instance(self) -> DagsterInstance:
         return self._instance
 
     @public  # type: ignore
