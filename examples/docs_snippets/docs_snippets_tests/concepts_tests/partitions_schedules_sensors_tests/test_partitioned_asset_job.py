@@ -4,4 +4,4 @@ from docs_snippets.concepts.partitions_schedules_sensors.partitioned_asset_job i
 
 
 def test():
-    assert defs.get_job_def("partitioned_asset_job")
+    assert defs.get_job_def("asset_1_and_2_job")

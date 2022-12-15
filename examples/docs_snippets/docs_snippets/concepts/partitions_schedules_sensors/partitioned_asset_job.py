@@ -28,5 +28,5 @@ partitioned_asset_job = define_asset_job(
 
 defs = Definitions(
     assets=[asset1, asset2],
-    jobs=[partitioned_asset_job],
+    jobs=[asset_1_and_2_job],
 )
