@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, Dict, Iterable, Mapping, Optional, Type, Union
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import experimental, public
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 
+@public
 @experimental
 def create_repository_using_definitions_args(
     name: str,
@@ -42,6 +43,11 @@ def create_repository_using_definitions_args(
     executor: Optional[ExecutorDefinition] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
 ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
+    """
+    For users who, for the time being, want to continue to use multiple named repositories in
+    a single code location, you can use this function. The behavior (e.g. applying resources to
+    all assets) are identical to :py:class:`Definitions` but this returns a named repository."""
+
     return _create_repository_using_definitions_args(
         name=name,
         assets=assets,
