@@ -2,9 +2,14 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Sequence, Ty
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._core.definitions.decorators.job_decorator import PendingJobDefinition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.repository_definition import (
+    PendingRepositoryDefinition,
+    RepositoryDefinition,
+)
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.executor.base import Executor
@@ -18,8 +23,6 @@ from .job_definition import JobDefinition
 from .partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
 from .repository_definition import (
     SINGLETON_REPOSITORY_NAME,
-    PendingRepositoryDefinition,
-    RepositoryDefinition,
 )
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
@@ -91,7 +94,9 @@ def _create_repository_using_definitions_args(
         Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
     ] = None,
     sensors: Optional[Iterable[SensorDefinition]] = None,
-    jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
+    jobs: Optional[
+        Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition, PendingJobDefinition]]
+    ] = None,
     resources: Optional[Mapping[str, Any]] = None,
     executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
@@ -103,7 +108,9 @@ def _create_repository_using_definitions_args(
         schedules, "schedules", (ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition)
     )
     check.opt_iterable_param(sensors, "sensors", SensorDefinition)
-    check.opt_iterable_param(jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition))
+    check.opt_iterable_param(
+        jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition, PendingJobDefinition)
+    )
 
     resource_defs = wrap_resources_for_execution(resources or {})
 
@@ -117,18 +124,25 @@ def _create_repository_using_definitions_args(
 
     check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
 
+    new_jobs = []
+    for job in jobs or []:
+        if isinstance(job, PendingJobDefinition):
+            new_jobs.append(job.bind_job_to_resources(resource_defs))
+        else:
+            new_jobs.append(job)
+
     @repository(
         name=name,
         default_executor_def=executor_def,
         default_logger_defs=loggers,
         _top_level_resources=resource_defs,
     )
-    def created_repo():
+    def created_repo() -> list:
         return [
             *with_resources(assets or [], resource_defs),
             *(schedules or []),
             *(sensors or []),
-            *(jobs or []),
+            *new_jobs,
         ]
 
     return created_repo

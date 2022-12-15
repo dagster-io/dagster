@@ -107,3 +107,4 @@ def test_job_logger():
         run_config={"loggers": {"basic_logger": {"config": "hullo"}}},
     )
     assert called["basic_logger"] == "hullo"
+

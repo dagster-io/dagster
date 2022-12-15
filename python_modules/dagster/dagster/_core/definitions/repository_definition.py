@@ -753,7 +753,7 @@ class CachingRepositoryData(RepositoryData):
         schedule_and_sensor_names: Set[str] = set()
         pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
         coerced_graphs: Dict[str, JobDefinition] = {}
-        unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition] = {}
+        unresolved_asset_jobs: Dict[str, UnresolvedAssetJobDefinition] = {}
         partition_sets: Dict[str, PartitionSetDefinition[object]] = {}
         schedules: Dict[str, ScheduleDefinition] = {}
         unresolved_partitioned_asset_schedules: Dict[
@@ -769,7 +769,7 @@ class CachingRepositoryData(RepositoryData):
                 if (
                     definition.name in pipelines_or_jobs
                     and pipelines_or_jobs[definition.name] != definition
-                ) or definition.name in unresolved_jobs:
+                ) or definition.name in unresolved_asset_jobs:
                     raise DagsterInvalidDefinitionError(
                         f"Duplicate {definition.target_type} definition found for"
                         f" {definition.describe_target()}"
@@ -832,12 +832,12 @@ class CachingRepositoryData(RepositoryData):
                 pipelines_or_jobs[coerced.name] = coerced
                 coerced_graphs[coerced.name] = coerced
             elif isinstance(definition, UnresolvedAssetJobDefinition):
-                if definition.name in pipelines_or_jobs or definition.name in unresolved_jobs:
+                if definition.name in pipelines_or_jobs or definition.name in unresolved_asset_jobs:
                     raise DagsterInvalidDefinitionError(
                         f"Duplicate definition found for unresolved job '{definition.name}'"
                     )
                 # we can only resolve these once we have all assets
-                unresolved_jobs[definition.name] = definition
+                unresolved_asset_jobs[definition.name] = definition
             elif isinstance(definition, AssetGroup):
                 if combined_asset_group:
                     combined_asset_group += definition
@@ -903,7 +903,11 @@ class CachingRepositoryData(RepositoryData):
                 if schedules[name].has_loadable_target():
                     target = schedules[name].load_target()
                     _process_and_validate_target(
-                        schedules[name], coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
+                        schedules[name],
+                        coerced_graphs,
+                        unresolved_asset_jobs,
+                        pipelines_or_jobs,
+                        target,
                     )
 
         for name, sensor_def in sensors.items():
@@ -911,22 +915,36 @@ class CachingRepositoryData(RepositoryData):
                 targets = sensor_def.load_targets()
                 for target in targets:
                     _process_and_validate_target(
-                        sensor_def, coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
+                        sensor_def, coerced_graphs, unresolved_asset_jobs, pipelines_or_jobs, target
                     )
 
         for name, schedule_def in schedules.items():
             if schedule_def.has_loadable_target():
                 target = schedule_def.load_target()
                 _process_and_validate_target(
-                    schedule_def, coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
+                    schedule_def, coerced_graphs, unresolved_asset_jobs, pipelines_or_jobs, target
                 )
 
-        if unresolved_jobs:
-            for name, unresolved_job_def in unresolved_jobs.items():
-                resolved_job = unresolved_job_def.resolve(
-                    asset_graph=asset_graph, default_executor_def=default_executor_def
+        # if unresolved_jobs:
+        #     for name, unresolved_job_def in unresolved_jobs.items():
+        #         resolved_job = unresolved_job_def.resolve(
+        #             asset_graph=asset_graph, default_executor_def=default_executor_def
+        #         )
+        #         pipelines_or_jobs[name] = resolved_job
+
+        # resolve all the UnresolvedAssetJobDefinitions using the full set of assets
+        for name, unresolved_asset_job_def in unresolved_asset_jobs.items():
+            if not combined_asset_group:
+                raise DagsterInvalidDefinitionError(
+                    f"UnresolvedAssetJobDefinition {name} specified, but no AssetsDefinitions exist"
+                    " on the repository."
                 )
-                pipelines_or_jobs[name] = resolved_job
+            resolved_job = unresolved_asset_job_def.resolve(
+                assets=combined_asset_group.assets,
+                source_assets=combined_asset_group.source_assets,
+                default_executor_def=default_executor_def,
+            )
+            pipelines_or_jobs[name] = resolved_job
 
         pipelines: Dict[str, PipelineDefinition] = {}
         jobs: Dict[str, JobDefinition] = {}

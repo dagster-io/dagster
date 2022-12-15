@@ -1,8 +1,19 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Mapping, Optional, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Union,
+    overload,
+)
 
 import dagster._check as check
 from dagster._core.decorator_utils import format_docstring_for_description
+from dagster._core.definitions.pipeline_definition import get_resource_requirements_for_graph
 
 from ..config import ConfigMapping
 from ..graph_definition import GraphDefinition
@@ -17,6 +28,38 @@ from ..version_strategy import VersionStrategy
 if TYPE_CHECKING:
     from ..executor_definition import ExecutorDefinition
     from ..partition import PartitionedConfig, PartitionsDefinition
+
+
+class PendingJobDefinition(NamedTuple):
+    name: str
+    graph_def: GraphDefinition
+    description: Optional[str]
+    tags: Optional[Mapping[str, Any]]
+    metadata: Optional[Mapping[str, RawMetadataValue]]
+    loggers: Optional[Mapping[str, LoggerDefinition]]
+    executor_def: Optional["ExecutorDefinition"]
+    config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"]]
+    hooks: Optional[AbstractSet[HookDefinition]]
+    op_retry_policy: Optional[RetryPolicy]
+    version_strategy: Optional[VersionStrategy]
+    partitions_def: Optional["PartitionsDefinition[object]"]
+    input_values: Optional[Mapping[str, object]]
+
+    def bind_job_to_resources(self, resource_defs):
+        return self.graph_def.to_job(
+            description=self.description,
+            resource_defs=resource_defs,
+            config=self.config,
+            tags=self.tags,
+            metadata=self.metadata,
+            logger_defs=None,
+            executor_def=None,
+            hooks=self.hooks,
+            op_retry_policy=self.op_retry_policy,
+            version_strategy=self.version_strategy,
+            partitions_def=self.partitions_def,
+            input_values=self.input_values,
+        )
 
 
 class _Job:
@@ -52,7 +95,7 @@ class _Job:
         self.partitions_def = partitions_def
         self.input_values = input_values
 
-    def __call__(self, fn: Callable[..., Any]) -> JobDefinition:
+    def __call__(self, fn: Callable[..., Any]) -> Union[JobDefinition, PendingJobDefinition]:
         check.callable_param(fn, "fn")
 
         if not self.name:
@@ -90,6 +133,29 @@ class _Job:
             tags=self.tags,
             node_input_source_assets=node_input_source_assets,
         )
+
+        required_keys = get_resource_requirements_for_graph(
+            graph_def=graph_def,
+            hook_defs=self.hooks,
+        )
+
+        # there is always an io_manager requirement
+        if len(required_keys) > 1 and self.resource_defs is None:
+            return PendingJobDefinition(
+                name=self.name,
+                graph_def=graph_def,
+                description=self.description or format_docstring_for_description(fn),
+                config=self.config,
+                tags=self.tags,
+                metadata=self.metadata,
+                loggers=self.logger_defs,
+                executor_def=self.executor_def,
+                hooks=self.hooks,
+                op_retry_policy=self.op_retry_policy,
+                version_strategy=self.version_strategy,
+                partitions_def=self.partitions_def,
+                input_values=self.input_values,
+            )
 
         job_def = graph_def.to_job(
             description=self.description or format_docstring_for_description(fn),
@@ -150,7 +216,7 @@ def job(
     version_strategy: Optional[VersionStrategy] = None,
     partitions_def: Optional["PartitionsDefinition[object]"] = None,
     input_values: Optional[Mapping[str, object]] = None,
-) -> Union[JobDefinition, _Job]:
+) -> Union[PendingJobDefinition, JobDefinition, _Job]:
     """Creates a job with the specified parameters from the decorated graph/op invocation function.
 
     Using this decorator allows you to build an executable job by writing a function that invokes

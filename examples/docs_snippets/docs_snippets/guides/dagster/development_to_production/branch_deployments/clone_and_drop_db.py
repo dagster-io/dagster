@@ -1,6 +1,6 @@
 import os
 
-from dagster import In, Nothing, graph, op
+from dagster import In, Nothing, job, op
 
 
 # start_clone_db
@@ -21,7 +21,7 @@ def clone_production_database(context):
     )
 
 
-@graph
+@job
 def clone_prod():
     clone_production_database(start=drop_database_clone())
 

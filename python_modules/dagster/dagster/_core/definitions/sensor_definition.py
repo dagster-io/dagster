@@ -486,9 +486,7 @@ class SensorDefinition:
                 return True
         return False
 
-    def load_targets(
-        self,
-    ) -> Sequence[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
+    def load_targets(self) -> Sequence[ExecutableDefinition]:
         targets = []
         for target in self._targets:
             if isinstance(target, DirectTarget):

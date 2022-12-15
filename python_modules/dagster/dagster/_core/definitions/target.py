@@ -9,10 +9,12 @@ from .pipeline_definition import PipelineDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.decorators.job_decorator import PendingJobDefinition
+
     from .graph_definition import GraphDefinition
 
 ExecutableDefinition: TypeAlias = Union[
-    PipelineDefinition, "GraphDefinition", UnresolvedAssetJobDefinition
+    PipelineDefinition, "GraphDefinition", UnresolvedAssetJobDefinition, "PendingJobDefinition"
 ]
 
 
@@ -41,10 +43,19 @@ class DirectTarget(
         cls,
         target: ExecutableDefinition,
     ):
+        from dagster._core.definitions.decorators.job_decorator import PendingJobDefinition
+
         from .graph_definition import GraphDefinition
 
         check.inst_param(
-            target, "target", (GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition)
+            target,
+            "target",
+            (
+                GraphDefinition,
+                PipelineDefinition,
+                UnresolvedAssetJobDefinition,
+                PendingJobDefinition,
+            ),
         )
 
         if isinstance(target, PipelineDefinition) and not len(target.mode_definitions) == 1:

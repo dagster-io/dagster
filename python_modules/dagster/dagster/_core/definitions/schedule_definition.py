@@ -632,9 +632,7 @@ class ScheduleDefinition:
             self.load_target(), UnresolvedAssetJobDefinition
         )
 
-    def load_target(
-        self,
-    ) -> Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]:
+    def load_target(self) -> ExecutableDefinition:
         if isinstance(self._target, DirectTarget):
             return self._target.load()
 
