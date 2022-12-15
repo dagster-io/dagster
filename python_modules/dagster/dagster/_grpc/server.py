@@ -871,7 +871,10 @@ class DagsterGrpcServer:
         check.opt_str_param(location_name, "location_name")
 
         self.server = grpc.server(
-            ThreadPoolExecutor(max_workers=max_workers),
+            ThreadPoolExecutor(
+                max_workers=max_workers,
+                thread_name_prefix="grpc-server-rpc-handler",
+            ),
             compression=grpc.Compression.Gzip,
             options=[
                 ("grpc.max_send_message_length", max_send_bytes()),
