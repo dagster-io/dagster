@@ -500,6 +500,14 @@ def logging_sensor(context):
     return SkipReason()
 
 
+@run_status_sensor(
+    monitor_all_repositories=True,
+    run_status=DagsterRunStatus.SUCCESS,
+)
+def logging_status_sensor(context):
+    context.log.info(f"run succeeded: {context.dagster_run.run_id}")
+
+
 @repository
 def the_repo():
     return [
@@ -547,6 +555,7 @@ def the_repo():
         asset_selection_sensor,
         targets_asset_selection_sensor,
         logging_sensor,
+        logging_status_sensor,
     ]
 
 

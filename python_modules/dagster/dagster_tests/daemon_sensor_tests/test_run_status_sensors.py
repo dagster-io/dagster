@@ -9,10 +9,12 @@ import pytest
 from dagster import DagsterRunStatus
 from dagster import _check as check
 from dagster import file_relative_path
+from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.host_representation import ExternalRepository, RepositoryLocation
 from dagster._core.instance import DagsterInstance
+from dagster._core.log_manager import DAGSTER_META_KEY
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
@@ -1165,3 +1167,63 @@ def test_instance_run_status_sensor(executor):
                 freeze_datetime,
                 TickStatus.SUCCESS,
             )
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_logging_run_status_sensor(executor, instance, workspace_context, external_repo):
+    freeze_datetime = pendulum.now()
+    with pendulum.test(freeze_datetime):
+        success_sensor = external_repo.get_external_sensor("logging_status_sensor")
+        instance.start_sensor(success_sensor)
+
+        evaluate_sensors(workspace_context, executor)
+
+        ticks = instance.get_ticks(
+            success_sensor.get_external_origin_id(), success_sensor.selector_id
+        )
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            success_sensor,
+            freeze_datetime,
+            TickStatus.SKIPPED,
+        )
+
+        freeze_datetime = freeze_datetime.add(seconds=60)
+        time.sleep(1)
+
+    with pendulum.test(freeze_datetime):
+        external_pipeline = external_repo.get_full_external_job("foo_pipeline")
+        run = instance.create_run_for_pipeline(
+            foo_pipeline,
+            external_pipeline_origin=external_pipeline.get_external_origin(),
+            pipeline_code_origin=external_pipeline.get_python_origin(),
+        )
+        instance.submit_run(run.run_id, workspace_context.create_request_context())
+        wait_for_all_runs_to_finish(instance)
+        run = instance.get_runs()[0]
+        assert run.status == DagsterRunStatus.SUCCESS
+        freeze_datetime = freeze_datetime.add(seconds=60)
+
+    with pendulum.test(freeze_datetime):
+
+        # should fire the success sensor and the started sensor
+        evaluate_sensors(workspace_context, executor)
+
+        ticks = instance.get_ticks(
+            success_sensor.get_external_origin_id(), success_sensor.selector_id
+        )
+        assert len(ticks) == 2
+        validate_tick(
+            ticks[0],
+            success_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+        )
+        tick = ticks[0]
+        assert tick.log_key
+        records = get_instigation_log_records(instance, tick.log_key)
+        assert len(records) == 1
+        record = records[0]
+        assert record[DAGSTER_META_KEY]["orig_message"] == f"run succeeded: {run.run_id}"
+        instance.compute_log_manager.delete_logs(log_key=tick.log_key)
