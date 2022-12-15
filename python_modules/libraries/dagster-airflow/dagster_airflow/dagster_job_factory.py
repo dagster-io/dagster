@@ -8,6 +8,7 @@ def make_dagster_job_from_airflow_dag(
     unique_id=None,
     mock_xcom=False,
     use_ephemeral_airflow_db=False,
+    connections=None,
 ):
     """Construct a Dagster job corresponding to a given Airflow DAG.
 
@@ -55,6 +56,8 @@ def make_dagster_job_from_airflow_dag(
             depend on xcom may not work as expected. (default: False)
         use_ephemeral_airflow_db (bool): If True, dagster will create an ephemeral sqlite airflow
             database for each run. (default: False)
+        connections (List[Connection]): List of Airflow Connections to be created in the Ephemeral
+            Airflow DB, if use_emphemeral_airflow_db is False this will be ignored.
 
     Returns:
         JobDefinition: The generated Dagster job
@@ -67,6 +70,7 @@ def make_dagster_job_from_airflow_dag(
         unique_id=unique_id,
         mock_xcom=mock_xcom,
         use_ephemeral_airflow_db=use_ephemeral_airflow_db,
+        connections=connections,
     )
     # pass in tags manually because pipeline_def.graph doesn't have it threaded
     return pipeline_def.graph.to_job(
