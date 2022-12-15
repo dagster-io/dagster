@@ -68,12 +68,10 @@ export const CodeLocationRowSet: React.FC<Props> = ({locationNode}) => {
         const repoAddress = buildRepoAddress(repository.name, name);
         return (
           <tr key={repoAddressAsHumanString(repoAddress)}>
-            <td style={{maxWidth: '400px'}}>
-              <strong>
-                <Link to={workspacePathFromAddress(repoAddress)}>
-                  <MiddleTruncate text={repoAddressAsHumanString(repoAddress)} />
-                </Link>
-              </strong>
+            <td style={{maxWidth: '400px', fontWeight: 500}}>
+              <Link to={workspacePathFromAddress(repoAddress)}>
+                <MiddleTruncate text={repoAddressAsHumanString(repoAddress)} />
+              </Link>
             </td>
             <td>
               <LocationStatus location={repository.name} locationOrError={locationNode} />

@@ -34,6 +34,8 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         max_concurrent_runs=None,
         tag_concurrency_limits=None,
         dequeue_interval_seconds=None,
+        dequeue_use_threads=None,
+        dequeue_num_workers=None,
         inst_data=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
@@ -51,6 +53,10 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         self._dequeue_interval_seconds = check.opt_int_param(
             dequeue_interval_seconds, "dequeue_interval_seconds", 5
         )
+        self._dequeue_use_threads = check.opt_bool_param(
+            dequeue_use_threads, "dequeue_use_threads", False
+        )
+        self._dequeue_num_workers = check.opt_int_param(dequeue_num_workers, "dequeue_num_workers")
         self._logger = logging.getLogger("dagster.run_coordinator.queued_run_coordinator")
         super().__init__()
 
@@ -67,6 +73,14 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
     @property
     def dequeue_interval_seconds(self):
         return self._dequeue_interval_seconds
+
+    @property
+    def dequeue_use_threads(self) -> bool:
+        return self._dequeue_use_threads
+
+    @property
+    def dequeue_num_workers(self) -> Optional[int]:
+        return self._dequeue_num_workers
 
     @classmethod
     def config_type(cls):
@@ -109,6 +123,16 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
                 description="The interval in seconds at which the Dagster Daemon "
                 "should periodically check the run queue for new runs to launch.",
             ),
+            "dequeue_use_threads": Field(
+                config=bool,
+                is_required=False,
+                description="Whether or not to use threads for concurrency when launching dequeued runs.",
+            ),
+            "dequeue_num_workers": Field(
+                config=IntSource,
+                is_required=False,
+                description="If dequeue_use_threads is true, limit the number of concurrent worker threads.",
+            ),
         }
 
     @classmethod
@@ -118,6 +142,8 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             max_concurrent_runs=config_value.get("max_concurrent_runs"),
             tag_concurrency_limits=config_value.get("tag_concurrency_limits"),
             dequeue_interval_seconds=config_value.get("dequeue_interval_seconds"),
+            dequeue_use_threads=config_value.get("dequeue_use_threads"),
+            dequeue_num_workers=config_value.get("max_dequeue_workers"),
         )
 
     def submit_run(self, context: SubmitRunContext) -> DagsterRun:
