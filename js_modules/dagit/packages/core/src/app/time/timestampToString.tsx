@@ -1,6 +1,3 @@
-import memoize from 'lodash/memoize';
-import moment from 'moment-timezone';
-
 import {TimeFormat, DEFAULT_TIME_FORMAT} from './TimestampFormat';
 import {browserTimezone} from './browserTimezone';
 
@@ -15,11 +12,21 @@ type Config = {
 // encourage use of the same default format string across the app.
 export const timestampToString = (config: Config) => {
   const {timestamp, locale, timezone, timeFormat = DEFAULT_TIME_FORMAT} = config;
-  const m = 'ms' in timestamp ? moment(timestamp.ms) : moment.unix(timestamp.unix);
+  const msec = 'ms' in timestamp ? timestamp.ms : timestamp.unix * 1000;
+  const date = new Date(msec);
   const targetTimezone = timezone === 'Automatic' ? browserTimezone() : timezone;
-  const sameYear = moment(Date.now()).tz(targetTimezone).year() === m.tz(targetTimezone).year();
 
-  return m.toDate().toLocaleDateString(locale, {
+  const timestampYear = date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    timeZone: targetTimezone,
+  });
+  const viewerYear = new Date(Date.now()).toLocaleDateString('en-US', {
+    year: 'numeric',
+    timeZone: targetTimezone,
+  });
+  const sameYear = timestampYear === viewerYear;
+
+  return date.toLocaleDateString(locale, {
     month: 'short',
     day: 'numeric',
     year: sameYear ? undefined : 'numeric',
@@ -30,5 +37,3 @@ export const timestampToString = (config: Config) => {
     timeZoneName: timeFormat.showTimezone ? 'short' : undefined,
   });
 };
-
-export const timeZoneAbbr = memoize((tzIn: string) => moment().tz(tzIn).zoneAbbr());
