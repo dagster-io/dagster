@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Sequence,
 import pendulum
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, public
+from dagster._annotations import public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
