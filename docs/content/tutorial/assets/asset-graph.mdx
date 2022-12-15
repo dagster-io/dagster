@@ -3,7 +3,7 @@ title: Building Graphs of Assets | Dagster
 description: Software-defined assets can depend on other software-defined assets
 ---
 
-# Building Graphs of Assets
+# Building graphs of assets
 
 Software-defined assets can depend on other software-defined assets. An asset dependency means that the contents of an "upstream" asset are used to compute the contents of the "downstream" asset.
 
@@ -58,11 +58,13 @@ dagit -f serial_asset_graph.py
 
 Navigate to <http://127.0.0.1:3000>:
 
+<!-- ![Serial asset graph in Dagit](/images/guides/asset-tutorial/serial_asset_graph.png) -->
+
 <Image
-alt="Serial asset graph"
+alt="Serial asset graph in Dagit"
 src="/images/guides/asset-tutorial/serial_asset_graph.png"
-width={1331}
-height={874}
+width={3574}
+height={1962}
 />
 
 <br />
@@ -134,11 +136,13 @@ dagit -f complex_asset_graph.py
 
 Navigate to <http://127.0.0.1:3000>:
 
+<!-- ![Complex asset graph](/images/guides/asset-tutorial/complex_asset_graph.png) -->
+
 <Image
 alt="Complex asset graph"
 src="/images/guides/asset-tutorial/complex_asset_graph.png"
-width={1331}
-height={874}
+width={3574}
+height={1962}
 />
 
-If you click the "Materialize All" button, you'll see that `cereals` executes first, followed by `nabisco_cereals` and `cereal_protein_fractions` executing in parallel, since they don't depend on each other's outputs. Finally, `highest_protein_nabisco_cereal` executes last, only after `nabisco_cereals` and `cereal_protein_fractions` have both executed.
+If you click **Materialize All** button, you'll see that `cereals` executes first, followed by `nabisco_cereals` and `cereal_protein_fractions` executing in parallel, since they don't depend on each other's outputs. Finally, `highest_protein_nabisco_cereal` executes last, only after `nabisco_cereals` and `cereal_protein_fractions` have both executed.
