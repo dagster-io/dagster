@@ -23,7 +23,7 @@
 - Fixed an issue where schedules often took up to 5 seconds to start after their tick time.
 - Fixed an issue where Dagster failed to load a dagster.yaml file that specified the folder to use for sqlite storage in the `dagster.yaml` file using an environment variable.
 - Fixed an issue which would cause the k8s/docker executors to unnecessarily reload CacheableAssetsDefinitions (such as those created when using `load_assets_from_dbt_cloud_job`) on each step execution.
-- Fixed an issue where Python-defined Airbyte sources and destinations were occasionally recreated unnecessarily.
+- [dagster-airbyte] Fixed an issue where Python-defined Airbyte sources and destinations were occasionally recreated unnecessarily.
 - Fixed an issue with `build_asset_reconciliation_sensor` that would cause it to ignore in-progress runs in some cases.
 
 - Fixed a bug where GQL errors would be thrown in the asset explorer when a previously materialized asset had its dependencies changed.
