@@ -49,6 +49,7 @@ class RunRequest(
             ("tags", PublicAttr[Mapping[str, str]]),
             ("job_name", PublicAttr[Optional[str]]),
             ("asset_selection", PublicAttr[Optional[Sequence[AssetKey]]]),
+            ("stale_only", PublicAttr[bool]),
         ],
     )
 ):
@@ -81,6 +82,7 @@ class RunRequest(
         tags: Optional[Mapping[str, str]] = None,
         job_name: Optional[str] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
+        stale_only: bool = False,
     ):
         return super(RunRequest, cls).__new__(
             cls,
@@ -91,6 +93,7 @@ class RunRequest(
             asset_selection=check.opt_nullable_sequence_param(
                 asset_selection, "asset_selection", of_type=AssetKey
             ),
+            stale_only=check.bool_param(stale_only, "stale_only"),
         )
 
     @property

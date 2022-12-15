@@ -93,6 +93,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
+    from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.host_representation import (
         ExternalPipeline,
         ExternalPipelineOrigin,
@@ -2341,3 +2342,7 @@ class DagsterInstance:
             materialization = next(iter(materializations), None)
 
         return materialization or observation
+
+    def get_stale_assets(self, job_def: JobDefinition) -> AbstractSet[AssetKey]:
+        all_keys = job_def.asset_layer.asset_keys
+

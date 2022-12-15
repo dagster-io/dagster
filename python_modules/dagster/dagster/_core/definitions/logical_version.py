@@ -186,3 +186,101 @@ def _extract_event_data_from_entry(
 
     assert isinstance(event_data, (AssetMaterialization, AssetObservation))
     return event_data
+
+# ########################
+# ##### PROJECTED LOGICAL VERSION LOADER
+# ########################
+
+class ProjectedLogicalVersionLoader:
+    """
+    A batch loader that computes the projected logical version for a set of asset keys. This is
+    necessary to avoid recomputation, since each asset's logical version is a function of its
+    dependency logical versions.
+    """
+
+    def __init__(
+        self,
+        instance: DagsterInstance,
+        repositories: Sequence[ExternalRepository],
+        key_to_node_map: Optional[Mapping[AssetKey, ExternalAssetNode]],
+    ):
+        self._instance = instance
+        self._key_to_node_map = check.opt_mapping_param(key_to_node_map, "key_to_node_map")
+        self._repositories = repositories
+
+    def get(self, asset_key: AssetKey) -> str:
+        return self._get_version(key=asset_key).value
+
+    @cached_method
+    def _get_version(self, *, key: AssetKey) -> LogicalVersion:
+        node = self._fetch_node(key)
+        if node.is_source:
+            event = self._instance.get_latest_logical_version_record(key, True)
+            if event:
+                version = (
+                    extract_logical_version_from_entry(event.event_log_entry)
+                    or DEFAULT_LOGICAL_VERSION
+                )
+            else:
+                version = DEFAULT_LOGICAL_VERSION
+        elif node.code_version is not None:
+            version = self._compute_projected_new_materialization_logical_version(node)
+        else:
+            materialization = self._instance.get_latest_materialization_event(key)
+            if materialization is None:  # never been materialized
+                version = self._compute_projected_new_materialization_logical_version(node)
+            else:
+                logical_version = extract_logical_version_from_entry(materialization)
+                provenance = extract_logical_version_provenance_from_entry(materialization)
+                if (
+                    logical_version is None  # old materialization event before logical versions
+                    or provenance is None  # should never happen
+                    or self._is_provenance_stale(node, provenance)
+                ):
+                    version = self._compute_projected_new_materialization_logical_version(node)
+                else:
+                    version = logical_version
+        return version
+
+    # Returns true if the current logical version of at least one input asset differs from the
+    # recorded logical version for that asset in the provenance. This indicates that a new
+    # materialization with up-to-date data would produce a different logical verson.
+    def _is_provenance_stale(
+        self, node: ExternalAssetNode, provenance: LogicalVersionProvenance
+    ) -> bool:
+        if self._has_updated_dependencies(node, provenance):
+            return True
+        else:
+            for k, v in provenance.input_logical_versions.items():
+                if self._get_version(key=k) != v:
+                    return True
+            return False
+
+    def _has_updated_dependencies(
+        self, node: ExternalAssetNode, provenance: LogicalVersionProvenance
+    ) -> bool:
+        curr_dep_keys = {dep.upstream_asset_key for dep in node.dependencies}
+        old_dep_keys = set(provenance.input_logical_versions.keys())
+        return curr_dep_keys != old_dep_keys
+
+    def _compute_projected_new_materialization_logical_version(
+        self, node: ExternalAssetNode
+    ) -> LogicalVersion:
+        dep_keys = {dep.upstream_asset_key for dep in node.dependencies}
+        return compute_logical_version(
+            node.code_version or UNKNOWN_VALUE,
+            {dep_key: self._get_version(key=dep_key) for dep_key in dep_keys},
+        )
+
+    def _fetch_node(self, key: AssetKey) -> ExternalAssetNode:
+        if key in self._key_to_node_map:
+            return self._key_to_node_map[key]
+        else:
+            self._fetch_all_nodes()
+            return self._fetch_node(key)
+
+    def _fetch_all_nodes(self) -> None:
+        self._key_to_node_map = {}
+        for repository in self._repositories:
+            for node in repository.get_external_asset_nodes():
+                self._key_to_node_map[node.asset_key] = node
