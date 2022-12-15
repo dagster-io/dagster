@@ -20,6 +20,7 @@ from dagster._core.definitions.cacheable_assets import (
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.decorators.job_decorator import job
+from dagster._core.definitions.definitions_class import create_repository_using_definitions_args
 from dagster._core.definitions.executor_definition import executor
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import logger
@@ -27,6 +28,7 @@ from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
 )
+from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
@@ -293,3 +295,108 @@ def test_bad_logger_value():
     with pytest.raises(CheckError):
         # ignore type to catch runtime error
         Definitions(loggers={"not_a_logger": "not_a_logger"})  # type: ignore
+
+
+def test_kitchen_sink_on_create_helper_and_definitions():
+    @asset(required_resource_keys={"a_resource_key"})
+    def an_asset():
+        pass
+
+    @asset
+    def another_asset():
+        pass
+
+    another_asset_job = define_asset_job(name="another_asset_job", selection="another_asset")
+
+    @op
+    def an_op():
+        pass
+
+    @job
+    def a_job():
+        an_op()
+
+    @job
+    def sensor_target():
+        an_op()
+
+    @job
+    def schedule_target():
+        an_op()
+
+    a_schedule = ScheduleDefinition(name="a_schedule", job=schedule_target, cron_schedule="@daily")
+
+    @sensor(job=sensor_target)
+    def a_sensor(_):
+        raise Exception("not called")
+
+    @executor
+    def an_executor(_):
+        raise Exception("not executed")
+
+    @logger
+    def a_logger(_):
+        raise Exception("not executed")
+
+    repo = create_repository_using_definitions_args(
+        name="foobar",
+        assets=[an_asset, another_asset],
+        jobs=[a_job, another_asset_job],
+        schedules=[a_schedule],
+        sensors=[a_sensor],
+        resources={"a_resource_key": "the resource"},
+        executor=an_executor,
+        loggers={"logger_key": a_logger},
+    )
+
+    assert isinstance(repo, RepositoryDefinition)
+
+    assert repo.name == "foobar"
+    assert isinstance(repo.get_job("a_job"), JobDefinition)
+    assert repo.get_job("a_job").executor_def is an_executor
+    assert repo.get_job("a_job").loggers == {"logger_key": a_logger}
+    assert isinstance(repo.get_job("__ASSET_JOB"), JobDefinition)
+    assert repo.get_job("__ASSET_JOB").executor_def is an_executor
+    assert repo.get_job("__ASSET_JOB").loggers == {"logger_key": a_logger}
+    assert isinstance(repo.get_job("another_asset_job"), JobDefinition)
+    assert repo.get_job("another_asset_job").executor_def is an_executor
+    assert repo.get_job("another_asset_job").loggers == {"logger_key": a_logger}
+    assert isinstance(repo.get_job("sensor_target"), JobDefinition)
+    assert repo.get_job("sensor_target").executor_def is an_executor
+    assert repo.get_job("sensor_target").loggers == {"logger_key": a_logger}
+    assert isinstance(repo.get_job("schedule_target"), JobDefinition)
+    assert repo.get_job("schedule_target").executor_def is an_executor
+    assert repo.get_job("schedule_target").loggers == {"logger_key": a_logger}
+
+    assert isinstance(repo.get_schedule_def("a_schedule"), ScheduleDefinition)
+    assert isinstance(repo.get_sensor_def("a_sensor"), SensorDefinition)
+
+    # test the kitchen sink since we have created it
+    defs = Definitions(
+        assets=[an_asset, another_asset],
+        jobs=[a_job, another_asset_job],
+        schedules=[a_schedule],
+        sensors=[a_sensor],
+        resources={"a_resource_key": "the resource"},
+        executor=an_executor,
+        loggers={"logger_key": a_logger},
+    )
+
+    assert isinstance(defs.get_job_def("a_job"), JobDefinition)
+    assert defs.get_job_def("a_job").executor_def is an_executor
+    assert defs.get_job_def("a_job").loggers == {"logger_key": a_logger}
+    assert isinstance(defs.get_job_def("__ASSET_JOB"), JobDefinition)
+    assert defs.get_job_def("__ASSET_JOB").executor_def is an_executor
+    assert defs.get_job_def("__ASSET_JOB").loggers == {"logger_key": a_logger}
+    assert isinstance(defs.get_job_def("another_asset_job"), JobDefinition)
+    assert defs.get_job_def("another_asset_job").executor_def is an_executor
+    assert defs.get_job_def("another_asset_job").loggers == {"logger_key": a_logger}
+    assert isinstance(defs.get_job_def("sensor_target"), JobDefinition)
+    assert defs.get_job_def("sensor_target").executor_def is an_executor
+    assert defs.get_job_def("sensor_target").loggers == {"logger_key": a_logger}
+    assert isinstance(defs.get_job_def("schedule_target"), JobDefinition)
+    assert defs.get_job_def("schedule_target").executor_def is an_executor
+    assert defs.get_job_def("schedule_target").loggers == {"logger_key": a_logger}
+
+    assert isinstance(defs.get_schedule_def("a_schedule"), ScheduleDefinition)
+    assert isinstance(defs.get_sensor_def("a_sensor"), SensorDefinition)
