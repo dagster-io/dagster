@@ -114,7 +114,10 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         if self._executor is None:
             # assumes max_workers wont change
             self._executor = self._exit_stack.enter_context(
-                ThreadPoolExecutor(max_workers=max_workers)
+                ThreadPoolExecutor(
+                    max_workers=max_workers,
+                    thread_name_prefix="run_dequeue_worker",
+                )
             )
         return self._executor
 
