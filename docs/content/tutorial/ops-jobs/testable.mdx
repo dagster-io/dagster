@@ -3,7 +3,7 @@ title: Testing Ops and Jobs | Dagster
 description: Dagster enables you to build testable ops and jobs
 ---
 
-# Testing Ops and Jobs
+# Testing ops and jobs
 
 <CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/basics/testing/" />
 
@@ -11,7 +11,9 @@ Data applications are notoriously difficult to test and are therefore often un- 
 
 Creating testable and verifiable ops and jobs is one of the focuses of Dagster. We believe ensuring data quality is critical for managing the complexity of data systems. Here, we'll show how to write unit tests for Dagster jobs and ops.
 
-## Testing the Job (and its Ops)
+---
+
+## Testing the job (and its ops)
 
 Let's go back to the `diamond` job we wrote in the [prior section](/tutorial/ops-jobs/connecting-ops#a-more-complex-dag), and ensure that it's working as expected by writing some unit tests.
 
@@ -46,6 +48,8 @@ Obviously, in production we'll often execute jobs in a parallel, streaming way t
 Dagster is written to make testing easy in a domain where it has historically been very difficult. You can learn more about Testing in Dagster by reading the [Testing](/concepts/testing) page.
 
 <br />
+
+---
 
 ## Conclusion
 
