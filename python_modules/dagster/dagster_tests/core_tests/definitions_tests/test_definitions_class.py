@@ -1,3 +1,5 @@
+from csv import excel_tab
+from dagster._core.definitions.definitions_class import create_repository_using_definitions_args
 import pytest
 
 from dagster import (
@@ -293,3 +295,61 @@ def test_bad_logger_value():
     with pytest.raises(CheckError):
         # ignore type to catch runtime error
         Definitions(loggers={"not_a_logger": "not_a_logger"})  # type: ignore
+
+
+def test_create_repository_using_definitions():
+    @asset(required_resource_keys={"a_resource_key"})
+    def an_asset():
+        pass
+
+    @op
+    def an_op():
+        pass
+
+    @job
+    def a_job():
+        an_op()
+
+    @job
+    def sensor_target():
+        an_op()
+
+    a_schedule = ScheduleDefinition(job=a_job, cron_schedule="@daily")
+
+    @sensor(job=sensor_target)
+    def a_sensor(_):
+        raise Exception("not called")
+
+    @executor
+    def an_executor(_):
+        raise Exception("not executed")
+
+    @logger
+    def a_logger(_):
+        raise Exception("not executed")
+
+    repo = create_repository_using_definitions_args(
+        name="foobar",
+        assets=[an_asset],
+        jobs=[a_job],
+        schedules=[a_schedule],
+        sensors=[a_sensor],
+        resources={"a_resource_key": "the resource"},
+        executor=an_executor,
+        loggers={"logger_key": a_logger},
+    )
+
+    assert isinstance(repo, RepositoryDefinition)
+
+    assert repo.name == "foobar"
+    assert list(repo._assets_defs_by_key.keys()) == [
+        AssetKey("an_asset")
+    ]  # pylint: disable=protected-access
+    a_job_from_repo = repo.get_job("a_job")
+    assert a_job_from_repo.executor_def is an_executor
+    assert a_job_from_repo.loggers["logger_key"] is a_logger
+    assert repo.get_schedule_def("a_job_schedule")
+    a_sensor_from_repo = repo.get_sensor_def("a_sensor")
+    sensor_target_job_from_repo = repo.get_job("sensor_target")
+    assert isinstance(sensor_target_job_from_repo, JobDefinition)
+    assert sensor_target_job_from_repo.executor_def.name == "an_executor"
