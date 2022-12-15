@@ -1,4 +1,4 @@
-import {BaseTag, Box, Colors, Icon, IconWrapper, StyledTag} from '@dagster-io/ui';
+import {BaseTag, Box, Colors, Icon, IconWrapper, MiddleTruncate, StyledTag} from '@dagster-io/ui';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -174,9 +174,6 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
     );
   };
 
-  const {name: repoName, location: repoLocation} = repoAddress;
-  const isDunderName = repoName === DUNDER_REPO_NAME;
-
   return (
     <Box background={Colors.Gray100} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
       <SectionHeader
@@ -194,17 +191,12 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
             <Icon name="folder_open" size={16} />
           </Box>
           <RepoNameContainer>
-            <Box flex={{direction: 'column'}} style={{flex: 1, minWidth: 0}}>
-              <RepoName style={{fontWeight: 500}} data-tooltip={option.repository.name}>
-                {isDunderName ? repoLocation : repoName}
-              </RepoName>
-              {showRepoLocation && !isDunderName ? (
-                <RepoLocation data-tooltip={`@${option.repositoryLocation.name}`} $disabled={empty}>
-                  @{option.repositoryLocation.name}
-                </RepoLocation>
-              ) : null}
-            </Box>
-
+            <RepoName
+              data-tooltip={repoAddressAsHumanString(repoAddress)}
+              data-tooltip-style={CodeLocationTooltipStyles}
+            >
+              <MiddleTruncate text={repoAddressAsHumanString(repoAddress)} showTitle={false} />
+            </RepoName>
             {/* Wrapper div to prevent tag from stretching vertically */}
             <div>
               <BaseTag
@@ -226,6 +218,19 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
     </Box>
   );
 });
+
+const CodeLocationTooltipStyles = JSON.stringify({
+  background: Colors.Gray100,
+  filter: `brightness(97%)`,
+  color: Colors.Gray900,
+  fontWeight: 500,
+  border: 'none',
+  borderRadius: 7,
+  overflow: 'hidden',
+  fontSize: 14,
+  padding: '5px 10px',
+  transform: 'translate(-10px,-5px)',
+} as React.CSSProperties);
 
 type PathMatch = {
   repoPath: string;
@@ -356,15 +361,5 @@ const RepoNameContainer = styled.div`
 const RepoName = styled.div`
   font-weight: 500;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-`;
-
-const RepoLocation = styled.div<{$disabled: boolean}>`
-  color: ${({$disabled}) => ($disabled ? Colors.Gray400 : Colors.Gray700)};
-  font-size: 12px;
-  margin-top: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 `;

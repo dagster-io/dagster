@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, Dict, Iterable, Mapping, Optional, Type, Union
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
@@ -107,7 +107,6 @@ def _create_repository_using_definitions_args(
     return created_repo
 
 
-@experimental
 class Definitions:
     """Example usage:
 

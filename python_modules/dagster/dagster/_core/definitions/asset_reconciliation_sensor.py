@@ -275,9 +275,8 @@ def find_stale_candidates(
     ).items():
         # The children of updated assets might now be unreconciled:
         for child in asset_graph.get_children_partitions(asset_key, record.partition_key):
-            if (
-                child.asset_key in target_asset_keys
-                and not instance_queryer.is_asset_partition_in_run(record.run_id, child)
+            if child.asset_key in target_asset_keys and not instance_queryer.is_asset_in_run(
+                record.run_id, child
             ):
                 stale_candidates.add(child)
 
@@ -536,43 +535,33 @@ def get_expected_data_times_for_key(
 
 
 def get_execution_time_window_for_constraints(
-    instance_queryer: CachingInstanceQueryer,
     constraints: AbstractSet[FreshnessConstraint],
-    current_time: datetime.datetime,
     current_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
+    in_progress_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
-    asset_key: AssetKey,
 ) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
     """
-    # check to find if this asset is currently being materialized by a run, and if so, which
-    # other assets are being materialized in that run
-    (
-        current_run_data_time,
-        currently_materializing,
-    ) = instance_queryer.get_in_progress_run_time_and_planned_materializations(asset_key)
-
     execution_window_start = None
     execution_window_end = None
     for constraint in sorted(constraints, key=lambda c: c.required_by_time):
         current_data_time = current_data_times.get(constraint.asset_key)
+        in_progress_data_time = in_progress_data_times.get(constraint.asset_key)
         expected_data_time = expected_data_times.get(constraint.asset_key)
 
         if not (
             # this constraint is irrelevant, as it is satisfied by the current data time
             (current_data_time is not None and current_data_time > constraint.required_data_time)
-            # this constraint is irrelevant, as materializing on this tick will not solve it
-            or (expected_data_time is None)
-            # this constraint is irrelevant, as materializing on this tick will not make progress
-            # towards solving it
-            or (current_data_time is not None and expected_data_time <= current_data_time)
             # this constraint is irrelevant, as a currently-executing run will satisfy it
             or (
-                constraint.asset_key in currently_materializing
-                # if the run hasn't started yet, assume it'll get data from the current time
-                and (current_run_data_time or current_time) > constraint.required_data_time
+                in_progress_data_time is not None
+                and in_progress_data_time > constraint.required_data_time
             )
+            # this constraint is irrelevant, as materializing on this tick will not make progress
+            # towards satisfying it
+            or (expected_data_time is None)
+            or (current_data_time is not None and expected_data_time <= current_data_time)
         ):
             if execution_window_start is None:
                 execution_window_start = constraint.required_data_time
@@ -655,18 +644,25 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 instance_queryer, asset_graph, relevant_upstream_keys, key
             )
 
-            if key not in target_asset_keys:
+            # should not execute if key is not targeted or previous run failed
+            if key not in target_asset_keys or instance_queryer.failed_in_latest_run(asset_key=key):
                 # cannot execute this asset, so if something consumes it, it should expect to
                 # recieve the current contents of the asset
                 execution_window_start = None
-                expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]] = {}
             else:
-                # figure out the data times you'd expect for this key if you were to run it
+                # this key has constraints within the plan window, so must be updated within it
+                eventually_materialize.add(AssetKeyPartitionKey(key, None))
+
+                # calculate the data times you would expect if the latest currently-executing run
+                # were to successfully complete
+                in_progress_data_times = instance_queryer.get_in_progress_data_times_for_key(
+                    asset_graph, key, frozenset(relevant_upstream_keys), current_time
+                )
+
+                # calculate the data times you'd expect for this key if you were to run it
                 expected_data_times = get_expected_data_times_for_key(
                     asset_graph, current_time, expected_data_times_by_key, key
                 )
-                # this key has constraints within the plan window, so must be updated within it
-                eventually_materialize.add(AssetKeyPartitionKey(key, None))
 
                 # figure out a time window that you can execute this asset within to solve a maximum
                 # number of constraints
@@ -674,12 +670,10 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                     execution_window_start,
                     _execution_window_end,
                 ) = get_execution_time_window_for_constraints(
-                    instance_queryer,
-                    constraints,
-                    current_time,
-                    current_data_times,
-                    expected_data_times,
-                    key,
+                    constraints=constraints,
+                    current_data_times=current_data_times,
+                    in_progress_data_times=in_progress_data_times,
+                    expected_data_times=expected_data_times,
                 )
 
             # a key may already be in to_materialize by the time we get here if a required

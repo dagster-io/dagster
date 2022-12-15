@@ -24,6 +24,7 @@ from dagster_dbt.utils import _get_input_name, _get_output_name, result_to_event
 from dagster import (
     AssetKey,
     AssetsDefinition,
+    FreshnessPolicy,
     In,
     MetadataValue,
     Nothing,
@@ -186,6 +187,16 @@ def _get_node_metadata(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
     return metadata
 
 
+def _get_node_freshness_policy(node_info: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
+    freshness_policy_config = node_info["config"].get("dagster_freshness_policy")
+    if freshness_policy_config:
+        return FreshnessPolicy(
+            maximum_lag_minutes=float(freshness_policy_config["maximum_lag_minutes"]),
+            cron_schedule=freshness_policy_config.get("cron_schedule"),
+        )
+    return None
+
+
 def _get_deps(
     dbt_nodes: Mapping[str, Any],
     selected_unique_ids: AbstractSet[str],
@@ -249,12 +260,19 @@ def _get_deps(
 
 
 def _get_asset_deps(
-    dbt_nodes, deps, node_info_to_asset_key, node_info_to_group_fn, io_manager_key, display_raw_sql
+    dbt_nodes,
+    deps,
+    node_info_to_asset_key,
+    node_info_to_group_fn,
+    node_info_to_freshness_policy_fn,
+    io_manager_key,
+    display_raw_sql,
 ) -> Tuple[
     Dict[AssetKey, Set[AssetKey]],
     Dict[AssetKey, Tuple[str, In]],
     Dict[AssetKey, Tuple[str, Out]],
     Dict[AssetKey, str],
+    Dict[AssetKey, FreshnessPolicy],
     Dict[str, List[str]],
     Dict[str, Dict[str, Any]],
 ]:
@@ -265,6 +283,7 @@ def _get_asset_deps(
     # These dicts could be refactored as a single dict, mapping from output name to arbitrary
     # metadata that we need to store for reference.
     group_names_by_key: Dict[AssetKey, str] = {}
+    freshness_policies_by_key: Dict[AssetKey, FreshnessPolicy] = {}
     fqns_by_output_name: Dict[str, List[str]] = {}
     metadata_by_output_name: Dict[str, Dict[str, Any]] = {}
 
@@ -300,6 +319,10 @@ def _get_asset_deps(
         if group_name is not None:
             group_names_by_key[asset_key] = group_name
 
+        freshness_policy = node_info_to_freshness_policy_fn(node_info)
+        if freshness_policy is not None:
+            freshness_policies_by_key[asset_key] = freshness_policy
+
         for parent_unique_id in parent_unique_ids:
             parent_node_info = dbt_nodes[parent_unique_id]
             parent_asset_key = node_info_to_asset_key(parent_node_info)
@@ -316,6 +339,7 @@ def _get_asset_deps(
         asset_ins,
         asset_outs,
         group_names_by_key,
+        freshness_policies_by_key,
         fqns_by_output_name,
         metadata_by_output_name,
     )
@@ -414,6 +438,9 @@ def _dbt_nodes_to_assets(
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_freshness_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[FreshnessPolicy]
+    ] = _get_node_freshness_policy,
     display_raw_sql: bool = True,
 ) -> AssetsDefinition:
     if use_build_command:
@@ -425,11 +452,20 @@ def _dbt_nodes_to_assets(
     else:
         deps = _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types=["model"])
 
-    asset_deps, asset_ins, asset_outs, group_names_by_key, fqns_by_output_name, _ = _get_asset_deps(
+    (
+        asset_deps,
+        asset_ins,
+        asset_outs,
+        group_names_by_key,
+        freshness_policies_by_key,
+        fqns_by_output_name,
+        _,
+    ) = _get_asset_deps(
         dbt_nodes=dbt_nodes,
         deps=deps,
         node_info_to_asset_key=node_info_to_asset_key,
         node_info_to_group_fn=node_info_to_group_fn,
+        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         io_manager_key=io_manager_key,
         display_raw_sql=display_raw_sql,
     )
@@ -464,6 +500,7 @@ def _dbt_nodes_to_assets(
         can_subset=True,
         asset_deps=asset_deps,
         group_names_by_key=group_names_by_key,
+        freshness_policies_by_key=freshness_policies_by_key,
         partitions_def=partitions_def,
     )
 
@@ -485,6 +522,9 @@ def load_assets_from_dbt_project(
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_freshness_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[FreshnessPolicy]
+    ] = _get_node_freshness_policy,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
 ) -> Sequence[AssetsDefinition]:
@@ -528,6 +568,13 @@ def load_assets_from_dbt_project(
             invocation (e.g. {"run_date": "2022-01-01"})
         node_info_to_group_fn (Dict[str, Any] -> Optional[str]): A function that takes a
             dictionary of dbt node info and returns the group that this node should be assigned to.
+        node_info_to_freshness_policy_fn (Dict[str, Any] -> Optional[FreshnessPolicy]): A function
+            that takes a dictionary of dbt node info and optionally returns a FreshnessPolicy that
+            should be applied to this node. By default, freshness policies will be created from
+            config applied to dbt models, i.e.:
+            `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
+            will result in that model being assigned
+            `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
         display_raw_sql (Optional[bool]): [Experimental] A flag to indicate if the raw sql associated
             with each model should be included in the asset description. For large projects, setting
             this flag to False is advised to reduce the size of the resulting snapshot.
@@ -561,6 +608,7 @@ def load_assets_from_dbt_project(
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         node_info_to_group_fn=node_info_to_group_fn,
+        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         display_raw_sql=display_raw_sql,
         dbt_resource_key=dbt_resource_key,
     )
@@ -582,6 +630,9 @@ def load_assets_from_dbt_manifest(
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_freshness_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[FreshnessPolicy]
+    ] = _get_node_freshness_policy,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
 ) -> Sequence[AssetsDefinition]:
@@ -623,6 +674,13 @@ def load_assets_from_dbt_manifest(
             invocation (e.g. {"run_date": "2022-01-01"})
         node_info_to_group_fn (Dict[str, Any] -> Optional[str]): A function that takes a
             dictionary of dbt node info and returns the group that this node should be assigned to.
+        node_info_to_freshness_policy_fn (Dict[str, Any] -> Optional[FreshnessPolicy]): A function
+            that takes a dictionary of dbt node info and optionally returns a FreshnessPolicy that
+            should be applied to this node. By default, freshness policies will be created from
+            config applied to dbt models, i.e.:
+            `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
+            will result in that model being assigned
+            `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
         display_raw_sql (Optional[bool]): [Experimental] A flag to indicate if the raw sql associated
             with each model should be included in the asset description. For large projects, setting
             this flag to False is advised to reduce the size of the resulting snapshot.
@@ -670,6 +728,7 @@ def load_assets_from_dbt_manifest(
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         node_info_to_group_fn=node_info_to_group_fn,
+        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         display_raw_sql=display_raw_sql,
     )
     dbt_assets: Sequence[AssetsDefinition]
