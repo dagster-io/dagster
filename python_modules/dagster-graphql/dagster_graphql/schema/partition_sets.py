@@ -340,7 +340,13 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                 for dim in partition_def_data.external_partition_dimension_definitions
             ]
             if isinstance(partition_def_data, ExternalMultiPartitionsDefinitionData)
-            else [],
+            else [
+                GrapheneDimensionDefinitionType(
+                    name="default",
+                    description="",
+                    type=GraphenePartitionDefinitionType.from_partition_def_data(partition_def_data)
+                )
+            ],
         )
 
 
