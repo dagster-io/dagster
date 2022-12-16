@@ -104,7 +104,6 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const assetHealth = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
   const mergedHealth = React.useMemo(() => mergedAssetHealth(assetHealth), [assetHealth]);
 
-  console.log(partitionedAssets[0].partitionDefinition);
   const knownDimensions = partitionedAssets[0].partitionDefinition?.dimensionTypes || [];
   const [ranges, setRanges] = usePartitionDimensionRanges({
     knownDimensionNames: knownDimensions.map((d) => d.name),
@@ -379,8 +378,11 @@ const UpstreamUnavailableWarning: React.FC<{
   // unavailable partitions in the multi-dimensional case and our "two range inputs" won't
   // allow us to remove missing individual pairs.
   const upstreamAssetHealth = usePartitionHealthData(upstreamAssetKeys);
+  if (upstreamAssetHealth.length === 0) {
+    return <span />;
+  }
+
   const upstreamUnavailable = (singleDimensionKey: string) =>
-    upstreamAssetHealth.length > 0 &&
     upstreamAssetHealth.some((a) => {
       // If the key is not undefined, it's present in the partition key space of the asset
       return a.stateForKey([singleDimensionKey]) === PartitionState.MISSING;

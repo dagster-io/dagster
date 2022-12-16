@@ -21,7 +21,9 @@ export const PartitionRangeInput: React.FC<{
   }, [value, partitionNameJSON, isTimeseries]);
 
   const placeholder = React.useMemo(() => {
-    return placeholderForPartitions(partitionKeys, isTimeseries);
+    return partitionKeys.length === 0
+      ? 'Loading partition keys...'
+      : placeholderForPartitions(partitionKeys, isTimeseries);
   }, [partitionKeys, isTimeseries]);
 
   const tryCommit = (e: React.SyntheticEvent<HTMLInputElement>) => {
