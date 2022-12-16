@@ -310,6 +310,13 @@ multi_asset_in_middle = [
     asset_def("asset6", ["asset4"]),
 ]
 
+multi_asset_after_fork = [
+    asset_def("asset1"),
+    asset_def("asset2", ["asset1"]),
+    asset_def("asset3", ["asset1"]),
+    multi_asset_def(["asset4", "asset5"], {"asset4": {"asset3"}, "asset5": {"asset3"}}),
+]
+
 multi_asset_in_middle_subsettable = (
     multi_asset_in_middle[:2]
     + [
@@ -513,6 +520,11 @@ scenarios = {
             unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
         ),
         expected_run_requests=[run_request(asset_keys=["asset3", "asset5"])],
+    ),
+    "multi_asset_one_parent_unreconciled": AssetReconciliationScenario(
+        assets=multi_asset_after_fork,
+        unevaluated_runs=[run(["asset1", "asset2"], failed_asset_keys=["asset3"])],
+        expected_run_requests=[],
     ),
     ################################################################################################
     # Partial runs
