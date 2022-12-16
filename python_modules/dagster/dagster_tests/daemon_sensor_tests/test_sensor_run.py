@@ -1321,7 +1321,7 @@ def instance_with_sensors_no_run_bucketing():
         with instance_for_test(
             overrides={
                 "run_storage": {
-                    "module": "dagster_tests.core_tests.storage_tests.test_run_storage",
+                    "module": "dagster_tests.storage_tests.test_run_storage",
                     "class": "NonBucketQuerySqliteRunStorage",
                     "config": {"base_dir": temp_dir},
                 },
