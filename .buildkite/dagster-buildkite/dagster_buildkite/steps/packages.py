@@ -337,6 +337,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "execution_tests",
             "storage_tests",
             "definitions_tests",
+            "asset_defs_tests",
         ],
     ),
     PackageSpec(
