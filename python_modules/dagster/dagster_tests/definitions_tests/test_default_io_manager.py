@@ -60,7 +60,7 @@ def foo_io_manager_job():
 def test_override_default_io_manager(instance):
     with environ(
         {
-            "DAGSTER_DEFAULT_IO_MANAGER_MODULE": "dagster_tests.core_tests.definitions_tests.test_default_io_manager",
+            "DAGSTER_DEFAULT_IO_MANAGER_MODULE": "dagster_tests.definitions_tests.test_default_io_manager",
             "DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE": "foo_io_manager_def",
         }
     ):
@@ -80,7 +80,7 @@ def create_asset_job():
 def test_asset_override_default_io_manager(instance):
     with environ(
         {
-            "DAGSTER_DEFAULT_IO_MANAGER_MODULE": "dagster_tests.core_tests.definitions_tests.test_default_io_manager",
+            "DAGSTER_DEFAULT_IO_MANAGER_MODULE": "dagster_tests.definitions_tests.test_default_io_manager",
             "DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE": "foo_io_manager_def",
         }
     ):
