@@ -1060,6 +1060,14 @@ class PartitionsSubset(ABC):
     def partitions_def(self) -> PartitionsDefinition:
         raise NotImplementedError()
 
+    @abstractmethod
+    def __len__(self) -> int:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def __contains__(self, value) -> bool:
+        raise NotImplementedError()
+
 
 class DefaultPartitionsSubset(PartitionsSubset):
     def __init__(self, partitions_def: PartitionsDefinition, subset: Optional[Set[str]] = None):
@@ -1121,10 +1129,21 @@ class DefaultPartitionsSubset(PartitionsSubset):
             and self._subset == other._subset
         )
 
+    def __len__(self) -> int:
+        return len(self._subset)
+
+    def __contains__(self, value) -> bool:
+        return value in self._subset
+
     @staticmethod
     def from_serialized(
         partitions_def: PartitionsDefinition, serialized: str
     ) -> "DefaultPartitionsSubset":
         return DefaultPartitionsSubset(
             subset=set(json.loads(serialized)), partitions_def=partitions_def
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f"DefaultPartitionsSubset(subset={self._subset}, partitions_def={self._partitions_def})"
         )

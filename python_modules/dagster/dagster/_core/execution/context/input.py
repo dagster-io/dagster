@@ -663,3 +663,9 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
     @property
     def partitions_def(self) -> "PartitionsDefinition":
         raise NotImplementedError()
+
+    def __len__(self) -> int:
+        raise NotImplementedError()
+
+    def __contains__(self, value) -> bool:
+        raise NotImplementedError()
