@@ -45,7 +45,7 @@ class UPathIOManager(MemoizableIOManager):
 
     def get_metadata(
         self,
-        context: OutputContext,
+        context: OutputContext,  # pylint: disable=unused-argument
         obj: Any,  # pylint: disable=unused-argument
     ) -> Dict[str, MetadataValue]:
         """Child classes should override this method to add custom metadata to the outputs."""
@@ -101,6 +101,7 @@ class UPathIOManager(MemoizableIOManager):
     def _load_single_input(self, path: UPath, context: InputContext) -> Any:
         context.log.debug(f"Loading file from: {path}")
         obj = self.load_from_path(context=context, path=path)
+        context.add_input_metadata({"path": str(path)})
         return obj
 
     def _load_multiple_inputs(self, context: InputContext) -> Dict[str, Any]:
