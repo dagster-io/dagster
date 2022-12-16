@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Breadcrumbs} from '@blueprintjs/core';
-import {Checkbox, Colors, SplitPanelContainer, TextInput} from '@dagster-io/ui';
+import {Checkbox, Colors, getColorValue, SplitPanelContainer, TextInput} from '@dagster-io/ui';
 import Color from 'color';
 import qs from 'qs';
 import * as React from 'react';
@@ -359,7 +359,7 @@ export const RightInfoPanelContent = styled.div`
 `;
 
 export const OptionsOverlay = styled.div`
-  background-color: ${Color(Colors.White).fade(0.6).toString()};
+  background-color: ${Color(getColorValue('White')).fade(0.6).toString()};
   z-index: 2;
   padding: 15px 20px;
   display: inline-flex;
@@ -372,7 +372,7 @@ export const OptionsOverlay = styled.div`
 `;
 
 export const HighlightOverlay = styled.div`
-  background-color: ${Color(Colors.White).fade(0.6).toString()};
+  background-color: ${Color(getColorValue('White')).fade(0.6).toString()};
   z-index: 2;
   padding: 8px 12px 0 0;
   display: inline-flex;
@@ -393,7 +393,7 @@ export const QueryOverlay = styled.div`
 `;
 
 export const BreadcrumbsOverlay = styled.div`
-  background-color: ${Color(Colors.White).fade(0.6).toString()};
+  background-color: ${Color(getColorValue('White')).fade(0.6).toString()};
   z-index: 2;
   padding: 12px 0 0 20px;
   height: 42px;

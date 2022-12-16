@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "@tanstack/react-virtual": "3.0.0-beta.18",
+    "@uiw/react-color": "^1.1.1",
     "@vx/shape": "^0.0.192",
     "amator": "^1.1.0",
     "ansi-to-react": "^5.1.0",
@@ -47,6 +48,7 @@
     "deepmerge": "^4.2.2",
     "fuse.js": "^6.4.2",
     "graphql": "^15.5.0",
+    "hex-rgb": "^5.0.0",
     "lodash": "^4.17.15",
     "lru-cache": "^6.0.0",
     "moment-timezone": "^0.5.35",
@@ -58,6 +60,7 @@
     "remark": "^13.0.0",
     "remark-gfm": "1.0.0",
     "remark-plain-text": "^0.2.0",
+    "rgba-convert": "^0.3.0",
     "subscriptions-transport-ws": "^0.9.15",
     "worker-loader": "^3.0.8",
     "yaml": "2.0.0-10"

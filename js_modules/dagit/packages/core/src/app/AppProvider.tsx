@@ -41,6 +41,9 @@ import {AnalyticsContext, dummyAnalytics} from './analytics';
 import {TimezoneProvider} from './time/TimezoneContext';
 
 import './blueprint.css';
+import './theme.css';
+
+const ThemeRoot = React.lazy(() => import('../theme/ThemeRoot'));
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these
@@ -178,8 +181,16 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
     [statusPolling],
   );
 
+  const searchParams = new URLSearchParams(location.search);
+  const enable_theme_test_mode = !!searchParams.get('enable_theme_test_mode');
+
   return (
     <AppContext.Provider value={appContextValue}>
+      {enable_theme_test_mode ? (
+        <React.Suspense fallback={<div />}>
+          <ThemeRoot />
+        </React.Suspense>
+      ) : null}
       <WebSocketProvider websocketClient={websocketClient}>
         <GlobalInter />
         <GlobalInconsolata />
