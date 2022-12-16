@@ -1371,7 +1371,7 @@ def test_asset_selection_reconstructable():
                 pipeline_def=my_job, asset_selection=frozenset([AssetKey("f")])
             )
             reconstructable_foo_job = build_reconstructable_job(
-                "dagster_tests.core_tests.asset_defs_tests.test_assets_job",
+                "dagster_tests.asset_defs_tests.test_assets_job",
                 "reconstruct_asset_job",
                 reconstructable_args=tuple(),
                 reconstructable_kwargs={},

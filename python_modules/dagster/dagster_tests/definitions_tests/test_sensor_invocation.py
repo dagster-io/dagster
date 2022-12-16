@@ -737,7 +737,7 @@ def test_asset_keys_or_selection_mandatory():
 
 
 def test_build_multi_asset_sensor_context_asset_selection():
-    from dagster_tests.core_tests.asset_defs_tests.test_asset_selection import (
+    from dagster_tests.asset_defs_tests.test_asset_selection import (
         alice,
         bob,
         candace,

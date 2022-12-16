@@ -957,7 +957,7 @@ def test_asset_group_from_modules(monkeypatch):
             DagsterInvalidDefinitionError,
             match=re.escape(
                 "Asset key AssetKey(['little_richard']) is defined multiple times. "
-                "Definitions found in modules: dagster_tests.core_tests.asset_defs_tests.asset_package."
+                "Definitions found in modules: dagster_tests.asset_defs_tests.asset_package."
             ),
         ):
             AssetGroup.from_modules([asset_package, module_with_assets])
