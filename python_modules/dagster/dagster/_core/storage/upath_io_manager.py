@@ -101,7 +101,7 @@ class UPathIOManager(MemoizableIOManager):
     def _load_single_input(self, path: UPath, context: InputContext) -> Any:
         context.log.debug(f"Loading file from: {path}")
         obj = self.load_from_path(context=context, path=path)
-        context.add_input_metadata({"path": str(path)})
+        context.add_input_metadata({"path": MetadataValue.path(path)})
         return obj
 
     def _load_multiple_inputs(self, context: InputContext) -> Dict[str, Any]:
