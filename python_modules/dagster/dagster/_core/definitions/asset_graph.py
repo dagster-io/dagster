@@ -1,8 +1,12 @@
+import functools
 from collections import defaultdict, deque
+from heapq import heapify, heappop, heappush
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Callable,
     Dict,
+    Iterable,
     Iterator,
     Mapping,
     NamedTuple,
@@ -25,6 +29,7 @@ from .freshness_policy import FreshnessPolicy
 from .partition import PartitionsDefinition
 from .partition_mapping import PartitionMapping, infer_partition_mapping
 from .source_asset import SourceAsset
+from .time_window_partitions import TimeWindowPartitionsDefinition
 
 if TYPE_CHECKING:
     from dagster._core.host_representation.external_data import ExternalAssetNode
@@ -298,6 +303,39 @@ class AssetGraph(NamedTuple):
                     queue.append(parent_key)
                     visited.add(parent_key)
 
+    def bfs_filter_asset_partitions(
+        self,
+        condition_fn: Callable[[AssetKeyPartitionKey, AbstractSet[AssetKeyPartitionKey]], bool],
+        initial_asset_partitions: Iterable[AssetKeyPartitionKey],
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        """
+        Returns asset partitions within the graph that
+        - Are >= initial_asset_partitions
+        - Match the condition_fn
+        - All of their ancestors >= initial_asset_partitions match the condition_fn
+
+        Visits parents before children.
+        """
+        all_nodes = set(initial_asset_partitions)
+
+        # invariant: we never consider a candidate before considering its ancestors
+        queue = ToposortedPriorityQueue(self, all_nodes)
+
+        result: Set[AssetKeyPartitionKey] = set()
+
+        while len(queue) > 0:
+            asset_partition = queue.dequeue()
+            if condition_fn(asset_partition, result):
+                result.add(asset_partition)
+                for child in self.get_children_partitions(
+                    asset_partition.asset_key, asset_partition.partition_key
+                ):
+                    if child not in all_nodes:
+                        queue.enqueue(child)
+                        all_nodes.add(child)
+
+        return result
+
     def get_required_multi_asset_keys(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         """For a given asset_key, return the set of asset keys that must be materialized at the same time."""
         if self.required_multi_asset_sets_by_key is None:
@@ -321,3 +359,63 @@ class AssetGraph(NamedTuple):
 
     def __eq__(self, other):
         return self is other
+
+
+class ToposortedPriorityQueue:
+    """Queue that returns parents before their children"""
+
+    @functools.total_ordering
+    class QueueItem(NamedTuple):
+        level: int
+        partition_sort_key: Optional[float]
+        asset_partition: AssetKeyPartitionKey
+
+        def __eq__(self, other):
+            return self.level == other.level and self.partition_sort_key == other.partition_sort_key
+
+        def __lt__(self, other):
+            return self.level < other.level or (
+                self.level == other.level
+                and self.partition_sort_key is not None
+                and self.partition_sort_key < other.partition_sort_key
+            )
+
+    def __init__(self, asset_graph: AssetGraph, items: Iterable[AssetKeyPartitionKey]):
+        self._asset_graph = asset_graph
+        toposorted_asset_keys = asset_graph.toposort_asset_keys()
+        self._toposort_level_by_asset_key = {
+            asset_key: i
+            for i, asset_keys in enumerate(toposorted_asset_keys)
+            for asset_key in asset_keys
+        }
+        self._heap = [self._queue_item(asset_partition) for asset_partition in items]
+        heapify(self._heap)
+
+    def enqueue(self, asset_partition: AssetKeyPartitionKey) -> None:
+        heappush(self._heap, self._queue_item(asset_partition))
+
+    def dequeue(self) -> AssetKeyPartitionKey:
+        return heappop(self._heap).asset_partition
+
+    def _queue_item(self, asset_partition: AssetKeyPartitionKey):
+        asset_key = asset_partition.asset_key
+        level = self._toposort_level_by_asset_key[asset_key]
+        if self._asset_graph.has_self_dependency(asset_key):
+            partitions_def = self._asset_graph.get_partitions_def(asset_key)
+            if partitions_def is not None and isinstance(
+                partitions_def, TimeWindowPartitionsDefinition
+            ):
+                partition_sort_key = (
+                    cast(TimeWindowPartitionsDefinition, partitions_def)
+                    .time_window_for_partition_key(cast(str, asset_partition.partition_key))
+                    .start.timestamp()
+                )
+            else:
+                check.failed("Assets with self-dependencies must have time-window partitions")
+        else:
+            partition_sort_key = None
+
+        return ToposortedPriorityQueue.QueueItem(level, partition_sort_key, asset_partition)
+
+    def __len__(self) -> int:
+        return len(self._heap)
