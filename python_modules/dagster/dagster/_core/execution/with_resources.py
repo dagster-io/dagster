@@ -1,4 +1,5 @@
-from typing import Any, Iterable, List, Mapping, Optional, Sequence, TypeVar, cast
+from collections.abc import Iterable as IterableABC
+from typing import Any, Iterable, List, Mapping, Optional, Sequence, TypeVar, Union, cast
 
 from dagster import _check as check
 from dagster._utils import merge_dicts
@@ -13,7 +14,7 @@ T = TypeVar("T", bound=ResourceAddable)
 
 
 def with_resources(
-    definitions: Iterable[T],
+    definitions: Union[Iterable[T], T],
     resource_defs: Mapping[str, ResourceDefinition],
     resource_config_by_key: Optional[Mapping[str, Any]] = None,
 ) -> Sequence[T]:
@@ -99,6 +100,9 @@ def with_resources(
                     resource_config,
                 )
             resource_defs[key] = resource_defs[key].configured(resource_config["config"])
+
+    if not isinstance(definitions, IterableABC):
+        definitions = [definitions]
 
     transformed_defs: List[T] = []
     for definition in definitions:

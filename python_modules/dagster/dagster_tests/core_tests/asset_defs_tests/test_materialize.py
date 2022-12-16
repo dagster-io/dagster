@@ -114,6 +114,18 @@ def test_materialize_resources_not_satisfied():
         ).success
 
 
+def test_with_resources_non_iterable():
+    @asset(required_resource_keys={"foo"})
+    def the_asset(context):
+        assert context.resources.foo == "blah"
+
+    with instance_for_test() as instance:
+        assert materialize(
+            with_resources(the_asset, {"foo": ResourceDefinition.hardcoded_resource("blah")}),
+            instance=instance,
+        ).success
+
+
 def test_materialize_conflicting_resources():
     @asset(resource_defs={"foo": ResourceDefinition.hardcoded_resource("1")})
     def first():
