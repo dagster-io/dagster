@@ -1,9 +1,7 @@
-import {ApolloClient} from '@apollo/client';
-
 import {PartitionState} from '../partitions/PartitionStatus';
 
 import {PartitionHealthQuery} from './types/PartitionHealthQuery';
-import {loadPartitionHealthData} from './usePartitionHealthData';
+import {buildPartitionHealthData} from './usePartitionHealthData';
 
 const {SUCCESS_MISSING, SUCCESS, MISSING} = PartitionState;
 
@@ -67,17 +65,10 @@ const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
   },
 };
 
-function runLoadPartitionHealthData(data: PartitionHealthQuery) {
-  const mockClient = {
-    query: () => Promise.resolve({data}),
-  } as unknown;
-  return loadPartitionHealthData(mockClient as ApolloClient<any>, {path: ['asset']});
-}
-
 describe('usePartitionHealthData', () => {
   describe('loadPartitionHealthData', () => {
     it('should return an object with accessors for 1D partition data', async () => {
-      const assetHealth = await runLoadPartitionHealthData(ONE_DIMENSIONAL_ASSET);
+      const assetHealth = buildPartitionHealthData(ONE_DIMENSIONAL_ASSET, {path: ['asset']});
       expect(assetHealth.assetKey).toEqual({path: ['asset']});
       expect(assetHealth.dimensions).toEqual([
         {
@@ -97,7 +88,7 @@ describe('usePartitionHealthData', () => {
     });
 
     it('should return an object with accessors for 2D partition data', async () => {
-      const assetHealth = await runLoadPartitionHealthData(TWO_DIMENSIONAL_ASSET);
+      const assetHealth = buildPartitionHealthData(TWO_DIMENSIONAL_ASSET, {path: ['asset']});
       expect(assetHealth.assetKey).toEqual({path: ['asset']});
       expect(assetHealth.dimensions).toEqual([
         {
