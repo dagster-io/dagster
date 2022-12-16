@@ -344,7 +344,9 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                 GrapheneDimensionDefinitionType(
                     name="default",
                     description="",
-                    type=GraphenePartitionDefinitionType.from_partition_def_data(partition_def_data)
+                    type=GraphenePartitionDefinitionType.from_partition_def_data(
+                        partition_def_data
+                    ),
                 )
             ],
         )

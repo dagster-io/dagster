@@ -110,7 +110,6 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     modifyQueryString: false,
     assetHealth: mergedHealth,
   });
-  console.log(ranges);
 
   const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
     PartitionState.MISSING,
