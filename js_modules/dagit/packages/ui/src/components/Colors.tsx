@@ -1,45 +1,134 @@
+import React from 'react';
+
 export const Colors = {
-  Dark: 'rgba(23, 22, 21, 1)',
-  Gray900: 'rgba(35, 31, 27, 1)',
-  Gray800: 'rgba(58, 54, 49, 1)',
-  Gray700: 'rgba(82, 78, 72, 1)',
-  Gray600: 'rgba(107, 103, 98, 1)',
-  Gray500: 'rgba(134, 131, 127, 1)',
-  Gray400: 'rgba(161, 157, 153, 1)',
-  Gray300: 'rgba(189, 186, 183, 1)',
-  Gray200: 'rgba(218, 216, 214, 1)',
-  Gray100: 'rgba(245, 244, 242, 1)',
-  Gray50: 'rgba(250, 249, 247, 1)',
-  KeylineGray: 'rgba(233, 232, 232, 1)',
-  WashGray: 'rgba(0, 0, 0, .35)',
-  Gray10: 'rgba(35, 31, 27, 0.03)',
-  White: 'rgba(255, 255, 255, 1)',
-  LightPurple: 'rgba(222, 221, 255, 1)',
-  Link: 'rgba(9, 8, 110, 1)',
-  Blue700: 'rgba(14, 12, 167, 1)',
-  Blue500: 'rgba(79, 67, 221, 1)',
-  Blue200: 'rgba(185, 180, 241, 1)',
-  Blue100: 'rgba(211, 209,237,1)',
-  Blue50: 'rgba(236, 236, 248, 1)',
-  Red700: 'rgba(165, 9, 6, 1)',
-  Red500: 'rgba(221, 84, 72, 1)',
-  Red200: 'rgba(241, 187, 182, 1)',
-  Red100: 'rgba(248, 236, 235, 1)',
-  Red50: 'rgba(248, 236, 235, 1)',
-  HighlightRed: 'rgba(255, 128, 100, 1)',
-  Yellow700: 'rgba(165, 88, 2, 1)',
-  Yellow500: 'rgba(252, 188, 65, 1)',
-  Yellow200: 'rgba(251, 233, 181, 1)',
-  Yellow50: 'rgba(248, 242, 235, 1)',
-  ForestGreen: 'rgba(33, 70, 61, 1)',
-  Green700: 'rgba(18, 117, 75, 1)',
-  Green500: 'rgba(73, 193, 136, 1)',
-  Green200: 'rgba(200, 236, 219, 1)',
-  Green50: 'rgba(236, 244, 241, 1)',
-  NeonGreen: 'rgba(167, 255, 191, 1)',
-  HighlightGreen: 'rgba(81, 233, 124, 1)',
-  Olive700: 'rgba(72, 82, 69, 1)',
-  Olive500: 'rgba(156, 172, 151, 1)',
-  Olive200: 'rgba(215, 222, 213, 1)',
-  Olive50: 'rgba(236, 237, 236, 1)',
+  Dark: 'var(--Dark);',
+  Gray900: 'var(--Gray900)',
+  Gray800: 'var(--Gray800)',
+  Gray700: 'var(--Gray700)',
+  Gray600: 'var(--Gray600)',
+  Gray500: 'var(--Gray500)',
+  Gray400: 'var(--Gray400)',
+  Gray300: 'var(--Gray300)',
+  Gray200: 'var(--Gray200)',
+  Gray100: 'var(--Gray100)',
+  Gray50: 'var(--Gray50)',
+  KeylineGray: 'var(--KeylineGray)',
+  WashGray: 'var(--WashGray)',
+  Gray10: 'var(--Gray10)',
+  White: 'var(--White)',
+  LightPurple: 'var(--LightPurple)',
+  Link: 'var(--Link)',
+  Blue700: 'var(--Blue700)',
+  Blue500: 'var(--Blue500)',
+  Blue200: 'var(--Blue200)',
+  Blue100: 'var(--Blue100)',
+  Blue50: 'var(--Blue50)',
+  Red700: 'var(--Red700)',
+  Red500: 'var(--Red500)',
+  Red200: 'var(--Red200)',
+  Red100: 'var(--Red100)',
+  Red50: 'var(--Red50)',
+  HighlightRed: 'var(--HighlightRed)',
+  Yellow700: 'var(--Yellow700)',
+  Yellow500: 'var(--Yellow500)',
+  Yellow200: 'var(--Yellow200)',
+  Yellow50: 'var(--Yellow50)',
+  ForestGreen: 'var(--ForestGreen)',
+  Green700: 'var(--Green700)',
+  Green500: 'var(--Green500)',
+  Green200: 'var(--Green200)',
+  Green50: 'var(--Green50)',
+  NeonGreen: 'var(--NeonGreen)',
+  HighlightGreen: 'var(--HighlightGreen)',
+  Olive700: 'var(--Olive700)',
+  Olive500: 'var(--Olive500)',
+  Olive200: 'var(--Olive200)',
+  Olive50: 'var(--Olive50)',
 };
+
+export type ColorKey = keyof typeof Colors;
+
+const colorCache: Partial<Record<ColorKey, string>> = {};
+const originalColorCache: typeof colorCache = {};
+
+export function resetColorTheme() {
+  Object.keys(originalColorCache).forEach((key) => {
+    setColorValue(key as ColorKey, originalColorCache[key]);
+  });
+}
+
+let _cachedGetComputedStyleForDocumentElementValue: null | ReturnType<
+  typeof getComputedStyle
+> = null;
+function cachedGetComputedStyleForDocumentElement() {
+  if (!_cachedGetComputedStyleForDocumentElementValue) {
+    _cachedGetComputedStyleForDocumentElementValue = getComputedStyle(document.documentElement);
+    requestAnimationFrame(() => {
+      _cachedGetComputedStyleForDocumentElementValue = null;
+    });
+  }
+  return _cachedGetComputedStyleForDocumentElementValue;
+}
+
+export function getColorValue(colorKey: ColorKey): string {
+  if (!colorCache[colorKey]) {
+    colorCache[colorKey] = cachedGetComputedStyleForDocumentElement()
+      .getPropertyValue(`--${colorKey}`)
+      .trim();
+    if (!originalColorCache[colorKey]) {
+      originalColorCache[colorKey] = colorCache[colorKey];
+    }
+    const customColor = localStorage.getItem(`theme:color:${colorKey}`);
+    if (customColor) {
+      colorCache[colorKey] = customColor;
+    }
+  }
+  return colorCache[colorKey]!;
+}
+
+const listeners: Record<ColorKey, ((value: string) => void)[]> = Object.keys(Colors).reduce(
+  (colors, key) => {
+    colors[key] = [
+      (value: string) => {
+        colorCache[key] = value;
+      },
+    ];
+    return colors;
+  },
+  {} as any,
+);
+
+export function setColorValue(colorKey: ColorKey, value: string) {
+  if (!originalColorCache[colorKey]) {
+    originalColorCache[colorKey] = getColorValue(colorKey);
+  }
+  localStorage.setItem(`theme:color:${colorKey}`, value);
+  document.documentElement.style.setProperty(`--${colorKey}`, value);
+  listeners[colorKey].forEach((listener) => {
+    listener(value);
+  });
+}
+
+export function useColorValue(colorKey: ColorKey): string {
+  const [color, setColor] = React.useState(getColorValue(colorKey));
+  React.useLayoutEffect(() => {
+    const listener = (value: string) => {
+      setColor(value);
+    };
+    listeners[colorKey].push(listener);
+    return () => {
+      const listenerIndex = listeners[colorKey].indexOf(listener);
+      if (listenerIndex !== -1) {
+        listeners[colorKey].splice(listenerIndex, 1);
+      }
+    };
+  });
+  return color;
+}
+
+requestAnimationFrame(() => {
+  Object.keys(Colors).forEach((key: string) => {
+    const colorKey = key as ColorKey;
+    setColorValue(colorKey, getColorValue(colorKey));
+  });
+});
