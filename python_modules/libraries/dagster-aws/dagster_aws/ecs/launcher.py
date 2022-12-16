@@ -59,6 +59,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         include_sidecars=False,
         use_current_ecs_task_config: bool = True,
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
+        run_resources: Optional[Dict[str, str]] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -143,6 +144,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 check.invariant(
                     key in expected_keys, f"Found an unexpected key {key} in run_task_kwargs"
                 )
+
+        self.run_resources = check.opt_mapping_param(run_resources, "run_resources")
 
         self._current_task_metadata = None
         self._current_task = None
@@ -308,7 +311,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         # Set cpu or memory overrides
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
-        cpu_and_memory_overrides = self.get_cpu_and_memory_overrides(run)
+        cpu_and_memory_overrides = self.get_cpu_and_memory_overrides(container_context, run)
 
         task_overrides = self._get_task_overrides(run)
 
@@ -372,16 +375,19 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             cls=self.__class__,
         )
 
-    def get_cpu_and_memory_overrides(self, run: DagsterRun) -> Mapping[str, str]:
+    def get_cpu_and_memory_overrides(
+        self, container_context: EcsContainerContext, run: DagsterRun
+    ) -> Mapping[str, str]:
         overrides = {}
 
-        cpu = run.tags.get("ecs/cpu")
-        memory = run.tags.get("ecs/memory")
+        cpu = run.tags.get("ecs/cpu", container_context.run_resources.get("cpu"))
+        memory = run.tags.get("ecs/memory", container_context.run_resources.get("memory"))
 
         if cpu:
             overrides["cpu"] = cpu
         if memory:
             overrides["memory"] = memory
+
         return overrides
 
     def _get_task_overrides(self, run: DagsterRun) -> Mapping[str, Any]:

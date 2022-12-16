@@ -85,6 +85,15 @@ def test_merge(
 
     assert merged.container_name == "bar"
 
+    assert merged.run_resources == {
+        "cpu": "256",
+        "memory": "8192",
+    }
+    assert merged.server_resources == {
+        "cpu": "2048",
+        "memory": "4096",
+    }
+
     with pytest.raises(
         Exception, match="Tried to load environment variable OTHER_FOO_ENV_VAR, but it was not set"
     ):

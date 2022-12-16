@@ -1,13 +1,12 @@
 from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, cast
 
-from dagster import Array, Field, Noneable, Shape, StringSource
+from dagster import Array, Field, Noneable, Permissive, Shape, StringSource
 from dagster import _check as check
 from dagster._config import process_config
 from dagster._core.container_context import process_shared_container_context_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.utils import parse_env_var
-from dagster._utils import merge_dicts
 
 from ..secretsmanager import get_tagged_secrets
 
@@ -22,6 +21,22 @@ SHARED_ECS_SCHEMA = {
         description="List of environment variable names to include in the ECS task. "
         "Each can be of the form KEY=VALUE or just KEY (in which case the value will be pulled "
         "from the current process)",
+    ),
+    "run_resources": Field(
+        Permissive(
+            {
+                "cpu": Field(
+                    str,
+                    is_required=False,
+                    description="The CPU override to use for the launched task.",
+                ),
+                "memory": Field(
+                    str,
+                    is_required=False,
+                    description="The memory override to use for the launched task.",
+                ),
+            }
+        )
     ),
 }
 
@@ -53,6 +68,22 @@ ECS_CONTAINER_CONTEXT_SCHEMA = {
         is_required=False,
         description="Name of the container in the task definition to use to run Dagster code.",
     ),
+    "server_resources": Field(
+        Permissive(
+            {
+                "cpu": Field(
+                    str,
+                    is_required=False,
+                    description="The CPU override to use for the launched task.",
+                ),
+                "memory": Field(
+                    str,
+                    is_required=False,
+                    description="The memory override to use for the launched task.",
+                ),
+            }
+        )
+    ),
     **SHARED_ECS_SCHEMA,
 }
 
@@ -66,6 +97,8 @@ class EcsContainerContext(
             ("env_vars", Sequence[str]),
             ("task_definition_arn", Optional[str]),
             ("container_name", Optional[str]),
+            ("server_resources", Mapping[str, str]),
+            ("run_resources", Mapping[str, str]),
         ],
     )
 ):
@@ -78,6 +111,8 @@ class EcsContainerContext(
         env_vars: Optional[Sequence[str]] = None,
         task_definition_arn: Optional[str] = None,
         container_name: Optional[str] = None,
+        server_resources: Optional[Mapping[str, str]] = None,
+        run_resources: Optional[Mapping[str, str]] = None,
     ):
         return super(EcsContainerContext, cls).__new__(
             cls,
@@ -86,6 +121,8 @@ class EcsContainerContext(
             env_vars=check.opt_sequence_param(env_vars, "env_vars"),
             task_definition_arn=check.opt_str_param(task_definition_arn, "task_definition_arn"),
             container_name=check.opt_str_param(container_name, "container_name"),
+            server_resources=check.opt_mapping_param(server_resources, "server_resources"),
+            run_resources=check.opt_mapping_param(run_resources, "run_resources"),
         )
 
     def merge(self, other: "EcsContainerContext") -> "EcsContainerContext":
@@ -95,13 +132,15 @@ class EcsContainerContext(
             env_vars=[*other.env_vars, *self.env_vars],
             task_definition_arn=other.task_definition_arn or self.task_definition_arn,
             container_name=other.container_name or self.container_name,
+            server_resources={**self.server_resources, **other.server_resources},
+            run_resources={**self.run_resources, **other.run_resources},
         )
 
     def get_secrets_dict(self, secrets_manager) -> Mapping[str, str]:
-        return merge_dicts(
-            (get_tagged_secrets(secrets_manager, self.secrets_tags) if self.secrets_tags else {}),
-            {secret["name"]: secret["valueFrom"] for secret in self.secrets},
-        )
+        return {
+            **(get_tagged_secrets(secrets_manager, self.secrets_tags) if self.secrets_tags else {}),
+            **{secret["name"]: secret["valueFrom"] for secret in self.secrets},
+        }
 
     def get_environment_dict(self) -> Mapping[str, str]:
         parsed_env_var_tuples = [parse_env_var(env_var) for env_var in self.env_vars]
@@ -117,6 +156,7 @@ class EcsContainerContext(
                     secrets_tags=run_launcher.secrets_tags,
                     env_vars=run_launcher.env_vars,
                     task_definition_arn=run_launcher.task_definition,  # run launcher converts this from short name to ARN in constructor
+                    run_resources=run_launcher.run_resources,
                 )
             )
 
@@ -167,5 +207,7 @@ class EcsContainerContext(
                 env_vars=processed_context_value.get("env_vars"),
                 task_definition_arn=processed_context_value.get("task_definition_arn"),
                 container_name=processed_context_value.get("container_name"),
+                server_resources=processed_context_value.get("server_resources"),
+                run_resources=processed_context_value.get("run_resources"),
             )
         )
