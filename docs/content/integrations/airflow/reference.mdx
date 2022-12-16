@@ -30,9 +30,7 @@ migrated_airflow_repo = make_dagster_repo_from_airflow_dags_path(
 
 To convert a Dagster job to a Airflow DAG, use <PyObject module="dagster_airflow" object="make_airflow_dag" />:
 
-```python file=/integrations/airflow/hello_cereal_dag.py
-# pylint: disable=unused-variable
-
+```python file=/integrations/airflow/hello_cereal_dag.py startafter=start_example endbefore=end_example
 import datetime
 
 from dagster_airflow.factory import make_airflow_dag
@@ -115,9 +113,7 @@ def hello_cereal_job():
 
 To make this job available inside Airflow, you can write an Airflow DAG definition file that invokes <PyObject module="dagster_airflow" object="make_airflow_dag" />:
 
-```python file=/integrations/airflow/hello_cereal_dag.py
-# pylint: disable=unused-variable
-
+```python file=/integrations/airflow/hello_cereal_dag.py startafter=start_example endbefore=end_example
 import datetime
 
 from dagster_airflow.factory import make_airflow_dag
@@ -164,9 +160,7 @@ The approach above runs each op inside an operator that's similar to the Airflow
 
 As in the uncontainerized case, you'll put a new Python file defining your DAG in the directory in which Airflow looks for DAGs:
 
-```python file=/integrations/airflow/containerized.py
-# pylint: disable=unused-variable
-
+```python file=/integrations/airflow/containerized.py startafter=start_example endbefore=end_example
 import datetime
 
 from dagster_airflow.factory import make_airflow_dag_containerized

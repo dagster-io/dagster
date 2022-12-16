@@ -1,5 +1,5 @@
 # pylint: disable=unused-variable
-
+# start_example
 import datetime
 
 from dagster_airflow.factory import make_airflow_dag
@@ -18,3 +18,4 @@ dag, tasks = make_airflow_dag(
     job_name="hello_cereal_job",
     dag_kwargs={"default_args": DEFAULT_ARGS, "max_active_runs": 1},
 )
+# end_example

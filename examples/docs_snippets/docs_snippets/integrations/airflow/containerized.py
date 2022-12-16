@@ -1,5 +1,5 @@
 # pylint: disable=unused-variable
-
+# start_example
 import datetime
 
 from dagster_airflow.factory import make_airflow_dag_containerized
@@ -19,3 +19,4 @@ dag, steps = make_airflow_dag_containerized(
     image="dagster-airflow-demo-repository",
     dag_kwargs={"default_args": DEFAULT_ARGS, "max_active_runs": 1},
 )
+# end_example
