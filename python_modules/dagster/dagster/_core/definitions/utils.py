@@ -2,7 +2,7 @@ import keyword
 import os
 import re
 from glob import glob
-from typing import Any, Dict, Mapping, Optional, Sequence, Tuple, cast
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, cast
 
 import yaml
 
