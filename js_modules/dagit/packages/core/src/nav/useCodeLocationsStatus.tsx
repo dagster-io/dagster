@@ -10,17 +10,30 @@ import {StatusAndMessage} from '../instance/DeploymentStatusType';
 import {RepositoryLocationLoadStatus} from '../types/globalTypes';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
-import {
-  CodeLocationStatusQuery,
-  CodeLocationStatusQuery_locationStatusesOrError_WorkspaceLocationStatusEntries_entries,
-} from './types/CodeLocationStatusQuery';
+import {CodeLocationStatusQuery} from './types/CodeLocationStatusQuery';
 
-type LocationStatusEntry = CodeLocationStatusQuery_locationStatusesOrError_WorkspaceLocationStatusEntries_entries;
+type LocationStatusEntry = {
+  loadStatus: RepositoryLocationLoadStatus;
+  id: string;
+  name: string;
+  updateTimestamp: number;
+};
 
 const POLL_INTERVAL = 5 * 1000;
 
+type State = {
+  entriesById: {[key: string]: LocationStatusEntry} | undefined;
+  previousEntriesById: {[key: string]: LocationStatusEntry} | undefined;
+};
+const initialState: State = {
+  entriesById: undefined,
+  previousEntriesById: undefined,
+};
+
 export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null => {
   const {locationEntries, refetch} = React.useContext(WorkspaceContext);
+  const [state, setState] = React.useState<State>(initialState);
+
   const history = useHistory();
 
   const [showSpinner, setShowSpinner] = React.useState(false);
@@ -29,11 +42,36 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true,
     skip,
+    onCompleted: (data: CodeLocationStatusQuery) => {
+      const entries =
+        data?.locationStatusesOrError?.__typename === 'WorkspaceLocationStatusEntries'
+          ? data?.locationStatusesOrError.entries
+          : [];
+
+      let hasUpdates = entries.length !== Object.keys(state.entriesById || {}).length;
+      const entriesById = {};
+      entries.forEach((entry) => {
+        const previousEntry = state.previousEntriesById && state.previousEntriesById[entry.id];
+        const entryIsUpdated =
+          !previousEntry ||
+          previousEntry.updateTimestamp < entry.updateTimestamp ||
+          previousEntry.loadStatus !== entry.loadStatus;
+        hasUpdates = hasUpdates || entryIsUpdated;
+        entriesById[entry.id] = entryIsUpdated
+          ? {
+              id: entry.id,
+              loadStatus: entry.loadStatus,
+              updateTimestamp: entry.updateTimestamp,
+            }
+          : previousEntry;
+      });
+      if (hasUpdates) {
+        setState({entriesById, previousEntriesById: state.entriesById});
+      }
+    },
   });
 
   useQueryRefreshAtInterval(queryData, POLL_INTERVAL);
-
-  const {data, previousData} = queryData;
 
   const onClickViewButton = React.useCallback(() => {
     history.push('/locations');
@@ -88,33 +126,17 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
   // Given the previous and current code locations, determine whether to show a) a loading spinner
   // and/or b) a toast indicating that a code location is being reloaded.
   React.useEffect(() => {
-    const previousEntries =
-      previousData?.locationStatusesOrError?.__typename === 'WorkspaceLocationStatusEntries'
-        ? previousData?.locationStatusesOrError.entries
-        : [];
-    const currentEntries =
-      data?.locationStatusesOrError?.__typename === 'WorkspaceLocationStatusEntries'
-        ? data?.locationStatusesOrError.entries
-        : [];
-
-    const _build_entries_by_name = (
-      entries: LocationStatusEntry[],
-    ): {[key: string]: LocationStatusEntry} => {
-      const entries_by_name = {};
-      entries.forEach((entry) => {
-        entries_by_name[entry.id] = entry;
-      });
-      return entries_by_name;
-    };
-    const previousEntriesByName = _build_entries_by_name(previousEntries);
-    const currentEntriesByName = _build_entries_by_name(currentEntries);
+    const {entriesById, previousEntriesById} = state;
+    const currentEntries = Object.values(entriesById || {});
+    const previousEntries = Object.values(previousEntriesById || {});
     const hasUpdatedEntries =
       currentEntries.length &&
       currentEntries.some(
-        (entry) =>
-          !(entry.id in previousEntriesByName) ||
-          previousEntriesByName[entry.id].updateTimestamp <
-            currentEntriesByName[entry.id].updateTimestamp,
+        (entry: LocationStatusEntry) =>
+          !previousEntriesById ||
+          !(entry.id in previousEntriesById) ||
+          previousEntriesById[entry.id].updateTimestamp <
+            (entriesById || {})[entry.id].updateTimestamp,
       );
 
     // At least one code location has been removed. Reload, but don't make a big deal about it
@@ -125,12 +147,12 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     }
 
     const currentlyLoading = currentEntries.filter(
-      ({loadStatus}) => loadStatus === RepositoryLocationLoadStatus.LOADING,
+      ({loadStatus}: LocationStatusEntry) => loadStatus === RepositoryLocationLoadStatus.LOADING,
     );
     const anyCurrentlyLoading = currentlyLoading.length > 0;
 
     // If this is a fresh pageload and any locations are loading, show the spinner but not the toaster.
-    if (!previousData) {
+    if (!previousEntriesById) {
       if (anyCurrentlyLoading) {
         setShowSpinner(true);
       }
@@ -220,7 +242,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     // It's unlikely that we've made it to this point, since being inside this effect should
     // indicate that `data` and `previousData` have differences that would have been handled by
     // the conditionals above.
-  }, [data, previousData, reloadWorkspaceQuietly, reloadWorkspaceLoudly, onClickViewButton]);
+  }, [state, reloadWorkspaceQuietly, reloadWorkspaceLoudly, onClickViewButton]);
 
   if (showSpinner) {
     return {
