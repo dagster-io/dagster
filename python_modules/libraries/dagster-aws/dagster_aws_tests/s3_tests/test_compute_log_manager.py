@@ -7,7 +7,7 @@ import tempfile
 import pytest
 from botocore.exceptions import ClientError
 from dagster_aws.s3 import S3ComputeLogManager
-from dagster_tests.core_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
+from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
 
 from dagster import DagsterEventType, job, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
