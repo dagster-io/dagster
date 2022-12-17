@@ -99,10 +99,14 @@ def _check_invocation_requirements(
 def _get_friendly_string(configurable_def: ConfigurableDefinition) -> str:
     from dagster._core.definitions.resource_definition import ResourceDefinition
     from dagster._core.definitions.logger_definition import LoggerDefinition
+    from dagster._core.definitions.node_definition import NodeDefinition
     if isinstance(configurable_def, ResourceDefinition):
         return "resource"
     elif isinstance(configurable_def, LoggerDefinition):
         return "logger"
+    elif isinstance(configurable_def, NodeDefinition):
+        return configurable_def.node_type_str
+
 
     check.failed(f"Invalid definition type {configurable_def}")
 

@@ -241,6 +241,8 @@ class UnboundOpExecutionContext(OpExecutionContext):
 
         _validate_resource_requirements(self._resource_defs, op_def)
 
+        from dagster._core.definitions.resource_invocation import _resolve_bound_config
+
         solid_config = _resolve_bound_config(self.solid_config, op_def)
 
         return BoundOpExecutionContext(
@@ -323,32 +325,32 @@ def _validate_resource_requirements(
                 ensure_requirements_satisfied(resource_defs, [requirement])
 
 
-def _resolve_bound_config(solid_config: Any, op_def: OpDefinition) -> Any:
-    """Validate config against config schema, and return validated config."""
-    from dagster._config import process_config
+# def _resolve_bound_config(solid_config: Any, op_def: OpDefinition) -> Any:
+#     """Validate config against config schema, and return validated config."""
+#     from dagster._config import process_config
 
-    # Config processing system expects the top level config schema to be a dictionary, but solid
-    # config schema can be scalar. Thus, we wrap it in another layer of indirection.
-    outer_config_shape = Shape({"config": op_def.get_config_field()})
-    config_evr = process_config(
-        outer_config_shape, {"config": solid_config} if solid_config else {}
-    )
-    if not config_evr.success:
-        raise DagsterInvalidConfigError(
-            f"Error in config for {op_def.node_type_str} ",
-            config_evr.errors,
-            solid_config,
-        )
-    validated_config = cast(Dict, config_evr.value).get("config")
-    mapped_config_evr = op_def.apply_config_mapping({"config": validated_config})
-    if not mapped_config_evr.success:
-        raise DagsterInvalidConfigError(
-            f"Error in config for {op_def.node_type_str} ",
-            mapped_config_evr.errors,
-            solid_config,
-        )
-    validated_config = cast(Dict, mapped_config_evr.value).get("config")
-    return validated_config
+#     # Config processing system expects the top level config schema to be a dictionary, but solid
+#     # config schema can be scalar. Thus, we wrap it in another layer of indirection.
+#     outer_config_shape = Shape({"config": op_def.get_config_field()})
+#     config_evr = process_config(
+#         outer_config_shape, {"config": solid_config} if solid_config else {}
+#     )
+#     if not config_evr.success:
+#         raise DagsterInvalidConfigError(
+#             f"Error in config for {op_def.node_type_str} ",
+#             config_evr.errors,
+#             solid_config,
+#         )
+#     validated_config = cast(Dict, config_evr.value).get("config")
+#     mapped_config_evr = op_def.apply_config_mapping({"config": validated_config})
+#     if not mapped_config_evr.success:
+#         raise DagsterInvalidConfigError(
+#             f"Error in config for {op_def.node_type_str} ",
+#             mapped_config_evr.errors,
+#             solid_config,
+#         )
+#     validated_config = cast(Dict, mapped_config_evr.value).get("config")
+#     return validated_config
 
 
 class BoundOpExecutionContext(OpExecutionContext):
