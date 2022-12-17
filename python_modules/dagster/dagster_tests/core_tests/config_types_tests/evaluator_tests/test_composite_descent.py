@@ -852,3 +852,26 @@ def test_configuring_graph_with_no_config_mapping():
         '"graph_without_config_fn"',
     ):
         configured(graph_without_config_fn, name="configured_graph")({})
+
+
+from dagster import op, job
+
+
+def test_disallow_configured_config():
+    @op(config_schema={"an_int": int})
+    def op_with_config(_):
+        pass
+
+    configured_op = op_with_config.configured(
+        name="configured_op", config_or_config_fn={"an_int": 5}
+    )
+
+    @job
+    def a_job():
+        configured_op()
+
+    # this works
+    a_job.execute_in_process()
+
+    # this works, but should not
+    a_job.execute_in_process({"ops": {"configured_op": {"config": "lksjdlfkjdsljf"}}})
