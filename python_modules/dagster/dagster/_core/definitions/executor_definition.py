@@ -175,7 +175,9 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         name = check.opt_str_param(name, "name")
 
         new_config_schema = ConfiguredDefinitionConfigSchema(
-            self, convert_user_facing_definition_config_schema(config_schema), config_or_config_fn
+            self,
+            convert_user_facing_definition_config_schema(config_schema) if config_schema else None,
+            config_or_config_fn,
         )
 
         return self.copy_for_configured(
