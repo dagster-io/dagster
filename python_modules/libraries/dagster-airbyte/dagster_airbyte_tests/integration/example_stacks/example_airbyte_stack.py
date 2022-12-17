@@ -17,6 +17,10 @@ airbyte_instance = airbyte_resource.configured(
     }
 )
 
+# print("********************")
+# print(f"Curried resource {airbyte_instance.config_schema.as_field()}")
+# print("********************")
+
 
 local_json_source = AirbyteSource(
     name="local-json-input",

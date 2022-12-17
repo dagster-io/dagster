@@ -77,8 +77,12 @@ def _check_invocation_requirements(
             "Use the `build_init_resource_context` function to create a context with config."
         )
 
-    resource_config = _resolve_bound_config(
-        init_context.resource_config if init_context else None, resource_def
+    # print(f"resource_def {resource_def} config_schema {resource_def.config_schema.as_field()}")
+
+    resource_config = (
+        _resolve_bound_config(init_context.resource_config if init_context else None, resource_def)
+        if resource_def.config_schema
+        else None
     )
 
     # Construct a context if None was provided. This will initialize an ephemeral instance, and
@@ -97,15 +101,24 @@ def _check_invocation_requirements(
 def _resolve_bound_config(resource_config: Any, resource_def: "ResourceDefinition") -> Any:
     from dagster._config import process_config
 
-    outer_config_shape = Shape({"config": resource_def.get_config_field()})
-    config_evr = process_config(
-        outer_config_shape, {"config": resource_config} if resource_config else {}
-    )
-    if not config_evr.success:
-        raise DagsterInvalidConfigError(
-            "Error in config for resource ", config_evr.errors, resource_config
+    # print(f"resource_config: {resource_config}")
+    # print(f"resource_def: {resource_def}")
+    # print(f"resource_def config_field: {resource_def.get_config_field()}")
+
+    if resource_def.has_config_field:
+        outer_config_shape = Shape({"config": resource_def.get_config_field()})
+        config_evr = process_config(
+            outer_config_shape, {"config": resource_config} if resource_config else {}
         )
-    validated_config = cast(Dict[str, Any], config_evr.value).get("config")
+        if not config_evr.success:
+            raise DagsterInvalidConfigError(
+                "Error in config for resource ", config_evr.errors, resource_config
+            )
+        validated_config = cast(Dict[str, Any], config_evr.value).get("config")
+    else:
+        # nothing to validate
+        check.invariant(not resource_config, "Should not have passed in config here")
+        validated_config = resource_config
     mapped_config_evr = resource_def.apply_config_mapping({"config": validated_config})
     if not mapped_config_evr.success:
         raise DagsterInvalidConfigError(
@@ -114,4 +127,5 @@ def _resolve_bound_config(resource_config: Any, resource_def: "ResourceDefinitio
             validated_config,
         )
     validated_config = cast(Dict[str, Any], mapped_config_evr.value).get("config")
+    # print(f"validated_config: {validated_config}")
     return validated_config
