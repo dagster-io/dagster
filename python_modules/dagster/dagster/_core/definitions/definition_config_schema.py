@@ -101,6 +101,7 @@ class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
     parent_def: "ConfigurableDefinition"
     _current_field: Optional[Field]
     _config_fn: Callable[..., object]
+    _passed_config: Any
 
     def __init__(
         self,
@@ -119,11 +120,14 @@ class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
 
         # type-ignores for mypy "Cannot assign to a method" (pyright works)
         if not callable(config_or_config_fn):
+            check.invariant(config_schema is None)
+            self._passed_config = config_or_config_fn
             self._config_fn = lambda _: config_or_config_fn  # type: ignore
         else:
             self._config_fn = config_or_config_fn  # type: ignore
 
-    def as_field(self) -> Field:
+    def as_field(self) -> Optional[Field]:
+        return self._current_field
         return check.not_none(self._current_field)
 
     def _invoke_user_config_fn(self, processed_config: Mapping[str, Any]) -> Mapping[str, object]:
