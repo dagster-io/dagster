@@ -856,7 +856,7 @@ def test_configuring_graph_with_no_config_mapping():
         configured(graph_without_config_fn, name="configured_graph")({})
 
 
-@pytest.mark.xfail("Expected failure because this is a bug")
+@pytest.mark.xfail(reason="Expected failure because this is a bug")
 def test_disallow_configured_config():
     @op(config_schema={"an_int": int})
     def op_with_config(_):

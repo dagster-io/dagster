@@ -128,7 +128,7 @@ class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
 
     def as_field(self) -> Optional[Field]:
         return self._current_field
-        return check.not_none(self._current_field)
+        # return check.not_none(self._current_field)
 
     def _invoke_user_config_fn(self, processed_config: Mapping[str, Any]) -> Mapping[str, object]:
         with user_code_error_boundary(
