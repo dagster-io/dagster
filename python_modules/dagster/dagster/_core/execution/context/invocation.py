@@ -329,17 +329,22 @@ def _resolve_bound_config(solid_config: Any, op_def: OpDefinition) -> Any:
 
     # Config processing system expects the top level config schema to be a dictionary, but solid
     # config schema can be scalar. Thus, we wrap it in another layer of indirection.
-    outer_config_shape = Shape({"config": op_def.get_config_field()})
-    config_evr = process_config(
-        outer_config_shape, {"config": solid_config} if solid_config else {}
-    )
-    if not config_evr.success:
-        raise DagsterInvalidConfigError(
-            f"Error in config for {op_def.node_type_str} ",
-            config_evr.errors,
-            solid_config,
+    if op_def.has_config_field:
+        outer_config_shape = Shape({"config": op_def.get_config_field()})
+        config_evr = process_config(
+            outer_config_shape, {"config": solid_config} if solid_config else {}
         )
-    validated_config = cast(Dict, config_evr.value).get("config")
+        if not config_evr.success:
+            raise DagsterInvalidConfigError(
+                f"Error in config for {op_def.node_type_str} ",
+                config_evr.errors,
+                solid_config,
+            )
+        validated_config = cast(Dict, config_evr.value).get("config")
+    else:
+        # nothing to validate
+        check.invariant(not solid_config, "Should not have passed in config here")
+        validated_config = {}
     mapped_config_evr = op_def.apply_config_mapping({"config": validated_config})
     if not mapped_config_evr.success:
         raise DagsterInvalidConfigError(

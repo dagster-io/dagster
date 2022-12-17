@@ -1,5 +1,6 @@
 from typing import Any, Dict, cast
 
+import dagster._check as check
 from dagster._core.errors import DagsterInvalidConfigError
 
 from ..._config import Shape
@@ -22,18 +23,22 @@ def logger_invocation_result(logger_def: LoggerDefinition, init_context: Unbound
 def _resolve_bound_config(logger_config: Any, logger_def: "LoggerDefinition") -> Any:
     from dagster._config import process_config
 
-    validated_config = None
-    outer_config_shape = Shape({"config": logger_def.get_config_field()})
-    config_evr = process_config(
-        outer_config_shape, {"config": logger_config} if logger_config else {}
-    )
-    if not config_evr.success:
-        raise DagsterInvalidConfigError(
-            "Error in config for logger ",
-            config_evr.errors,
-            logger_config,
+    if logger_def.has_config_field:
+        validated_config = None
+        outer_config_shape = Shape({"config": logger_def.get_config_field()})
+        config_evr = process_config(
+            outer_config_shape, {"config": logger_config} if logger_config else {}
         )
-    validated_config = cast(Dict, config_evr.value).get("config")
+        if not config_evr.success:
+            raise DagsterInvalidConfigError(
+                "Error in config for logger ",
+                config_evr.errors,
+                logger_config,
+            )
+        validated_config = cast(Dict, config_evr.value).get("config")
+    else:
+        check.invariant(not logger_config, "Should not have passed in config here")
+        validated_config = []
     mapped_config_evr = logger_def.apply_config_mapping({"config": validated_config})
     if not mapped_config_evr.success:
         raise DagsterInvalidConfigError(

@@ -85,7 +85,11 @@ def _check_invocation_requirements(
         )
 
     # Check config requirements
-    if not context and solid_def.config_schema.as_field().is_required:
+    if (
+        not context
+        and solid_def.has_config_field
+        and solid_def.config_schema.as_field().is_required
+    ):
         node_label = solid_def.node_type_str  # string "solid" for solids, "op" for ops
         raise DagsterInvalidInvocationError(
             f'{node_label} "{solid_def.name}" has required config schema, but no context was provided. '
