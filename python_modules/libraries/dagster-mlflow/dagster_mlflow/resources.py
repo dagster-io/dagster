@@ -133,8 +133,8 @@ class MlFlow(metaclass=MlflowMeta):
                 experiment_ids=[experiment.experiment_id],
                 filter_string=f"tags.dagster_run_id='{dagster_run_id}'",
             )
-            if not current_run_df.empty:
-                return current_run_df.run_id.values[0]  # pylint: disable=no-member
+            if not current_run_df.empty:  # type: ignore (bad lib types)
+                return current_run_df.run_id.values[0]  # type: ignore (bad lib types)
 
     def _set_active_run(self, run_id=None):
         """
