@@ -173,13 +173,32 @@ class CachingInstanceQueryer:
         else:
             asset_partition = asset
 
+        import os
+
+        should_log = os.getenv("SHOULD_LOG") == "yes"
+
+        # do not use the latest materialization cache with before_cursor
+
+        if before_cursor is not None:
+            if should_log:
+                print(asset, "SKIPPED")
+            return self._get_materialization_record(
+                asset_partition=asset_partition,
+                after_cursor=after_cursor,
+                before_cursor=before_cursor,
+            )
+
         if asset_partition in self._latest_materialization_record_cache:
+            if should_log:
+                print("WAS IN CACHE")
             cached_record = self._latest_materialization_record_cache[asset_partition]
-            if (after_cursor is None or after_cursor < cached_record.storage_id) and (
-                before_cursor is None or before_cursor > cached_record.storage_id
-            ):
+            if after_cursor is None or after_cursor < cached_record.storage_id:
+                if should_log:
+                    print("RETURNED FROM CACHE")
                 return cached_record
             else:
+                if should_log:
+                    print("RETURNED NONE")
                 return None
         elif asset_partition in self._no_materializations_after_cursor_cache:
             if (
@@ -196,7 +215,7 @@ class CachingInstanceQueryer:
             self._latest_materialization_record_cache[asset_partition] = record
             return record
         else:
-            if after_cursor is not None and before_cursor is None:
+            if after_cursor is not None:
                 self._no_materializations_after_cursor_cache[asset_partition] = min(
                     after_cursor,
                     self._no_materializations_after_cursor_cache.get(asset_partition, after_cursor),
@@ -266,6 +285,7 @@ class CachingInstanceQueryer:
         new_known_data: Dict[AssetKey, Tuple[Optional[int], Optional[float]]],
     ):
         event_log_storage = self._instance.event_log_storage
+        return
         if (
             event_log_storage.supports_add_asset_event_tags()
             and record.asset_key is not None
@@ -329,6 +349,9 @@ class CachingInstanceQueryer:
         required_keys: AbstractSet[AssetKey],
     ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
 
+        import os
+
+        should_log = os.getenv("SHOULD_LOG") == "yes"
         if record_id is None:
             return {key: (None, None) for key in required_keys}
 
@@ -336,6 +359,10 @@ class CachingInstanceQueryer:
         known_data = self.get_known_used_data(asset_key, record_id)
         if asset_key in required_keys:
             known_data[asset_key] = (record_id, record_timestamp)
+
+        if should_log:
+            print("key:", asset_key)
+            print("known data:", known_data)
 
         # not all required keys have known values
         unknown_required_keys = required_keys - set(known_data.keys())
@@ -350,6 +377,9 @@ class CachingInstanceQueryer:
                 upstream_required_keys = self._upstream_subset(
                     asset_graph, start_key=parent_key, input_keys=unknown_required_keys
                 )
+                if should_log:
+                    print("eval parent:", parent_key)
+                    print("upstream req:", upstream_required_keys)
 
                 input_event_pointer_tag = get_input_event_pointer_tag_key(parent_key)
                 if input_event_pointer_tag in record_tags:
@@ -359,6 +389,11 @@ class CachingInstanceQueryer:
                     parent_record = self.get_latest_materialization_record(
                         parent_key, before_cursor=input_record_id + 1
                     )
+                    if should_log:
+                        print("used pointer", input_record_id)
+                        print(
+                            "parent_record_id", parent_record.storage_id if parent_record else None
+                        )
                 else:
                     # if the input event id was not recorded (materialized pre-1.1.0), just grab
                     # the most recent asset materialization for this parent which happened before
@@ -366,6 +401,11 @@ class CachingInstanceQueryer:
                     parent_record = self.get_latest_materialization_record(
                         parent_key, before_cursor=record_id
                     )
+                    if should_log:
+                        print("used time", record_id)
+                        print(
+                            "parent_record_id", parent_record.storage_id if parent_record else None
+                        )
 
                 # recurse to find the data times of this parent
                 for key, tup in self._calculate_used_data(
@@ -424,6 +464,10 @@ class CachingInstanceQueryer:
         )
         self.set_known_used_data(record, new_known_data=data)
 
+        import os
+
+        if os.getenv("SHOULD_LOG") == "yes":
+            print("compiled data:", data)
         return {
             key: datetime.datetime.fromtimestamp(timestamp, tz=datetime.timezone.utc)
             if timestamp is not None

@@ -639,10 +639,19 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 & constraint_keys
             ) | {key}
 
+            print("-----------------------")
+            import os
+            if key in {
+                AssetKey(["ANALYTICS", "company_perf"]),
+                AssetKey(["ANALYTICS", "company_stats"]),
+            }:
+                os.environ["SHOULD_LOG"] = "yes"
             # figure out the current contents of this asset with respect to its constraints
             current_data_times = get_current_data_times_for_key(
                 instance_queryer, asset_graph, relevant_upstream_keys, key
             )
+            print(key, current_data_times)
+            os.environ["SHOULD_LOG"] = "no"
 
             # should not execute if key is not targeted or previous run failed
             if key not in target_asset_keys or instance_queryer.failed_in_latest_run(asset_key=key):
@@ -696,6 +705,8 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 # current times for this asset, as it's not going to be updated
                 expected_data_times_by_key[key] = current_data_times
 
+            print("************************")
+
     return to_materialize, eventually_materialize
 
 
@@ -717,6 +728,8 @@ def reconcile(
         asset_graph=asset_graph,
         target_asset_selection=asset_selection,
     )
+    print("FOR FRESHNESS", asset_partitions_to_reconcile_for_freshness)
+    print("EVENTUAL", eventual_asset_partitions_to_reconcile_for_freshness)
 
     (
         asset_partitions_to_reconcile,
@@ -730,6 +743,8 @@ def reconcile(
         target_asset_selection=asset_selection,
         eventual_asset_partitions_to_reconcile_for_freshness=eventual_asset_partitions_to_reconcile_for_freshness,
     )
+
+    print("FOR RECONCILE", asset_partitions_to_reconcile)
 
     assets_to_reconcile_by_partitions_def_partition_key: Mapping[
         Tuple[Optional[PartitionsDefinition], Optional[str]], Set[AssetKey]
@@ -880,6 +895,8 @@ def build_asset_reconciliation_sensor(
     check.opt_mapping_param(run_tags, "run_tags", key_type=str, value_type=str)
 
     def sensor_fn(context):
+        print("====================================================")
+        print("START" * 10)
         cursor = (
             AssetReconciliationCursor.from_serialized(
                 context.cursor, context.repository_def.asset_graph
@@ -896,6 +913,8 @@ def build_asset_reconciliation_sensor(
         )
 
         context.update_cursor(updated_cursor.serialize())
+        print("END" * 15)
+        print("====================================================")
         return run_requests
 
     return SensorDefinition(
