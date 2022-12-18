@@ -1,7 +1,9 @@
 import json
 
+# Type errors ignored because some of these imports target deprecated modules for compatibility with
+# airflow 1.x and 2.x.
 from airflow.models import Connection
-from airflow.operators.http_operator import SimpleHttpOperator
+from airflow.operators.http_operator import SimpleHttpOperator  # type: ignore
 from dagster import job
 from dagster_airflow import airflow_operator_to_op
 
