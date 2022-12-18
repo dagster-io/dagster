@@ -117,7 +117,6 @@ setup(
             "pytest==7.0.1",  # last version supporting python 3.6
             "responses==0.10.*",
             "snapshottest==0.6.0",
-            "tox==3.25.0",
             "yamllint",
         ],
         "black": [
@@ -148,6 +147,9 @@ setup(
         "ruff": [
             "ruff==0.0.212",
         ],
+        "tox": [
+            "tox==4.0.14",
+        ]
     },
     entry_points={
         "console_scripts": [
