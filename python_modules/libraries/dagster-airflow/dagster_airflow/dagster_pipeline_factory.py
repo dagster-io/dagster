@@ -49,7 +49,7 @@ if str(airflow_version) >= "2.0.0":
     from airflow.utils.state import DagRunState
     from airflow.utils.types import DagRunType
 else:
-    from airflow.utils.db import create_session
+    from airflow.utils.db import create_session  # type: ignore  # (airflow 1 compat)
     from airflow.utils.state import State
 # pylint: enable=no-name-in-module,import-error
 
