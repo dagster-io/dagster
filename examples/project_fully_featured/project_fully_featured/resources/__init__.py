@@ -1,36 +1,25 @@
 import os
 
-from dagster_aws.s3 import s3_resource
-from dagster_dbt import dbt_cli_resource
-from dagster_pyspark import pyspark_resource
+from dagster_aws.s3.io_manager import PickledObjectS3IOManager
+from dagster_pyspark.resources import PySparkResource
+from matplotlib.artist import get
 
+from dagster._seven.temp_dir import get_system_temp_directory
 from dagster._utils import file_relative_path
 
-from .common_bucket_s3_pickle_io_manager import common_bucket_s3_pickle_io_manager
-from .duckdb_parquet_io_manager import duckdb_partitioned_parquet_io_manager
-from .hn_resource import hn_api_client, hn_api_subsample_client
-from .parquet_io_manager import (
-    local_partitioned_parquet_io_manager,
-    s3_partitioned_parquet_io_manager,
-)
-from .snowflake_io_manager import snowflake_io_manager
+from .common_utils_to_move_to_libraries import DbtCliResource, build_s3_session, deferred_io_manager
+from .duckdb_parquet_io_manager import DuckDBPartitionedParquetIOManager
+from .hn_resource import HNAPIClient, HNAPISubsampleClient
+from .parquet_io_manager import PartitionedParquetIOManager
+from .snowflake_io_manager import SnowflakeIOManager
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
 DBT_PROFILES_DIR = DBT_PROJECT_DIR + "/config"
-dbt_local_resource = dbt_cli_resource.configured(
-    {"profiles_dir": DBT_PROFILES_DIR, "project_dir": DBT_PROJECT_DIR, "target": "local"}
-)
-dbt_staging_resource = dbt_cli_resource.configured(
-    {"profiles-dir": DBT_PROFILES_DIR, "project-dir": DBT_PROJECT_DIR, "target": "staging"}
-)
-dbt_prod_resource = dbt_cli_resource.configured(
-    {"profiles_dir": DBT_PROFILES_DIR, "project_dir": DBT_PROJECT_DIR, "target": "prod"}
-)
 
 
-configured_pyspark = pyspark_resource.configured(
-    {
-        "spark_conf": {
+def get_configured_pyspark_resource():
+    return PySparkResource(
+        spark_conf={
             "spark.jars.packages": ",".join(
                 [
                     "net.snowflake:snowflake-jdbc:3.8.0",
@@ -43,44 +32,75 @@ configured_pyspark = pyspark_resource.configured(
             "spark.hadoop.fs.s3.awsSecretAccessKey": os.getenv("AWS_SECRET_ACCESS_KEY", ""),
             "spark.hadoop.fs.s3.buffer.dir": "/tmp",
         }
+    )
+
+
+SHARED_SNOWFLAKE_CONF = {
+    "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
+    "user": os.getenv("SNOWFLAKE_USER", ""),
+    "password": os.getenv("SNOWFLAKE_PASSWORD", ""),
+    "warehouse": "TINY_WAREHOUSE",
+}
+
+
+def get_prod_resources():
+    s3_prod_bucket = "hackernews-elementl-prod"
+
+    return {
+        "io_manager": deferred_io_manager(
+            lambda: PickledObjectS3IOManager(
+                s3_bucket=s3_prod_bucket, s3_session=build_s3_session()
+            )
+        ),
+        "parquet_io_manager": PartitionedParquetIOManager(
+            base_path="s3://" + s3_prod_bucket,
+            pyspark_resource=get_configured_pyspark_resource(),
+        ),
+        "warehouse_io_manager": SnowflakeIOManager(database="DEMO_DB", **SHARED_SNOWFLAKE_CONF),
+        "hn_client": HNAPISubsampleClient(subsample_rate=10),
+        "dbt": DbtCliResource(
+            profiles_dir=DBT_PROFILES_DIR, project_dir=DBT_PROJECT_DIR, target="prod"
+        ),
     }
-)
 
 
-snowflake_io_manager_prod = snowflake_io_manager.configured({"database": "DEMO_DB"})
+def get_staging_resources():
+    s3_staging_bucket = "hackernews-elementl-dev"
 
-RESOURCES_PROD = {
-    "s3_bucket": "hackernews-elementl-prod",
-    "io_manager": common_bucket_s3_pickle_io_manager,
-    "s3": s3_resource,
-    "parquet_io_manager": s3_partitioned_parquet_io_manager,
-    "warehouse_io_manager": snowflake_io_manager_prod,
-    "pyspark": configured_pyspark,
-    "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
-    "dbt": dbt_prod_resource,
-}
-
-snowflake_io_manager_staging = snowflake_io_manager.configured({"database": "DEMO_DB_STAGING"})
-
-
-RESOURCES_STAGING = {
-    "s3_bucket": "hackernews-elementl-dev",
-    "io_manager": common_bucket_s3_pickle_io_manager,
-    "s3": s3_resource,
-    "parquet_io_manager": s3_partitioned_parquet_io_manager,
-    "warehouse_io_manager": snowflake_io_manager_staging,
-    "pyspark": configured_pyspark,
-    "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
-    "dbt": dbt_staging_resource,
-}
+    return {
+        "io_manager": deferred_io_manager(
+            lambda: PickledObjectS3IOManager(
+                s3_bucket=s3_staging_bucket, s3_session=build_s3_session()
+            )
+        ),
+        "parquet_io_manager": PartitionedParquetIOManager(
+            base_path="s3://" + s3_staging_bucket,
+            pyspark_resource=get_configured_pyspark_resource(),
+        ),
+        "warehouse_io_manager": SnowflakeIOManager(
+            database="DEMO_DB_STAGIN", **SHARED_SNOWFLAKE_CONF
+        ),
+        "hn_client": HNAPISubsampleClient(subsample_rate=10),
+        "dbt": DbtCliResource(
+            profiles_dir=DBT_PROFILES_DIR, project_dir=DBT_PROJECT_DIR, target="staging"
+        ),
+    }
 
 
-RESOURCES_LOCAL = {
-    "parquet_io_manager": local_partitioned_parquet_io_manager,
-    "warehouse_io_manager": duckdb_partitioned_parquet_io_manager.configured(
-        {"duckdb_path": os.path.join(DBT_PROJECT_DIR, "hackernews.duckdb")},
-    ),
-    "pyspark": configured_pyspark,
-    "hn_client": hn_api_client,
-    "dbt": dbt_local_resource,
-}
+def get_local_resources():
+    configured_pyspark = get_configured_pyspark_resource()
+    return {
+        "parquet_io_manager": PartitionedParquetIOManager(
+            base_path=get_system_temp_directory(),
+            pyspark_resource=configured_pyspark,
+        ),
+        "warehouse_io_manager": DuckDBPartitionedParquetIOManager(
+            base_path=get_system_temp_directory(),
+            duckdb_path=os.path.join(DBT_PROJECT_DIR, "hackernews.duckdb"),
+            pyspark_resource=configured_pyspark,
+        ),
+        "hn_client": HNAPIClient(),
+        "dbt": DbtCliResource(
+            profiles_dir=DBT_PROFILES_DIR, project_dir=DBT_PROJECT_DIR, target="local"
+        ),
+    }

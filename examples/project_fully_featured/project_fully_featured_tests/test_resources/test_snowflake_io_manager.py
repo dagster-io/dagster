@@ -7,8 +7,8 @@ import pytest
 from pandas import DataFrame as PandasDataFrame
 from project_fully_featured.resources.snowflake_io_manager import (
     SHARED_SNOWFLAKE_CONF,
+    SnowflakeIOManager,
     connect_snowflake,
-    snowflake_io_manager,
 )
 from pyspark.sql import Row, SparkSession
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
@@ -54,9 +54,8 @@ def temporary_snowflake_table(contents: PandasDataFrame) -> Iterator[AssetKey]:
     os.environ.get("TEST_SNOWFLAKE") != "true", reason="avoid dependency on snowflake for tests"
 )
 def test_handle_output_then_load_input_pandas():
-    snowflake_manager = snowflake_io_manager(
-        build_init_resource_context(config={"database": "TESTDB"})
-    )
+    # unclear if this is even executed
+    snowflake_manager = SnowflakeIOManager(database="TESTDB")
     contents1 = PandasDataFrame([{"col1": "a", "col2": 1}])  # just to get the types right
     contents2 = PandasDataFrame([{"col1": "b", "col2": 2}])  # contents we will insert
     with temporary_snowflake_table(contents1) as temp_table_key:
@@ -72,9 +71,8 @@ def test_handle_output_then_load_input_pandas():
     os.environ.get("TEST_SNOWFLAKE") != "true", reason="avoid dependency on snowflake for tests"
 )
 def test_handle_output_spark_then_load_input_pandas():
-    snowflake_manager = snowflake_io_manager(
-        build_init_resource_context(config={"database": "TESTDB"})
-    )
+    # unclear if this is even executed
+    snowflake_manager = SnowflakeIOManager(database="TESTDB")
     spark = SparkSession.builder.config(
         "spark.jars.packages",
         "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",

@@ -1,7 +1,10 @@
+from typing import Optional
+
 import pandas as pd
 from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckdb_io_manager
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._core.definitions.configured_adapters import ConfiguredIOManagerAdapter
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 
 
@@ -121,3 +124,11 @@ Examples:
             ...
 
 """
+
+
+class DuckDbPandasIOManager(ConfiguredIOManagerAdapter):
+    def __init__(self, database: str, schema: Optional[str] = None):
+        super().__init__(
+            parent_io_manager=duckdb_pandas_io_manager,
+            args={"database": database, "schema": schema},
+        )

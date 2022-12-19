@@ -10,15 +10,7 @@ from snowflake.connector.pandas_tools import pd_writer
 from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
 from sqlalchemy import create_engine
 
-from dagster import (
-    IOManager,
-    InputContext,
-    MetadataValue,
-    OutputContext,
-    TableColumn,
-    TableSchema,
-    io_manager,
-)
+from dagster import IOManager, InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -52,21 +44,14 @@ def connect_snowflake(config, schema="public"):
             conn.close()
 
 
-@io_manager(config_schema={"database": str})
-def snowflake_io_manager(init_context):
-    return SnowflakeIOManager(
-        config=dict(database=init_context.resource_config["database"], **SHARED_SNOWFLAKE_CONF)
-    )
-
-
 class SnowflakeIOManager(IOManager):
     """
     This IOManager can handle outputs that are either Spark or Pandas DataFrames. In either case,
     the data will be written to a Snowflake table specified by metadata on the relevant Out.
     """
 
-    def __init__(self, config):
-        self._config = config
+    def __init__(self, database, **kwargs):
+        self._config = dict(database=database, **kwargs)
 
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
         schema, table = context.asset_key.path[-2], context.asset_key.path[-1]  # type: ignore
@@ -80,7 +65,7 @@ class SnowflakeIOManager(IOManager):
         elif isinstance(obj, PandasDataFrame):
             metadata = self._handle_pandas_output(obj, schema, table)
         elif obj is None:  # dbt
-            config = dict(SHARED_SNOWFLAKE_CONF)
+            config = dict(self._config)
             config["schema"] = schema
             with connect_snowflake(config=config) as con:
                 df = read_sql(f"SELECT * FROM {context.name} LIMIT 5", con=con)
