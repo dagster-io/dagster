@@ -453,14 +453,12 @@ def get_freshness_constraints_by_key(
                 asset_graph=asset_graph, record=latest_record, upstream_keys=upstream_keys
             )
             if latest_record is not None
-            else {}
+            else {upstream_key: None for upstream_key in upstream_keys}
         )
-        available_data_times = {upstream_key: plan_window_start for upstream_key in upstream_keys}
         constraints_by_key[key] = freshness_policy.constraints_for_time_window(
             window_start=plan_window_start,
             window_end=plan_window_end,
             used_data_times=used_data_times,
-            available_data_times=available_data_times,
         )
 
     # no freshness policies, so don't bother with constraints
@@ -539,29 +537,30 @@ def get_execution_time_window_for_constraints(
     current_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     in_progress_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
+    relevant_upstream_keys: AbstractSet[AssetKey],
 ) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
     """
     execution_window_start = None
     execution_window_end = None
-    for constraint in sorted(constraints, key=lambda c: c.required_by_time):
-        current_data_time = current_data_times.get(constraint.asset_key)
-        in_progress_data_time = in_progress_data_times.get(constraint.asset_key)
-        expected_data_time = expected_data_times.get(constraint.asset_key)
+    min_dt = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
 
-        if not (
-            # this constraint is irrelevant, as it is satisfied by the current data time
-            (current_data_time is not None and current_data_time > constraint.required_data_time)
-            # this constraint is irrelevant, as a currently-executing run will satisfy it
-            or (
-                in_progress_data_time is not None
-                and in_progress_data_time > constraint.required_data_time
-            )
-            # this constraint is irrelevant, as materializing on this tick will not make progress
-            # towards satisfying it
-            or (expected_data_time is None)
-            or (current_data_time is not None and expected_data_time <= current_data_time)
+    for constraint in sorted(constraints, key=lambda c: c.required_by_time):
+        # the set of keys in this constraint that are actually upstream of this asset
+        relevant_constraint_keys = constraint.asset_keys & relevant_upstream_keys
+
+        if not all(
+            # ensure that this constraint is not satisfied by the current state of the data and
+            # will not be satisfied once all in progress runs complete
+            (current_data_times.get(constraint_key) or min_dt) > constraint.required_data_time
+            or (in_progress_data_times.get(constraint_key) or min_dt)
+            > constraint.required_data_time
+            for constraint_key in relevant_constraint_keys
+        ) and not any(
+            # ensure that if we execute this asset on this tick, this constraint will be satisfied
+            (expected_data_times.get(constraint_key) or min_dt) < constraint.required_data_time
+            for constraint_key in relevant_constraint_keys
         ):
             if execution_window_start is None:
                 execution_window_start = constraint.required_data_time
@@ -578,6 +577,9 @@ def get_execution_time_window_for_constraints(
                     execution_window_end,
                     constraint.required_by_time,
                 )
+            else:
+                break
+
     return execution_window_start, execution_window_end
 
 
@@ -625,7 +627,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
             if not constraints:
                 continue
 
-            constraint_keys = {constraint.asset_key for constraint in constraints}
+            constraint_keys = set().union(*(constraint.asset_keys for constraint in constraints))
 
             # the set of asset keys which are involved in some constraint and are actually upstream
             # of this asset
@@ -674,6 +676,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                     current_data_times=current_data_times,
                     in_progress_data_times=in_progress_data_times,
                     expected_data_times=expected_data_times,
+                    relevant_upstream_keys=relevant_upstream_keys,
                 )
 
             # a key may already be in to_materialize by the time we get here if a required
