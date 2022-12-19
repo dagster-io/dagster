@@ -68,7 +68,7 @@ To rewrite this DAG in Dagster, we'll break it down into three parts:
 
 A Dagster [job](/concepts/ops-jobs-graphs/jobs) is made up of a [graph](/concepts/ops-jobs-graphs/graphs) of [ops](/concepts/ops-jobs-graphs/ops). This should feel familiar if you've used the Airflow Task API. With ops, the focus is on writing a graph with Python functions as nodes and data dependencies in between them as edges.
 
---
+---
 
 ## Step 1: Defining the ops
 
@@ -109,7 +109,7 @@ Which would yield the following graph of computations in Dagit, Dagster's web-ba
 
 In the tutorial DAG, the `t2` operator allowed for 3 retries. To configure the same behavior in Dagster, you can use [op-level retry policies](/concepts/ops-jobs-graphs/op-retries)
 
---
+---
 
 ## Step 2: Define the job
 
@@ -127,7 +127,7 @@ def tutorial_job():
 
 Job-level retries are managed by the [run launcher](/deployment/run-retries) Once enabled in your dagster.yaml file, you can define the retry count for the job.
 
---
+---
 
 ## Step 3: Define the schedule
 
@@ -137,7 +137,7 @@ In Dagster, schedules can be defined for jobs, which determine the cadence at wh
 schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
 ```
 
---
+---
 
 ## Step 4: Run Dagster locally
 
