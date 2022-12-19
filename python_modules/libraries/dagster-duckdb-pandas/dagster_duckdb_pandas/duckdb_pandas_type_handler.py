@@ -1,8 +1,19 @@
+from typing import Optional
+
 import pandas as pd
-from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckdb_io_manager
+import pydantic
+from dagster_duckdb.io_manager import (
+    DuckDbClient,
+    DuckDbIOManagerConfigSchema,
+    DuckDbIOManagerConfigSchemaFieldsOnly,
+    _connect_duckdb,
+    build_duckdb_io_manager,
+)
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._config.structured_config import StructuredIOManagerAdapter
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
+from dagster._core.storage.io_manager import IOManagerDefinition
 
 
 class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
@@ -121,3 +132,20 @@ Examples:
             ...
 
 """
+
+
+class DuckDbPandasIOManager(StructuredIOManagerAdapter, DuckDbIOManagerConfigSchema):
+    @property
+    def wrapped_io_manager(self) -> IOManagerDefinition:
+        return duckdb_pandas_io_manager
+
+
+# class DuckDbPandasIOManager(StructuredIOManagerAdapter):
+#     database: str = pydantic.Field(description="Path to the DuckDB database")
+#     schema_: Optional[str] = pydantic.Field(
+#         default=None, alias="schema", description="Name of the schema to use."
+#     )
+
+#     @property
+#     def wrapped_io_manager(self) -> IOManagerDefinition:
+#         return duckdb_pandas_io_manager
