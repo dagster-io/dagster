@@ -3,6 +3,7 @@ import os
 from dagster_aws.s3 import s3_resource
 from dagster_dbt import dbt_cli_resource
 from dagster_pyspark import pyspark_resource
+from dagster_pyspark.resources import PySparkResource
 
 from dagster._utils import file_relative_path
 
@@ -28,23 +29,23 @@ dbt_prod_resource = dbt_cli_resource.configured(
 )
 
 
-configured_pyspark = pyspark_resource.configured(
-    {
-        "spark_conf": {
-            "spark.jars.packages": ",".join(
-                [
-                    "net.snowflake:snowflake-jdbc:3.8.0",
-                    "net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
-                    "com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7",
-                ]
-            ),
-            "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3native.NativeS3FileSystem",
-            "spark.hadoop.fs.s3.awsAccessKeyId": os.getenv("AWS_ACCESS_KEY_ID", ""),
-            "spark.hadoop.fs.s3.awsSecretAccessKey": os.getenv("AWS_SECRET_ACCESS_KEY", ""),
-            "spark.hadoop.fs.s3.buffer.dir": "/tmp",
-        }
+def get_spark_conf():
+    return {
+        "spark.jars.packages": ",".join(
+            [
+                "net.snowflake:snowflake-jdbc:3.8.0",
+                "net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
+                "com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7",
+            ]
+        ),
+        "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3native.NativeS3FileSystem",
+        "spark.hadoop.fs.s3.awsAccessKeyId": os.getenv("AWS_ACCESS_KEY_ID", ""),
+        "spark.hadoop.fs.s3.awsSecretAccessKey": os.getenv("AWS_SECRET_ACCESS_KEY", ""),
+        "spark.hadoop.fs.s3.buffer.dir": "/tmp",
     }
-)
+
+
+configured_pyspark = pyspark_resource.configured({"spark_conf": get_spark_conf()})
 
 
 snowflake_io_manager_prod = snowflake_io_manager.configured({"database": "DEMO_DB"})
