@@ -98,11 +98,13 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
             "role": Field(StringSource, description="Name of the role to use", is_required=False),
         }
     )
-    def snowflake_io_manager():
+    def snowflake_io_manager(context):
         return DbIOManager(
             type_handlers=type_handlers,
             db_client=SnowflakeDbClient(),
             io_manager_name="SnowflakeIOManager",
+            database=context.resource_config["database"],
+            schema=context.resource_config.get("schema"),
         )
 
     return snowflake_io_manager

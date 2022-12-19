@@ -26,6 +26,23 @@ resource_config = {
 }
 
 
+def construct_db_io_manager_for_test(type_handlers, db_client):
+    return construct_db_io_manager_from_resource_config(
+        type_handlers=type_handlers,
+        db_client=db_client,
+        passed_resource_config=resource_config,
+    )
+
+
+def construct_db_io_manager_from_resource_config(type_handlers, db_client, passed_resource_config):
+    return DbIOManager(
+        type_handlers=type_handlers,
+        db_client=db_client,
+        database=passed_resource_config["database"],
+        schema=passed_resource_config.get("schema"),
+    )
+
+
 class IntHandler(DbTypeHandler[int]):
     def __init__(self):
         self.handle_input_calls = []
@@ -63,7 +80,7 @@ class StringHandler(DbTypeHandler[str]):
 def test_asset_out():
     handler = IntHandler()
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
-    manager = DbIOManager(type_handlers=[handler], db_client=db_client)
+    manager = construct_db_io_manager_for_test(type_handlers=[handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
     output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
     manager.handle_output(output_context, 5)
@@ -89,7 +106,7 @@ def test_asset_out():
 def test_asset_out_columns():
     handler = IntHandler()
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
-    manager = DbIOManager(type_handlers=[handler], db_client=db_client)
+    manager = construct_db_io_manager_for_test(type_handlers=[handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
     output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
     manager.handle_output(output_context, 5)
@@ -117,7 +134,7 @@ def test_asset_out_columns():
 def test_asset_out_partitioned():
     handler = IntHandler()
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
-    manager = DbIOManager(type_handlers=[handler], db_client=db_client)
+    manager = construct_db_io_manager_for_test(type_handlers=[handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
     output_context = MagicMock(
         asset_key=asset_key,
@@ -158,7 +175,9 @@ def test_different_output_and_input_types():
     int_handler = IntHandler()
     str_handler = StringHandler()
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
-    manager = DbIOManager(type_handlers=[int_handler, str_handler], db_client=db_client)
+    manager = construct_db_io_manager_for_test(
+        type_handlers=[int_handler, str_handler], db_client=db_client
+    )
     asset_key = AssetKey(["schema1", "table1"])
     output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
     manager.handle_output(output_context, 5)
@@ -186,7 +205,7 @@ def test_different_output_and_input_types():
 def test_non_asset_out():
     handler = IntHandler()
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
-    manager = DbIOManager(type_handlers=[handler], db_client=db_client)
+    manager = construct_db_io_manager_for_test(type_handlers=[handler], db_client=db_client)
     output_context = build_output_context(
         name="table1", metadata={"schema": "schema1"}, resource_config=resource_config
     )
@@ -213,7 +232,7 @@ def test_non_asset_out():
 def test_asset_schema_defaults():
     handler = IntHandler()
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
-    manager = DbIOManager(type_handlers=[handler], db_client=db_client)
+    manager = construct_db_io_manager_for_test(type_handlers=[handler], db_client=db_client)
 
     asset_key = AssetKey(["schema1", "table1"])
     output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
@@ -236,11 +255,17 @@ def test_asset_schema_defaults():
         "schema": "my_schema",
     }
 
+    manager_w_schema = construct_db_io_manager_from_resource_config(
+        type_handlers=[handler],
+        db_client=db_client,
+        passed_resource_config=resource_config_w_schema,
+    )
+
     asset_key = AssetKey(["table1"])
     output_context = build_output_context(
         asset_key=asset_key, resource_config=resource_config_w_schema
     )
-    table_slice = manager._get_table_slice(output_context, output_context)
+    table_slice = manager_w_schema._get_table_slice(output_context, output_context)
 
     assert table_slice.schema == "my_schema"
 
@@ -249,13 +274,13 @@ def test_asset_schema_defaults():
         asset_key=asset_key, resource_config=resource_config_w_schema
     )
     with pytest.raises(DagsterInvalidDefinitionError):
-        table_slice = manager._get_table_slice(output_context, output_context)
+        table_slice = manager_w_schema._get_table_slice(output_context, output_context)
 
 
 def test_output_schema_defaults():
     handler = IntHandler()
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
-    manager = DbIOManager(type_handlers=[handler], db_client=db_client)
+    manager = construct_db_io_manager_for_test(type_handlers=[handler], db_client=db_client)
     output_context = build_output_context(
         name="table1", metadata={"schema": "schema1"}, resource_config=resource_config
     )
@@ -277,8 +302,14 @@ def test_output_schema_defaults():
         "schema": "my_schema",
     }
 
+    manager_w_schema = construct_db_io_manager_from_resource_config(
+        type_handlers=[handler],
+        db_client=db_client,
+        passed_resource_config=resource_config_w_schema,
+    )
+
     output_context = build_output_context(name="table1", resource_config=resource_config_w_schema)
-    table_slice = manager._get_table_slice(output_context, output_context)
+    table_slice = manager_w_schema._get_table_slice(output_context, output_context)
 
     assert table_slice.schema == "my_schema"
 
@@ -286,13 +317,13 @@ def test_output_schema_defaults():
         name="table1", metadata={"schema": "schema1"}, resource_config=resource_config_w_schema
     )
     with pytest.raises(DagsterInvalidDefinitionError):
-        table_slice = manager._get_table_slice(output_context, output_context)
+        table_slice = manager_w_schema._get_table_slice(output_context, output_context)
 
 
 def test_handle_none_output():
     handler = IntHandler()
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
-    manager = DbIOManager(type_handlers=[handler], db_client=db_client)
+    manager = construct_db_io_manager_for_test(type_handlers=[handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
     output_context = build_output_context(
         asset_key=asset_key,
@@ -307,7 +338,7 @@ def test_handle_none_output():
 def test_non_supported_type():
     handler = IntHandler()
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
-    manager = DbIOManager(type_handlers=[handler], db_client=db_client)
+    manager = construct_db_io_manager_for_test(type_handlers=[handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
     output_context = build_output_context(
         asset_key=asset_key,
