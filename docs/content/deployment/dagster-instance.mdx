@@ -1,6 +1,6 @@
 ---
 title: "Dagster instnace | Dagster Docs"
-description: "TODO"
+description: "Define configuration options for your Dagster instance."
 ---
 
 # Dagster instance
@@ -28,7 +28,7 @@ All of the processes and services that make up your Dagster deployment should sh
 
 ## Default local behavior
 
-When a Dagster process like Dagit or Dagster CLI commands are launched, Dagster attempts to load your instance. If the environment variable `DAGSTER_HOME` is set, Dagster looks for an instance config file at `$DAGSTER_HOME/dagster.yaml`. This file contains the configuration settings that make up the instance.
+When a Dagster process like Dagit or Dagster CLI commands are launched, Dagster tries to load your instance. If the environment variable `DAGSTER_HOME` is set, Dagster looks for an instance config file at `$DAGSTER_HOME/dagster.yaml`. This file contains the configuration settings that make up the instance.
 
 By default - if `dagster.yaml` isn't present or the file exists but is empty - Dagster will store this information on the local filesystem, structured like the following:
 
@@ -83,15 +83,13 @@ Here's a breakdown of the files and directories that are generated:
   </tbody>
 </table>
 
-If `DAGSTER_HOME` isn't set, Dagster tools will use an ephemeral instance for execution. In this case, the run and event log storages will be in-memory rather than persisted to disk and filesystem storage will use a temporary directory that's cleaned up when the process exits. This is useful for tests and is the default when invoking Python APIs such as <PyObject module="dagster" object="JobDefinition" method="execute_in_process" /> directly.
+If `DAGSTER_HOME` isn't set, Dagster tools will use an ephemeral instance for execution. In this case, the run and event log storages will be in-memory rather than persisted to disk. Additionally, filesystem storage will use a temporary directory that's cleaned up when the process exits. This is useful for tests and is the default when invoking Python APIs such as <PyObject module="dagster" object="JobDefinition" method="execute_in_process" /> directly.
 
 ---
 
 ## Configuration reference
 
-In persistent Dagster deployments, you'll typically want to configure many of the components on the instance. For example, you may want to use a Postgres instance to store runs and the corresponding event logs, and to stream compute logs to an S3 bucket.
-
-Note that Dagster supports retrieving instance YAML values from environment variables, using an `env:` key instead of a string literal value. Examples of using `env:` are included in the sample configurations below.
+In persistent Dagster deployments, you'll typically want to configure many of the components on the instance. For example, you may want to use a Postgres instance to store runs and the corresponding event logs, but stream compute logs to an Amazon S3 bucket.
 
 To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which Dagit and all Dagster tools will look for on startup. In this file, you can configure different aspects of your Dagster instance, including:
 
@@ -225,6 +223,8 @@ To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which Dagit and all Dag
     </tr>
   </tbody>
 </table>
+
+**Note**: Environment variables in YAML configuration are supported by using an `env:` key instead of a literal string value. Sample configurations in this reference include examples using environment variables.
 
 ### Dagster storage
 
@@ -472,9 +472,9 @@ run_coordinator:
 
 #### QueuedRunCoordinator
 
-The <PyObject module="dagster._core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executed at once. **Note** This requires an active [dagster-daemon process](/deployment/dagster-daemon) to actually launch the runs.
+The <PyObject module="dagster._core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executed at once. **Note** This requires an active [dagster-daemon process](/deployment/dagster-daemon) to launch the runs.
 
-This run coordinator has several configuration options, which allow for both limiting the overall number of concurrent runs as well as more specific limits based on run tags. For example, you can configure a limit on the number of runs that interact with a particular cloud service that can run concurrently to avoid being throttled.
+This run coordinator supports both limiting the overall number of concurrent runs and specific limits based on run tags. For example, to avoid throttling, you can specify a concurrency limit for runs that interact with a specific cloud service.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_coordinator_queued endbefore=end_marker_run_coordinator_queued
 # There are a few ways to configure the QueuedRunCoordinator:
@@ -638,9 +638,12 @@ compute_logs:
 
 ### Local artifact storage
 
-The `local_artifact_storage` key allows you to configure local artifact storage. Local artifact storage is used to configure storage for artifacts that require a local disk, or when using the filesystem I/O manager (<PyObject module="dagster" object="fs_io_manager" />) to store inputs and outputs. Refer to the <Link href="/concepts/io-management/io-managers">I/O managers documentation</Link> for more information on how other I/O managers store artifacts.
+The `local_artifact_storage` key allows you to configure local artifact storage. Local artifact storage is used to:
 
-**Note**: <PyObject module="dagster._core.storage.root" object="LocalArtifactStorage" /> is currently the only option for local artifact storage. This configures the directory used by the default filesystem I/O Manager, as well as any artifacts that require a local disk.
+- Configure storage for artifacts that require a local disk, or
+- Store inputs and outputs when using the filesystem I/O manager (<PyObject module="dagster" object="fs_io_manager" />). Refer to the <Link href="/concepts/io-management/io-managers">I/O managers documentation</Link> for more information on how other I/O managers store artifacts.
+
+**Note**: <PyObject module="dagster._core.storage.root" object="LocalArtifactStorage" /> is currently the only option for local artifact storage. This option configures the directory used by the default filesystem I/O Manager, as well as any artifacts that require a local disk.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_local_artifact_storage endbefore=end_marker_local_artifact_storage
 # there are two possible ways to configure LocalArtifactStorage
@@ -690,7 +693,7 @@ code_servers:
 
 ### Data retention
 
-The `retention` key allows you to configure how long Dagster retains certain types of data that have diminishing value over time, such as schedule/sensor tick data. Cleaning up old ticks can help minimize storage concerns and improve query performance.
+The `retention` key allows you to configure how long Dagster retains certain types of data. Specifically, data that has diminishing value over time, such as schedule/sensor tick data. Cleaning up old ticks can help minimize storage concerns and improve query performance.
 
 By default, Dagster retains skipped sensor ticks for seven days and all other tick types indefinitely. To customize the retention policies for schedule and sensor ticks, use the `purge_after_days` key:
 
@@ -708,12 +711,12 @@ retention:
 
 The `purge_after_days` key accepts either:
 
-- A single integer that indicates how long, in days, ticks of all types are retained. **Note**: A value of `-1` indicates that ticks should be retained indefinitely.
-- A mapping of tick types (`skipped`, `failure`, `success`) to integers. The integers indicate how long, in days, the tick type is retained.
+- A single integer that indicates how long, in days, to retain ticks of all types. **Note**: A value of `-1` retains ticks indefinitely.
+- A mapping of tick types (`skipped`, `failure`, `success`) to integers. The integers indicate how long, in days, to retain the tick type.
 
 ### Sensor evaluation
 
-The `sensors` key allows you to configure configure how sensors are evaluated. If you want sensors to be evaluated asynchronously, set the `use_threads` and `num_workers` keys:
+The `sensors` key allows you to configure how sensors are evaluated. To asynchronously evaluate sensors, set the `use_threads` and `num_workers` keys:
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_sensors endbefore=end_marker_sensors
 sensors:
@@ -723,9 +726,9 @@ sensors:
 
 ### Schedule evaluation
 
-The `schedules` key allows you to configure configure how schedules are evaluated. By default, Dagster evaluates schedules synchronously.
+The `schedules` key allows you to configure how schedules are evaluated. By default, Dagster evaluates schedules synchronously.
 
-If you want schedules to be evaluated asynchronously, set the `use_threads` and `num_workers` keys:
+To asynchronously evaluate schedules, set the `use_threads` and `num_workers` keys:
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_schedules endbefore=end_marker_schedules
 schedules:
