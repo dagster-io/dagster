@@ -16,23 +16,6 @@ from .resources import SnowflakeConnection
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-def get_snowflake_db_io_manager_config_schema():
-    return {
-        "database": Field(StringSource, description="Name of the database to use."),
-        "account": Field(
-            StringSource,
-            description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
-        ),
-        "user": Field(StringSource, description="User login name."),
-        "password": Field(StringSource, description="User password."),
-        "warehouse": Field(
-            StringSource, description="Name of the warehouse to use.", is_required=False
-        ),
-        "schema": Field(StringSource, description="Name of the schema to use", is_required=False),
-        "role": Field(StringSource, description="Name of the role to use", is_required=False),
-    }
-
-
 def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManagerDefinition:
     """
     Builds an IO manager definition that reads inputs from and writes outputs to Snowflake.
@@ -98,7 +81,22 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
     """
 
     @io_manager(
-        config_schema=get_snowflake_db_io_manager_config_schema(),
+        config_schema={
+            "database": Field(StringSource, description="Name of the database to use."),
+            "account": Field(
+                StringSource,
+                description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
+            ),
+            "user": Field(StringSource, description="User login name."),
+            "password": Field(StringSource, description="User password."),
+            "warehouse": Field(
+                StringSource, description="Name of the warehouse to use.", is_required=False
+            ),
+            "schema": Field(
+                StringSource, description="Name of the schema to use", is_required=False
+            ),
+            "role": Field(StringSource, description="Name of the role to use", is_required=False),
+        }
     )
     def snowflake_io_manager():
         return DbIOManager(
