@@ -1,9 +1,14 @@
-from typing import Mapping, Union, cast
+from typing import Mapping, Union, cast, Optional
+from dagster._config.field_utils import apply_defaults_to_fields
+from dagster._core.storage.io_manager import IOManagerDefinition
 
 import pandas as pd
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
-from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient
+from dagster_snowflake.snowflake_io_manager import (
+    SnowflakeDbClient,
+    get_snowflake_db_io_manager_config_schema,
+)
 from snowflake.connector.pandas_tools import pd_writer
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
@@ -173,3 +178,45 @@ Examples:
             ...
 
 """
+
+
+class SnowflakePandasIOManager(IOManagerDefinition):
+    def __init__(
+        self,
+        *,
+        database: str,
+        account: str,
+        user: str,
+        password: str,
+        warehouse: Optional[str],
+        schema: Optional[str],
+        role: Optional[str],
+    ):
+
+        # "database": Field(StringSource, description="Name of the database to use."),
+        # "account": Field(
+        #     StringSource,
+        #     description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
+        # ),
+        # "user": Field(StringSource, description="User login name."),
+        # "password": Field(StringSource, description="User password."),
+        # "warehouse": Field(
+        #     StringSource, description="Name of the warehouse to use.", is_required=False
+        # ),
+        # "schema": Field(StringSource, description="Name of the schema to use", is_required=False),
+        # "role": Field(StringSource, description="Name of the role to use", is_required=False),
+        super().__init__(
+            resource_fn=snowflake_pandas_io_manager.resource_fn,
+            config_schema=apply_defaults_to_fields(
+                dict(
+                    database=database,
+                    account=account,
+                    user=user,
+                    password=password,
+                    warehouse=warehouse,
+                    schema=schema,
+                    role=role,
+                ),
+                get_snowflake_db_io_manager_config_schema(),
+            ),
+        )
