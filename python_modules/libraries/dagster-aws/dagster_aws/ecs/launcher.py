@@ -500,7 +500,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
             backoff(
                 self._reuse_or_register_task_definition,
-                retry_on=(ClientError,),
+                retry_on=(Exception,),
                 kwargs={
                     "desired_task_definition_config": task_definition_config,
                     "container_name": container_name,
