@@ -324,6 +324,8 @@ const NodeContainer = styled.div<{
 }>`
   opacity: ${({$dim}) => ($dim ? 0.3 : 1)};
   pointer-events: auto;
+  user-select: none;
+  cursor: default;
 
   .highlight-box {
     border-radius: 13px;
