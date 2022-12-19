@@ -3,7 +3,6 @@ import os
 import duckdb
 import pandas as pd
 import pytest
-from dagster_duckdb_pandas import duckdb_pandas_io_manager
 from dagster_duckdb_pandas.duckdb_pandas_type_handler import DuckDbPandasIOManager
 
 from dagster import AssetIn, DailyPartitionsDefinition, Out, asset, graph, materialize, op
@@ -60,9 +59,7 @@ def b_plus_one(b_df: pd.DataFrame):
 
 def test_duckdb_io_manager_with_assets(tmp_path):
     resource_defs = {
-        "io_manager": duckdb_pandas_io_manager.configured(
-            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-        ),
+        "io_manager": DuckDbPandasIOManager(database=os.path.join(tmp_path, "unit_test.duckdb")),
     }
 
     # materialize asset twice to ensure that tables get properly deleted
@@ -88,9 +85,7 @@ def b_plus_one_columns(b_df: pd.DataFrame):
 
 def test_loading_columns(tmp_path):
     resource_defs = {
-        "io_manager": duckdb_pandas_io_manager.configured(
-            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-        ),
+        "io_manager": DuckDbPandasIOManager(database=os.path.join(tmp_path, "unit_test.duckdb")),
     }
 
     # materialize asset twice to ensure that tables get properly deleted
@@ -123,9 +118,7 @@ def not_supported():
 
 def test_not_supported_type(tmp_path):
     resource_defs = {
-        "io_manager": duckdb_pandas_io_manager.configured(
-            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-        ),
+        "io_manager": DuckDbPandasIOManager(database=os.path.join(tmp_path, "unit_test.duckdb")),
     }
 
     job = not_supported.to_job(resource_defs=resource_defs)
@@ -157,10 +150,9 @@ def daily_partitioned(context):
 
 
 def test_partitioned_asset(tmp_path):
-    duckdb_io_manager = duckdb_pandas_io_manager.configured(
-        {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-    )
-    resource_defs = {"io_manager": duckdb_io_manager}
+    resource_defs = {
+        "io_manager": DuckDbPandasIOManager(database=os.path.join(tmp_path, "unit_test.duckdb")),
+    }
 
     materialize(
         [daily_partitioned],
