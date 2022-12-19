@@ -1,7 +1,7 @@
 import os
 
 from dagster_dbt import dbt_cli_resource
-from dagster_duckdb_pandas import duckdb_pandas_io_manager
+from dagster_duckdb_pandas import DuckDbPandasIOManager
 from tutorial_dbt_dagster import assets
 from tutorial_dbt_dagster.assets import DBT_PROFILES, DBT_PROJECT_PATH
 
@@ -19,8 +19,8 @@ def tutorial_dbt_dagster():
                     "profiles_dir": DBT_PROFILES,
                 },
             ),
-            "io_manager": duckdb_pandas_io_manager.configured(
-                {"database": os.path.join(DBT_PROJECT_PATH, "tutorial.duckdb")}
+            "io_manager": DuckDbPandasIOManager(
+                database=os.path.join(DBT_PROJECT_PATH, "tutorial.duckdb")
             ),
         },
     )
