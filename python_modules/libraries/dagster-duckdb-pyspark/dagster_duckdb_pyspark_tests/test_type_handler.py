@@ -3,7 +3,7 @@ import os
 import duckdb
 import pandas as pd
 import pytest
-from dagster_duckdb_pyspark import duckdb_pyspark_io_manager
+from dagster_duckdb_pyspark import DuckDbPySparkIOManager
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import SparkSession
 
@@ -30,9 +30,7 @@ def make_df():
 
 def test_duckdb_io_manager_with_ops(tmp_path):
     resource_defs = {
-        "io_manager": duckdb_pyspark_io_manager.configured(
-            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-        ),
+        "io_manager": DuckDbPySparkIOManager(database=os.path.join(tmp_path, "unit_test.duckdb"))
     }
 
     job = make_df.to_job(resource_defs=resource_defs)
@@ -67,9 +65,7 @@ def b_plus_one(b_df: SparkDF) -> SparkDF:
 
 def test_duckdb_io_manager_with_assets(tmp_path):
     resource_defs = {
-        "io_manager": duckdb_pyspark_io_manager.configured(
-            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-        ),
+        "io_manager": DuckDbPySparkIOManager(database=os.path.join(tmp_path, "unit_test.duckdb"))
     }
 
     # materialize asset twice to ensure that tables get properly deleted
@@ -100,9 +96,7 @@ def not_supported():
 
 def test_not_supported_type(tmp_path):
     resource_defs = {
-        "io_manager": duckdb_pyspark_io_manager.configured(
-            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-        ),
+        "io_manager": DuckDbPySparkIOManager(database=os.path.join(tmp_path, "unit_test.duckdb"))
     }
 
     job = not_supported.to_job(resource_defs=resource_defs)
@@ -137,9 +131,7 @@ def daily_partitioned(context) -> SparkDF:
 
 def test_partitioned_asset(tmp_path):
     resource_defs = {
-        "io_manager": duckdb_pyspark_io_manager.configured(
-            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-        )
+        "io_manager": DuckDbPySparkIOManager(database=os.path.join(tmp_path, "unit_test.duckdb"))
     }
 
     materialize(
