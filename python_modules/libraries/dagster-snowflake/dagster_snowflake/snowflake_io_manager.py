@@ -1,8 +1,10 @@
-from typing import Sequence
+from typing import Optional, Sequence
 
+import pydantic
 from snowflake.connector import ProgrammingError
 
-from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
+from dagster import IOManagerDefinition, OutputContext, io_manager
+from dagster._config.structured_config import Config, infer_schema_from_config_class
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
@@ -14,6 +16,18 @@ from dagster._core.storage.db_io_manager import (
 from .resources import SnowflakeConnection
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+
+class SnowflakeIOManagerConfigSchema(Config):
+    database: str = pydantic.Field(description="Name of the database to use.")
+    account: str = pydantic.Field(
+        description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320."
+    )
+    user: str = pydantic.Field(description="User login name.")
+    password: str = pydantic.Field(description="User password.")
+    warehouse: Optional[str] = pydantic.Field(description="Name of the warehouse to use.")
+    schema: Optional[str] = pydantic.Field(description="Name of the schema to use")
+    role: Optional[str] = pydantic.Field(description="Name of the role to use")
 
 
 def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManagerDefinition:
@@ -80,24 +94,7 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
 
     """
 
-    @io_manager(
-        config_schema={
-            "database": Field(StringSource, description="Name of the database to use."),
-            "account": Field(
-                StringSource,
-                description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
-            ),
-            "user": Field(StringSource, description="User login name."),
-            "password": Field(StringSource, description="User password."),
-            "warehouse": Field(
-                StringSource, description="Name of the warehouse to use.", is_required=False
-            ),
-            "schema": Field(
-                StringSource, description="Name of the schema to use", is_required=False
-            ),
-            "role": Field(StringSource, description="Name of the role to use", is_required=False),
-        }
-    )
+    @io_manager(config_schema=infer_schema_from_config_class(SnowflakeIOManagerConfigSchema))
     def snowflake_io_manager(init_context):
         return DbIOManager(
             type_handlers=type_handlers,

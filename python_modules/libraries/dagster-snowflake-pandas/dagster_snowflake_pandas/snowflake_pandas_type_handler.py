@@ -3,12 +3,14 @@ from typing import Mapping, Union, cast
 import pandas as pd
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
-from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient
+from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, SnowflakeIOManagerConfigSchema
 from snowflake.connector.pandas_tools import pd_writer
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._config.structured_config import StructuredIOManagerAdapter
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
+from dagster._core.storage.io_manager import IOManagerDefinition
 
 
 def _connect_snowflake(context: Union[InputContext, OutputContext], table_slice: TableSlice):
@@ -173,3 +175,9 @@ Examples:
             ...
 
 """
+
+
+class SnowflakePandasIOManager(SnowflakeIOManagerConfigSchema, StructuredIOManagerAdapter):
+    @property
+    def wrapped_io_manager(self) -> IOManagerDefinition:
+        return snowflake_pandas_io_manager
