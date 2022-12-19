@@ -9,7 +9,9 @@ from dagster import (
     Output,
     String,
     configured,
+    job,
     mem_io_manager,
+    op,
 )
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators.graph_decorator import graph
@@ -854,9 +856,7 @@ def test_configuring_graph_with_no_config_mapping():
         configured(graph_without_config_fn, name="configured_graph")({})
 
 
-from dagster import op, job
-
-
+@pytest.mark.xfail(reason="This test should fail. It is a bug.")
 def test_disallow_configured_config():
     @op(config_schema={"an_int": int})
     def op_with_config(_):
@@ -873,5 +873,10 @@ def test_disallow_configured_config():
     # this works
     a_job.execute_in_process()
 
-    # this works, but should not
-    a_job.execute_in_process({"ops": {"configured_op": {"config": "lksjdlfkjdsljf"}}})
+    # This call *should* raise DagsterInvalidConfigError but does not (hence xfail)
+    with pytest.raises(DagsterInvalidConfigError):
+        # We are passing a bunch of garbage config to the op that shouldn't be allowed
+        # and is in fact inaccessible in the body of the op. As a result it should throw
+        # an invalid config error. However it does not. To the pytest.raises fails and why
+        # this test is marked as an expected failure.
+        a_job.execute_in_process({"ops": {"configured_op": {"config": "lksjdlfkjdsljf"}}})
