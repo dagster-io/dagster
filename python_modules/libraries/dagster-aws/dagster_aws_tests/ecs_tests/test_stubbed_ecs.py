@@ -1,4 +1,6 @@
 # pylint: disable=protected-access
+from concurrent.futures import ThreadPoolExecutor
+
 import pytest
 from botocore.exceptions import ClientError, ParamValidationError
 
@@ -257,6 +259,34 @@ def test_register_task_definition(ecs):
         cpu="256",
     )
     assert response["taskDefinition"]["containerDefinitions"][0]["secrets"] == []
+
+    # Denies concurrent requests per family
+    with pytest.raises(ClientError):
+        # The task definition doesn't exist
+        ecs.describe_task_definition(taskDefinition="concurrent")
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+
+        def task():
+            ecs.register_task_definition(
+                family="concurrent",
+                containerDefinitions=[{"image": "hello_world:latest"}],
+                memory="512",
+                cpu="256",
+            )
+
+        futures = [executor.submit(task) for i in range(2)]
+
+    # We successfully registered only 1 task definition revision
+    assert (
+        ecs.describe_task_definition(taskDefinition="concurrent")["taskDefinition"]["revision"] == 1
+    )
+    # And the other call errored
+    assert any(
+        "Too many concurrent attempts to create a new revision of the specified family"
+        in str(future.exception())
+        for future in futures
+    )
 
 
 def test_run_task(ecs, ec2, subnet):
