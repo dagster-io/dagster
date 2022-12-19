@@ -65,8 +65,10 @@ migrated_airflow_repo = make_dagster_repo_from_airflow_dags_path(
 )
 ```
 
+If you're running on Dagster Cloud and any of youre connection fields are sensitive you can also pass them from [Environment Variables](/dagster-cloud/developing-testing/environment-variables-and-secrets)
+
 ---
 
 ## Step 3: Launching runs
 
-Once we have a Repository defined we can launch dagit, view your newly migrated Jobs and launch runs. Its important to note that things like your old Airflow's instance infrastructure permissions will not have been migrated so in order to have your api calls to external services like AWS or K8s work you may need to do some permissioning work.
+Once we have a Repository defined we can launch dagit, view your newly migrated Jobs and launch runs. Its important to note that things like your old Airflow's instance infrastructure permissions will not have been migrated so in order to have your api calls to external services like AWS or K8s work you may need to do some permissioning work. If you're running on Dagster Cloud using [Environment Variables](/dagster-cloud/developing-testing/environment-variables-and-secrets) to configure correctly scoped access tokens to those services will work well.
