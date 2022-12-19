@@ -23,11 +23,9 @@ const POLL_INTERVAL = 5 * 1000;
 
 type State = {
   entriesById: {[key: string]: LocationStatusEntry} | undefined;
-  previousEntriesById: {[key: string]: LocationStatusEntry} | undefined;
 };
 const initialState: State = {
   entriesById: undefined,
-  previousEntriesById: undefined,
 };
 
 export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null => {
@@ -37,41 +35,6 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
   const history = useHistory();
 
   const [showSpinner, setShowSpinner] = React.useState(false);
-
-  const queryData = useQuery<CodeLocationStatusQuery>(CODE_LOCATION_STATUS_QUERY, {
-    fetchPolicy: 'network-only',
-    notifyOnNetworkStatusChange: true,
-    skip,
-    onCompleted: (data: CodeLocationStatusQuery) => {
-      const entries =
-        data?.locationStatusesOrError?.__typename === 'WorkspaceLocationStatusEntries'
-          ? data?.locationStatusesOrError.entries
-          : [];
-
-      let hasUpdates = entries.length !== Object.keys(state.entriesById || {}).length;
-      const entriesById = {};
-      entries.forEach((entry) => {
-        const previousEntry = state.previousEntriesById && state.previousEntriesById[entry.id];
-        const entryIsUpdated =
-          !previousEntry ||
-          previousEntry.updateTimestamp < entry.updateTimestamp ||
-          previousEntry.loadStatus !== entry.loadStatus;
-        hasUpdates = hasUpdates || entryIsUpdated;
-        entriesById[entry.id] = entryIsUpdated
-          ? {
-              id: entry.id,
-              loadStatus: entry.loadStatus,
-              updateTimestamp: entry.updateTimestamp,
-            }
-          : previousEntry;
-      });
-      if (hasUpdates) {
-        setState({entriesById, previousEntriesById: state.entriesById});
-      }
-    },
-  });
-
-  useQueryRefreshAtInterval(queryData, POLL_INTERVAL);
 
   const onClickViewButton = React.useCallback(() => {
     history.push('/locations');
@@ -123,21 +86,38 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     }
   }, [onClickViewButton, refetch]);
 
-  // Given the previous and current code locations, determine whether to show a) a loading spinner
-  // and/or b) a toast indicating that a code location is being reloaded.
-  React.useEffect(() => {
-    const {entriesById, previousEntriesById} = state;
+  const onLocationUpdate = (data: CodeLocationStatusQuery) => {
+    // Given the previous and current code locations, determine whether to show a) a loading spinner
+    // and/or b) a toast indicating that a code location is being reloaded.
+    const entries =
+      data?.locationStatusesOrError?.__typename === 'WorkspaceLocationStatusEntries'
+        ? data?.locationStatusesOrError.entries
+        : [];
+
+    let hasUpdatedEntries = entries.length !== Object.keys(state.entriesById || {}).length;
+    const entriesById: {[key: string]: LocationStatusEntry} = {};
+    entries.forEach((entry) => {
+      const previousEntry = state.entriesById && state.entriesById[entry.id];
+      const entryIsUpdated =
+        !previousEntry ||
+        previousEntry.updateTimestamp < entry.updateTimestamp ||
+        previousEntry.loadStatus !== entry.loadStatus;
+      hasUpdatedEntries = hasUpdatedEntries || entryIsUpdated;
+      entriesById[entry.id] = entryIsUpdated
+        ? {
+            id: entry.id,
+            loadStatus: entry.loadStatus,
+            name: entry.name,
+            updateTimestamp: entry.updateTimestamp,
+          }
+        : previousEntry;
+    });
+    const previousEntriesById = state.entriesById;
     const currentEntries = Object.values(entriesById || {});
     const previousEntries = Object.values(previousEntriesById || {});
-    const hasUpdatedEntries =
-      currentEntries.length &&
-      currentEntries.some(
-        (entry: LocationStatusEntry) =>
-          !previousEntriesById ||
-          !(entry.id in previousEntriesById) ||
-          previousEntriesById[entry.id].updateTimestamp <
-            (entriesById || {})[entry.id].updateTimestamp,
-      );
+    if (hasUpdatedEntries) {
+      setState({entriesById});
+    }
 
     // At least one code location has been removed. Reload, but don't make a big deal about it
     // since this was probably done manually.
@@ -238,11 +218,16 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
       reloadWorkspaceLoudly();
       return;
     }
+  };
 
-    // It's unlikely that we've made it to this point, since being inside this effect should
-    // indicate that `data` and `previousData` have differences that would have been handled by
-    // the conditionals above.
-  }, [state, reloadWorkspaceQuietly, reloadWorkspaceLoudly, onClickViewButton]);
+  const queryData = useQuery<CodeLocationStatusQuery>(CODE_LOCATION_STATUS_QUERY, {
+    fetchPolicy: 'network-only',
+    notifyOnNetworkStatusChange: true,
+    skip,
+    onCompleted: onLocationUpdate,
+  });
+
+  useQueryRefreshAtInterval(queryData, POLL_INTERVAL);
 
   if (showSpinner) {
     return {
