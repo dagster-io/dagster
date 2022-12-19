@@ -3,11 +3,11 @@ title: "Migrating Airflow to Dagster"
 description: guide for doing a lift and shift migration of airflow to dagster
 ---
 
-\#Migrating Airflow to Dagster
+# Migrating Airflow to Dagster
 
 Dagster can convert your Airflow DAGs into Dagster jobs, making it possible to a lift and shift migration off of Airflow onto Dagster without any rewriting.
 
-This guide will walk you through the basic steps of doing this migration
+This guide will walk you through the basic steps of doing this migration.
 
 <Note>
   Looking for example of an Airflow to Dagster migration? Check out the{" "}
@@ -29,19 +29,44 @@ pip install dagster dagster-airflow
 
 ## Step 1: Create a new repository using <PyObject module="dagster_airflow" object="make_dagster_repo_from_airflow_dags_path" />
 
-The first step to migrating is to define a dagster repository, to do this we'll use <PyObject module="dagster_airflow" object="make_dagster_repo_from_airflow_dags_path" /> and pass it the path name of our Airflow Dag Bag. Dagster will then load that DagBag and render them into Jobs
+The first step to migrating is to define a dagster repository, to do this we'll use <PyObject module="dagster_airflow" object="make_dagster_repo_from_airflow_dags_path" /> and pass it the file path of our Airflow Dag Bag. Dagster will then load that DagBag and convert all DAGs into Dagster Jobs
 
-```python
+```python file=/integrations/airflow/migrate_repo.py
 import os
+
 from dagster_airflow import make_dagster_repo_from_airflow_dags_path
+
 migrated_airflow_repo = make_dagster_repo_from_airflow_dags_path(
     os.path.join(os.getenv("AIRFLOW_HOME"), "dags"),
     "migrated_airflow_repo",
 )
 ```
 
+Under the hood, dagster is still running the exact operator code as you were in Airflow. You will be able to view your normal airflow stdout/stderr logs as compute logs in dagit.
+
 ---
 
-## Step 2: Launching runs
+## Step 2: Define Connections
+
+By default each Job Run of your migrated DAGs will create an ephemeral airflow metadatabase scoped to each Job run, this means any [Airflow Connections](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html) that your DAG was depending on will need to be created for that to work, to do this you can provide a `connections` parameter to <PyObject module="dagster_airflow" object="make_dagster_repo_from_airflow_dags_path" />
+
+```python file=/integrations/airflow/migrate_repo_connections.py
+import os
+
+from airflow.models import Connection
+from dagster_airflow import make_dagster_repo_from_airflow_dags_path
+
+migrated_airflow_repo = make_dagster_repo_from_airflow_dags_path(
+    os.path.join(os.getenv("AIRFLOW_HOME"), "dags"),
+    "migrated_airflow_repo",
+    connections=[
+        Connection(conn_id="http_default", conn_type="uri", host="https://google.com")
+    ],
+)
+```
+
+---
+
+## Step 3: Launching runs
 
 Once we have a Repository defined we can launch dagit, view your newly migrated Jobs and launch runs. Its important to note that things like your old Airflow's instance infrastructure permissions will not have been migrated so in order to have your api calls to external services like AWS or K8s work you may need to do some permissioning work.
