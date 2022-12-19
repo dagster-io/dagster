@@ -3,11 +3,8 @@ import pendulum
 import dagster._check as check
 from dagster._core.errors import DagsterError
 from dagster._core.events import AssetKey
-from dagster._core.execution.backfill import (
-    BulkActionStatus,
-    PartitionBackfill,
-    submit_backfill_runs,
-)
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.job_backfill import submit_backfill_runs
 from dagster._core.host_representation import RepositorySelector
 from dagster._core.utils import make_new_backfill_id
 
