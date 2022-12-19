@@ -466,7 +466,7 @@ def _convert_potential_field(
 
 def config_dictionary_from_values(
     values: Mapping[str, Any], config_field: "Field"
-) -> Dict[str, "Field"]:
+) -> Dict[str, Any]:
     assert ConfigTypeKind.is_shape(config_field.config_type.kind)
     new_values = {}
     for key, value in values.items():
