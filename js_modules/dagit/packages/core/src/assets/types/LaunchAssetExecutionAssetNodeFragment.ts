@@ -7,14 +7,15 @@
 // GraphQL fragment: LaunchAssetExecutionAssetNodeFragment
 // ====================================================
 
+export interface LaunchAssetExecutionAssetNodeFragment_partitionDefinition_dimensionTypes {
+  __typename: "DimensionDefinitionType";
+  name: string;
+}
+
 export interface LaunchAssetExecutionAssetNodeFragment_partitionDefinition {
   __typename: "PartitionDefinition";
   description: string;
-}
-
-export interface LaunchAssetExecutionAssetNodeFragment_partitionKeysByDimension {
-  __typename: "DimensionPartitionKeys";
-  name: string;
+  dimensionTypes: LaunchAssetExecutionAssetNodeFragment_partitionDefinition_dimensionTypes[];
 }
 
 export interface LaunchAssetExecutionAssetNodeFragment_assetKey {
@@ -569,7 +570,6 @@ export interface LaunchAssetExecutionAssetNodeFragment {
   jobNames: string[];
   graphName: string | null;
   partitionDefinition: LaunchAssetExecutionAssetNodeFragment_partitionDefinition | null;
-  partitionKeysByDimension: LaunchAssetExecutionAssetNodeFragment_partitionKeysByDimension[];
   isObservable: boolean;
   isSource: boolean;
   assetKey: LaunchAssetExecutionAssetNodeFragment_assetKey;
