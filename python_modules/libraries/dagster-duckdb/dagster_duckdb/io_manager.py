@@ -15,6 +15,13 @@ from dagster._utils.backoff import backoff
 DUCKDB_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
+def get_duckdb_io_manager_config_schema():
+    return {
+        "database": Field(StringSource, description="Path to the DuckDB database."),
+        "schema": Field(StringSource, description="Name of the schema to use.", is_required=False),
+    }
+
+
 def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManagerDefinition:
     """
     Builds an IO manager definition that reads inputs from and writes outputs to DuckDB.
@@ -75,14 +82,7 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
 
     """
 
-    @io_manager(
-        config_schema={
-            "database": Field(StringSource, description="Path to the DuckDB database."),
-            "schema": Field(
-                StringSource, description="Name of the schema to use.", is_required=False
-            ),
-        }
-    )
+    @io_manager(config_schema=get_duckdb_io_manager_config_schema())
     def duckdb_io_manager(init_context):
         """IO Manager for storing outputs in a DuckDB database
 
