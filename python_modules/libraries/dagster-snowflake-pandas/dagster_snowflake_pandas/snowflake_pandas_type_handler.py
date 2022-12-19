@@ -1,4 +1,4 @@
-from typing import Mapping, Union, cast
+from typing import Mapping, Optional, Union, cast
 
 import pandas as pd
 from dagster_snowflake import build_snowflake_io_manager
@@ -173,3 +173,30 @@ Examples:
             ...
 
 """
+from dagster._core.definitions.configured_adapters import ConfiguredIOManagerAdapter
+
+
+class SnowflakePandasIOManager(ConfiguredIOManagerAdapter):
+    def __init__(
+        self,
+        *,
+        database: str,
+        account: str,
+        user: str,
+        password: str,
+        warehouse: Optional[str] = None,
+        schema: Optional[str] = None,
+        role: Optional[str] = None,
+    ):
+        super().__init__(
+            parent_io_manager=snowflake_pandas_io_manager,
+            args=dict(
+                database=database,
+                account=account,
+                user=user,
+                password=password,
+                warehouse=warehouse,
+                schema=schema,
+                role=role,
+            ),
+        )
