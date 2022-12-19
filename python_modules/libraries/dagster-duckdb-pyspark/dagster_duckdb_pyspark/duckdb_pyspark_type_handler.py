@@ -18,6 +18,7 @@ from dagster import (
     TableSchema,
 )
 from dagster._config.field_utils import apply_defaults_to_fields
+from dagster._core.definitions.configured_adapters import ConfiguredIOManagerAdapter
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 
 
@@ -146,11 +147,9 @@ Examples:
 """
 
 
-class DuckDbPySparkIOManager(IOManagerDefinition):
+class DuckDbPySparkIOManager(ConfiguredIOManagerAdapter):
     def __init__(self, database: str, schema: Optional[str] = None):
         super().__init__(
-            resource_fn=duckdb_pyspark_io_manager.resource_fn,
-            config_schema=apply_defaults_to_fields(
-                dict(database=database, schema=schema), get_duckdb_io_manager_config_schema()
-            ),
+            parent_io_manager=duckdb_pyspark_io_manager,
+            args={"database": database, "schema": schema},
         )

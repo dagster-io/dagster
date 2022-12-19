@@ -5,6 +5,7 @@ from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckd
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._config.field_utils import config_dictionary_from_values
+from dagster._core.definitions.configured_adapters import ConfiguredIOManagerAdapter
 from dagster._core.definitions.definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
@@ -129,24 +130,6 @@ Examples:
             ...
 
 """
-
-
-class ConfiguredIOManagerAdapter(IOManagerDefinition):
-    def __init__(self, parent_io_manager, args):
-        ## TODO: coerce all strings to string source
-        super().__init__(
-            resource_fn=parent_io_manager.resource_fn,
-            config_schema=ConfiguredDefinitionConfigSchema(
-                parent_io_manager,
-                convert_user_facing_definition_config_schema(
-                    None
-                ),  # this is actually just replicating a bug that allows for too permissive of config
-                config_dictionary_from_values(
-                    args,
-                    parent_io_manager.config_schema.as_field(),
-                ),
-            ),
-        )
 
 
 class DuckDbPandasIOManager(ConfiguredIOManagerAdapter):
