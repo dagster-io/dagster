@@ -1,4 +1,4 @@
-from typing import Mapping, Optional
+from typing import Optional
 
 import pandas as pd
 from dagster_duckdb.io_manager import (
@@ -8,8 +8,8 @@ from dagster_duckdb.io_manager import (
     get_duckdb_io_manager_config_schema,
 )
 
-from dagster import Field, InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._config.field_utils import convert_potential_field
+from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._config.field_utils import apply_defaults_to_fields
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster._core.storage.io_manager import IOManagerDefinition
 
@@ -132,65 +132,11 @@ Examples:
 """
 
 
-def apply_defaults(defaults: dict, config_schema: Mapping[str, Field]):
-    new_config_schema = {}
-    for key, value in config_schema.items():
-        old_field = convert_potential_field(value)
-        default_value = defaults[key]
-        new_config_schema[key] = (
-            Field(
-                config=old_field.config_type,
-                description=old_field.description,
-                is_required=False,
-                default_value=default_value,
-            )
-            if default_value
-            else Field(
-                config=old_field.config_type,
-                description=old_field.description,
-                is_required=False,
-            )
-        )
-    return new_config_schema
-
-
 class DuckDbPandasIOManager(IOManagerDefinition):
     def __init__(self, database: str, schema: Optional[str] = None):
         super().__init__(
             resource_fn=duckdb_pandas_io_manager.resource_fn,
-            config_schema=apply_defaults(
+            config_schema=apply_defaults_to_fields(
                 dict(database=database, schema=schema), get_duckdb_io_manager_config_schema()
             ),
         )
-
-
-# class DuckDbPandasIOManager(IOManagerDefinition):
-#     def __init__(self, database: str, schema: Optional[str] = None):
-#         super().__init__(
-#             resource_fn=lambda _: DbIOManager(
-#                 type_handlers=[DuckDBPandasTypeHandler()],
-#                 db_client=DuckDbClient(),
-#                 io_manager_name="DuckDBIOManager",
-#             ),
-#             config_schema={
-
-#                 "database": Field(
-#                     StringSource,
-#                     description="Path to the DuckDB database.",
-#                     default_value=database,
-#                     is_required=False,
-#                 ),
-#                 "schema": Field(
-#                     StringSource,
-#                     description="Name of the schema to use.",
-#                     is_required=False,
-#                     default_value=schema,
-#                 )
-#                 if schema
-#                 else Field(
-#                     StringSource,
-#                     description="Name of the schema to use.",
-#                     is_required=False,
-#                 ),
-#             },
-#         )

@@ -462,3 +462,27 @@ def _convert_potential_field(
         return potential_field
 
     return Field(_convert_potential_type(original_root, potential_field, stack))
+
+
+def apply_defaults_to_fields(
+    defaults: Mapping[str, Any], config_schema: Mapping[str, Field]
+) -> Dict[str, Field]:
+    new_config_schema = {}
+    for key, value in config_schema.items():
+        old_field = convert_potential_field(value)
+        default_value = defaults[key]
+        new_config_schema[key] = (
+            Field(
+                config=old_field.config_type,
+                description=old_field.description,
+                is_required=False,
+                default_value=default_value,
+            )
+            if default_value
+            else Field(
+                config=old_field.config_type,
+                description=old_field.description,
+                is_required=False,
+            )
+        )
+    return new_config_schema
