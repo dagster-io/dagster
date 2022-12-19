@@ -1,7 +1,6 @@
 import {Box} from '@dagster-io/ui';
 import React from 'react';
 
-import {position} from '../graph/common';
 import {RunStatus} from '../types/globalTypes';
 
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
