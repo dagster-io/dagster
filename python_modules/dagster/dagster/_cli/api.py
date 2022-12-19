@@ -379,6 +379,14 @@ def _execute_step_command_body(
             "Pipeline run with id '{}' does not include an origin.".format(args.pipeline_run_id),
         )
 
+        location_name = (
+            pipeline_run.external_pipeline_origin.location_name
+            if pipeline_run.external_pipeline_origin
+            else None
+        )
+
+        instance.inject_env_vars(location_name)
+
         log_manager = create_context_free_log_manager(instance, pipeline_run)
 
         yield DagsterEvent.step_worker_started(
@@ -393,14 +401,6 @@ def _execute_step_command_body(
             ),
             step_key=single_step_key,
         )
-
-        location_name = (
-            pipeline_run.external_pipeline_origin.location_name
-            if pipeline_run.external_pipeline_origin
-            else None
-        )
-
-        instance.inject_env_vars(location_name)
 
         if args.should_verify_step:
             success = verify_step(
