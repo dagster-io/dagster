@@ -1196,13 +1196,12 @@ class TestRunStorage:
 
         one = PartitionBackfill(
             "one",
-            origin,
-            BulkActionStatus.REQUESTED,
-            ["a", "b", "c"],
-            False,
-            None,
-            None,
-            pendulum.now().timestamp(),
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=pendulum.now().timestamp(),
         )
         storage.add_backfill(one)
         assert len(storage.get_backfills()) == 1
