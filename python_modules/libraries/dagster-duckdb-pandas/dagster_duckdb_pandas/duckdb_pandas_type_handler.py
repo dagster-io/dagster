@@ -1,7 +1,15 @@
+from lib2to3.pytree import convert
+from pydoc import describe
 from typing import Any, Optional
+from dagster._config.field_utils import convert_potential_field
 
 import pandas as pd
-from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckdb_io_manager
+from dagster_duckdb.io_manager import (
+    DuckDbClient,
+    _connect_duckdb,
+    build_duckdb_io_manager,
+    get_duckdb_io_manager_config_schema,
+)
 
 from dagster import (
     Field,
@@ -133,33 +141,68 @@ Examples:
 
 """
 
+from typing import Mapping
+
+
+def apply_defaults(defaults: dict, config_schema: Mapping[str, Field]):
+    new_config_schema = {}
+    for key, value in config_schema.items():
+        old_field = convert_potential_field(value)
+        default_value = defaults[key]
+        new_config_schema[key] = (
+            Field(
+                config=old_field.config_type,
+                description=old_field.description,
+                is_required=False,
+                default_value=default_value,
+            )
+            if default_value
+            else Field(
+                config=old_field.config_type,
+                description=old_field.description,
+                is_required=False,
+            )
+        )
+    return new_config_schema
+
 
 class DuckDbPandasIOManager(IOManagerDefinition):
     def __init__(self, database: str, schema: Optional[str] = None):
         super().__init__(
-            resource_fn=lambda _: DbIOManager(
-                type_handlers=[DuckDBPandasTypeHandler()],
-                db_client=DuckDbClient(),
-                io_manager_name="DuckDBIOManager",
+            resource_fn=duckdb_pandas_io_manager.resource_fn,
+            config_schema=apply_defaults(
+                dict(database=database, schema=schema), get_duckdb_io_manager_config_schema()
             ),
-            config_schema={
-                "database": Field(
-                    StringSource,
-                    description="Path to the DuckDB database.",
-                    default_value=database,
-                    is_required=False,
-                ),
-                "schema": Field(
-                    StringSource,
-                    description="Name of the schema to use.",
-                    is_required=False,
-                    default_value=schema,
-                )
-                if schema
-                else Field(
-                    StringSource,
-                    description="Name of the schema to use.",
-                    is_required=False,
-                ),
-            },
         )
+
+
+# class DuckDbPandasIOManager(IOManagerDefinition):
+#     def __init__(self, database: str, schema: Optional[str] = None):
+#         super().__init__(
+#             resource_fn=lambda _: DbIOManager(
+#                 type_handlers=[DuckDBPandasTypeHandler()],
+#                 db_client=DuckDbClient(),
+#                 io_manager_name="DuckDBIOManager",
+#             ),
+#             config_schema={
+
+#                 "database": Field(
+#                     StringSource,
+#                     description="Path to the DuckDB database.",
+#                     default_value=database,
+#                     is_required=False,
+#                 ),
+#                 "schema": Field(
+#                     StringSource,
+#                     description="Name of the schema to use.",
+#                     is_required=False,
+#                     default_value=schema,
+#                 )
+#                 if schema
+#                 else Field(
+#                     StringSource,
+#                     description="Name of the schema to use.",
+#                     is_required=False,
+#                 ),
+#             },
+#         )
