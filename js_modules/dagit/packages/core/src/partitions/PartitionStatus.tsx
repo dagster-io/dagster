@@ -90,6 +90,8 @@ export const PartitionStatus: React.FC<{
     [partitionNames],
   );
 
+  const selectedSet = React.useMemo(() => new Set(selected), [selected]);
+
   React.useEffect(() => {
     if (!currentSelectionRange || !onSelect || !selected) {
       return;
@@ -107,7 +109,7 @@ export const PartitionStatus: React.FC<{
 
       const operation = !e.getModifierState('Shift')
         ? 'replace'
-        : currentSelection.every((name) => selected.includes(name))
+        : currentSelection.every((name) => selectedSet.has(name))
         ? 'subtract'
         : 'add';
 
@@ -128,22 +130,27 @@ export const PartitionStatus: React.FC<{
     };
   }, [onSelect, selected, currentSelectionRange, getRangeSelection, toPartitionName]);
 
-  const selectedSpans = selected
-    ? assembleIntoSpans(partitionNames, (key) => selected.includes(key)).filter((s) => s.status)
-    : [];
+  const selectedSpans = React.useMemo(
+    () =>
+      selectedSet.size === 0
+        ? []
+        : selectedSet.size === partitionNames.length
+        ? [{startIdx: 0, endIdx: partitionNames.length - 1, status: true}]
+        : assembleIntoSpans(partitionNames, (key) => selectedSet.has(key)).filter((s) => s.status),
+    [selectedSet, partitionNames],
+  );
 
-  const spans = splitPartitions
-    ? partitionNames.map((name, idx) => ({
-        startIdx: idx,
-        endIdx: idx,
-        status: partitionStateForKey(name, idx),
-      }))
-    : _partitionsToSpans(
-        partitionNames,
-        Object.fromEntries(
-          partitionNames.map((name, idx) => [name, partitionStateForKey(name, idx)]),
-        ),
-      );
+  const spans = React.useMemo(
+    () =>
+      splitPartitions
+        ? partitionNames.map((name, idx) => ({
+            startIdx: idx,
+            endIdx: idx,
+            status: partitionStateForKey(name, idx),
+          }))
+        : assembleIntoSpans(partitionNames, partitionStateForKey),
+    [splitPartitions, partitionNames, partitionStateForKey],
+  );
 
   const highestIndex = spans.map((s) => s.endIdx).reduce((prev, cur) => Math.max(prev, cur), 0);
   const indexToPct = (idx: number) => `${((idx * 100) / partitionNames.length).toFixed(3)}%`;
@@ -328,22 +335,6 @@ export const PartitionStatus: React.FC<{
     </div>
   );
 };
-
-function _partitionsToSpans(keys: string[], keyStatus: {[key: string]: PartitionState}) {
-  const spans: {startIdx: number; endIdx: number; status: PartitionState}[] = [];
-
-  for (let ii = 0; ii < keys.length; ii++) {
-    const status: PartitionState =
-      keys[ii] in keyStatus ? keyStatus[keys[ii]] : PartitionState.MISSING;
-    if (!spans.length || spans[spans.length - 1].status !== status) {
-      spans.push({startIdx: ii, endIdx: ii, status});
-    } else {
-      spans[spans.length - 1].endIdx = ii;
-    }
-  }
-
-  return spans;
-}
 
 export const partitionStateToStyle = (status: PartitionState): React.CSSProperties => {
   switch (status) {

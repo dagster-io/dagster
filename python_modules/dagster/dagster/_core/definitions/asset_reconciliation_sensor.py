@@ -1,11 +1,9 @@
 # pylint: disable=anomalous-backslash-in-string
 
 import datetime
-import functools
 import itertools
 import json
 from collections import defaultdict
-from heapq import heapify, heappop, heappush
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -34,12 +32,10 @@ from .partition import PartitionsDefinition, PartitionsSubset
 from .repository_definition import RepositoryDefinition
 from .run_request import RunRequest
 from .sensor_definition import DefaultSensorStatus, SensorDefinition
-from .time_window_partitions import TimeWindowPartitionsDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
-    from dagster._core.storage.event_log.base import EventLogRecord
 
 
 class AssetReconciliationCursor(NamedTuple):
@@ -183,66 +179,6 @@ class AssetReconciliationCursor(NamedTuple):
         return serialized
 
 
-class ToposortedPriorityQueue:
-    """Queue that returns parents before their children"""
-
-    @functools.total_ordering
-    class QueueItem(NamedTuple):
-        level: int
-        partition_sort_key: Optional[float]
-        asset_partition: AssetKeyPartitionKey
-
-        def __eq__(self, other):
-            return self.level == other.level and self.partition_sort_key == other.partition_sort_key
-
-        def __lt__(self, other):
-            return self.level < other.level or (
-                self.level == other.level
-                and self.partition_sort_key is not None
-                and self.partition_sort_key < other.partition_sort_key
-            )
-
-    def __init__(self, asset_graph: AssetGraph, items: Iterable[AssetKeyPartitionKey]):
-        self._asset_graph = asset_graph
-        toposorted_asset_keys = asset_graph.toposort_asset_keys()
-        self._toposort_level_by_asset_key = {
-            asset_key: i
-            for i, asset_keys in enumerate(toposorted_asset_keys)
-            for asset_key in asset_keys
-        }
-        self._heap = [self._queue_item(asset_partition) for asset_partition in items]
-        heapify(self._heap)
-
-    def enqueue(self, asset_partition: AssetKeyPartitionKey) -> None:
-        heappush(self._heap, self._queue_item(asset_partition))
-
-    def dequeue(self) -> AssetKeyPartitionKey:
-        return heappop(self._heap).asset_partition
-
-    def _queue_item(self, asset_partition: AssetKeyPartitionKey):
-        asset_key = asset_partition.asset_key
-        level = self._toposort_level_by_asset_key[asset_key]
-        if self._asset_graph.has_self_dependency(asset_key):
-            partitions_def = self._asset_graph.get_partitions_def(asset_key)
-            if partitions_def is not None and isinstance(
-                partitions_def, TimeWindowPartitionsDefinition
-            ):
-                partition_sort_key = (
-                    cast(TimeWindowPartitionsDefinition, partitions_def)
-                    .time_window_for_partition_key(cast(str, asset_partition.partition_key))
-                    .start.timestamp()
-                )
-            else:
-                check.failed("Assets with self-dependencies must have time-window partitions")
-        else:
-            partition_sort_key = None
-
-        return ToposortedPriorityQueue.QueueItem(level, partition_sort_key, asset_partition)
-
-    def __len__(self) -> int:
-        return len(self._heap)
-
-
 def find_stale_candidates(
     instance_queryer: CachingInstanceQueryer,
     cursor: AssetReconciliationCursor,
@@ -365,62 +301,49 @@ def determine_asset_partitions_to_reconcile(
 
     target_asset_keys = target_asset_selection.resolve(asset_graph)
 
-    to_reconcile: Set[AssetKeyPartitionKey] = set()
-    all_candidates = set(itertools.chain(never_materialized_or_requested_roots, stale_candidates))
-
-    # invariant: we never consider a candidate before considering its ancestors
-    candidates_queue = ToposortedPriorityQueue(asset_graph, all_candidates)
-
-    while len(candidates_queue) > 0:
-        candidate = candidates_queue.dequeue()
-
-        # no need to update this now, as it will be updated later
-        if candidate in eventual_asset_partitions_to_reconcile_for_freshness:
-            continue
-
-        if (
-            # all of its parents reconciled first
-            all(
+    def parents_will_be_reconciled(
+        candidate: AssetKeyPartitionKey,
+        to_reconcile: AbstractSet[AssetKeyPartitionKey],
+    ) -> bool:
+        return all(
+            (
                 (
-                    (
-                        parent in to_reconcile
-                        # if they don't have the same partitioning, then we can't launch a run that
-                        # targets both, so we need to wait until the parent is reconciled before
-                        # launching a run for the child
-                        and asset_graph.have_same_partitioning(
-                            parent.asset_key, candidate.asset_key
-                        )
-                        and parent.partition_key == candidate.partition_key
-                    )
-                    or (
-                        instance_queryer.is_reconciled(
-                            asset_partition=parent, asset_graph=asset_graph
-                        )
-                    )
+                    parent in to_reconcile
+                    # if they don't have the same partitioning, then we can't launch a run that
+                    # targets both, so we need to wait until the parent is reconciled before
+                    # launching a run for the child
+                    and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
+                    and parent.partition_key == candidate.partition_key
                 )
-                for parent in asset_graph.get_parents_partitions(
-                    candidate.asset_key, candidate.partition_key
-                )
+                or (instance_queryer.is_reconciled(asset_partition=parent, asset_graph=asset_graph))
             )
-            and not instance_queryer.is_reconciled(
-                asset_partition=candidate, asset_graph=asset_graph
-            )
-        ):
-            to_reconcile.add(candidate)
-            # add in all of the neighbor keys which must be materialized alongside this one
-            for required_key in asset_graph.get_required_multi_asset_keys(candidate.asset_key):
-                to_reconcile.add(AssetKeyPartitionKey(required_key, candidate.partition_key))
-
-            for child in asset_graph.get_children_partitions(
+            for parent in asset_graph.get_parents_partitions(
                 candidate.asset_key, candidate.partition_key
-            ):
-                if (
-                    child.asset_key in target_asset_keys
-                    and child not in all_candidates
-                    and asset_graph.have_same_partitioning(child.asset_key, candidate.asset_key)
-                ):
-                    candidates_queue.enqueue(child)
-                    all_candidates.add(child)
+            )
+        )
+
+    def should_reconcile(
+        candidates_unit: Iterable[AssetKeyPartitionKey],
+        to_reconcile: AbstractSet[AssetKeyPartitionKey],
+    ) -> bool:
+        if any(
+            candidate in eventual_asset_partitions_to_reconcile_for_freshness
+            or candidate.asset_key not in target_asset_keys
+            for candidate in candidates_unit
+        ):
+            return False
+
+        return all(
+            parents_will_be_reconciled(candidate, to_reconcile) for candidate in candidates_unit
+        ) and any(
+            not instance_queryer.is_reconciled(asset_partition=candidate, asset_graph=asset_graph)
+            for candidate in candidates_unit
+        )
+
+    to_reconcile = asset_graph.bfs_filter_asset_partitions(
+        should_reconcile,
+        set(itertools.chain(never_materialized_or_requested_roots, stale_candidates)),
+    )
 
     return (
         to_reconcile,
