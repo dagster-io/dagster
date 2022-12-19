@@ -27,11 +27,8 @@ from dagster._cli.workspace.cli_target import (
 from dagster._core.definitions.pipeline_base import IPipeline
 from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.backfill import (
-    BulkActionStatus,
-    PartitionBackfill,
-    create_backfill_run,
-)
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.job_backfill import create_backfill_run
 from dagster._core.host_representation import (
     ExternalPipeline,
     ExternalRepository,
