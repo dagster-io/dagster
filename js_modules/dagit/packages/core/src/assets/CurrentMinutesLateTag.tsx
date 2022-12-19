@@ -48,14 +48,10 @@ export const CurrentMinutesLateTag: React.FC<{
   if (freshnessInfo.currentMinutesLate === 0) {
     return description ? (
       <Tooltip content={freshnessPolicyDescription(freshnessPolicy)}>
-        <Tag intent="success" icon="check_circle">
-          On time
-        </Tag>
+        <Tag intent="success" icon="check_circle" />
       </Tooltip>
     ) : (
-      <Tag intent="success" icon="check_circle">
-        On time
-      </Tag>
+      <Tag intent="success" icon="check_circle" />
     );
   }
 

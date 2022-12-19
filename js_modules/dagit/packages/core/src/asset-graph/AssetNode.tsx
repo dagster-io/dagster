@@ -192,7 +192,7 @@ export const AssetNodeStatusRow: React.FC<{
     );
   }
 
-  if (isAssetStale(liveData)) {
+  if (!liveData.freshnessPolicy && isAssetStale(liveData)) {
     return (
       <AssetNodeStatusBox background={Colors.Yellow50}>
         <Caption color={Colors.Yellow700}>Stale</Caption>
@@ -218,34 +218,25 @@ export const AssetNodeMinimal: React.FC<{
   const displayName = assetKey.path[assetKey.path.length - 1];
   const materializingRunId = liveData?.inProgressRunIds?.[0] || liveData?.unstartedRunIds?.[0];
 
+  const [background, border] =
+    !liveData || definition.isSource
+      ? [Colors.Gray100, Colors.Gray300]
+      : materializingRunId
+      ? [Colors.Blue50, Colors.Blue500]
+      : liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
+      ? [Colors.Red50, Colors.Red500]
+      : !liveData?.lastMaterialization || (!liveData.freshnessPolicy && isAssetStale(liveData))
+      ? [Colors.Yellow50, Colors.Yellow500]
+      : [Colors.Green50, Colors.Green500];
+
   return (
     <AssetInsetForHoverEffect>
       <MinimalAssetNodeContainer $selected={selected}>
         <MinimalAssetNodeBox
           $selected={selected}
           $isSource={isSource}
-          $background={
-            !liveData || definition.isSource
-              ? Colors.Gray100
-              : materializingRunId
-              ? Colors.Blue50
-              : liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
-              ? Colors.Red50
-              : !liveData?.lastMaterialization || isAssetStale(liveData)
-              ? Colors.Yellow50
-              : Colors.Green50
-          }
-          $border={
-            !liveData || definition.isSource
-              ? Colors.Gray300
-              : materializingRunId
-              ? Colors.Blue500
-              : liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
-              ? Colors.Red500
-              : !liveData?.lastMaterialization || isAssetStale(liveData)
-              ? Colors.Yellow500
-              : Colors.Green500
-          }
+          $background={background}
+          $border={border}
         >
           <div style={{position: 'absolute', bottom: 6, left: 6}}>
             <AssetLatestRunSpinner liveData={liveData} purpose="section" />
