@@ -4,14 +4,8 @@ import pandas as pd
 from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckdb_io_manager
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._config.field_utils import config_dictionary_from_values
 from dagster._core.definitions.configured_adapters import ConfiguredIOManagerAdapter
-from dagster._core.definitions.definition_config_schema import (
-    ConfiguredDefinitionConfigSchema,
-    convert_user_facing_definition_config_schema,
-)
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
-from dagster._core.storage.io_manager import IOManagerDefinition
 
 
 class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
