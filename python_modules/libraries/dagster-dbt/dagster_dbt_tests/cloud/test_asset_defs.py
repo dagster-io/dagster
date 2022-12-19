@@ -195,10 +195,13 @@ def test_load_assets_from_dbt_cloud_job(
     ).resolve(assets=dbt_cloud_assets, source_assets=[])
 
     with instance_for_test() as instance:
-        assert materialize_cereal_assets.execute_in_process(instance=instance).success
+        result = materialize_cereal_assets.execute_in_process(instance=instance)
+
+    assert result.success
 
     mock_run_job_and_poll.assert_called_once_with(
         job_id=DBT_CLOUD_JOB_ID,
+        cause=f"Materializing software-defined assets in Dagster run {result.run_id[:8]}",
         steps_override=dbt_commands,
     )
 
@@ -369,13 +372,16 @@ def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
     ).resolve(assets=dbt_cloud_assets, source_assets=[])
 
     with instance_for_test() as instance:
-        assert materialize_cereal_assets.execute_in_process(
+        result = materialize_cereal_assets.execute_in_process(
             instance=instance,
             partition_key="2022-02-01",
-        ).success
+        )
+
+    assert result.success
 
     mock_run_job_and_poll.assert_called_once_with(
         job_id=DBT_CLOUD_JOB_ID,
+        cause=f"Materializing software-defined assets in Dagster run {result.run_id[:8]}",
         steps_override=[f"dbt build --vars '{json.dumps({'run_date': '2022-02-01'})}'"],
     )
 
@@ -444,7 +450,9 @@ def test_subsetting(
     ).resolve(assets=list(dbt_cloud_assets) + [hanger1, hanger2], source_assets=[])
 
     with instance_for_test() as instance:
-        assert materialize_cereal_assets.execute_in_process(instance=instance).success
+        result = materialize_cereal_assets.execute_in_process(instance=instance)
+
+    assert result.success
 
     expected_dbt_asset_names = (
         expected_dbt_asset_names.split(",") if expected_dbt_asset_names else []
@@ -454,5 +462,6 @@ def test_subsetting(
     )
     mock_run_job_and_poll.assert_called_once_with(
         job_id=DBT_CLOUD_JOB_ID,
+        cause=f"Materializing software-defined assets in Dagster run {result.run_id[:8]}",
         steps_override=[f"dbt build {dbt_filter_option}".strip()],
     )
