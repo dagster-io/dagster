@@ -167,17 +167,22 @@ class CachingInstanceQueryer:
         after_cursor: Optional[int] = None,
         before_cursor: Optional[int] = None,
     ) -> Optional["EventLogRecord"]:
-
         if isinstance(asset, AssetKey):
             asset_partition = AssetKeyPartitionKey(asset_key=asset)
         else:
             asset_partition = asset
 
+        # fancy caching only applies to after_cursor
+        if before_cursor is not None:
+            return self._get_materialization_record(
+                asset_partition=asset_partition,
+                after_cursor=after_cursor,
+                before_cursor=before_cursor,
+            )
+
         if asset_partition in self._latest_materialization_record_cache:
             cached_record = self._latest_materialization_record_cache[asset_partition]
-            if (after_cursor is None or after_cursor < cached_record.storage_id) and (
-                before_cursor is None or before_cursor > cached_record.storage_id
-            ):
+            if after_cursor is None or after_cursor < cached_record.storage_id:
                 return cached_record
             else:
                 return None
@@ -196,7 +201,7 @@ class CachingInstanceQueryer:
             self._latest_materialization_record_cache[asset_partition] = record
             return record
         else:
-            if after_cursor is not None and before_cursor is None:
+            if after_cursor is not None:
                 self._no_materializations_after_cursor_cache[asset_partition] = min(
                     after_cursor,
                     self._no_materializations_after_cursor_cache.get(asset_partition, after_cursor),
@@ -328,7 +333,6 @@ class CachingInstanceQueryer:
         record_tags: Mapping[str, str],
         required_keys: AbstractSet[AssetKey],
     ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
-
         if record_id is None:
             return {key: (None, None) for key in required_keys}
 
