@@ -1,14 +1,9 @@
-from typing import Mapping, Union, cast, Optional
-from dagster._config.field_utils import apply_defaults_to_fields
-from dagster._core.storage.io_manager import IOManagerDefinition
+from typing import Mapping, Optional, Union, cast
 
 import pandas as pd
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
-from dagster_snowflake.snowflake_io_manager import (
-    SnowflakeDbClient,
-    get_snowflake_db_io_manager_config_schema,
-)
+from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient
 from snowflake.connector.pandas_tools import pd_writer
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
@@ -193,19 +188,6 @@ class SnowflakePandasIOManager(ConfiguredIOManagerAdapter):
         schema: Optional[str] = None,
         role: Optional[str] = None,
     ):
-
-        # "database": Field(StringSource, description="Name of the database to use."),
-        # "account": Field(
-        #     StringSource,
-        #     description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
-        # ),
-        # "user": Field(StringSource, description="User login name."),
-        # "password": Field(StringSource, description="User password."),
-        # "warehouse": Field(
-        #     StringSource, description="Name of the warehouse to use.", is_required=False
-        # ),
-        # "schema": Field(StringSource, description="Name of the schema to use", is_required=False),
-        # "role": Field(StringSource, description="Name of the role to use", is_required=False),
         super().__init__(
             parent_io_manager=snowflake_pandas_io_manager,
             args=dict(

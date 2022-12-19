@@ -3,9 +3,8 @@ from dagster_snowflake_pandas import snowflake_pandas_io_manager
 from dagster_snowflake_pandas.snowflake_pandas_type_handler import SnowflakePandasIOManager
 from pandas import DataFrame
 
-from dagster._config.field_utils import EnvVar
-
 from dagster import Definitions, SourceAsset, TableSchema, asset, load_assets_from_current_module
+from dagster._config.field_utils import EnvVar
 from dagster._utils import file_relative_path
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../dbt_project")
