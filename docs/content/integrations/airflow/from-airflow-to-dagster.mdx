@@ -5,13 +5,13 @@ description: How to get started with Dagster from an Airflow background
 
 # Learning Dagster from Airflow
 
-In this tutorial, we'll help you make the switch from Airflow to Dagster. Here, we review an Airflow DAG and show how the same functionality and be achieved in Dagster.
+In this tutorial, we'll help you make the switch from Airflow to Dagster. Here, we review an Airflow DAG and show how the same functionality can be achieved in Dagster.
 
 ---
 
-## Comparing an Airflow Dag to Dagster
+## Comparing an Airflow DAG to Dagster
 
-In this guide we will rewrite an [Airflow DAG](https://airflow.apache.org/docs/apache-airflow/stable/tutorial/fundamentals.html) as a Dagster [Job](/concepts/ops-jobs-graphs/jobs). Starting with a basic Airflow DAG:
+In this tutorial, we'll rewrite an [Airflow DAG](https://airflow.apache.org/docs/apache-airflow/stable/tutorial/fundamentals.html) as a Dagster [job](/concepts/ops-jobs-graphs/jobs). Let's start with a basic Airflow DAG:
 
 ```python file=/integrations/airflow/dags/tutorial.py
 from datetime import datetime, timedelta
@@ -60,17 +60,19 @@ with DAG(
     t1 >> [t2, t3]
 ```
 
-In order to rewrite this DAG in Dagster we will break it down into three parts
+To rewrite this DAG in Dagster, we'll break it down into three parts:
 
-1. Define the computations: "the ops" - in Airflow, the operators
+1. Define the computations: the ops - in Airflow, the operators
 2. Define the graph: the job - in Airflow, the DAG
 3. Define the schedule - In Airflow, the schedule (how simple!)
 
-A [Job](/concepts/ops-jobs-graphs/jobs) is made up of a [Graph](/concepts/ops-jobs-graphs/graphs) of [Ops](/concepts/ops-jobs-graphs/ops). If you've used the Airflow taskflow api this will feel familiar, With ops you will be focused on writing a graph with python functions as the nodes with the data dependencies between those as edges.
+A Dagster [job](/concepts/ops-jobs-graphs/jobs) is made up of a [graph](/concepts/ops-jobs-graphs/graphs) of [ops](/concepts/ops-jobs-graphs/ops). This should feel familiar if you've used the Airflow Task API. With ops, the focus is on writing a graph with Python functions as nodes and data dependencies in between them as edges.
 
-### Step 1: Defining the Ops
+--
 
-In Dagster, the minimum unit of computation is an op. This directly corresponds to an operator in Airflow. Here, we map the Airflow operators `t1`, `t2`, and `t3` to their respective Dagster op's.
+## Step 1: Defining the ops
+
+In Dagster, the minimum unit of computation is an op. This directly corresponds to an operator in Airflow. Here, we map the the operators of our example Airflow DAG `t1`, `t2`, and `t3` to their respective Dagster ops.
 
 ```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_ops endbefore=end_ops
 @op
@@ -92,7 +94,7 @@ def templated(context, ds: datetime):
         context.log.info(ds - timedelta(days=7))
 ```
 
-this yields us the following graph of computations
+Which would yield the following graph of computations in Dagit, Dagster's web-based UI. We'll spin up Dagit later in the tutorial, but wanted to demonstrate :
 
 <center>
   <Image
@@ -103,13 +105,15 @@ this yields us the following graph of computations
   />
 </center>
 
-##### Op Level Retries
+### Op-level retries
 
-In the tutorial DAG, the `t2` operator allowed for 3 retries. To configure the same behavior in Dagster, you can use [op level retry policies](/concepts/ops-jobs-graphs/op-retries)
+In the tutorial DAG, the `t2` operator allowed for 3 retries. To configure the same behavior in Dagster, you can use [op-level retry policies](/concepts/ops-jobs-graphs/op-retries)
 
-### Step 2: Defining the Job
+--
 
-In Dagster, the computations defined in `op`s are composed in `job`s, which define the sequence and dependency structure of the computations you want to execute. This directly corresponds to a DAG in Airflow. Here, we compose the `op`s `print_date`, `sleep` and `templated` to match the dependency structure defined by the Airflow operators `t1`, `t2`, and `t3`.
+## Step 2: Define the job
+
+In Dagster, the computations defined in ops are composed in jobs, which define the sequence and dependency structure of the computations you want to execute. This directly corresponds to a DAG in Airflow. Here, we compose the `op`s `print_date`, `sleep` and `templated` to match the dependency structure defined by the Airflow operators `t1`, `t2`, and `t3`.
 
 ```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_job endbefore=end_job
 @job(tags={"dagster/max_retries": 1, "dag_name": "example"})
@@ -119,11 +123,13 @@ def tutorial_job():
     templated(ds)
 ```
 
-##### Job Level Retries
+### Job-level retries
 
-Job level retries are managed by the [run launcher](/deployment/run-retries) you will need to enable support for them in your dagster.yaml, once you do you can define the retry count on the job.
+Job-level retries are managed by the [run launcher](/deployment/run-retries) Once enabled in your dagster.yaml file, you can define the retry count for the job.
 
-### Step 3: Defining the schedule
+--
+
+## Step 3: Define the schedule
 
 In Dagster, schedules can be defined for jobs, which determine the cadence at which a job is triggered to be executed. Below we define a schedule that will run the `tutorial_job` daily:
 
@@ -131,7 +137,9 @@ In Dagster, schedules can be defined for jobs, which determine the cadence at wh
 schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
 ```
 
-### Step 4: Running locally
+--
+
+## Step 4: Run Dagster locally
 
 In order to run our newly defined Dagster job we'll need to define a Dagster [repository](/concepts/repositories-workspaces/repositories). A Dagster repository is a logical grouping of jobs and schedules that provides an entrypoint for viewing and executing them.
 
@@ -147,7 +155,9 @@ We can now load this file with dagit, the interactive web-ui for dagster
 dagit -f <your_dagster_file>.py
 ```
 
-## Completed Code Example
+## Completed code example
+
+That's it! By now, your code should look like this:
 
 ```python file=/integrations/airflow/tutorial_rewrite_complete.py startafter=start_example endbefore=end_example
 import time
