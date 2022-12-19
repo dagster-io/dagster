@@ -1,8 +1,21 @@
 import pyspark
-from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckdb_io_manager
+from dagster_duckdb.io_manager import (
+    DuckDbClient,
+    DuckDbIOManagerConfigSchema,
+    _connect_duckdb,
+    build_duckdb_io_manager,
+)
 from pyspark.sql import SparkSession
 
-from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster import (
+    IOManagerDefinition,
+    InputContext,
+    MetadataValue,
+    OutputContext,
+    TableColumn,
+    TableSchema,
+)
+from dagster._config.structured_config import StructuredIOManagerAdapter
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 
 
@@ -129,3 +142,9 @@ Examples:
             ...
 
 """
+
+
+class DuckDbPySparkIOManager(DuckDbIOManagerConfigSchema, StructuredIOManagerAdapter):
+    @property
+    def wrapped_io_manager(self) -> IOManagerDefinition:
+        return duckdb_pyspark_io_manager

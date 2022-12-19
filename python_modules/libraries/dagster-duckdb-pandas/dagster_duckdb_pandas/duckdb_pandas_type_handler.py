@@ -10,10 +10,16 @@ from dagster_duckdb.io_manager import (
     build_duckdb_io_manager,
 )
 
-from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster import (
+    IOManagerDefinition,
+    InputContext,
+    MetadataValue,
+    OutputContext,
+    TableColumn,
+    TableSchema,
+)
 from dagster._config.structured_config import StructuredIOManagerAdapter
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
-from dagster._core.storage.io_manager import IOManagerDefinition
 
 
 class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
