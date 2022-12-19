@@ -1,14 +1,34 @@
 from dagster import (
     asset,
     IOManager,
-    load_assets_from_current_module,
     Definitions,
     IOManagerDefinition,
     AssetIn,
     materialize,
     instance_for_test,
+    DagsterRunStatus
 )
 
+import time
+
+def wait_for_all_runs_to_finish(instance, timeout=10):
+    start_time = time.time()
+    FINISHED_STATES = [
+        DagsterRunStatus.SUCCESS,
+        DagsterRunStatus.FAILURE,
+        DagsterRunStatus.CANCELED,
+    ]
+    while True:
+        if time.time() - start_time > timeout:
+            raise Exception("Timed out waiting for runs to start")
+        time.sleep(0.5)
+
+        not_finished_runs = [
+            run for run in instance.get_runs() if run.status not in FINISHED_STATES
+        ]
+
+        if len(not_finished_runs) == 0:
+            break
 
 @asset
 def upstream() -> int:
@@ -32,6 +52,7 @@ def test_loading_already_materialized_asset():
     with instance_for_test() as instance:
         # materialize the upstream
         materialize([upstream], instance=instance)
+        wait_for_all_runs_to_finish(instance)
 
         # materialize just the downstream
         materialize(
