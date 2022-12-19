@@ -68,6 +68,7 @@ class DbClient:
 class DbIOManager(IOManager):
     def __init__(
         self,
+        *,
         type_handlers: Sequence[DbTypeHandler],
         db_client: DbClient,
         io_manager_name: Optional[str] = None,
