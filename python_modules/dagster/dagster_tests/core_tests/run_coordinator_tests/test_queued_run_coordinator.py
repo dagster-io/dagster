@@ -177,3 +177,20 @@ class TestQueuedRunCoordinator:
         coordinator.cancel_run(run.run_id)
         stored_run = instance.get_run_by_id("foo-1")
         assert stored_run.status == DagsterRunStatus.CANCELED
+
+
+def test_thread_config():
+    num = 16
+    with instance_for_test(
+        overrides={
+            "run_coordinator": {
+                "module": "dagster._core.run_coordinator",
+                "class": "QueuedRunCoordinator",
+                "config": {
+                    "dequeue_use_threads": True,
+                    "dequeue_num_workers": num,
+                },
+            }
+        }
+    ) as instance:
+        assert instance.run_coordinator.dequeue_num_workers == num

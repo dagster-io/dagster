@@ -2,7 +2,7 @@ import inspect
 from typing import Optional
 
 import pendulum
-from dagster_tests.core_tests.asset_defs_tests.test_partitioned_assets import (
+from dagster_tests.asset_defs_tests.test_partitioned_assets import (
     get_downstream_partitions_for_partition_range,
     get_upstream_partitions_for_partition_range,
 )

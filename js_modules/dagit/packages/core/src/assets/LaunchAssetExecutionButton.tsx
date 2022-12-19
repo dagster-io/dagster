@@ -535,9 +535,9 @@ export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     graphName
     partitionDefinition {
       description
-    }
-    partitionKeysByDimension {
-      name
+      dimensionTypes {
+        name
+      }
     }
     isObservable
     isSource

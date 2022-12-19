@@ -41,8 +41,9 @@ export const usePartitionDimensionRanges = (opts: {
   const [local, setLocal] = React.useState<DimensionQueryState[]>([]);
 
   const knownDimensionNamesJSON = JSON.stringify(knownDimensionNames);
+
   const inflated = React.useMemo((): PartitionHealthDimensionRange[] => {
-    if (!assetHealth) {
+    if (!assetHealth || !assetHealth.dimensions.length) {
       return JSON.parse(knownDimensionNamesJSON).map(placeholderDimensionRange);
     }
     return assetHealth.dimensions.map((dimension) => {
