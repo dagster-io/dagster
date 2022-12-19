@@ -4,6 +4,7 @@ import duckdb
 import pandas as pd
 import pytest
 from dagster_duckdb_pandas import duckdb_pandas_io_manager
+from dagster_duckdb_pandas.duckdb_pandas_type_handler import DuckDbPandasIOManager
 
 from dagster import AssetIn, DailyPartitionsDefinition, Out, asset, graph, materialize, op
 from dagster._check import CheckError
@@ -26,9 +27,7 @@ def add_one_to_dataframe():
 
 def test_duckdb_io_manager_with_ops(tmp_path):
     resource_defs = {
-        "io_manager": duckdb_pandas_io_manager.configured(
-            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-        ),
+        "io_manager": DuckDbPandasIOManager(database=os.path.join(tmp_path, "unit_test.duckdb")),
     }
 
     job = add_one_to_dataframe.to_job(resource_defs=resource_defs)
