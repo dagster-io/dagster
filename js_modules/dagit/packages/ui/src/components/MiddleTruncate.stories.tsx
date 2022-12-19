@@ -45,6 +45,33 @@ export const Simple = () => {
   );
 };
 
+export const FlexboxContainerUsage = () => {
+  return (
+    <Box>
+      {[
+        'asset1',
+        'example',
+        'test1234',
+        'example_1',
+        'helloworld',
+        'example_12',
+        'example_123',
+        'otherstring',
+        'example_1234',
+        'variable_width',
+      ].map((text) => (
+        <Box key={text} style={{maxWidth: '100%'}} flex={{direction: 'row', gap: 8}}>
+          <Box>
+            <Icon name="asset_non_sda" />
+          </Box>
+          <a style={{overflow: 'hidden'}} href="#/">
+            <MiddleTruncate text={text} />
+          </a>
+        </Box>
+      ))}
+    </Box>
+  );
+};
 export const TagUsage = () => {
   return (
     <Tag icon="job">

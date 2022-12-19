@@ -1,3 +1,8 @@
+// We've observed that Firefox's DOM APIs and Canvas APIs do not return
+// identical values given the same rendered text, in particular when the DOM
+// element is inside a flexbox. They're floating point numbers off by ~0.05.
+const FIREFOX_WIDTH_VARIANCE = 0.1;
+
 /**
  * Binary search to find the maximum middle-truncated text that will fit within the specified target width.
  * The truncation will occur in the center of the string, with the same number of characters on either side.
@@ -7,8 +12,9 @@ export const calculateMiddleTruncation = (
   targetWidth: number,
   measure: (value: string) => number,
 ): string => {
-  // Skip the search if the text will already fit as-is.
-  if (measure(text) <= targetWidth) {
+  // Skip the search if the text will already fit as-is (or is very, very close).
+  const fullWidth = measure(text);
+  if (fullWidth < targetWidth || Math.abs(fullWidth - targetWidth) < FIREFOX_WIDTH_VARIANCE) {
     return text;
   }
 
