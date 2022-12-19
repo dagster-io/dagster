@@ -237,6 +237,16 @@ def test_materialize_to_memory_partition_key():
     assert result.success
 
 
+def test_materialize_tags():
+    @asset
+    def the_asset(context):
+        assert context.get_tag("key1") == "value1"
+
+    result = materialize_to_memory([the_asset], tags={"key1": "value1"})
+    assert result.success
+    assert result.dagster_run.tags == {"key1": "value1"}
+
+
 def test_materialize_to_memory_partition_key_and_run_config():
     @asset(config_schema={"value": str})
     def configurable(context):

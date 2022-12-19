@@ -262,6 +262,17 @@ def test_materialize_multi_asset():
         assert result.output_for_node("multi_asset_with_internal_deps", "my_other_out_name") == 2
 
 
+def test_materialize_tags():
+    @asset
+    def the_asset(context):
+        assert context.get_tag("key1") == "value1"
+
+    with instance_for_test() as instance:
+        result = materialize([the_asset], instance=instance, tags={"key1": "value1"})
+        assert result.success
+        assert result.dagster_run.tags == {"key1": "value1"}
+
+
 def test_materialize_partition_key():
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
     def the_asset(context):
