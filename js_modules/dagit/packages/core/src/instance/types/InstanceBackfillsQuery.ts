@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { BulkActionStatus, BackfillStatus } from "./../../types/globalTypes";
+import { BulkActionStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: InstanceBackfillsQuery
@@ -47,7 +47,6 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   __typename: "PartitionBackfill";
   backfillId: string;
   status: BulkActionStatus;
-  backfillStatus: BackfillStatus;
   numRequested: number;
   numPartitions: number;
   timestamp: number;
