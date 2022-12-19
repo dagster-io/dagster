@@ -30,7 +30,7 @@ export const CurrentMinutesLateTag: React.FC<{
   const description = policyOnHover ? freshnessPolicyDescription(freshnessPolicy) : '';
 
   if (!freshnessInfo) {
-    return <span />;
+    return null;
   }
 
   if (freshnessInfo.currentMinutesLate === null) {
