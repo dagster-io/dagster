@@ -1,8 +1,23 @@
+from typing import Optional
+
 import pyspark
-from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckdb_io_manager
+from dagster_duckdb.io_manager import (
+    DuckDbClient,
+    _connect_duckdb,
+    build_duckdb_io_manager,
+    get_duckdb_io_manager_config_schema,
+)
 from pyspark.sql import SparkSession
 
-from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster import (
+    IOManagerDefinition,
+    InputContext,
+    MetadataValue,
+    OutputContext,
+    TableColumn,
+    TableSchema,
+)
+from dagster._config.field_utils import apply_defaults_to_fields
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 
 
@@ -129,3 +144,13 @@ Examples:
             ...
 
 """
+
+
+class DuckDbPySparkIOManager(IOManagerDefinition):
+    def __init__(self, database: str, schema: Optional[str] = None):
+        super().__init__(
+            resource_fn=duckdb_pyspark_io_manager.resource_fn,
+            config_schema=apply_defaults_to_fields(
+                dict(database=database, schema=schema), get_duckdb_io_manager_config_schema()
+            ),
+        )
