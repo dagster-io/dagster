@@ -1,16 +1,14 @@
 from typing import Optional
-from dagster._config.validate import process_config
 
 import pandas as pd
-from dagster_duckdb.io_manager import (
-    DuckDbClient,
-    _connect_duckdb,
-    build_duckdb_io_manager,
-    get_duckdb_io_manager_config_schema,
-)
+from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckdb_io_manager
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._config.field_utils import apply_defaults_to_fields, config_dictionary_from_values
+from dagster._config.field_utils import config_dictionary_from_values
+from dagster._core.definitions.definition_config_schema import (
+    ConfiguredDefinitionConfigSchema,
+    convert_user_facing_definition_config_schema,
+)
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster._core.storage.io_manager import IOManagerDefinition
 
@@ -131,11 +129,6 @@ Examples:
             ...
 
 """
-
-from dagster._core.definitions.definition_config_schema import (
-    convert_user_facing_definition_config_schema,
-    ConfiguredDefinitionConfigSchema,
-)
 
 
 class ConfiguredIOManagerAdapter(IOManagerDefinition):
