@@ -1,7 +1,4 @@
-from lib2to3.pytree import convert
-from pydoc import describe
-from typing import Any, Optional
-from dagster._config.field_utils import convert_potential_field
+from typing import Mapping, Optional
 
 import pandas as pd
 from dagster_duckdb.io_manager import (
@@ -11,16 +8,9 @@ from dagster_duckdb.io_manager import (
     get_duckdb_io_manager_config_schema,
 )
 
-from dagster import (
-    Field,
-    InputContext,
-    MetadataValue,
-    OutputContext,
-    StringSource,
-    TableColumn,
-    TableSchema,
-)
-from dagster._core.storage.db_io_manager import DbIOManager, DbTypeHandler, TableSlice
+from dagster import Field, InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._config.field_utils import convert_potential_field
+from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster._core.storage.io_manager import IOManagerDefinition
 
 
@@ -140,8 +130,6 @@ Examples:
             ...
 
 """
-
-from typing import Mapping
 
 
 def apply_defaults(defaults: dict, config_schema: Mapping[str, Field]):
