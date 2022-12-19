@@ -81,7 +81,7 @@ Dagster requires three long-running services, which are outlined in the table be
         <a href="/concepts/code-locations">Code location server</a>
       </td>
       <td>
-        Code lcation servers serve metadata about the collection of its Dagster
+        Code location servers serve metadata about the collection of its Dagster
         definitions. You can have many code location servers; each server can
         have one or more replicas.
       </td>
@@ -90,17 +90,11 @@ Dagster requires three long-running services, which are outlined in the table be
   </tbody>
 </table>
 
-**For simple deployments**, you can run Dagit and the Dagster daemon, letting Dagit manage running the code location servers for you.
-
-**For larger deployments**, you can run and manage the code location servers separately.
-
 ---
 
 ## Deployment configuration
 
-Dagster OSS deployments are composed of multiple components, such as storages, executors, and run launchers. One of the core features of Dagster is that each of these components is swappable and configurable.
-
-If custom configuration isn't provided, Dagster will automatically use a default implementation of each component. However, default implementations can be swapped for another built-in Dagster option or your own custom implementation. For example, by default Dagster uses <PyObject module="dagster._core.storage.runs" object="SqliteRunStorage" /> to store information about pipeline runs. This can be swapped with the Dagster-provided <PyObject module="dagster_postgres" object="PostgresRunStorage"/> instead or or a custom storage class.
+Dagster OSS deployments are composed of multiple components, such as storages, executors, and run launchers. One of the core features of Dagster is that each of these components is swappable and configurable. If custom configuration isn't provided, Dagster will automatically use a default implementation of each component. For example, by default Dagster uses <PyObject module="dagster._core.storage.runs" object="SqliteRunStorage" /> to store information about pipeline runs. This can be swapped with the Dagster-provided <PyObject module="dagster_postgres" object="PostgresRunStorage"/> instead or or a custom storage class.
 
 Based on the component's scope, configuration occurs at either the **Dagster instance** or **Job run** level. Access to user code is configured at the **Workspace** level. Refer to the following table for info on how components are configured at each of these levels:
 
