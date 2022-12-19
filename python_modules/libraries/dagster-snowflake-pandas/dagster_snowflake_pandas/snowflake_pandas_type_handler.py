@@ -178,9 +178,10 @@ Examples:
             ...
 
 """
+from dagster._core.definitions.configured_adapters import ConfiguredIOManagerAdapter
 
 
-class SnowflakePandasIOManager(IOManagerDefinition):
+class SnowflakePandasIOManager(ConfiguredIOManagerAdapter):
     def __init__(
         self,
         *,
@@ -188,9 +189,9 @@ class SnowflakePandasIOManager(IOManagerDefinition):
         account: str,
         user: str,
         password: str,
-        warehouse: Optional[str],
-        schema: Optional[str],
-        role: Optional[str],
+        warehouse: Optional[str] = None,
+        schema: Optional[str] = None,
+        role: Optional[str] = None,
     ):
 
         # "database": Field(StringSource, description="Name of the database to use."),
@@ -206,17 +207,14 @@ class SnowflakePandasIOManager(IOManagerDefinition):
         # "schema": Field(StringSource, description="Name of the schema to use", is_required=False),
         # "role": Field(StringSource, description="Name of the role to use", is_required=False),
         super().__init__(
-            resource_fn=snowflake_pandas_io_manager.resource_fn,
-            config_schema=apply_defaults_to_fields(
-                dict(
-                    database=database,
-                    account=account,
-                    user=user,
-                    password=password,
-                    warehouse=warehouse,
-                    schema=schema,
-                    role=role,
-                ),
-                get_snowflake_db_io_manager_config_schema(),
+            parent_io_manager=snowflake_pandas_io_manager,
+            args=dict(
+                database=database,
+                account=account,
+                user=user,
+                password=password,
+                warehouse=warehouse,
+                schema=schema,
+                role=role,
             ),
         )
