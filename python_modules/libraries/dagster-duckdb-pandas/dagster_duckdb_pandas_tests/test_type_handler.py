@@ -1,9 +1,13 @@
 import os
+from dagster_duckdb_pyspark import duckdb_pyspark_io_manager
 
 import duckdb
 import pandas as pd
 import pytest
-from dagster_duckdb_pandas.duckdb_pandas_type_handler import DuckDbPandasIOManager
+from dagster_duckdb_pandas.duckdb_pandas_type_handler import (
+    DuckDbPandasIOManager,
+    duckdb_pandas_io_manager,
+)
 
 from dagster import AssetIn, DailyPartitionsDefinition, Out, asset, graph, materialize, op
 from dagster._check import CheckError

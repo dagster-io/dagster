@@ -465,8 +465,8 @@ def _convert_potential_field(
 
 
 def apply_defaults_to_fields(
-    defaults: Mapping[str, Any], config_schema: Mapping[str, Field]
-) -> Dict[str, Field]:
+    defaults: Mapping[str, Any], config_schema: Mapping[str, "Field"]
+) -> Dict[str, "Field"]:
     new_config_schema = {}
     for key, value in config_schema.items():
         old_field = convert_potential_field(value)
@@ -486,3 +486,23 @@ def apply_defaults_to_fields(
             )
         )
     return new_config_schema
+
+
+def config_dictionary_from_values(
+    values: Mapping[str, Any], config_field: "Field"
+) -> Dict[str, "Field"]:
+    assert ConfigTypeKind.is_shape(config_field.config_type.kind)
+    new_values = {}
+    for key, value in values.items():
+        if value is None:
+            continue
+
+        if isinstance(value, EnvVar):
+            new_values[key] = {"env": str(value)}
+        else:
+            new_values[key] = value
+    return new_values
+
+
+class EnvVar(str):
+    pass
