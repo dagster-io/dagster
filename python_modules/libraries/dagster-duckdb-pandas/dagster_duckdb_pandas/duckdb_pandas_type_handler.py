@@ -1,8 +1,19 @@
+from typing import Any, Optional
+
 import pandas as pd
 from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckdb_io_manager
 
-from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
+from dagster import (
+    Field,
+    InputContext,
+    MetadataValue,
+    OutputContext,
+    StringSource,
+    TableColumn,
+    TableSchema,
+)
+from dagster._core.storage.db_io_manager import DbIOManager, DbTypeHandler, TableSlice
+from dagster._core.storage.io_manager import IOManagerDefinition
 
 
 class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
@@ -121,3 +132,34 @@ Examples:
             ...
 
 """
+
+
+class DuckDbPandasIOManager(IOManagerDefinition):
+    def __init__(self, database: str, schema: Optional[str] = None):
+        super().__init__(
+            resource_fn=lambda _: DbIOManager(
+                type_handlers=[DuckDBPandasTypeHandler()],
+                db_client=DuckDbClient(),
+                io_manager_name="DuckDBIOManager",
+            ),
+            config_schema={
+                "database": Field(
+                    StringSource,
+                    description="Path to the DuckDB database.",
+                    default_value=database,
+                    is_required=False,
+                ),
+                "schema": Field(
+                    StringSource,
+                    description="Name of the schema to use.",
+                    is_required=False,
+                    default_value=schema,
+                )
+                if schema
+                else Field(
+                    StringSource,
+                    description="Name of the schema to use.",
+                    is_required=False,
+                ),
+            },
+        )
