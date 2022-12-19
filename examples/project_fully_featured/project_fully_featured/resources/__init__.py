@@ -4,7 +4,6 @@ from dagster_aws.s3 import s3_resource
 from dagster_dbt import dbt_cli_resource
 from dagster_pyspark import pyspark_resource
 
-from dagster import ResourceDefinition
 from dagster._utils import file_relative_path
 
 from .common_bucket_s3_pickle_io_manager import common_bucket_s3_pickle_io_manager
@@ -51,7 +50,7 @@ configured_pyspark = pyspark_resource.configured(
 snowflake_io_manager_prod = snowflake_io_manager.configured({"database": "DEMO_DB"})
 
 RESOURCES_PROD = {
-    "s3_bucket": ResourceDefinition.hardcoded_resource("hackernews-elementl-prod"),
+    "s3_bucket": "hackernews-elementl-prod",
     "io_manager": common_bucket_s3_pickle_io_manager,
     "s3": s3_resource,
     "parquet_io_manager": s3_partitioned_parquet_io_manager,
@@ -65,7 +64,7 @@ snowflake_io_manager_staging = snowflake_io_manager.configured({"database": "DEM
 
 
 RESOURCES_STAGING = {
-    "s3_bucket": ResourceDefinition.hardcoded_resource("hackernews-elementl-dev"),
+    "s3_bucket": "hackernews-elementl-dev",
     "io_manager": common_bucket_s3_pickle_io_manager,
     "s3": s3_resource,
     "parquet_io_manager": s3_partitioned_parquet_io_manager,
