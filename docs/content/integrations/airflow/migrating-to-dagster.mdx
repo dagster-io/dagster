@@ -29,7 +29,7 @@ pip install dagster dagster-airflow
 
 ---
 
-## Step 1: Create a new repository using <PyObject module="dagster_airflow" object="make_dagster_repo_from_airflow_dags_path" />
+## Step 1: Create a new repository using make_dagster_repo_from_airflow_dags_path
 
 The first step to migrating is to define a Dagster repository. To do this, we'll use <PyObject module="dagster_airflow" object="make_dagster_repo_from_airflow_dags_path" /> and pass it the file path of our Airflow Dag Bag. Dagster will then load the DagBag and convert all DAGs into Dagster jobs.
 
