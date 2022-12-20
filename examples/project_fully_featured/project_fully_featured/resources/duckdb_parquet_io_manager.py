@@ -3,10 +3,8 @@ import os
 import duckdb
 import pandas as pd
 
-from dagster import Field, PartitionKeyRange
+from dagster import PartitionKeyRange
 from dagster import _check as check
-from dagster import io_manager
-from dagster._seven.temp_dir import get_system_temp_directory
 
 from .parquet_io_manager import PartitionedParquetIOManager
 
@@ -62,15 +60,3 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
 
     def _connect_duckdb(self):
         return duckdb.connect(database=self._duckdb_path, read_only=False)
-
-
-@io_manager(
-    config_schema={"base_path": Field(str, is_required=False), "duckdb_path": str},
-    required_resource_keys={"pyspark"},
-)
-def duckdb_partitioned_parquet_io_manager(init_context):
-    return DuckDBPartitionedParquetIOManager(
-        base_path=init_context.resource_config.get("base_path", get_system_temp_directory()),
-        duckdb_path=init_context.resource_config["duckdb_path"],
-        pyspark_resource=init_context.resources.pyspark,
-    )
