@@ -70,7 +70,7 @@ s3_staging_bucket = "hackernews-elementl-dev"
 
 RESOURCES_STAGING = {
     "io_manager": deferred_io_manager(
-        lambda: PickledObjectS3IOManager(s3_bucket=s3_prod_bucket, s3_session=s3_session)
+        lambda: PickledObjectS3IOManager(s3_bucket=s3_staging_bucket, s3_session=s3_session)
     ),
     "parquet_io_manager": PartitionedParquetIOManager(
         base_path="s3://" + s3_staging_bucket,
