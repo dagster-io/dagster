@@ -1,8 +1,7 @@
 import os
 from typing import Optional
 
-from dagster_aws.s3 import s3_resource
-from dagster_aws.s3.io_manager import PickledObjectS3IOManager, s3_pickle_io_manager
+from dagster_aws.s3.io_manager import PickledObjectS3IOManager
 from dagster_aws.s3.utils import construct_s3_client
 from dagster_dbt import dbt_cli_resource
 from dagster_pyspark.resources import PySparkResource
