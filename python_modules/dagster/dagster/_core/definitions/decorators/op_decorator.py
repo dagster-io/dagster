@@ -72,7 +72,10 @@ class _Op:
             # Parse schema from the type annotation of the config arg
             config_arg = compute_fn.get_config_arg()
             config_arg_type = config_arg.annotation
-            self.config_schema = infer_schema_from_config_annotation(config_arg_type)
+            config_arg_default = config_arg.default
+            self.config_schema = infer_schema_from_config_annotation(
+                config_arg_type, config_arg_default
+            )
 
         outs: Optional[Mapping[str, Out]] = None
         if self.out is not None and isinstance(self.out, Out):
