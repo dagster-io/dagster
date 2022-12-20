@@ -62,15 +62,3 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
 
     def _connect_duckdb(self):
         return duckdb.connect(database=self._duckdb_path, read_only=False)
-
-
-@io_manager(
-    config_schema={"base_path": Field(str, is_required=False), "duckdb_path": str},
-    required_resource_keys={"pyspark"},
-)
-def duckdb_partitioned_parquet_io_manager(init_context):
-    return DuckDBPartitionedParquetIOManager(
-        base_path=init_context.resource_config.get("base_path", get_system_temp_directory()),
-        pyspark_resource=init_context.resources.pyspark,
-        duckdb_path=init_context.resource_config["duckdb_path"],
-    )
