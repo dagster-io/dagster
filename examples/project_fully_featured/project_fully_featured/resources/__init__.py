@@ -47,8 +47,16 @@ configured_pyspark = PySparkResource(
 snowflake_io_manager_prod = snowflake_io_manager.configured({"database": "DEMO_DB"})
 
 s3_prod_bucket = "hackernews-elementl-prod"
+
+
+def create_s3_pickle_io_manager(s3_bucket):
+    s3_session = s3_resource(build_init_resource_context())
+    return PickledObjectS3IOManager(s3_bucket, s3_session, s3_prefix="dagster")
+
+
 RESOURCES_PROD = {
-    "io_manager": s3_pickle_io_manager.configured({"s3_bucket": s3_prod_bucket}),
+    # "io_manager": s3_pickle_io_manager.configured({"s3_bucket": s3_prod_bucket}),
+    "io_manager": create_s3_pickle_io_manager(s3_prod_bucket),
     "s3": s3_resource,
     "parquet_io_manager": PartitionedParquetIOManager(
         base_path="s3://" + s3_prod_bucket,
@@ -62,11 +70,6 @@ RESOURCES_PROD = {
 snowflake_io_manager_staging = snowflake_io_manager.configured({"database": "DEMO_DB_STAGING"})
 
 s3_staging_bucket = "hackernews-elementl-dev"
-
-
-def create_s3_pickle_io_manager(s3_bucket):
-    s3_session = s3_resource(build_init_resource_context())
-    return PickledObjectS3IOManager(s3_bucket, s3_session, s3_prefix="dagster")
 
 
 RESOURCES_STAGING = {
