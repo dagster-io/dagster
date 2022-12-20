@@ -431,7 +431,28 @@ def test_with_resources_override():
         resources={"b_resource": "passed-through-definitions"},
     )
 
-    defs.get_job_def("__ASSET_JOB").execute_in_process()
+    defs.get_implicit_global_asset_job().execute_in_process()
 
     assert executed["asset_one"]
     assert executed["asset_two"]
+
+
+def test_implicit_global_job():
+    @asset
+    def asset_one():
+        pass
+
+    defs = Definitions(assets=[asset_one])
+
+    assert defs.has_implicit_global_asset_job()
+
+
+def test_implicit_global_job_with_job_defined():
+    @asset
+    def asset_one():
+        pass
+
+    defs = Definitions(assets=[asset_one], jobs=[define_asset_job("all_assets_job", selection="*")])
+
+    # I officially do not understand the semantics of the global implicit job at this point
+    assert defs.has_implicit_global_asset_job()

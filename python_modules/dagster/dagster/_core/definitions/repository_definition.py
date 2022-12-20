@@ -1348,6 +1348,22 @@ class RepositoryDefinition:
     def _assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._repository_data.get_assets_defs_by_key()
 
+    def has_implicit_global_asset_job(self) -> bool:
+        return bool(self._get_maybe_implicit_global_asset_job())
+
+    def get_implicit_global_asset_job(self) -> JobDefinition:
+        """A useful conveninence method for repositories where there are assets and nodefined jobs"""
+        return check.not_none(
+            self._get_maybe_implicit_global_asset_job(),
+            "There are other jobs defined and therefore there is not implicit global job.",
+        )
+
+    def _get_maybe_implicit_global_asset_job(self) -> Optional[JobDefinition]:
+        all_asset_keys = list(self._assets_defs_by_key.keys()) + list(
+            self.source_assets_by_key.keys()
+        )
+        return self.get_base_job_for_assets(all_asset_keys)
+
     def get_base_asset_job_names(self) -> Sequence[str]:
         return [
             job_name for job_name in self.job_names if job_name.startswith(ASSET_BASE_JOB_PREFIX)

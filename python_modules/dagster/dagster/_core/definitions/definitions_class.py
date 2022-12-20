@@ -262,6 +262,14 @@ class Definitions:
             instance=instance,
         )
 
+    def has_implicit_global_asset_job(self) -> bool:
+        return self.get_repository_def().has_implicit_global_asset_job()
+
+    def get_implicit_global_asset_job(self) -> JobDefinition:
+        """A useful conveninence method for code locations where there are assets and no defined jobs"""
+        asset_job = self.get_repository_def().get_implicit_global_asset_job()
+        return check.not_none(asset_job)
+
     @cached_method
     def get_repository_def(self) -> RepositoryDefinition:
         """
