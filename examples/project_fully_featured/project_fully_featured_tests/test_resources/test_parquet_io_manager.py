@@ -1,11 +1,11 @@
 # pylint: disable=redefined-outer-name
 import os
 import tempfile
+from dagster_pyspark.resources import LazyPySparkResource
 
 import pandas
-from dagster_pyspark import pyspark_resource
 from project_fully_featured.partitions import hourly_partitions
-from project_fully_featured.resources.parquet_io_manager import local_partitioned_parquet_io_manager
+from project_fully_featured.resources import create_local_partitioned_io_manager
 from pyspark.sql import DataFrame as SparkDF
 
 from dagster import asset, materialize
@@ -29,9 +29,8 @@ def test_io_manager():
         res = materialize(
             assets=[pandas_df_asset, spark_input_asset],
             resources={
-                "pyspark": pyspark_resource,
-                "io_manager": local_partitioned_parquet_io_manager.configured(
-                    {"base_path": temp_dir}
+                "io_manager": create_local_partitioned_io_manager(
+                    base_path=temp_dir, pyspark_resource=LazyPySparkResource(spark_conf={})
                 ),
             },
             partition_key="2022-01-01-16:00",

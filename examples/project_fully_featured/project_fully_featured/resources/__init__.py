@@ -6,7 +6,7 @@ from dagster_aws.s3 import s3_resource
 from dagster_aws.s3.io_manager import PickledObjectS3IOManager
 from dagster_aws.s3.utils import construct_s3_client
 from dagster_dbt import dbt_cli_resource
-from dagster_pyspark.resources import PySparkResource
+from dagster_pyspark.resources import LazyPySparkResource
 
 from dagster._utils import file_relative_path
 
@@ -30,7 +30,8 @@ dbt_prod_resource = dbt_cli_resource.configured(
 
 
 def create_local_partitioned_io_manager(
-    pyspark_resource: PySparkResource, base_path: Optional[str] = None
+    pyspark_resource,
+    base_path: Optional[str] = None,
 ) -> PartitionedParquetIOManager:
     return PartitionedParquetIOManager(
         base_path=base_path if base_path is not None else get_system_temp_directory(),
@@ -39,7 +40,7 @@ def create_local_partitioned_io_manager(
 
 
 def create_s3_partitioned_parquet_io_manager(
-    pyspark_resource: PySparkResource, s3_bucket
+    pyspark_resource, s3_bucket
 ) -> PartitionedParquetIOManager:
     return PartitionedParquetIOManager(
         base_path="s3://" + s3_bucket, pyspark_resource=pyspark_resource
@@ -62,7 +63,7 @@ def get_spark_conf():
     }
 
 
-configured_pyspark = PySparkResource({"spark_conf": get_spark_conf()})
+configured_pyspark = LazyPySparkResource({"spark_conf": get_spark_conf()})
 
 
 snowflake_io_manager_prod = snowflake_io_manager.configured({"database": "DEMO_DB"})
@@ -72,7 +73,9 @@ def get_prod_resources():
     s3_bucket = "hackernews-elementl-prod"
     s3_session = construct_s3_client(max_attempts=5)
     return {
-        "io_manager": PickledObjectS3IOManager(s3_bucket=s3_bucket, s3_session=s3_session),
+        "io_manager": PickledObjectS3IOManager(
+            s3_bucket=s3_bucket, s3_session=s3_session, s3_prefix="dagster"
+        ),
         "s3": s3_resource,
         "parquet_io_manager": create_s3_partitioned_parquet_io_manager(
             pyspark_resource=configured_pyspark, s3_bucket=s3_bucket
@@ -93,7 +96,7 @@ def get_staging_resources():
     s3_bucket = "hackernews-elementl-dev"
     return {
         "io_manager": PickledObjectS3IOManager(
-            s3_bucket=s3_bucket, s3_session=construct_s3_client(max_attempts=5)
+            s3_bucket=s3_bucket, s3_session=construct_s3_client(max_attempts=5), s3_prefix="dagster"
         ),
         "s3": s3_resource,
         "parquet_io_manager": create_s3_partitioned_parquet_io_manager(
@@ -105,6 +108,8 @@ def get_staging_resources():
         "dbt": dbt_staging_resource,
     }
 
+
+RESOURCES_STAGING = get_staging_resources()
 
 RESOURCES_LOCAL = {
     "parquet_io_manager": create_local_partitioned_io_manager(configured_pyspark),

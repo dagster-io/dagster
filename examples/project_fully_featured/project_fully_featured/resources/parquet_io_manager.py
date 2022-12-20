@@ -1,7 +1,6 @@
 import os
 from typing import Optional, Union
 from dagster._core.definitions.resource_requirement import get_resource_key_conflicts
-from dagster_pyspark.resources import PySparkResource
 
 import pandas
 import pyspark
