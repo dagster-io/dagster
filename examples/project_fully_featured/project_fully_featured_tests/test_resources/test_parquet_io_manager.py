@@ -3,7 +3,6 @@ import os
 import tempfile
 
 import pandas
-
 from dagster_pyspark.resources import PySparkResource
 from project_fully_featured.partitions import hourly_partitions
 from project_fully_featured.resources.parquet_io_manager import PartitionedParquetIOManager
