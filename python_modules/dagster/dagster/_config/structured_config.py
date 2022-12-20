@@ -1,11 +1,12 @@
 import inspect
-from typing import Any, Type
+from typing import Any, Optional, Tuple, Type
 
 from pydantic import BaseModel
 from pydantic.fields import SHAPE_SINGLETON, ModelField
 
 import dagster._check as check
-from dagster import Field, Shape
+from dagster import Field, Shape, StringSource
+from dagster._config.config_type import ConfigStringInstance, ConfigType
 from dagster._config.field_utils import FIELD_NO_DEFAULT_PROVIDED, convert_potential_field
 
 
@@ -13,6 +14,11 @@ class Config(BaseModel):
     """
     Base class for Dagster configuration models.
     """
+
+
+class EnvVar(str):
+    def __init__(self, name: str):
+        self._name = name
 
 
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
@@ -29,12 +35,15 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     else:
         raise NotImplementedError(f"Pydantic shape {pydantic_field.shape} not supported.")
 
-    inner_config_type = convert_potential_field(dagster_type).config_type
-    return Field(
-        config=inner_config_type,
+    config_type, default_value = resolve_config_type_and_default(
+        dagster_type,
         default_value=pydantic_field.default
         if pydantic_field.default
         else FIELD_NO_DEFAULT_PROVIDED,
+    )
+    return Field(
+        config=config_type,
+        default_value=default_value,
     )
 
 
@@ -43,25 +52,31 @@ def infer_schema_from_config_annotation(model_cls: Type, config_arg_default: Any
     Parses a structured config class or primitive type and returns a corresponding Dagster config Field.
     """
 
+    is_subclass = False
     try:
-        if issubclass(model_cls, Config):
-            check.invariant(
-                config_arg_default is inspect.Parameter.empty,
-                "Cannot provide a default value when using a Config class",
-            )
-            return infer_schema_from_config_class(model_cls)
+        is_subclass = issubclass(model_cls, Config)
     except TypeError:
         # In case a user passes e.g. a Typing type, which is not a class
         # convert_potential_field will produce a more actionable error message
         # than the TypeError that would be raised here
         pass
 
-    inner_config_type = convert_potential_field(model_cls).config_type
-    return Field(
-        config=inner_config_type,
-        default_value=FIELD_NO_DEFAULT_PROVIDED
+    if is_subclass:
+        check.invariant(
+            config_arg_default is inspect.Parameter.empty,
+            "Cannot provide a default value when using a Config class",
+        )
+        return infer_schema_from_config_class(model_cls)
+
+    config_type, default_value = resolve_config_type_and_default(
+        model_cls,
+        FIELD_NO_DEFAULT_PROVIDED
         if config_arg_default is inspect.Parameter.empty
         else config_arg_default,
+    )
+    return Field(
+        config=config_type,
+        default_value=default_value,
     )
 
 
@@ -80,3 +95,15 @@ def infer_schema_from_config_class(model_cls: Type[Config]) -> Field:
         fields[pydantic_field_name] = _convert_pydantic_field(pydantic_field)
 
     return Field(config=Shape(fields))
+
+
+def resolve_config_type_and_default(contents: Any, default_value: Any) -> Tuple[ConfigType, Any]:
+    config_type = convert_potential_field(contents).config_type
+
+    if isinstance(default_value, EnvVar):
+        check.invariant(
+            config_type is ConfigStringInstance, "EnvVar only supported for string fields"
+        )
+        return StringSource, {"env": default_value._name}
+
+    return config_type, default_value

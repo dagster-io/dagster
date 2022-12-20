@@ -5,9 +5,10 @@ from dagster import _check as check
 from dagster import job, op, validate_run_config
 from dagster._config.config_type import ConfigTypeKind
 from dagster._config.field_utils import convert_potential_field
-from dagster._config.structured_config import Config, infer_schema_from_config_class
+from dagster._config.structured_config import Config, EnvVar, infer_schema_from_config_class
 from dagster._core.errors import DagsterInvalidConfigDefinitionError, DagsterInvalidConfigError
 from dagster._core.execution.context.invocation import build_op_context
+from dagster._core.test_utils import ExplodingRunLauncher, environ
 from dagster._legacy import pipeline
 
 
@@ -130,3 +131,35 @@ def test_default_values_nested():
     )
 
     assert executed["yes"]
+
+
+def test_env_var():
+    class ANewConfigOpConfig(Config):
+        a_string: str = EnvVar("MY_ENV_VAR")
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: ANewConfigOpConfig):
+        assert config.a_string == "foo"
+        executed["yes"] = True
+
+    from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+
+    assert DecoratedOpFunction(a_struct_config_op).has_config_arg()
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"a_string": "foo"}}}})
+    assert executed["yes"]
+
+    executed = {}
+    with environ({"MY_ENV_VAR": "foo"}):
+        a_job.execute_in_process()
+        assert executed["yes"]
+
+    with pytest.raises(AssertionError):
+        with environ({"MY_ENV_VAR": "bar"}):
+            a_job.execute_in_process()
