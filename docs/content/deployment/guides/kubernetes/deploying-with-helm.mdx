@@ -134,51 +134,71 @@ height={713}
   </tbody>
 </table>
 
-### Daemon
+</TabItem>
+<TabItem name="Code location server">
 
-The [daemon](/deployment/dagster-daemon) periodically checks the Runs table in PostgreSQL for runs that are ready to be launched. The daemon also submits runs from [schedules](/concepts/partitions-schedules-sensors/schedules) and [sensors](/concepts/partitions-schedules-sensors/sensors).
+A [code location server](/concepts/code-locations) runs a gRPC server and responds to Dagit's requests for information, such as:
 
-The daemon launches runs via the <PyObject module="dagster_k8s" object="K8sRunLauncher" />, creating a run worker [Job](https://kubernetes.io/docs/concepts/workloads/controllers/job/) with the image specified in the user code deployment.
+- List all of the jobs in each code location, or
+- What is the dependency structure of job X?
 
-### Dagit
+The user-provided image for the server must contain a [code location definition](/concepts/code-locations) and all of the packages needed to execute within the code location.
 
-The Dagit webserver communicates with the user code deployments via gRPC to fetch information needed to populate the Dagit UI. Dagit does not load or execute user-written code, and will remain available even when user code contains errors. Dagit frequently checks whether the user code deployment has been updated; and if so, the new information is fetched.
+Users can have multiple code location servers. A common pattern is for each code location server to correspond to a different code location.
 
-Dagit can be horizontally scaled by setting the `dagit.replicaCount` field in the `values.yaml`.
+Code location servers can be updated independently from other Dagster components, including Dagit. As a result, updates to code locations can occur without causing downtime to any other code location or Dagit. After updating, if there is an error with any code location, an error is surfaced for that code location within Dagit. All other code locations and Dagit will still operate normally.
 
-By default, dagit launches runs via the <PyObject module="dagster_k8s" object="K8sRunLauncher" />, which creates a new Kubernetes Job per run.
+</TabItem>
+<TabItem name="Dagit">
 
-### Database
+The Dagit webserver communicates with user code deployments via gRPC to fetch information needed to populate the Dagit UI. Dagit doesn't load or execute user-written code, and will remain available even when user code contains errors. Dagit frequently checks whether the user code deployment has been updated and if so, fetches the new information.
 
-The user can connect an external database (i.e. using a cloud provider's managed database service, like RDS) or run PostgreSQL on Kubernetes. This database stores runs event logs, and other metadata, and powers much of the real-time and historical data visible in Dagit. In order to maintain a referenceable history of events, we recommend connecting an external database for most use cases.
+Dagit can be horizontally scaled by setting the `dagit.replicaCount` field in `values.yaml`.
 
-### Run Worker
+By default, Dagit launches runs via the <PyObject module="dagster_k8s" object="K8sRunLauncher" />, which creates a new Kubernetes job per run.
 
-The run worker is responsible for executing launched Dagster runs. The run worker uses the same image as the user code deployment at the time the run was submitted. The run worker uses ephemeral compute, and completes once the run is finished. Events that occur during the run are written to the database, and are displayed in Dagit.
+</TabItem>
+<TabItem name="Daemon">
 
-The run worker jobs and pods are not automatically deleted, so that users are able to inspect results. It is up to the user to periodically delete old jobs and pods.
+The [daemon](/deployment/dagster-daemon) periodically checks the runs table in PostgreSQL for runs that are ready to be launched. The daemon also submits runs from [schedules](/concepts/partitions-schedules-sensors/schedules) and [sensors](/concepts/partitions-schedules-sensors/sensors).
 
-### Executor
+The daemon launches runs via the <PyObject module="dagster_k8s" object="K8sRunLauncher" />, creating a run worker [job](https://kubernetes.io/docs/concepts/workloads/controllers/job/) with the image specified in the user code deployment.
 
-Each Dagster job specifies an [executor](/deployment/executors) that determines how the run worker will execute each step of the job. Different executors offer different levels of isolation and concurrency. Common choices are <PyObject module="dagster" object="in_process_executor" /> (all steps run serially in a single process in a single pod), <PyObject module="dagster" object="multiprocess_executor" /> (multiple processes in a single pod), and <PyObject module="dagster_k8s" object="k8s_job_executor" /> (each step runs in a separate Kubernetes job). Generally, increasing isolation incurs some additional overhead per step (e.g. starting up a new Kubernetes job vs starting a new process within a pod). The [executor](/deployment/executors) can be configured per-run in the `execution` block.
+</TabItem>
+<TabItem name="Run worker">
 
-### User Code Deployment
+The run worker is responsible for executing launched Dagster runs. The run worker uses the same image as the user code deployment at the time the run was submitted. The run worker uses ephemeral compute and completes once the run is finished. Events that occur during the run are written to the database and then displayed in Dagit.
 
-A user code deployment runs a gRPC server and responds to Dagit's requests for information (such as: "List all of the jobs in each repository" or "What is the dependency structure of job X?"). The user-provided image for the user code deployment must contain a [repository definition](/concepts/repositories-workspaces/repositories) and all of the packages needed to execute within the repository.
+Run worker jobs and pods are not automatically deleted so that users are able to inspect results. It's up to the user to periodically delete old jobs and pods.
 
-Users can have multiple user code deployments. A common pattern is for each user code deployment to correspond to a different repository.
+</TabItem>
+<TabItem name="Executor">
 
-User code deployments can be updated independently from other Dagster components, including Dagit. As a result, updates to repositories can occur without causing downtime to any other repository or to Dagit. After updating, if there is an error with any repository, an error is surfaced for that repository within Dagit; all other repositories and Dagit will still operate normally.
+Each Dagster job specifies an [executor](/deployment/executors) that determines how the run worker will execute each step of the job. Different executors offer different levels of isolation and concurrency. Common choices are:
 
 ## Walkthrough
+- <PyObject module="dagster" object="in_process_executor" /> - All steps run serially
+  in a single process in a single pod
+- <PyObject module="dagster" object="multiprocess_executor" /> - Multiple processes
+  run in a single pod
+- <PyObject module="dagster_k8s" object="k8s_job_executor" /> - Each step runs in
+  a separate Kubernetes job
+
+Generally, increasing isolation incurs some additional overhead per step (e.g. starting up a new Kubernetes job vs starting a new process within a pod). The [executor](/deployment/executors) can be configured per-run in the `execution` block.
 
 ### Configure kubectl
+</TabItem>
+<TabItem name="Database">
 
 First, configure the `kubectl` CLI to point at a kubernetes cluster.
+An external database (i.e. using a cloud provider's managed database service, like RDS) can be connected, or you can run PostgreSQL on Kubernetes. This database stores run event logs, other metadata, and powers much of the real-time and historical data visible in Dagit. To maintain a referenceable history of events, we recommend connecting an external database for most use cases.
 
 You can use [docker-desktop](https://docs.docker.com/desktop/kubernetes/) to set up a local k8s cluster to develop against, or substitute with another k8s cluster as desired.
+</TabItem>
+</TabGroup>
 
 If you're using docker-desktop and you have a local cluster set up, configure the `kubectl` CLI to point to the local k8s cluster:
+---
 
     $ kubectl config set-context dagster --namespace default --cluster docker-desktop --user=docker-desktop
     $ kubectl config use-context dagster
