@@ -1,12 +1,12 @@
 import os
 
 from dagster_aws.s3 import s3_resource
+from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_dbt import dbt_cli_resource
 from dagster_pyspark import pyspark_resource
 
 from dagster._utils import file_relative_path
 
-from .common_bucket_s3_pickle_io_manager import common_bucket_s3_pickle_io_manager
 from .duckdb_parquet_io_manager import duckdb_partitioned_parquet_io_manager
 from .hn_resource import hn_api_client, hn_api_subsample_client
 from .parquet_io_manager import (
@@ -46,12 +46,12 @@ configured_pyspark = pyspark_resource.configured(
     }
 )
 
-
 snowflake_io_manager_prod = snowflake_io_manager.configured({"database": "DEMO_DB"})
 
+s3_prod_bucket = "hackernews-elementl-prod"
 RESOURCES_PROD = {
-    "s3_bucket": "hackernews-elementl-prod",
-    "io_manager": common_bucket_s3_pickle_io_manager,
+    "s3_bucket": s3_prod_bucket,
+    "io_manager": s3_pickle_io_manager.configured({"s3_bucket": s3_prod_bucket}),
     "s3": s3_resource,
     "parquet_io_manager": s3_partitioned_parquet_io_manager,
     "warehouse_io_manager": snowflake_io_manager_prod,
@@ -62,10 +62,11 @@ RESOURCES_PROD = {
 
 snowflake_io_manager_staging = snowflake_io_manager.configured({"database": "DEMO_DB_STAGING"})
 
+s3_staging_bucket = "hackernews-elementl-dev"
 
 RESOURCES_STAGING = {
-    "s3_bucket": "hackernews-elementl-dev",
-    "io_manager": common_bucket_s3_pickle_io_manager,
+    "s3_bucket": s3_staging_bucket,
+    "io_manager": s3_pickle_io_manager.configured({"s3_bucket": s3_staging_bucket}),
     "s3": s3_resource,
     "parquet_io_manager": s3_partitioned_parquet_io_manager,
     "warehouse_io_manager": snowflake_io_manager_staging,
