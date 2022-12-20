@@ -42,19 +42,32 @@ def scope_dbt_cli_resource_config():
 
 
 def scope_schedule_assets():
-    dbt_assets = []
+    from dagster import file_relative_path, with_resources
+    from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
+
+    DBT_PROJECT_PATH = file_relative_path(
+        __file__, "../../../../assets_dbt_python/dbt_project"
+    )
+    dbt_assets = with_resources(
+        load_assets_from_dbt_project(DBT_PROJECT_PATH),
+        {
+            "dbt": dbt_cli_resource.configured(
+                {"project_dir": DBT_PROJECT_PATH},
+            )
+        },
+    )
+
     # start_schedule_assets
-    from dagster import ScheduleDefinition, define_asset_job, repository
+    from dagster import ScheduleDefinition, define_asset_job, Definitions
 
     run_everything_job = define_asset_job("run_everything", selection="*")
 
-    # only my_model and its children
-    run_something_job = define_asset_job("run_something", selection="my_model*")
+    # only `order_stats` and its children
+    run_something_job = define_asset_job("run_something", selection="order_stats*")
 
-    @repository
-    def my_repo():
-        return [
-            dbt_assets,
+    defs = Definitions(
+        assets=dbt_assets,
+        schedules=[
             ScheduleDefinition(
                 job=run_something_job,
                 cron_schedule="@daily",
@@ -63,7 +76,8 @@ def scope_schedule_assets():
                 job=run_everything_job,
                 cron_schedule="@weekly",
             ),
-        ]
+        ],
+    )
 
     # end_schedule_assets
 
