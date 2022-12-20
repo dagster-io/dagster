@@ -27,25 +27,37 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
     },
   });
 
+  const {materializations, observations, hasLineage} = React.useMemo(() => {
+    if (result.data?.assetNodeOrError?.__typename !== 'AssetNode') {
+      return {materializations: [], observations: [], hasLineage: false};
+    }
+    return {
+      materializations: [...result.data.assetNodeOrError.assetMaterializations].sort(
+        (a, b) => Number(b.timestamp) - Number(a.timestamp),
+      ),
+      observations: [...result.data.assetNodeOrError.assetObservations].sort(
+        (a, b) => Number(b.timestamp) - Number(a.timestamp),
+      ),
+      hasLineage: result.data.assetNodeOrError.assetMaterializations.some(
+        (m) => m.assetLineage.length > 0,
+      ),
+    };
+  }, [result.data]);
+
   if (result.loading || !result.data) {
     return <AssetPartitionDetailEmpty partitionKey={props.partitionKey} />;
   }
-
-  const events =
-    result.data?.assetNodeOrError?.__typename === 'AssetNode'
-      ? result.data.assetNodeOrError.assetMaterializations
-      : [];
-
-  const hasLineage = events.some((m) => m.assetLineage.length > 0);
 
   return (
     <AssetPartitionDetail
       hasLineage={hasLineage}
       group={{
-        latest: events[0],
-        all: events,
-        timestamp: events[0]?.timestamp,
+        latest: materializations[0],
+        timestamp: materializations[0]?.timestamp,
         partition: props.partitionKey,
+        all: [...materializations, ...observations].sort(
+          (a, b) => Number(b.timestamp) - Number(a.timestamp),
+        ),
       }}
     />
   );
@@ -61,6 +73,12 @@ const ASSET_PARTITION_DETAIL_QUERY = graphql(`
           ... on MaterializationEvent {
             runId
             ...AssetMaterializationFragment
+          }
+        }
+        assetObservations(partitions: [$partitionKey]) {
+          ... on ObservationEvent {
+            runId
+            ...AssetObservationFragment
           }
         }
       }
