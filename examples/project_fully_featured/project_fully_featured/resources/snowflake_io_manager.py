@@ -52,13 +52,6 @@ def connect_snowflake(config, schema="public"):
             conn.close()
 
 
-@io_manager(config_schema={"database": str})
-def snowflake_io_manager(init_context):
-    return SnowflakeIOManager(
-        config=dict(database=init_context.resource_config["database"], **SHARED_SNOWFLAKE_CONF)
-    )
-
-
 class SnowflakeIOManager(IOManager):
     """
     This IOManager can handle outputs that are either Spark or Pandas DataFrames. In either case,
@@ -80,7 +73,7 @@ class SnowflakeIOManager(IOManager):
         elif isinstance(obj, PandasDataFrame):
             metadata = self._handle_pandas_output(obj, schema, table)
         elif obj is None:  # dbt
-            config = dict(SHARED_SNOWFLAKE_CONF)
+            config = dict(self._config)
             config["schema"] = schema
             with connect_snowflake(config=config) as con:
                 df = read_sql(f"SELECT * FROM {context.name} LIMIT 5", con=con)
