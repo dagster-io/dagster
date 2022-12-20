@@ -31,7 +31,7 @@ EXPOSE 3000
 ENTRYPOINT ["dagit", "-h", "0.0.0.0", "-p", "3000"]
 ```
 
-You'll also need to include a `workspace.yaml` file in the same directory as the Dockerfile to configure your [workspace](/concepts/code-locations/workspace-files):
+You'll also need to include a [workspace file (`workspace.yaml`)](/concepts/code-locations/workspace-files) file in the same directory as the Dockerfile to configure your code location server:
 
 ```yaml file=/deploying/docker/workspace.yaml
 load_from:
@@ -126,7 +126,7 @@ EXPOSE 4000
 CMD ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-f", "repo.py"]
 ```
 
-and your workspace might look like:
+And your code location server might look like:
 
 ```yaml file=/deploying/docker/workspace_grpc.yaml
 load_from:
@@ -137,9 +137,11 @@ load_from:
       location_name: "example_user_code"
 ```
 
-When you update your code, you can rebuild and restart your user code container without needing to redeploy other parts of the system. Dagit will automatically notice that a new server has been redeployed and prompt you to refresh your workspace.
+When you update your code, you can rebuild and restart your user code container without needing to redeploy other parts of the system. Dagit will automatically notice that a new server has been redeployed and prompt you to refresh.
 
 When you add or remove a user code container, you can also remove the corresponding entry from your `workspace.yaml` file. If this file is mounted on the Dagit and Dagster daemon containers as a volume, you can pick up the changes in Dagit by reloading from the **Deployment** tab. The Dagster daemon container will automatically pick up the changes by periodically reloading the `workspace.yaml` file.
+
+---
 
 ## Launching runs in containers
 
