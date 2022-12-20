@@ -7,7 +7,7 @@ description: guide for doing a lift and shift migration of airflow to dagster
 
 Dagster can convert your Airflow DAGs into Dagster jobs, making it possible to a lift and shift migration off of Airflow onto Dagster without any rewriting.
 
-This guide will walk you through the basic steps of doing this migration.
+This guide will walk you through the steps of doing this migration.
 
 <Note>
   Looking for example of an Airflow to Dagster migration? Check out the{" "}
@@ -46,7 +46,7 @@ Under the hood, dagster is still running the exact operator code as you were in 
 
 ---
 
-## Step 2: Define Connections
+## Step 2: Define your Airflow connections
 
 By default each Job Run of your migrated DAGs will create an ephemeral airflow metadatabase scoped to each Job run, this means any [Airflow Connections](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html) that your DAG was depending on will need to be created for that to work, to do this you can provide a `connections` parameter to <PyObject module="dagster_airflow" object="make_dagster_repo_from_airflow_dags_path" />
 
@@ -65,10 +65,28 @@ migrated_airflow_repo = make_dagster_repo_from_airflow_dags_path(
 )
 ```
 
-If you're running on Dagster Cloud and any of youre connection fields are sensitive you can also pass them from [Environment Variables](/dagster-cloud/developing-testing/environment-variables-and-secrets)
+If you're running on Dagster Cloud and any of your connection fields are sensitive you can also pass them from [Environment Variables](/dagster-cloud/developing-testing/environment-variables-and-secrets) instead of hard coding them.
 
 ---
 
-## Step 3: Launching runs
+## Step 3: Run your migrated DAGs locally
 
-Once we have a Repository defined we can launch dagit, view your newly migrated Jobs and launch runs. Its important to note that things like your old Airflow's instance infrastructure permissions will not have been migrated so in order to have your api calls to external services like AWS or K8s work you may need to do some permissioning work. If you're running on Dagster Cloud using [Environment Variables](/dagster-cloud/developing-testing/environment-variables-and-secrets) to configure correctly scoped access tokens to those services will work well.
+Once we have a Repository defined we can launch dagit, view your newly migrated Jobs and launch runs.
+
+```bash
+dagit -f <your migrated dags>.py
+```
+
+If your local shell has the correct permissions you can also test out running the migrated dags end to end.
+
+---
+
+## Step 4: Setup your permissions
+
+Your airflow instance likely had specific IAM or Kubernetes permissions that allowed it to successfully run your airflow dags, in order to run the migrated dagster jobs you'll need to duplicate these permissions dagster.
+
+In general if you can lean on [Airflow Connections](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html) or [Environment Variables](/dagster-cloud/developing-testing/environment-variables-and-secrets) for defining these permissions it will be easier than modifying the underlying dagster infrastructure to assume roles that are permissioned correctly.
+
+### KubernetesPodOperators
+
+If your airflow dags were using [KubernetesPodOperators](https://airflow.apache.org/docs/apache-airflow-providers-cncf-kubernetes/stable/operators.html) its possible that you were using the `in_cluster` config or loading a kube_config file. When migrating switching to using a [Connection with a kube_config JSON blob](https://airflow.apache.org/docs/apache-airflow-providers-cncf-kubernetes/stable/connections/kubernetes.html) will be easier.
