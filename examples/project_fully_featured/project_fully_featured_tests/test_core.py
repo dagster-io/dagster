@@ -16,7 +16,6 @@ from dagster import (
 
 def test_download():
     with tempfile.TemporaryDirectory() as temp_dir:
-        pyspark_resource = PySparkResource(spark_conf={})
         result = materialize(
             load_assets_from_package_module(core),
             resources={
@@ -24,10 +23,9 @@ def test_download():
                 "partition_start": ResourceDefinition.string_resource(),
                 "partition_end": ResourceDefinition.string_resource(),
                 "parquet_io_manager": PartitionedParquetIOManager(
-                    base_path=temp_dir, pyspark_resource=pyspark_resource
+                    base_path=temp_dir, pyspark_resource=PySparkResource(spark_conf={})
                 ),
                 "warehouse_io_manager": mem_io_manager,
-                "pyspark": pyspark_resource,
                 "hn_client": HNSnapshotClient(),
                 "dbt": ResourceDefinition.none_resource(),
             },

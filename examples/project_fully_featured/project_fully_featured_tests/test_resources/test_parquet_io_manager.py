@@ -26,13 +26,11 @@ def test_io_manager():
         return pandas_df_asset
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        configured_pyspark = PySparkResource(spark_conf={})
         res = materialize(
             assets=[pandas_df_asset, spark_input_asset],
             resources={
-                "pyspark": configured_pyspark,
                 "io_manager": PartitionedParquetIOManager(
-                    base_path=temp_dir, pyspark_resource=configured_pyspark
+                    base_path=temp_dir, pyspark_resource=PySparkResource(spark_conf={})
                 ),
             },
             partition_key="2022-01-01-16:00",
