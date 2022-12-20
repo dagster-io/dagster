@@ -3,7 +3,7 @@ from dagster._core.definitions.definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
-from dagster._core.storage.io_manager import IOManagerDefinition
+from dagster._core.storage.io_manager import IOManagerDefinition, ResourceDefinition
 
 
 class ConfiguredIOManagerAdapter(IOManagerDefinition):
@@ -19,6 +19,24 @@ class ConfiguredIOManagerAdapter(IOManagerDefinition):
                 config_dictionary_from_values(
                     args,
                     parent_io_manager.config_schema.as_field(),
+                ),
+            ),
+        )
+
+
+class ConfiguredResourceAdapter(ResourceDefinition):
+    def __init__(self, parent_resource, args):
+        ## TODO: coerce all strings to string source
+        super().__init__(
+            resource_fn=parent_resource.resource_fn,
+            config_schema=ConfiguredDefinitionConfigSchema(
+                parent_resource,
+                convert_user_facing_definition_config_schema(
+                    None
+                ),  # this is actually just replicating a bug that allows for too permissive of config
+                config_dictionary_from_values(
+                    args,
+                    parent_resource.config_schema.as_field(),
                 ),
             ),
         )
