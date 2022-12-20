@@ -21,8 +21,9 @@ class PartitionedParquetIOManager(IOManager):
     to where the data is stored.
     """
 
-    def __init__(self, base_path):
+    def __init__(self, base_path, pyspark_resource):
         self._base_path = base_path
+        self._pyspark_resource = pyspark_resource
 
     def handle_output(
         self, context: OutputContext, obj: Union[pandas.DataFrame, pyspark.sql.DataFrame]
@@ -47,7 +48,7 @@ class PartitionedParquetIOManager(IOManager):
         path = self._get_path(context)
         if context.dagster_type.typing_type == pyspark.sql.DataFrame:
             # return pyspark dataframe
-            return context.resources.pyspark.spark_session.read.parquet(path)
+            return self._pyspark_resource.spark_session.read.parquet(path)
 
         return check.failed(
             f"Inputs of type {context.dagster_type} not supported. Please specify a valid type "
@@ -72,10 +73,14 @@ class PartitionedParquetIOManager(IOManager):
 )
 def local_partitioned_parquet_io_manager(init_context):
     return PartitionedParquetIOManager(
-        base_path=init_context.resource_config.get("base_path", get_system_temp_directory())
+        base_path=init_context.resource_config.get("base_path", get_system_temp_directory()),
+        pyspark_resource=init_context.resources.pyspark,
     )
 
 
 @io_manager(required_resource_keys={"pyspark", "s3_bucket"})
 def s3_partitioned_parquet_io_manager(init_context):
-    return PartitionedParquetIOManager(base_path="s3://" + init_context.resources.s3_bucket)
+    return PartitionedParquetIOManager(
+        base_path="s3://" + init_context.resources.s3_bucket,
+        pyspark_resource=init_context.resources.pyspark,
+    )

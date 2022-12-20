@@ -14,8 +14,8 @@ from .parquet_io_manager import PartitionedParquetIOManager
 class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
     """Stores data in parquet files and creates duckdb views over those files."""
 
-    def __init__(self, base_path: str, duckdb_path: str):
-        super().__init__(base_path=base_path)
+    def __init__(self, base_path: str, duckdb_path: str, pyspark_resource):
+        super().__init__(base_path=base_path, pyspark_resource=pyspark_resource)
         self._duckdb_path = check.str_param(duckdb_path, "duckdb_path")
 
     def handle_output(self, context, obj):
@@ -72,4 +72,5 @@ def duckdb_partitioned_parquet_io_manager(init_context):
     return DuckDBPartitionedParquetIOManager(
         base_path=init_context.resource_config.get("base_path", get_system_temp_directory()),
         duckdb_path=init_context.resource_config["duckdb_path"],
+        pyspark_resource=init_context.resources.pyspark,
     )
