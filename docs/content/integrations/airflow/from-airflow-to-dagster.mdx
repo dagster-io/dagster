@@ -94,7 +94,7 @@ def templated(context, ds: datetime):
         context.log.info(ds - timedelta(days=7))
 ```
 
-Which would yield the following graph of computations in Dagit, Dagster's web-based UI. We'll spin up Dagit later in the tutorial, but wanted to demonstrate :
+Which would yield the following graph of computations in Dagit, Dagster's web-based UI. We'll spin up Dagit later in the tutorial, but wanted to demonstrate:
 
 <center>
   <Image
@@ -107,13 +107,13 @@ Which would yield the following graph of computations in Dagit, Dagster's web-ba
 
 ### Op-level retries
 
-In the tutorial DAG, the `t2` operator allowed for 3 retries. To configure the same behavior in Dagster, you can use [op-level retry policies](/concepts/ops-jobs-graphs/op-retries)
+In the tutorial DAG, the `t2` operator allowed for three retries. To configure the same behavior in Dagster, you can use [op-level retry policies](/concepts/ops-jobs-graphs/op-retries).
 
 ---
 
 ## Step 2: Define the job
 
-In Dagster, the computations defined in ops are composed in jobs, which define the sequence and dependency structure of the computations you want to execute. This directly corresponds to a DAG in Airflow. Here, we compose the `op`s `print_date`, `sleep` and `templated` to match the dependency structure defined by the Airflow operators `t1`, `t2`, and `t3`.
+In Dagster, the computations defined in ops are composed in jobs, which define the sequence and dependency structure of the computations you want to execute. This directly corresponds to a DAG in Airflow. Here, we compose the op's `print_date`, `sleep` and `templated` to match the dependency structure defined by the Airflow operators `t1`, `t2`, and `t3`.
 
 ```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_job endbefore=end_job
 @job(tags={"dagster/max_retries": 1, "dag_name": "example"})
@@ -125,7 +125,7 @@ def tutorial_job():
 
 ### Job-level retries
 
-Job-level retries are managed by the [run launcher](/deployment/run-retries) Once enabled in your dagster.yaml file, you can define the retry count for the job.
+Job-level retries are managed by the [run launcher](/deployment/run-retries). Once enabled in your `dagster.yaml` file, you can define the retry count for the job.
 
 ---
 
@@ -154,6 +154,8 @@ We can now load this file with dagit, the interactive web-ui for dagster
 ```bash
 dagit -f <your_dagster_file>.py
 ```
+
+---
 
 ## Completed code example
 
