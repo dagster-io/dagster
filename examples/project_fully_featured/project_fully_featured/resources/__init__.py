@@ -8,7 +8,7 @@ from dagster._utils import file_relative_path
 
 from .common_bucket_s3_pickle_io_manager import common_bucket_s3_pickle_io_manager
 from .duckdb_parquet_io_manager import duckdb_partitioned_parquet_io_manager
-from .hn_resource import hn_api_client, hn_api_subsample_client
+from .hn_resource import HNAPIClient, HNAPISubsampleClient
 from .parquet_io_manager import (
     local_partitioned_parquet_io_manager,
     s3_partitioned_parquet_io_manager,
@@ -56,7 +56,7 @@ RESOURCES_PROD = {
     "parquet_io_manager": s3_partitioned_parquet_io_manager,
     "warehouse_io_manager": snowflake_io_manager_prod,
     "pyspark": configured_pyspark,
-    "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
+    "hn_client": HNAPISubsampleClient(subsample_rate=10),
     "dbt": dbt_prod_resource,
 }
 
@@ -70,7 +70,7 @@ RESOURCES_STAGING = {
     "parquet_io_manager": s3_partitioned_parquet_io_manager,
     "warehouse_io_manager": snowflake_io_manager_staging,
     "pyspark": configured_pyspark,
-    "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
+    "hn_client": HNAPISubsampleClient(subsample_rate=10),
     "dbt": dbt_staging_resource,
 }
 
@@ -81,6 +81,6 @@ RESOURCES_LOCAL = {
         {"duckdb_path": os.path.join(DBT_PROJECT_DIR, "hackernews.duckdb")},
     ),
     "pyspark": configured_pyspark,
-    "hn_client": hn_api_client,
+    "hn_client": HNAPIClient(),
     "dbt": dbt_local_resource,
 }
