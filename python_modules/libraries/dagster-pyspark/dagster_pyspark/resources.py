@@ -51,7 +51,7 @@ def pyspark_resource(init_context):
             my_op()
 
     """
-    return PySparkResource(init_context.resource_config["spark_conf"])
+    return LazyPySparkResource(init_context.resource_config["spark_conf"])
 
 
 class LazyPySparkResource:
