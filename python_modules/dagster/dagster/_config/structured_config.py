@@ -30,7 +30,6 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
         raise NotImplementedError(f"Pydantic shape {pydantic_field.shape} not supported")
 
     inner_config_type = convert_potential_field(dagster_type).config_type
-    print(pydantic_field.field_info)
     return Field(
         config=inner_config_type,
         description=pydantic_field.field_info.description,
