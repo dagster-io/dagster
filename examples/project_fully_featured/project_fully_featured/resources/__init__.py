@@ -1,7 +1,6 @@
 import os
 
-from dagster_aws.s3 import s3_resource
-from dagster_aws.s3.io_manager import s3_pickle_io_manager
+from dagster_aws.s3.io_manager import PickledObjectS3IOManager
 from dagster_dbt import dbt_cli_resource
 from dagster_pyspark.resources import PySparkResource
 from project_fully_featured.resources.hn_resource import HNAPIClient, HNAPISubsampleClient
@@ -9,6 +8,7 @@ from project_fully_featured.resources.hn_resource import HNAPIClient, HNAPISubsa
 from dagster._seven.temp_dir import get_system_temp_directory
 from dagster._utils import file_relative_path
 
+from .common_utils_to_move_to_libraries import build_s3_session, deferred_io_manager
 from .duckdb_parquet_io_manager import DuckDBPartitionedParquetIOManager
 from .parquet_io_manager import PartitionedParquetIOManager
 from .snowflake_io_manager import SnowflakeIOManager
@@ -49,11 +49,14 @@ SHARED_SNOWFLAKE_CONF = {
     "warehouse": "TINY_WAREHOUSE",
 }
 
+s3_session = build_s3_session()
+
 s3_prod_bucket = "hackernews-elementl-prod"
 
 RESOURCES_PROD = {
-    "io_manager": s3_pickle_io_manager.configured({"s3_bucket": s3_prod_bucket}),
-    "s3": s3_resource,
+    "io_manager": deferred_io_manager(
+        lambda: PickledObjectS3IOManager(s3_bucket=s3_prod_bucket, s3_session=s3_session)
+    ),
     "parquet_io_manager": PartitionedParquetIOManager(
         base_path="s3://" + s3_prod_bucket,
         pyspark_resource=configured_pyspark,
@@ -66,8 +69,9 @@ RESOURCES_PROD = {
 s3_staging_bucket = "hackernews-elementl-dev"
 
 RESOURCES_STAGING = {
-    "io_manager": s3_pickle_io_manager.configured({"s3_bucket": s3_staging_bucket}),
-    "s3": s3_resource,
+    "io_manager": deferred_io_manager(
+        lambda: PickledObjectS3IOManager(s3_bucket=s3_staging_bucket, s3_session=s3_session)
+    ),
     "parquet_io_manager": PartitionedParquetIOManager(
         base_path="s3://" + s3_staging_bucket,
         pyspark_resource=configured_pyspark,
