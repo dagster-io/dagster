@@ -36,11 +36,25 @@ def scope_load_assets_from_dbt_cloud_job():
 
 
 def scope_schedule_dbt_cloud_assets():
-    dbt_cloud_assets = []
-    # start_schedule_dbt_cloud_assets
-    from dagster import ScheduleDefinition, define_asset_job, repository, AssetSelection
+    from dagster_dbt import dbt_cloud_resource, load_assets_from_dbt_cloud_job
 
-    # Materialize all assets in the repository
+    dbt_cloud_instance = dbt_cloud_resource.configured(
+        {"auth_token": "foo", "account_id": 111}
+    )
+    dbt_cloud_assets = load_assets_from_dbt_cloud_job(
+        dbt_cloud=dbt_cloud_instance,
+        job_id=33333,
+    )
+
+    # start_schedule_dbt_cloud_assets
+    from dagster import (
+        ScheduleDefinition,
+        define_asset_job,
+        AssetSelection,
+        Definitions,
+    )
+
+    # Materialize all assets
     run_everything_job = define_asset_job("run_everything_job", AssetSelection.all())
 
     # Materialize only the staging assets
@@ -48,11 +62,10 @@ def scope_schedule_dbt_cloud_assets():
         "run_staging_job", AssetSelection.groups("staging")
     )
 
-    @repository
-    def my_repo():
-        return [
-            # Use the dbt_cloud_assets defined in Step 2
-            dbt_cloud_assets,
+    defs = Definitions(
+        # Use the dbt_cloud_assets defined in Step 2
+        assets=[dbt_cloud_assets],
+        schedules=[
             ScheduleDefinition(
                 job=run_everything_job,
                 cron_schedule="@daily",
@@ -61,6 +74,7 @@ def scope_schedule_dbt_cloud_assets():
                 job=run_staging_job,
                 cron_schedule="@hourly",
             ),
-        ]
+        ],
+    )
 
     # end_schedule_dbt_cloud_assets
