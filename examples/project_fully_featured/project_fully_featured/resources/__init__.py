@@ -4,6 +4,7 @@ from dagster_aws.s3 import s3_resource
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_dbt import dbt_cli_resource
 from dagster_pyspark import pyspark_resource
+from dagster_pyspark.resources import PySparkResource
 
 from dagster._seven.temp_dir import get_system_temp_directory
 from dagster._utils import file_relative_path
@@ -26,8 +27,8 @@ dbt_prod_resource = dbt_cli_resource.configured(
 )
 
 
-configured_pyspark = pyspark_resource.configured(
-    {
+configured_pyspark = PySparkResource(
+    spark_conf={
         "spark_conf": {
             "spark.jars.packages": ",".join(
                 [
@@ -55,7 +56,6 @@ RESOURCES_PROD = {
         pyspark_resource=configured_pyspark,
     ),
     "warehouse_io_manager": snowflake_io_manager_prod,
-    "pyspark": configured_pyspark,
     "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
     "dbt": dbt_prod_resource,
 }
@@ -72,7 +72,6 @@ RESOURCES_STAGING = {
         pyspark_resource=configured_pyspark,
     ),
     "warehouse_io_manager": snowflake_io_manager_staging,
-    "pyspark": configured_pyspark,
     "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
     "dbt": dbt_staging_resource,
 }
@@ -88,7 +87,6 @@ RESOURCES_LOCAL = {
         duckdb_path=os.path.join(DBT_PROJECT_DIR, "hackernews.duckdb"),
         pyspark_resource=configured_pyspark,
     ),
-    "pyspark": configured_pyspark,
     "hn_client": hn_api_client,
     "dbt": dbt_local_resource,
 }
