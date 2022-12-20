@@ -1,29 +1,19 @@
 import os
 
 from dagster_aws.s3.io_manager import PickledObjectS3IOManager
-from dagster_dbt import dbt_cli_resource
 from dagster_pyspark.resources import PySparkResource
 from project_fully_featured.resources.hn_resource import HNAPIClient, HNAPISubsampleClient
 
 from dagster._seven.temp_dir import get_system_temp_directory
 from dagster._utils import file_relative_path
 
-from .common_utils_to_move_to_libraries import build_s3_session, deferred_io_manager
+from .common_utils_to_move_to_libraries import DbtCliResource, build_s3_session, deferred_io_manager
 from .duckdb_parquet_io_manager import DuckDBPartitionedParquetIOManager
 from .parquet_io_manager import PartitionedParquetIOManager
 from .snowflake_io_manager import SnowflakeIOManager
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
 DBT_PROFILES_DIR = DBT_PROJECT_DIR + "/config"
-dbt_local_resource = dbt_cli_resource.configured(
-    {"profiles_dir": DBT_PROFILES_DIR, "project_dir": DBT_PROJECT_DIR, "target": "local"}
-)
-dbt_staging_resource = dbt_cli_resource.configured(
-    {"profiles-dir": DBT_PROFILES_DIR, "project-dir": DBT_PROJECT_DIR, "target": "staging"}
-)
-dbt_prod_resource = dbt_cli_resource.configured(
-    {"profiles_dir": DBT_PROFILES_DIR, "project_dir": DBT_PROJECT_DIR, "target": "prod"}
-)
 
 
 configured_pyspark = PySparkResource(
@@ -63,7 +53,9 @@ RESOURCES_PROD = {
     ),
     "warehouse_io_manager": SnowflakeIOManager(dict(database="DEMO_DB", **SHARED_SNOWFLAKE_CONF)),
     "hn_client": HNAPISubsampleClient(subsample_rate=10),
-    "dbt": dbt_prod_resource,
+    "dbt": DbtCliResource(
+        profiles_dir=DBT_PROFILES_DIR, project_dir=DBT_PROJECT_DIR, target="prod"
+    ),
 }
 
 s3_staging_bucket = "hackernews-elementl-dev"
@@ -80,7 +72,9 @@ RESOURCES_STAGING = {
         dict(database="DEMO_DB_STAGING", **SHARED_SNOWFLAKE_CONF)
     ),
     "hn_client": HNAPISubsampleClient(subsample_rate=10),
-    "dbt": dbt_staging_resource,
+    "dbt": DbtCliResource(
+        profiles_dir=DBT_PROFILES_DIR, project_dir=DBT_PROJECT_DIR, target="staging"
+    ),
 }
 
 
@@ -95,5 +89,7 @@ RESOURCES_LOCAL = {
         pyspark_resource=configured_pyspark,
     ),
     "hn_client": HNAPIClient(),
-    "dbt": dbt_local_resource,
+    "dbt": DbtCliResource(
+        profiles_dir=DBT_PROFILES_DIR, project_dir=DBT_PROJECT_DIR, target="local"
+    ),
 }
