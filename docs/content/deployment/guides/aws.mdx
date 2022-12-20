@@ -1,19 +1,15 @@
 ---
-title: Deploying Dagster to Amazon Web Services | Dagster
+title: Deploying Dagster to AWS | Dagster
 description: To deploy Dagster to AWS, EC2 or ECS can host Dagit, RDS can store runs and events, and S3 can act as an IO manager.
 ---
 
-# Deploying Dagster to Amazon Web Services
+# Deploying Dagster to AWS
 
-This guide provides instructions for deploying Dagster on Amazon Web Services (AWS). You can use EC2 or ECS to host Dagit and the Dagster daemon, RDS to store runs and events, and S3 as an I/O manager to store op inputs and outputs.
-
----
+This guide provides instructions for deploying Dagster on AWS. You can use EC2 or ECS to host Dagit and the Dagster Daemon, RDS to store runs and events, and S3 as an IO manager to store op inputs and outputs.
 
 ## Hosting Dagster on EC2
 
 To host Dagster on a bare VM or in Docker on EC2, see [Running Dagster as a service](/deployment/guides/service).
-
----
 
 ## Using RDS for run and event log storage
 
@@ -35,8 +31,6 @@ In this case, you'll want to ensure you provide the right connection strings for
 Be sure that this file is present, and _DAGSTER_HOME_ is set, on the node where Dagit is running.
 
 Note that using RDS for run and event log storage does not require that Dagit be running in the cloud. If you are connecting a local Dagit instance to a remote RDS storage, double check that your local node is able to connect to RDS.
-
----
 
 ## Deploying in ECS
 
@@ -61,7 +55,7 @@ run_launcher:
     container_name: "my_container_name"
 ```
 
-### Customizing CPU and memory in ECS
+### Customizing CPU and Memory in ECS
 
 You can use job tags to customize the CPU and memory of every run for a job:
 
@@ -84,7 +78,7 @@ def my_job():
 
 [Fargate tasks only support certain combinations of CPU and Memory.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)
 
-### Customizing the launched run's task
+### Customizing the Launched Run's Task
 
 The <PyObject module="dagster_aws.ecs" object="EcsRunLauncher" /> creates a new task for each run, using the current ECS task to determine network configuration. For example, the launched run will use the same ECS cluster, subnets, security groups, and launch type (e.g. Fargate or EC2).
 
@@ -104,7 +98,7 @@ Refer to the [boto3 docs](https://boto3.amazonaws.com/v1/documentation/api/lates
 - Keys are in `camelCase` as they correspond to arguments in boto's API
 - All arguments with the exception of `taskDefinition` and `overrides` can be used in `run_launcher.config.run_task_kwargs`. `taskDefinition` can be overridden by configuring the `run_launcher.config.task_definition` field instead.
 
-### Secrets management in ECS
+### Secrets Management in ECS
 
 [ECS can bind AWS Secrets Managers secrets as environment variables when runs launch.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data-secrets.html)
 
@@ -138,9 +132,7 @@ run_launcher:
 
 Any secret tagged with `dagster` will be included in the environment. `MY_API_TOKEN` and `MY_PASSWORD` will also be included in the environment.
 
----
-
-## Using S3 for I/O management
+## Using S3 for IO Management
 
 To enable parallel computation (e.g., with the multiprocessing or Dagster celery executors), you will need to configure persistent [IO Managers](/concepts/io-management/io-managers) -- for instance, using an S3 bucket to store data passed between ops.
 
