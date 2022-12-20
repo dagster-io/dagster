@@ -9,6 +9,7 @@ from dagster._utils import file_relative_path
 
 from .common_utils_to_move_to_libraries import DbtCliResource, build_s3_session, deferred_io_manager
 from .duckdb_parquet_io_manager import DuckDBPartitionedParquetIOManager
+from .hn_resource import HNAPIClient, HNAPISubsampleClient
 from .parquet_io_manager import PartitionedParquetIOManager
 from .snowflake_io_manager import SnowflakeIOManager
 
