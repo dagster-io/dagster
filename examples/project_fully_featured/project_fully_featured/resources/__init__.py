@@ -101,7 +101,7 @@ def get_staging_resources():
         ),
         "warehouse_io_manager": snowflake_io_manager_staging,
         "pyspark": configured_pyspark,
-        "hn_client": HNAPISubsampleClient(sample_rate=10),
+        "hn_client": HNAPISubsampleClient(subsample_rate=10),
         "dbt": dbt_staging_resource,
     }
 
