@@ -50,7 +50,7 @@ def has_valid_name_chars(name: str) -> bool:
     return bool(VALID_NAME_REGEX.match(name))
 
 
-def check_valid_name(name: str, allow_list: List[str] = None) -> str:
+def check_valid_name(name: str, allow_list: Optional[List[str]] = None) -> str:
 
     check.str_param(name, "name")
 
