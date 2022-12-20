@@ -58,7 +58,7 @@ class DecoratedOpFunction(NamedTuple):
             if param.name == "config":
                 return param
 
-        raise Exception("Must have config arg")
+        check.failed("Requested config arg on function that does not have one")
 
     def positional_inputs(self) -> Sequence[str]:
         params = self._get_function_params()

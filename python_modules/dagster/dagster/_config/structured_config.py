@@ -23,10 +23,8 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
         return infer_schema_from_config_class(pydantic_field.type_)
 
     dagster_type = pydantic_field.type_
-    if pydantic_field.shape == SHAPE_SINGLETON:
-        pass
-    else:
-        raise NotImplementedError(f"Pydantic shape {pydantic_field.shape} not supported.")
+    if pydantic_field.shape != SHAPE_SINGLETON:
+        raise NotImplementedError(f"Pydantic shape {pydantic_field.shape} not supported")
 
     return convert_potential_field(dagster_type)
 
