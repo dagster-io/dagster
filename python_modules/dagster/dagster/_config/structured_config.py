@@ -19,7 +19,7 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     Transforms a Pydantic field into a corresponding Dagster config field.
     """
 
-    if issubclass(pydantic_field.type_, Config):
+    if _safe_is_subclass(pydantic_field.type_, Config):
         return infer_schema_from_config_class(pydantic_field.type_)
 
     dagster_type = pydantic_field.type_
@@ -36,16 +36,18 @@ def infer_schema_from_config_annotation(model_cls: Type) -> Field:
     Parses a structured config class or primitive type and returns a corresponding Dagster config Field.
     """
 
-    try:
-        if issubclass(model_cls, Config):
-            return infer_schema_from_config_class(model_cls)
-    except TypeError:
-        # In case a user passes e.g. a Typing type, which is not a class
-        # convert_potential_field will produce a more actionable error message
-        # than the TypeError that would be raised here
-        pass
+    if _safe_is_subclass(model_cls, Config):
+        return infer_schema_from_config_class(model_cls)
 
     return convert_potential_field(model_cls)
+
+
+def _safe_is_subclass(cls: Type, possible_parent_cls: Type) -> bool:
+    """Safe version of issubclass that returns False if cls is not a class."""
+    try:
+        return issubclass(cls, possible_parent_cls)
+    except TypeError:
+        return False
 
 
 def infer_schema_from_config_class(model_cls: Type[Config]) -> Field:
