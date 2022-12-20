@@ -1,7 +1,8 @@
 import os
+from dagster._core.execution.context.init import build_init_resource_context
 
 from dagster_aws.s3 import s3_resource
-from dagster_aws.s3.io_manager import s3_pickle_io_manager
+from dagster_aws.s3.io_manager import PickledObjectS3IOManager, s3_pickle_io_manager
 from dagster_dbt import dbt_cli_resource
 from dagster_pyspark import pyspark_resource
 from dagster_pyspark.resources import PySparkResource
@@ -62,8 +63,15 @@ snowflake_io_manager_staging = snowflake_io_manager.configured({"database": "DEM
 
 s3_staging_bucket = "hackernews-elementl-dev"
 
+
+def create_s3_pickle_io_manager(s3_bucket):
+    s3_session = s3_resource(build_init_resource_context())
+    return PickledObjectS3IOManager(s3_bucket, s3_session, s3_prefix="dagster")
+
+
 RESOURCES_STAGING = {
-    "io_manager": s3_pickle_io_manager.configured({"s3_bucket": s3_staging_bucket}),
+    # "io_manager": s3_pickle_io_manager.configured({"s3_bucket": s3_staging_bucket}),
+    "io_manager": create_s3_pickle_io_manager(s3_staging_bucket),
     "s3": s3_resource,
     "parquet_io_manager": PartitionedParquetIOManager(
         base_path="s3://" + s3_staging_bucket,
