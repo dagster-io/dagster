@@ -74,8 +74,3 @@ def local_partitioned_parquet_io_manager(init_context):
     return PartitionedParquetIOManager(
         base_path=init_context.resource_config.get("base_path", get_system_temp_directory())
     )
-
-
-@io_manager(required_resource_keys={"pyspark", "s3_bucket"})
-def s3_partitioned_parquet_io_manager(init_context):
-    return PartitionedParquetIOManager(base_path="s3://" + init_context.resources.s3_bucket)
