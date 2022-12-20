@@ -500,32 +500,51 @@ That's it! You deployed Dagster, configured with the default <PyObject module="d
 
 ## Debugging
 
-Some of the following commands will be useful if you'd like to debug issues with deploying on Helm:
+Running into issues deploying on Helm? Use these commands to help with debugging.
 
-    # Get the Dagit pod's name
-    $ export DAGIT_POD_NAME=$(kubectl get pods --namespace default \
-          -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=dagit" \
-          -o jsonpath="{.items[0].metadata.name}")
+### Get the name of the Dagit pod
 
-    # Start a shell in the dagit pod
-    $ kubectl exec --stdin --tty $DAGIT_POD_NAME -- /bin/bash
+```shell
+export DAGIT_POD_NAME=$(kubectl get pods --namespace default \
+      -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=dagit" \
+      -o jsonpath="{.items[0].metadata.name}")
+```
 
-    # Get debug data from $RUN_ID
-    $ kubectl exec $DAGIT_POD_NAME -- dagster debug export $RUN_ID debug_info.gzip
+### Start a shell in the Dagit pod
 
-    # Get a list of recently failed runs
-    $ kubectl exec $DAGIT_POD -- dagster debug export fakename fakename.gzip
+```shell
+kubectl exec --stdin --tty $DAGIT_POD_NAME -- /bin/bash
+```
 
-    # Get debug output of a failed run - note that this information is also available in Dagit
-    $ kubectl exec $DAGIT_POD -- dagster debug export 360d7882-e631-4ac7-8632-43c75cb4d426 debug.gzip
+### Get debug data from $RUN_ID
 
-    # Extract the debug.gzip from the pod
-    $ kubectl cp $DAGIT_POD:debug.gzip debug.gzip
+```shell
+kubectl exec $DAGIT_POD_NAME -- dagster debug export $RUN_ID debug_info.gzip
+```
 
-    # List config maps
-    $ kubectl get configmap # Make note of the "user-deployments" configmap
-    $ kubectl get configmap dagster-dagster-user-deployments-$NAME
+### Get a list of recently failed runs
 
-## Conclusion
+```shell
+kubectl exec $DAGIT_POD -- dagster debug export fakename fakename.gzip
+```
 
-We deployed Dagster, configured with the default <PyObject module="dagster_k8s" object="K8sRunLauncher" />, onto a Kubernetes cluster using Helm.
+### Get debug output of a failed run
+
+**Note**: This information is also available in Dagit
+
+```shell
+kubectl exec $DAGIT_POD -- dagster debug export 360d7882-e631-4ac7-8632-43c75cb4d426 debug.gzip
+```
+
+### Extract the debug.gzip from the pod
+
+```shell
+kubectl cp $DAGIT_POD:debug.gzip debug.gzip
+```
+
+### List config maps
+
+```shell
+kubectl get configmap # Make note of the "user-deployments" configmap
+kubectl get configmap dagster-dagster-user-deployments-$NAME
+```
