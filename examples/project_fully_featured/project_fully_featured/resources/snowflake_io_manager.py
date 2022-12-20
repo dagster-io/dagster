@@ -10,24 +10,9 @@ from snowflake.connector.pandas_tools import pd_writer
 from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
 from sqlalchemy import create_engine
 
-from dagster import (
-    IOManager,
-    InputContext,
-    MetadataValue,
-    OutputContext,
-    TableColumn,
-    TableSchema,
-)
+from dagster import IOManager, InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-
-
-SHARED_SNOWFLAKE_CONF = {
-    "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
-    "user": os.getenv("SNOWFLAKE_USER", ""),
-    "password": os.getenv("SNOWFLAKE_PASSWORD", ""),
-    "warehouse": "TINY_WAREHOUSE",
-}
 
 
 @contextmanager
