@@ -188,6 +188,7 @@ def test_put_account_setting(ecs):
     assert task_arn_format_setting["value"] == "disabled"
 
 
+# is this erroring
 def test_register_task_definition(ecs):
     # Without memory
     with pytest.raises(ClientError):
