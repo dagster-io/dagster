@@ -245,6 +245,9 @@ def test_task_definition_registration(
     assert len(ecs.list_task_definitions()["taskDefinitionArns"]) == len(task_definitions) + 1
 
 
+@pytest.mark.skip(
+    "https://buildkite.com/dagster/dagster/builds/42816#018530eb-8d74-4934-bbbc-4acb6db1cdaf"
+)
 def test_task_definition_registration_race_condition(ecs, instance, workspace, run):
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     initial_tasks = ecs.list_tasks()["taskArns"]
