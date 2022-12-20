@@ -20,11 +20,11 @@ from dagster import (
     input_manager,
     io_manager,
     job,
+    materialize,
     op,
     resource,
     root_input_manager,
 )
-from dagster._core.definitions.asset_group import AssetGroup
 from dagster._core.definitions.events import Failure, RetryRequested
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.instance import InstanceRef
@@ -403,18 +403,11 @@ def test_input_manager_with_assets():
         def handle_output(self, context, obj):
             ...
 
-    group = AssetGroup(
-        assets=[upstream, downstream],
-        resource_defs={
-            "special_io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())
-        },
+    materialize([upstream])
+    output = materialize(
+        [*upstream.to_source_assets(), downstream],
+        resources={"special_io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
-
-    # materialize the upstream
-    group.materialize(selection="upstream")
-
-    # materialize the downstream
-    output = group.materialize(selection="downstream")
 
     assert (
         output._get_output_for_handle("downstream", "result")  # pylint: disable=protected-access
