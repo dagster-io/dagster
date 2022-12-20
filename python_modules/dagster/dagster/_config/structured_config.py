@@ -49,7 +49,12 @@ def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any)
         return infer_schema_from_config_class(model_cls)
 
     inner_config_type = convert_potential_field(model_cls).config_type
-    return Field(config=inner_config_type, default_value=config_arg_default)
+    return Field(
+        config=inner_config_type,
+        default_value=FIELD_NO_DEFAULT_PROVIDED
+        if config_arg_default is inspect.Parameter.empty
+        else config_arg_default,
+    )
 
 
 def _safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
