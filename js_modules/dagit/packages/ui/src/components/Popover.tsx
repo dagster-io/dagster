@@ -57,6 +57,9 @@ export const GlobalPopoverStyle = createGlobalStyle`
     border-bottom-right-radius: 4px;
   }
 
+  .dagit-popover .bp3-popover2-arrow-fill {
+    fill: ${Colors.Gray900};
+  }
   .dagit-popover .bp3-popover2.bp3-dark .bp3-popover2-content,
   .bp3-dark .dagit-popover .bp3-popover2 .bp3-popover2-content {
     background-color: ${Colors.Gray900};
@@ -67,17 +70,18 @@ export const GlobalPopoverStyle = createGlobalStyle`
 const overwriteMerge = (destination: any[], source: any[]) => source;
 
 export const Popover: React.FC<Popover2Props> = (props) => {
+  const modifiers = deepmerge(
+    {offset: {enabled: true, options: {offset: [0, 8]}}},
+    props.modifiers || {},
+    {arrayMerge: overwriteMerge},
+  );
   return (
     <Popover2
-      {...props}
       minimal
       autoFocus={false}
+      {...props}
       popoverClassName={`dagit-popover ${props.popoverClassName}`}
-      modifiers={deepmerge(
-        {offset: {enabled: true, options: {offset: [0, 8]}}},
-        props.modifiers || {},
-        {arrayMerge: overwriteMerge},
-      )}
+      modifiers={modifiers}
     />
   );
 };

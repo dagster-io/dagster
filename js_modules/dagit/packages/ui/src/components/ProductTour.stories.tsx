@@ -27,7 +27,14 @@ export const Positions = () => {
         ].map(([str, value]) => ({label: str, id: value as Position}))}
         onClick={(pos: Position) => setActiveItem(pos)}
       />
-      <div style={{paddingTop: '400px'}}>
+      <div
+        style={{
+          paddingTop: '400px',
+          height: '2000px',
+          justifyContent: 'space-around',
+          display: 'flex',
+        }}
+      >
         <ProductTour
           title="My product tour"
           description={
@@ -44,7 +51,13 @@ export const Positions = () => {
             next: () => {},
           }}
         >
-          <div style={{padding: '32px', border: '1px solid red'}}>This is an example</div>
+          <div
+            style={{
+              padding: '32px',
+              border: '1px solid red',
+              background: 'red',
+            }}
+          />
         </ProductTour>
       </div>
     </>
