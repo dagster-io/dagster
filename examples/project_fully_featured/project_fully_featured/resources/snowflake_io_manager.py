@@ -41,8 +41,8 @@ class SnowflakeIOManager(IOManager):
     the data will be written to a Snowflake table specified by metadata on the relevant Out.
     """
 
-    def __init__(self, config):
-        self._config = config
+    def __init__(self, database, **kwargs):
+        self._config = dict(database=database, **kwargs)
 
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
         schema, table = context.asset_key.path[-2], context.asset_key.path[-1]  # type: ignore
