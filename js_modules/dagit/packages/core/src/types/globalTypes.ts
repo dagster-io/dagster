@@ -7,15 +7,6 @@
 // START Enums and Input Objects
 //==============================================================
 
-export enum BackfillStatus {
-  CANCELED = "CANCELED",
-  COMPLETED = "COMPLETED",
-  FAILED = "FAILED",
-  INCOMPLETE = "INCOMPLETE",
-  IN_PROGRESS = "IN_PROGRESS",
-  REQUESTED = "REQUESTED",
-}
-
 export enum BulkActionStatus {
   CANCELED = "CANCELED",
   COMPLETED = "COMPLETED",
