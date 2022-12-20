@@ -54,7 +54,6 @@ SHARED_SNOWFLAKE_CONF = {
 s3_prod_bucket = "hackernews-elementl-prod"
 
 RESOURCES_PROD = {
-    "s3_bucket": s3_prod_bucket,
     "io_manager": s3_pickle_io_manager.configured({"s3_bucket": s3_prod_bucket}),
     "s3": s3_resource,
     "parquet_io_manager": PartitionedParquetIOManager(
@@ -70,7 +69,6 @@ RESOURCES_PROD = {
 s3_staging_bucket = "hackernews-elementl-dev"
 
 RESOURCES_STAGING = {
-    "s3_bucket": s3_staging_bucket,
     "io_manager": s3_pickle_io_manager.configured({"s3_bucket": s3_staging_bucket}),
     "s3": s3_resource,
     "parquet_io_manager": PartitionedParquetIOManager(
