@@ -5,9 +5,10 @@ from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_dbt import dbt_cli_resource
 from dagster_pyspark import pyspark_resource
 
+from dagster._seven.temp_dir import get_system_temp_directory
 from dagster._utils import file_relative_path
 
-from .duckdb_parquet_io_manager import duckdb_partitioned_parquet_io_manager
+from .duckdb_parquet_io_manager import DuckDBPartitionedParquetIOManager
 from .hn_resource import HNAPIClient, HNAPISubsampleClient
 from .parquet_io_manager import PartitionedParquetIOManager, local_partitioned_parquet_io_manager
 from .snowflake_io_manager import SnowflakeIOManager
@@ -87,8 +88,10 @@ RESOURCES_STAGING = {
 
 RESOURCES_LOCAL = {
     "parquet_io_manager": local_partitioned_parquet_io_manager,
-    "warehouse_io_manager": duckdb_partitioned_parquet_io_manager.configured(
-        {"duckdb_path": os.path.join(DBT_PROJECT_DIR, "hackernews.duckdb")},
+    "warehouse_io_manager": DuckDBPartitionedParquetIOManager(
+        base_path=get_system_temp_directory(),
+        duckdb_path=os.path.join(DBT_PROJECT_DIR, "hackernews.duckdb"),
+        pyspark_resource=configured_pyspark,
     ),
     "pyspark": configured_pyspark,
     "hn_client": HNAPIClient(),
