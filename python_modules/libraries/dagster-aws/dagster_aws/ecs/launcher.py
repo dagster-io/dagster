@@ -19,6 +19,7 @@ from dagster._core.launcher.base import (
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._grpc.types import ExecuteRunArgs
 from dagster._serdes import ConfigurableClass
+from dagster._utils.backoff import backoff
 
 from ..secretsmanager import get_secrets_from_arns
 from .container_context import SHARED_ECS_SCHEMA, EcsContainerContext
@@ -489,11 +490,18 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     self._get_container_name(container_context),
                 )
 
-            if not self._reuse_task_definition(
-                task_definition_config,
-                self._get_container_name(container_context),
-            ):
-                self.ecs.register_task_definition(**task_definition_dict)
+            container_name = self._get_container_name(container_context)
+
+            backoff(
+                self._reuse_or_register_task_definition,
+                retry_on=(Exception,),
+                kwargs={
+                    "desired_task_definition_config": task_definition_config,
+                    "container_name": container_name,
+                    "task_definition_dict": task_definition_dict,
+                },
+                max_retries=5,
+            )
 
             task_definition = family
 
@@ -530,6 +538,15 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             existing_task_definition,
             container_name=container_name,
         )
+
+    def _reuse_or_register_task_definition(
+        self,
+        desired_task_definition_config: DagsterEcsTaskDefinitionConfig,
+        container_name: str,
+        task_definition_dict: dict,
+    ):
+        if not self._reuse_task_definition(desired_task_definition_config, container_name):
+            self.ecs.register_task_definition(**task_definition_dict)
 
     def _environment(self, container_context):
         return [
