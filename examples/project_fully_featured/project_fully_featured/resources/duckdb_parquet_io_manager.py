@@ -66,5 +66,6 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
 )
 def duckdb_partitioned_parquet_io_manager(init_context):
     return DuckDBPartitionedParquetIOManager(
-        base_path=init_context.resource_config.get("base_path", get_system_temp_directory())
+        base_path=init_context.resource_config.get("base_path", get_system_temp_directory()),
+        pyspark_resource=init_context.resources.pyspark,
     )
