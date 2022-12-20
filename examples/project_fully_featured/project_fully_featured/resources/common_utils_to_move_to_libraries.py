@@ -1,6 +1,10 @@
-from dagster_aws.s3.utils import construct_s3_client
 from typing import Optional
+
+from dagster_aws.s3.utils import construct_s3_client
+from dagster_dbt.cli.resources import dbt_cli_resource
+
 from dagster import io_manager
+from dagster._core.definitions.configured_adapters import ConfiguredResourceAdapter
 
 
 def build_s3_session(
@@ -26,3 +30,21 @@ def deferred_io_manager(func):
         return func()
 
     return _a_io_manager
+
+
+class DbtCliResource(ConfiguredResourceAdapter):
+    def __init__(
+        self,
+        *,
+        profiles_dir: Optional[str] = None,
+        project_dir: Optional[str] = None,
+        target: Optional[str] = None,
+    ):
+        super().__init__(
+            parent_resource=dbt_cli_resource,
+            args={
+                "profiles-dir": profiles_dir,
+                "project-dir": project_dir,
+                "target": target,
+            },
+        )
