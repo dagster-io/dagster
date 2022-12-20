@@ -10,7 +10,7 @@ from dagster._utils import file_relative_path
 
 from .duckdb_parquet_io_manager import DuckDBPartitionedParquetIOManager
 from .hn_resource import hn_api_client, hn_api_subsample_client
-from .parquet_io_manager import PartitionedParquetIOManager, local_partitioned_parquet_io_manager
+from .parquet_io_manager import PartitionedParquetIOManager
 from .snowflake_io_manager import snowflake_io_manager
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
@@ -79,7 +79,10 @@ RESOURCES_STAGING = {
 
 
 RESOURCES_LOCAL = {
-    "parquet_io_manager": local_partitioned_parquet_io_manager,
+    "parquet_io_manager": PartitionedParquetIOManager(
+        base_path=get_system_temp_directory(),
+        pyspark_resource=configured_pyspark,
+    ),
     "warehouse_io_manager": DuckDBPartitionedParquetIOManager(
         base_path=get_system_temp_directory(),
         duckdb_path=os.path.join(DBT_PROJECT_DIR, "hackernews.duckdb"),
