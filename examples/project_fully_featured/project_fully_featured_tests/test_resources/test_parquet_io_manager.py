@@ -3,7 +3,8 @@ import os
 import tempfile
 
 import pandas
-from dagster_pyspark import pyspark_resource
+
+# from dagster_pyspark import pyspark_resource
 from dagster_pyspark.resources import PySparkResource
 from project_fully_featured.partitions import hourly_partitions
 from project_fully_featured.resources.parquet_io_manager import PartitionedParquetIOManager
@@ -27,13 +28,13 @@ def test_io_manager():
         return pandas_df_asset
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        pyspark_resource = PySparkResource(spark_conf={})
+        configured_pyspark = PySparkResource(spark_conf={})
         res = materialize(
             assets=[pandas_df_asset, spark_input_asset],
             resources={
-                "pyspark": pyspark_resource,
+                "pyspark": configured_pyspark,
                 "parquet_io_manager": PartitionedParquetIOManager(
-                    base_path=temp_dir, pyspark_resource=pyspark_resource
+                    base_path=temp_dir, pyspark_resource=configured_pyspark
                 ),
             },
             partition_key="2022-01-01-16:00",
