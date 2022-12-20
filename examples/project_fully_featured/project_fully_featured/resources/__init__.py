@@ -9,10 +9,7 @@ from dagster._utils import file_relative_path
 
 from .duckdb_parquet_io_manager import duckdb_partitioned_parquet_io_manager
 from .hn_resource import HNAPIClient, HNAPISubsampleClient
-from .parquet_io_manager import (
-    local_partitioned_parquet_io_manager,
-    s3_partitioned_parquet_io_manager,
-)
+from .parquet_io_manager import PartitionedParquetIOManager, local_partitioned_parquet_io_manager
 from .snowflake_io_manager import SnowflakeIOManager
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
@@ -59,7 +56,10 @@ RESOURCES_PROD = {
     "s3_bucket": s3_prod_bucket,
     "io_manager": s3_pickle_io_manager.configured({"s3_bucket": s3_prod_bucket}),
     "s3": s3_resource,
-    "parquet_io_manager": s3_partitioned_parquet_io_manager,
+    "parquet_io_manager": PartitionedParquetIOManager(
+        base_path="s3://" + s3_prod_bucket,
+        pyspark_resource=configured_pyspark,
+    ),
     "warehouse_io_manager": SnowflakeIOManager(dict(database="DEMO_DB", **SHARED_SNOWFLAKE_CONF)),
     "pyspark": configured_pyspark,
     "hn_client": HNAPISubsampleClient(subsample_rate=10),
@@ -72,7 +72,10 @@ RESOURCES_STAGING = {
     "s3_bucket": s3_staging_bucket,
     "io_manager": s3_pickle_io_manager.configured({"s3_bucket": s3_staging_bucket}),
     "s3": s3_resource,
-    "parquet_io_manager": s3_partitioned_parquet_io_manager,
+    "parquet_io_manager": PartitionedParquetIOManager(
+        base_path="s3://" + s3_staging_bucket,
+        pyspark_resource=configured_pyspark,
+    ),
     "warehouse_io_manager": SnowflakeIOManager(
         dict(database="DEMO_DB_STAGING", **SHARED_SNOWFLAKE_CONF)
     ),
