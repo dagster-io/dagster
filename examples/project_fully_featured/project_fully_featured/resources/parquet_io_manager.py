@@ -4,10 +4,8 @@ from typing import Union
 import pandas
 import pyspark
 
-from dagster import Field, IOManager, InputContext, OutputContext
+from dagster import IOManager, InputContext, OutputContext
 from dagster import _check as check
-from dagster import io_manager
-from dagster._seven.temp_dir import get_system_temp_directory
 
 
 class PartitionedParquetIOManager(IOManager):
@@ -65,14 +63,3 @@ class PartitionedParquetIOManager(IOManager):
             return os.path.join(self._base_path, key, f"{partition_str}.pq")
         else:
             return os.path.join(self._base_path, f"{key}.pq")
-
-
-@io_manager(
-    config_schema={"base_path": Field(str, is_required=False)},
-    required_resource_keys={"pyspark"},
-)
-def local_partitioned_parquet_io_manager(init_context):
-    return PartitionedParquetIOManager(
-        base_path=init_context.resource_config.get("base_path", get_system_temp_directory()),
-        pyspark_resource=init_context.resources.pyspark,
-    )
