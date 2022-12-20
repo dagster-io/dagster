@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 
 import dagster._check as check
+from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
 
 from ..._config import Shape
@@ -94,22 +95,34 @@ def _check_invocation_requirements(
     )
 
 
-def _resolve_bound_config(resource_config: Any, resource_def: "ResourceDefinition") -> Any:
+def _get_friendly_string(configurable_def: ConfigurableDefinition) -> str:
+    from dagster._core.definitions.logger_definition import LoggerDefinition
+    from dagster._core.definitions.resource_definition import ResourceDefinition
+
+    if isinstance(configurable_def, ResourceDefinition):
+        return "resource"
+    elif isinstance(configurable_def, LoggerDefinition):
+        return "logger"
+
+    check.failed(f"Invalid definition type {configurable_def}")
+
+
+def _resolve_bound_config(config: Any, configurable_def: ConfigurableDefinition) -> Any:
     from dagster._config import process_config
 
-    outer_config_shape = Shape({"config": resource_def.get_config_field()})
-    config_evr = process_config(
-        outer_config_shape, {"config": resource_config} if resource_config else {}
-    )
+    outer_config_shape = Shape({"config": configurable_def.get_config_field()})
+    config_evr = process_config(outer_config_shape, {"config": config} if config else {})
     if not config_evr.success:
         raise DagsterInvalidConfigError(
-            "Error in config for resource ", config_evr.errors, resource_config
+            f"Error in config for {_get_friendly_string(configurable_def)}",
+            config_evr.errors,
+            config,
         )
     validated_config = cast(Dict[str, Any], config_evr.value).get("config")
-    mapped_config_evr = resource_def.apply_config_mapping({"config": validated_config})
+    mapped_config_evr = configurable_def.apply_config_mapping({"config": validated_config})
     if not mapped_config_evr.success:
         raise DagsterInvalidConfigError(
-            "Error when applying config mapping for resource ",
+            f"Error when applying config mapping for {_get_friendly_string(configurable_def)}",
             mapped_config_evr.errors,
             validated_config,
         )
