@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Type
+from typing import Any, Optional, Type
 
 from pydantic import BaseModel
 from pydantic.fields import SHAPE_SINGLETON, ModelField
@@ -21,15 +21,19 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     """
 
     if _safe_is_subclass(pydantic_field.type_, Config):
-        return infer_schema_from_config_class(pydantic_field.type_)
+        return infer_schema_from_config_class(
+            pydantic_field.type_, description=pydantic_field.field_info.description
+        )
 
     dagster_type = pydantic_field.type_
     if pydantic_field.shape != SHAPE_SINGLETON:
         raise NotImplementedError(f"Pydantic shape {pydantic_field.shape} not supported")
 
     inner_config_type = convert_potential_field(dagster_type).config_type
+    print(pydantic_field.field_info)
     return Field(
         config=inner_config_type,
+        description=pydantic_field.field_info.description,
         default_value=pydantic_field.default
         if pydantic_field.default
         else FIELD_NO_DEFAULT_PROVIDED,
@@ -64,7 +68,9 @@ def _safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
     return issubclass(cls, possible_parent_cls)
 
 
-def infer_schema_from_config_class(model_cls: Type[Config]) -> Field:
+def infer_schema_from_config_class(
+    model_cls: Type[Config], description: Optional[str] = None
+) -> Field:
     """
     Parses a structured config class and returns a corresponding Dagster config Field.
     """
@@ -78,4 +84,5 @@ def infer_schema_from_config_class(model_cls: Type[Config]) -> Field:
     for pydantic_field_name, pydantic_field in model_cls.__fields__.items():
         fields[pydantic_field_name] = _convert_pydantic_field(pydantic_field)
 
-    return Field(config=Shape(fields))
+    docstring = model_cls.__doc__.strip() if model_cls.__doc__ else None
+    return Field(config=Shape(fields), description=description or docstring)
