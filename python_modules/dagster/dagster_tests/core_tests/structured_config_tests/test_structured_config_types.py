@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Literal, Mapping, Optional, Type, Union
+from typing import Any, Dict, List, Mapping, Optional, Type, Union
 
 import pytest
 from dagster import job, op
@@ -7,6 +7,7 @@ from dagster._config.structured_config import Config, PermissiveConfig
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
+from typing_extensions import Literal
 
 
 def test_default_config_class_non_permissive():
