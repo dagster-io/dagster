@@ -28,102 +28,110 @@ The [Dagster Helm chart](https://artifacthub.io/packages/helm/dagster/dagster) i
 
 In the following tutorial, we install the most recent version of the Dagster Helm chart. To use an older version of the chart, pass a `--version` flag to `helm upgrade`.
 
-## Deployment Architecture
 **Note**: If you're using a chart version **before** 0.11.13, you'll also need to update the tags of the Dagster-provided images to match the chart version. After 0.11.13, this is automatically done for you.
 
-<!-- https://excalidraw.com/#json=4680957890134016,q6NWURUuPP_VThmbRQ89Jg -->
+---
 
+## Deployment architecture
+
+<!-- ![Default Dagster-Kubernetes deployment architecture](/images/deploying/dagster-kubernetes-defalut-architecture.png) -->
+
+<center>
 <Image
-alt="dagster-kubernetes-default-architecture.png"
-src="/images/deploying/dagster-kubernetes-default-architecture.png"
-width={1944}
-height={1020}
+alt="Default Dagster-Kubernetes deployment architecture"
+src="/images/deploying/dagster-kubernetes-defalut-architecture.png"
+width={833}
+height={713}
 />
+</center>
 
-### Components
+<TabGroup>
+<TabItem name="Overview">
 
 <table>
-  <tr style={{ background: "#F8F8F8" }}>
-    <th>Component Name</th>
-    <th>Type</th>
-    <th>Image</th>
-  </tr>
-  <tr>
-    <td>Daemon </td>
-    <td>
-      <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
-        Deployment
-      </a>
-    </td>
-    <td>
-      <a href="https://hub.docker.com/r/dagster/dagster-k8s">
-        dagster/dagster-k8s
-      </a>{" "}
-      <i>(released weekly)</i>
-    </td>
-  </tr>
-  <tr style={{ background: "#F8F8F8" }}>
-    <td>Dagit</td>
-    <td>
-      <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
-        Deployment
-      </a>{" "}
-      behind a{" "}
-      <a href="https://kubernetes.io/docs/concepts/services-networking/service/">
-        Service
-      </a>
-    </td>
-    <td>
-      <a href="https://hub.docker.com/r/dagster/dagster-k8s">
-        dagster/dagster-k8s
-      </a>{" "}
-      <i>(released weekly)</i>
-    </td>
-  </tr>
-  <tr>
-    <td>Database</td>
-    <td>PostgreSQL</td>
-    <td>
-      {" "}
-      <a href="https://hub.docker.com/_/postgres">postgres</a> <i>
-        (Optional)
-      </i>{" "}
-    </td>
-  </tr>
-  <tr style={{ background: "#F8F8F8" }}>
-    <td>Run Worker</td>
-    <td>
-      <a href="https://kubernetes.io/docs/concepts/workloads/controllers/job/">
-        Job
-      </a>
-    </td>
-    <td>
-      User-provided or{" "}
-      <a href="https://hub.docker.com/r/dagster/user-code-example">
-        dagster/user-code-example
-      </a>{" "}
-      <i>(released weekly)</i>{" "}
-    </td>
-  </tr>
-  <tr>
-    <td>User Code Deployment</td>
-    <td>
-      <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
-        Deployment
-      </a>{" "}
-      behind a{" "}
-      <a href="https://kubernetes.io/docs/concepts/services-networking/service/">
-        Service
-      </a>
-    </td>
-    <td>
-      User-provided or{" "}
-      <a href="https://hub.docker.com/r/dagster/user-code-example">
-        dagster/user-code-example
-      </a>{" "}
-      <i>(released weekly)</i>{" "}
-    </td>
-  </tr>
+  <thead>
+    <tr>
+      <th>Component</th>
+      <th>Type</th>
+      <th>Image</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Code location server</td>
+      <td>
+        <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
+          Deployment
+        </a>{" "}
+        behind a{" "}
+        <a href="https://kubernetes.io/docs/concepts/services-networking/service/">
+          service
+        </a>
+      </td>
+      <td>
+        User-provided or{" "}
+        <a href="https://hub.docker.com/r/dagster/user-code-example">
+          dagster/user-code-example
+        </a>{" "}
+        (released weekly){" "}
+      </td>
+    </tr>
+    <tr>
+      <td>Dagit</td>
+      <td>
+        <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
+          Deployment
+        </a>{" "}
+        behind a{" "}
+        <a href="https://kubernetes.io/docs/concepts/services-networking/service/">
+          service
+        </a>
+      </td>
+      <td>
+        <a href="https://hub.docker.com/r/dagster/dagster-k8s">
+          dagster/dagster-k8s
+        </a>{" "}
+        (released weekly)
+      </td>
+    </tr>
+    <tr>
+      <td>Daemon</td>
+      <td>
+        <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
+          Deployment
+        </a>
+      </td>
+      <td>
+        <a href="https://hub.docker.com/r/dagster/dagster-k8s">
+          dagster/dagster-k8s
+        </a>{" "}
+        (released weekly)
+      </td>
+    </tr>
+    <tr>
+      <td>Run worker</td>
+      <td>
+        <a href="https://kubernetes.io/docs/concepts/workloads/controllers/job/">
+          Job
+        </a>
+      </td>
+      <td>
+        User-provided or{" "}
+        <a href="https://hub.docker.com/r/dagster/user-code-example">
+          dagster/user-code-example
+        </a>{" "}
+        (released weekly)
+      </td>
+    </tr>
+    <tr>
+      <td>Database</td>
+      <td>PostgreSQL</td>
+      <td>
+        {" "}
+        <a href="https://hub.docker.com/_/postgres">postgres</a> (optional){" "}
+      </td>
+    </tr>
+  </tbody>
 </table>
 
 ### Daemon
