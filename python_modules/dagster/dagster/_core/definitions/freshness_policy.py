@@ -137,7 +137,7 @@ class FreshnessPolicy(
             required_by_time = evaluation_tick
 
             # only add constraints if it is not currently fully satisfied
-            if used_data_time is None or used_data_time < required_data_time:
+            if True or used_data_time is None or used_data_time < required_data_time:
                 constraints.add(
                     FreshnessConstraint(
                         asset_keys=upstream_keys,

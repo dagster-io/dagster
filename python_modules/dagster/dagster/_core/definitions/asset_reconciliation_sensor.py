@@ -459,51 +459,65 @@ def get_execution_time_window_for_constraints(
     constraints: AbstractSet[FreshnessConstraint],
     current_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     in_progress_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
+    failed_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     relevant_upstream_keys: AbstractSet[AssetKey],
 ) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
     """
+    currently_executable = False
     execution_window_start = None
     execution_window_end = None
     min_dt = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+    failed_until_time = min_dt
 
     for constraint in sorted(constraints, key=lambda c: c.required_by_time):
+
         # the set of keys in this constraint that are actually upstream of this asset
         relevant_constraint_keys = constraint.asset_keys & relevant_upstream_keys
 
         if not all(
             # ensure that this constraint is not satisfied by the current state of the data and
-            # will not be satisfied once all in progress runs complete
-            (current_data_times.get(constraint_key) or min_dt) > constraint.required_data_time
-            or (in_progress_data_times.get(constraint_key) or min_dt)
-            > constraint.required_data_time
-            for constraint_key in relevant_constraint_keys
-        ) and not any(
-            # ensure that if we execute this asset on this tick, this constraint will be satisfied
-            (expected_data_times.get(constraint_key) or min_dt) < constraint.required_data_time
-            for constraint_key in relevant_constraint_keys
+            # will not be satisfied once all in progress runs complete, and was not intended to
+            # be satisfied by a run that failed
+            (current_data_times.get(key) or min_dt) >= constraint.required_data_time
+            or (in_progress_data_times.get(key) or min_dt) >= constraint.required_data_time
+            for key in relevant_constraint_keys
         ):
-            if execution_window_start is None:
-                execution_window_start = constraint.required_data_time
-            if execution_window_end is None:
-                execution_window_end = constraint.required_by_time
+            # for this constraint, if all required data times will be satisfied by an execution
+            # on this tick, it is valid to execute this asset
+            if all(
+                (expected_data_times.get(key) or min_dt) >= constraint.required_data_time
+                for key in relevant_constraint_keys
+            ):
+                currently_executable = True
+
+            # if the asset failed to be materialized in its last run, do not attempt to rematerialize
+            # it until after the unsatisfied constraints that required that data time out
+            if all(
+                (failed_data_times.get(key) or min_dt) >= constraint.required_data_time
+                for key in relevant_constraint_keys
+            ):
+                failed_until_time = max(failed_until_time, constraint.required_by_time)
 
             # you can solve this constraint within the existing execution window
-            if constraint.required_data_time < execution_window_end:
+            if execution_window_end is None or constraint.required_data_time < execution_window_end:
                 execution_window_start = max(
-                    execution_window_start,
+                    execution_window_start or constraint.required_data_time,
                     constraint.required_data_time,
                 )
                 execution_window_end = min(
-                    execution_window_end,
+                    execution_window_end or constraint.required_by_time,
                     constraint.required_by_time,
                 )
             else:
                 break
 
-    return execution_window_start, execution_window_end
+    if not currently_executable or not execution_window_start:
+        return None, execution_window_end
+
+    return max(failed_until_time, execution_window_start), execution_window_end
 
 
 def determine_asset_partitions_to_reconcile_for_freshness(
@@ -554,7 +568,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
             # the set of asset keys which are involved in some constraint and are actually upstream
             # of this asset
-            relevant_upstream_keys = (
+            relevant_upstream_keys = frozenset(
                 set().union(
                     *(
                         expected_data_times_by_key[parent_key].keys()
@@ -570,20 +584,23 @@ def determine_asset_partitions_to_reconcile_for_freshness(
             )
 
             # should not execute if key is not targeted or previous run failed
-            if key not in target_asset_keys or instance_queryer.failed_in_latest_run(asset_key=key):
+            if key not in target_asset_keys:
                 # cannot execute this asset, so if something consumes it, it should expect to
                 # recieve the current contents of the asset
                 execution_window_start = None
             else:
-                # this key has constraints within the plan window, so must be updated within it
-                eventually_materialize.add(AssetKeyPartitionKey(key, None))
 
-                # calculate the data times you would expect if the latest currently-executing run
+                # calculate the data times you would expect after all currently-executing runs
                 # were to successfully complete
                 in_progress_data_times = instance_queryer.get_in_progress_data_times_for_key(
-                    asset_graph, key, frozenset(relevant_upstream_keys), current_time
+                    asset_graph, key, relevant_upstream_keys, current_time
                 )
 
+                # if the latest run for this asset failed, then calculate the data times you would
+                # have expected after that failed run completed
+                failed_data_times = instance_queryer.get_failed_data_times_for_key(
+                    asset_graph, key, relevant_upstream_keys
+                )
                 # calculate the data times you'd expect for this key if you were to run it
                 expected_data_times = get_expected_data_times_for_key(
                     asset_graph, current_time, expected_data_times_by_key, key
@@ -593,14 +610,19 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 # number of constraints
                 (
                     execution_window_start,
-                    _execution_window_end,
+                    execution_window_end,
                 ) = get_execution_time_window_for_constraints(
                     constraints=constraints,
                     current_data_times=current_data_times,
                     in_progress_data_times=in_progress_data_times,
+                    failed_data_times=failed_data_times,
                     expected_data_times=expected_data_times,
                     relevant_upstream_keys=relevant_upstream_keys,
                 )
+
+                # this key will be updated within the plan window
+                if execution_window_end is not None and execution_window_end <= plan_window_end:
+                    eventually_materialize.add(AssetKeyPartitionKey(key, None))
 
             # a key may already be in to_materialize by the time we get here if a required
             # neighbor was selected to be updated

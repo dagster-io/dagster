@@ -78,16 +78,16 @@ class AssetReconciliationScenario(NamedTuple):
             else:
                 cursor = AssetReconciliationCursor.empty()
 
-        start = pendulum.now()
+        start = datetime.datetime.now()
 
         def test_time_fn():
-            return (test_time + (pendulum.now() - start)).timestamp()
+            return (test_time + (datetime.datetime.now() - start)).timestamp()
 
         for run in self.unevaluated_runs:
+            if self.between_runs_delta is not None:
+                test_time += self.between_runs_delta
 
-            with mock.patch("time.time", new=test_time_fn):
-                if self.between_runs_delta is not None:
-                    test_time += self.between_runs_delta
+            with pendulum.test(test_time), mock.patch("time.time", new=test_time_fn):
                 assets_in_run = []
                 run_keys = set(run.asset_keys)
                 for asset in self.assets:
@@ -878,20 +878,62 @@ scenarios = {
             run(["asset1", "asset2", "asset3", "asset4"]),
             run(["asset3"], failed_asset_keys=["asset3"]),
         ],
-        evaluation_delta=datetime.timedelta(minutes=35),
-        # only request 1 and 2 because 3 failed (and 4 is downstream of 3)
-        expected_run_requests=[run_request(asset_keys=["asset1", "asset2"])],
+        expected_run_requests=[],
     ),
-    "freshness_half_run_with_failure2": AssetReconciliationScenario(
+    "freshness_half_run_after_delay": AssetReconciliationScenario(
         assets=diamond_freshness,
         unevaluated_runs=[
             run(["asset1", "asset2", "asset3", "asset4"]),
-            run(["asset1", "asset3"], failed_asset_keys=["asset3"]),
+            run(["asset1", "asset3"]),
         ],
+        between_runs_delta=datetime.timedelta(minutes=35),
+        evaluation_delta=datetime.timedelta(minutes=5),
+        expected_run_requests=[run_request(asset_keys=["asset2", "asset4"])],
+    ),
+    "freshness_half_run_with_failure_after_delay": AssetReconciliationScenario(
+        assets=diamond_freshness,
+        unevaluated_runs=[
+            run(["asset1", "asset2", "asset3", "asset4"]),
+            run(["asset1", "asset2", "asset3"], failed_asset_keys=["asset3"]),
+        ],
+        between_runs_delta=datetime.timedelta(minutes=35),
+        evaluation_delta=datetime.timedelta(minutes=5),
+        # even though 4 doesn't have the most up to date data yet, we just tried to materialize
+        # asset 3 and it failed, so it doesn't make sense to try to run it again to get 4 up to date
+        expected_run_requests=[],
+    ),
+    "freshness_half_run_with_failure_after_delay2": AssetReconciliationScenario(
+        assets=diamond_freshness,
+        unevaluated_runs=[
+            run(["asset1", "asset2", "asset3", "asset4"]),
+            run(["asset1", "asset2", "asset3"], failed_asset_keys=["asset3"]),
+        ],
+        between_runs_delta=datetime.timedelta(minutes=35),
         evaluation_delta=datetime.timedelta(minutes=35),
-        # same reasoning as above, but make sure asset1 can still execute even though it was part
-        # of a failed run
-        expected_run_requests=[run_request(asset_keys=["asset1", "asset2"])],
+        # now that it's been awhile since that run failed, give it another attempt
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
+    ),
+    "freshness_root_failure": AssetReconciliationScenario(
+        assets=diamond_freshness,
+        unevaluated_runs=[
+            run(["asset1", "asset2", "asset3", "asset4"]),
+            run(["asset1"], failed_asset_keys=["asset1"]),
+        ],
+        between_runs_delta=datetime.timedelta(minutes=35),
+        evaluation_delta=datetime.timedelta(minutes=5),
+        # need to rematerialize all, but asset1 just failed so we don't want to retry immediately
+        expected_run_requests=[],
+    ),
+    "freshness_root_failure_after_delay": AssetReconciliationScenario(
+        assets=diamond_freshness,
+        unevaluated_runs=[
+            run(["asset1", "asset2", "asset3", "asset4"]),
+            run(["asset1"], failed_asset_keys=["asset1"]),
+        ],
+        between_runs_delta=datetime.timedelta(minutes=35),
+        evaluation_delta=datetime.timedelta(minutes=35),
+        # asset1 failed last time, but it's been awhile so we'll give it another shot
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
     ),
     "freshness_half_run_stale": AssetReconciliationScenario(
         assets=diamond_freshness,
