@@ -5,8 +5,6 @@ description: We walk through a Kubernetes deployment of Dagster using Helm.
 
 # Deploying Dagster on Helm
 
-## Overview
-
 [Kubernetes](https://kubernetes.io/) is a container orchestration system for automating deployment, scaling, and management of containerized applications. Dagster uses Kubernetes in combination with [Helm](https://helm.sh/), a package manager for Kubernetes applications. Using Helm, users specify the configuration of required Kubernetes resources to deploy Dagster through a [values file or command-line overrides](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). References to `values.yaml` in the following sections refer to [Dagster's `values.yaml`](https://github.com/dagster-io/dagster/blob/master/helm/dagster/values.yaml).
 
 Dagster publishes a [fully-featured Helm chart](https://github.com/dagster-io/dagster/tree/master/helm) to manage installing and running a production-grade Kubernetes deployment of Dagster. For each Dagster component in the chart, Dagster publishes a corresponding Docker image on [DockerHub](https://hub.docker.com/u/dagster).
