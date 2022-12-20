@@ -57,7 +57,12 @@ def infer_schema_from_config_annotation(model_cls: Type, config_arg_default: Any
         pass
 
     inner_config_type = convert_potential_field(model_cls).config_type
-    return Field(config=inner_config_type, default_value=config_arg_default)
+    return Field(
+        config=inner_config_type,
+        default_value=FIELD_NO_DEFAULT_PROVIDED
+        if config_arg_default is inspect.Parameter.empty
+        else config_arg_default,
+    )
 
 
 def infer_schema_from_config_class(model_cls: Type[Config]) -> Field:
