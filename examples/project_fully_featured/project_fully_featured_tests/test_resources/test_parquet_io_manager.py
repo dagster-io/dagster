@@ -33,7 +33,7 @@ def test_io_manager():
             assets=[pandas_df_asset, spark_input_asset],
             resources={
                 "pyspark": configured_pyspark,
-                "parquet_io_manager": PartitionedParquetIOManager(
+                "io_manager": PartitionedParquetIOManager(
                     base_path=temp_dir, pyspark_resource=configured_pyspark
                 ),
             },
