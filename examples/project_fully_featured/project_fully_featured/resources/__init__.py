@@ -1,15 +1,13 @@
 import os
-from typing import Optional
 
 from dagster_aws.s3.io_manager import PickledObjectS3IOManager
-from dagster_aws.s3.utils import construct_s3_client
 from dagster_dbt import dbt_cli_resource
 from dagster_pyspark.resources import PySparkResource
 
-from dagster import io_manager
 from dagster._seven.temp_dir import get_system_temp_directory
 from dagster._utils import file_relative_path
 
+from .common_utils_to_move_to_libraries import build_s3_session, deferred_io_manager
 from .duckdb_parquet_io_manager import DuckDBPartitionedParquetIOManager
 from .hn_resource import hn_api_client, hn_api_subsample_client
 from .parquet_io_manager import PartitionedParquetIOManager
@@ -43,31 +41,6 @@ configured_pyspark = PySparkResource(
         "spark.hadoop.fs.s3.buffer.dir": "/tmp",
     }
 )
-
-
-def build_s3_session(
-    *,
-    max_attempts: int = 5,
-    use_unsigned_session: bool = False,
-    region_name: Optional[str] = None,
-    endpoint_url: Optional[str] = None,
-    profile_name: Optional[str] = None,
-):
-    return construct_s3_client(
-        max_attempts=max_attempts,
-        use_unsigned_session=use_unsigned_session,
-        region_name=region_name,
-        endpoint_url=endpoint_url,
-        profile_name=profile_name,
-    )
-
-
-def deferred_io_manager(func):
-    @io_manager
-    def _a_io_manager(_):
-        return func()
-
-    return _a_io_manager
 
 
 snowflake_io_manager_prod = snowflake_io_manager.configured({"database": "DEMO_DB"})
