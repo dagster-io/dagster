@@ -13,6 +13,7 @@ from dagster import (
     op,
     repository,
     sensor,
+    with_resources,
 )
 from dagster._check import CheckError
 from dagster._core.definitions.cacheable_assets import (
@@ -400,3 +401,37 @@ def test_kitchen_sink_on_create_helper_and_definitions():
 
     assert isinstance(defs.get_schedule_def("a_schedule"), ScheduleDefinition)
     assert isinstance(defs.get_sensor_def("a_sensor"), SensorDefinition)
+
+
+def test_with_resources_override():
+    executed = {}
+
+    @asset(required_resource_keys={"a_resource"})
+    def asset_one(context):
+        executed["asset_one"] = True
+        assert context.resources.a_resource == "passed-through-with-resources"
+
+    @asset(required_resource_keys={"b_resource"})
+    def asset_two(context):
+        executed["asset_two"] = True
+        assert context.resources.b_resource == "passed-through-definitions"
+
+    defs = Definitions(
+        assets=[
+            *with_resources(
+                [asset_one],
+                {
+                    "a_resource": ResourceDefinition.hardcoded_resource(
+                        "passed-through-with-resources"
+                    )
+                },
+            ),
+            asset_two,
+        ],
+        resources={"b_resource": "passed-through-definitions"},
+    )
+
+    defs.get_job_def("__ASSET_JOB").execute_in_process()
+
+    assert executed["asset_one"]
+    assert executed["asset_two"]
