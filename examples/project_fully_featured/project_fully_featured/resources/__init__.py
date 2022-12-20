@@ -1,9 +1,10 @@
 import os
+from typing import Optional
 
 from dagster_aws.s3 import s3_resource
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
+from dagster_aws.s3.utils import construct_s3_client
 from dagster_dbt import dbt_cli_resource
-from dagster_pyspark import pyspark_resource
 from dagster_pyspark.resources import PySparkResource
 
 from dagster._seven.temp_dir import get_system_temp_directory
@@ -43,12 +44,39 @@ configured_pyspark = PySparkResource(
     }
 )
 
+
+def build_s3_session(
+    *,
+    max_attempts: int = 5,
+    use_unsigned_session: bool = False,
+    region_name: Optional[str] = None,
+    endpoint_url: Optional[str] = None,
+    profile_name: Optional[str] = None,
+):
+    return construct_s3_client(
+        max_attempts=max_attempts,
+        use_unsigned_session=use_unsigned_session,
+        region_name=region_name,
+        endpoint_url=endpoint_url,
+        profile_name=profile_name,
+    )
+
+
+def construct_fully_configured(resource_def):
+    from dagster._core.execution.context.init import build_init_resource_context
+
+    return resource_def(build_init_resource_context())
+
+
 snowflake_io_manager_prod = snowflake_io_manager.configured({"database": "DEMO_DB"})
+
+# s3_session = s3_resource.construct_fully_configured()
+s3_session = build_s3_session()
 
 s3_prod_bucket = "hackernews-elementl-prod"
 RESOURCES_PROD = {
     "io_manager": s3_pickle_io_manager.configured({"s3_bucket": s3_prod_bucket}),
-    "s3": s3_resource,
+    "s3": s3_session,
     "parquet_io_manager": PartitionedParquetIOManager(
         base_path="s3://" + s3_prod_bucket,
         pyspark_resource=configured_pyspark,
@@ -64,7 +92,7 @@ s3_staging_bucket = "hackernews-elementl-dev"
 
 RESOURCES_STAGING = {
     "io_manager": s3_pickle_io_manager.configured({"s3_bucket": s3_staging_bucket}),
-    "s3": s3_resource,
+    "s3": s3_session,
     "parquet_io_manager": PartitionedParquetIOManager(
         base_path="s3://" + s3_staging_bucket,
         pyspark_resource=configured_pyspark,
