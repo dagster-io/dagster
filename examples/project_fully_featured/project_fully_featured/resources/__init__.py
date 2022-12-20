@@ -48,7 +48,6 @@ snowflake_io_manager_prod = snowflake_io_manager.configured({"database": "DEMO_D
 
 s3_prod_bucket = "hackernews-elementl-prod"
 RESOURCES_PROD = {
-    "s3_bucket": s3_prod_bucket,
     "io_manager": s3_pickle_io_manager.configured({"s3_bucket": s3_prod_bucket}),
     "s3": s3_resource,
     "parquet_io_manager": PartitionedParquetIOManager(
@@ -66,7 +65,6 @@ snowflake_io_manager_staging = snowflake_io_manager.configured({"database": "DEM
 s3_staging_bucket = "hackernews-elementl-dev"
 
 RESOURCES_STAGING = {
-    "s3_bucket": s3_staging_bucket,
     "io_manager": s3_pickle_io_manager.configured({"s3_bucket": s3_staging_bucket}),
     "s3": s3_resource,
     "parquet_io_manager": PartitionedParquetIOManager(
