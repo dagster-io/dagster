@@ -64,61 +64,6 @@ snapshots['test_basic_ops_config 1'] = {
     }
 }
 
-snapshots['test_basic_solids_config 1'] = {
-    'execution': {
-        'in_process': {
-            'config': {
-                'marker_to_close': '',
-                'retries': {
-                    'disabled': {
-                    },
-                    'enabled': {
-                    }
-                }
-            }
-        },
-        'multiprocess': {
-            'config': {
-                'max_concurrent': 0,
-                'retries': {
-                    'disabled': {
-                    },
-                    'enabled': {
-                    }
-                },
-                'start_method': {
-                    'forkserver': {
-                        'preload_modules': [
-                        ]
-                    },
-                    'spawn': {
-                    }
-                }
-            }
-        }
-    },
-    'loggers': {
-        'console': {
-            'config': {
-                'log_level': '',
-                'name': ''
-            }
-        }
-    },
-    'resources': {
-        'io_manager': {
-            'config': 'AnyType'
-        }
-    },
-    'solids': {
-        'required_field_solid': {
-            'config': {
-                'required_int': 0
-            }
-        }
-    }
-}
-
 snapshots['test_two_modes 1'] = {
 }
 
