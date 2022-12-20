@@ -17,7 +17,6 @@ from dagster import (
     OutputContext,
     TableColumn,
     TableSchema,
-    io_manager,
 )
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
