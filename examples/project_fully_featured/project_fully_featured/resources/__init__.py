@@ -51,7 +51,7 @@ RESOURCES_PROD = {
         base_path="s3://" + s3_prod_bucket,
         pyspark_resource=configured_pyspark,
     ),
-    "warehouse_io_manager": SnowflakeIOManager(dict(database="DEMO_DB", **SHARED_SNOWFLAKE_CONF)),
+    "warehouse_io_manager": SnowflakeIOManager(database="DEMO_DB", **SHARED_SNOWFLAKE_CONF),
     "hn_client": HNAPISubsampleClient(subsample_rate=10),
     "dbt": DbtCliResource(
         profiles_dir=DBT_PROFILES_DIR, project_dir=DBT_PROJECT_DIR, target="prod"
@@ -68,9 +68,7 @@ RESOURCES_STAGING = {
         base_path="s3://" + s3_staging_bucket,
         pyspark_resource=configured_pyspark,
     ),
-    "warehouse_io_manager": SnowflakeIOManager(
-        dict(database="DEMO_DB_STAGING", **SHARED_SNOWFLAKE_CONF)
-    ),
+    "warehouse_io_manager": SnowflakeIOManager(database="DEMO_DB_STAGIN", **SHARED_SNOWFLAKE_CONF),
     "hn_client": HNAPISubsampleClient(subsample_rate=10),
     "dbt": DbtCliResource(
         profiles_dir=DBT_PROFILES_DIR, project_dir=DBT_PROJECT_DIR, target="staging"
