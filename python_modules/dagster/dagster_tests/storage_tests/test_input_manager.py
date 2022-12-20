@@ -4,6 +4,7 @@ import pytest
 
 from dagster import (
     AssetIn,
+    AssetKey,
     DagsterInstance,
     DagsterInvalidDefinitionError,
     IOManager,
@@ -395,6 +396,7 @@ def test_input_manager_with_assets():
     class MyIOManager(IOManager):
         def load_input(self, context):
             assert context.upstream_output is not None
+            assert context.upstream_output.asset_key == AssetKey(["upstream"])
 
             return 2
 
