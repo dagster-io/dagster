@@ -7,19 +7,13 @@ import pytest
 from pandas import DataFrame as PandasDataFrame
 from project_fully_featured.resources.snowflake_io_manager import (
     SHARED_SNOWFLAKE_CONF,
+    SnowflakeIOManager,
     connect_snowflake,
-    snowflake_io_manager,
 )
 from pyspark.sql import Row, SparkSession
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
-from dagster import (
-    AssetKey,
-    asset,
-    build_init_resource_context,
-    build_input_context,
-    build_output_context,
-)
+from dagster import AssetKey, asset, build_input_context, build_output_context
 
 
 def mock_output_context(asset_key):
@@ -54,14 +48,12 @@ def temporary_snowflake_table(contents: PandasDataFrame) -> Iterator[AssetKey]:
     os.environ.get("TEST_SNOWFLAKE") != "true", reason="avoid dependency on snowflake for tests"
 )
 def test_handle_output_then_load_input_pandas():
-    snowflake_manager = snowflake_io_manager(
-        build_init_resource_context(config={"database": "TESTDB"})
-    )
+    snowflake_manager = SnowflakeIOManager({"database": "TESTDB"})
     contents1 = PandasDataFrame([{"col1": "a", "col2": 1}])  # just to get the types right
     contents2 = PandasDataFrame([{"col1": "b", "col2": 2}])  # contents we will insert
     with temporary_snowflake_table(contents1) as temp_table_key:
         output_context = mock_output_context(temp_table_key)
-        list(snowflake_manager.handle_output(output_context, contents2))  # exhaust the iterator
+        snowflake_manager.handle_output(output_context, contents2)
 
         input_context = mock_input_context(output_context)
         input_value = snowflake_manager.load_input(input_context)
@@ -72,9 +64,7 @@ def test_handle_output_then_load_input_pandas():
     os.environ.get("TEST_SNOWFLAKE") != "true", reason="avoid dependency on snowflake for tests"
 )
 def test_handle_output_spark_then_load_input_pandas():
-    snowflake_manager = snowflake_io_manager(
-        build_init_resource_context(config={"database": "TESTDB"})
-    )
+    snowflake_manager = SnowflakeIOManager({"database": "TESTDB"})
     spark = SparkSession.builder.config(
         "spark.jars.packages",
         "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
@@ -86,7 +76,7 @@ def test_handle_output_spark_then_load_input_pandas():
     with temporary_snowflake_table(PandasDataFrame([{"col1": "a", "col2": 1}])) as temp_table_key:
         output_context = mock_output_context(temp_table_key)
 
-        list(snowflake_manager.handle_output(output_context, contents))  # exhaust the iterator
+        snowflake_manager.handle_output(output_context, contents)
 
         input_context = mock_input_context(output_context)
         input_value = snowflake_manager.load_input(input_context)
