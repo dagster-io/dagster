@@ -16,7 +16,7 @@ from .source_asset import SourceAsset
 
 class AssetSelection(ABC):
     """
-    An AssetSelection defines a query over a set of assets, normally all the assets in a repository.
+    An AssetSelection defines a query over a set of assets, normally all the assets in a code location.
 
     You can use the "|", "&", and "-" operators to create unions, intersections, and differences of
     asset selections, respectively.
@@ -268,7 +268,7 @@ class KeysAssetSelection(AssetSelection):
             raise DagsterInvalidSubsetError(
                 f"AssetKey(s) {invalid_keys} were selected, but no AssetsDefinition objects supply "
                 "these keys. Make sure all keys are spelled correctly, and all AssetsDefinitions "
-                "are correctly added to the repository."
+                "are correctly added to the `Definitions`."
             )
         return specified_keys
 
