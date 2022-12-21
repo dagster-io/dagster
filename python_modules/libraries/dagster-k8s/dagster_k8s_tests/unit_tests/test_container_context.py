@@ -64,7 +64,7 @@ def other_container_context_config():
                 }
             ],
             "volumes": [{"name": "bar", "config_map": {"name": "your-settings-cm"}}],
-            "labels": {"bar_label": "baz_value"},
+            "labels": {"bar_label": "baz_value", "foo_label": "override_value"},
             "namespace": "your_namespace",
             "resources": {
                 "limits": {"memory": "64Mi", "cpu": "250m"},
@@ -250,7 +250,7 @@ def test_merge(empty_container_context, container_context, other_container_conte
             {"name": "foo", "config_map": {"name": "settings-cm"}},
         ],
     )
-    assert merged.labels == {"foo_label": "bar_value", "bar_label": "baz_value"}
+    assert merged.labels == {"foo_label": "override_value", "bar_label": "baz_value"}
     assert merged.namespace == "your_namespace"
     assert merged.resources == {
         "limits": {"memory": "64Mi", "cpu": "250m"},

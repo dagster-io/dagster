@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { BulkActionStatus, BackfillStatus, RunStatus } from "./../../types/globalTypes";
+import { BulkActionStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: InstanceBackfillsQuery
@@ -38,19 +38,6 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   causes: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error_causes[];
 }
 
-export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionStatuses_results {
-  __typename: "PartitionStatus";
-  id: string;
-  partitionName: string;
-  runId: string | null;
-  runStatus: RunStatus | null;
-}
-
-export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionStatuses {
-  __typename: "PartitionStatuses";
-  results: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionStatuses_results[];
-}
-
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_assetSelection {
   __typename: "AssetKey";
   path: string[];
@@ -60,7 +47,6 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   __typename: "PartitionBackfill";
   backfillId: string;
   status: BulkActionStatus;
-  backfillStatus: BackfillStatus;
   numRequested: number;
   numPartitions: number;
   timestamp: number;
@@ -68,7 +54,6 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   partitionSet: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet | null;
   error: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error | null;
   partitionNames: string[];
-  partitionStatuses: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionStatuses;
   assetSelection: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_assetSelection[] | null;
 }
 

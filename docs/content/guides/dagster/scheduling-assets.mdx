@@ -30,10 +30,10 @@ Let's begin with a regular schedule:
 ```python file=/guides/dagster/scheduling/freshness_1.py
 from dagster import (
     AssetSelection,
+    Definitions,
     ScheduleDefinition,
     asset,
     define_asset_job,
-    repository,
 )
 
 
@@ -56,9 +56,10 @@ update_job_schedule = ScheduleDefinition(
 )
 
 
-@repository
-def my_repo():
-    return [[a, b], [update_job_schedule]]
+defs = Definitions(
+    assets=[a, b],
+    schedules=[update_job_schedule],
+)
 ```
 
 This schedule runs a job every minute called `update_job` that materialiazes asset `a` and then asset `b`. This setup represents a traditional cron-based schedule. To ensure asset `b` is updated with fresh data, you tell the orchestrator to run a job targetting asset `a` and `b`, and Dagster knows to run `a` before `b` because `a` is an input to the asset function `b`.
@@ -78,11 +79,11 @@ Now, let's take a step towards a more declarative approach to scheduling that de
 ```python file=/guides/dagster/scheduling/freshness_2.py
 from dagster import (
     AssetSelection,
+    Definitions,
     ScheduleDefinition,
     asset,
     build_asset_reconciliation_sensor,
     define_asset_job,
-    repository,
 )
 
 
@@ -108,9 +109,11 @@ update_job_schedule = ScheduleDefinition(
 )
 
 
-@repository
-def my_repo():
-    return [[a, b], [update_job_schedule], [update_sensor]]
+defs = Definitions(
+    assets=[a, b],
+    schedules=[update_job_schedule],
+    sensors=[update_sensor],
+)
 ```
 
 This example adds a reconciliation sensor called `update_sensor` and modifies the scheduled job to only target asset `a`. When the scheduled job runs:
@@ -142,12 +145,12 @@ In Dagster, you can avoid all of these questions and instead declare how fresh y
 ```python file=/guides/dagster/scheduling/freshness_3.py
 from dagster import (
     AssetSelection,
+    Definitions,
     FreshnessPolicy,
     ScheduleDefinition,
     asset,
     build_asset_reconciliation_sensor,
     define_asset_job,
-    repository,
 )
 
 
@@ -177,10 +180,11 @@ update_job_schedule = ScheduleDefinition(
     name="update_job_schedule", job=update_job, cron_schedule="* * * * *"
 )
 
-
-@repository
-def my_repo():
-    return [[a, b, c], [update_job_schedule], [update_sensor]]
+defs = Definitions(
+    assets=[a, b, c],
+    schedules=[update_job_schedule],
+    sensors=[update_sensor],
+)
 ```
 
 One way to think about a freshness policy is that it adds a tolerance to the reconciliation sensor. When `a` is updated, the reconciliation sensor immediately knows that `b` is stale and then creates a run to refresh `b`. The freshness policy tells the reconciliation sensor that `c` can tolerate being stale for up to **two minutes**. Instead of creating a run to update `c` immediately, the reconciliation sensor will wait until `c` is more than two minutes stale and then will create a run to update `c`:
@@ -218,10 +222,10 @@ Our code still contains a schedule that updates `a`. The final step is to remove
 ```python file=/guides/dagster/scheduling/freshness_4a.py
 from dagster import (
     AssetSelection,
+    Definitions,
     FreshnessPolicy,
     asset,
     build_asset_reconciliation_sensor,
-    repository,
 )
 
 
@@ -245,9 +249,7 @@ update_sensor = build_asset_reconciliation_sensor(
 )
 
 
-@repository
-def my_repo():
-    return [[a, b, c], [update_sensor]]
+defs = Definitions(assets=[a, b, c], sensors=[update_sensor])
 ```
 
 Here is where the reconciliation sensor and freshness policies become really powerful! Dagster will determine that after two minutes asset `c` is late and in violation of its freshness policy. Dagster will also determine that in order for `c` to be fresh, asset `a` needs to be updated as well. Dagster will create a run to update both `a` and `c`:
@@ -281,10 +283,10 @@ In the current code asset `b` has no policy, but `b` is monitored by the reconci
 ```python file=/guides/dagster/scheduling/freshness_4b.py
 from dagster import (
     AssetSelection,
+    Definitions,
     FreshnessPolicy,
     asset,
     build_asset_reconciliation_sensor,
-    repository,
 )
 
 
@@ -309,9 +311,7 @@ update_sensor = build_asset_reconciliation_sensor(
 )
 
 
-@repository
-def my_repo():
-    return [[a, b, c], [update_sensor]]
+defs = Definitions(assets=[a, b, c], sensors=[update_sensor])
 ```
 
 When multiple freshness policies exist, Dagster determines the minimal amount of work needed to meet all of the policies. In this example, `a` is refreshed every two minutes by `c`, so `b` can be refreshed without re-running `a` again. In contrast, a simple cron scheduler would redundantly run `a` for each run of `b` and `c`. Freshness policies reduce the work done by the scheduler!
@@ -327,7 +327,12 @@ While this guide has focused on assets becoming stale due to time passing and ne
 In Dagster, it's possible to indicate that an asset is stale by updating its `code_version`. For example, existing code in production might be labeled with version `0.1`:
 
 ```python file=/guides/dagster/scheduling/freshness_5a.py
-from dagster import AssetSelection, asset, build_asset_reconciliation_sensor, repository
+from dagster import (
+    AssetSelection,
+    Definitions,
+    asset,
+    build_asset_reconciliation_sensor,
+)
 
 
 @asset
@@ -350,10 +355,7 @@ update_sensor = build_asset_reconciliation_sensor(
     name="update_sensor", asset_selection=AssetSelection.all()
 )
 
-
-@repository
-def my_repo():
-    return [[a, b, c], [update_sensor]]
+defs = Definitions(assets=[a, b, c], sensors=[update_sensor])
 ```
 
 These assets would be managed by the reconciliation scheduler and considered fresh when all three have been materialized:
@@ -367,7 +369,12 @@ height={1362}
 If you make a substantial change to your code, you can increment the `op_version`:
 
 ```python file=/guides/dagster/scheduling/freshness_5b.py
-from dagster import AssetSelection, asset, build_asset_reconciliation_sensor, repository
+from dagster import (
+    AssetSelection,
+    Definitions,
+    asset,
+    build_asset_reconciliation_sensor,
+)
 
 
 @asset
@@ -390,10 +397,10 @@ update_sensor = build_asset_reconciliation_sensor(
     name="update_sensor", asset_selection=AssetSelection.all()
 )
 
-
-@repository
-def my_repo():
-    return [[a, b, c], [update_sensor]]
+defs = Definitions(
+    assets=[a, b, c],
+    sensors=[update_sensor],
+)
 ```
 
 When the new asset definitions are loaded, `b` and the downstream asset `c` will be flagged as stale:

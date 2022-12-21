@@ -115,6 +115,34 @@ reconciler_different_dest = AirbyteManagedElementReconciler(
     delete_unmentioned_resources=True,
 )
 
+
+# Version with different destination type, same name
+
+local_csv_destination = AirbyteDestination(
+    name="local-json-output",
+    destination_type="Local CSV",
+    destination_configuration={"destination_path": "/local/destination_file.csv"},
+)
+
+
+local_csv_conn = AirbyteConnection(
+    name="local-json-conn",
+    source=local_json_source,
+    destination=local_csv_destination,
+    stream_config={
+        "my_data_stream": AirbyteSyncMode.full_refresh_append(),
+    },
+    normalize_data=False,
+)
+
+reconciler_csv = AirbyteManagedElementReconciler(
+    airbyte=airbyte_instance,
+    connections=[
+        local_csv_conn,
+    ],
+    delete_unmentioned_resources=True,
+)
+
 # Version with destination namespace as destination default
 
 

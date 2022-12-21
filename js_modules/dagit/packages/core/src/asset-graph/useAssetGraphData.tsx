@@ -152,24 +152,24 @@ export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: Asset
     return {upstream: 0, downstream: 0};
   }
 
-  const bfsUpstream = (ins: GraphQueryItem['inputs'], depth: number): number => {
-    const next = ins
+  const dfsUpstream = (name: string, depth: number): number => {
+    const next = map[name].inputs
       .flatMap((i) => i.dependsOn.map((d) => d.solid.name))
-      .map((name) => map[name].inputs);
+      .filter((dname) => dname !== name);
 
-    return Math.max(depth, ...next.map((nextIns) => bfsUpstream(nextIns, depth + 1)));
+    return Math.max(depth, ...next.map((dname) => dfsUpstream(dname, depth + 1)));
   };
-  const bfsDownstream = (outs: GraphQueryItem['outputs'], depth: number): number => {
-    const next = outs
+  const dfsDownstream = (name: string, depth: number): number => {
+    const next = map[name].outputs
       .flatMap((i) => i.dependedBy.map((d) => d.solid.name))
-      .map((name) => map[name].outputs);
+      .filter((dname) => dname !== name);
 
-    return Math.max(depth, ...next.map((nextOuts) => bfsDownstream(nextOuts, depth + 1)));
+    return Math.max(depth, ...next.map((dname) => dfsDownstream(dname, depth + 1)));
   };
 
   return {
-    upstream: bfsUpstream(start.inputs, 0),
-    downstream: bfsDownstream(start.outputs, 0),
+    upstream: dfsUpstream(start.name, 0),
+    downstream: dfsDownstream(start.name, 0),
   };
 };
 

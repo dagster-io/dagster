@@ -38,6 +38,7 @@ export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results {
   rootRunId: string | null;
   parentRunId: string | null;
   pipelineSnapshotId: string | null;
+  parentPipelineSnapshotId: string | null;
   pipelineName: string;
   repositoryOrigin: PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_repositoryOrigin | null;
   solidSelection: string[] | null;

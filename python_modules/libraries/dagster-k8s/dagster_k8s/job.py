@@ -4,7 +4,7 @@ import json
 import random
 import string
 from collections import namedtuple
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, List, Mapping, Optional, Sequence
 
 import kubernetes
 
@@ -210,7 +210,7 @@ class DagsterK8sJobConfig(
         "_K8sJobTaskConfig",
         "job_image dagster_home image_pull_policy image_pull_secrets service_account_name "
         "instance_config_map postgres_password_secret env_config_maps env_secrets env_vars "
-        "volume_mounts volumes labels resources scheduler_name",
+        "volume_mounts volumes labels resources scheduler_name security_context",
     )
 ):
     """Configuration parameters for launching Dagster Jobs on Kubernetes.
@@ -258,6 +258,8 @@ class DagsterK8sJobConfig(
             https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         scheduler_name (Optional[str]): Use a custom Kubernetes scheduler for launched Pods. See:
             https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
+        security_context (Optional[Dict[str,Any]]): Security settings for the container. See:
+            https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container
     """
 
     def __new__(
@@ -277,6 +279,7 @@ class DagsterK8sJobConfig(
         labels=None,
         resources=None,
         scheduler_name=None,
+        security_context=None,
     ):
         return super(DagsterK8sJobConfig, cls).__new__(
             cls,
@@ -305,6 +308,7 @@ class DagsterK8sJobConfig(
             labels=check.opt_dict_param(labels, "labels", key_type=str, value_type=str),
             resources=check.opt_dict_param(resources, "resources", key_type=str),
             scheduler_name=check.opt_str_param(scheduler_name, "scheduler_name"),
+            security_context=check.opt_dict_param(security_context, "security_context"),
         )
 
     @classmethod
@@ -479,6 +483,12 @@ class DagsterK8sJobConfig(
                 description="Use a custom Kubernetes scheduler for launched Pods. See:"
                 "https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/",
             ),
+            "security_context": Field(
+                dict,
+                is_required=False,
+                description="Security settings for the container. See:"
+                "https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container",
+            ),
         }
 
     @classmethod
@@ -531,36 +541,37 @@ class DagsterK8sJobConfig(
 
 
 def construct_dagster_k8s_job(
-    job_config,
-    args,
-    job_name,
-    user_defined_k8s_config=None,
-    pod_name=None,
-    component=None,
-    labels=None,
-    env_vars=None,
-):
-    """Constructs a Kubernetes Job object for a dagster-graphql invocation.
+    job_config: DagsterK8sJobConfig,
+    args: Optional[Sequence[str]],
+    job_name: str,
+    user_defined_k8s_config: Optional[UserDefinedDagsterK8sConfig] = None,
+    pod_name: Optional[str] = None,
+    component: Optional[str] = None,
+    labels: Optional[Mapping[str, str]] = None,
+    env_vars: Optional[Sequence[Mapping[str, Any]]] = None,
+) -> kubernetes.client.V1Job:
+    """Constructs a Kubernetes Job object
 
     Args:
-        job_config (DagsterK8sJobConfig): Job configuration to use for constructing the Kubernetes
+        job_config: Job configuration to use for constructing the Kubernetes
             Job object.
-        args (Optional[List[str]]): CLI arguments to use with in this Job.
-        job_name (str): The name of the Job. Note that this name must be <= 63 characters in length.
-        user_defined_k8s_config(Optional[UserDefinedDagsterK8sConfig]): Additional k8s config in tags or Dagster config
+        args: CLI arguments to use with in this Job.
+        job_name: The name of the Job. Note that this name must be <= 63 characters in length.
+        user_defined_k8s_config: Additional k8s config in tags or Dagster config
             to apply to the job.
-        pod_name (str, optional): The name of the Pod. Note that this name must be <= 63 characters
+        pod_name: The name of the Pod. Note that this name must be <= 63 characters
             in length. Defaults to "<job_name>-pod".
-        component (str, optional): The name of the component, used to provide the Job label
+        component: The name of the component, used to provide the Job label
             app.kubernetes.io/component. Defaults to None.
-        labels(Dict[str, str]): Additional labels to be attached to k8s jobs and pod templates.
+        labels: Additional labels to be attached to k8s jobs and pod templates.
             Long label values are may be truncated.
+        env_vars: Environment config for the container in the pod template.
 
     Returns:
         kubernetes.client.V1Job: A Kubernetes Job object.
     """
     check.inst_param(job_config, "job_config", DagsterK8sJobConfig)
-    check.opt_list_param(args, "args", of_type=str)
+    check.opt_sequence_param(args, "args", of_type=str)
     check.str_param(job_name, "job_name")
     user_defined_k8s_config = check.opt_inst_param(
         user_defined_k8s_config,
@@ -571,7 +582,7 @@ def construct_dagster_k8s_job(
 
     pod_name = check.opt_str_param(pod_name, "pod_name", default=job_name + "-pod")
     check.opt_str_param(component, "component")
-    check.opt_dict_param(labels, "labels", key_type=str, value_type=str)
+    check.opt_mapping_param(labels, "labels", key_type=str, value_type=str)
 
     check.invariant(
         len(job_name) <= MAX_K8S_NAME_LEN,
@@ -599,7 +610,9 @@ def construct_dagster_k8s_job(
     additional_labels = {k: sanitize_k8s_label(v) for k, v in (labels or {}).items()}
     dagster_labels = merge_dicts(k8s_common_labels, additional_labels)
 
-    env = env_vars or []
+    env: List[Mapping[str, Any]] = []
+    if env_vars:
+        env.extend(env_vars)
 
     if job_config.dagster_home:
         env.append({"name": "DAGSTER_HOME", "value": job_config.dagster_home})
@@ -636,17 +649,20 @@ def construct_dagster_k8s_job(
 
     resources = user_defined_resources if user_defined_resources else job_config.resources
 
+    security_context = container_config.pop("security_context", job_config.security_context)
+
     container_config = merge_dicts(
         container_config,
         {
             "name": "dagster",
             "image": job_image,
             "image_pull_policy": job_config.image_pull_policy,
-            "env": env + job_config.env + user_defined_env_vars,
+            "env": [*env, *job_config.env, *user_defined_env_vars],
             "env_from": job_config.env_from_sources + user_defined_env_from,
             "volume_mounts": volume_mounts,
             "resources": resources,
         },
+        {"security_context": security_context} if security_context else {},
     )
 
     pod_spec_config = copy.deepcopy(user_defined_k8s_config.pod_spec_config)

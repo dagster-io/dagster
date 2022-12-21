@@ -254,6 +254,10 @@ def execute_sensor_iteration_loop(
                 sensor_state_lock=sensor_state_lock,
                 log_verbose_checks=verbose_logs_iteration,
             )
+            # Yield to check for heartbeats in case there were no yields within
+            # execute_sensor_iteration
+            yield None
+
             end_time = pendulum.now("UTC").timestamp()
 
             if verbose_logs_iteration:
@@ -262,7 +266,6 @@ def execute_sensor_iteration_loop(
             loop_duration = end_time - start_time
             sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
             time.sleep(sleep_time)
-            yield None
 
 
 def execute_sensor_iteration(

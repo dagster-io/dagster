@@ -98,6 +98,7 @@ def test_launcher_with_container_context(kubeconfig_file):
                 "requests": {"memory": "32Mi", "cpu": "125m"},
             },
             "scheduler_name": "test-scheduler-2",
+            "security_context": {"capabilities": {"add": ["SYS_PTRACE"]}},
         }
     }
 
@@ -154,6 +155,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             "limits": {"memory": "64Mi", "cpu": "250m"},
             "requests": {"memory": "32Mi", "cpu": "125m"},
         }
+        assert container.security_context.capabilities.add == ["SYS_PTRACE"]
 
         assert kwargs["body"].spec.template.spec.scheduler_name == "test-scheduler-2"
 
@@ -254,6 +256,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
         job_resources = container.resources
         assert job_resources.to_dict() == expected_resources
         assert DAGSTER_PG_PASSWORD_ENV_VAR in [env.name for env in container.env]
+        assert "DAGSTER_RUN_JOB_NAME" in [env.name for env in container.env]
 
         assert kwargs["body"].spec.template.spec.scheduler_name == "test-scheduler-2"
 

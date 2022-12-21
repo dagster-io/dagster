@@ -3,7 +3,7 @@ import time
 import pytest
 import yaml
 from dagster_postgres.event_log import PostgresEventLogStorage
-from dagster_tests.core_tests.storage_tests.utils.event_log_storage import (
+from dagster_tests.storage_tests.utils.event_log_storage import (
     TestEventLogStorage,
     create_test_event_log_record,
 )

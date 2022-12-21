@@ -1,6 +1,17 @@
 import datetime
 import json
-from typing import TYPE_CHECKING, AbstractSet, Dict, Iterable, Mapping, Optional, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Dict,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
@@ -14,6 +25,7 @@ from dagster._core.storage.event_log.sql_event_log import AssetEventTagsTable
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
+    DagsterRunStatus,
     RunRecord,
     RunsFilter,
 )
@@ -41,40 +53,48 @@ class CachingInstanceQueryer:
         # materialization record for a >= cursor, we don't need to query the instance
         self._no_materializations_after_cursor_cache: Dict[AssetKeyPartitionKey, int] = {}
 
-    def get_in_progress_run_time_and_planned_materializations(
-        self, asset_key: AssetKey
-    ) -> Tuple[Optional[datetime.datetime], AbstractSet[AssetKey]]:
-        # the latest asset record is updated when the run is created
+    @cached_method
+    def failed_in_latest_run(self, asset_key: AssetKey) -> bool:
         asset_records = self._instance.get_asset_records([asset_key])
         asset_record = next(iter(asset_records), None)
+
+        # no latest run
         if asset_record is None or asset_record.asset_entry.last_run_id is None:
-            return (None, set())
+            return False
+
         run_id = asset_record.asset_entry.last_run_id
+        latest_run_record = self._get_run_record_by_id(run_id=run_id)
 
-        run_record = self._get_run_record_by_id(run_id=run_id)
-        if run_record is not None and run_record.pipeline_run.status in IN_PROGRESS_RUN_STATUSES:
-            data_time = (
-                datetime.datetime.fromtimestamp(run_record.start_time, tz=datetime.timezone.utc)
-                if run_record.start_time
-                else None
-            )
-            return (data_time, self._get_planned_materializations_for_run(run_id=run_id))
-        return (None, set())
+        # latest run did not fail
+        if (
+            latest_run_record is None
+            or latest_run_record.pipeline_run.status != DagsterRunStatus.FAILURE
+        ):
+            return False
 
-    def is_asset_partition_in_run(self, run_id: str, asset_partition: AssetKeyPartitionKey) -> bool:
+        # if asset was still materialized in the run count as success
+        latest_materialization = asset_record.asset_entry.last_materialization
+        if (
+            latest_materialization is not None
+            and latest_materialization.run_id == latest_run_record.pipeline_run.run_id
+        ):
+            return False
+
+        return True
+
+    def is_asset_in_run(self, run_id: str, asset: Union[AssetKey, AssetKeyPartitionKey]) -> bool:
         run = self._get_run_by_id(run_id=run_id)
         if not run:
             check.failed("")
 
-        if run.tags.get(PARTITION_NAME_TAG) != asset_partition.partition_key:
-            return False
-
-        if run.asset_selection:
-            return asset_partition.asset_key in run.asset_selection
+        if isinstance(asset, AssetKeyPartitionKey):
+            asset_key = asset.asset_key
+            if run.tags.get(PARTITION_NAME_TAG) != asset.partition_key:
+                return False
         else:
-            return asset_partition.asset_key in self._get_planned_materializations_for_run(
-                run_id=run_id
-            )
+            asset_key = asset
+
+        return asset_key in self._get_planned_materializations_for_run(run_id=run_id)
 
     def _get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
         run_record = self._get_run_record_by_id(run_id=run_id)
@@ -90,12 +110,34 @@ class CachingInstanceQueryer:
         )
 
     @cached_method
-    def _get_planned_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
+    def _get_planned_materializations_for_run_from_events(
+        self, run_id: str
+    ) -> AbstractSet[AssetKey]:
         materializations_planned = self._instance.get_records_for_run(
             run_id=run_id,
             of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
         ).records
         return set(cast(AssetKey, record.asset_key) for record in materializations_planned)
+
+    @cached_method
+    def _get_planned_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
+        run = self._get_run_by_id(run_id=run_id)
+        if run is None:
+            return set()
+
+        if run.asset_selection:
+            return run.asset_selection
+        else:
+            # must resort to querying the event log
+            return self._get_planned_materializations_for_run_from_events(run_id=run_id)
+
+    @cached_method
+    def _get_current_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
+        materializations = self._instance.get_records_for_run(
+            run_id=run_id,
+            of_type=DagsterEventType.ASSET_MATERIALIZATION,
+        ).records
+        return set(cast(AssetKey, record.asset_key) for record in materializations)
 
     @cached_method
     def _get_materialization_record(
@@ -125,17 +167,22 @@ class CachingInstanceQueryer:
         after_cursor: Optional[int] = None,
         before_cursor: Optional[int] = None,
     ) -> Optional["EventLogRecord"]:
-
         if isinstance(asset, AssetKey):
             asset_partition = AssetKeyPartitionKey(asset_key=asset)
         else:
             asset_partition = asset
 
+        # fancy caching only applies to after_cursor
+        if before_cursor is not None:
+            return self._get_materialization_record(
+                asset_partition=asset_partition,
+                after_cursor=after_cursor,
+                before_cursor=before_cursor,
+            )
+
         if asset_partition in self._latest_materialization_record_cache:
             cached_record = self._latest_materialization_record_cache[asset_partition]
-            if (after_cursor is None or after_cursor < cached_record.storage_id) and (
-                before_cursor is None or before_cursor > cached_record.storage_id
-            ):
+            if after_cursor is None or after_cursor < cached_record.storage_id:
                 return cached_record
             else:
                 return None
@@ -154,7 +201,7 @@ class CachingInstanceQueryer:
             self._latest_materialization_record_cache[asset_partition] = record
             return record
         else:
-            if after_cursor is not None and before_cursor is None:
+            if after_cursor is not None:
                 self._no_materializations_after_cursor_cache[asset_partition] = min(
                     after_cursor,
                     self._no_materializations_after_cursor_cache.get(asset_partition, after_cursor),
@@ -264,8 +311,20 @@ class CachingInstanceQueryer:
             }
         return {}
 
+    def _upstream_subset(
+        self, asset_graph: AssetGraph, start_key: AssetKey, input_keys: AbstractSet[AssetKey]
+    ) -> AbstractSet[AssetKey]:
+        """Helper method which returns the set up keys in the input set which are upstream of start_key"""
+        ret = set()
+        if start_key in input_keys:
+            ret.add(start_key)
+        for upstream_key in asset_graph.upstream_key_iterator(start_key):
+            if upstream_key in input_keys:
+                ret.add(upstream_key)
+        return frozenset(ret)
+
     @cached_method
-    def calculate_used_data(
+    def _calculate_used_data(
         self,
         asset_graph: AssetGraph,
         asset_key: AssetKey,
@@ -274,7 +333,6 @@ class CachingInstanceQueryer:
         record_tags: Mapping[str, str],
         required_keys: AbstractSet[AssetKey],
     ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
-
         if record_id is None:
             return {key: (None, None) for key in required_keys}
 
@@ -293,21 +351,22 @@ class CachingInstanceQueryer:
                     continue
 
                 # the set of required keys which are upstream of this parent
-                upstream_required_keys = set()
-                if parent_key in unknown_required_keys:
-                    upstream_required_keys.add(parent_key)
-                for upstream_key in asset_graph.upstream_key_iterator(parent_key):
-                    if upstream_key in unknown_required_keys:
-                        upstream_required_keys.add(upstream_key)
+                upstream_required_keys = self._upstream_subset(
+                    asset_graph, start_key=parent_key, input_keys=unknown_required_keys
+                )
 
                 input_event_pointer_tag = get_input_event_pointer_tag_key(parent_key)
                 if input_event_pointer_tag in record_tags:
                     # get the upstream materialization event which was consumed when producing this
                     # materialization event
-                    input_record_id = int(record_tags[input_event_pointer_tag])
-                    parent_record = self.get_latest_materialization_record(
-                        parent_key, before_cursor=input_record_id + 1
-                    )
+                    pointer_tag = record_tags[input_event_pointer_tag]
+                    if pointer_tag and pointer_tag != "NULL":
+                        input_record_id = int(pointer_tag)
+                        parent_record = self.get_latest_materialization_record(
+                            parent_key, before_cursor=input_record_id + 1
+                        )
+                    else:
+                        parent_record = None
                 else:
                     # if the input event id was not recorded (materialized pre-1.1.0), just grab
                     # the most recent asset materialization for this parent which happened before
@@ -317,7 +376,7 @@ class CachingInstanceQueryer:
                     )
 
                 # recurse to find the data times of this parent
-                for key, tup in self.calculate_used_data(
+                for key, tup in self._calculate_used_data(
                     asset_graph=asset_graph,
                     asset_key=parent_key,
                     record_id=parent_record.storage_id if parent_record else None,
@@ -332,7 +391,7 @@ class CachingInstanceQueryer:
                         )
                         or {}
                     ),
-                    required_keys=frozenset(upstream_required_keys),
+                    required_keys=upstream_required_keys,
                 ).items():
                     # if root data is missing, this overrides other values
                     if tup == (None, None) or known_data.get(key) == (None, None):
@@ -363,7 +422,7 @@ class CachingInstanceQueryer:
         if upstream_keys is None:
             upstream_keys = asset_graph.get_non_source_roots(record.asset_key)
 
-        data = self.calculate_used_data(
+        data = self._calculate_used_data(
             asset_graph=asset_graph,
             asset_key=record.asset_key,
             record_id=record.storage_id,
@@ -379,6 +438,110 @@ class CachingInstanceQueryer:
             else None
             for key, (_, timestamp) in data.items()
         }
+
+    @cached_method
+    def _get_in_progress_run_ids(self) -> Sequence[str]:
+        return [
+            record.pipeline_run.run_id
+            for record in self._instance.get_run_records(
+                filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES), limit=25
+            )
+        ]
+
+    @cached_method
+    def _get_in_progress_data_times_for_key_in_run(
+        self,
+        run_id: str,
+        current_time: datetime.datetime,
+        asset_graph: AssetGraph,
+        asset_key: AssetKey,
+        required_keys: AbstractSet[AssetKey],
+    ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
+        """Returns the upstream data times that a given asset key will be expected to have at the
+        completion of the given run.
+        """
+        planned_keys = self._get_planned_materializations_for_run(run_id=run_id)
+        materialized_keys = self._get_current_materializations_for_run(run_id=run_id)
+
+        # if key is not pending materialization within the run, then downstream pending
+        # materializations will (in general) read from the current state of the data
+        if asset_key not in planned_keys or asset_key in materialized_keys:
+            latest_record = self.get_latest_materialization_record(asset_key)
+            latest_used_data = self._calculate_used_data(
+                asset_graph=asset_graph,
+                asset_key=asset_key,
+                record_id=latest_record.storage_id if latest_record else None,
+                record_timestamp=latest_record.event_log_entry.timestamp if latest_record else None,
+                record_tags=frozendict(
+                    (
+                        latest_record.asset_materialization.tags
+                        if latest_record and latest_record.asset_materialization
+                        else None
+                    )
+                    or {}
+                ),
+                required_keys=required_keys,
+            )
+            return {
+                key: datetime.datetime.fromtimestamp(timestamp, tz=datetime.timezone.utc)
+                if timestamp is not None
+                else None
+                for key, (_, timestamp) in latest_used_data.items()
+            }
+
+        # if you're here, then this asset is planned, but not materialized
+        upstream_data_times: Dict[AssetKey, Optional[datetime.datetime]] = {}
+        if asset_key in required_keys:
+            # in the worst case (data-time wise), this asset gets materialized right now
+            upstream_data_times[asset_key] = current_time
+
+        for parent_key in asset_graph.get_parents(asset_key):
+            # the set of required keys which are upstream of this parent
+            upstream_required_keys = self._upstream_subset(
+                asset_graph, start_key=parent_key, input_keys=required_keys
+            )
+            for upstream_key, upstream_time in self._get_in_progress_data_times_for_key_in_run(
+                run_id=run_id,
+                current_time=current_time,
+                asset_graph=asset_graph,
+                asset_key=parent_key,
+                required_keys=upstream_required_keys,
+            ).items():
+                current_value = upstream_data_times.get(upstream_key, upstream_time)
+                if current_value is None or upstream_time is None:
+                    upstream_data_times[upstream_key] = None
+                else:
+                    upstream_data_times[upstream_key] = max(current_value, upstream_time)
+        return upstream_data_times
+
+    def get_in_progress_data_times_for_key(
+        self,
+        asset_graph: AssetGraph,
+        asset_key: AssetKey,
+        upstream_keys: AbstractSet[AssetKey],
+        current_time: datetime.datetime,
+    ) -> Mapping[AssetKey, datetime.datetime]:
+        """Returns a mapping containing the maximum upstream data time that the input asset will
+        have once all in-progress runs complete.
+        """
+        in_progress_times: Dict[AssetKey, datetime.datetime] = {}
+
+        for run_id in self._get_in_progress_run_ids():
+            if not self.is_asset_in_run(run_id=run_id, asset=asset_key):
+                continue
+
+            for upstream_key, upstream_time in self._get_in_progress_data_times_for_key_in_run(
+                run_id=run_id,
+                current_time=current_time,
+                asset_graph=asset_graph,
+                asset_key=asset_key,
+                required_keys=upstream_keys,
+            ).items():
+                if upstream_time is not None:
+                    in_progress_times[upstream_key] = max(
+                        in_progress_times.get(upstream_key, upstream_time), upstream_time
+                    )
+        return in_progress_times
 
     def get_current_minutes_late_for_key(
         self,
@@ -401,5 +564,4 @@ class CachingInstanceQueryer:
         return freshness_policy.minutes_late(
             evaluation_time=evaluation_time,
             used_data_times=used_data_times,
-            available_data_times={key: evaluation_time for key in used_data_times},
         )

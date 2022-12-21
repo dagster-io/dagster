@@ -21,8 +21,9 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
-from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._utils import merge_dicts
 from dagster._utils.backcompat import (
     ExperimentalWarning,
@@ -182,6 +183,7 @@ class AssetsDefinition(ResourceAddable):
                 self._metadata_by_key.get(asset_key, {}),
             )
             self._code_versions_by_key[asset_key] = output_def.code_version
+
         for key, freshness_policy in (freshness_policies_by_key or {}).items():
             check.param_invariant(
                 not (freshness_policy and self._partitions_def),
@@ -194,6 +196,12 @@ class AssetsDefinition(ResourceAddable):
             "freshness_policies_by_key",
             key_type=AssetKey,
             value_type=FreshnessPolicy,
+        )
+
+        _validate_self_deps(
+            input_keys=self._keys_by_input_name.values(),
+            output_keys=self._keys_by_output_name.values(),
+            partition_mappings=self._partition_mappings,
         )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
@@ -595,8 +603,6 @@ class AssetsDefinition(ResourceAddable):
         input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
     ) -> "AssetsDefinition":
-        from dagster import DagsterInvalidDefinitionError
-
         output_asset_key_replacements = check.opt_mapping_param(
             output_asset_key_replacements,
             "output_asset_key_replacements",
@@ -668,6 +674,10 @@ class AssetsDefinition(ResourceAddable):
             group_names_by_key={
                 **replaced_group_names_by_key,
                 **group_names_by_key,
+            },
+            metadata_by_key={
+                output_asset_key_replacements.get(key, key): value
+                for key, value in self.metadata_by_key.items()
             },
             freshness_policies_by_key=replaced_freshness_policies_by_key,
         )
@@ -776,6 +786,7 @@ class AssetsDefinition(ResourceAddable):
                 selected_asset_keys=selected_asset_keys & self.keys,
                 resource_defs=self.resource_defs,
                 group_names_by_key=self.group_names_by_key,
+                metadata_by_key=self.metadata_by_key,
                 freshness_policies_by_key=self.freshness_policies_by_key,
             )
         else:
@@ -792,6 +803,8 @@ class AssetsDefinition(ResourceAddable):
                 selected_asset_keys=asset_subselection,
                 resource_defs=self.resource_defs,
                 group_names_by_key=self.group_names_by_key,
+                metadata_by_key=self.metadata_by_key,
+                freshness_policies_by_key=self.freshness_policies_by_key,
             )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
@@ -884,6 +897,7 @@ class AssetsDefinition(ResourceAddable):
             can_subset=self._can_subset,
             resource_defs=relevant_resource_defs,
             group_names_by_key=self.group_names_by_key,
+            metadata_by_key=self.metadata_by_key,
             freshness_policies_by_key=self.freshness_policies_by_key,
         )
 
@@ -1012,3 +1026,25 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
         f"ops: {unmapped_leaf_nodes}. This behavior is not currently supported because these ops "
         "are not required for the creation of the associated asset(s).",
     )
+
+
+def _validate_self_deps(
+    input_keys: Iterable[AssetKey],
+    output_keys: Iterable[AssetKey],
+    partition_mappings: Mapping[AssetKey, PartitionMapping],
+) -> None:
+    output_keys_set = set(output_keys)
+    for input_key in input_keys:
+        if input_key in output_keys_set:
+            if input_key in partition_mappings:
+                partition_mapping = partition_mappings[input_key]
+                if (
+                    isinstance(partition_mapping, TimeWindowPartitionMapping)
+                    and (partition_mapping.start_offset or 0) < 0
+                    and (partition_mapping.end_offset or 0) < 0
+                ):
+                    continue
+
+            raise DagsterInvalidDefinitionError(
+                "Assets can only depend on themselves if they are time-partitioned and each partition depends on earlier partitions"
+            )

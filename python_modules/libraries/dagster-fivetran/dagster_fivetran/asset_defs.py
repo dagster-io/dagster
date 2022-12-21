@@ -119,8 +119,12 @@ def build_fivetran_assets(
         io_manager_key (Optional[str]): The io_manager to be used to handle each of these assets.
         asset_key_prefix (Optional[List[str]]): A prefix for the asset keys inside this asset.
             If left blank, assets will have a key of `AssetKey([schema_name, table_name])`.
+        metadata_by_table_name (Optional[Mapping[str, MetadataUserInput]]): A mapping from destination
+            table name to user-supplied metadata that should be associated with the asset for that table.
 
-    Examples:
+    **Examples:**
+
+    Basic example:
 
     .. code-block:: python
 
@@ -147,6 +151,23 @@ def build_fivetran_assets(
                 fivetran_assets,
                 resource_defs={"fivetran": my_fivetran_resource},
             )
+
+    Attaching metadata:
+
+    .. code-block:: python
+
+        fivetran_assets = build_fivetran_assets(
+            connector_id="foobar",
+            table_names=["schema1.table1", "schema2.table2"],
+            metadata_by_table_name={
+                "schema1.table1": {
+                    "description": "This is a table that contains foo and bar",
+                },
+                "schema2.table2": {
+                    "description": "This is a table that contains baz and quux",
+                },
+            },
+        )
 
     """
     return _build_fivetran_assets(

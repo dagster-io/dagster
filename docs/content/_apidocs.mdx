@@ -16,6 +16,8 @@ APIs from the core `dagster` package, divided roughly by topic:
 
 - [Jobs](/\_apidocs/jobs) APIs to define jobs that execute a set of ops with specific parameters.
 
+- [Definitions](/\_apidocs/definitions) APIs to collect definitions tools such as the Dagster CLI or Dagit can them as code locations.
+
 - [Ops](/\_apidocs/ops) APIs to define or decorate functions as ops, declare their inputs and outputs, compose ops with each other, as well as the datatypes that op execution can return or yield.
 
 - [Graphs](/\_apidocs/graphs) APIs to define a logical structure of ops.
@@ -23,8 +25,6 @@ APIs from the core `dagster` package, divided roughly by topic:
 - [Resources](/\_apidocs/resources) APIs to define resources which can provide specific implementations of certain functionality within a job.
 
 - [Loggers](/\_apidocs/loggers) APIs to define where logs go.
-
-- [Repositories](/\_apidocs/repositories) APIs to define collections of jobs and other definitions that tools such as the Dagster CLI or Dagit can load from.
 
 - [Config](/\_apidocs/config) The types available to describe config schemas.
 
@@ -47,6 +47,8 @@ APIs from the core `dagster` package, divided roughly by topic:
 - [Dynamic Mapping & Collect](/\_apidocs/dynamic) APIs that allow graph structures to be determined at run time.
 
 - [Versioning & Memoization](/\_apidocs/memoization) (Experimental) Code versioning and memoization of previous outputs based upon that versioning.
+
+- [Repositories](/\_apidocs/repositories) Older APIs to define collections of jobs and other definitions that tools such as the Dagster CLI or Dagit can load from.
 
 - [Utilities](/\_apidocs/utilities) Miscellaneous helpers used by Dagster that may be useful to users.
 

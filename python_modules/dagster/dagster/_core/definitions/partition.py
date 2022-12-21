@@ -14,6 +14,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Set,
     TypeVar,
     Union,
     cast,
@@ -214,11 +215,19 @@ class PartitionsDefinition(ABC, Generic[T]):
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
         return [partition.name for partition in self.get_partitions(current_time)]
 
-    def get_last_partition_key(self, current_time: Optional[datetime] = None) -> str:
-        return self.get_partitions(current_time)[-1].name
+    def get_last_partition_key(self, current_time: Optional[datetime] = None) -> Optional[str]:
+        partitions = self.get_partitions(current_time)
+        if partitions:
+            return partitions[-1].name
+        else:
+            return None
 
-    def get_first_partition_key(self, current_time: Optional[datetime] = None) -> str:
-        return self.get_partitions(current_time)[0].name
+    def get_first_partition_key(self, current_time: Optional[datetime] = None) -> Optional[str]:
+        partitions = self.get_partitions(current_time)
+        if partitions:
+            return partitions[0].name
+        else:
+            return None
 
     def get_default_partition_mapping(self):
         from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
@@ -247,7 +256,7 @@ class PartitionsDefinition(ABC, Generic[T]):
         ]
 
     def empty_subset(self) -> "PartitionsSubset":
-        return DefaultPartitionsSubset(self, [])
+        return DefaultPartitionsSubset(self, set())
 
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return DefaultPartitionsSubset.from_serialized(self, serialized)
@@ -1023,16 +1032,46 @@ class PartitionsSubset(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_partition_key_ranges(
+        self, current_time: Optional[datetime] = None
+    ) -> Sequence[PartitionKeyRange]:
+        raise NotImplementedError()
+
+    @abstractmethod
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset":
+        raise NotImplementedError()
+
+    @abstractmethod
+    def with_partition_key_range(
+        self, partition_key_range: PartitionKeyRange
+    ) -> "PartitionsSubset":
         raise NotImplementedError()
 
     @abstractmethod
     def serialize(self) -> str:
         raise NotImplementedError()
 
+    @property
+    @abstractmethod
+    def partitions_def(self) -> PartitionsDefinition:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def __len__(self) -> int:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def __contains__(self, value) -> bool:
+        raise NotImplementedError()
+
 
 class DefaultPartitionsSubset(PartitionsSubset):
-    def __init__(self, partitions_def: PartitionsDefinition, subset=None):
+    def __init__(self, partitions_def: PartitionsDefinition, subset: Optional[Set[str]] = None):
+        check.opt_set_param(subset, "subset")
         self._partitions_def = partitions_def
         self._subset = subset or set()
 
@@ -1041,11 +1080,60 @@ class DefaultPartitionsSubset(PartitionsSubset):
     ) -> Iterable[str]:
         return set(self._partitions_def.get_partition_keys()) - self._subset
 
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
+        return self._subset
+
+    def get_partition_key_ranges(
+        self, current_time: Optional[datetime] = None
+    ) -> Sequence[PartitionKeyRange]:
+        partition_keys = self._partitions_def.get_partition_keys(current_time)
+        cur_range_start = None
+        cur_range_end = None
+        result = []
+        for partition_key in partition_keys:
+            if partition_key in self._subset:
+                if cur_range_start is None:
+                    cur_range_start = partition_key
+                cur_range_end = partition_key
+            else:
+                if cur_range_start is not None and cur_range_end is not None:
+                    result.append(PartitionKeyRange(cur_range_start, cur_range_end))
+                cur_range_start = cur_range_end = None
+
+        if cur_range_start is not None and cur_range_end is not None:
+            result.append(PartitionKeyRange(cur_range_start, cur_range_end))
+
+        return result
+
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "DefaultPartitionsSubset":
         return DefaultPartitionsSubset(self._partitions_def, self._subset | set(partition_keys))
 
+    def with_partition_key_range(
+        self, partition_key_range: PartitionKeyRange
+    ) -> "PartitionsSubset":
+        return self.with_partition_keys(
+            self._partitions_def.get_partition_keys_in_range(partition_key_range)
+        )
+
     def serialize(self) -> str:
         return json.dumps(list(self._subset))
+
+    @property
+    def partitions_def(self) -> PartitionsDefinition:
+        return self._partitions_def
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, DefaultPartitionsSubset)
+            and self._partitions_def == other._partitions_def
+            and self._subset == other._subset
+        )
+
+    def __len__(self) -> int:
+        return len(self._subset)
+
+    def __contains__(self, value) -> bool:
+        return value in self._subset
 
     @staticmethod
     def from_serialized(
@@ -1053,4 +1141,9 @@ class DefaultPartitionsSubset(PartitionsSubset):
     ) -> "DefaultPartitionsSubset":
         return DefaultPartitionsSubset(
             subset=set(json.loads(serialized)), partitions_def=partitions_def
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f"DefaultPartitionsSubset(subset={self._subset}, partitions_def={self._partitions_def})"
         )

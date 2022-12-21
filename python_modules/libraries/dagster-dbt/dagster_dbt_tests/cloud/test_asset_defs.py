@@ -14,6 +14,7 @@ from dagster import (
     AssetKey,
     AssetSelection,
     DailyPartitionsDefinition,
+    FreshnessPolicy,
     MetadataValue,
     asset,
     build_init_resource_context,
@@ -119,7 +120,10 @@ def _add_dbt_cloud_job_responses(
 @responses.activate
 @pytest.mark.parametrize("before_dbt_materialization_command", [[], ["dbt test"]])
 @pytest.mark.parametrize("dbt_materialization_command", ["dbt run", "dbt build"])
-@pytest.mark.parametrize("after_dbt_materialization_command", [[], ["dbt test"]])
+@pytest.mark.parametrize(
+    "after_dbt_materialization_command",
+    [[], ["dbt run-operation upload_dbt_artifacts --args '{filenames: [manifest, run_results]}'"]],
+)
 @pytest.mark.parametrize(
     ["dbt_materialization_command_options", "expected_dbt_materialization_command_options"],
     [
@@ -191,10 +195,13 @@ def test_load_assets_from_dbt_cloud_job(
     ).resolve(assets=dbt_cloud_assets, source_assets=[])
 
     with instance_for_test() as instance:
-        assert materialize_cereal_assets.execute_in_process(instance=instance).success
+        result = materialize_cereal_assets.execute_in_process(instance=instance)
+
+    assert result.success
 
     mock_run_job_and_poll.assert_called_once_with(
         job_id=DBT_CLOUD_JOB_ID,
+        cause=f"Materializing software-defined assets in Dagster run {result.run_id[:8]}",
         steps_override=dbt_commands,
     )
 
@@ -298,6 +305,31 @@ def test_node_info_to_asset_key(dbt_cloud, dbt_cloud_service):
 
 
 @responses.activate
+def test_custom_freshness_policy(dbt_cloud, dbt_cloud_service):
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_commands=["dbt build"],
+    )
+
+    dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
+        dbt_cloud=dbt_cloud,
+        job_id=DBT_CLOUD_JOB_ID,
+        node_info_to_freshness_policy_fn=lambda node_info: FreshnessPolicy(
+            maximum_lag_minutes=len(node_info["name"])
+        ),
+    )
+    dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
+    dbt_cloud_assets = dbt_cloud_cacheable_assets.build_definitions(
+        dbt_assets_definition_cacheable_data
+    )
+
+    assert dbt_cloud_assets[0].freshness_policies_by_key == {
+        key: FreshnessPolicy(maximum_lag_minutes=len(key.path[-1]))
+        for key in dbt_cloud_assets[0].keys
+    }
+
+
+@responses.activate
 def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
     _add_dbt_cloud_job_responses(
         dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
@@ -310,6 +342,8 @@ def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
         job_id=DBT_CLOUD_JOB_ID,
         partitions_def=partition_def,
         partition_key_to_vars_fn=lambda partition_key: {"run_date": partition_key},
+        # FreshnessPolicies not currently supported for partitioned assets
+        node_info_to_freshness_policy_fn=lambda _: None,
     )
 
     mock_run_job_and_poll = mocker.patch(
@@ -338,13 +372,16 @@ def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
     ).resolve(assets=dbt_cloud_assets, source_assets=[])
 
     with instance_for_test() as instance:
-        assert materialize_cereal_assets.execute_in_process(
+        result = materialize_cereal_assets.execute_in_process(
             instance=instance,
             partition_key="2022-02-01",
-        ).success
+        )
+
+    assert result.success
 
     mock_run_job_and_poll.assert_called_once_with(
         job_id=DBT_CLOUD_JOB_ID,
+        cause=f"Materializing software-defined assets in Dagster run {result.run_id[:8]}",
         steps_override=[f"dbt build --vars '{json.dumps({'run_date': '2022-02-01'})}'"],
     )
 
@@ -413,7 +450,9 @@ def test_subsetting(
     ).resolve(assets=list(dbt_cloud_assets) + [hanger1, hanger2], source_assets=[])
 
     with instance_for_test() as instance:
-        assert materialize_cereal_assets.execute_in_process(instance=instance).success
+        result = materialize_cereal_assets.execute_in_process(instance=instance)
+
+    assert result.success
 
     expected_dbt_asset_names = (
         expected_dbt_asset_names.split(",") if expected_dbt_asset_names else []
@@ -423,5 +462,6 @@ def test_subsetting(
     )
     mock_run_job_and_poll.assert_called_once_with(
         job_id=DBT_CLOUD_JOB_ID,
+        cause=f"Materializing software-defined assets in Dagster run {result.run_id[:8]}",
         steps_override=[f"dbt build {dbt_filter_option}".strip()],
     )

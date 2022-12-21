@@ -268,6 +268,19 @@ def foo_resource():
 
 
 # start_asset_provide_resource
+from dagster import Definitions
+
+
+defs = Definitions(
+    assets=[asset_requires_resource],
+    resources={"foo": foo_resource},
+)
+
+# end_asset_provide_resource
+
+
+# start_asset_provide_resource_using_repository
+
 from dagster import repository, with_resources
 
 
@@ -281,4 +294,4 @@ def repo():
     ]
 
 
-# end_asset_provide_resource
+# end_asset_provide_resource_using_repository

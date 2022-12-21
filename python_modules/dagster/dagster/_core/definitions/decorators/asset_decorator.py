@@ -478,6 +478,12 @@ def multi_asset(
                 asset_key: group_name for asset_key in keys_by_output_name.values()
             }
 
+        # source freshness policies from the AssetOuts (if any)
+        freshness_policies_by_key = {
+            keys_by_output_name[output_name]: out.freshness_policy
+            for output_name, out in outs.items()
+            if isinstance(out, AssetOut) and out.freshness_policy is not None
+        }
         partition_mappings = {
             keys_by_input_name[input_name]: asset_in.partition_mapping
             for input_name, asset_in in (ins or {}).items()
@@ -494,6 +500,7 @@ def multi_asset(
             can_subset=can_subset,
             resource_defs=resource_defs,
             group_names_by_key=group_names_by_key,
+            freshness_policies_by_key=freshness_policies_by_key,
         )
 
     return inner

@@ -1,0 +1,3 @@
+load_from:
+  - python_module: dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.daemon_sensor_defs
+  - python_module: dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.success_job_def

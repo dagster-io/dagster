@@ -18,7 +18,9 @@ from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import Queued
 
 
 @contextmanager
-def instance_for_queued_run_coordinator(max_concurrent_runs=None, tag_concurrency_limits=None):
+def instance_for_queued_run_coordinator(
+    max_concurrent_runs=None, tag_concurrency_limits=None, use_threads=False
+):
     max_concurrent_runs = (
         {"max_concurrent_runs": max_concurrent_runs} if max_concurrent_runs else {}
     )
@@ -29,7 +31,11 @@ def instance_for_queued_run_coordinator(max_concurrent_runs=None, tag_concurrenc
         "run_coordinator": {
             "module": "dagster._core.run_coordinator",
             "class": "QueuedRunCoordinator",
-            "config": {**max_concurrent_runs, **tag_concurrency_limits},
+            "config": {
+                **max_concurrent_runs,
+                **tag_concurrency_limits,
+                "dequeue_use_threads": use_threads,
+            },
         },
         "run_launcher": {
             "module": "dagster._core.test_utils",
@@ -123,9 +129,21 @@ def test_attempt_to_launch_runs_no_queued(instance, pipeline_handle, workspace_c
     "num_in_progress_runs",
     [0, 1, 5],
 )
-def test_get_queued_runs_max_runs(num_in_progress_runs, pipeline_handle, workspace_context, daemon):
+@pytest.mark.parametrize(
+    "use_threads",
+    [False, True],
+)
+def test_get_queued_runs_max_runs(
+    num_in_progress_runs,
+    use_threads,
+    pipeline_handle,
+    workspace_context,
+    daemon,
+):
     max_runs = 4
-    with instance_for_queued_run_coordinator(max_concurrent_runs=max_runs) as instance:
+    with instance_for_queued_run_coordinator(
+        max_concurrent_runs=max_runs, use_threads=use_threads
+    ) as instance:
         bounded_ctx = workspace_context.copy_for_test_instance(instance)
         # fill run store with ongoing runs
         in_progress_run_ids = ["in_progress-run-{}".format(i) for i in range(num_in_progress_runs)]
@@ -154,8 +172,14 @@ def test_get_queued_runs_max_runs(num_in_progress_runs, pipeline_handle, workspa
         assert len(instance.run_launcher.queue()) == max(0, max_runs - num_in_progress_runs)
 
 
-def test_disable_max_concurrent_runs_limit(workspace_context, pipeline_handle, daemon):
-    with instance_for_queued_run_coordinator(max_concurrent_runs=-1) as instance:
+@pytest.mark.parametrize(
+    "use_threads",
+    [False, True],
+)
+def test_disable_max_concurrent_runs_limit(use_threads, workspace_context, pipeline_handle, daemon):
+    with instance_for_queued_run_coordinator(
+        max_concurrent_runs=-1, use_threads=use_threads
+    ) as instance:
         bounded_ctx = workspace_context.copy_for_test_instance(instance)
 
         # create ongoing runs
@@ -225,10 +249,15 @@ def test_priority_on_malformed_tag(instance, workspace_context, pipeline_handle,
     assert get_run_ids(instance.run_launcher.queue()) == ["bad-pri-run"]
 
 
-def test_tag_limits(workspace_context, pipeline_handle, daemon):
+@pytest.mark.parametrize(
+    "use_threads",
+    [False, True],
+)
+def test_tag_limits(use_threads, workspace_context, pipeline_handle, daemon):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=10,
         tag_concurrency_limits=[{"key": "database", "value": "tiny", "limit": 1}],
+        use_threads=use_threads,
     ) as instance:
         bounded_ctx = workspace_context.copy_for_test_instance(instance)
 
@@ -256,15 +285,21 @@ def test_tag_limits(workspace_context, pipeline_handle, daemon):
 
         list(daemon.run_iteration(bounded_ctx))
 
-        assert get_run_ids(instance.run_launcher.queue()) == ["tiny-1", "large-1"]
+        # exact order non-deterministic due to threaded dequeue
+        assert set(get_run_ids(instance.run_launcher.queue())) == {"tiny-1", "large-1"}
 
 
-def test_tag_limits_just_key(workspace_context, pipeline_handle, daemon):
+@pytest.mark.parametrize(
+    "use_threads",
+    [False, True],
+)
+def test_tag_limits_just_key(use_threads, workspace_context, pipeline_handle, daemon):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=10,
         tag_concurrency_limits=[
             {"key": "database", "value": {"applyLimitPerUniqueValue": False}, "limit": 2}
         ],
+        use_threads=use_threads,
     ) as instance:
         bounded_ctx = workspace_context.copy_for_test_instance(instance)
 
@@ -292,10 +327,16 @@ def test_tag_limits_just_key(workspace_context, pipeline_handle, daemon):
 
         list(daemon.run_iteration(bounded_ctx))
 
-        assert get_run_ids(instance.run_launcher.queue()) == ["tiny-1", "tiny-2"]
+        # exact order non-deterministic due to threaded dequeue
+        assert set(get_run_ids(instance.run_launcher.queue())) == {"tiny-1", "tiny-2"}
 
 
+@pytest.mark.parametrize(
+    "use_threads",
+    [False, True],
+)
 def test_multiple_tag_limits(
+    use_threads,
     workspace_context,
     daemon,
     pipeline_handle,
@@ -306,6 +347,7 @@ def test_multiple_tag_limits(
             {"key": "database", "value": "tiny", "limit": 1},
             {"key": "user", "value": "johann", "limit": 2},
         ],
+        use_threads=use_threads,
     ) as instance:
         bounded_ctx = workspace_context.copy_for_test_instance(instance)
 
@@ -340,16 +382,22 @@ def test_multiple_tag_limits(
 
         list(daemon.run_iteration(bounded_ctx))
 
-        assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]
+        # exact order non-deterministic due to threaded dequeue
+        assert set(get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-3"}
 
 
-def test_overlapping_tag_limits(workspace_context, daemon, pipeline_handle):
+@pytest.mark.parametrize(
+    "use_threads",
+    [False, True],
+)
+def test_overlapping_tag_limits(use_threads, workspace_context, daemon, pipeline_handle):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=10,
         tag_concurrency_limits=[
             {"key": "foo", "limit": 2},
             {"key": "foo", "value": "bar", "limit": 1},
         ],
+        use_threads=use_threads,
     ) as instance:
         bounded_ctx = workspace_context.copy_for_test_instance(instance)
 
@@ -384,15 +432,21 @@ def test_overlapping_tag_limits(workspace_context, daemon, pipeline_handle):
 
         list(daemon.run_iteration(bounded_ctx))
 
-        assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]
+        # exact order non-deterministic due to threaded dequeue
+        assert set(get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-3"}
 
 
-def test_limits_per_unique_value(workspace_context, pipeline_handle, daemon):
+@pytest.mark.parametrize(
+    "use_threads",
+    [False, True],
+)
+def test_limits_per_unique_value(use_threads, workspace_context, pipeline_handle, daemon):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=10,
         tag_concurrency_limits=[
             {"key": "foo", "limit": 1, "value": {"applyLimitPerUniqueValue": True}},
         ],
+        use_threads=use_threads,
     ) as instance:
         bounded_ctx = workspace_context.copy_for_test_instance(instance)
 
@@ -429,16 +483,27 @@ def test_limits_per_unique_value(workspace_context, pipeline_handle, daemon):
 
         list(daemon.run_iteration(bounded_ctx))
 
-        assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]
+        # exact order non-deterministic due to threaded dequeue
+        assert set(get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-3"}
 
 
-def test_limits_per_unique_value_overlapping_limits(workspace_context, daemon, pipeline_handle):
+@pytest.mark.parametrize(
+    "use_threads",
+    [False, True],
+)
+def test_limits_per_unique_value_overlapping_limits(
+    use_threads,
+    workspace_context,
+    daemon,
+    pipeline_handle,
+):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=10,
         tag_concurrency_limits=[
             {"key": "foo", "limit": 1, "value": {"applyLimitPerUniqueValue": True}},
             {"key": "foo", "limit": 2},
         ],
+        use_threads=use_threads,
     ) as instance:
         bounded_ctx = workspace_context.copy_for_test_instance(instance)
 
@@ -473,7 +538,8 @@ def test_limits_per_unique_value_overlapping_limits(workspace_context, daemon, p
 
         list(daemon.run_iteration(bounded_ctx))
 
-        assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]
+        # exact order non-deterministic due to threaded dequeue
+        assert set(get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-3"}
 
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=10,
@@ -481,6 +547,7 @@ def test_limits_per_unique_value_overlapping_limits(workspace_context, daemon, p
             {"key": "foo", "limit": 2, "value": {"applyLimitPerUniqueValue": True}},
             {"key": "foo", "limit": 1, "value": "bar"},
         ],
+        use_threads=use_threads,
     ) as instance:
         bounded_ctx = workspace_context.copy_for_test_instance(instance)
 
@@ -522,7 +589,8 @@ def test_limits_per_unique_value_overlapping_limits(workspace_context, daemon, p
 
         list(daemon.run_iteration(bounded_ctx))
 
-        assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-2", "run-4"]
+        # exact order non-deterministic due to threaded dequeue
+        assert set(get_run_ids(instance.run_launcher.queue())) == {"run-1", "run-2", "run-4"}
 
 
 def test_locations_not_created(instance, monkeypatch, workspace_context, daemon, pipeline_handle):
@@ -608,12 +676,17 @@ def test_skip_error_runs(instance, pipeline_handle, workspace_context, daemon):
     assert instance.get_run_by_id("bad-run").status == DagsterRunStatus.FAILURE
 
 
-def test_key_limit_with_extra_tags(workspace_context, daemon, pipeline_handle):
+@pytest.mark.parametrize(
+    "use_threads",
+    [False, True],
+)
+def test_key_limit_with_extra_tags(use_threads, workspace_context, daemon, pipeline_handle):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=2,
         tag_concurrency_limits=[
             {"key": "test", "limit": 1},
         ],
+        use_threads=use_threads,
     ) as instance:
         bounded_ctx = workspace_context.copy_for_test_instance(instance)
 

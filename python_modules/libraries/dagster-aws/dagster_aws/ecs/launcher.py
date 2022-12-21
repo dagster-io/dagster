@@ -19,6 +19,7 @@ from dagster._core.launcher.base import (
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._grpc.types import ExecuteRunArgs
 from dagster._serdes import ConfigurableClass
+from dagster._utils.backoff import backoff
 
 from ..secretsmanager import get_secrets_from_arns
 from .container_context import SHARED_ECS_SCHEMA, EcsContainerContext
@@ -59,6 +60,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         include_sidecars=False,
         use_current_ecs_task_config: bool = True,
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
+        run_resources: Optional[Dict[str, str]] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -143,6 +145,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 check.invariant(
                     key in expected_keys, f"Found an unexpected key {key} in run_task_kwargs"
                 )
+
+        self.run_resources = check.opt_mapping_param(run_resources, "run_resources")
 
         self._current_task_metadata = None
         self._current_task = None
@@ -252,19 +256,15 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return EcsRunLauncher(inst_data=inst_data, **config_value)
 
-    def _set_ecs_tags(self, run_id, task_arn):
-        try:
-            tags = [{"key": "dagster/run_id", "value": run_id}]
-            self.ecs.tag_resource(resourceArn=task_arn, tags=tags)
-        except ClientError:
-            pass
-
     def _set_run_tags(self, run_id: str, cluster: str, task_arn: str):
         tags = {
             "ecs/task_arn": task_arn,
             "ecs/cluster": cluster,
         }
         self._instance.add_run_tags(run_id, tags)
+
+    def build_ecs_tags_for_run_task(self, run):
+        return [{"key": "dagster/run_id", "value": run.run_id}]
 
     def _get_run_tags(self, run_id):
         run = self._instance.get_run_by_id(run_id)
@@ -312,7 +312,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         # Set cpu or memory overrides
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
-        cpu_and_memory_overrides = self.get_cpu_and_memory_overrides(run)
+        cpu_and_memory_overrides = self.get_cpu_and_memory_overrides(container_context, run)
 
         task_overrides = self._get_task_overrides(run)
 
@@ -331,12 +331,14 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             **cpu_and_memory_overrides,
             **task_overrides,
         }
+        run_task_kwargs["tags"] = [
+            *run_task_kwargs.get("tags", []),
+            *self.build_ecs_tags_for_run_task(run),
+        ]
 
         # Run a task using the same network configuration as this processes's
         # task.
-        response = self.ecs.run_task(
-            **run_task_kwargs,
-        )
+        response = self.ecs.run_task(**run_task_kwargs)
 
         tasks = response["tasks"]
 
@@ -353,7 +355,6 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         arn = tasks[0]["taskArn"]
         cluster_arn = tasks[0]["clusterArn"]
         self._set_run_tags(run.run_id, cluster=cluster_arn, task_arn=arn)
-        self._set_ecs_tags(run.run_id, task_arn=arn)
         self.report_launch_events(run, arn, cluster_arn)
 
     def report_launch_events(
@@ -375,16 +376,19 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             cls=self.__class__,
         )
 
-    def get_cpu_and_memory_overrides(self, run: DagsterRun) -> Mapping[str, str]:
+    def get_cpu_and_memory_overrides(
+        self, container_context: EcsContainerContext, run: DagsterRun
+    ) -> Mapping[str, str]:
         overrides = {}
 
-        cpu = run.tags.get("ecs/cpu")
-        memory = run.tags.get("ecs/memory")
+        cpu = run.tags.get("ecs/cpu", container_context.run_resources.get("cpu"))
+        memory = run.tags.get("ecs/memory", container_context.run_resources.get("memory"))
 
         if cpu:
             overrides["cpu"] = cpu
         if memory:
             overrides["memory"] = memory
+
         return overrides
 
     def _get_task_overrides(self, run: DagsterRun) -> Mapping[str, Any]:
@@ -438,6 +442,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         definition if needed.
         """
         environment = self._environment(container_context)
+        environment.append({"name": "DAGSTER_RUN_JOB_NAME", "value": run.job_name})
+
         secrets = self._secrets(container_context)
 
         if container_context.task_definition_arn:
@@ -490,11 +496,18 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     self._get_container_name(container_context),
                 )
 
-            if not self._reuse_task_definition(
-                task_definition_config,
-                self._get_container_name(container_context),
-            ):
-                self.ecs.register_task_definition(**task_definition_dict)
+            container_name = self._get_container_name(container_context)
+
+            backoff(
+                self._reuse_or_register_task_definition,
+                retry_on=(Exception,),
+                kwargs={
+                    "desired_task_definition_config": task_definition_config,
+                    "container_name": container_name,
+                    "task_definition_dict": task_definition_dict,
+                },
+                max_retries=5,
+            )
 
             task_definition = family
 
@@ -531,6 +544,15 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             existing_task_definition,
             container_name=container_name,
         )
+
+    def _reuse_or_register_task_definition(
+        self,
+        desired_task_definition_config: DagsterEcsTaskDefinitionConfig,
+        container_name: str,
+        task_definition_dict: dict,
+    ):
+        if not self._reuse_task_definition(desired_task_definition_config, container_name):
+            self.ecs.register_task_definition(**task_definition_dict)
 
     def _environment(self, container_context):
         return [

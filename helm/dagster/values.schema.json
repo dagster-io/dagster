@@ -2019,6 +2019,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "securityContext": {
+                    "title": "SecurityContext",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/SecurityContext"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -2276,6 +2287,31 @@
                         },
                         {
                             "$ref": "#/definitions/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "dequeueNumWorkers": {
+                    "title": "Dequeuenumworkers",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/definitions/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "dequeueUseThreads": {
+                    "title": "Dequeueusethreads",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
                         },
                         {
                             "type": "null"

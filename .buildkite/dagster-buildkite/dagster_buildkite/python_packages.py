@@ -8,7 +8,7 @@ import pathspec
 from dagster_buildkite.git import ChangedFiles, GitInfo
 from pkg_resources import Requirement, parse_requirements
 
-changed_filetypes = [".py", ".cfg", ".toml", ".yaml", ".ipynb", ".yml"]
+changed_filetypes = [".py", ".cfg", ".toml", ".yaml", ".ipynb", ".yml", ".ini"]
 
 
 class PythonPackage:
@@ -117,7 +117,7 @@ class PythonPackages:
             ignored = git_ignore.read_text().splitlines()
             git_ignore_spec = pathspec.PathSpec.from_lines("gitwildmatch", ignored)
         else:
-            git_ignore_spec = pathspec.PathSpec().from_lines([])
+            git_ignore_spec = pathspec.PathSpec([])
 
         # Consider any setup.py file to be a package
         packages = set(

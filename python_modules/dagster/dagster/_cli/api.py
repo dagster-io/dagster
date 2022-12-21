@@ -14,6 +14,7 @@ import dagster._seven as seven
 from dagster._cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
+    unwrap_single_code_location_target_cli_arg,
 )
 from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -418,10 +419,14 @@ def _execute_step_command_body(
         else:
             repository_load_data = None
 
-        recon_pipeline = recon_pipeline_from_origin(
-            cast(PipelinePythonOrigin, pipeline_run.pipeline_code_origin)
-        ).subset_for_execution_from_existing_pipeline(
-            pipeline_run.solids_to_execute, pipeline_run.asset_selection
+        recon_pipeline = (
+            recon_pipeline_from_origin(
+                cast(PipelinePythonOrigin, pipeline_run.pipeline_code_origin)
+            )
+            .with_repository_load_data(repository_load_data)
+            .subset_for_execution_from_existing_pipeline(
+                pipeline_run.solids_to_execute, pipeline_run.asset_selection
+            )
         )
 
         execution_plan = create_execution_plan(
@@ -650,6 +655,20 @@ def grpc_command(
             "empty_working_directory",
         ]
     ):
+        # in the gRPC api CLI we never load more than one module or python file at a time
+
+        module_name = (
+            unwrap_single_code_location_target_cli_arg(kwargs, "module_name")
+            if kwargs["module_name"]
+            else None
+        )
+
+        python_file = (
+            unwrap_single_code_location_target_cli_arg(kwargs, "python_file")
+            if kwargs["python_file"]
+            else None
+        )
+
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute=kwargs["attribute"],
@@ -658,8 +677,8 @@ def grpc_command(
                 if kwargs.get("empty_working_directory")
                 else get_working_directory_from_kwargs(kwargs)
             ),
-            module_name=kwargs["module_name"],
-            python_file=kwargs["python_file"],
+            module_name=module_name,
+            python_file=python_file,
             package_name=kwargs["package_name"],
         )
 

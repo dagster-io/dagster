@@ -422,7 +422,10 @@ class GrapheneAssetNode(graphene.ObjectType):
             return (logical_version or DEFAULT_LOGICAL_VERSION).value
 
     def resolve_projectedLogicalVersion(self, _graphene_info) -> Optional[str]:
-        if self.external_asset_node.is_source:
+        if (
+            self.external_asset_node.is_source
+            or self.external_asset_node.partitions_def_data is not None
+        ):
             return None
         else:
             loader = check.not_none(

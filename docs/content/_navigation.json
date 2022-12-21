@@ -209,24 +209,24 @@
         ]
       },
       {
-        "title": "Repositories & Workspaces",
-        "children": [
-          {
-            "title": "Repositories",
-            "path": "/concepts/repositories-workspaces/repositories"
-          },
-          {
-            "title": "Workspaces",
-            "path": "/concepts/repositories-workspaces/workspaces"
-          }
-        ]
-      },
-      {
         "title": "Resources",
         "children": [
           {
             "title": "Resources",
             "path": "/concepts/resources"
+          }
+        ]
+      },
+      {
+        "title": "Code locations",
+        "children": [
+          {
+            "title": "Code locations",
+            "path": "/concepts/code-locations"
+          },
+          {
+            "title": "Workspace files",
+            "path": "/concepts/code-locations/workspace-files"
           }
         ]
       },
@@ -554,7 +554,21 @@
       },
       {
         "title": "Airflow",
-        "path": "/integrations/airflow"
+        "path": "/integrations/airflow",
+        "children": [
+          {
+            "title": "Learning Dagster from Airflow",
+            "path": "/integrations/airflow/from-airflow-to-dagster"
+          },
+          {
+            "title": "Airflow Migration Guide",
+            "path": "/integrations/airflow/migrating-to-dagster"
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/airflow/reference"
+          }
+        ]
       },
       {
         "title": "dbt",
@@ -628,7 +642,17 @@
       },
       {
         "title": "Snowflake",
-        "path": "/integrations/snowflake"
+        "path": "/integrations/snowflake",
+        "children": [
+          {
+            "title": "Snowflake+ Dagster tutorial",
+            "path": "/integrations/snowflake/using-snowflake-with-dagster"
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/snowflake/reference"
+          }
+        ]
       },
       {
         "title": "All integrations",
@@ -731,6 +755,10 @@
             "path": "/_apidocs/jobs"
           },
           {
+            "title": "Definitions",
+            "path": "/_apidocs/definitions"
+          },
+          {
             "title": "Ops",
             "path": "/_apidocs/ops"
           },
@@ -745,10 +773,6 @@
           {
             "title": "Loggers",
             "path": "/_apidocs/loggers"
-          },
-          {
-            "title": "Repositories",
-            "path": "/_apidocs/repositories"
           },
           {
             "title": "Config",
@@ -793,6 +817,10 @@
           {
             "title": "Versioning & Memoization",
             "path": "/_apidocs/memoization"
+          },
+          {
+            "title": "Repositories",
+            "path": "/_apidocs/repositories"
           },
           {
             "title": "Utilities",

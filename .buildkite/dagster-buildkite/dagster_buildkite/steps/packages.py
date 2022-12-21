@@ -16,10 +16,7 @@ from dagster_buildkite.utils import (
 def build_example_packages_steps() -> List[BuildkiteStep]:
     custom_example_pkg_roots = [pkg.directory for pkg in EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG]
     example_packages_with_standard_config = [
-        PackageSpec(
-            pkg,
-            upload_coverage=False,
-        )
+        PackageSpec(pkg)
         for pkg in _get_uncustomized_pkg_roots("examples", custom_example_pkg_roots)
     ]
 
@@ -32,7 +29,7 @@ def build_library_packages_steps() -> List[BuildkiteStep]:
     custom_library_pkg_roots = [pkg.directory for pkg in LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG]
     library_packages_with_standard_config = [
         *[
-            PackageSpec(pkg, upload_coverage=False)
+            PackageSpec(pkg)
             for pkg in _get_uncustomized_pkg_roots("python_modules", custom_library_pkg_roots)
         ],
         *[
@@ -330,7 +327,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "api_tests",
             "cli_tests",
             "core_tests",
-            "core_tests_old_sqlalchemy",
+            "storage_tests_old_sqlalchemy",
             "daemon_sensor_tests",
             "daemon_tests",
             "definitions_tests_old_pendulum",
@@ -338,6 +335,11 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "scheduler_tests",
             "scheduler_tests_old_pendulum",
             "execution_tests",
+            "storage_tests",
+            "definitions_tests",
+            "asset_defs_tests",
+            "launcher_tests",
+            "logging_tests",
         ],
     ),
     PackageSpec(
@@ -449,7 +451,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_extra_cmds=k8s_extra_cmds,
         pytest_step_dependencies=test_project_depends_fn,
     ),
-    PackageSpec("python_modules/libraries/dagster-mlflow", upload_coverage=False),
+    PackageSpec("python_modules/libraries/dagster-mlflow"),
     PackageSpec("python_modules/libraries/dagster-mysql", pytest_extra_cmds=mysql_extra_cmds),
     PackageSpec(
         "python_modules/libraries/dagster-snowflake-pandas",

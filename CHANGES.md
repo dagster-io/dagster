@@ -1,5 +1,43 @@
 # Changelog
 
+# 1.1.7 (core) / 0.17.7 (libraries)
+
+### New
+
+- `Definitions` is no longer marked as experimental and is the preferred API over `@repository` for new users of Dagster. Examples, tutorials, and documentation have largely ported to this new API. No migration is needed. Please see GitHub discussion for more details.
+- The “Workspace” section of Dagit has been removed. All definitions for your code locations can be accessed via the “Deployment” section of the app. Just as in the old Workspace summary page, each code location will show counts of its available jobs, assets, schedules, and sensors. Additionally, the code locations page is now available at `/locations`.
+- Lagged / rolling window partition mappings: `TimeWindowPartitionMapping` now accepts `start_offset` and `end_offset` arguments that allow specifying that time partitions depend on earlier or later time partitions of upstream assets.
+- Asset partitions can now depend on earlier time partitions of the same asset. The asset reconciliation sensor will respect these dependencies when requesting runs.
+- `dagit` can now accept multiple arguments for the `-m` and `-f` flags. For each argument a new code location is loaded.
+- Schedules created by `build_schedule_from_partitioned_job` now execute more performantly - in constant time, rather than linear in the number of partitions.
+- The `QueuedRunCoordinator` now supports options `dequeue_use_threads` and `dequeue_num_workers` options to enable concurrent run dequeue operations for greater throughput.
+- [dagster-dbt] `load_assets_from_dbt_project`, `load_assets_from_dbt_manifest`, and `load_assets_from_dbt_cloud_job` now support applying freshness policies to loaded nodes. To do so, you can apply `dagster_freshness_policy` config directly in your dbt project, i.e. `config(dagster_freshness_policy={"maximum_lag_minutes": 60})` would result in the corresponding asset being assigned a `FreshnessPolicy(maximum_lag_minutes=60)`.
+- The `DAGSTER_RUN_JOB_NAME` environment variable is now set in containerized environments spun up by our run launchers and executor.
+- [dagster-airflow] `make_dagster_repo_from_airflow_dags_path` ,`make_dagster_job_from_airflow_dag` and `make_dagster_repo_from_airflow_dag_bag` have a new `connections` parameter which allows for configuring the airflow connections used by migrated dags.
+
+### Bugfixes
+
+- Fixed a bug where the `log` property was not available on the `RunStatusSensorContext` context object provided for run status sensors for sensor logging.
+- Fixed a bug where the re-execute button on runs of asset jobs would incorrectly show warning icon, indicating that the pipeline code may have changed since you last ran it.
+- Fixed an issue which would cause metadata supplied to graph-backed assets to not be viewable in the UI.
+- Fixed an issue where schedules often took up to 5 seconds to start after their tick time.
+- Fixed an issue where Dagster failed to load a dagster.yaml file that specified the folder to use for sqlite storage in the `dagster.yaml` file using an environment variable.
+- Fixed an issue which would cause the k8s/docker executors to unnecessarily reload CacheableAssetsDefinitions (such as those created when using `load_assets_from_dbt_cloud_job`) on each step execution.
+- [dagster-airbyte] Fixed an issue where Python-defined Airbyte sources and destinations were occasionally recreated unnecessarily.
+- Fixed an issue with `build_asset_reconciliation_sensor` that would cause it to ignore in-progress runs in some cases.
+
+- Fixed a bug where GQL errors would be thrown in the asset explorer when a previously materialized asset had its dependencies changed.
+- [dagster-airbyte] Fixed an error when generating assets for normalization table for connections with non-object streams.
+- [dagster-dbt] Fixed an error where dbt Cloud jobs with `dbt run` and `dbt run-operation` were incorrectly validated.
+- [dagster-airflow] `use_ephemeral_airflow_db` now works when running within a PEX deployment artifact.
+
+
+### Documentation
+
+- New documentation for [Code locations](https://docs.dagster.io/concepts/code-locations) and how to define one using `Definitions`
+- Lots of updates throughout the docs to reflect the recommended usage of `Definitions`. Any content not ported to `Definitions` in this release is in the process of being updated.
+- New documentation for dagster-airflow on how to start writing dagster code from an airflow background.
+
 # 1.1.6 (core) / 0.17.6 (libraries)
 
 ### New
@@ -2085,7 +2123,7 @@ asset_group = AssetGroup(
 - When you produce a PartitionedConfig object using a decorator like daily_partitioned_config or static_partitioned_config, you can now directly invoke that object to invoke the decorated function.
 - The end_offset argument to PartitionedConfig can now be negative. This allows you to define a schedule that fills in partitions further in the past than the current partition (for example, you could define a daily schedule that fills in the partition from two days ago by setting end_offset to -1.
 - The runConfigData argument to the launchRun GraphQL mutation can now be either a JSON-serialized string or a JSON object , instead of being required to be passed in as a JSON object. This makes it easier to use the mutation in typed languages where passing in unserialized JSON objects as arguments can be cumbersome.
-- Dagster now always uses the local working directory when resolving local imports in job code, in all workspaces. In the case where you want to use a different base folder to resolve local imports in your code, the working_directory argument can now always be specified (before, it was only available when using the python_file key in your workspace). See the Workspace docs (https://docs.dagster.io/concepts/repositories-workspaces/workspaces#loading-relative-imports) for more information.
+- Dagster now always uses the local working directory when resolving local imports in job code, in all workspaces. In the case where you want to use a different base folder to resolve local imports in your code, the working_directory argument can now always be specified (before, it was only available when using the python_file key in your workspace). See the Workspace docs (https://docs.dagster.io/concepts/code-locations/workspace-files#loading-relative-imports) for more information.
 
 ### Bugfixes
 
@@ -3867,7 +3905,7 @@ The corresponding value flag `dagsterDaemon.backfill.enabled` has also been remo
 - The `has_config_entry`, `has_configurable_inputs`, and `has_configurable_outputs` properties of `solid` and `composite_solid` have been removed.
 - The deprecated optionality of the `name` argument to `PipelineDefinition` has been removed, and the argument is now required.
 - The `execute_run_with_structured_logs` and `execute_step_with_structured_logs` internal CLI entry points have been removed. Use `execute_run` or `execute_step` instead.
-- The `python_environment` key has been removed from `workspace.yaml`. Instead, to specify that a repository location should use a custom python environment, set the `executable_path` key within a `python_file`, `python_module`, or `python_package` key. See [the docs](https://docs.dagster.io/concepts/repositories-workspaces/workspaces) for more information on configuring your `workspace.yaml` file.
+- The `python_environment` key has been removed from `workspace.yaml`. Instead, to specify that a repository location should use a custom python environment, set the `executable_path` key within a `python_file`, `python_module`, or `python_package` key. See [the docs](https://docs.dagster.io/concepts/code-locations/workspaces) for more information on configuring your `workspace.yaml` file.
 - [dagster-dask] The deprecated schema for reading or materializing dataframes has been removed. Use the `read` or `to` keys accordingly.
 
 ## 0.10.9

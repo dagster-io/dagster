@@ -4,9 +4,10 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
-snapshots['test_basic_solids_config 1'] = {
+snapshots['test_basic_ops_config 1'] = {
     'execution': {
         'in_process': {
             'config': {
@@ -56,7 +57,9 @@ snapshots['test_basic_solids_config 1'] = {
         'required_field_solid': {
             'config': {
                 'required_int': 0
-            }
+            },
+            'outputs': [
+            ]
         }
     }
 }
