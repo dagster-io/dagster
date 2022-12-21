@@ -37,7 +37,7 @@ In this case, you'll want to ensure that:
 
 Be sure that this file is present and `DAGSTER_HOME` is set on the node where Dagit is running.
 
-**Note**: Using RDS for run and event log storage doesn't require that Dagit be running in the cloud. If you're' connecting a local Dagit instance to a remote RDS storage, verify that your local node is able to connect to RDS.
+**Note**: Using RDS for run and event log storage doesn't require that Dagit be running in the cloud. If you're connecting a local Dagit instance to a remote RDS storage, verify that your local node is able to connect to RDS.
 
 ---
 
@@ -50,13 +50,15 @@ The Deploying on ECS example on GitHub demonstrates how to configure the [Docker
 - A Dagit container for loading and launching jobs
 - A `dagster-daemon` container for managing a run queue and submitting runs from schedules and sensors
 - A Postgres container for persistent storage
-- A container with user job code. The [Dagster instance](/deployment/dagster-instance) uses the <PyObject module="dagster_aws.ecs" object="EcsRunLauncher" /> to launch each run in its own ECS task.
+- A container with user job code
+
+The [Dagster instance](/deployment/dagster-instance) uses the <PyObject module="dagster_aws.ecs" object="EcsRunLauncher" /> to launch each run in its own ECS task.
 
 ### Launching runs in ECS
 
 The <PyObject module="dagster_aws.ecs" object="EcsRunLauncher" /> launches an ECS task per run. It assumes that the rest of your Dagster deployment is also running in ECS.
 
-By default, each run's task registers its own task definition. To simplify configuration, these task definitions inherit most of their configuration (networking, cpu, memory, environment, etc.) from the process that launches the run but overrides its container definition with a new command to launch a Dagster run.
+By default, each run's task registers its own task definition. To simplify configuration, these task definitions inherit most of their configuration (networking, cpu, memory, environment, etc.) from the task that launches the run but overrides its container definition with a new command to launch a Dagster run.
 
 When using the <PyObject module="dagster._core.run_coordinator" object="DefaultRunCoordinator" />, runs launched via Dagit or GraphQL inherit their task definitions from the Dagit task while runs launched from a sensor or schedule inherit their task definitions from the daemon task.
 
@@ -186,6 +188,6 @@ resources:
       s3_prefix: good/prefix-for-files-
 ```
 
-The resource uses `boto` under the hood. If you're accessing your private buckets, you will need to provide the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables or follow one of the other boto authentication methods.
+The resource uses `boto` under the hood. If you're accessing your private buckets, you'll need to provide the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables or follow [one of the other boto authentication methods](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
 
 With this in place, your job runs will store data passed between ops on S3 in the location `s3://<bucket>/dagster/storage/<job run id>/<op name>.compute`.
