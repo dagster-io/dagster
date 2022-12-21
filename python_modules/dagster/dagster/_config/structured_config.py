@@ -1,3 +1,4 @@
+import inspect
 from typing import Any, Type
 
 from pydantic import BaseModel
@@ -5,7 +6,7 @@ from pydantic.fields import SHAPE_SINGLETON, ModelField
 
 import dagster._check as check
 from dagster import Field, Shape
-from dagster._config.field_utils import convert_potential_field
+from dagster._config.field_utils import FIELD_NO_DEFAULT_PROVIDED, convert_potential_field
 
 
 class Config(BaseModel):
@@ -26,18 +27,34 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     if pydantic_field.shape != SHAPE_SINGLETON:
         raise NotImplementedError(f"Pydantic shape {pydantic_field.shape} not supported")
 
-    return convert_potential_field(dagster_type)
+    inner_config_type = convert_potential_field(dagster_type).config_type
+    return Field(
+        config=inner_config_type,
+        default_value=pydantic_field.default
+        if pydantic_field.default
+        else FIELD_NO_DEFAULT_PROVIDED,
+    )
 
 
-def infer_schema_from_config_annotation(model_cls: Any) -> Field:
+def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any) -> Field:
     """
     Parses a structured config class or primitive type and returns a corresponding Dagster config Field.
     """
 
     if _safe_is_subclass(model_cls, Config):
+        check.invariant(
+            config_arg_default is inspect.Parameter.empty,
+            "Cannot provide a default value when using a Config class",
+        )
         return infer_schema_from_config_class(model_cls)
 
-    return convert_potential_field(model_cls)
+    inner_config_type = convert_potential_field(model_cls).config_type
+    return Field(
+        config=inner_config_type,
+        default_value=FIELD_NO_DEFAULT_PROVIDED
+        if config_arg_default is inspect.Parameter.empty
+        else config_arg_default,
+    )
 
 
 def _safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
