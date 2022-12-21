@@ -396,22 +396,14 @@ def get_freshness_info(
         asset_graph=asset_graph, record=latest_record
     )
 
-    # in the future, if you have upstream source assets with versioning policies, available data
-    # times will be based off of the timestamp of the most recent materializations.
     current_minutes_late = freshness_policy.minutes_late(
         evaluation_time=current_time,
         used_data_times=used_data_times,
-        available_data_times={
-            # assume materializing an asset at time T will update the data time of that asset to T
-            key: current_time
-            for key in used_data_times.keys()
-        },
     )
 
     latest_materialization_minutes_late = freshness_policy.minutes_late(
         evaluation_time=latest_materialization_time,
         used_data_times=used_data_times,
-        available_data_times={key: latest_materialization_time for key in used_data_times.keys()},
     )
 
     return GrapheneAssetFreshnessInfo(

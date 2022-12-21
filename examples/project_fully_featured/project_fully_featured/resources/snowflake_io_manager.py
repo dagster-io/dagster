@@ -1,4 +1,3 @@
-import os
 from contextlib import contextmanager
 from datetime import datetime
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
@@ -10,25 +9,9 @@ from snowflake.connector.pandas_tools import pd_writer
 from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
 from sqlalchemy import create_engine
 
-from dagster import (
-    IOManager,
-    InputContext,
-    MetadataValue,
-    OutputContext,
-    TableColumn,
-    TableSchema,
-    io_manager,
-)
+from dagster import IOManager, InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-
-
-SHARED_SNOWFLAKE_CONF = {
-    "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
-    "user": os.getenv("SNOWFLAKE_USER", ""),
-    "password": os.getenv("SNOWFLAKE_PASSWORD", ""),
-    "warehouse": "TINY_WAREHOUSE",
-}
 
 
 @contextmanager
@@ -52,13 +35,6 @@ def connect_snowflake(config, schema="public"):
             conn.close()
 
 
-@io_manager(config_schema={"database": str})
-def snowflake_io_manager(init_context):
-    return SnowflakeIOManager(
-        config=dict(database=init_context.resource_config["database"], **SHARED_SNOWFLAKE_CONF)
-    )
-
-
 class SnowflakeIOManager(IOManager):
     """
     This IOManager can handle outputs that are either Spark or Pandas DataFrames. In either case,
@@ -80,7 +56,7 @@ class SnowflakeIOManager(IOManager):
         elif isinstance(obj, PandasDataFrame):
             metadata = self._handle_pandas_output(obj, schema, table)
         elif obj is None:  # dbt
-            config = dict(SHARED_SNOWFLAKE_CONF)
+            config = dict(self._config)
             config["schema"] = schema
             with connect_snowflake(config=config) as con:
                 df = read_sql(f"SELECT * FROM {context.name} LIMIT 5", con=con)

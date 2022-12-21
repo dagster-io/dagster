@@ -81,6 +81,9 @@ def define_inty_job(adls_io_resource=adls2_resource):
 
 
 @pytest.mark.nettest
+@pytest.mark.skip(
+    "Blob this depends on does not exist. See https://linear.app/elementl/issue/CORE-83/test-adls2-pickle-io-manager-deletes-recursively-disabled-reenable-it"
+)
 def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_system, credential):
     job = define_inty_job()
 
@@ -149,6 +152,9 @@ def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_syste
 
 
 @pytest.mark.nettest
+@pytest.mark.skip(
+    "Blob this depends on does not exist. See https://linear.app/elementl/issue/CORE-83/test-adls2-pickle-io-manager-deletes-recursively-disabled-reenable-it"
+)
 def test_adls2_pickle_io_manager_execution(storage_account, file_system, credential):
     job = define_inty_job()
 
@@ -229,6 +235,9 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
     assert io_manager.load_input(context) == 2
 
 
+@pytest.mark.skip(
+    "Blob this depends on does not exist. See https://linear.app/elementl/issue/CORE-83/test-adls2-pickle-io-manager-deletes-recursively-disabled-reenable-it"
+)
 def test_asset_io_manager(storage_account, file_system, credential):
     # if you add new assets to this test, make sure that the output names include _id so that we don't
     # run into issues with the azure leasing system in CI

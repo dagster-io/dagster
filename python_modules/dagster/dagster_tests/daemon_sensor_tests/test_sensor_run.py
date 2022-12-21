@@ -847,7 +847,7 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
     ]
     while True:
         if time.time() - start_time > timeout:
-            raise Exception("Timed out waiting for runs to start")
+            raise Exception("Timed out waiting for runs to finish")
         time.sleep(0.5)
 
         not_finished_runs = [
@@ -1321,7 +1321,7 @@ def instance_with_sensors_no_run_bucketing():
         with instance_for_test(
             overrides={
                 "run_storage": {
-                    "module": "dagster_tests.core_tests.storage_tests.test_run_storage",
+                    "module": "dagster_tests.storage_tests.test_run_storage",
                     "class": "NonBucketQuerySqliteRunStorage",
                     "config": {"base_dir": temp_dir},
                 },

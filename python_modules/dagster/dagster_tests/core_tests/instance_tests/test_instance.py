@@ -5,7 +5,7 @@ import yaml
 from dagster_tests.api_tests.utils import get_bar_workspace
 
 from dagster import _check as check
-from dagster import execute_job, job, op, reconstructable
+from dagster import _seven, execute_job, job, op, reconstructable
 from dagster._check import CheckError
 from dagster._config import Field
 from dagster._core.errors import (
@@ -96,6 +96,7 @@ def test_unified_storage(tmpdir):
         pass
 
 
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Windows paths formatted differently")
 def test_unified_storage_env_var(tmpdir):
     with environ({"SQLITE_STORAGE_BASE_DIR": str(tmpdir)}):
         with instance_for_test(

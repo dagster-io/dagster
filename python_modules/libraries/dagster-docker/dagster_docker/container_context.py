@@ -6,7 +6,6 @@ from dagster._config import process_config
 from dagster._core.container_context import process_shared_container_context_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.pipeline_run import DagsterRun
-from dagster._utils import merge_dicts
 
 if TYPE_CHECKING:
     from . import DockerRunLauncher
@@ -88,7 +87,7 @@ class DockerContainerContext(
             registry=other.registry if other.registry != None else self.registry,
             env_vars=[*self.env_vars, *other.env_vars],
             networks=[*self.networks, *other.networks],
-            container_kwargs=merge_dicts(other.container_kwargs, self.container_kwargs),
+            container_kwargs={**self.container_kwargs, **other.container_kwargs},
         )
 
     @staticmethod

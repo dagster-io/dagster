@@ -28,3 +28,13 @@ declare module 'worker-loader!*' {
 }
 
 declare module 'chartjs-adapter-date-fns';
+
+declare namespace Intl {
+  type Key = 'calendar' | 'collation' | 'currency' | 'numberingSystem' | 'timeZone' | 'unit';
+
+  function supportedValuesOf(input: Key): string[];
+
+  interface Locale extends LocaleOptions {
+    timeZones: string[];
+  }
+}

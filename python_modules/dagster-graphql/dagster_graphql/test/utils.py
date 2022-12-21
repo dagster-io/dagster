@@ -18,8 +18,11 @@ def main_repo_name():
     return "test_repo"
 
 
+SCHEMA = create_schema()
+
+
 def execute_dagster_graphql(context, query, variables=None):
-    result = create_schema().execute(
+    result = SCHEMA.execute(
         query,
         context_value=context,
         variable_values=variables,
@@ -42,7 +45,7 @@ def execute_dagster_graphql_subscription(
 ):
     results = []
 
-    subscription = create_schema().subscribe(
+    subscription = SCHEMA.subscribe(
         query,
         context_value=context,
         variable_values=variables,

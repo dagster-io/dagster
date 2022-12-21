@@ -167,17 +167,22 @@ class CachingInstanceQueryer:
         after_cursor: Optional[int] = None,
         before_cursor: Optional[int] = None,
     ) -> Optional["EventLogRecord"]:
-
         if isinstance(asset, AssetKey):
             asset_partition = AssetKeyPartitionKey(asset_key=asset)
         else:
             asset_partition = asset
 
+        # fancy caching only applies to after_cursor
+        if before_cursor is not None:
+            return self._get_materialization_record(
+                asset_partition=asset_partition,
+                after_cursor=after_cursor,
+                before_cursor=before_cursor,
+            )
+
         if asset_partition in self._latest_materialization_record_cache:
             cached_record = self._latest_materialization_record_cache[asset_partition]
-            if (after_cursor is None or after_cursor < cached_record.storage_id) and (
-                before_cursor is None or before_cursor > cached_record.storage_id
-            ):
+            if after_cursor is None or after_cursor < cached_record.storage_id:
                 return cached_record
             else:
                 return None
@@ -196,7 +201,7 @@ class CachingInstanceQueryer:
             self._latest_materialization_record_cache[asset_partition] = record
             return record
         else:
-            if after_cursor is not None and before_cursor is None:
+            if after_cursor is not None:
                 self._no_materializations_after_cursor_cache[asset_partition] = min(
                     after_cursor,
                     self._no_materializations_after_cursor_cache.get(asset_partition, after_cursor),
@@ -328,7 +333,6 @@ class CachingInstanceQueryer:
         record_tags: Mapping[str, str],
         required_keys: AbstractSet[AssetKey],
     ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
-
         if record_id is None:
             return {key: (None, None) for key in required_keys}
 
@@ -355,10 +359,14 @@ class CachingInstanceQueryer:
                 if input_event_pointer_tag in record_tags:
                     # get the upstream materialization event which was consumed when producing this
                     # materialization event
-                    input_record_id = int(record_tags[input_event_pointer_tag])
-                    parent_record = self.get_latest_materialization_record(
-                        parent_key, before_cursor=input_record_id + 1
-                    )
+                    pointer_tag = record_tags[input_event_pointer_tag]
+                    if pointer_tag and pointer_tag != "NULL":
+                        input_record_id = int(pointer_tag)
+                        parent_record = self.get_latest_materialization_record(
+                            parent_key, before_cursor=input_record_id + 1
+                        )
+                    else:
+                        parent_record = None
                 else:
                     # if the input event id was not recorded (materialized pre-1.1.0), just grab
                     # the most recent asset materialization for this parent which happened before
@@ -556,5 +564,4 @@ class CachingInstanceQueryer:
         return freshness_policy.minutes_late(
             evaluation_time=evaluation_time,
             used_data_times=used_data_times,
-            available_data_times={key: evaluation_time for key in used_data_times},
         )

@@ -1,9 +1,9 @@
 from dagster import (
     AssetSelection,
+    Definitions,
     ScheduleDefinition,
     asset,
     define_asset_job,
-    repository,
 )
 
 
@@ -26,6 +26,7 @@ update_job_schedule = ScheduleDefinition(
 )
 
 
-@repository
-def my_repo():
-    return [[a, b], [update_job_schedule]]
+defs = Definitions(
+    assets=[a, b],
+    schedules=[update_job_schedule],
+)
