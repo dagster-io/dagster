@@ -9,7 +9,7 @@ import {Colors} from './Colors';
 import {Popover} from './Popover';
 import {Subheading} from './Text';
 
-export enum Position {
+export enum ProductTourPosition {
   TOP_LEFT = 'top-start',
   TOP_CENTER = 'top',
   TOP_RIGHT = 'top-end',
@@ -31,7 +31,7 @@ type Props = {
     next?: () => void;
     dismiss?: () => void;
   };
-  position: Position;
+  position: ProductTourPosition;
   width?: CSSProperties['width'];
 } & ObjectType;
 
@@ -48,10 +48,10 @@ export const ProductTour: React.FC<Props> = ({
 }) => {
   const media = React.useMemo(() => {
     if (img) {
-      return <img src={img} />;
+      return <img src={img} style={{borderRadius: '6px'}} />;
     }
     if (video) {
-      return <video src={video} />;
+      return <video src={video} style={{borderRadius: '6px'}} />;
     }
     return object;
   }, [img, video, object]);
