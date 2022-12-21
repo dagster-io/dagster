@@ -47,17 +47,23 @@ export interface LaunchPipelineReexecution_launchPipelineReexecution_RunConfigVa
   errors: LaunchPipelineReexecution_launchPipelineReexecution_RunConfigValidationInvalid_errors[];
 }
 
-export interface LaunchPipelineReexecution_launchPipelineReexecution_PythonError_causes {
+export interface LaunchPipelineReexecution_launchPipelineReexecution_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface LaunchPipelineReexecution_launchPipelineReexecution_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: LaunchPipelineReexecution_launchPipelineReexecution_PythonError_errorChain_error;
 }
 
 export interface LaunchPipelineReexecution_launchPipelineReexecution_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: LaunchPipelineReexecution_launchPipelineReexecution_PythonError_causes[];
+  errorChain: LaunchPipelineReexecution_launchPipelineReexecution_PythonError_errorChain[];
 }
 
 export type LaunchPipelineReexecution_launchPipelineReexecution = LaunchPipelineReexecution_launchPipelineReexecution_InvalidStepError | LaunchPipelineReexecution_launchPipelineReexecution_LaunchRunSuccess | LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError | LaunchPipelineReexecution_launchPipelineReexecution_InvalidSubsetError | LaunchPipelineReexecution_launchPipelineReexecution_RunConfigValidationInvalid | LaunchPipelineReexecution_launchPipelineReexecution_PythonError;

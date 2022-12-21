@@ -17,17 +17,23 @@ export interface PartitionGraphFragment_stats_RunStatsSnapshot {
   materializations: number;
 }
 
-export interface PartitionGraphFragment_stats_PythonError_causes {
+export interface PartitionGraphFragment_stats_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface PartitionGraphFragment_stats_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: PartitionGraphFragment_stats_PythonError_errorChain_error;
 }
 
 export interface PartitionGraphFragment_stats_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: PartitionGraphFragment_stats_PythonError_causes[];
+  errorChain: PartitionGraphFragment_stats_PythonError_errorChain[];
 }
 
 export type PartitionGraphFragment_stats = PartitionGraphFragment_stats_RunStatsSnapshot | PartitionGraphFragment_stats_PythonError;

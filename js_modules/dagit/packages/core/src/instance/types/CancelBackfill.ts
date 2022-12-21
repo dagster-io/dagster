@@ -16,17 +16,23 @@ export interface CancelBackfill_cancelPartitionBackfill_CancelBackfillSuccess {
   backfillId: string;
 }
 
-export interface CancelBackfill_cancelPartitionBackfill_PythonError_causes {
+export interface CancelBackfill_cancelPartitionBackfill_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface CancelBackfill_cancelPartitionBackfill_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: CancelBackfill_cancelPartitionBackfill_PythonError_errorChain_error;
 }
 
 export interface CancelBackfill_cancelPartitionBackfill_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: CancelBackfill_cancelPartitionBackfill_PythonError_causes[];
+  errorChain: CancelBackfill_cancelPartitionBackfill_PythonError_errorChain[];
 }
 
 export type CancelBackfill_cancelPartitionBackfill = CancelBackfill_cancelPartitionBackfill_UnauthorizedError | CancelBackfill_cancelPartitionBackfill_CancelBackfillSuccess | CancelBackfill_cancelPartitionBackfill_PythonError;

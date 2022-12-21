@@ -45,17 +45,23 @@ export interface LaunchPipelineExecution_launchPipelineExecution_RunConfigValida
   errors: LaunchPipelineExecution_launchPipelineExecution_RunConfigValidationInvalid_errors[];
 }
 
-export interface LaunchPipelineExecution_launchPipelineExecution_PythonError_causes {
+export interface LaunchPipelineExecution_launchPipelineExecution_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface LaunchPipelineExecution_launchPipelineExecution_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: LaunchPipelineExecution_launchPipelineExecution_PythonError_errorChain_error;
 }
 
 export interface LaunchPipelineExecution_launchPipelineExecution_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: LaunchPipelineExecution_launchPipelineExecution_PythonError_causes[];
+  errorChain: LaunchPipelineExecution_launchPipelineExecution_PythonError_errorChain[];
 }
 
 export type LaunchPipelineExecution_launchPipelineExecution = LaunchPipelineExecution_launchPipelineExecution_InvalidStepError | LaunchPipelineExecution_launchPipelineExecution_LaunchRunSuccess | LaunchPipelineExecution_launchPipelineExecution_PipelineNotFoundError | LaunchPipelineExecution_launchPipelineExecution_InvalidSubsetError | LaunchPipelineExecution_launchPipelineExecution_RunConfigValidationInvalid | LaunchPipelineExecution_launchPipelineExecution_PythonError;

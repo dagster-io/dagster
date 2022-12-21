@@ -10,11 +10,24 @@ describe('PythonErrorInfo', () => {
       __typename: 'PythonError',
       message: 'lol oh no',
       stack: ['u have failed', 'rofl'],
-      causes: [
+      errorChain: [
         {
-          __typename: 'PythonError',
-          message: 'u wrote bad code',
-          stack: ['problem here', 'whoops'],
+          __typename: 'ErrorChainLink',
+          error: {
+            __typename: 'PythonError',
+            message: 'u wrote bad code',
+            stack: ['problem here', 'whoops'],
+          },
+          isExplicitLink: true,
+        },
+        {
+          __typename: 'ErrorChainLink',
+          error: {
+            __typename: 'PythonError',
+            message: 'u wrote even worse code',
+            stack: ['worse problem here', 'whoops'],
+          },
+          isExplicitLink: false,
         },
       ],
     };
@@ -22,6 +35,13 @@ describe('PythonErrorInfo', () => {
 
     expect(screen.getByText(/lol oh no/i)).toBeVisible();
     expect(screen.getByText(/u wrote bad code/i)).toBeVisible();
+    expect(screen.getByText(/u wrote even worse code/i)).toBeVisible();
+    expect(
+      screen.getByText(/The above exception was caused by the following exception:/i),
+    ).toBeVisible();
+    expect(
+      screen.getByText(/The above exception occurred during handling of the following exception:/i),
+    ).toBeVisible();
   });
 
   it('renders a generic error without errors', async () => {

@@ -10,11 +10,18 @@ from dagster._serdes import whitelist_for_serdes
 class SerializableErrorInfo(
     NamedTuple(
         "SerializableErrorInfo",
-        [("message", str), ("stack", Sequence[str]), ("cls_name", str), ("cause", Any)],
+        [
+            ("message", str),
+            ("stack", Sequence[str]),
+            ("cls_name", str),
+            ("cause", Any),
+            ("context", Any),
+        ],
     )
 ):
     # serdes log
     # * added cause - default to None in constructor to allow loading old entries
+    # * added context - default to None for similar reasons
     #
     def __new__(
         cls,
@@ -22,8 +29,9 @@ class SerializableErrorInfo(
         stack: Sequence[str],
         cls_name: str,
         cause: Optional["SerializableErrorInfo"] = None,
+        context: Optional["SerializableErrorInfo"] = None,
     ):
-        return super().__new__(cls, message, stack, cls_name, cause)
+        return super().__new__(cls, message, stack, cls_name, cause, context)
 
     def __str__(self):
         return self.to_string()
@@ -36,7 +44,16 @@ class SerializableErrorInfo(
             if self.cause
             else ""
         )
-        return "{err.message}{stack}{cause}".format(err=self, stack=stack_str, cause=cause_str)
+        context_str = (
+            "\nThe above exception occurred during handling of the following exception:\n"
+            + self.context.to_string()
+            if self.context
+            else ""
+        )
+
+        return "{err.message}{stack}{cause}{context}".format(
+            err=self, stack=stack_str, cause=cause_str, context=context_str
+        )
 
 
 def _serializable_error_info_from_tb(tb: traceback.TracebackException) -> SerializableErrorInfo:
@@ -46,6 +63,7 @@ def _serializable_error_info_from_tb(tb: traceback.TracebackException) -> Serial
         tb.stack.format(),
         tb.exc_type.__name__ if tb.exc_type is not None else None,
         _serializable_error_info_from_tb(tb.__cause__) if tb.__cause__ else None,
+        _serializable_error_info_from_tb(tb.__context__) if tb.__context__ else None,
     )
 
 

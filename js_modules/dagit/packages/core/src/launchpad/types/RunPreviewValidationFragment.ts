@@ -214,17 +214,23 @@ export interface RunPreviewValidationFragment_InvalidSubsetError {
   message: string;
 }
 
-export interface RunPreviewValidationFragment_PythonError_causes {
+export interface RunPreviewValidationFragment_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface RunPreviewValidationFragment_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: RunPreviewValidationFragment_PythonError_errorChain_error;
 }
 
 export interface RunPreviewValidationFragment_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: RunPreviewValidationFragment_PythonError_causes[];
+  errorChain: RunPreviewValidationFragment_PythonError_errorChain[];
 }
 
 export type RunPreviewValidationFragment = RunPreviewValidationFragment_PipelineConfigValidationValid | RunPreviewValidationFragment_RunConfigValidationInvalid | RunPreviewValidationFragment_PipelineNotFoundError | RunPreviewValidationFragment_InvalidSubsetError | RunPreviewValidationFragment_PythonError;

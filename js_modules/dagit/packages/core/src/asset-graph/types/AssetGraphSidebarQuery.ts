@@ -1248,17 +1248,23 @@ export interface AssetGraphSidebarQuery_pipelineSnapshotOrError_PipelineSnapshot
   message: string;
 }
 
-export interface AssetGraphSidebarQuery_pipelineSnapshotOrError_PythonError_causes {
+export interface AssetGraphSidebarQuery_pipelineSnapshotOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface AssetGraphSidebarQuery_pipelineSnapshotOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: AssetGraphSidebarQuery_pipelineSnapshotOrError_PythonError_errorChain_error;
 }
 
 export interface AssetGraphSidebarQuery_pipelineSnapshotOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: AssetGraphSidebarQuery_pipelineSnapshotOrError_PythonError_causes[];
+  errorChain: AssetGraphSidebarQuery_pipelineSnapshotOrError_PythonError_errorChain[];
 }
 
 export type AssetGraphSidebarQuery_pipelineSnapshotOrError = AssetGraphSidebarQuery_pipelineSnapshotOrError_PipelineSnapshot | AssetGraphSidebarQuery_pipelineSnapshotOrError_PipelineNotFoundError | AssetGraphSidebarQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundError | AssetGraphSidebarQuery_pipelineSnapshotOrError_PythonError;

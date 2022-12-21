@@ -27,17 +27,23 @@ export interface WorkspaceJobsQuery_repositoryOrError_Repository {
   pipelines: WorkspaceJobsQuery_repositoryOrError_Repository_pipelines[];
 }
 
-export interface WorkspaceJobsQuery_repositoryOrError_PythonError_causes {
+export interface WorkspaceJobsQuery_repositoryOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface WorkspaceJobsQuery_repositoryOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: WorkspaceJobsQuery_repositoryOrError_PythonError_errorChain_error;
 }
 
 export interface WorkspaceJobsQuery_repositoryOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: WorkspaceJobsQuery_repositoryOrError_PythonError_causes[];
+  errorChain: WorkspaceJobsQuery_repositoryOrError_PythonError_errorChain[];
 }
 
 export type WorkspaceJobsQuery_repositoryOrError = WorkspaceJobsQuery_repositoryOrError_RepositoryNotFoundError | WorkspaceJobsQuery_repositoryOrError_Repository | WorkspaceJobsQuery_repositoryOrError_PythonError;

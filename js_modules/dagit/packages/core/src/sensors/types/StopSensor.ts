@@ -24,17 +24,23 @@ export interface StopSensor_stopSensor_StopSensorMutationResult {
   instigationState: StopSensor_stopSensor_StopSensorMutationResult_instigationState | null;
 }
 
-export interface StopSensor_stopSensor_PythonError_causes {
+export interface StopSensor_stopSensor_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface StopSensor_stopSensor_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: StopSensor_stopSensor_PythonError_errorChain_error;
 }
 
 export interface StopSensor_stopSensor_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: StopSensor_stopSensor_PythonError_causes[];
+  errorChain: StopSensor_stopSensor_PythonError_errorChain[];
 }
 
 export type StopSensor_stopSensor = StopSensor_stopSensor_UnauthorizedError | StopSensor_stopSensor_StopSensorMutationResult | StopSensor_stopSensor_PythonError;

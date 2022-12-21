@@ -27,17 +27,23 @@ export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_Repos
   message: string;
 }
 
-export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_PythonError_causes {
+export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: ReloadRepositoryLocationMutation_reloadRepositoryLocation_PythonError_errorChain_error;
 }
 
 export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: ReloadRepositoryLocationMutation_reloadRepositoryLocation_PythonError_causes[];
+  errorChain: ReloadRepositoryLocationMutation_reloadRepositoryLocation_PythonError_errorChain[];
 }
 
 export type ReloadRepositoryLocationMutation_reloadRepositoryLocation = ReloadRepositoryLocationMutation_reloadRepositoryLocation_WorkspaceLocationEntry | ReloadRepositoryLocationMutation_reloadRepositoryLocation_UnauthorizedError | ReloadRepositoryLocationMutation_reloadRepositoryLocation_ReloadNotSupported | ReloadRepositoryLocationMutation_reloadRepositoryLocation_RepositoryLocationNotFound | ReloadRepositoryLocationMutation_reloadRepositoryLocation_PythonError;

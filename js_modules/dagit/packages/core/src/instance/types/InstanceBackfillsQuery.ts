@@ -25,17 +25,23 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   repositoryOrigin: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet_repositoryOrigin;
 }
 
-export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error_causes {
+export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error_errorChain_error;
 }
 
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error_causes[];
+  errorChain: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error_errorChain[];
 }
 
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_assetSelection {
@@ -62,17 +68,23 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   results: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results[];
 }
 
-export interface InstanceBackfillsQuery_partitionBackfillsOrError_PythonError_causes {
+export interface InstanceBackfillsQuery_partitionBackfillsOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface InstanceBackfillsQuery_partitionBackfillsOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: InstanceBackfillsQuery_partitionBackfillsOrError_PythonError_errorChain_error;
 }
 
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: InstanceBackfillsQuery_partitionBackfillsOrError_PythonError_causes[];
+  errorChain: InstanceBackfillsQuery_partitionBackfillsOrError_PythonError_errorChain[];
 }
 
 export type InstanceBackfillsQuery_partitionBackfillsOrError = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills | InstanceBackfillsQuery_partitionBackfillsOrError_PythonError;

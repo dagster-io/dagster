@@ -23,17 +23,23 @@ export interface AssetWipeMutation_wipeAssets_AssetWipeSuccess {
   assetKeys: AssetWipeMutation_wipeAssets_AssetWipeSuccess_assetKeys[];
 }
 
-export interface AssetWipeMutation_wipeAssets_PythonError_causes {
+export interface AssetWipeMutation_wipeAssets_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface AssetWipeMutation_wipeAssets_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: AssetWipeMutation_wipeAssets_PythonError_errorChain_error;
 }
 
 export interface AssetWipeMutation_wipeAssets_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: AssetWipeMutation_wipeAssets_PythonError_causes[];
+  errorChain: AssetWipeMutation_wipeAssets_PythonError_errorChain[];
 }
 
 export type AssetWipeMutation_wipeAssets = AssetWipeMutation_wipeAssets_AssetNotFoundError | AssetWipeMutation_wipeAssets_AssetWipeSuccess | AssetWipeMutation_wipeAssets_PythonError;
