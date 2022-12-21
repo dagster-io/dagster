@@ -1,7 +1,7 @@
 import cronstrue from 'cronstrue';
 import memoize from 'lodash/memoize';
 
-import {timeZoneAbbr} from '../app/time/timestampToString';
+import {timezoneAbbreviation} from '../app/time/browserTimezone';
 
 const formatOptions = memoize((language: string) => {
   const date = new Date();
@@ -19,7 +19,7 @@ const convertSingleCronString = (cronSchedule: string, longTimezone?: string) =>
     if (timeMatch) {
       let shortTimezone: string | null;
       try {
-        shortTimezone = timeZoneAbbr(longTimezone);
+        shortTimezone = timezoneAbbreviation(longTimezone);
       } catch (e) {
         // Failed to extract a timezone abbreviation. Skip rendering the timezone.
         shortTimezone = null;

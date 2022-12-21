@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Page, Spinner} from '@dagster-io/ui';
+import {Box, Colors, Page, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router';
 import {useParams} from 'react-router-dom';
@@ -42,33 +42,44 @@ export const AssetsCatalogRoot = () => {
       : 'Assets',
   );
 
-  return queryResult.loading ? (
-    <Page>
-      <AssetPageHeader assetKey={{path: currentPath}} />
-      <Box padding={64}>
-        <Spinner purpose="page" />
-      </Box>
-    </Page>
-  ) : currentPath.length === 0 ||
-    queryResult.data?.assetOrError.__typename === 'AssetNotFoundError' ? (
-    <Page>
-      <AssetPageHeader
-        assetKey={{path: currentPath}}
-        right={
-          <Box flex={{gap: 12, alignItems: 'center'}}>
-            <AssetGlobalLineageLink />
-            <ReloadAllButton label="Reload definitions" />
+  if (queryResult.loading) {
+    return (
+      <Page>
+        <AssetPageHeader assetKey={{path: currentPath}} />
+        <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
+            <Spinner purpose="body-text" />
+            <div style={{color: Colors.Gray600}}>Loading assets…</div>
           </Box>
-        }
-      />
-      <AssetsCatalogTable
-        prefixPath={currentPath}
-        setPrefixPath={(prefixPath) => history.push(assetDetailsPathForKey({path: prefixPath}))}
-      />
-    </Page>
-  ) : (
-    <AssetView assetKey={{path: currentPath}} />
-  );
+        </Box>
+      </Page>
+    );
+  }
+
+  if (
+    currentPath.length === 0 ||
+    queryResult.data?.assetOrError.__typename === 'AssetNotFoundError'
+  ) {
+    return (
+      <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
+        <AssetPageHeader
+          assetKey={{path: currentPath}}
+          right={
+            <Box flex={{gap: 12, alignItems: 'center'}}>
+              <AssetGlobalLineageLink />
+              <ReloadAllButton label="Reload definitions" />
+            </Box>
+          }
+        />
+        <AssetsCatalogTable
+          prefixPath={currentPath}
+          setPrefixPath={(prefixPath) => history.push(assetDetailsPathForKey({path: prefixPath}))}
+        />
+      </Box>
+    );
+  }
+
+  return <AssetView assetKey={{path: currentPath}} />;
 };
 
 // Imported via React.lazy, which requires a default export.

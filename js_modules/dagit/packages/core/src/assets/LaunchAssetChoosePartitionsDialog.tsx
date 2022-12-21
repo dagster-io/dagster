@@ -42,10 +42,7 @@ import {RepoAddress} from '../workspace/types';
 import {executionParamsForAssetJob} from './LaunchAssetExecutionButton';
 import {explodePartitionKeysInRanges, mergedAssetHealth} from './MultipartitioningSupport';
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
-import {
-  LaunchAssetExecutionAssetNodeFragment_partitionDefinition,
-  LaunchAssetExecutionAssetNodeFragment_partitionKeysByDimension,
-} from './types/LaunchAssetExecutionAssetNodeFragment';
+import {LaunchAssetExecutionAssetNodeFragment_partitionDefinition} from './types/LaunchAssetExecutionAssetNodeFragment';
 import {usePartitionDimensionRanges} from './usePartitionDimensionRanges';
 import {PartitionHealthDimensionRange, usePartitionHealthData} from './usePartitionHealthData';
 import {usePartitionNameForPipeline} from './usePartitionNameForPipeline';
@@ -57,7 +54,6 @@ interface Props {
   assets: {
     assetKey: AssetKey;
     opNames: string[];
-    partitionKeysByDimension: LaunchAssetExecutionAssetNodeFragment_partitionKeysByDimension[];
     partitionDefinition: LaunchAssetExecutionAssetNodeFragment_partitionDefinition | null;
   }[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
@@ -108,8 +104,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const assetHealth = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
   const mergedHealth = React.useMemo(() => mergedAssetHealth(assetHealth), [assetHealth]);
 
+  const knownDimensions = partitionedAssets[0].partitionDefinition?.dimensionTypes || [];
   const [ranges, setRanges] = usePartitionDimensionRanges({
-    knownDimensionNames: partitionedAssets[0].partitionKeysByDimension.map((d) => d.name),
+    knownDimensionNames: knownDimensions.map((d) => d.name),
     modifyQueryString: false,
     assetHealth: mergedHealth,
   });
@@ -380,8 +377,11 @@ const UpstreamUnavailableWarning: React.FC<{
   // unavailable partitions in the multi-dimensional case and our "two range inputs" won't
   // allow us to remove missing individual pairs.
   const upstreamAssetHealth = usePartitionHealthData(upstreamAssetKeys);
+  if (upstreamAssetHealth.length === 0) {
+    return <span />;
+  }
+
   const upstreamUnavailable = (singleDimensionKey: string) =>
-    upstreamAssetHealth.length > 0 &&
     upstreamAssetHealth.some((a) => {
       // If the key is not undefined, it's present in the partition key space of the asset
       return a.stateForKey([singleDimensionKey]) === PartitionState.MISSING;

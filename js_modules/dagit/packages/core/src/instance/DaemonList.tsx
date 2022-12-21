@@ -1,10 +1,10 @@
 import {gql} from '@apollo/client';
 import {Group, Table} from '@dagster-io/ui';
-import moment from 'moment-timezone';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
+import {TimeFromNow} from '../ui/TimeFromNow';
 
 import {DaemonHealth} from './DaemonHealth';
 import {DaemonHealthFragment_allDaemonStatuses as DaemonStatus} from './types/DaemonHealthFragment';
@@ -46,7 +46,7 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
   }
 
   return (
-    <Table>
+    <Table $monospaceFont={false}>
       <thead>
         <tr>
           <th style={{width: '25%'}}>Daemon</th>
@@ -74,7 +74,10 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
                           timestamp={{unix: daemon.lastHeartbeatTime}}
                           timeFormat={TIME_FORMAT}
                         />
-                        <span>&nbsp;({`${moment.unix(daemon.lastHeartbeatTime).fromNow()}`})</span>
+                        <span>
+                          &nbsp;(
+                          <TimeFromNow unixTimestamp={daemon.lastHeartbeatTime} />)
+                        </span>
                       </Group>
                     ) : (
                       'Never'
