@@ -521,12 +521,18 @@ def build_asset_ins(
         "context"
     )
     input_params = params[1:] if is_context_provided else params
+
+    # Filter config
+    filtered_input_params = [param for param in input_params if param.name != "config"]
+
     non_var_input_param_names = [
         param.name
-        for param in input_params
+        for param in filtered_input_params
         if param.kind == funcsigs.Parameter.POSITIONAL_OR_KEYWORD
     ]
-    has_kwargs = any(param.kind == funcsigs.Parameter.VAR_KEYWORD for param in input_params)
+    has_kwargs = any(
+        param.kind == funcsigs.Parameter.VAR_KEYWORD for param in filtered_input_params
+    )
 
     all_input_names = set(non_var_input_param_names) | asset_ins.keys()
 

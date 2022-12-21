@@ -2,11 +2,12 @@ import pytest
 from pydantic import BaseModel
 
 from dagster import _check as check
-from dagster import job, op, validate_run_config
+from dagster import asset, job, op, validate_run_config
 from dagster._config.config_type import ConfigTypeKind
 from dagster._config.field_utils import convert_potential_field
 from dagster._config.structured_config import Config, infer_schema_from_config_class
 from dagster._config.type_printer import print_config_type_to_string
+from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.errors import DagsterInvalidConfigDefinitionError, DagsterInvalidConfigError
 from dagster._core.execution.context.invocation import build_op_context
 from dagster._legacy import pipeline
@@ -112,6 +113,27 @@ def test_struct_config():
     )
 
     assert executed["yes"]
+
+
+def test_with_assets():
+    class AnAssetConfig(Config):
+        a_string: str
+        an_int: int
+
+    @asset
+    def my_asset(config: AnAssetConfig):
+        assert config.a_string == "foo"
+        assert config.an_int == 2
+
+    assert (
+        build_assets_job(
+            "blah",
+            [my_asset],
+            config={"ops": {"my_asset": {"config": {"a_string": "foo", "an_int": 2}}}},
+        )
+        .execute_in_process()
+        .success
+    )
 
 
 def test_primitive_struct_config():
