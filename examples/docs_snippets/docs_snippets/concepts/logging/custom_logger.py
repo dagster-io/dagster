@@ -71,7 +71,7 @@ def test_init_json_console_logger_with_context():
 # end_custom_logger_testing_context
 
 # start_default_logger_repo
-from dagster import repository, define_asset_job, asset
+from dagster import Definitions, define_asset_job, asset
 
 
 @asset
@@ -82,11 +82,8 @@ def some_asset():
 the_job = define_asset_job("the_job", selection="*")
 
 
-@repository(default_logger_defs={"json_logger": json_console_logger})
-def the_repo():
-    # When loading this repository in dagit, json_logger will now be used when
-    # the_job runs, or some_asset materializes.
-    return [the_job, some_asset]
-
+defs = Definitions(
+    jobs=[the_job], assets=[some_asset], loggers={"json_logger": json_console_logger}
+)
 
 # end_default_logger_repo

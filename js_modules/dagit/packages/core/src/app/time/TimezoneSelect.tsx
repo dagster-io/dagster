@@ -1,68 +1,143 @@
 import {MenuDivider, MenuItem, Menu, Select} from '@dagster-io/ui';
-import moment from 'moment-timezone';
 import * as React from 'react';
 
 import {TimezoneContext} from './TimezoneContext';
 import {browserTimezone, browserTimezoneAbbreviation} from './browserTimezone';
 
-const formatOffset = (mm: number) => {
-  const amm = Math.abs(mm);
-  // moment.tz.zone() offsets are inverted: https://momentjs.com/timezone/docs/#/zone-object/offset/
-  return `${mm < 0 ? '+' : '-'}${Math.floor(amm / 60)}:${amm % 60 < 10 ? '0' : ''}${amm % 60}`;
+/**
+ * Render the target date as a string in en-US with the timezone supplied, and use
+ * that to extract the GMT offset (+/- HH:MM) of the provided timezone.
+ *
+ * We use `toLocaleDateString` instead of `formatToParts` here so that we don't have
+ * to create new Intl.DateTimeFormat objects for every timezone we're looking at.
+ */
+const extractOffset = (targetDate: Date, timeZone: string) => {
+  const formatted = targetDate.toLocaleDateString('en-US', {
+    year: 'numeric',
+    timeZone,
+    timeZoneName: 'longOffset',
+  });
+  const [_, gmtOffset] = formatted.split(', ');
+  const stripped = gmtOffset.replace(/^GMT/, '').replace(/:/, '');
+
+  // Already GMT.
+  if (stripped === '') {
+    return {label: '0:00', value: 0};
+  }
+
+  const plusMinus = stripped[0];
+  const hours = stripped.slice(1, 3).replace(/^0/, '');
+  const minutes = stripped.slice(3);
+
+  const hourValue = parseInt(`${plusMinus}${hours}`, 10);
+  const minValue = parseInt(`${plusMinus}${minutes}`, 10) / 60;
+
+  return {label: `${plusMinus}${hours}:${minutes}`, value: hourValue + minValue};
 };
 
-const AllTimezoneItems = moment.tz
-  .names()
-  .map((key) => {
-    const offset = moment.tz.zone(key)?.utcOffset(Date.now()) || 0;
-    return {offsetLabel: `${formatOffset(offset)}`, offset, key};
-  })
-  .sort((a, b) => a.offset - b.offset);
-
-const PopularTimezones = ['UTC', 'US/Pacific', 'US/Mountain', 'US/Central', 'US/Eastern'];
-
-const offsetLabel = () => {
-  return `${browserTimezoneAbbreviation()} ${formatOffset(
-    moment.tz.zone(browserTimezone())?.utcOffset(Date.now()) || 0,
-  )}`;
-};
-
-const SortedTimezoneItems = [
-  {
-    key: 'Automatic',
-    offsetLabel: offsetLabel(),
-    offset: 0,
-  },
-  {
-    key: 'divider-1',
-    offsetLabel: '',
-    offset: 0,
-  },
-  ...AllTimezoneItems.filter((t) => PopularTimezones.includes(t.key)),
-  {
-    key: 'divider-2',
-    offsetLabel: '',
-    offset: 0,
-  },
-  ...AllTimezoneItems.filter((t) => !PopularTimezones.includes(t.key)),
-];
+const POPULAR_TIMEZONES = new Set([
+  'UTC',
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+]);
 
 interface Props {
   trigger: (timezone: string) => React.ReactNode;
 }
 
+/**
+ * Show a list of timezones that the user can choose from. The selected timezone
+ * is tracked in localStorage. Show sections of timezones, in this order:
+ *
+ * - Automatic timezone: whatever the user's browser/locale thinks they're in.
+ * - Popular timezones: the four US timezones.
+ * - Locale timezones: other timezones for the user's locale, if possible.
+ * - Everything else
+ */
 export const TimezoneSelect: React.FC<Props> = ({trigger}) => {
   const [timezone, setTimezone] = React.useContext(TimezoneContext);
 
+  const allTimezoneItems = React.useMemo(() => {
+    const date = new Date();
+    const allTimezoneItems = Intl.supportedValuesOf('timeZone')
+      .map((timeZone) => {
+        const {label, value} = extractOffset(date, timeZone);
+        return {offsetLabel: label, offset: value, key: timeZone};
+      })
+      .sort((a, b) => a.offset - b.offset);
+
+    const automaticOffsetLabel = () => {
+      const abbreviation = browserTimezoneAbbreviation();
+      const {label} = extractOffset(date, browserTimezone());
+      return `${abbreviation} ${label}`;
+    };
+
+    const locale = new Intl.Locale(navigator.language);
+    const timezonesForLocaleSet = new Set<string>(
+      'timeZones' in locale ? (locale.timeZones as string[]) : [],
+    );
+
+    const timezonesForLocale = allTimezoneItems.filter(
+      (tz) => timezonesForLocaleSet.has(tz.key) && !POPULAR_TIMEZONES.has(tz.key),
+    );
+
+    // Some browsers include UTC. (Firefox) Some don't. (Chrome, Safari)
+    // Include it in the "popular" list either way.
+    const browserIncludesUTC = allTimezoneItems.some((tz) => tz.key === 'UTC');
+
+    return [
+      {
+        key: 'Automatic',
+        offsetLabel: automaticOffsetLabel(),
+        offset: 0,
+      },
+      {
+        key: 'divider-1',
+        offsetLabel: '',
+        offset: 0,
+      },
+      ...(browserIncludesUTC
+        ? []
+        : [
+            {
+              key: 'UTC',
+              offsetLabel: '0:00',
+              offset: 0,
+            },
+          ]),
+      ...allTimezoneItems.filter((tz) => POPULAR_TIMEZONES.has(tz.key)),
+      ...(timezonesForLocale.length
+        ? [
+            {
+              key: 'divider-2',
+              offsetLabel: '',
+              offset: 0,
+            },
+            ...timezonesForLocale,
+          ]
+        : []),
+      {
+        key: 'divider-3',
+        offsetLabel: '',
+        offset: 0,
+      },
+      ...allTimezoneItems.filter(
+        (tz) => !POPULAR_TIMEZONES.has(tz.key) && !timezonesForLocaleSet.has(tz.key),
+      ),
+    ];
+  }, []);
+
   return (
-    <Select<typeof SortedTimezoneItems[0]>
+    <Select<typeof allTimezoneItems[0]>
       popoverProps={{
         position: 'bottom-left',
         modifiers: {offset: {enabled: true, offset: '-12px, 8px'}},
       }}
-      activeItem={SortedTimezoneItems.find((tz) => tz.key === timezone)}
+      activeItem={allTimezoneItems.find((tz) => tz.key === timezone)}
       inputProps={{style: {width: '300px'}}}
-      items={SortedTimezoneItems}
+      items={allTimezoneItems}
       itemPredicate={(query, tz) => tz.key.toLowerCase().includes(query.toLowerCase())}
       itemRenderer={(tz, props) =>
         tz.key.startsWith('divider') ? (

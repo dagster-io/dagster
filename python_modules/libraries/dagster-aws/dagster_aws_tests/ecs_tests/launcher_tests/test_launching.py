@@ -2,6 +2,7 @@
 # pylint: disable=unused-variable
 
 import copy
+from concurrent.futures import ThreadPoolExecutor
 
 import dagster_aws
 import pytest
@@ -242,6 +243,24 @@ def test_task_definition_registration(
 
     instance.launch_run(other_run.run_id, other_workspace)
     assert len(ecs.list_task_definitions()["taskDefinitionArns"]) == len(task_definitions) + 1
+
+
+@pytest.mark.skip(
+    "https://buildkite.com/dagster/dagster/builds/42816#018530eb-8d74-4934-bbbc-4acb6db1cdaf"
+)
+def test_task_definition_registration_race_condition(ecs, instance, workspace, run):
+    initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    initial_tasks = ecs.list_tasks()["taskArns"]
+
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        for i in range(10):
+            executor.submit(instance.launch_run, run.run_id, workspace)
+
+    task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    assert len(task_definitions) == len(initial_task_definitions) + 1
+
+    tasks = ecs.list_tasks()["taskArns"]
+    assert len(tasks) == len(initial_tasks) + 10
 
 
 def test_reuse_task_definition(instance, ecs):
@@ -760,7 +779,7 @@ def test_status(ecs, instance, workspace, run):
     # our internal task data structure - maybe a dict of dicts
     # using cluster and arn as keys - instead of a dict of lists?
     task_arn = instance.get_run_by_id(run.run_id).tags["ecs/task_arn"]
-    task = [task for task in ecs.tasks["default"] if task["taskArn"] == task_arn][0]
+    task = [task for task in ecs.storage.tasks["default"] if task["taskArn"] == task_arn][0]
 
     for status in RUNNING_STATUSES:
         task["lastStatus"] = status

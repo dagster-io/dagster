@@ -14,10 +14,14 @@ from .parquet_io_manager import PartitionedParquetIOManager
 class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
     """Stores data in parquet files and creates duckdb views over those files."""
 
+    def __init__(self, base_path: str, duckdb_path: str):
+        super().__init__(base_path=base_path)
+        self._duckdb_path = check.str_param(duckdb_path, "duckdb_path")
+
     def handle_output(self, context, obj):
         if obj is not None:  # if this is a dbt output, then the value will be None
             super().handle_output(context, obj)
-            con = self._connect_duckdb(context)
+            con = self._connect_duckdb()
 
             path = self._get_path(context)
             if context.has_asset_partitions:
@@ -42,7 +46,7 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
         )
 
         if context.dagster_type.typing_type == pd.DataFrame:
-            con = self._connect_duckdb(context)
+            con = self._connect_duckdb()
             return con.execute(f"SELECT * FROM {self._table_path(context)}").fetchdf()
 
         check.failed(
@@ -56,8 +60,8 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
     def _schema(self, context) -> str:
         return f"{context.asset_key.path[-2]}"
 
-    def _connect_duckdb(self, context):
-        return duckdb.connect(database=context.resource_config["duckdb_path"], read_only=False)
+    def _connect_duckdb(self):
+        return duckdb.connect(database=self._duckdb_path, read_only=False)
 
 
 @io_manager(
@@ -66,5 +70,6 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
 )
 def duckdb_partitioned_parquet_io_manager(init_context):
     return DuckDBPartitionedParquetIOManager(
-        base_path=init_context.resource_config.get("base_path", get_system_temp_directory())
+        base_path=init_context.resource_config.get("base_path", get_system_temp_directory()),
+        duckdb_path=init_context.resource_config["duckdb_path"],
     )
