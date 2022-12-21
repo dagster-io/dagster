@@ -23,3 +23,16 @@ def test_scope_schedule_assets_can_load():
     )
 
     scope_schedule_assets(dbt_assets)
+
+
+def test_scope_schedule_dbt_cloud_assets_can_load():
+
+    from dagster_dbt import dbt_cloud_resource, load_assets_from_dbt_cloud_job
+
+    dbt_cloud_instance = dbt_cloud_resource.configured({"auth_token": "foo", "account_id": 111})
+    dbt_cloud_assets = load_assets_from_dbt_cloud_job(
+        dbt_cloud=dbt_cloud_instance,
+        job_id=33333,
+    )
+
+    scope_schedule_dbt_cloud_assets(dbt_cloud_assets)
