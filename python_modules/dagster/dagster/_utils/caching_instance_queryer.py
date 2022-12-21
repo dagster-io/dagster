@@ -294,6 +294,26 @@ class CachingInstanceQueryer:
                 ret.add(upstream_key)
         return frozenset(ret)
 
+    @cached_methdo
+    def _calculate_versioned_data_timestamp(
+        self, asset_key: AssetKey, record_id: str, record_version: str
+    ):
+        latest_record = self.get_latest_materialization_record(asset_key)
+        latest_version = ""  # get version from tags
+        if latest_version == record_version:
+            return "NOW"
+
+        while True:
+            current_id = record_id
+            for record in self.get_latest_materialization_records(
+                asset_key=asset_key, after_cursor=current_id, n=5
+            ):
+                current_id = record.storage_id
+                current_version = "" # get version from tags
+                if current_version != record_version:
+                    return record.event_log_entry.timestamp
+
+
     @cached_method
     def _calculate_used_data(
         self,
@@ -310,7 +330,20 @@ class CachingInstanceQueryer:
         # grab the existing upstream data times already calculated for this record (if any)
         known_data = self.get_known_used_data(asset_key, record_id)
         if asset_key in required_keys:
-            known_data[asset_key] = (record_id, record_timestamp)
+            record_version = ""  # get_record_from_tags
+            _, data_timestamp = known_data.get(asset_key, (None, None))
+
+            if data_timestamp is None:
+                # if no version information, just use the record timestamp
+                if record_version is None:
+                    data_timestamp = record_timestamp
+                else:
+                    data_timestamp = self._calculate_versioned_data_timestamp(
+                        record_id=record_id,
+                        record_version=record_version,
+                    )
+
+            known_data[asset_key] = (record_id, data_timestamp, record_version)
 
         # not all required keys have known values
         unknown_required_keys = required_keys - set(known_data.keys())
