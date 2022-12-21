@@ -1,12 +1,14 @@
 import pytest
 from pydantic import BaseModel
 
+from dagster import AssetOut
 from dagster import _check as check
-from dagster import job, op, validate_run_config
+from dagster import asset, job, multi_asset, op, validate_run_config
 from dagster._config.config_type import ConfigTypeKind
 from dagster._config.field_utils import convert_potential_field
 from dagster._config.structured_config import Config, infer_schema_from_config_class
 from dagster._config.type_printer import print_config_type_to_string
+from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.errors import DagsterInvalidConfigDefinitionError, DagsterInvalidConfigError
 from dagster._core.execution.context.invocation import build_op_context
 from dagster._legacy import pipeline
@@ -109,6 +111,59 @@ def test_struct_config():
 
     a_job.execute_in_process(
         {"ops": {"a_struct_config_op": {"config": {"a_string": "foo", "an_int": 2}}}}
+    )
+
+    assert executed["yes"]
+
+
+def test_with_assets():
+    class AnAssetConfig(Config):
+        a_string: str
+        an_int: int
+
+    executed = {}
+
+    @asset
+    def my_asset(config: AnAssetConfig):
+        assert config.a_string == "foo"
+        assert config.an_int == 2
+        executed["yes"] = True
+
+    assert (
+        build_assets_job(
+            "blah",
+            [my_asset],
+            config={"ops": {"my_asset": {"config": {"a_string": "foo", "an_int": 2}}}},
+        )
+        .execute_in_process()
+        .success
+    )
+
+    assert executed["yes"]
+
+
+def test_multi_asset():
+    class AMultiAssetConfig(Config):
+        a_string: str
+        an_int: int
+
+    executed = {}
+
+    @multi_asset(outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")})
+    def two_assets(config: AMultiAssetConfig):
+        assert config.a_string == "foo"
+        assert config.an_int == 2
+        executed["yes"] = True
+        return 1, 2
+
+    assert (
+        build_assets_job(
+            "blah",
+            [two_assets],
+            config={"ops": {"two_assets": {"config": {"a_string": "foo", "an_int": 2}}}},
+        )
+        .execute_in_process()
+        .success
     )
 
     assert executed["yes"]
