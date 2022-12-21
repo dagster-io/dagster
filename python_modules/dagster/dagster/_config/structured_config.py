@@ -6,13 +6,56 @@ from pydantic.fields import SHAPE_SINGLETON, ModelField
 
 import dagster._check as check
 from dagster import Field, Shape
-from dagster._config.field_utils import FIELD_NO_DEFAULT_PROVIDED, convert_potential_field
+from dagster._config.field_utils import (
+    FIELD_NO_DEFAULT_PROVIDED,
+    config_dictionary_from_values,
+    convert_potential_field,
+)
+from dagster._core.definitions.resource_definition import ResourceDefinition
 
 
 class Config(BaseModel):
     """
     Base class for Dagster configuration models.
     """
+
+
+class StructuredConfigResource(
+    ResourceDefinition,
+    Config,
+):
+    def __init__(self, **data: Any):
+        schema = infer_schema_from_config_class(self.__class__)
+
+        inner_resource_def = ResourceDefinition(self.resource_fn, schema)
+        configured_resource_def = inner_resource_def.configured(
+            config_dictionary_from_values(
+                data,
+                schema,
+            ),
+        )
+
+        Config.__init__(self, **data)
+        ResourceDefinition.__init__(
+            self,
+            resource_fn=self.resource_fn,
+            config_schema=configured_resource_def.config_schema,
+            description=self.__doc__,
+        )
+
+    def __setattr__(self, name: str, value: Any):
+        # This is a hack to allow us to set attributes on the class that are not part of the
+        # config schema. Pydantic will normally raise an error if you try to set an attribute
+        # that is not part of the schema.
+
+        if name.startswith("_"):
+            object.__setattr__(self, name, value)
+            return
+
+        return super().__setattr__(name, value)
+
+    def resource_fn(self, context) -> Any:  # pylint: disable=unused-argument
+        pass
 
 
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
