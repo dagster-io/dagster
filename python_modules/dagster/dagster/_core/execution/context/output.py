@@ -104,7 +104,7 @@ class OutputContext:
     _cm_scope_entered: Optional[bool]
     _events: List["DagsterEvent"]
     _user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]]
-    _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]]
+    _metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]]
 
     def __init__(
         self,
@@ -162,7 +162,7 @@ class OutputContext:
 
         self._events = []
         self._user_events = []
-        self._metadata_entries = None
+        self._metadata_entries = []
 
     def __enter__(self):
         if self._resources_cm:
@@ -685,7 +685,7 @@ class OutputContext:
         """
         from dagster._core.definitions.metadata import normalize_metadata
 
-        self._metadata_entries = normalize_metadata(metadata, [])
+        self._metadata_entries.extend(normalize_metadata(metadata, []))
 
     def get_logged_metadata_entries(
         self,
