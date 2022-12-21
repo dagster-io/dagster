@@ -18,7 +18,7 @@ To complete the steps in this guide, you'll need to:
 - Have `kuberctl` installed and configured with your desired Kubernetes cluster
 - Understand [the basics of Helm](https://helm.sh/docs/)
 - Have Helm 3 installed
-- Have Docker installed **if creating your own user code images**
+- Have Docker installed
 
 ---
 
@@ -28,13 +28,11 @@ The [Dagster Helm chart](https://artifacthub.io/packages/helm/dagster/dagster) i
 
 In the following tutorial, we install the most recent version of the Dagster Helm chart. To use an older version of the chart, pass a `--version` flag to `helm upgrade`.
 
-**Note**: If you're using a chart version **before** 0.11.13, you'll also need to update the tags of the Dagster-provided images to match the chart version. After 0.11.13, this is automatically done for you.
-
 ---
 
 ## Deployment architecture
 
-<!-- ![Default Dagster-Kubernetes deployment architecture](/images/deploying/dagster-kubernetes-defalut-architecture.png) -->
+<!-- ![Default Dagster-Kubernetes deployment architecture](/images/deploying/dagster-kubernetes-default-architecture.png) -->
 
 <center>
   <Image
