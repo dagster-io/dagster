@@ -133,6 +133,9 @@ export const LaunchAssetExecutionButton: React.FC<{
 
   const options = optionsForButton(scope, liveDataForStale);
   const firstOption = options[0];
+
+  const {MaterializeButton} = useLaunchPadHooks();
+
   if (!firstOption) {
     return <span />;
   }
@@ -150,8 +153,12 @@ export const LaunchAssetExecutionButton: React.FC<{
   return (
     <>
       <Box flex={{alignItems: 'center'}}>
-        <Tooltip content="Shift+click to add configuration" position="bottom-right">
-          <Button
+        <Tooltip
+          content="Shift+click to add configuration"
+          position="bottom-right"
+          useDisabledButtonTooltipFix
+        >
+          <MaterializeButton
             intent={intent}
             onClick={(e) => onClick(firstOption.assetKeys, e)}
             style={
@@ -167,7 +174,7 @@ export const LaunchAssetExecutionButton: React.FC<{
             icon={loading ? <Spinner purpose="body-text" /> : <Icon name="materialization" />}
           >
             {firstOption.label}
-          </Button>
+          </MaterializeButton>
         </Tooltip>
         {options.length > 1 && (
           <Popover
