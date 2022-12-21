@@ -94,7 +94,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     status = graphene.NonNull(GrapheneBulkActionStatus)
     partitionNames = non_null_list(graphene.String)
     numPartitions = graphene.NonNull(graphene.Int)
-    numRequested = graphene.NonNull(graphene.Int)
+    numCancelable = graphene.NonNull(graphene.Int)
     fromFailure = graphene.NonNull(graphene.Boolean)
     reexecutionSteps = non_null_list(graphene.String)
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
@@ -189,19 +189,18 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     def resolve_numPartitions(self, _graphene_info):
         return len(self._backfill_job.partition_names)
 
-    def resolve_numRequested(self, graphene_info):
-        if self._backfill_job.status == BulkActionStatus.COMPLETED:
-            return len(self._backfill_job.partition_names)
-
-        partition_run_data = self._get_partition_run_data(graphene_info)
+    def resolve_numCancelable(self, _graphene_info):
+        if self._backfill_job.status != BulkActionStatus.REQUESTED:
+            return 0
 
         checkpoint = self._backfill_job.last_submitted_partition_name
-        return max(
-            len(partition_run_data),
+        total_count = len(self._backfill_job.partition_names)
+        checkpoint_idx = (
             self._backfill_job.partition_names.index(checkpoint) + 1
             if checkpoint and checkpoint in self._backfill_job.partition_names
-            else 0,
+            else 0
         )
+        return max(0, total_count - checkpoint_idx)
 
     def resolve_partitionSet(self, graphene_info):
         from ..schema.partition_sets import GraphenePartitionSet

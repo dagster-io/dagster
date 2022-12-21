@@ -2618,7 +2618,7 @@ type PartitionBackfill {
   status: BulkActionStatus!
   partitionNames: [String!]!
   numPartitions: Int!
-  numRequested: Int!
+  numCancelable: Int!
   fromFailure: Boolean!
   reexecutionSteps: [String!]!
   assetSelection: [AssetKey!]

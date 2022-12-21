@@ -47,12 +47,12 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   __typename: "PartitionBackfill";
   backfillId: string;
   status: BulkActionStatus;
-  numRequested: number;
   numPartitions: number;
   timestamp: number;
   partitionSetName: string;
   partitionSet: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet | null;
   error: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error | null;
+  numCancelable: number;
   partitionNames: string[];
   assetSelection: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_assetSelection[] | null;
 }
