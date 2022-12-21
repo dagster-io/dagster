@@ -2,7 +2,7 @@ import graphene
 
 import dagster._check as check
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.storage.pipeline_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG
 
 from ..implementation.fetch_partition_sets import partition_statuses_from_run_partition_data
@@ -86,25 +86,12 @@ class GrapheneBulkActionStatus(graphene.Enum):
         name = "BulkActionStatus"
 
 
-class GrapheneBackfillStatus(graphene.Enum):
-    REQUESTED = "REQUESTED"
-    FAILED = "FAILED"
-    CANCELED = "CANCELED"
-    IN_PROGRESS = "IN_PROGRESS"
-    COMPLETED = "COMPLETED"
-    INCOMPLETE = "INCOMPLETE"
-
-    class Meta:
-        name = "BackfillStatus"
-
-
 class GraphenePartitionBackfill(graphene.ObjectType):
     class Meta:
         name = "PartitionBackfill"
 
     backfillId = graphene.NonNull(graphene.String)
     status = graphene.NonNull(GrapheneBulkActionStatus)
-    backfillStatus = graphene.NonNull(GrapheneBackfillStatus)
     partitionNames = non_null_list(graphene.String)
     numPartitions = graphene.NonNull(graphene.Int)
     numRequested = graphene.NonNull(graphene.Int)
@@ -192,31 +179,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
         records = self._get_records(graphene_info)
         return [GrapheneRun(record) for record in records if not record.pipeline_run.is_finished]
-
-    def resolve_backfillStatus(self, graphene_info):
-        if self._backfill_job.status == BulkActionStatus.REQUESTED:
-            return GrapheneBackfillStatus.REQUESTED
-        if self._backfill_job.status == BulkActionStatus.CANCELED:
-            return GrapheneBackfillStatus.CANCELED
-        if self._backfill_job.status == BulkActionStatus.FAILED:
-            return GrapheneBackfillStatus.FAILED
-        if self._backfill_job.status == BulkActionStatus.COMPLETED:
-            partition_run_data = self._get_partition_run_data(graphene_info)
-            is_done = all(partition.status in FINISHED_STATUSES for partition in partition_run_data)
-            if not is_done:
-                return GrapheneBackfillStatus.IN_PROGRESS
-            else:
-                num_success = len(
-                    [
-                        partition
-                        for partition in partition_run_data
-                        if partition.status == DagsterRunStatus.SUCCESS
-                    ]
-                )
-                if num_success == len(self._backfill_job.partition_names):
-                    return GrapheneBackfillStatus.COMPLETED
-                else:
-                    return GrapheneBackfillStatus.INCOMPLETE
 
     def resolve_runs(self, graphene_info):
         from .pipelines.pipeline import GrapheneRun

@@ -281,7 +281,7 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
   ]
 }'''
 
-snapshots['test_create_with_composite 1'] = '''{
+snapshots['test_create_with_graph 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "executor_name": "multi_or_in_process_executor",

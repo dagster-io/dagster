@@ -170,7 +170,11 @@ class FromSourceAsset(
         )
         assert input_asset_key is not None
 
-        input_manager_key = asset_layer.io_manager_key_for_asset(input_asset_key)
+        input_manager_key = (
+            input_def.input_manager_key
+            if input_def.input_manager_key
+            else asset_layer.io_manager_key_for_asset(input_asset_key)
+        )
 
         op_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
         config_data = op_config.inputs.get(self.input_name) if op_config else None
@@ -183,7 +187,7 @@ class FromSourceAsset(
             config_data,
             metadata=input_def.metadata,
             dagster_type=input_def.dagster_type,
-            resource_config=step_context.resolved_run_config.resources[input_manager_key].config,
+            resource_config=resource_config,
             resources=resources,
             artificial_output_context=OutputContext(
                 resources=resources,
@@ -290,7 +294,7 @@ class FromRootInputManager(
 
         check.invariant(
             step_context.solid_handle == self.solid_handle and input_def.name == self.input_name,
-            "RootInputManager source must be op input and not one along compostion mapping. "
+            "RootInputManager source must be op input and not one along composition mapping. "
             f"Loading for op {step_context.solid_handle}.{input_def.name} "
             f"but source is {self.solid_handle}.{self.input_name}.",
         )

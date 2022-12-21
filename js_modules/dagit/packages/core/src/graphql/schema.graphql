@@ -2616,7 +2616,6 @@ type PartitionRun {
 type PartitionBackfill {
   backfillId: String!
   status: BulkActionStatus!
-  backfillStatus: BackfillStatus!
   partitionNames: [String!]!
   numPartitions: Int!
   numRequested: Int!
@@ -2637,15 +2636,6 @@ enum BulkActionStatus {
   COMPLETED
   FAILED
   CANCELED
-}
-
-enum BackfillStatus {
-  REQUESTED
-  FAILED
-  CANCELED
-  IN_PROGRESS
-  COMPLETED
-  INCOMPLETE
 }
 
 union PartitionSetOrError = PartitionSet | PartitionSetNotFoundError | PythonError

@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, BulkActionStatus, RunStatus } from "./../../types/globalTypes";
+import { RepositorySelector, BulkActionStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: JobBackfillsQuery
@@ -27,19 +27,6 @@ export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_pa
   mode: string;
   pipelineName: string;
   repositoryOrigin: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionSet_repositoryOrigin;
-}
-
-export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionStatuses_results {
-  __typename: "PartitionStatus";
-  id: string;
-  partitionName: string;
-  runId: string | null;
-  runStatus: RunStatus | null;
-}
-
-export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionStatuses {
-  __typename: "PartitionStatuses";
-  results: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionStatuses_results[];
 }
 
 export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_assetSelection {
@@ -70,7 +57,6 @@ export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills {
   timestamp: number;
   partitionSetName: string;
   partitionSet: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionSet | null;
-  partitionStatuses: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionStatuses;
   assetSelection: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_assetSelection[] | null;
   error: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_error | null;
 }
