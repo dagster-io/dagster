@@ -167,7 +167,7 @@ The following daemons are currently available:
   </tbody>
 </table>
 
-Daemons that need to load code location(s) will do so by periodically reloading your instance's [workspace file](/concepts/code-locations/workspace-files). This means that the `dagster-daemon` process doesn't need to be restarted when workspace files are changed.
+If the daemon is configured to use a [workspace file](/concepts/code-locations/workspace-files) to load code location(s), note that they will periodically reload the file. This means that the `dagster-daemon` process doesn't need to be restarted when workspace files are changed.
 
 ---
 
