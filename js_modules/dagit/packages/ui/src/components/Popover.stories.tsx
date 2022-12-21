@@ -20,7 +20,6 @@ export const Default = () => {
       <Group direction="column" spacing={8} padding={8}>
         <Popover
           position="bottom-left"
-          modifiers={{arrow: {enabled: true}}}
           content={
             <Menu>
               <MenuItem icon="layers" text="Act fast" />

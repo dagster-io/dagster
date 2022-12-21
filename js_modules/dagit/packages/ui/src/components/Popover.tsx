@@ -70,18 +70,17 @@ export const GlobalPopoverStyle = createGlobalStyle`
 const overwriteMerge = (destination: any[], source: any[]) => source;
 
 export const Popover: React.FC<Popover2Props> = (props) => {
-  const modifiers = deepmerge(
-    {offset: {enabled: true, options: {offset: [0, 8]}}},
-    props.modifiers || {},
-    {arrayMerge: overwriteMerge},
-  );
   return (
     <Popover2
       minimal
       autoFocus={false}
       {...props}
       popoverClassName={`dagit-popover ${props.popoverClassName}`}
-      modifiers={modifiers}
+      modifiers={deepmerge(
+        {offset: {enabled: true, options: {offset: [0, 8]}}},
+        props.modifiers || {},
+        {arrayMerge: overwriteMerge},
+      )}
     />
   );
 };
