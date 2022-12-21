@@ -63,7 +63,7 @@ class _Op:
 
         if compute_fn.has_config_arg():
             check.param_invariant(
-                self.config_schema is None,
+                self.config_schema is None or self.config_schema == {},
                 "If the @op has a config arg, you cannot specify a config schema",
             )
 
