@@ -1006,7 +1006,7 @@ def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
         try:
             client.ping("")
             return
-        except DagsterUserCodeUnreachableError:
+        except grpc._channel._InactiveRpcError:
             last_error = serializable_error_info_from_exc_info(sys.exc_info())
 
         if timeout > 0 and (time.time() - start_time > timeout):

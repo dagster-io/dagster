@@ -137,6 +137,18 @@ class DagsterGrpcClient:
     ):
         try:
             return self._get_response(method, request=request_type(**kwargs), timeout=timeout)
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
+                raise DagsterUserCodeUnreachableError(
+                    f"Your code location server took longer to respond than the {timeout} second timeout."
+                    " One reason this might happen is if you are running a schedule or sensor"
+                    " that is taking a long time to evaluate its tick. \n\n"
+                    "You can fix this error by optimizing your evaluation function to be faster"
+                    f" than the {timeout} second timeout, or by setting the environment variable"
+                    f" `DAGSTER_GRPC_TIMEOUT_SECONDS` to be a value larger than {timeout}."
+                ) from rpc_error
+
+            raise
         except Exception as e:
             raise DagsterUserCodeUnreachableError("Could not reach user code server") from e
 
