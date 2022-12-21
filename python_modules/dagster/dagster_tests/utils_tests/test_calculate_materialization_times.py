@@ -10,14 +10,53 @@ from dagster import (
     AssetSelection,
     DagsterEventType,
     DagsterInstance,
+    LogicalVersion,
     Output,
     asset,
     multi_asset,
+    observable_source_asset,
     repository,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_layer import build_asset_selection_job
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+
+
+def get_assets():
+    """
+    A = B = D = F
+     \\  //
+       C = E
+    B,C,D share an op
+    """
+
+    @multi_asset(
+        non_argument_deps={AssetKey("a")},
+        outs={
+            "b": AssetOut(is_required=False),
+            "c": AssetOut(is_required=False),
+            "d": AssetOut(is_required=False),
+        },
+        can_subset=True,
+        internal_asset_deps={
+            "b": {AssetKey("a")},
+            "c": {AssetKey("a")},
+            "d": {AssetKey("b"), AssetKey("c")},
+        },
+    )
+    def bcd(context):
+        for output_name in sorted(context.selected_output_names):
+            yield Output(output_name, output_name)
+
+    @asset(non_argument_deps={AssetKey("c")})
+    def e():
+        return 1
+
+    @asset(non_argument_deps={AssetKey("d")})
+    def f():
+        return 1
+
+    return [bcd, e, f]
 
 
 @pytest.mark.parametrize("ignore_asset_tags", [True, False])
@@ -94,59 +133,14 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
         ),
     ],
 )
-def test_caching_instance_queryer(
-    ignore_asset_tags, relative_to, runs_to_expected_data_times_index
-):
-    """
-    A = B = D = F
-     \\  //
-       C = E
-    B,C,D share an op
-    """
-
+def test_get_used_data(ignore_asset_tags, relative_to, runs_to_expected_data_times_index):
     @asset
     def a():
         return 1
 
-    @multi_asset(
-        non_argument_deps={AssetKey("a")},
-        outs={
-            "b": AssetOut(is_required=False),
-            "c": AssetOut(is_required=False),
-            "d": AssetOut(is_required=False),
-        },
-        can_subset=True,
-        internal_asset_deps={
-            "b": {AssetKey("a")},
-            "c": {AssetKey("a")},
-            "d": {AssetKey("b"), AssetKey("c")},
-        },
-    )
-    def bcd(context):
-        for output_name in sorted(context.selected_output_names):
-            yield Output(output_name, output_name)
-
-    @asset(non_argument_deps={AssetKey("c")})
-    def e():
-        return 1
-
-    @asset(non_argument_deps={AssetKey("d")})
-    def f():
-        return 1
-
-    all_assets = [a, bcd, e, f]
+    all_assets = [a] + get_assets()
 
     asset_graph = AssetGraph.from_assets(all_assets)
-
-    @repository
-    def my_repo():
-        return [all_assets]
-
-    def _get_root_keys(key):
-        upstream_keys = asset_graph.get_parents(key)
-        if not upstream_keys:
-            return {key}
-        return set().union(*(_get_root_keys(upstream_key) for upstream_key in upstream_keys))
 
     with DagsterInstance.ephemeral() as instance:
 
@@ -180,6 +174,7 @@ def test_caching_instance_queryer(
                     entry.timestamp, tz=datetime.timezone.utc
                 )
 
+            evaluation_time = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
             for asset_keys, expected_data_times in expected_index_mapping.items():
                 for ak in asset_keys:
                     latest_asset_record = data_time_queryer.get_latest_materialization_record(
@@ -201,14 +196,137 @@ def test_caching_instance_queryer(
                                 asset_graph=asset_graph,
                                 record=latest_asset_record,
                                 upstream_keys=relevant_upstream_keys,
+                                evaluation_time=evaluation_time,
                             )
                     else:
                         upstream_data_times = data_time_queryer.get_used_data_times_for_record(
                             asset_graph=asset_graph,
                             record=latest_asset_record,
                             upstream_keys=relevant_upstream_keys,
+                            evaluation_time=evaluation_time,
                         )
                     assert upstream_data_times == {
                         AssetKey(k): materialization_times_index[AssetKey(k)][v]
                         for k, v in expected_data_times.items()
+                    }
+
+
+@pytest.mark.parametrize(
+    ["runs_to_expected_data_times_index"],
+    [
+        (
+            [
+                ("1", "abcdef", {"abcdef": None}),
+                ("2", "abcdf", {"abcdf": None, "e": 1}),
+                ("3", "abcde", {"abcde": None, "f": 2}),
+                ("4", "abcd", {"abcd": None, "e": 3, "f": 2}),
+                ("5", "abc", {"abc": None, "d": 4, "e": 3, "f": 2}),
+                ("6", "ab", {"ab": None, "c": 5, "d": 4, "e": 3, "f": 2}),
+                ("7", "a", {"a": None, "b": 6, "c": 5, "d": 4, "e": 3, "f": 2}),
+                ("8", "f", {"a": 7, "b": 6, "c": 5, "fd": 4, "e": 3}),
+            ],
+        ),
+        (
+            [
+                ("0", "abcdef", {"abcdef": None}),
+                ("0", "abcdef", {"abcdef": None}),
+                ("1", "a", {"a": None, "bcdef": 2}),
+                ("1", "a", {"a": None, "bcdef": 2}),
+                ("1", "a", {"a": None, "bcdef": 2}),
+                ("1", "a", {"a": None, "bcdef": 2}),
+                ("1", "a", {"a": None, "bcdef": 2}),
+                ("1", "a", {"a": None, "bcdef": 2}),
+                ("1", "a", {"a": None, "bcdef": 2}),
+                ("1", "a", {"a": None, "bcdef": 2}),
+                ("2", "f", {"a": 10, "bcdef": 2}),
+            ],
+        ),
+        (
+            [
+                ("0", "ace", {"ace": None}),
+                ("1", "abd", {"ab": None, "cde": 1}),
+                ("1", "c", {"abc": None, "de": 1}),
+                ("1", "def", {"abcdef": None}),
+                ("2", "f", {"abcdef": 4}),
+                ("2", "abcdef", {"abcdef": None}),
+            ],
+        ),
+        # version never changes
+        (
+            [
+                ("0", "ace", {"ace": None}),
+                ("0", "abd", {"ab": None, "cde": None}),
+                ("0", "ac", {"ac": None, "b": None, "ed": None}),
+                ("0", "e", {"ace": None, "b": None, "d": None}),
+            ],
+        ),
+    ],
+)
+def test_get_used_data_with_source_version(runs_to_expected_data_times_index):
+
+    files_version = None
+
+    @observable_source_asset
+    def files(_context):
+        return LogicalVersion(files_version)
+
+    @asset(non_argument_deps={"files"})
+    def a():
+        return 1
+
+    all_assets = [a] + get_assets()
+
+    @repository
+    def my_repo():
+        return all_assets + [files]
+
+    asset_graph = AssetGraph.from_assets([files] + all_assets)
+
+    with DagsterInstance.ephemeral() as instance:
+
+        observation_times_index = {}
+
+        for idx, (source_version, to_materialize, expected_index_mapping) in enumerate(
+            runs_to_expected_data_times_index
+        ):
+            files_version = source_version
+            observe_asset_job = my_repo.get_maybe_subset_job_def(
+                "__ASSET_JOB", asset_selection={AssetKey("files")}
+            )
+            observe_result = observe_asset_job.execute_in_process(instance=instance)
+            assert observe_result.success
+
+            # build mapping of expected timestamps
+            observations = instance.all_logs(
+                observe_result.run_id, of_type=DagsterEventType.ASSET_OBSERVATION
+            )
+            assert len(observations) == 1
+            observation_times_index[idx] = datetime.datetime.fromtimestamp(
+                observations[0].timestamp, tz=datetime.timezone.utc
+            )
+
+            execute_asset_job = my_repo.get_maybe_subset_job_def(
+                "__ASSET_JOB", asset_selection={AssetKey(c) for c in to_materialize}
+            )
+            execute_result = execute_asset_job.execute_in_process(instance=instance)
+            assert execute_result.success
+
+            # rebuild the data time queryer after each run
+            data_time_queryer = CachingInstanceQueryer(instance)
+
+            evaluation_time = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
+            for asset_keys, expected_data_time_idx in expected_index_mapping.items():
+                for ak in asset_keys:
+                    latest_asset_record = data_time_queryer.get_latest_materialization_record(
+                        AssetKey(ak)
+                    )
+                    upstream_data_times = data_time_queryer.get_used_data_times_for_record(
+                        asset_graph=asset_graph,
+                        record=latest_asset_record,
+                        evaluation_time=evaluation_time,
+                    )
+                    assert upstream_data_times == {
+                        AssetKey("files"): evaluation_time
+                        if expected_data_time_idx is None
+                        else observation_times_index[expected_data_time_idx]
                     }

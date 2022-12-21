@@ -38,6 +38,7 @@ if TYPE_CHECKING:
 class AssetGraph(NamedTuple):
     asset_dep_graph: DependencyGraph
     source_asset_keys: AbstractSet[AssetKey]
+    observable_source_asset_keys: AbstractSet[AssetKey]
     partitions_defs_by_key: Mapping[AssetKey, Optional[PartitionsDefinition]]
     partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]]
     group_names_by_key: Mapping[AssetKey, Optional[str]]
@@ -48,6 +49,7 @@ class AssetGraph(NamedTuple):
     def from_assets(all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]) -> "AssetGraph":
         assets_defs = []
         source_assets = []
+        observable_source_asset_keys: AbstractSet[AssetKey] = set()
         partitions_defs_by_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
         partition_mappings_by_key: Dict[
             AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]
@@ -59,6 +61,7 @@ class AssetGraph(NamedTuple):
         for asset in all_assets:
             if isinstance(asset, SourceAsset):
                 source_assets.append(asset)
+                observable_source_asset_keys |= {asset.key}
             elif isinstance(asset, AssetsDefinition):
                 assets_defs.append(asset)
                 partition_mappings_by_key.update(
@@ -79,6 +82,7 @@ class AssetGraph(NamedTuple):
         return AssetGraph(
             asset_dep_graph=generate_asset_dep_graph(assets_defs, source_assets),
             source_asset_keys={source_asset.key for source_asset in source_assets},
+            observable_source_asset_keys=observable_source_asset_keys,
             partitions_defs_by_key=partitions_defs_by_key,
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
@@ -91,6 +95,7 @@ class AssetGraph(NamedTuple):
         upstream = {}
         downstream = {}
         source_asset_keys = set()
+        observable_source_asset_keys = set()
         partitions_defs_by_key = {}
         partition_mappings_by_key: Dict[AssetKey, Dict[AssetKey, PartitionMapping]] = defaultdict(
             defaultdict
@@ -101,6 +106,8 @@ class AssetGraph(NamedTuple):
         for node in external_asset_nodes:
             if node.is_source:
                 source_asset_keys.add(node.asset_key)
+                if node.is_observable:
+                    observable_source_asset_keys.add(node.asset_key)
             upstream[node.asset_key] = {dep.upstream_asset_key for dep in node.dependencies}
             downstream[node.asset_key] = {dep.downstream_asset_key for dep in node.depended_by}
             for dep in node.dependencies:
@@ -119,6 +126,7 @@ class AssetGraph(NamedTuple):
         return AssetGraph(
             asset_dep_graph={"upstream": upstream, "downstream": downstream},
             source_asset_keys=source_asset_keys,
+            observable_source_asset_keys=observable_source_asset_keys,
             partitions_defs_by_key=partitions_defs_by_key,
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
@@ -129,6 +137,9 @@ class AssetGraph(NamedTuple):
     @property
     def all_asset_keys(self) -> AbstractSet[AssetKey]:
         return self.asset_dep_graph["upstream"].keys()
+
+    def is_observable_source_asset(self, asset_key: AssetKey) -> bool:
+        return asset_key in self.observable_source_asset_keys
 
     def get_partitions_def(self, asset_key: AssetKey) -> Optional[PartitionsDefinition]:
         return self.partitions_defs_by_key.get(asset_key)
@@ -287,6 +298,27 @@ class AssetGraph(NamedTuple):
             key
             for key in self.upstream_key_iterator(asset_key)
             if not self.has_non_source_parents(key)
+        }
+
+    def is_non_observable_source_asset(self, asset_key: AssetKey) -> bool:
+        return (
+            asset_key in self.source_asset_keys
+            and asset_key not in self.observable_source_asset_keys
+        )
+
+    def has_data_parents(self, asset_key: AssetKey) -> bool:
+        if asset_key in self.source_asset_keys:
+            return False
+        return not all(
+            self.is_non_observable_source_asset(parent_key)
+            for parent_key in (self.get_parents(asset_key) - {asset_key})
+        )
+
+    def get_data_roots(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
+        if not self.has_data_parents(asset_key):
+            return {asset_key}
+        return {
+            key for key in self.upstream_key_iterator(asset_key) if not self.has_data_parents(key)
         }
 
     def upstream_key_iterator(self, asset_key: AssetKey) -> Iterator[AssetKey]:

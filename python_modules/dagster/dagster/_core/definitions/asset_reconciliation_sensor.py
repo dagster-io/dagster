@@ -369,11 +369,14 @@ def get_freshness_constraints_by_key(
         if freshness_policy is None:
             continue
         has_freshness_policy = True
-        upstream_keys = asset_graph.get_non_source_roots(key)
+        upstream_keys = asset_graph.get_data_roots(key)
         latest_record = instance_queryer.get_latest_materialization_record(key)
         used_data_times = (
             instance_queryer.get_used_data_times_for_record(
-                asset_graph=asset_graph, record=latest_record, upstream_keys=upstream_keys
+                asset_graph=asset_graph,
+                record=latest_record,
+                upstream_keys=upstream_keys,
+                evaluation_time=plan_window_start,
             )
             if latest_record is not None
             else {upstream_key: None for upstream_key in upstream_keys}
@@ -409,6 +412,7 @@ def get_current_data_times_for_key(
     asset_graph: AssetGraph,
     relevant_upstream_keys: AbstractSet[AssetKey],
     asset_key: AssetKey,
+    evaluation_time: datetime.datetime,
 ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
 
     # calculate the data time for this record in relation to the upstream keys which are
@@ -421,6 +425,7 @@ def get_current_data_times_for_key(
             asset_graph=asset_graph,
             upstream_keys=relevant_upstream_keys,
             record=latest_record,
+            evaluation_time=evaluation_time,
         )
 
 
@@ -572,7 +577,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
             # figure out the current contents of this asset with respect to its constraints
             current_data_times = get_current_data_times_for_key(
-                instance_queryer, asset_graph, relevant_upstream_keys, key
+                instance_queryer, asset_graph, relevant_upstream_keys, key, current_time
             )
 
             # should not execute if key is not targeted or previous run failed
