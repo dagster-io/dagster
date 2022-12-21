@@ -1,3 +1,5 @@
+import re
+
 import pytest
 import responses
 from dagster_airbyte import AirbyteOutput, AirbyteState, airbyte_resource
@@ -34,7 +36,12 @@ def test_trigger_connection_fail():
     ab_resource = airbyte_resource(
         build_init_resource_context(config={"host": "some_host", "port": "8000"})
     )
-    with pytest.raises(Failure, match="Exceeded max number of retries"):
+    with pytest.raises(
+        Failure,
+        match=re.escape(
+            "Max retries (3) exceeded with url: http://some_host:8000/api/v1/connections/get."
+        ),
+    ):
         ab_resource.sync_and_poll("some_connection")
 
 

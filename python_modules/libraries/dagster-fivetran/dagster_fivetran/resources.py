@@ -73,7 +73,7 @@ class FivetranResource:
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request
         """
-
+        url = urljoin(self.api_base_url, endpoint)
         headers = {
             "User-Agent": f"dagster-fivetran/{__version__}",
             "Content-Type": "application/json;version=2",
@@ -84,7 +84,7 @@ class FivetranResource:
             try:
                 response = requests.request(
                     method=method,
-                    url=urljoin(self.api_base_url, endpoint),
+                    url=url,
                     headers=headers,
                     auth=self._auth,
                     data=data,
@@ -99,7 +99,7 @@ class FivetranResource:
                 num_retries += 1
                 time.sleep(self._request_retry_delay)
 
-        raise Failure("Exceeded max number of retries.")
+        raise Failure(f"Max retries ({self._request_max_retries}) exceeded with url: {url}.")
 
     def get_connector_details(self, connector_id: str) -> Mapping[str, Any]:
         """
