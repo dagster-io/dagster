@@ -1,6 +1,9 @@
+import pytest
+
 from dagster import AssetsDefinition, ResourceDefinition, asset, job, op, resource, with_resources
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.resource_output import ResourceOutput
+from dagster._core.errors import DagsterInvalidDefinitionError
 
 
 def test_filter_out_resources():
@@ -86,6 +89,20 @@ def test_with_assets():
     assert build_assets_job("the_job", [transformed_asset]).execute_in_process().success
 
 
+def test_resource_not_provided():
+    @asset
+    def consumes_nonexistent_resource(
+        not_provided: ResourceOutput[str],  # pylint: disable=unused-argument
+    ):
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'not_provided' required by op 'consumes_nonexistent_resource'",
+    ):
+        with_resources([consumes_nonexistent_resource], {})
+
+
 def test_resource_class():
 
     resource_called = {}
@@ -107,3 +124,15 @@ def test_resource_class():
 
     assert my_job.execute_in_process().success
     assert resource_called["called"]
+
+    @asset
+    def consumes_nonexistent_resource_class(
+        not_provided: MyResource,  # pylint: disable=unused-argument
+    ):
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'not_provided' required by op 'consumes_nonexistent_resource_class'",
+    ):
+        with_resources([consumes_nonexistent_resource_class], {})
