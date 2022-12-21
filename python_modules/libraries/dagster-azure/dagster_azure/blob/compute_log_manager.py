@@ -2,8 +2,10 @@ import os
 from contextlib import contextmanager
 from typing import Optional, Sequence
 
+from azure.identity import DefaultAzureCredential
+
 import dagster._seven as seven
-from dagster import Field, Noneable, StringSource
+from dagster import Field, Noneable, Permissive, StringSource
 from dagster import _check as check
 from dagster._core.storage.cloud_storage_compute_log_manager import (
     CloudStorageComputeLogManager,
@@ -37,6 +39,8 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             storage_account: my-storage-account
             container: my-container
             credential: sas-token-or-secret-key
+            default_azure_credential:
+              exclude_environment_credential: true
             prefix: "dagster-test-"
             local_dir: "/tmp/cool"
             upload_interval: 30
@@ -44,8 +48,10 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
     Args:
         storage_account (str): The storage account name to which to log.
         container (str): The container (or ADLS2 filesystem) to which to log.
-        secret_key (str): Secret key for the storage account. SAS tokens are not
+        secret_key (Optional[str]): Secret key for the storage account. SAS tokens are not
             supported because we need a secret key to generate a SAS token for a download URL.
+        default_azure_credential (Optional[dict]): Use and configure DefaultAzureCredential.
+            Cannot be used with sas token or secret key config.
         local_dir (Optional[str]): Path to the local directory in which to stage logs. Default:
             ``dagster._seven.get_system_temp_directory()``.
         prefix (Optional[str]): Prefix for the log file keys.
@@ -58,18 +64,27 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         self,
         storage_account,
         container,
-        secret_key,
+        secret_key=None,
         local_dir=None,
         inst_data=None,
         prefix="dagster",
         upload_interval=None,
+        default_azure_credential=None,
     ):
         self._storage_account = check.str_param(storage_account, "storage_account")
         self._container = check.str_param(container, "container")
         self._blob_prefix = self._clean_prefix(check.str_param(prefix, "prefix"))
-        check.str_param(secret_key, "secret_key")
+        self._default_azure_credential = check.opt_dict_param(
+            default_azure_credential, "default_azure_credential"
+        )
+        check.opt_str_param(secret_key, "secret_key")
 
-        self._blob_client = create_blob_client(storage_account, secret_key)
+        if default_azure_credential is None:
+            self._blob_client = create_blob_client(storage_account, secret_key)
+        else:
+            credential = DefaultAzureCredential(**self._default_azure_credential)
+            self._blob_client = create_blob_client(storage_account, credential)
+
         self._container_client = self._blob_client.get_container_client(container)
         self._download_urls = {}
 
@@ -99,7 +114,11 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         return {
             "storage_account": StringSource,
             "container": StringSource,
-            "secret_key": StringSource,
+            "secret_key": Field(StringSource, is_required=False),
+            "default_azure_credential": Field(
+                Noneable(Permissive(description="keyword arguments for DefaultAzureCredential")),
+                is_required=False,
+            ),
             "local_dir": Field(StringSource, is_required=False),
             "prefix": Field(StringSource, is_required=False, default_value="dagster"),
             "upload_interval": Field(Noneable(int), is_required=False, default_value=None),
