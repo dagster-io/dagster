@@ -4,7 +4,6 @@ from dagster import (
     IOManager,
     IOManagerDefinition,
     asset,
-    load_assets_from_current_module,
     with_resources,
 )
 
@@ -28,9 +27,7 @@ def get_assets():
 
     return with_resources(
         [asset1, asset2],
-        resource_defs={
-            "io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())
-        },
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
 
 
@@ -38,9 +35,10 @@ assets = get_assets()
 
 
 def load_single_asset_value():
-    # single_asset_start_marker
 
-    defs = Definitions(assets=[load_assets_from_current_module()])
+    defs = Definitions(assets=assets)
+
+    # single_asset_start_marker
 
     asset1_value = defs.load_asset_value(AssetKey("asset1"))
 
@@ -50,7 +48,7 @@ def load_single_asset_value():
 
 
 def load_multiple_asset_values():
-    defs = Definitions(assets=[load_assets_from_current_module()])
+    defs = Definitions(assets=assets)
 
     # multiple_asset_start_marker
 

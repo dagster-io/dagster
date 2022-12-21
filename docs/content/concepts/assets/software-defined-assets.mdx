@@ -556,8 +556,6 @@ It's sometimes useful to load an asset as a Python object outside of a Dagster r
 For this, you can use <PyObject object="Definitions" method="load_asset_value" />:
 
 ```python file=/concepts/assets/load_asset_values.py startafter=single_asset_start_marker endbefore=single_asset_end_marker dedent=4
-defs = Definitions(assets=[load_assets_from_current_module()])
-
 asset1_value = defs.load_asset_value(AssetKey("asset1"))
 ```
 
