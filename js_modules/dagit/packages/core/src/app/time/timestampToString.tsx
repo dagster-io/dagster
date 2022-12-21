@@ -8,8 +8,6 @@ type Config = {
   timeFormat?: TimeFormat;
 };
 
-// This helper is here so that we can swap out Moment in the future as needed and
-// encourage use of the same default format string across the app.
 export const timestampToString = (config: Config) => {
   const {timestamp, locale, timezone, timeFormat = DEFAULT_TIME_FORMAT} = config;
   const msec = 'ms' in timestamp ? timestamp.ms : timestamp.unix * 1000;
