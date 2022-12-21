@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Any, Type
 
 from pydantic import BaseModel
 from pydantic.fields import SHAPE_SINGLETON, ModelField
@@ -29,7 +29,7 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     return convert_potential_field(dagster_type)
 
 
-def infer_schema_from_config_annotation(model_cls: Type) -> Field:
+def infer_schema_from_config_annotation(model_cls: Any) -> Field:
     """
     Parses a structured config class or primitive type and returns a corresponding Dagster config Field.
     """
@@ -40,12 +40,11 @@ def infer_schema_from_config_annotation(model_cls: Type) -> Field:
     return convert_potential_field(model_cls)
 
 
-def _safe_is_subclass(cls: Type, possible_parent_cls: Type) -> bool:
-    """Safe version of issubclass that returns False if cls is not a class."""
-    try:
-        return issubclass(cls, possible_parent_cls)
-    except TypeError:
+def _safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
+    """Version of issubclass that returns False if cls is not a Type."""
+    if not isinstance(cls, Type):
         return False
+    return issubclass(cls, possible_parent_cls)
 
 
 def infer_schema_from_config_class(model_cls: Type[Config]) -> Field:
