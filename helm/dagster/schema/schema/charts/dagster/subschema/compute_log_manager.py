@@ -42,6 +42,7 @@ class S3ComputeLogManager(BaseModel):
     endpointUrl: Optional[StringSource]
     skipEmptyFiles: Optional[bool]
     uploadInterval: Optional[int]
+    uploadExtraArgs: Optional[dict]
 
 
 class ComputeLogManagerConfig(BaseModel):
