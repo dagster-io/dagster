@@ -42,7 +42,7 @@ def infer_schema_from_config_annotation(model_cls: Any) -> Field:
 
 def _safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
     """Version of issubclass that returns False if cls is not a Type."""
-    if not isinstance(cls, Type):
+    if not isinstance(cls, type):
         return False
     return issubclass(cls, possible_parent_cls)
 
