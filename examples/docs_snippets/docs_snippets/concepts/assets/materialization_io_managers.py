@@ -1,10 +1,6 @@
 # isort: skip_file
-# pylint: disable=reimported
-import os
 
 import pandas as pd
-
-from dagster import AssetKey, AssetMaterialization, IOManager
 
 
 def read_csv(_path):
@@ -12,7 +8,9 @@ def read_csv(_path):
 
 
 # start_marker_0
-from dagster import AssetMaterialization, IOManager
+import os
+
+from dagster import AssetKey, AssetMaterialization, IOManager
 
 
 class PandasCsvIOManager(IOManager):

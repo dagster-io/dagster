@@ -6,8 +6,8 @@ from dagster import (
     DagsterInstance,
     Definitions,
     ExecuteInProcessResult,
-    IOManager,
     InputContext,
+    IOManager,
     OutputContext,
 )
 from dagster._core.definitions.events import CoercibleToAssetKey

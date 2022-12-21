@@ -14,9 +14,9 @@ from dagster_airflow_tests.test_fixtures import (
 
 @requires_airflow_db
 def test_my_custom_operator(
-    dagster_airflow_custom_operator_pipeline,
+    dagster_airflow_custom_operator_pipeline,  # noqa: F811 (fixture)
     caplog,
-):  # pylint: disable=redefined-outer-name
+):
     caplog.set_level(logging.INFO, logger="CustomOperatorLogger")
     pipeline_name = "demo_pipeline_s3"
     operator = CustomOperator

@@ -5,7 +5,6 @@ from typing import Iterable, Mapping, Optional, Sequence, Tuple, cast
 
 import dagster._check as check
 from dagster._core.errors import DagsterBackfillFailedError
-from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import (

@@ -30,7 +30,6 @@ from dagster._core.definitions.partition_mapping import (
 )
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.test_utils import assert_namedtuple_lists_equal
-
 from dagster_tests.asset_defs_tests.test_partitioned_assets import (
     get_downstream_partitions_for_partition_range,
     get_upstream_partitions_for_partition_range,

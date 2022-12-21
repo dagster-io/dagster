@@ -12,7 +12,6 @@ from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
-from dagster._utils.merger import merge_dicts
 
 from .asset_backfill import AssetBackfillData
 

@@ -1,14 +1,18 @@
 import sys
 from typing import Optional
 
+import dagster
 import pydantic
 import pytest
-from pydantic import BaseModel
-
-import dagster
-from dagster import AssetOut
-from dagster import _check as check
-from dagster import asset, job, multi_asset, op, validate_run_config
+from dagster import (
+    AssetOut,
+    _check as check,
+    asset,
+    job,
+    multi_asset,
+    op,
+    validate_run_config,
+)
 from dagster._config.config_type import ConfigTypeKind
 from dagster._config.field_utils import convert_potential_field
 from dagster._config.source import BoolSource, IntSource, StringSource
@@ -20,6 +24,7 @@ from dagster._core.errors import DagsterInvalidConfigDefinitionError, DagsterInv
 from dagster._core.execution.context.invocation import build_op_context
 from dagster._legacy import pipeline
 from dagster._utils.cached_method import cached_method
+from pydantic import BaseModel
 
 
 def test_disallow_config_schema_conflict():
@@ -271,7 +276,7 @@ def test_nested_struct_config():
         executed["yes"] = True
         assert config.a_nested_value.a_string == "foo"
         assert config.a_nested_value.an_int == 2
-        assert config.a_bool == True
+        assert config.a_bool is True
 
     from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
 

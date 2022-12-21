@@ -20,10 +20,10 @@ class CustomOperator(PythonOperator):
             )
 
         super(CustomOperator, self).__init__(
+            *args,
             task_id=dagster_operator_parameters.task_id,
             provide_context=True,
             python_callable=python_callable,
             dag=dagster_operator_parameters.dag,
-            *args,
             **kwargs,
         )

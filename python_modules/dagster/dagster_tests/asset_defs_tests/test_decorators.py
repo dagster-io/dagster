@@ -3,7 +3,6 @@ from typing import Any
 
 import pytest
 from dagster import (
-    _check as check,
     AssetKey,
     AssetOut,
     DagsterInvalidDefinitionError,
@@ -15,6 +14,7 @@ from dagster import (
     StaticPartitionsDefinition,
     String,
     TimeWindowPartitionMapping,
+    _check as check,
     build_op_context,
     io_manager,
     materialize_to_memory,

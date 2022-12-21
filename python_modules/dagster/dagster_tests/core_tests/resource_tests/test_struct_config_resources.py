@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 from typing import Callable
 
 import pytest
-from pydantic import ValidationError
-
 from dagster import IOManager, asset, job, op, resource
 from dagster._config.structured_config import (
     Resource,

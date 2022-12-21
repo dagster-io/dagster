@@ -724,7 +724,7 @@ def test_args_kwargs_op():
             pass
 
     @op(ins={"the_in": In()})
-    def the_op(**kwargs):
+    def the_op(**kwargs):  # noqa: F811
         return kwargs["the_in"]
 
     @op

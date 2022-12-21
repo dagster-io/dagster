@@ -1,1 +1,1 @@
-from .definitions import defs
+from .definitions import defs as defs

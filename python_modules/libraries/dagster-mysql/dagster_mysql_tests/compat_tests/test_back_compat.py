@@ -5,8 +5,16 @@ import tempfile
 from urllib.parse import urlparse
 
 import pytest
-
-from dagster import AssetKey, AssetMaterialization, AssetObservation, DagsterEventType, EventRecordsFilter, Output, job, op
+from dagster import (
+    AssetKey,
+    AssetMaterialization,
+    AssetObservation,
+    DagsterEventType,
+    EventRecordsFilter,
+    Output,
+    job,
+    op,
+)
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS

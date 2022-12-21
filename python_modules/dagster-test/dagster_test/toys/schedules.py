@@ -82,8 +82,8 @@ def longitudinal_schedule():
             }
         }
 
-    longitudinal_job = longitudinal.to_job(config=longitudinal_config)
-    return build_schedule_from_partitioned_job(longitudinal_job)
+    job_def = longitudinal.to_job(config=longitudinal_config)
+    return build_schedule_from_partitioned_job(job_def)
 
 
 def get_toys_schedules():

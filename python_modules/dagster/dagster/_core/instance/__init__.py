@@ -95,6 +95,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.host_representation import (
         ExternalPipeline,
+        ExternalPipelineOrigin,
         ExternalSensor,
         HistoricalPipeline,
         RepositoryLocation,
@@ -1130,7 +1131,7 @@ class DagsterInstance:
         asset_selection: Optional[AbstractSet[AssetKey]],
         solids_to_execute: Optional[AbstractSet[str]],
         solid_selection: Optional[Sequence[str]],
-        external_pipeline_origin: Optional[ExternalPipelineOrigin],
+        external_pipeline_origin: Optional["ExternalPipelineOrigin"],
         pipeline_code_origin: Optional[PipelinePythonOrigin],
     ) -> DagsterRun:
         from dagster._core.definitions.utils import validate_tags

@@ -2043,7 +2043,7 @@ class TestEventLogStorage:
                 storage.register_instance(created_instance)
 
             my_asset_key = AssetKey("my_asset")
-            second_asset_key = AssetKey("second_asset")
+            # second_asset_key = AssetKey("second_asset")
             # storage.get_asset_records([my_asset_key, second_asset_key])
 
             assert len(storage.get_asset_records()) == 0
@@ -2827,7 +2827,7 @@ class TestEventLogStorage:
             for event in events:
                 storage.store_event(event)
 
-            assert _get_cached_status_for_asset(storage, asset_key) == None
+            assert _get_cached_status_for_asset(storage, asset_key) is None
 
             cache_value = AssetStatusCacheValue(
                 latest_storage_id=1,
@@ -2849,4 +2849,4 @@ class TestEventLogStorage:
                 for event in events:
                     storage.store_event(event)
 
-                assert _get_cached_status_for_asset(storage, asset_key) == None
+                assert _get_cached_status_for_asset(storage, asset_key) is None

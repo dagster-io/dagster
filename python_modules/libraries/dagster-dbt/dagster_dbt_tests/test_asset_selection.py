@@ -1,12 +1,11 @@
 import json
 
 import pytest
-from dagster_dbt import DbtManifestAssetSelection
-from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
-
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._utils import file_relative_path
+from dagster_dbt import DbtManifestAssetSelection
+from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
 
 
 @pytest.mark.parametrize(

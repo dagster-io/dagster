@@ -1,5 +1,3 @@
-# mypy: disable-error-code=annotation-unchecked
-
 import re
 import string
 from collections import namedtuple
@@ -203,7 +201,7 @@ def test_forward_compat():
     old_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=old_map)
-    class Quux(namedtuple("_Quux", "bar baz")):
+    class Quux(namedtuple("_Quux", "bar baz")):  # type: ignore
         def __new__(cls, bar, baz):
             return super().__new__(cls, bar, baz)
 
@@ -212,7 +210,7 @@ def test_forward_compat():
 
     # pylint: disable=function-redefined
     @_whitelist_for_serdes(whitelist_map=new_map)
-    class Quux(namedtuple("_Quux", "foo bar baz")):
+    class Quux(namedtuple("_Quux", "foo bar baz")):  # noqa: F811
         def __new__(cls, foo, bar, baz):
             return super().__new__(cls, foo, bar, baz)
 

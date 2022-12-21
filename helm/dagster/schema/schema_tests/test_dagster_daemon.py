@@ -235,7 +235,7 @@ def test_run_monitoring(
 
     assert instance["run_monitoring"]["enabled"] is True
 
-    assert not "max_resume_run_attempts" in instance["run_monitoring"]
+    assert "max_resume_run_attempts" not in instance["run_monitoring"]
 
 
 def test_run_monitoring_no_max_resume_run_attempts(

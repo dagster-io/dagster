@@ -5,6 +5,7 @@ from dagster import AssetKey, ResourceDefinition
 from dagster._annotations import experimental, public
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import deep_merge_dicts
 from dagster_managed_elements import (

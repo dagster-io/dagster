@@ -95,7 +95,7 @@ class DockerContainerContext(
         # `container_kwargs` field does a shallow merge so that different kwargs can be combined
         # or replaced without replacing the full set of arguments.
         return DockerContainerContext(
-            registry=other.registry if other.registry != None else self.registry,
+            registry=other.registry if other.registry is not None else self.registry,
             env_vars=[*self.env_vars, *other.env_vars],
             networks=[*self.networks, *other.networks],
             container_kwargs={**self.container_kwargs, **other.container_kwargs},

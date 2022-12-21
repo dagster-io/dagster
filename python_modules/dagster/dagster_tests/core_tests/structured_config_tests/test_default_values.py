@@ -1,14 +1,7 @@
 import pytest
-from pydantic import BaseModel
-
-from dagster import _check as check
-from dagster import job, op, validate_run_config
-from dagster._config.config_type import ConfigTypeKind
-from dagster._config.field_utils import convert_potential_field
-from dagster._config.structured_config import Config, infer_schema_from_config_class
-from dagster._core.errors import DagsterInvalidConfigDefinitionError, DagsterInvalidConfigError
+from dagster import job, op
+from dagster._config.structured_config import Config
 from dagster._core.execution.context.invocation import build_op_context
-from dagster._legacy import pipeline
 
 
 def test_default_values():

@@ -1,5 +1,10 @@
 from airflow.models.connection import Connection
 from airflow.models.dagbag import DagBag
+from dagster import (
+    Definitions,
+    _check as check,
+)
+
 from dagster_airflow.dagster_pipeline_factory import (
     DagsterAirflowError,
     _create_airflow_connections,
@@ -7,9 +12,6 @@ from dagster_airflow.dagster_pipeline_factory import (
     make_dagster_pipeline_from_airflow_dag,
     patch_airflow_example_dag,
 )
-
-from dagster import Definitions
-from dagster import _check as check
 
 
 def make_dagster_job_from_airflow_dag(

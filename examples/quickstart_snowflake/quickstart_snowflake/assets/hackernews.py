@@ -1,6 +1,5 @@
 import base64
 from io import BytesIO
-from typing import List
 
 import matplotlib.pyplot as plt
 import pandas as pd

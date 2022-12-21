@@ -140,7 +140,7 @@ def instance_for_test(
 
     Args:
         overrides (Optional[Mapping[str, Any]]):
-            Config to provide to instance (config format follows that typically found in an `instance.yaml` file).
+            Config to provide to instance (config format follows that typically found in an `instance.yaml` file).
         set_dagster_home (Optional[bool]):
             If set to True, the `$DAGSTER_HOME` environment variable will be
             overridden to be the directory used by this instance for the

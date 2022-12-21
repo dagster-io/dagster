@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import job, op
 from dagster._config.config_type import ConfigTypeKind
 from dagster._config.structured_config import Config, PermissiveConfig
