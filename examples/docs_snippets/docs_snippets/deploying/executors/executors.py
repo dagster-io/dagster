@@ -41,7 +41,7 @@ def op_job():
 # since neither define their own executor.
 
 defs = Definitions(
-    assets=[the_asset], jobs=[asset_job, op_job], executor=[multiprocess_executor]
+    assets=[the_asset], jobs=[asset_job, op_job], executor=multiprocess_executor
 )
 
 # end_executor_on_repo
