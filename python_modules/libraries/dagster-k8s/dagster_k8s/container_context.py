@@ -8,7 +8,7 @@ from dagster._core.container_context import process_shared_container_context_con
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.utils import parse_env_var
-from dagster._utils import make_readonly_value, merge_dicts
+from dagster._utils import make_readonly_value
 
 if TYPE_CHECKING:
     from . import K8sRunLauncher
@@ -103,7 +103,7 @@ class K8sContainerContext(
             env_vars=_dedupe_list([*other.env_vars, *self.env_vars]),
             volume_mounts=_dedupe_list([*other.volume_mounts, *self.volume_mounts]),
             volumes=_dedupe_list([*other.volumes, *self.volumes]),
-            labels=merge_dicts(other.labels, self.labels),
+            labels={**self.labels, **other.labels},
             namespace=other.namespace if other.namespace else self.namespace,
             resources=other.resources if other.resources else self.resources,
             scheduler_name=other.scheduler_name if other.scheduler_name else self.scheduler_name,

@@ -5,7 +5,6 @@ from typing import Any, Dict, Optional
 
 import requests
 
-from dagster import resource
 from dagster._utils import file_relative_path
 
 HNItemRecord = Dict[str, Any]
@@ -81,23 +80,3 @@ class HNAPISubsampleClient(HNClient):
 
     def min_item_id(self) -> int:
         return 1
-
-
-@resource(description="A hackernews client that fetches results from the firebaseio web api.")
-def hn_api_client(_):
-    return HNAPIClient()
-
-
-@resource(
-    description="A mock hackernews client powered by a json file containing sample responses."
-)
-def hn_snapshot_client(_):
-    return HNSnapshotClient()
-
-
-@resource(
-    config_schema={"sample_rate": int},
-    description="A hackernews client that sub-samples results from the firebaseio web api.",
-)
-def hn_api_subsample_client(context):
-    return HNAPISubsampleClient(context.resource_config["sample_rate"])

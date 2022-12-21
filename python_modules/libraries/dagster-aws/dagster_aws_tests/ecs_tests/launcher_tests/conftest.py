@@ -139,6 +139,19 @@ def instance(instance_cm):
 
 
 @pytest.fixture
+def instance_with_resources(instance_cm):
+    with instance_cm(
+        config={
+            "run_resources": {
+                "cpu": "1024",
+                "memory": "2048",
+            }
+        }
+    ) as dagster_instance:
+        yield dagster_instance
+
+
+@pytest.fixture
 def instance_dont_use_current_task(instance_cm, subnet):
     with instance_cm(
         config={
@@ -341,6 +354,14 @@ def container_context_config(configured_secret):
             "secrets_tags": ["dagster"],
             "env_vars": ["FOO_ENV_VAR=BAR_VALUE"],
             "container_name": "foo",
+            "run_resources": {
+                "cpu": "4096",
+                "memory": "8192",
+            },
+            "server_resources": {
+                "cpu": "1024",
+                "memory": "2048",
+            },
         },
     }
 
@@ -359,6 +380,13 @@ def other_container_context_config(other_configured_secret):
             "secrets_tags": ["other_secret_tag"],
             "env_vars": ["OTHER_FOO_ENV_VAR"],
             "container_name": "bar",
+            "run_resources": {
+                "cpu": "256",
+            },
+            "server_resources": {
+                "cpu": "2048",
+                "memory": "4096",
+            },
         },
     }
 

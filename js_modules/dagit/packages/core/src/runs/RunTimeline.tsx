@@ -10,7 +10,6 @@ import {
   Spinner,
   MiddleTruncate,
 } from '@dagster-io/ui';
-import moment from 'moment-timezone';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -328,6 +327,16 @@ const TimeDividers = (props: TimeDividersProps) => {
     });
   }, [locale, timeZone]);
 
+  const dateFormatWithTimezone = React.useMemo(() => {
+    return Intl.DateTimeFormat(locale, {
+      month: 'numeric',
+      day: 'numeric',
+      year: 'numeric',
+      timeZone,
+      timeZoneName: 'short',
+    });
+  }, [locale, timeZone]);
+
   const timeFormat = React.useMemo(() => {
     return new Intl.DateTimeFormat(locale, {
       hour: 'numeric',
@@ -337,15 +346,18 @@ const TimeDividers = (props: TimeDividersProps) => {
 
   const dateMarkers: DateMarker[] = React.useMemo(() => {
     const totalTime = end - start;
-    const startAtTimezone = moment.tz(start, timeZone);
+    const startDate = new Date(start);
+    const startDateStringWithTimezone = dateFormatWithTimezone.format(startDate);
 
     const dayBoundaries = [];
-    const cursor = startAtTimezone.startOf('day');
+
+    // Create a date at midnight on this date in this timezone.
+    let cursor = new Date(startDateStringWithTimezone);
 
     while (cursor.valueOf() < end) {
-      const dayStart = cursor.valueOf();
-      cursor.add(1, 'day');
-      const dayEnd = cursor.valueOf();
+      const dayStart = cursor.getTime();
+      const dayEnd = new Date(dayStart).setDate(cursor.getDate() + 1); // Increment by one day.
+      cursor = new Date(dayEnd);
       dayBoundaries.push({dayStart, dayEnd});
     }
 
@@ -365,7 +377,7 @@ const TimeDividers = (props: TimeDividersProps) => {
         width: right - left,
       };
     });
-  }, [dateFormat, end, start, timeZone]);
+  }, [dateFormat, dateFormatWithTimezone, end, start]);
 
   const timeMarkers: TimeMarker[] = React.useMemo(() => {
     const totalTime = end - start;

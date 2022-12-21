@@ -104,6 +104,7 @@ export const AssetNodeLineageGraph: React.FC<{
                 ) : scale < MINIMAL_SCALE ? (
                   <AssetNodeMinimal
                     definition={graphNode.definition}
+                    liveData={liveDataByNode[graphNode.id]}
                     selected={graphNode.id === assetGraphId}
                   />
                 ) : (

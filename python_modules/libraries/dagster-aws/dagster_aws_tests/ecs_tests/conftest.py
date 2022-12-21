@@ -3,7 +3,7 @@ import boto3
 import moto
 import pytest
 
-from .stubbed_ecs import StubbedEcs
+from .stubbed_ecs import ThreadsafeStubbedEcs
 
 
 @pytest.fixture
@@ -13,7 +13,7 @@ def region():
 
 @pytest.fixture
 def ecs(region):
-    return StubbedEcs(boto3.client("ecs", region_name=region))
+    return ThreadsafeStubbedEcs(region_name=region)
 
 
 @pytest.fixture

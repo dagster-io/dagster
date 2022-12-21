@@ -27,6 +27,7 @@ export function allPartitionsSpan({partitionKeys}: {partitionKeys: string[]}) {
 export function textToPartitions(selected: string, all: string[]) {
   const terms = selected.split(',').map((s) => s.trim());
   const result = [];
+
   for (const term of terms) {
     if (term.length === 0) {
       continue;
@@ -51,11 +52,15 @@ export function textToPartitions(selected: string, all: string[]) {
       result.push(term);
     }
   }
-  return result.sort((a, b) => all.indexOf(a) - all.indexOf(b));
+  return Array.from(new Set(result));
 }
 
 export function partitionsToText(selected: string[], all: string[]) {
-  return assembleIntoSpans(all, (key) => selected.includes(key))
+  if (selected.length === all.length) {
+    return allPartitionsSpan({partitionKeys: all});
+  }
+  const selectedSet = new Set(selected);
+  return assembleIntoSpans(all, (key) => selectedSet.has(key))
     .filter((s) => s.status)
     .map((s) => stringForSpan(s, all))
     .join(', ');

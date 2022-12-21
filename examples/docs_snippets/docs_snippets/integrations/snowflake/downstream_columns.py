@@ -1,21 +1,8 @@
 import pandas as pd
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
-from dagster import AssetIn, asset, repository, with_resources
+from dagster import AssetIn, asset
 
-
-@asset
-def iris_dataset() -> pd.DataFrame:
-    return pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
-        names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
-        ],
-    )
+# this example uses the iris_dataset asset from Step 2 of the Using Dagster with Snowflake tutorial
 
 
 @asset(
@@ -31,21 +18,3 @@ def sepal_data(iris_sepal: pd.DataFrame) -> pd.DataFrame:
         iris_sepal["Sepal length (cm)"] * iris_sepal["Sepal width (cm)"]
     )
     return iris_sepal
-
-
-@repository
-def flowers_analysis_repository():
-    return with_resources(
-        [iris_dataset, sepal_data],
-        resource_defs={
-            "io_manager": snowflake_pandas_io_manager.configured(
-                {
-                    "database": "FLOWERS",
-                    "schema": "IRIS",
-                    "account": "abc1234.us-east-1",
-                    "user": {"env": "SNOWFLAKE_USER"},
-                    "password": {"env": "SNOWFLAKE_PASSWORD"},
-                }
-            )
-        },
-    )

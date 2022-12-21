@@ -36,6 +36,9 @@ class AssetSelection(ABC):
             # Select all assets in group "marketing" that are downstream of asset "leads":
             AssetSelection.groups("marketing") & AssetSelection.keys("leads").downstream()
 
+            # Select all assets in a list of assets:
+            AssetSelection.assets(*my_assets_list)
+
             # Select all assets except for those in group "marketing"
             AssetSelection.all() - AssetSelection.groups("marketing")
     """

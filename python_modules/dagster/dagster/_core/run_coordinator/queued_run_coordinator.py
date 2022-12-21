@@ -143,7 +143,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             tag_concurrency_limits=config_value.get("tag_concurrency_limits"),
             dequeue_interval_seconds=config_value.get("dequeue_interval_seconds"),
             dequeue_use_threads=config_value.get("dequeue_use_threads"),
-            dequeue_num_workers=config_value.get("max_dequeue_workers"),
+            dequeue_num_workers=config_value.get("dequeue_num_workers"),
         )
 
     def submit_run(self, context: SubmitRunContext) -> DagsterRun:
