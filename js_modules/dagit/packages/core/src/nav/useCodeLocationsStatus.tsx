@@ -21,16 +21,11 @@ type LocationStatusEntry = {
 
 const POLL_INTERVAL = 5 * 1000;
 
-type State = {
-  entriesById: {[key: string]: LocationStatusEntry} | undefined;
-};
-const initialState: State = {
-  entriesById: undefined,
-};
+type EntriesById = Record<string, LocationStatusEntry>;
 
 export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null => {
   const {locationEntries, refetch} = React.useContext(WorkspaceContext);
-  const [state, setState] = React.useState<State>(initialState);
+  const [previousEntriesById, setPreviousEntriesById] = React.useState<EntriesById | null>(null);
 
   const history = useHistory();
 
@@ -94,16 +89,16 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         ? data?.locationStatusesOrError.entries
         : [];
 
-    let hasUpdatedEntries = entries.length !== Object.keys(state.entriesById || {}).length;
-    const entriesById: {[key: string]: LocationStatusEntry} = {};
+    let hasUpdatedEntries = entries.length !== Object.keys(previousEntriesById || {}).length;
+    const currEntriesById: {[key: string]: LocationStatusEntry} = {};
     entries.forEach((entry) => {
-      const previousEntry = state.entriesById && state.entriesById[entry.id];
+      const previousEntry = previousEntriesById && previousEntriesById[entry.id];
       const entryIsUpdated =
         !previousEntry ||
         previousEntry.updateTimestamp < entry.updateTimestamp ||
         previousEntry.loadStatus !== entry.loadStatus;
       hasUpdatedEntries = hasUpdatedEntries || entryIsUpdated;
-      entriesById[entry.id] = entryIsUpdated
+      currEntriesById[entry.id] = entryIsUpdated
         ? {
             id: entry.id,
             loadStatus: entry.loadStatus,
@@ -112,11 +107,10 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
           }
         : previousEntry;
     });
-    const previousEntriesById = state.entriesById;
-    const currentEntries = Object.values(entriesById || {});
+    const currentEntries = Object.values(currEntriesById || {});
     const previousEntries = Object.values(previousEntriesById || {});
     if (hasUpdatedEntries) {
-      setState({entriesById});
+      setPreviousEntriesById(currEntriesById);
     }
 
     // At least one code location has been removed. Reload, but don't make a big deal about it
