@@ -47,7 +47,7 @@ export interface BackfillTableFragment {
   __typename: "PartitionBackfill";
   backfillId: string;
   status: BulkActionStatus;
-  numRequested: number;
+  numCancelable: number;
   partitionNames: string[];
   numPartitions: number;
   timestamp: number;

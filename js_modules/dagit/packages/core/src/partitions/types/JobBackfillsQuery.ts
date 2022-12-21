@@ -51,7 +51,7 @@ export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills {
   __typename: "PartitionBackfill";
   backfillId: string;
   status: BulkActionStatus;
-  numRequested: number;
+  numCancelable: number;
   partitionNames: string[];
   numPartitions: number;
   timestamp: number;

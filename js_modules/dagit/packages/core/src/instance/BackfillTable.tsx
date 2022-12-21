@@ -129,7 +129,7 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
   fragment BackfillTableFragment on PartitionBackfill {
     backfillId
     status
-    numRequested
+    numCancelable
     partitionNames
     numPartitions
     timestamp
