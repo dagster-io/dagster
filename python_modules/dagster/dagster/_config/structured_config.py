@@ -55,7 +55,9 @@ class StructuredConfigResource(
         return super().__setattr__(name, value)
 
     def resource_fn(self, context) -> Any:  # pylint: disable=unused-argument
-        pass
+        # Default behavior, for "new-style" resources, is to return the resource itself, so that
+        # initialization is a no-op
+        return self
 
 
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
