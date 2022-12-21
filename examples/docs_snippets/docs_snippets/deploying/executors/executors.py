@@ -21,7 +21,7 @@ other_job = the_graph.to_job(executor_def=multiprocess_executor)
 # end_executor_on_job
 
 # start_executor_on_repo
-from dagster import multiprocess_executor, define_asset_job, asset, repository
+from dagster import multiprocess_executor, define_asset_job, asset, Definitions
 
 
 @asset
@@ -37,11 +37,11 @@ def op_job():
     ...
 
 
-# op_job and asset_job will both use the default_executor_def,
+# op_job and asset_job will both use the multiprocess_executor,
 # since neither define their own executor.
-@repository(default_executor_def=multiprocess_executor)
-def the_repo():
-    return [the_asset, asset_job, op_job]
 
+defs = Definitions(
+    assets=[the_asset], jobs=[asset_job, op_job], executor=multiprocess_executor
+)
 
 # end_executor_on_repo

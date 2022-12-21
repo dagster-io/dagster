@@ -46,10 +46,25 @@ class DecoratedOpFunction(NamedTuple):
     def _get_function_params(self) -> Sequence[funcsigs.Parameter]:
         return get_function_params(self.decorated_fn)
 
+    def has_config_arg(self) -> bool:
+        for param in get_function_params(self.decorated_fn):
+            if param.name == "config":
+                return True
+
+        return False
+
+    def get_config_arg(self) -> funcsigs.Parameter:
+        for param in get_function_params(self.decorated_fn):
+            if param.name == "config":
+                return param
+
+        check.failed("Requested config arg on function that does not have one")
+
     def positional_inputs(self) -> Sequence[str]:
         params = self._get_function_params()
         input_args = params[1:] if self.has_context_arg() else params
-        return positional_arg_name_list(input_args)
+        input_args_filtered = [input_arg for input_arg in input_args if input_arg.name != "config"]
+        return positional_arg_name_list(input_args_filtered)
 
     def has_var_kwargs(self) -> bool:
         params = self._get_function_params()
@@ -348,6 +363,14 @@ def resolve_checked_solid_fn_inputs(
     params = get_function_params(compute_fn.decorated_fn)
 
     input_args = params[1:] if compute_fn.has_context_arg() else params
+
+    # filter out config arg
+    if compute_fn.has_config_arg():
+        new_input_args = []
+        for input_arg in input_args:
+            if input_arg.name != "config":
+                new_input_args.append(input_arg)
+        input_args = new_input_args
 
     # Validate input arguments
     used_inputs = set()

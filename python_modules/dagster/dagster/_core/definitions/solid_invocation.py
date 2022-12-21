@@ -54,10 +54,15 @@ def op_invocation_result(
         check.failed("solid invocation only works with decorated solid fns")
 
     compute_fn = cast(DecoratedOpFunction, compute_fn)
-    result = (
-        compute_fn.decorated_fn(bound_context, **input_dict)
-        if compute_fn.has_context_arg()
-        else compute_fn.decorated_fn(**input_dict)
+
+    from ..execution.plan.compute_generator import invoke_compute_fn
+
+    result = invoke_compute_fn(
+        compute_fn.decorated_fn,
+        bound_context,
+        input_dict,
+        compute_fn.has_context_arg(),
+        compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None,
     )
 
     return _type_check_output_wrapper(op_def, result, bound_context)
