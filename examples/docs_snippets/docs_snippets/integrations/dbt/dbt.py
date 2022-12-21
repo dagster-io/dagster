@@ -41,22 +41,7 @@ def scope_dbt_cli_resource_config():
     # end_dbt_cli_resource
 
 
-def scope_schedule_assets():
-    from dagster import file_relative_path, with_resources
-    from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
-
-    DBT_PROJECT_PATH = file_relative_path(
-        __file__, "../../../../assets_dbt_python/dbt_project"
-    )
-    dbt_assets = with_resources(
-        load_assets_from_dbt_project(DBT_PROJECT_PATH),
-        {
-            "dbt": dbt_cli_resource.configured(
-                {"project_dir": DBT_PROJECT_PATH},
-            )
-        },
-    )
-
+def scope_schedule_assets(dbt_assets):
     # start_schedule_assets
     from dagster import ScheduleDefinition, define_asset_job, Definitions
 
