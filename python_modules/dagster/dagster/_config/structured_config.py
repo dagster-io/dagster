@@ -81,7 +81,6 @@ def infer_schema_from_config_class(
 
     fields = {}
     for pydantic_field_name, pydantic_field in model_cls.__fields__.items():
-
         fields[pydantic_field_name] = _convert_pydantic_field(pydantic_field)
 
     docstring = model_cls.__doc__.strip() if model_cls.__doc__ else None
