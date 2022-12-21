@@ -3,7 +3,6 @@ import sys
 import textwrap
 
 import pytest
-
 from dagster import DagsterEvent
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.errors import DagsterUserCodeExecutionError, user_code_error_boundary

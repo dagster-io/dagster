@@ -2,14 +2,6 @@ import sys
 from typing import cast
 
 import kubernetes
-from dagster_k8s.client import DagsterKubernetesClient
-from dagster_k8s.job import (
-    DagsterK8sJobConfig,
-    construct_dagster_k8s_job,
-    get_job_name_from_run_id,
-    get_user_defined_k8s_config,
-)
-
 from dagster import (
     DagsterInvariantViolationError,
     MetadataEntry,
@@ -27,6 +19,13 @@ from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import frozentags
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
+from dagster_k8s.client import DagsterKubernetesClient
+from dagster_k8s.job import (
+    DagsterK8sJobConfig,
+    construct_dagster_k8s_job,
+    get_job_name_from_run_id,
+    get_user_defined_k8s_config,
+)
 
 from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
 

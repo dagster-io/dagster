@@ -2,7 +2,6 @@ from collections import defaultdict
 from typing import Sequence
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -37,7 +36,6 @@ from dagster._core.definitions.partition import PartitionedConfig, StaticPartiti
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._legacy import AssetGroup
 from dagster._loggers import default_loggers
-
 
 # pylint: disable=comparison-with-callable
 

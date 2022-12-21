@@ -51,7 +51,6 @@ from .context_creation_pipeline import (
 from .execute_job_result import ExecuteJobResult
 from .results import PipelineExecutionResult
 
-
 ## Brief guide to the execution APIs
 # | function name               | operates over      | sync  | supports    | creates new DagsterRun  |
 # |                             |                    |       | reexecution | in instance             |

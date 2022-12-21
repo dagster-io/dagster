@@ -2,7 +2,6 @@ import re
 import typing
 
 import pytest
-
 from dagster import (
     DagsterEventType,
     DagsterInvalidDefinitionError,

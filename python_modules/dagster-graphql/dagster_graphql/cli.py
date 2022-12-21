@@ -2,10 +2,9 @@ from typing import Mapping, Optional
 from urllib.parse import urljoin, urlparse
 
 import click
-import requests
-
 import dagster._check as check
 import dagster._seven as seven
+import requests
 from dagster._cli.workspace import workspace_target_argument
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,

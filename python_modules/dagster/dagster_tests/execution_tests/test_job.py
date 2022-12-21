@@ -2,7 +2,6 @@ import warnings
 from datetime import datetime
 
 import pytest
-
 from dagster import (
     DagsterInvariantViolationError,
     Field,

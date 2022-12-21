@@ -5,7 +5,6 @@ import tempfile
 from functools import update_wrapper
 
 import pytest
-
 from dagster import DagsterType, _seven
 from dagster._core.types.dagster_type import ListType
 from dagster._seven import is_subclass

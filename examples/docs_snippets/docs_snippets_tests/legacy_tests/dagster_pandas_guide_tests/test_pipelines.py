@@ -1,4 +1,5 @@
 import pytest
+
 from docs_snippets.legacy.dagster_pandas_guide.core_trip import core_trip
 from docs_snippets.legacy.dagster_pandas_guide.custom_column_constraint import (
     custom_column_constraint_trip,

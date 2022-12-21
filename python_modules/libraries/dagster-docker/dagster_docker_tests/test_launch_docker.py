@@ -7,6 +7,9 @@ import time
 
 import docker
 import pytest
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.test_utils import environ, poll_for_finished_run, poll_for_step_start
+from dagster._utils.yaml_utils import merge_yamls
 from dagster_docker.docker_run_launcher import DOCKER_CONTAINER_ID_TAG, DOCKER_IMAGE_TAG
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
@@ -17,10 +20,6 @@ from dagster_test.test_project import (
     get_test_project_recon_pipeline,
     get_test_project_workspace_and_external_pipeline,
 )
-
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
-from dagster._core.test_utils import environ, poll_for_finished_run, poll_for_step_start
-from dagster._utils.yaml_utils import merge_yamls
 
 from . import IS_BUILDKITE, docker_postgres_instance
 

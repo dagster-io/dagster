@@ -3,7 +3,6 @@ from typing import Union
 
 import pandas
 import pyspark
-
 from dagster import (
     Field,
     InputContext,

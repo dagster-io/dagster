@@ -4,13 +4,13 @@ import pytest
 from dagster_tests.core_tests.run_coordinator_tests.test_queued_run_coordinator import (
     TestQueuedRunCoordinator,
 )
-from docs_snippets.guides.dagster.run_attribution.custom_run_coordinator import (
-    CustomRunCoordinator,
-)
 from mock import patch
 
 from dagster._core.run_coordinator import SubmitRunContext
 from dagster._core.storage.pipeline_run import DagsterRunStatus
+from docs_snippets.guides.dagster.run_attribution.custom_run_coordinator import (
+    CustomRunCoordinator,
+)
 
 
 class TestCustomRunCoordinator(TestQueuedRunCoordinator):

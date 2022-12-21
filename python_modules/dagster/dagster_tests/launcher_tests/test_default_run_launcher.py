@@ -7,9 +7,15 @@ import time
 
 import pytest
 
-from dagster import DagsterEventType, DefaultRunLauncher
-from dagster import _check as check
-from dagster import _seven, file_relative_path, fs_io_manager, repository
+from dagster import (
+    DagsterEventType,
+    DefaultRunLauncher,
+    _check as check,
+    _seven,
+    file_relative_path,
+    fs_io_manager,
+    repository,
+)
 from dagster._core.errors import DagsterLaunchFailedError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRunStatus

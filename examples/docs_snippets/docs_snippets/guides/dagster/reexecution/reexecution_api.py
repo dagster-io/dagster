@@ -2,9 +2,8 @@
 from_failure_result = None
 result = None
 # start_initial_execution_marker
-from docs_snippets.guides.dagster.reexecution.unreliable_job import unreliable_job
-
 from dagster import DagsterInstance, ReexecutionOptions, execute_job, reconstructable
+from docs_snippets.guides.dagster.reexecution.unreliable_job import unreliable_job
 
 instance = DagsterInstance.ephemeral()
 

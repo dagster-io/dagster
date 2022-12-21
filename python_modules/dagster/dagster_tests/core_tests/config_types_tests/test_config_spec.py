@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import DagsterInvalidConfigDefinitionError, Noneable, Permissive, Selector, op
 from dagster._utils.test import wrap_op_in_graph_and_execute
 

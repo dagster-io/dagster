@@ -1,14 +1,13 @@
 import time
 
 import pytest
+from dagster._core.storage.pipeline_run import DagsterRun, RunsFilter
+from dagster._core.test_utils import poll_for_finished_run
 from dagster_test.test_project import (
     ReOriginatedExternalScheduleForTest,
     get_test_project_external_schedule,
 )
 from marks import mark_daemon
-
-from dagster._core.storage.pipeline_run import DagsterRun, RunsFilter
-from dagster._core.test_utils import poll_for_finished_run
 
 
 @mark_daemon

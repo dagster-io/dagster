@@ -1,5 +1,6 @@
 import pytest
 import yaml
+from dagster._core.test_utils import remove_none_recursively
 from kubernetes.client import models
 from schema.charts.dagster.subschema.run_launcher import (
     CeleryK8sRunLauncherConfig,
@@ -11,8 +12,6 @@ from schema.charts.dagster.subschema.run_launcher import (
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
-
-from dagster._core.test_utils import remove_none_recursively
 
 
 @pytest.fixture(name="deployment_template")

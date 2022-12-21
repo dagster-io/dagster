@@ -3,9 +3,8 @@ import subprocess
 import uuid
 
 import click
-from celery.utils.nodenames import default_nodename, host_format
-
 import dagster._check as check
+from celery.utils.nodenames import default_nodename, host_format
 from dagster._config import post_process_config, validate_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.instance import DagsterInstance

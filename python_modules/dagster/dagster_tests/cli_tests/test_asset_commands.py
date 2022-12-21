@@ -2,7 +2,6 @@ import tempfile
 
 import pytest
 from click.testing import CliRunner
-
 from dagster import AssetKey, AssetMaterialization, Output
 from dagster._cli.asset import asset_wipe_command
 from dagster._core.test_utils import instance_for_test

@@ -1,16 +1,15 @@
 from itertools import chain
 from typing import Any, Dict, Iterable, List, Mapping, Optional
 
-import requests.exceptions
-from gql import Client, gql
-from gql.transport import Transport
-from gql.transport.requests import RequestsHTTPTransport
-
 import dagster._check as check
+import requests.exceptions
 from dagster import DagsterRunStatus
 from dagster._annotations import public
 from dagster._core.definitions.utils import validate_tags
 from dagster._utils.backcompat import experimental_class_warning
+from gql import Client, gql
+from gql.transport import Transport
+from gql.transport.requests import RequestsHTTPTransport
 
 from .client_queries import (
     CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY,

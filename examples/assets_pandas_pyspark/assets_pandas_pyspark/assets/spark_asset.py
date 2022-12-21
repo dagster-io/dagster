@@ -1,10 +1,9 @@
+from dagster import asset
 from pyspark.sql import (
     DataFrame as SparkDF,
     Window,
     functions as f,
 )
-
-from dagster import asset
 
 
 @asset

@@ -6,9 +6,8 @@ import string
 from collections import namedtuple
 from typing import Any, List, Mapping, Optional, Sequence
 
-import kubernetes
-
 import dagster._check as check
+import kubernetes
 from dagster import (
     Array,
     BoolSource,

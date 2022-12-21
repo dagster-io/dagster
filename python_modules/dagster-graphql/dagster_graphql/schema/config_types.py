@@ -1,8 +1,7 @@
 from typing import List, Optional, Union
 
-import graphene
-
 import dagster._check as check
+import graphene
 from dagster._config import ConfigTypeKind, get_recursive_type_keys
 from dagster._core.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
 

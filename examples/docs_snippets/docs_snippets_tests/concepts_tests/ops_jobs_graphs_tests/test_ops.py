@@ -1,3 +1,4 @@
+from dagster import OpDefinition, build_op_context
 from docs_snippets.concepts.ops_jobs_graphs.ops import (
     context_op,
     my_configurable_op,
@@ -11,8 +12,6 @@ from docs_snippets.concepts.ops_jobs_graphs.ops import (
     my_typed_input_op,
     return_annotation_op,
 )
-
-from dagster import OpDefinition, build_op_context
 
 
 def generate_stub_input_values(solid):

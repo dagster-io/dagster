@@ -9,7 +9,6 @@ import seaborn as sns
 from dagster_pandera import pandera_schema_to_dagster_type
 from pandera.typing import Series
 
-
 # ****************************************************************************
 # ***** TYPES ****************************************************************
 

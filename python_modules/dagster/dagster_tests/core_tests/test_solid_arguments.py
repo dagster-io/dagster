@@ -1,6 +1,5 @@
 # pylint: disable=unused-argument
 import pytest
-
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._legacy import InputDefinition, execute_solid, lambda_solid, solid
 

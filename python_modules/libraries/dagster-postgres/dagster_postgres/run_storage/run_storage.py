@@ -1,8 +1,7 @@
 from typing import Mapping
 
-import sqlalchemy as db
-
 import dagster._check as check
+import sqlalchemy as db
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.runs import (
     DaemonHeartbeatsTable,

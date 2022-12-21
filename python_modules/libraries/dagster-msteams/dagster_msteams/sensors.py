@@ -1,8 +1,5 @@
 from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
-from dagster_msteams.card import Card
-from dagster_msteams.client import TeamsClient
-
 from dagster import DefaultSensorStatus
 from dagster._core.definitions import GraphDefinition, PipelineDefinition
 from dagster._core.definitions.run_status_sensor_definition import (
@@ -10,6 +7,9 @@ from dagster._core.definitions.run_status_sensor_definition import (
     run_failure_sensor,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+
+from dagster_msteams.card import Card
+from dagster_msteams.client import TeamsClient
 
 if TYPE_CHECKING:
     from dagster._core.host_representation.selector import JobSelector, RepositorySelector

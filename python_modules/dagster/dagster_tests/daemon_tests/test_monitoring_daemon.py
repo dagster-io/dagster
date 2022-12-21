@@ -5,7 +5,6 @@ import os
 import time
 
 import pytest
-
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.launcher import CheckRunHealthResult, RunLauncher, WorkerStatus

@@ -6,10 +6,6 @@ import time
 
 import boto3
 from botocore.exceptions import ClientError
-from dagster_aws.emr import EmrError, EmrJobRunner, emr_step_main
-from dagster_aws.emr.configs_spark import spark_config as get_spark_config
-from dagster_aws.utils.mrjob.log4j import parse_hadoop_log4j_records
-
 from dagster import (
     Field,
     StringSource,
@@ -24,6 +20,10 @@ from dagster._core.execution.plan.external_step import (
     step_context_to_step_run_ref,
 )
 from dagster._serdes import deserialize_value
+
+from dagster_aws.emr import EmrError, EmrJobRunner, emr_step_main
+from dagster_aws.emr.configs_spark import spark_config as get_spark_config
+from dagster_aws.utils.mrjob.log4j import parse_hadoop_log4j_records
 
 # On EMR, Spark is installed here
 EMR_SPARK_HOME = "/usr/lib/spark/"

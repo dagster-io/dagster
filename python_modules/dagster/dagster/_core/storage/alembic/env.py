@@ -2,7 +2,6 @@
 # alembic dynamically populates the alembic.context module
 
 from alembic import context
-
 from dagster._core.storage.event_log import SqlEventLogStorageMetadata
 from dagster._core.storage.runs import SqlRunStorage
 from dagster._core.storage.schedules import SqlScheduleStorage

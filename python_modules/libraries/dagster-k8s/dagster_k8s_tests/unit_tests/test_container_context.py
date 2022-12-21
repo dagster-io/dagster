@@ -1,10 +1,9 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-from dagster_k8s.container_context import K8sContainerContext
-
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils import make_readonly_value
+from dagster_k8s.container_context import K8sContainerContext
 
 
 @pytest.fixture

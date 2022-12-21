@@ -1,7 +1,6 @@
 from typing import Sequence
 
 import duckdb
-
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
 from dagster._core.storage.db_io_manager import (
     DbClient,

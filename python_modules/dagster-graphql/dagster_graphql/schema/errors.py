@@ -1,6 +1,5 @@
-import graphene
-
 import dagster._check as check
+import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._utils.error import SerializableErrorInfo
 

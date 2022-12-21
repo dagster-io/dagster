@@ -2,15 +2,15 @@ import json
 from itertools import chain
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
-from dagster_fivetran import FivetranResource
-from dagster_managed_elements import ManagedElementCheckResult, ManagedElementDiff
-from dagster_managed_elements.types import ManagedElementReconciler, is_key_secret
-from dagster_managed_elements.utils import diff_dicts
-
 import dagster._check as check
 from dagster import ResourceDefinition
 from dagster._annotations import experimental
 from dagster._core.execution.context.init import build_init_resource_context
+from dagster_managed_elements import ManagedElementCheckResult, ManagedElementDiff
+from dagster_managed_elements.types import ManagedElementReconciler, is_key_secret
+from dagster_managed_elements.utils import diff_dicts
+
+from dagster_fivetran import FivetranResource
 
 from .types import (
     FivetranConnector,

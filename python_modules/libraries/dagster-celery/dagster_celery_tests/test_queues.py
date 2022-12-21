@@ -1,10 +1,9 @@
 import threading
 import time
 
-from dagster_celery import celery_executor
-
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import ModeDefinition, default_executors
+from dagster_celery import celery_executor
 
 from .utils import execute_on_thread, start_celery_worker
 

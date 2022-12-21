@@ -7,7 +7,6 @@ from contextlib import ExitStack, contextmanager
 
 import pendulum
 import pytest
-
 from dagster import (
     Any,
     AssetKey,

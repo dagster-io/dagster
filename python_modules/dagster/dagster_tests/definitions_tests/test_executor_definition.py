@@ -4,7 +4,6 @@ import multiprocessing
 from os import path
 
 import pytest
-
 from dagster import (
     DagsterInstance,
     ExecutorRequirement,

@@ -1,10 +1,9 @@
 import warnings
 from typing import Optional
 
+import dagster._check as check
 import pendulum
 import pytest
-
-import dagster._check as check
 from dagster import (
     AssetMaterialization,
     AssetOut,

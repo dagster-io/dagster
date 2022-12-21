@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import DagsterInvalidDefinitionError, DynamicOut, DynamicOutput, graph, job, op
 
 

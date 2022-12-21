@@ -1,10 +1,9 @@
 import datetime
 import os
 
+import dagster._check as check
 import pytest
 import yaml
-
-import dagster._check as check
 from dagster._utils import file_relative_path
 from dagster._utils.yaml_utils import (
     dump_run_config_yaml,

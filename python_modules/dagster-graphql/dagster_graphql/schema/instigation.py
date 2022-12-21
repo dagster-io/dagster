@@ -1,10 +1,9 @@
 import sys
 import warnings
 
+import dagster._check as check
 import graphene
 import pendulum
-
-import dagster._check as check
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.scheduler.instigation import (

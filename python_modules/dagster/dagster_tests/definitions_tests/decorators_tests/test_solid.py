@@ -1,7 +1,6 @@
 import re
 
 import pytest
-
 from dagster import (
     Any,
     DagsterInvalidDefinitionError,
@@ -18,7 +17,6 @@ from dagster import (
     op,
 )
 from dagster._core.utility_solids import define_stub_solid
-
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
 # pylint: disable=unused-variable, unused-argument, redefined-outer-name

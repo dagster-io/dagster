@@ -1,10 +1,10 @@
 # pylint: redefined-builtin
 from typing import Optional, Union
 
-from dagster_airbyte.managed.types import GeneratedAirbyteDestination
-
 import dagster._check as check
 from dagster._annotations import public
+
+from dagster_airbyte.managed.types import GeneratedAirbyteDestination
 
 
 class DynamodbDestination(GeneratedAirbyteDestination):

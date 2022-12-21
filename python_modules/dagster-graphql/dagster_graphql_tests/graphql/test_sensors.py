@@ -3,14 +3,6 @@ import sys
 
 import pendulum
 import pytest
-from dagster_graphql.test.utils import (
-    execute_dagster_graphql,
-    infer_repository_selector,
-    infer_sensor_selector,
-    main_repo_location_name,
-    main_repo_name,
-)
-
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
@@ -29,6 +21,13 @@ from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._utils import Counter, traced_counter
 from dagster._utils.error import SerializableErrorInfo
+from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
+    infer_repository_selector,
+    infer_sensor_selector,
+    main_repo_location_name,
+    main_repo_name,
+)
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,

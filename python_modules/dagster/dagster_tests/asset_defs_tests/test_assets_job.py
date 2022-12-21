@@ -2,7 +2,6 @@ import os
 import warnings
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetOut,

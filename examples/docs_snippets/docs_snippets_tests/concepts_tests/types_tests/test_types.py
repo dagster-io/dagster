@@ -1,7 +1,7 @@
 import pytest
-from docs_snippets.concepts.types.types import test_dagster_type
 
 from dagster import DagsterTypeCheckDidNotPass
+from docs_snippets.concepts.types.types import test_dagster_type
 
 
 def test_basic_even_type():

@@ -5,13 +5,12 @@ from enum import Enum
 from typing import Optional
 
 import kubernetes
-from kubernetes.client.models import V1JobStatus
-
 from dagster import (
     DagsterInstance,
     _check as check,
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus
+from kubernetes.client.models import V1JobStatus
 
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day
 DEFAULT_WAIT_BETWEEN_ATTEMPTS = 10.0  # 10 seconds

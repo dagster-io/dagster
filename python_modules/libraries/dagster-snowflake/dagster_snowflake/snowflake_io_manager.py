@@ -1,7 +1,5 @@
 from typing import Sequence
 
-from snowflake.connector import ProgrammingError
-
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
 from dagster._core.storage.db_io_manager import (
     DbClient,
@@ -10,6 +8,7 @@ from dagster._core.storage.db_io_manager import (
     TablePartition,
     TableSlice,
 )
+from snowflake.connector import ProgrammingError
 
 from .resources import SnowflakeConnection
 

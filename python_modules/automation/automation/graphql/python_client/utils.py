@@ -2,10 +2,9 @@ import os
 import re
 from typing import AbstractSet, Dict, NamedTuple, Tuple, cast
 
+import dagster._check as check
 import dagster_graphql_tests
 from dagster_graphql.client import client_queries
-
-import dagster._check as check
 
 
 class LegacyQueryHistoryInfo(NamedTuple):

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Callable, List, Mapping, Optional, Union
 
 import pkg_resources
+
 from dagster_buildkite.git import ChangedFiles
 from dagster_buildkite.python_packages import PythonPackages, changed_filetypes
 

@@ -2,8 +2,6 @@ import pickle
 from contextlib import contextmanager
 from typing import Union
 
-from dagster_azure.adls2.utils import ResourceNotFoundError
-
 from dagster import (
     Field,
     InputContext,
@@ -14,6 +12,8 @@ from dagster import (
     io_manager,
 )
 from dagster._utils import PICKLE_PROTOCOL
+
+from dagster_azure.adls2.utils import ResourceNotFoundError
 
 _LEASE_DURATION = 60  # One minute
 

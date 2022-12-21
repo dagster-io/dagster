@@ -5,7 +5,6 @@ from typing import Any, List, Optional
 
 import pendulum
 import pytest
-
 from dagster import (
     ConfigMapping,
     DagsterInstance,

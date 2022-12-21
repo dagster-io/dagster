@@ -5,7 +5,6 @@ from typing import Optional, Sequence
 
 from airflow.models import Connection
 from airflow.models.baseoperator import BaseOperator
-
 from dagster import (
     Any,
     In,

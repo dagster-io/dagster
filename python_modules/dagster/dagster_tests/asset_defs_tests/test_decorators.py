@@ -2,7 +2,6 @@ import warnings
 from typing import Any
 
 import pytest
-
 from dagster import (
     _check as check,
     AssetKey,

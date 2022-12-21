@@ -2,7 +2,6 @@ from datetime import datetime
 
 import pendulum
 import pytest
-
 from dagster import (
     AssetKey,
     AssetsDefinition,

@@ -5,9 +5,8 @@ import sys
 from collections import defaultdict
 from contextlib import contextmanager
 
-import pytest
-
 import dagster._check as check
+import pytest
 from dagster._check import (
     CheckError,
     ElementCheckError,

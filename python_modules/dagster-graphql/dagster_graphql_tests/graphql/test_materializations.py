@@ -1,4 +1,5 @@
 from dagster_graphql.test.utils import infer_pipeline_selector
+
 from dagster_graphql_tests.graphql.repo import LONG_INT
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix

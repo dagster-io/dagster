@@ -3,14 +3,6 @@ import sys
 
 import pendulum
 import pytest
-from dagster_graphql.test.utils import (
-    execute_dagster_graphql,
-    infer_repository_selector,
-    infer_schedule_selector,
-    main_repo_location_name,
-    main_repo_name,
-)
-
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
@@ -24,6 +16,13 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils import Counter, traced_counter
+from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
+    infer_repository_selector,
+    infer_schedule_selector,
+    main_repo_location_name,
+    main_repo_name,
+)
 
 from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
 

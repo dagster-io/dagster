@@ -1,23 +1,6 @@
 from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
 
 import graphene
-from dagster_graphql.implementation.events import iterate_metadata_entries
-from dagster_graphql.implementation.fetch_assets import (
-    get_asset_materializations,
-    get_asset_observations,
-)
-from dagster_graphql.schema.config_types import GrapheneConfigTypeField
-from dagster_graphql.schema.metadata import GrapheneMetadataEntry
-from dagster_graphql.schema.partition_sets import (
-    GrapheneDimensionPartitionKeys,
-    GraphenePartitionDefinition,
-)
-from dagster_graphql.schema.solids import (
-    GrapheneCompositeSolidDefinition,
-    GrapheneResourceRequirement,
-    GrapheneSolidDefinition,
-)
-
 from dagster import (
     AssetKey,
     _check as check,
@@ -37,6 +20,23 @@ from dagster._core.host_representation.external_data import (
 )
 from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+
+from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.implementation.fetch_assets import (
+    get_asset_materializations,
+    get_asset_observations,
+)
+from dagster_graphql.schema.config_types import GrapheneConfigTypeField
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.partition_sets import (
+    GrapheneDimensionPartitionKeys,
+    GraphenePartitionDefinition,
+)
+from dagster_graphql.schema.solids import (
+    GrapheneCompositeSolidDefinition,
+    GrapheneResourceRequirement,
+    GrapheneSolidDefinition,
+)
 
 from ..implementation.fetch_assets import (
     get_freshness_info,

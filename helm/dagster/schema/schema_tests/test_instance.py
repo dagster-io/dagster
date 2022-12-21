@@ -3,6 +3,11 @@ import tempfile
 
 import pytest
 import yaml
+from dagster._config import process_config, resolve_to_config_type
+from dagster._core.instance.config import retention_config_schema
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.run_coordinator import QueuedRunCoordinator
+from dagster._core.test_utils import environ
 from dagster_aws.s3.compute_log_manager import S3ComputeLogManager
 from dagster_azure.blob.compute_log_manager import AzureBlobComputeLogManager
 from dagster_gcp.gcs.compute_log_manager import GCSComputeLogManager
@@ -39,12 +44,6 @@ from schema.charts.dagster.subschema.run_launcher import (
 from schema.charts.dagster.subschema.telemetry import Telemetry
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.utils.helm_template import HelmTemplate
-
-from dagster._config import process_config, resolve_to_config_type
-from dagster._core.instance.config import retention_config_schema
-from dagster._core.instance.ref import InstanceRef
-from dagster._core.run_coordinator import QueuedRunCoordinator
-from dagster._core.test_utils import environ
 
 
 def to_camel_case(s: str) -> str:

@@ -3,11 +3,10 @@ from collections import defaultdict
 from enum import Enum
 from typing import Mapping, Sequence
 
-from requests import Response
-from requests.exceptions import RequestException
-
 from dagster import Failure, RetryRequested
 from dagster._core.execution.context.compute import OpExecutionContext
+from requests import Response
+from requests.exceptions import RequestException
 
 
 def fmt_rpc_logs(logs: Sequence[Mapping[str, str]]) -> Mapping[int, str]:

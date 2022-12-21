@@ -1,9 +1,8 @@
 import sys
 import time
 
-from celery.exceptions import TaskRevokedError
-
 import dagster._check as check
+from celery.exceptions import TaskRevokedError
 from dagster._core.errors import DagsterSubprocessError
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext

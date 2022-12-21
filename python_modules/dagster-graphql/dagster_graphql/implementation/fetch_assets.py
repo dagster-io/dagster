@@ -2,11 +2,6 @@ import datetime
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple
 
-from dagster_graphql.implementation.loader import (
-    CrossRepoAssetDependedByLoader,
-    ProjectedLogicalVersionLoader,
-)
-
 import dagster._seven as seven
 from dagster import (
     AssetKey,
@@ -25,6 +20,12 @@ from dagster._core.host_representation.external_data import (
 from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.storage.tags import get_dimension_from_partition_tag
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+
+from dagster_graphql.implementation.loader import (
+    CrossRepoAssetDependedByLoader,
+    ProjectedLogicalVersionLoader,
+)
+from dagster_graphql.schema.util import HasContext
 
 from .utils import capture_error
 

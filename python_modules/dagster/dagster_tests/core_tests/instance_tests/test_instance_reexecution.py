@@ -1,7 +1,6 @@
 import os
 
 import pytest
-
 from dagster import DagsterInstance, job, op, reconstructable, repository
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.storage.pipeline_run import DagsterRunStatus

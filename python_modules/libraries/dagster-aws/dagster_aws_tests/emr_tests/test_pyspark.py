@@ -4,14 +4,6 @@ import sys
 from unittest import mock
 
 import pytest
-from dagster_aws.emr import EmrError, EmrJobRunner
-from dagster_aws.emr.pyspark_step_launcher import EmrPySparkStepLauncher, emr_pyspark_step_launcher
-from dagster_aws.s3 import s3_resource
-from dagster_pyspark import DataFrame, pyspark_resource
-from moto import mock_emr
-from pyspark.sql import Row
-from pyspark.sql.types import IntegerType, StringType, StructField, StructType
-
 from dagster import reconstructable
 from dagster._core.definitions.no_step_launcher import no_step_launcher
 from dagster._core.errors import DagsterSubprocessError
@@ -26,6 +18,13 @@ from dagster._legacy import (
 )
 from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.test import create_test_pipeline_execution_context
+from dagster_aws.emr import EmrError, EmrJobRunner
+from dagster_aws.emr.pyspark_step_launcher import EmrPySparkStepLauncher, emr_pyspark_step_launcher
+from dagster_aws.s3 import s3_resource
+from dagster_pyspark import DataFrame, pyspark_resource
+from moto import mock_emr
+from pyspark.sql import Row
+from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 S3_BUCKET = "dagster-scratch-80542c2"
 

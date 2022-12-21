@@ -3,10 +3,6 @@ import os
 import sys
 from typing import TYPE_CHECKING, Any, AsyncIterator, Optional, Sequence, Tuple, Union
 
-from starlette.concurrency import (
-    run_in_threadpool,  # can provide this indirectly if we dont want starlette dep in dagster-graphql
-)
-
 import dagster._check as check
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
@@ -14,6 +10,11 @@ from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._utils.error import serializable_error_info_from_exc_info
+from starlette.concurrency import (
+    run_in_threadpool,  # can provide this indirectly if we dont want starlette dep in dagster-graphql
+)
+
+from dagster_graphql.schema.util import HasContext
 
 from ..utils import capture_error
 

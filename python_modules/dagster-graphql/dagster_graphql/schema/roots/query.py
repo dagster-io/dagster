@@ -1,10 +1,7 @@
 from typing import Any, Dict, Sequence
 
-import graphene
-from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
-from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
-
 import dagster._check as check
+import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.host_representation import (
@@ -14,6 +11,9 @@ from dagster._core.host_representation import (
     SensorSelector,
 )
 from dagster._core.scheduler.instigation import InstigatorType
+
+from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
+from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
 
 from ...implementation.external import (
     fetch_location_statuses,

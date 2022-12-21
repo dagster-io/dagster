@@ -8,7 +8,6 @@ from base64 import standard_b64encode as b64
 from typing import Any, Dict, Mapping, Optional, Sequence, cast
 
 import requests
-
 from dagster import (
     Failure,
     Field,

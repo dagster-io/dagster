@@ -1,3 +1,4 @@
+from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -7,8 +8,6 @@ from dagster_graphql.test.utils import (
     execute_dagster_graphql_and_finish_runs,
     infer_pipeline_selector,
 )
-
-from dagster._core.storage.tags import RESUME_RETRY_TAG
 
 from .utils import (
     get_all_logs_for_finished_run_via_subscription,

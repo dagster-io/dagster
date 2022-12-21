@@ -1,7 +1,6 @@
 import sys
 
 import pytest
-
 from dagster import file_relative_path, op, repository
 from dagster._core.definitions.repository_definition import RepositoryData
 from dagster._core.test_utils import instance_for_test

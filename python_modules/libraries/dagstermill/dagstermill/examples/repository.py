@@ -2,9 +2,6 @@ import os
 import pickle
 import uuid
 
-import dagstermill
-from dagstermill.io_managers import local_output_notebook_io_manager
-
 from dagster import (
     AssetIn,
     AssetSelection,
@@ -28,6 +25,9 @@ from dagster import (
 )
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._utils import PICKLE_PROTOCOL, file_relative_path
+
+import dagstermill
+from dagstermill.io_managers import local_output_notebook_io_manager
 
 try:
     from dagster_pandas import DataFrame

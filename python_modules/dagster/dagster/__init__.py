@@ -461,11 +461,11 @@ from dagster._core.storage.root_input_manager import (
 )
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG as MEMOIZED_RUN_TAG
 from dagster._core.storage.upath_io_manager import UPathIOManager as UPathIOManager
+from dagster._core.test_utils import instance_for_test
 from dagster._core.types.config_schema import (
     DagsterTypeLoader as DagsterTypeLoader,
     dagster_type_loader as dagster_type_loader,
 )
-from dagster._core.test_utils import instance_for_test
 from dagster._core.types.dagster_type import (
     DagsterType as DagsterType,
     List as List,

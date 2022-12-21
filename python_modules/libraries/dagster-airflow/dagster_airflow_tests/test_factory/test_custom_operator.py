@@ -1,15 +1,15 @@
 import logging
 import os
 
+from dagster._core.definitions.reconstruct import ReconstructableRepository
+from dagster_test.dagster_airflow.custom_operator import CustomOperator
+from dagster_test.test_project import get_test_project_environments_path
+
 from dagster_airflow_tests.marks import requires_airflow_db
 from dagster_airflow_tests.test_factory.utils import validate_pipeline_execution
 from dagster_airflow_tests.test_fixtures import (
     dagster_airflow_custom_operator_pipeline,  # noqa: F401 (fixture)
 )
-from dagster_test.dagster_airflow.custom_operator import CustomOperator
-from dagster_test.test_project import get_test_project_environments_path
-
-from dagster._core.definitions.reconstruct import ReconstructableRepository
 
 
 @requires_airflow_db

@@ -4,9 +4,8 @@ import time
 import uuid
 from contextlib import contextmanager
 
-import kubernetes
-
 import dagster._check as check
+import kubernetes
 from dagster._utils import safe_tempfile_path
 
 from .cluster import ClusterConfig

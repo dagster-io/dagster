@@ -1,8 +1,7 @@
 from datetime import datetime
 
-from dagster_duckdb.io_manager import DuckDbClient, _get_cleanup_statement
-
 from dagster._core.storage.db_io_manager import TablePartition, TableSlice
+from dagster_duckdb.io_manager import DuckDbClient, _get_cleanup_statement
 
 
 def test_get_select_statement():

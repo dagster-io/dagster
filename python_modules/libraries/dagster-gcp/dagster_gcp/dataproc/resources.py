@@ -1,10 +1,9 @@
 import time
 from contextlib import contextmanager
 
+from dagster import resource
 from googleapiclient.discovery import build
 from oauth2client.client import GoogleCredentials
-
-from dagster import resource
 
 from .configs import define_dataproc_create_cluster_config
 from .types import DataprocError

@@ -3,12 +3,11 @@ import time
 from typing import Any
 from unittest import mock
 
-from dagster_graphql.test.utils import execute_dagster_graphql
-
 from dagster import file_relative_path
 from dagster._core.host_representation import ManagedGrpcPythonEnvRepositoryLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load import location_origins_from_yaml_paths
+from dagster_graphql.test.utils import execute_dagster_graphql
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 

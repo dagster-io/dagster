@@ -10,6 +10,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, Union, cast
 
 import click
 import requests
+
 from automation.printer import IndentingBufferPrinter
 
 SPARK_VERSION = "v2.4.0"

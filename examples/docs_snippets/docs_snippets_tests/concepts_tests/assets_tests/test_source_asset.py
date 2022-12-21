@@ -1,6 +1,5 @@
-from docs_snippets.concepts.assets.source_asset import my_derived_asset, my_source_asset
-
 from dagster import repository
+from docs_snippets.concepts.assets.source_asset import my_derived_asset, my_source_asset
 
 
 def test_source_asset():

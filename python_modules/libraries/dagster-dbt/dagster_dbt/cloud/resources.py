@@ -7,8 +7,6 @@ from typing import Any, Mapping, Optional, Sequence, cast
 from urllib.parse import urlencode, urljoin
 
 import requests
-from requests.exceptions import RequestException
-
 from dagster import (
     Failure,
     Field,
@@ -21,6 +19,7 @@ from dagster import (
     resource,
 )
 from dagster._utils.merger import deep_merge_dicts
+from requests.exceptions import RequestException
 
 from .types import DbtCloudOutput
 

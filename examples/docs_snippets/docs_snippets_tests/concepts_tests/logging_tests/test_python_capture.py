@@ -1,9 +1,8 @@
+from dagster._core.test_utils import instance_for_test
 from docs_snippets.concepts.logging.python_logger import (
     scope_logged_job,
     scope_logged_job2,
 )
-
-from dagster._core.test_utils import instance_for_test
 
 
 def test_captured_python_logger_config(capsys):

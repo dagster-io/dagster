@@ -8,9 +8,6 @@ from typing import Any, Mapping, Optional, Sequence, Set, Union, cast
 
 import nbformat
 import papermill
-from papermill.engines import papermill_engines
-from papermill.iorw import load_notebook_node, write_ipynb
-
 from dagster import (
     In,
     OpDefinition,
@@ -31,6 +28,8 @@ from dagster._serdes import pack_value
 from dagster._seven import get_system_temp_directory
 from dagster._utils import mkdir_p, safe_tempfile_path
 from dagster._utils.error import serializable_error_info_from_exc_info
+from papermill.engines import papermill_engines
+from papermill.iorw import load_notebook_node, write_ipynb
 
 from .compat import ExecutionError
 from .engine import DagstermillEngine

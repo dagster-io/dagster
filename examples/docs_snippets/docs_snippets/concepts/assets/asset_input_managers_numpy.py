@@ -10,7 +10,6 @@ from .asset_input_managers import (
     store_pandas_dataframe,
 )
 
-
 # start_numpy_example
 
 

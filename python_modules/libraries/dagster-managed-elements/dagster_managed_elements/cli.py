@@ -8,9 +8,9 @@ from typing import Optional, Sequence
 
 import click
 import click_spinner
-from dagster_managed_elements.types import ManagedElementDiff, ManagedElementReconciler
-
 from dagster._utils.backcompat import ExperimentalWarning
+
+from dagster_managed_elements.types import ManagedElementDiff, ManagedElementReconciler
 
 
 def _deepgetattr(obj, attr: str):

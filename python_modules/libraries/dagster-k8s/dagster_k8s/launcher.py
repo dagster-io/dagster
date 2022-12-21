@@ -2,7 +2,6 @@ import sys
 from typing import Any, Mapping, Optional, Sequence
 
 import kubernetes
-
 from dagster import (
     Field,
     MetadataEntry,

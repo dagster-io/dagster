@@ -2,10 +2,9 @@ import itertools
 import re
 from typing import TYPE_CHECKING, Callable, Sequence, Type, Union
 
+import dagster._check as check
 import pandas as pd
 import pandera as pa
-
-import dagster._check as check
 from dagster import (
     DagsterType,
     MetadataEntry,

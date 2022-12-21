@@ -3,7 +3,6 @@ import datetime
 import tempfile
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetOut,

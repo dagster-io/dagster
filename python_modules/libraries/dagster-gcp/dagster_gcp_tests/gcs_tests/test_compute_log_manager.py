@@ -4,10 +4,6 @@ import tempfile
 
 import pendulum
 import pytest
-from dagster_gcp.gcs import GCSComputeLogManager
-from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
-from google.cloud import storage  # type: ignore
-
 from dagster import DagsterEventType, job, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher import DefaultRunLauncher
@@ -17,6 +13,9 @@ from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import environ
+from dagster_gcp.gcs import GCSComputeLogManager
+from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
+from google.cloud import storage  # type: ignore
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"

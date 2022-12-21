@@ -1,10 +1,10 @@
 # pylint: redefined-builtin
 from typing import List, Optional, Union
 
-from dagster_airbyte.managed.types import GeneratedAirbyteSource
-
 import dagster._check as check
 from dagster._annotations import public
+
+from dagster_airbyte.managed.types import GeneratedAirbyteSource
 
 
 class StravaSource(GeneratedAirbyteSource):

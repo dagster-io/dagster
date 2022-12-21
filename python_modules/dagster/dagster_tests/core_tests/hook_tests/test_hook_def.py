@@ -2,7 +2,6 @@ from collections import defaultdict
 from unittest import mock
 
 import pytest
-
 from dagster import (
     DagsterEventType,
     GraphDefinition,

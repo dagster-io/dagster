@@ -1,7 +1,6 @@
 from typing import List, Optional
 
 import click
-
 import dagster._check as check
 
 from .dagster_docker import DagsterDockerImage

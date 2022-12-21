@@ -2,8 +2,6 @@ import json
 import os
 from typing import Optional, Sequence
 
-from google.cloud import storage  # type: ignore
-
 import dagster._seven as seven
 from dagster import (
     Field,
@@ -22,6 +20,7 @@ from dagster._core.storage.local_compute_log_manager import (
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import ensure_dir, ensure_file
+from google.cloud import storage  # type: ignore
 
 
 class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):

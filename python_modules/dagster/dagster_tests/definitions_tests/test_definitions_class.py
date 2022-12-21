@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import (
     AssetKey,
     AssetsDefinition,

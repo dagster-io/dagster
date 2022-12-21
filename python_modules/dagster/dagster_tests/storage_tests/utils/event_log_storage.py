@@ -9,7 +9,6 @@ from typing import List, Optional, Sequence, Tuple, cast
 import mock
 import pendulum
 import pytest
-
 from dagster import (
     AssetKey,
     AssetMaterialization,

@@ -2,7 +2,6 @@ import os
 
 import dateutil.parser
 from airflow.exceptions import AirflowException, AirflowSkipException
-
 from dagster import (
     DagsterEventType,
     _check as check,

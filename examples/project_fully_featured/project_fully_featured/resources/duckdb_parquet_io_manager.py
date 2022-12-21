@@ -2,7 +2,6 @@ import os
 
 import duckdb
 import pandas as pd
-
 from dagster import (
     Field,
     PartitionKeyRange,

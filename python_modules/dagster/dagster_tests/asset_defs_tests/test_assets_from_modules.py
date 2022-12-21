@@ -2,7 +2,6 @@ import re
 from typing import cast
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetsDefinition,

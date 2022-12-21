@@ -6,7 +6,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 import yaml
-
 from dagster import (
     DagsterEventType,
     DagsterInvalidConfigError,

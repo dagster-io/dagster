@@ -1,8 +1,6 @@
 import datetime
 
 import pandas as pd
-from dagster_pandas import DataFrame
-
 from dagster import (
     DependencyDefinition,
     GraphDefinition,
@@ -12,6 +10,7 @@ from dagster import (
     graph,
     op,
 )
+from dagster_pandas import DataFrame
 
 
 def get_op_result_value(op_inst):

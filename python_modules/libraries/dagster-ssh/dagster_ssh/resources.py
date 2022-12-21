@@ -3,9 +3,6 @@ import os
 from io import StringIO
 
 import paramiko
-from paramiko.config import SSH_PORT
-from sshtunnel import SSHTunnelForwarder
-
 from dagster import (
     BoolSource,
     Field,
@@ -16,6 +13,8 @@ from dagster import (
 )
 from dagster._utils import mkdir_p
 from dagster._utils.merger import merge_dicts
+from paramiko.config import SSH_PORT
+from sshtunnel import SSHTunnelForwarder
 
 
 def key_from_str(key_str):

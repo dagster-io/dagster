@@ -3,8 +3,6 @@ import json
 import textwrap
 from typing import Any, List, Tuple, Type, Union, cast
 
-from sphinx.ext.autodoc import ClassDocumenter, DataDocumenter, ObjectMembers
-
 import dagster._check as check
 from dagster import BoolSource, Field, IntSource, StringSource
 from dagster._annotations import is_public
@@ -19,6 +17,7 @@ from dagster._config.config_type import (
 )
 from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._serdes import ConfigurableClass
+from sphinx.ext.autodoc import ClassDocumenter, DataDocumenter, ObjectMembers
 
 
 def type_repr(config_type: ConfigType) -> str:

@@ -8,7 +8,6 @@ from urllib.parse import (
 
 import mysql.connector as mysql
 import sqlalchemy as db
-
 from dagster import _check as check
 from dagster._core.storage.sql import get_alembic_config
 

@@ -2,6 +2,11 @@ import json
 import time
 import uuid
 
+from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.test_utils import wait_for_runs_to_finish
+from dagster._legacy import DagsterRunStatus
+from dagster._utils import file_relative_path
+from dagster._utils.test import get_temp_file_name
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     RUN_EVENTS_QUERY,
@@ -12,12 +17,6 @@ from dagster_graphql.test.utils import (
     execute_dagster_graphql_subscription,
     infer_pipeline_selector,
 )
-
-from dagster._core.storage.pipeline_run import RunsFilter
-from dagster._core.test_utils import wait_for_runs_to_finish
-from dagster._legacy import DagsterRunStatus
-from dagster._utils import file_relative_path
-from dagster._utils.test import get_temp_file_name
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,

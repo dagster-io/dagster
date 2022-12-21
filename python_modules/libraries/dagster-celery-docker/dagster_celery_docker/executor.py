@@ -1,11 +1,6 @@
 import os
 
 import docker.client
-from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
-from dagster_celery.core_execution_loop import DELEGATE_MARKER, core_celery_execution_loop
-from dagster_celery.defaults import broker_url, result_backend
-from dagster_celery.executor import CELERY_CONFIG
-
 from dagster import (
     DagsterInstance,
     Executor,
@@ -24,6 +19,10 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._serdes import pack_value, serialize_dagster_namedtuple, unpack_value
 from dagster._utils.merger import merge_dicts
+from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
+from dagster_celery.core_execution_loop import DELEGATE_MARKER, core_celery_execution_loop
+from dagster_celery.defaults import broker_url, result_backend
+from dagster_celery.executor import CELERY_CONFIG
 
 CELERY_DOCKER_CONFIG_KEY = "celery-docker"
 

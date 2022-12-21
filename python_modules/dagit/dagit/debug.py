@@ -1,7 +1,6 @@
 from gzip import GzipFile
 
 import click
-
 from dagster import (
     DagsterInstance,
     _check as check,

@@ -5,10 +5,9 @@ import time
 from typing import Any, Mapping, Optional
 
 import requests
+from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
-
-from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource
 
 from .types import CensusOutput
 

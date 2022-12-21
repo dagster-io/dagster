@@ -1,6 +1,4 @@
 import pytest
-from dagster_tests.api_tests.utils import get_bar_workspace
-
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.events import DagsterEventType
 from dagster._core.run_coordinator import SubmitRunContext
@@ -8,6 +6,8 @@ from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordi
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
 from dagster._utils.merger import merge_dicts
+
+from dagster_tests.api_tests.utils import get_bar_workspace
 
 
 class TestQueuedRunCoordinator:

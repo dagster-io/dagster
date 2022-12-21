@@ -1,5 +1,4 @@
 from airflow.plugins_manager import AirflowPlugin
-
 from dagster._core.utils import check_dagster_package_version
 
 from .dagster_job_factory import (

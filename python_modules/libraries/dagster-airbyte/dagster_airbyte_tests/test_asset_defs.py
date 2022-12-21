@@ -1,17 +1,10 @@
 import pytest
 import responses
-from dagster_airbyte import airbyte_resource, build_airbyte_assets
 
-from dagster import (
-    AssetKey,
-    FreshnessPolicy,
-    MetadataEntry,
-    TableColumn,
-    TableSchema,
-    build_init_resource_context,
-)
+from dagster import AssetKey, FreshnessPolicy, MetadataEntry, TableColumn, TableSchema, build_init_resource_context
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._legacy import build_assets_job
+from dagster_airbyte import airbyte_resource, build_airbyte_assets
 
 from .utils import get_sample_connection_json, get_sample_job_json
 

@@ -1,6 +1,3 @@
-from dagster_aws.s3.io_manager import s3_pickle_io_manager
-from dagster_aws.s3.utils import construct_s3_client
-
 from dagster import (
     GraphIn,
     GraphOut,
@@ -21,6 +18,8 @@ from dagster import (
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import build_assets_job
+from dagster_aws.s3.io_manager import s3_pickle_io_manager
+from dagster_aws.s3.utils import construct_s3_client
 
 
 @resource

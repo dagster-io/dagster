@@ -2,7 +2,6 @@ import datetime
 import logging
 
 import boto3
-
 from dagster import (
     Field,
     StringSource,

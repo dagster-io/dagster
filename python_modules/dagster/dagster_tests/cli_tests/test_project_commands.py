@@ -2,7 +2,6 @@ import os
 import re
 
 from click.testing import CliRunner
-
 from dagster import file_relative_path
 from dagster._cli.project import (
     from_example_command,

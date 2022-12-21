@@ -4,6 +4,8 @@ import os
 import sys
 from typing import Optional
 
+from typing_extensions import TypedDict
+
 from dagit_screenshot.utils import (
     ScreenshotSpec,
     load_spec_db,
@@ -11,7 +13,6 @@ from dagit_screenshot.utils import (
     normalize_workspace_path,
     spec_id_to_relative_path,
 )
-from typing_extensions import TypedDict
 
 
 class SpecAuditResult(TypedDict):

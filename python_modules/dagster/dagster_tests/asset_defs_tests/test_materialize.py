@@ -4,7 +4,6 @@ import warnings
 from tempfile import TemporaryDirectory
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetOut,

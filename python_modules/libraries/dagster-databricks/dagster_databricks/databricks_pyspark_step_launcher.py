@@ -6,15 +6,6 @@ import tempfile
 import time
 import zlib
 
-from dagster_databricks import databricks_step_main
-from dagster_databricks.databricks import (
-    DEFAULT_RUN_MAX_WAIT_TIME_SEC,
-    DatabricksJobRunner,
-    poll_run_state,
-)
-from dagster_pyspark.utils import build_pyspark_zip
-from requests import HTTPError
-
 from dagster import (
     Bool,
     Field,
@@ -32,6 +23,15 @@ from dagster._core.execution.plan.external_step import (
 )
 from dagster._serdes import deserialize_value
 from dagster._utils.backoff import backoff
+from dagster_pyspark.utils import build_pyspark_zip
+from requests import HTTPError
+
+from dagster_databricks import databricks_step_main
+from dagster_databricks.databricks import (
+    DEFAULT_RUN_MAX_WAIT_TIME_SEC,
+    DatabricksJobRunner,
+    poll_run_state,
+)
 
 from .configs import (
     define_databricks_env_variables,

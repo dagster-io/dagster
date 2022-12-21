@@ -5,7 +5,6 @@ import sys
 from contextlib import contextmanager
 
 import pytest
-
 from dagster import (
     DagsterInvalidConfigError,
     _check as check,

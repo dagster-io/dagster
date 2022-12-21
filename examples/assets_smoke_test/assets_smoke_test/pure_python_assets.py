@@ -1,6 +1,5 @@
-from pandas import DataFrame
-
 from dagster import SourceAsset, TableSchema, asset
+from pandas import DataFrame
 
 raw_country_populations = SourceAsset(
     "raw_country_populations",

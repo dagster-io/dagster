@@ -1,8 +1,7 @@
 import warnings
 
-import pytest
-
 import dagster.version
+import pytest
 from dagster._core.test_utils import environ
 from dagster._core.utils import check_dagster_package_version, parse_env_var
 

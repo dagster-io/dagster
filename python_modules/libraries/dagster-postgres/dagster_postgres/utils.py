@@ -6,7 +6,6 @@ from urllib.parse import quote, urlencode
 import psycopg2
 import psycopg2.errorcodes
 import sqlalchemy
-
 from dagster import _check as check
 from dagster._core.definitions.policy import Backoff, Jitter, calculate_delay
 

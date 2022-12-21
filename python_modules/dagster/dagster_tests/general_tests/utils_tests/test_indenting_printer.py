@@ -1,5 +1,4 @@
 import pytest
-
 from dagster._check import CheckError
 from dagster._utils.indenting_printer import IndentingPrinter, IndentingStringIoPrinter
 

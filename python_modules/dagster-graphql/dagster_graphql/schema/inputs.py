@@ -1,6 +1,5 @@
 import graphene
 import pendulum
-
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 
 from .pipelines.status import GrapheneRunStatus

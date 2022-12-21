@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple, cast
 
-from graphene import ResolveInfo
-
 import dagster._check as check
 from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.execution.plan.resume_retry import get_retry_steps_from_parent_run
@@ -12,6 +10,9 @@ from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.utils import make_new_run_id
 from dagster._utils.merger import merge_dicts
+from graphene import ResolveInfo
+
+from dagster_graphql.schema.util import HasContext
 
 from ..external import ensure_valid_config, get_external_execution_plan_or_raise
 from ..utils import ExecutionParams, UserFacingGraphQLError

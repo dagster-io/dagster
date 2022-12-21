@@ -4,7 +4,6 @@ import tempfile
 from typing import Optional, Tuple
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetsDefinition,

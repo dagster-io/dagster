@@ -3,7 +3,6 @@ from collections import defaultdict
 
 import mock
 import pytest
-
 from dagster import (
     AssetKey,
     AssetOut,

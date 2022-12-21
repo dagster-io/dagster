@@ -2,12 +2,11 @@ import datetime
 import re
 from typing import Any, Mapping
 
+import dagster._check as check
 import kubernetes
+from dagster._utils import frozendict
 from dateutil.parser import parse
 from kubernetes.client import ApiClient
-
-import dagster._check as check
-from dagster._utils import frozendict
 
 
 def _get_k8s_class(classname):

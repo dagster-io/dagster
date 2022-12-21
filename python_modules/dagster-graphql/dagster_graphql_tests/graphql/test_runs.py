@@ -1,16 +1,6 @@
 import copy
 
 import yaml
-from dagster_graphql.test.utils import (
-    define_out_of_process_context,
-    execute_dagster_graphql,
-    infer_pipeline_selector,
-    infer_repository_selector,
-)
-from dagster_graphql_tests.graphql.graphql_context_test_suite import (
-    ExecutingGraphQLContextTestMatrix,
-    ReadonlyGraphQLContextTestMatrix,
-)
 
 from dagster import AssetMaterialization, Output, job, op, repository
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
@@ -20,6 +10,17 @@ from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import execute_pipeline, lambda_solid, pipeline
 from dagster._utils import Counter, traced_counter
+from dagster_graphql.test.utils import (
+    define_out_of_process_context,
+    execute_dagster_graphql,
+    infer_pipeline_selector,
+    infer_repository_selector,
+)
+
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    ExecutingGraphQLContextTestMatrix,
+    ReadonlyGraphQLContextTestMatrix,
+)
 
 RUNS_QUERY = """
 query PipelineRunsRootQuery($selector: PipelineSelector!) {

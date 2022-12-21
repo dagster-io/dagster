@@ -8,7 +8,6 @@ import tempfile
 import time
 
 import pytest
-
 from dagster import (
     Any,
     Bool,

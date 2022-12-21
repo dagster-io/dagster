@@ -1,7 +1,6 @@
-from graphene import ResolveInfo
-
 import dagster._check as check
 from dagster._core.storage.pipeline_run import DagsterRun
+from graphene import ResolveInfo
 
 from .external import get_external_pipeline_or_raise, get_full_external_pipeline_or_raise
 from .utils import PipelineSelector, UserFacingGraphQLError, capture_error

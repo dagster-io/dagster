@@ -2,7 +2,6 @@ import string
 
 import pytest
 from click.testing import CliRunner
-
 from dagster._cli.job import execute_backfill_command, job_backfill_command
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path

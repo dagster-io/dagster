@@ -3,7 +3,6 @@ import time
 from typing import Dict, Generator, List, Tuple
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetMaterialization,

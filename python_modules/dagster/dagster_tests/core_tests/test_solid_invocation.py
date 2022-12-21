@@ -2,7 +2,6 @@ import asyncio
 from functools import partial
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetMaterialization,

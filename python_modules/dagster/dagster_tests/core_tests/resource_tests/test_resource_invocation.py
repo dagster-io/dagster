@@ -1,7 +1,6 @@
 from contextlib import contextmanager
 
 import pytest
-
 from dagster import Field, Noneable, Selector, build_init_resource_context, resource
 from dagster._core.errors import (
     DagsterInvalidConfigError,

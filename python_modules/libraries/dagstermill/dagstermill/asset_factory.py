@@ -5,17 +5,8 @@ import tempfile
 import uuid
 from typing import Any, Mapping, Optional, Set, Union
 
-import papermill
-from dagstermill.compat import ExecutionError
-from dagstermill.factory import (
-    _clean_path_for_windows,
-    get_papermill_parameters,
-    replace_parameters,
-)
-from papermill.engines import papermill_engines
-from papermill.iorw import load_notebook_node, write_ipynb
-
 import dagster._check as check
+import papermill
 from dagster import (
     AssetIn,
     AssetKey,
@@ -33,6 +24,15 @@ from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._utils import safe_tempfile_path
 from dagster._utils.error import serializable_error_info_from_exc_info
+from papermill.engines import papermill_engines
+from papermill.iorw import load_notebook_node, write_ipynb
+
+from dagstermill.compat import ExecutionError
+from dagstermill.factory import (
+    _clean_path_for_windows,
+    get_papermill_parameters,
+    replace_parameters,
+)
 
 from .engine import DagstermillEngine
 

@@ -3,7 +3,6 @@ from typing import cast
 
 import pendulum
 import pytest
-
 from dagster import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,

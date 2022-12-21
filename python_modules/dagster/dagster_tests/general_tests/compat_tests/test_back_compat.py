@@ -11,7 +11,6 @@ from typing import NamedTuple, Optional, Union
 import pendulum
 import pytest
 import sqlalchemy as db
-
 from dagster import (
     AssetKey,
     AssetMaterialization,

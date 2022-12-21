@@ -1,10 +1,9 @@
 import os
 
+from dagster._utils import file_relative_path
 from dagster_aws.s3 import s3_resource
 from dagster_dbt import dbt_cli_resource
 from dagster_pyspark import pyspark_resource
-
-from dagster._utils import file_relative_path
 
 from .common_bucket_s3_pickle_io_manager import common_bucket_s3_pickle_io_manager
 from .duckdb_parquet_io_manager import duckdb_partitioned_parquet_io_manager

@@ -5,8 +5,9 @@ import signal
 import subprocess
 from time import sleep
 
-from dagit_screenshot.utils import ScreenshotSpec
 from selenium import webdriver  # pylint: disable=import-error
+
+from dagit_screenshot.utils import ScreenshotSpec
 
 # Time in seconds that we sleep waiting for a dagit route to load
 DAGIT_ROUTE_LOAD_TIME = 1

@@ -2,7 +2,6 @@ import uuid
 import warnings
 
 import pytest
-
 from dagster import (
     DependencyDefinition,
     Field,
@@ -47,7 +46,6 @@ from dagster._legacy import (
     solid,
 )
 from dagster._utils.test import execute_solid_within_pipeline
-
 
 # protected members
 # pylint: disable=W0212

@@ -1,3 +1,4 @@
+from dagster import build_op_context
 from docs_snippets.concepts.assets.materialization_ops import (
     my_asset_key_materialization_op,
     my_materialization_op,
@@ -5,8 +6,6 @@ from docs_snippets.concepts.assets.materialization_ops import (
     my_partitioned_asset_op,
     my_simple_op,
 )
-
-from dagster import build_op_context
 
 
 def test_ops_compile_and_execute():

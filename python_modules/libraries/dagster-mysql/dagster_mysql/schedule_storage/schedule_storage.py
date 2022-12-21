@@ -1,8 +1,6 @@
+import dagster._check as check
 import pendulum
 import sqlalchemy as db
-from packaging.version import parse
-
-import dagster._check as check
 from dagster._core.storage.config import mysql_config
 from dagster._core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
 from dagster._core.storage.schedules.schema import InstigatorsTable
@@ -13,6 +11,7 @@ from dagster._core.storage.sql import (
     stamp_alembic_rev,
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
+from packaging.version import parse
 
 from ..utils import (
     create_mysql_connection,

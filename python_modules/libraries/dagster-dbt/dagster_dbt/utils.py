@@ -1,7 +1,6 @@
 from typing import Any, Callable, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
 
 import dateutil
-
 from dagster import (
     AssetKey,
     AssetMaterialization,

@@ -1,18 +1,18 @@
 from functools import lru_cache
 from typing import Union
 
-import graphene
-from dagster_graphql.implementation.events import iterate_metadata_entries
-from dagster_graphql.schema.logs.events import GrapheneRunStepStats
-from dagster_graphql.schema.metadata import GrapheneMetadataEntry
-
 import dagster._check as check
+import graphene
 from dagster._core.definitions import NodeHandle
 from dagster._core.host_representation import RepresentedPipeline
 from dagster._core.host_representation.historical import HistoricalPipeline
 from dagster._core.snap import CompositeSolidDefSnap, DependencyStructureIndex, SolidDefSnap
 from dagster._core.snap.solid import InputMappingSnap, OutputMappingSnap
 from dagster._core.storage.pipeline_run import RunsFilter
+
+from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.schema.logs.events import GrapheneRunStepStats
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 
 from .config_types import GrapheneConfigTypeField
 from .dagster_types import GrapheneDagsterType, to_dagster_type

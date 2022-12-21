@@ -2,6 +2,7 @@ from dagster_aws_tests.conftest import (
     mock_s3_bucket,  # noqa: F401 -- fixture
     mock_s3_resource,  # noqa: F401 -- fixture
 )
+
 from docs_snippets.concepts.io_management.io_manager_per_output import my_job
 
 

@@ -6,12 +6,10 @@ from typing import Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set,
 import mock
 import pendulum
 import pytest
-
 from dagster import (
     AssetIn,
     AssetKey,
     AssetOut,
-    AssetSelection,
     AssetsDefinition,
     AssetSelection,
     DagsterInstance,

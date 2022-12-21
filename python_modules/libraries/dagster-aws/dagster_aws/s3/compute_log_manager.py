@@ -2,8 +2,6 @@ import os
 from typing import Optional, Sequence
 
 import boto3
-from botocore.errorfactory import ClientError
-
 import dagster._seven as seven
 from dagster import Field, Permissive, StringSource
 from dagster import _check as check

@@ -4,7 +4,6 @@ import tempfile
 from io import BytesIO
 
 import yaml
-
 from dagster import execute_job, reconstructable
 from dagster._cli.job import execute_list_versions_command
 from dagster._core.test_utils import instance_for_test

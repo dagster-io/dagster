@@ -6,8 +6,6 @@ from threading import Thread
 from unittest import mock
 
 import pytest
-from dagster_celery_tests.repo import COMPOSITE_DEPTH
-
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.errors import DagsterSubprocessError
 from dagster._core.events import DagsterEventType
@@ -19,6 +17,8 @@ from dagster._legacy import (
     execute_pipeline_iterator,
 )
 from dagster._utils import send_interrupt
+
+from dagster_celery_tests.repo import COMPOSITE_DEPTH
 
 from .utils import (  # isort:skip
     REPO_FILE,

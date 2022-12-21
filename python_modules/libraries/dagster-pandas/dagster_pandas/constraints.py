@@ -4,8 +4,6 @@ from datetime import datetime
 from functools import wraps
 
 import pandas as pd
-from pandas import DataFrame
-
 from dagster import (
     DagsterType,
     MetadataEntry,
@@ -13,6 +11,7 @@ from dagster import (
     _check as check,
 )
 from dagster._utils.backcompat import experimental_class_warning
+from pandas import DataFrame
 
 
 class ConstraintViolationException(Exception):

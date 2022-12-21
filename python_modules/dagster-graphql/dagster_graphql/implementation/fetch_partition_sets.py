@@ -1,7 +1,5 @@
 from typing import Optional
 
-from graphene import ResolveInfo
-
 import dagster._check as check
 from dagster._core.host_representation import (
     ExternalPartitionSet,
@@ -17,6 +15,7 @@ from dagster._core.storage.tags import (
     get_tag_type,
 )
 from dagster._utils.yaml_utils import dump_run_config_yaml
+from graphene import ResolveInfo
 
 from .utils import capture_error
 

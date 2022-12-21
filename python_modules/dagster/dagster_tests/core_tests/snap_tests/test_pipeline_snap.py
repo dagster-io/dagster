@@ -1,7 +1,6 @@
 import itertools
 
 import pytest
-
 from dagster import Field, In, Map, Nothing, Out, Permissive, Selector, Shape, job, op
 from dagster._config import Array, Bool, Enum, EnumValue, Float, Int, Noneable, String
 from dagster._core.snap import (

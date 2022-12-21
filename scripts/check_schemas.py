@@ -2,10 +2,9 @@
 import importlib
 import pkgutil
 
+import dagster
 import sqlalchemy as db
 from sqlalchemy.sql.schema import Column
-
-import dagster
 
 
 def check_schema_compat(schema):

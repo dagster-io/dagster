@@ -16,11 +16,6 @@ from typing import (
     Tuple,
 )
 
-from dagster_dbt.cli.types import DbtCliOutput
-from dagster_dbt.cli.utils import execute_cli
-from dagster_dbt.types import DbtOutput
-from dagster_dbt.utils import _get_input_name, _get_output_name, result_to_events
-
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -42,6 +37,11 @@ from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._legacy import OpExecutionContext
 from dagster._utils.backcompat import experimental_arg_warning
+
+from dagster_dbt.cli.types import DbtCliOutput
+from dagster_dbt.cli.utils import execute_cli
+from dagster_dbt.types import DbtOutput
+from dagster_dbt.utils import _get_input_name, _get_output_name, result_to_events
 
 
 def _load_manifest_for_project(

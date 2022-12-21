@@ -6,12 +6,6 @@ from typing import Any, Mapping, Optional, Sequence, Tuple
 from urllib.parse import urljoin
 
 import requests
-from dagster_fivetran.types import FivetranOutput
-from dagster_fivetran.utils import get_fivetran_connector_url, get_fivetran_logs_url
-from dateutil import parser
-from requests.auth import HTTPBasicAuth
-from requests.exceptions import RequestException
-
 from dagster import (
     Failure,
     Field,
@@ -22,6 +16,12 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
+from dateutil import parser
+from requests.auth import HTTPBasicAuth
+from requests.exceptions import RequestException
+
+from dagster_fivetran.types import FivetranOutput
+from dagster_fivetran.utils import get_fivetran_connector_url, get_fivetran_logs_url
 
 FIVETRAN_API_BASE = "https://api.fivetran.com"
 FIVETRAN_API_VERSION_PATH = "v1/"

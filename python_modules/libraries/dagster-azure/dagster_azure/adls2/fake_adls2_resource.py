@@ -3,9 +3,9 @@ import random
 from typing import Dict
 from unittest import mock
 
-from dagster_azure.blob import FakeBlobServiceClient
-
 from dagster import resource
+
+from dagster_azure.blob import FakeBlobServiceClient
 
 from .resources import ADLS2Resource
 from .utils import ResourceNotFoundError

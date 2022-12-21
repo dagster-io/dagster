@@ -1,12 +1,6 @@
 import logging
 
 import pytest
-from dagster_tests.general_tests.test_legacy_repository import (
-    define_multi_mode_pipeline,
-    define_multi_mode_with_resources_pipeline,
-    define_single_mode_pipeline,
-)
-
 from dagster import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -20,6 +14,12 @@ from dagster._check import CheckError
 from dagster._core.utils import coerce_valid_log_level
 from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline, solid
 from dagster._utils.test import execute_solids_within_pipeline
+
+from dagster_tests.general_tests.test_legacy_repository import (
+    define_multi_mode_pipeline,
+    define_multi_mode_with_resources_pipeline,
+    define_single_mode_pipeline,
+)
 
 
 def test_default_mode_definition():

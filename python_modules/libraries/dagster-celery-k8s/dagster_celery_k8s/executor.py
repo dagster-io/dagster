@@ -4,24 +4,6 @@ import sys
 import time
 
 import kubernetes
-from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
-from dagster_celery.core_execution_loop import DELEGATE_MARKER
-from dagster_celery.defaults import broker_url, result_backend
-from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
-from dagster_k8s.client import (
-    DagsterK8sAPIRetryLimitExceeded,
-    DagsterK8sError,
-    DagsterK8sPipelineStatusException,
-    DagsterK8sTimeoutError,
-    DagsterK8sUnrecoverableAPIError,
-    DagsterKubernetesClient,
-)
-from dagster_k8s.job import (
-    UserDefinedDagsterK8sConfig,
-    get_k8s_job_name,
-    get_user_defined_k8s_config,
-)
-
 from dagster import (
     DagsterEvent,
     DagsterEventType,
@@ -42,6 +24,23 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import pack_value, serialize_dagster_namedtuple, unpack_value
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
+from dagster_celery.core_execution_loop import DELEGATE_MARKER
+from dagster_celery.defaults import broker_url, result_backend
+from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
+from dagster_k8s.client import (
+    DagsterK8sAPIRetryLimitExceeded,
+    DagsterK8sError,
+    DagsterK8sPipelineStatusException,
+    DagsterK8sTimeoutError,
+    DagsterK8sUnrecoverableAPIError,
+    DagsterKubernetesClient,
+)
+from dagster_k8s.job import (
+    UserDefinedDagsterK8sConfig,
+    get_k8s_job_name,
+    get_user_defined_k8s_config,
+)
 
 from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
 from .launcher import CeleryK8sRunLauncher

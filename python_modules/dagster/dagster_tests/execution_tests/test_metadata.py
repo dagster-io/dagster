@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-
 from dagster import (
     AssetMaterialization,
     AssetObservation,

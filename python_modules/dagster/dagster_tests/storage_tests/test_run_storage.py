@@ -3,11 +3,11 @@ from contextlib import contextmanager
 
 import mock
 import pytest
-from dagster_tests.storage_tests.utils.run_storage import TestRunStorage
-
 from dagster._core.storage.legacy_storage import LegacyRunStorage
 from dagster._core.storage.runs import InMemoryRunStorage, SqliteRunStorage
 from dagster._core.storage.sqlite_storage import DagsterSqliteStorage
+
+from dagster_tests.storage_tests.utils.run_storage import TestRunStorage
 
 
 @contextmanager

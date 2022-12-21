@@ -11,9 +11,8 @@ from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import click
-import yaml
-
 import dagster._check as check
+import yaml
 from dagster._utils import file_relative_path, mkdir_p
 from dagster._utils.merger import deep_merge_dicts
 

@@ -7,8 +7,6 @@ import tempfile
 
 import pytest
 import sqlalchemy as db
-from sqlalchemy import inspect
-
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -27,6 +25,7 @@ from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._legacy import execute_pipeline, pipeline, solid
 from dagster._utils import file_relative_path
+from sqlalchemy import inspect
 
 
 def get_columns(instance, table_name: str):

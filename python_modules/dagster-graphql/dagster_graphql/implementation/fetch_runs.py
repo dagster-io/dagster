@@ -1,8 +1,6 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, KeysView, List, Mapping, Sequence, cast
 
-from graphene import ResolveInfo
-
 from dagster import (
     AssetKey,
     _check as check,
@@ -15,6 +13,9 @@ from dagster._core.host_representation import PipelineSelector
 from dagster._core.storage.pipeline_run import RunRecord, RunsFilter
 from dagster._core.storage.tags import TagType, get_tag_type
 from dagster._legacy import DagsterRunStatus, PipelineDefinition
+from graphene import ResolveInfo
+
+from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import UserFacingGraphQLError, capture_error

@@ -5,7 +5,6 @@ from dagster import build_op_context
 from .assets_v2 import items
 from .resources.resources_v2 import StubHNClient
 
-
 # start
 # test_assets.py
 

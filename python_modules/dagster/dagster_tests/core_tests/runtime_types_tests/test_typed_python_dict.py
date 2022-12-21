@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import DagsterTypeCheckDidNotPass, Dict, In, Out, op
 from dagster._legacy import execute_solid
 

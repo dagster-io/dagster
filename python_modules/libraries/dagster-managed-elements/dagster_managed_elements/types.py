@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import Any, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
 
 import click
-
 import dagster._check as check
 
 

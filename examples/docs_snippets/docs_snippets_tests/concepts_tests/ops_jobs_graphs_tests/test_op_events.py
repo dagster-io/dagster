@@ -1,4 +1,6 @@
 import pytest
+
+from dagster import Failure, graph
 from docs_snippets.concepts.ops_jobs_graphs.op_events import (
     my_asset_op,
     my_expectation_op,
@@ -12,8 +14,6 @@ from docs_snippets.concepts.ops_jobs_graphs.op_events import (
     my_output_op,
     my_retry_op,
 )
-
-from dagster import Failure, graph
 
 
 def execute_op_in_graph(an_op, **kwargs):

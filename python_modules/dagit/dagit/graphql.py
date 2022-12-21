@@ -3,7 +3,8 @@ from asyncio import Task, get_event_loop
 from enum import Enum
 from typing import Any, AsyncGenerator, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-from dagit.templates.playground import TEMPLATE
+import dagster._check as check
+from dagster._seven import json
 from dagster_graphql.implementation.utils import ErrorCapture
 from graphene import Schema
 from graphql import GraphQLError, GraphQLFormattedError
@@ -18,8 +19,7 @@ from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from starlette.routing import BaseRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
-import dagster._check as check
-from dagster._seven import json
+from dagit.templates.playground import TEMPLATE
 
 
 class GraphQLWS(str, Enum):
