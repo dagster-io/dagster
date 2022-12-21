@@ -1,11 +1,18 @@
+from azure.identity.aio import DefaultAzureCredential
 from azure.storage.filedatalake import DataLakeLeaseClient
 from dagster_azure.blob.utils import create_blob_client
 
-from dagster import Field, Selector, StringSource, resource
+from dagster import Field, Permissive, Selector, StringSource, resource
 from dagster._utils.merger import merge_dicts
 
 from .file_manager import ADLS2FileManager
 from .utils import create_adls2_client
+
+DEFAULT_AZURE_CREDENTIAL_CONFIG = Field(
+    Permissive(
+        description="Uses DefaultAzureCredential to authenticate and passed as keyword arguments",
+    )
+)
 
 ADLS2_CLIENT_CONFIG = {
     "storage_account": Field(StringSource, description="The storage account name."),
@@ -13,7 +20,8 @@ ADLS2_CLIENT_CONFIG = {
         Selector(
             {
                 "sas": Field(StringSource, description="SAS token for the account."),
-                "key": Field(StringSource, description="Shared Access Key for the account"),
+                "key": Field(StringSource, description="Shared Access Key for the account."),
+                "DefaultAzureCredential": DEFAULT_AZURE_CREDENTIAL_CONFIG,
             }
         ),
         description="The credentials with which to authenticate.",
@@ -49,8 +57,7 @@ def adls2_resource(context):
     `required_resource_keys`, or it will not be initialized for the execution of their compute
     functions.
 
-    You may pass credentials to this resource using either a SAS token or a key, using
-    environment variables if desired:
+    You may pass credentials to this resource using either a SAS token, a key or by
 
     .. code-block:: YAML
 
@@ -65,6 +72,12 @@ def adls2_resource(context):
                 key:
                   env: AZURE_DATA_LAKE_STORAGE_KEY
                 # str: The shared access key for the account.
+                DefaultAzureCredential: {}
+                # dict: The keyword arguments used for DefaultAzureCredential
+                # or leave the object empty for no arguments
+                DefaultAzureCredential:
+                    exclude_environment_credential: true
+
     """
     return _adls2_resource_from_config(context.resource_config)
 
@@ -125,5 +138,9 @@ def _adls2_resource_from_config(config):
     Returns: An adls2 client.
     """
     storage_account = config["storage_account"]
-    credential = config["credential"].copy().popitem()[1]
+    if "DefaultAzureCredential" in config["credential"]:
+        credential = DefaultAzureCredential(**config["credential"]["DefaultAzureCredential"])
+    else:
+        credential = config["credential"].copy().popitem()[1]
+
     return ADLS2Resource(storage_account, credential)

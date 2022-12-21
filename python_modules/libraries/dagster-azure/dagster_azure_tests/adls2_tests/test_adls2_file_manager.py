@@ -189,3 +189,46 @@ def test_adls_file_manager_resource(MockADLS2FileManager, MockADLS2Resource):
     )
     test_solid(context)
     assert did_it_run["it_ran"]
+
+
+@mock.patch("dagster_azure.adls2.resources.DefaultAzureCredential")
+@mock.patch("dagster_azure.adls2.resources.ADLS2Resource")
+@mock.patch("dagster_azure.adls2.resources.ADLS2FileManager")
+def test_adls_file_manager_resource_defaultazurecredential(
+    MockADLS2FileManager,
+    MockADLS2Resource,
+    MockDefaultAzureCredential,
+):
+    did_it_run = dict(it_ran=False)
+
+    resource_config = {
+        "storage_account": "some-storage-account",
+        "credential": {"DefaultAzureCredential": {"exclude_environment_credential": True}},
+        "adls2_file_system": "some-file-system",
+        "adls2_prefix": "some-prefix",
+    }
+
+    @op(required_resource_keys={"file_manager"})
+    def test_solid(context):
+        # test that we got back a ADLS2FileManager
+        assert context.resources.file_manager == MockADLS2FileManager.return_value
+
+        # make sure the file manager was initalized with the config we are supplying
+        MockADLS2FileManager.assert_called_once_with(
+            adls2_client=MockADLS2Resource.return_value.adls2_client,
+            file_system=resource_config["adls2_file_system"],
+            prefix=resource_config["adls2_prefix"],
+        )
+        MockDefaultAzureCredential.assert_called_once_with(exclude_environment_credential=True)
+        MockADLS2Resource.assert_called_once_with(
+            resource_config["storage_account"],
+            MockDefaultAzureCredential.return_value,
+        )
+
+        did_it_run["it_ran"] = True
+
+    context = build_op_context(
+        resources={"file_manager": configured(adls2_file_manager)(resource_config)},
+    )
+    test_solid(context)
+    assert did_it_run["it_ran"]
