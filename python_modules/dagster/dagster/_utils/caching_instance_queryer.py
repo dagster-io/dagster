@@ -359,10 +359,14 @@ class CachingInstanceQueryer:
                 if input_event_pointer_tag in record_tags:
                     # get the upstream materialization event which was consumed when producing this
                     # materialization event
-                    input_record_id = int(record_tags[input_event_pointer_tag])
-                    parent_record = self.get_latest_materialization_record(
-                        parent_key, before_cursor=input_record_id + 1
-                    )
+                    pointer_tag = record_tags[input_event_pointer_tag]
+                    if pointer_tag and pointer_tag != "NULL":
+                        input_record_id = int(pointer_tag)
+                        parent_record = self.get_latest_materialization_record(
+                            parent_key, before_cursor=input_record_id + 1
+                        )
+                    else:
+                        parent_record = None
                 else:
                     # if the input event id was not recorded (materialized pre-1.1.0), just grab
                     # the most recent asset materialization for this parent which happened before
@@ -560,5 +564,4 @@ class CachingInstanceQueryer:
         return freshness_policy.minutes_late(
             evaluation_time=evaluation_time,
             used_data_times=used_data_times,
-            available_data_times={key: evaluation_time for key in used_data_times},
         )

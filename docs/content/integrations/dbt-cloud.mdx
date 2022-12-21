@@ -99,9 +99,14 @@ Now that your dbt Cloud assets are loaded, you can define a Dagster job that mat
 You can explicitly define when your assets should be materialized. For example, you can schedule assets based on their upstream or downstream dependencies, external events using a sensor, or a cron schedule.
 
 ```python startafter=start_schedule_dbt_cloud_assets endbefore=end_schedule_dbt_cloud_assets file=/integrations/dbt/dbt_cloud.py dedent=4
-from dagster import ScheduleDefinition, define_asset_job, repository, AssetSelection
+from dagster import (
+    ScheduleDefinition,
+    define_asset_job,
+    AssetSelection,
+    Definitions,
+)
 
-# Materialize all assets in the repository
+# Materialize all assets
 run_everything_job = define_asset_job("run_everything_job", AssetSelection.all())
 
 # Materialize only the staging assets
@@ -109,11 +114,10 @@ run_staging_job = define_asset_job(
     "run_staging_job", AssetSelection.groups("staging")
 )
 
-@repository
-def my_repo():
-    return [
-        # Use the dbt_cloud_assets defined in Step 2
-        dbt_cloud_assets,
+defs = Definitions(
+    # Use the dbt_cloud_assets defined in Step 2
+    assets=[dbt_cloud_assets],
+    schedules=[
         ScheduleDefinition(
             job=run_everything_job,
             cron_schedule="@daily",
@@ -122,7 +126,8 @@ def my_repo():
             job=run_staging_job,
             cron_schedule="@hourly",
         ),
-    ]
+    ],
+)
 ```
 
 ## What's next?

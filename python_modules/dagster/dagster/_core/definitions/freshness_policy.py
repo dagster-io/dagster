@@ -12,7 +12,7 @@ from .events import AssetKey
 
 
 class FreshnessConstraint(NamedTuple):
-    asset_key: AssetKey
+    asset_keys: AbstractSet[AssetKey]
     required_data_time: datetime.datetime
     required_by_time: datetime.datetime
 
@@ -95,7 +95,6 @@ class FreshnessPolicy(
         window_start: datetime.datetime,
         window_end: datetime.datetime,
         used_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
-        available_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     ) -> AbstractSet[FreshnessConstraint]:
         """For a given time window, calculate a set of FreshnessConstraints that this asset must
         satisfy.
@@ -108,10 +107,6 @@ class FreshnessPolicy(
             used_data_times (Mapping[AssetKey, Optional[datetime]]): For each of the relevant
                 upstream assets, the timestamp of the data that was used to create the current
                 version of this asset.
-            available_data_times (Mapping[AssetKey, Optional[datetime]]): For each of the relevant
-                upstream assets, the timestamp of the most recent available data. Currently, this
-                is always equal to the current time, reflecting that if an asset is executed, it
-                will incorporate all data in the external world up until that point in time.
         """
         constraints = set()
 
@@ -131,30 +126,25 @@ class FreshnessPolicy(
 
         # iterate over each schedule tick in the provided time window
         evaluation_tick = next(constraint_ticks, None)
+        upstream_keys = frozenset(used_data_times.keys())
+        used_data_time = None
+        for dt in used_data_times.values():
+            if dt is not None:
+                used_data_time = min(used_data_time or dt, dt)
         while evaluation_tick is not None and evaluation_tick < window_end:
-            for asset_key, available_data_time in available_data_times.items():
-                if available_data_time is None:
-                    continue
-                # assume updated data is always available
-                elif available_data_time == window_start:
-                    required_data_time = evaluation_tick - self.maximum_lag_delta
-                    required_by_time = evaluation_tick
-                # assume updated data not always available, just require the latest
-                # available data
-                else:
-                    required_data_time = available_data_time
-                    required_by_time = available_data_time + self.maximum_lag_delta
 
-                # only add constraints if they are not currently satisfied
-                used_data_time = used_data_times.get(asset_key)
-                if used_data_time is None or used_data_time < required_data_time:
-                    constraints.add(
-                        FreshnessConstraint(
-                            asset_key=asset_key,
-                            required_data_time=required_data_time,
-                            required_by_time=required_by_time,
-                        )
+            required_data_time = evaluation_tick - self.maximum_lag_delta
+            required_by_time = evaluation_tick
+
+            # only add constraints if it is not currently fully satisfied
+            if used_data_time is None or used_data_time < required_data_time:
+                constraints.add(
+                    FreshnessConstraint(
+                        asset_keys=upstream_keys,
+                        required_data_time=required_data_time,
+                        required_by_time=required_by_time,
                     )
+                )
 
             evaluation_tick = next(constraint_ticks, None)
             # fallback if the user selects a very small maximum_lag_minutes value
@@ -166,7 +156,6 @@ class FreshnessPolicy(
         self,
         evaluation_time: Optional[datetime.datetime],
         used_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
-        available_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     ) -> Optional[float]:
         """Returns a number of minutes past the specified freshness policy that this asset currently
         is. If the asset is missing upstream data, or is not materialized at all, then it is unknown
@@ -178,10 +167,6 @@ class FreshnessPolicy(
             used_data_times (Mapping[AssetKey, Optional[datetime]]): For each of the relevant
                 upstream assets, the timestamp of the data that was used to create the current
                 version of this asset.
-            available_data_times (Mapping[AssetKey, Optional[datetime]]): For each of the relevant
-                upstream assets, the timestamp of the most recent available data. Currently, this
-                is always equal to the current time, reflecting that if an asset is executed, it
-                will incorporate all data in the external world up until that point in time.
         """
         if self.cron_schedule:
             # most recent cron schedule tick
@@ -193,29 +178,12 @@ class FreshnessPolicy(
             evaluation_tick = evaluation_time
 
         minutes_late = 0.0
-        for asset_key, available_data_time in available_data_times.items():
-            # upstream data is not available, undefined how out of date you are
-            if available_data_time is None:
-                return None
-
+        for used_data_time in used_data_times.values():
             # upstream data was not used, undefined how out of date you are
-            used_data_time = used_data_times[asset_key]
             if used_data_time is None:
                 return None
 
-            # in the case that we're basing available data time off of upstream materialization
-            # events instead of the current time, you are considered up to date if it's no more
-            # than maximum_lag_duration after your upstream asset updated
-            if (
-                evaluation_time != available_data_time
-                and evaluation_tick < available_data_time + self.maximum_lag_delta
-            ):
-                continue
-
-            # require either the most recent available data time, or data from maximum_lag_duration
-            # before the most recent evaluation tick, whichever is less strict
-            required_time = min(available_data_time, evaluation_tick - self.maximum_lag_delta)
-
+            required_time = evaluation_tick - self.maximum_lag_delta
             if used_data_time < required_time:
                 minutes_late = max(
                     minutes_late, (required_time - used_data_time).total_seconds() / 60

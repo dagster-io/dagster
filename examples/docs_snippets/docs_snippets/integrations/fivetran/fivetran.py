@@ -70,11 +70,22 @@ def scope_fivetran_manual_config():
 
 
 def scope_schedule_assets():
-    fivetran_assets = []
-    # start_schedule_assets
-    from dagster import ScheduleDefinition, define_asset_job, repository, AssetSelection
+    from dagster_fivetran import fivetran_resource, load_assets_from_fivetran_instance
 
-    # materialize all assets in the repository
+    fivetran_instance = fivetran_resource.configured(
+        {"api_key": "foo", "api_secret": "bar"}
+    )
+    fivetran_assets = load_assets_from_fivetran_instance(fivetran_instance)
+
+    # start_schedule_assets
+    from dagster import (
+        ScheduleDefinition,
+        define_asset_job,
+        AssetSelection,
+        Definitions,
+    )
+
+    # materialize all assets
     run_everything_job = define_asset_job("run_everything", selection="*")
 
     # only run my_fivetran_connection and downstream assets
@@ -82,10 +93,9 @@ def scope_schedule_assets():
         "my_etl_job", AssetSelection.groups("my_fivetran_connection").downstream()
     )
 
-    @repository
-    def my_repo():
-        return [
-            fivetran_assets,
+    defs = Definitions(
+        assets=[fivetran_assets],
+        schedules=[
             ScheduleDefinition(
                 job=my_etl_job,
                 cron_schedule="@daily",
@@ -94,8 +104,8 @@ def scope_schedule_assets():
                 job=run_everything_job,
                 cron_schedule="@weekly",
             ),
-        ]
-
+        ],
+    )
     # end_schedule_assets
 
 
@@ -112,7 +122,7 @@ def scope_add_downstream_assets():
 
     # start_add_downstream_assets
     import json
-    from dagster import asset, repository, with_resources, AssetIn, AssetKey
+    from dagster import asset, AssetIn, AssetKey, Definitions
     from dagster_fivetran import load_assets_from_fivetran_instance
 
     fivetran_assets = load_assets_from_fivetran_instance(
@@ -121,19 +131,14 @@ def scope_add_downstream_assets():
     )
 
     @asset(
-        ins={"survey_responses": AssetIn(key=AssetKey("public", "survey_responses"))}
+        ins={"survey_responses": AssetIn(key=AssetKey(["public", "survey_responses"]))}
     )
     def survey_responses_file(survey_responses):
         with open("survey_responses.json", "w", encoding="utf8") as f:
             f.write(json.dumps(survey_responses, indent=2))
 
-    @repository
-    def my_repo():
-        return [
-            with_resources(
-                [fivetran_assets, survey_responses_file],
-                {"snowflake_io_manager": snowflake_io_manager},
-            )
-        ]
-
+    defs = Definitions(
+        assets=[fivetran_assets, survey_responses_file],
+        resources={"snowflake_io_manager": snowflake_io_manager},
+    )
     # end_add_downstream_assets
