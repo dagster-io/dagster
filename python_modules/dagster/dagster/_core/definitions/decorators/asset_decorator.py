@@ -6,6 +6,7 @@ from typing import (
     Dict,
     Mapping,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Union,
@@ -16,6 +17,7 @@ from typing import (
 import dagster._check as check
 from dagster._builtins import Nothing
 from dagster._config import UserConfigSchema
+from dagster._config.structured_config import get_resource_args
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -263,8 +265,10 @@ class _Asset:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-            required_resource_keys = set(self.required_resource_keys).union(
-                set(self.resource_defs.keys())
+            required_resource_keys = (
+                set(self.required_resource_keys)
+                .union(set(self.resource_defs.keys()))
+                .union({arg.name for arg in get_resource_args(fn)})
             )
 
             if isinstance(self.io_manager, str):
@@ -522,17 +526,21 @@ def build_asset_ins(
     )
     input_params = params[1:] if is_context_provided else params
 
-    # Filter config
-    filtered_input_params = [param for param in input_params if param.name != "config"]
+    # Filter config, resource args
+    resource_arg_names = {arg.name for arg in get_resource_args(fn)}
+
+    new_input_args = []
+    for input_arg in input_params:
+        if input_arg.name != "config" and input_arg.name not in resource_arg_names:
+            new_input_args.append(input_arg)
+    input_params = new_input_args
 
     non_var_input_param_names = [
         param.name
-        for param in filtered_input_params
+        for param in new_input_args
         if param.kind == funcsigs.Parameter.POSITIONAL_OR_KEYWORD
     ]
-    has_kwargs = any(
-        param.kind == funcsigs.Parameter.VAR_KEYWORD for param in filtered_input_params
-    )
+    has_kwargs = any(param.kind == funcsigs.Parameter.VAR_KEYWORD for param in new_input_args)
 
     all_input_names = set(non_var_input_param_names) | asset_ins.keys()
 
