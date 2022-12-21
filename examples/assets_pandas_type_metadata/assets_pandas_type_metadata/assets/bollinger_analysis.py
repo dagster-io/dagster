@@ -1,5 +1,8 @@
 # pylint: disable=redefined-outer-name
-from dagster import Field, asset
+from pydantic import Field
+
+from dagster import asset
+from dagster._config.structured_config import Config
 
 from ..lib import (
     AnomalousEventsDgType,
@@ -18,10 +21,6 @@ from ..lib import (
 def sp500_prices():
     """Historical stock prices for the S&P 500."""
     return load_sp500_prices()
-
-
-from pydantic import Field
-from dagster._config.structured_config import Config
 
 
 class SP500BollingerBandsConfig(Config):
