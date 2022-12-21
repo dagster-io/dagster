@@ -121,10 +121,13 @@ def test_with_assets():
         a_string: str
         an_int: int
 
+    executed = {}
+
     @asset
     def my_asset(config: AnAssetConfig):
         assert config.a_string == "foo"
         assert config.an_int == 2
+        executed["yes"] = True
 
     assert (
         build_assets_job(
@@ -136,16 +139,21 @@ def test_with_assets():
         .success
     )
 
+    assert executed["yes"]
+
 
 def test_multi_asset():
     class AMultiAssetConfig(Config):
         a_string: str
         an_int: int
 
+    executed = {}
+
     @multi_asset(outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")})
     def two_assets(config: AMultiAssetConfig):
         assert config.a_string == "foo"
         assert config.an_int == 2
+        executed["yes"] = True
         return 1, 2
 
     assert (
@@ -157,6 +165,8 @@ def test_multi_asset():
         .execute_in_process()
         .success
     )
+
+    assert executed["yes"]
 
 
 def test_primitive_struct_config():
