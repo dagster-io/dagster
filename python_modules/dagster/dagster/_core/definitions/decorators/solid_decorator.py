@@ -13,13 +13,10 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Annotated
-
 import dagster._check as check
 from dagster._config import UserConfigSchema
-from dagster._config.structured_config import get_resource_args
 from dagster._core.decorator_utils import format_docstring_for_description
-from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.resource_output import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster._seven import funcsigs
@@ -65,7 +62,6 @@ class DecoratedOpFunction(NamedTuple):
         check.failed("Requested config arg on function that does not have one")
 
     def get_resource_args(self) -> Sequence[funcsigs.Parameter]:
-
         return get_resource_args(self.decorated_fn)
 
     def positional_inputs(self) -> Sequence[str]:
@@ -161,7 +157,7 @@ class _Solid:
             explicit_input_defs=self.input_defs,
             exclude_nothing=True,
         )
-        resolved_resource_keys = set(self.required_resource_keys).union(
+        resolved_resource_keys = (self.required_resource_keys or set()).union(
             {arg.name for arg in compute_fn.get_resource_args()}
         )
 

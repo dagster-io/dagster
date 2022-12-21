@@ -83,6 +83,10 @@ class _Op:
         elif self.out is not None:
             outs = check.mapping_param(self.out, "out", key_type=str, value_type=Out)
 
+        resolved_resource_keys = (self.required_resource_keys or set()).union(
+            {arg.name for arg in compute_fn.get_resource_args()}
+        )
+
         op_def = OpDefinition(
             name=self.name,
             ins=self.ins,
@@ -90,7 +94,7 @@ class _Op:
             compute_fn=compute_fn,
             config_schema=self.config_schema,
             description=self.description or format_docstring_for_description(fn),
-            required_resource_keys=self.required_resource_keys,
+            required_resource_keys=resolved_resource_keys,
             tags=self.tags,
             code_version=self.code_version,
             retry_policy=self.retry_policy,

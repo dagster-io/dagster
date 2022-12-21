@@ -1,37 +1,18 @@
 import inspect
-from inspect import Parameter
-from typing import Any, Optional, Sequence, Type, TypeVar
+from typing import Any, Optional, Type
 
 from pydantic import BaseModel
 from pydantic.fields import SHAPE_SINGLETON, ModelField
-from typing_extensions import Annotated
 
 import dagster._check as check
 from dagster import Field, Shape
 from dagster._config.field_utils import FIELD_NO_DEFAULT_PROVIDED, convert_potential_field
-from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.resource_definition import ResourceDefinition
 
 
 class Config(BaseModel):
     """
     Base class for Dagster configuration models.
     """
-
-
-def get_resource_args(fn) -> Sequence[Parameter]:
-
-    return [param for param in get_function_params(fn) if _is_resource_annotated(param)]
-
-
-def _is_resource_annotated(param: Parameter) -> bool:
-    return (
-        isinstance(param.annotation, type) and issubclass(param.annotation, ResourceDefinition)
-    ) or (hasattr(param.annotation, "__metadata__") and getattr(param.annotation, "__metadata__"))
-
-
-T = TypeVar("T")
-ResourceOutput = Annotated[T, "resource_output"]
 
 
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
