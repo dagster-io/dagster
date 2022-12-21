@@ -48,7 +48,9 @@ def scope_schedule_dbt_cloud_assets(dbt_cloud_assets):
     run_everything_job = define_asset_job("run_everything_job", AssetSelection.all())
 
     # Materialize only the staging assets
-    run_staging_job = define_asset_job("run_staging_job", AssetSelection.groups("staging"))
+    run_staging_job = define_asset_job(
+        "run_staging_job", AssetSelection.groups("staging")
+    )
 
     defs = Definitions(
         # Use the dbt_cloud_assets defined in Step 2

@@ -1,4 +1,9 @@
-from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
+from dagster_dbt import (
+    dbt_cli_resource,
+    dbt_cloud_resource,
+    load_assets_from_dbt_cloud_job,
+    load_assets_from_dbt_project,
+)
 
 from dagster import file_relative_path, with_resources
 from docs_snippets.integrations.dbt.dbt import scope_schedule_assets
@@ -26,10 +31,9 @@ def test_scope_schedule_assets_can_load():
 
 
 def test_scope_schedule_dbt_cloud_assets_can_load():
-
-    from dagster_dbt import dbt_cloud_resource, load_assets_from_dbt_cloud_job
-
-    dbt_cloud_instance = dbt_cloud_resource.configured({"auth_token": "foo", "account_id": 111})
+    dbt_cloud_instance = dbt_cloud_resource.configured(
+        {"auth_token": "foo", "account_id": 111}
+    )
     dbt_cloud_assets = load_assets_from_dbt_cloud_job(
         dbt_cloud=dbt_cloud_instance,
         job_id=33333,
