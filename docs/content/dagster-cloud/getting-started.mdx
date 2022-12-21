@@ -64,8 +64,8 @@ In this step, you'll select the type of deployment you want to use: **Serverless
         <strong>Serverless</strong>
       </td>
       <td>
-        Serverless Deployment is a fully-managed version of Dagster Cloud that
-        allows you to run your Dagster jobs without spinning up any
+        In a Serverless deployment, Dagster manages the infrastructure needed to
+        run Dagster jobs. This means you don't need to spin up or manage any
         infrastructure. Refer to the{" "}
         <a href="/dagster-cloud/deployment/serverless">
           Serverless deployment documentation
@@ -98,7 +98,7 @@ In this step, you'll select the type of deployment you want to use: **Serverless
         <strong>Hybrid</strong>
       </td>
       <td>
-        With a Hybrid Deployment, your Dagster code is executed in your
+        In a Hybrid deployment, your Dagster code is executed in your
         infrastructure. The agent runs in your infrastructure, executes your
         code, and streams metadata about code execution and assets and jobs (for
         visualization) over HTTPS back to Dagster Cloud. Refer to the{" "}
@@ -252,7 +252,7 @@ After you've finished setting up your local project, move on to deploying using 
    ```shell
    dagster-cloud serverless deploy \
          --location-name "<LOCATION_NAME>" \       # name of the code loation
-         --package-name <PACKAGE_NAME> \           # name of the Python package associated with the code location
+         --package-name "<PACKAGE_NAME>" \           # name of the Python package associated with the code location
    ```
 
 When finished, [continue to the next step](#step-4-set-up-environment-variables-and-secrets).
@@ -271,7 +271,6 @@ To set up Hybrid deployment and deploy your code, you'll need to:
 
 1. Set up an agent
 2. Configure CI/CD for your project
-3. Add the code location in Dagster Cloud
 
 For most Hybrid deployments - with the exception of those using a local agent - you'll need to create a Docker image containing your Dagster code and then add a code location to Dagster Cloud that references the image.
 
@@ -280,6 +279,9 @@ For most Hybrid deployments - with the exception of those using a local agent - 
 **Step 1: Create a Hybrid agent**
 
 1. The dialog that displays will contain a pre-generated [agent token](/dagster-cloud/account/managing-user-agent-tokens) and details about the agents currently supported by Dagster Cloud.
+
+   **Note**: Keep this token handy - you'll need it to set up CI/CD in the next step.
+
 2. Follow the steps for setting up and deploying your agent:
 
    - [Amazon Elastic Container Service (ECS)](/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc)
@@ -301,17 +303,15 @@ Next, you'll configure CI/CD for your Dagster project. How this is accomplished 
 <TabGroup>
 <TabItem name="GitHub Actions">
 
-For continunous integration using GitHub actions:
-
-To complete this step, you can use your own Dagster code or [Dagster Cloud Hybrid Quickstart](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart). The quickstart is a template with everything you need to get started using Hybrid in Dagster Cloud.
+To set up continuous integration using GitHub Actions, you can use your own Dagster code or the [Dagster Cloud Hybrid Quickstart](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart). The quickstart is a template with everything you need to get started using Hybrid deployment in Dagster Cloud.
 
 - **If using the template**, [clone the repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart).
 
-- **If not using the template**, copy the workflow files (`.github/workflows`) from the [Hybrid quickstart repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/tree/main/.github/workflows) and add them to your repository. This is already done for you if using the quickstart.
+- **If not using the template**, copy the GitHub workflow files (`.github/workflows`) from the [Hybrid quickstart repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/tree/main/.github/workflows) and add them to your repository. This is already done for you if using the quickstart.
 
 1. In the repository, set the necessary GitHub action secrets:
 
-   - `DAGSTER_CLOUD_API_TOKEN` - A Dagster Cloud agent token. Refer to the [agent tokens documentation](/dagster-cloud/account/managing-user-agent-tokens#managing-agent-tokens) for more info.
+   - `DAGSTER_CLOUD_API_TOKEN` - The Dagster Cloud agent token from the previous section. Refer to the [agent tokens documentation](/dagster-cloud/account/managing-user-agent-tokens#managing-agent-tokens) for more info.
    - `ORGANIZATION_ID` - The organization ID of your Dagster Cloud organization, found in your account's URL. For example, if your organization is found at `https://dagster.cloud/pied-piper` or `https://pied-piper.dagster.cloud/`, this would be `pied-piper`.
 
    Refer to the [GitHub docs](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository) for more info about GitHub Action secrets.
@@ -321,16 +321,6 @@ To complete this step, you can use your own Dagster code or [Dagster Cloud Hybri
 When finished setting up the repository, navigate back to Dagster Cloud and move on to the next step.
 
 ---
-
-**Step 3: Add a Dagster Cloud code location**
-
-1. Click **Configure a Code Location**.
-
-2. In the **Code Locations** tab that displays, click **+ Add**.
-
-3. A pre-filled YAML editor with configuration will display.
-
-4. Verify that the configuration is correct, then click **Add code location** to save.
 
 The agent will attempt to load your code. After the code is loaded, the new code location will show a **Loaded** status and a sample Dagster job will display in Dagster Cloud.
 
