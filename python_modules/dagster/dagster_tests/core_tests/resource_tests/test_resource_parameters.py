@@ -1,15 +1,5 @@
+from dagster import AssetsDefinition, ResourceDefinition, asset, job, op, resource, with_resources
 from dagster._core.definitions.assets_job import build_assets_job
-from dagster._core.storage.mem_io_manager import InMemoryIOManager
-
-from dagster import (
-    ResourceDefinition,
-    asset,
-    job,
-    op,
-    resource,
-    with_resources,
-    AssetsDefinition,
-)
 from dagster._core.definitions.resource_output import ResourceOutput
 
 

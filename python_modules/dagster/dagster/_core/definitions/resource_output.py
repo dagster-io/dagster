@@ -15,7 +15,10 @@ def get_resource_args(fn) -> Sequence[Parameter]:
 def _is_resource_annotated(param: Parameter) -> bool:
     return (
         isinstance(param.annotation, type) and issubclass(param.annotation, ResourceDefinition)
-    ) or (hasattr(param.annotation, "__metadata__") and getattr(param.annotation, "__metadata__"))
+    ) or (
+        hasattr(param.annotation, "__metadata__")
+        and getattr(param.annotation, "__metadata__") == ("resource_output",)
+    )
 
 
 T = TypeVar("T")

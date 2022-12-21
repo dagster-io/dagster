@@ -83,7 +83,7 @@ class _Op:
         elif self.out is not None:
             outs = check.mapping_param(self.out, "out", key_type=str, value_type=Out)
 
-        resolved_resource_keys = (self.required_resource_keys or set()).union(
+        resolved_resource_keys = set(self.required_resource_keys or []).union(
             {arg.name for arg in compute_fn.get_resource_args()}
         )
 

@@ -157,7 +157,7 @@ class _Solid:
             explicit_input_defs=self.input_defs,
             exclude_nothing=True,
         )
-        resolved_resource_keys = (self.required_resource_keys or set()).union(
+        resolved_resource_keys = set(self.required_resource_keys or []).union(
             {arg.name for arg in compute_fn.get_resource_args()}
         )
 

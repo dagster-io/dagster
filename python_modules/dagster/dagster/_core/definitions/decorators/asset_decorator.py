@@ -6,7 +6,6 @@ from typing import (
     Dict,
     Mapping,
     Optional,
-    Sequence,
     Set,
     Tuple,
     Union,
