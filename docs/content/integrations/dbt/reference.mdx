@@ -105,17 +105,16 @@ dbt_assets = with_resources(
 Once you have your dbt assets, you can define a job that runs some or all of these assets on a schedule:
 
 ```python startafter=start_schedule_assets endbefore=end_schedule_assets file=/integrations/dbt/dbt.py dedent=4
-from dagster import ScheduleDefinition, define_asset_job, repository
+from dagster import ScheduleDefinition, define_asset_job, Definitions
 
 run_everything_job = define_asset_job("run_everything", selection="*")
 
-# only my_model and its children
-run_something_job = define_asset_job("run_something", selection="my_model*")
+# only `order_stats` and its children
+run_something_job = define_asset_job("run_something", selection="order_stats*")
 
-@repository
-def my_repo():
-    return [
-        dbt_assets,
+defs = Definitions(
+    assets=dbt_assets,
+    schedules=[
         ScheduleDefinition(
             job=run_something_job,
             cron_schedule="@daily",
@@ -124,7 +123,8 @@ def my_repo():
             job=run_everything_job,
             cron_schedule="@weekly",
         ),
-    ]
+    ],
+)
 ```
 
 Refer to the [Schedule documentation](/concepts/partitions-schedules-sensors/schedules#running-the-scheduler) for more info on running jobs on a schedule.
