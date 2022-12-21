@@ -847,7 +847,7 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
     ]
     while True:
         if time.time() - start_time > timeout:
-            raise Exception("Timed out waiting for runs to start")
+            raise Exception("Timed out waiting for runs to finish")
         time.sleep(0.5)
 
         not_finished_runs = [

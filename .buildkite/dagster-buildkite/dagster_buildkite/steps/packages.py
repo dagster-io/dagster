@@ -336,6 +336,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "scheduler_tests_old_pendulum",
             "execution_tests",
             "storage_tests",
+            "definitions_tests",
+            "asset_defs_tests",
+            "launcher_tests",
+            "logging_tests",
         ],
     ),
     PackageSpec(

@@ -7,7 +7,7 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useAssetNodeSearch} from '../assets/useAssetSearch';
 
-import {VirtualizedAssetTable} from './VirtualizedAssetTable';
+import {VirtualizedRepoAssetTable} from './VirtualizedRepoAssetTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
@@ -85,7 +85,7 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
       );
     }
 
-    return <VirtualizedAssetTable repoAddress={repoAddress} assets={filteredBySearch} />;
+    return <VirtualizedRepoAssetTable repoAddress={repoAddress} assets={filteredBySearch} />;
   };
 
   return (

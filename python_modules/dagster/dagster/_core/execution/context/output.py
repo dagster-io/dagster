@@ -26,7 +26,7 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
 from dagster._core.execution.plan.utils import build_resources_for_manager
 
 if TYPE_CHECKING:
@@ -104,7 +104,7 @@ class OutputContext:
     _cm_scope_entered: Optional[bool]
     _events: List["DagsterEvent"]
     _user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]]
-    _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]]
+    _metadata_entries: Optional[Sequence[MetadataEntry]]
 
     def __init__(
         self,
@@ -685,7 +685,15 @@ class OutputContext:
         """
         from dagster._core.definitions.metadata import normalize_metadata
 
-        self._metadata_entries = normalize_metadata(metadata, [])
+        prior_metadata_entries = self._metadata_entries or []
+
+        overlapping_labels = {entry.label for entry in prior_metadata_entries} & metadata.keys()
+        if overlapping_labels:
+            raise DagsterInvalidMetadata(
+                f"Tried to add metadata for key(s) that already have metadata: {overlapping_labels}"
+            )
+
+        self._metadata_entries = [*prior_metadata_entries, *normalize_metadata(metadata, [])]
 
     def get_logged_metadata_entries(
         self,

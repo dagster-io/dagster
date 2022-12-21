@@ -2,7 +2,7 @@ import sys
 import time
 
 import pytest
-from dagster_tests.core_tests.launcher_tests.test_default_run_launcher import (
+from dagster_tests.launcher_tests.test_default_run_launcher import (
     math_diamond,
     sleepy_pipeline,
     slow_pipeline,

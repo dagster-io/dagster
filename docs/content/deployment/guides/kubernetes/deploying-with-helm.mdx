@@ -1,251 +1,334 @@
 ---
 title: Deploying with Helm | Dagster
-description: We walk through a Kubernetes deployment of Dagster using Helm.
+description: Walk through a Kubernetes deployment of Dagster using Helm.
 ---
 
 # Deploying Dagster on Helm
-
-## Overview
 
 [Kubernetes](https://kubernetes.io/) is a container orchestration system for automating deployment, scaling, and management of containerized applications. Dagster uses Kubernetes in combination with [Helm](https://helm.sh/), a package manager for Kubernetes applications. Using Helm, users specify the configuration of required Kubernetes resources to deploy Dagster through a [values file or command-line overrides](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). References to `values.yaml` in the following sections refer to [Dagster's `values.yaml`](https://github.com/dagster-io/dagster/blob/master/helm/dagster/values.yaml).
 
 Dagster publishes a [fully-featured Helm chart](https://github.com/dagster-io/dagster/tree/master/helm) to manage installing and running a production-grade Kubernetes deployment of Dagster. For each Dagster component in the chart, Dagster publishes a corresponding Docker image on [DockerHub](https://hub.docker.com/u/dagster).
 
+---
+
 ## Prerequisites
 
-`kubectl` should be configured with your desired Kubernetes cluster. You should understand [the basics of Helm](https://helm.sh/docs/), and Helm 3 should be installed. If you are creating your own user code images, Docker should be installed as well.
+To complete the steps in this guide, you'll need to:
+
+- Have `kubectl` installed and configured with your desired Kubernetes cluster
+- Understand [the basics of Helm](https://helm.sh/docs/)
+- Have Helm 3 installed
+- Have Docker installed
+
+---
 
 ## Versioning
 
-The [Dagster Helm chart](https://artifacthub.io/packages/helm/dagster/dagster) is versioned with the same version numbers as the Dagster Python library, and ideally should only be used together when the version numbers match.
+The [Dagster Helm chart](https://artifacthub.io/packages/helm/dagster/dagster) is versioned with the same version numbers as the Dagster Python library. Ideally, the Helm chart and Dagster Python library should only be used together when their version numbers match.
 
-In the following tutorial, we install the most recent version of the Dagster Helm chart. To use an older version of the Chart, a `--version` flag can be passed to `helm upgrade`. If you are using a chart version before 0.11.13, you will also need to update the tags of the Dagster provided images to match the Chart version. After 0.11.13, this will automatically be done for you.
+In the following tutorial, we install the most recent version of the Dagster Helm chart. To use an older version of the chart, pass a `--version` flag to `helm upgrade`.
 
-## Deployment Architecture
+---
 
-<!-- https://excalidraw.com/#json=4680957890134016,q6NWURUuPP_VThmbRQ89Jg -->
+## Deployment architecture
 
-<Image
-alt="dagster-kubernetes-default-architecture.png"
-src="/images/deploying/dagster-kubernetes-default-architecture.png"
-width={1944}
-height={1020}
-/>
+<!-- ![Default Dagster-Kubernetes deployment architecture](/images/deploying/dagster-kubernetes-default-architecture.png) -->
 
-### Components
+<center>
+  <Image
+    alt="Default Dagster-Kubernetes deployment architecture"
+    src="/images/deploying/dagster-kubernetes-defalut-architecture.png"
+    width={833}
+    height={713}
+  />
+</center>
+
+<TabGroup>
+<TabItem name="Overview">
 
 <table>
-  <tr style={{ background: "#F8F8F8" }}>
-    <th>Component Name</th>
-    <th>Type</th>
-    <th>Image</th>
-  </tr>
-  <tr>
-    <td>Daemon </td>
-    <td>
-      <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
-        Deployment
-      </a>
-    </td>
-    <td>
-      <a href="https://hub.docker.com/r/dagster/dagster-k8s">
-        dagster/dagster-k8s
-      </a>{" "}
-      <i>(released weekly)</i>
-    </td>
-  </tr>
-  <tr style={{ background: "#F8F8F8" }}>
-    <td>Dagit</td>
-    <td>
-      <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
-        Deployment
-      </a>{" "}
-      behind a{" "}
-      <a href="https://kubernetes.io/docs/concepts/services-networking/service/">
-        Service
-      </a>
-    </td>
-    <td>
-      <a href="https://hub.docker.com/r/dagster/dagster-k8s">
-        dagster/dagster-k8s
-      </a>{" "}
-      <i>(released weekly)</i>
-    </td>
-  </tr>
-  <tr>
-    <td>Database</td>
-    <td>PostgreSQL</td>
-    <td>
-      {" "}
-      <a href="https://hub.docker.com/_/postgres">postgres</a> <i>
-        (Optional)
-      </i>{" "}
-    </td>
-  </tr>
-  <tr style={{ background: "#F8F8F8" }}>
-    <td>Run Worker</td>
-    <td>
-      <a href="https://kubernetes.io/docs/concepts/workloads/controllers/job/">
-        Job
-      </a>
-    </td>
-    <td>
-      User-provided or{" "}
-      <a href="https://hub.docker.com/r/dagster/user-code-example">
-        dagster/user-code-example
-      </a>{" "}
-      <i>(released weekly)</i>{" "}
-    </td>
-  </tr>
-  <tr>
-    <td>User Code Deployment</td>
-    <td>
-      <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
-        Deployment
-      </a>{" "}
-      behind a{" "}
-      <a href="https://kubernetes.io/docs/concepts/services-networking/service/">
-        Service
-      </a>
-    </td>
-    <td>
-      User-provided or{" "}
-      <a href="https://hub.docker.com/r/dagster/user-code-example">
-        dagster/user-code-example
-      </a>{" "}
-      <i>(released weekly)</i>{" "}
-    </td>
-  </tr>
+  <thead>
+    <tr>
+      <th>Component</th>
+      <th>Type</th>
+      <th>Image</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Code location server</td>
+      <td>
+        <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
+          Deployment
+        </a>{" "}
+        behind a{" "}
+        <a href="https://kubernetes.io/docs/concepts/services-networking/service/">
+          service
+        </a>
+      </td>
+      <td>
+        User-provided or{" "}
+        <a href="https://hub.docker.com/r/dagster/user-code-example">
+          dagster/user-code-example
+        </a>{" "}
+        (released weekly){" "}
+      </td>
+    </tr>
+    <tr>
+      <td>Dagit</td>
+      <td>
+        <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
+          Deployment
+        </a>{" "}
+        behind a{" "}
+        <a href="https://kubernetes.io/docs/concepts/services-networking/service/">
+          service
+        </a>
+      </td>
+      <td>
+        <a href="https://hub.docker.com/r/dagster/dagster-k8s">
+          dagster/dagster-k8s
+        </a>{" "}
+        (released weekly)
+      </td>
+    </tr>
+    <tr>
+      <td>Daemon</td>
+      <td>
+        <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
+          Deployment
+        </a>
+      </td>
+      <td>
+        <a href="https://hub.docker.com/r/dagster/dagster-k8s">
+          dagster/dagster-k8s
+        </a>{" "}
+        (released weekly)
+      </td>
+    </tr>
+    <tr>
+      <td>Run worker</td>
+      <td>
+        <a href="https://kubernetes.io/docs/concepts/workloads/controllers/job/">
+          Job
+        </a>
+      </td>
+      <td>
+        User-provided or{" "}
+        <a href="https://hub.docker.com/r/dagster/user-code-example">
+          dagster/user-code-example
+        </a>{" "}
+        (released weekly)
+      </td>
+    </tr>
+    <tr>
+      <td>Database</td>
+      <td>PostgreSQL</td>
+      <td>
+        {" "}
+        <a href="https://hub.docker.com/_/postgres">postgres</a> (optional){" "}
+      </td>
+    </tr>
+  </tbody>
 </table>
 
-### Daemon
+</TabItem>
+<TabItem name="Code location server">
 
-The [daemon](/deployment/dagster-daemon) periodically checks the Runs table in PostgreSQL for runs that are ready to be launched. The daemon also submits runs from [schedules](/concepts/partitions-schedules-sensors/schedules) and [sensors](/concepts/partitions-schedules-sensors/sensors).
+A [code location server](/concepts/code-locations) runs a gRPC server and responds to Dagit's requests for information, such as:
 
-The daemon launches runs via the <PyObject module="dagster_k8s" object="K8sRunLauncher" />, creating a run worker [Job](https://kubernetes.io/docs/concepts/workloads/controllers/job/) with the image specified in the user code deployment.
+- List all of the jobs in each code location, or
+- What is the dependency structure of job X?
 
-### Dagit
+The user-provided image for the server must contain a [code location definition](/concepts/code-locations) and all of the packages needed to execute within the code location.
 
-The Dagit webserver communicates with the user code deployments via gRPC to fetch information needed to populate the Dagit UI. Dagit does not load or execute user-written code, and will remain available even when user code contains errors. Dagit frequently checks whether the user code deployment has been updated; and if so, the new information is fetched.
+Users can have multiple code location servers. A common pattern is for each code location server to correspond to a different code location.
 
-Dagit can be horizontally scaled by setting the `dagit.replicaCount` field in the `values.yaml`.
+Code location servers can be updated independently from other Dagster components, including Dagit. As a result, updates to code locations can occur without causing downtime to any other code location or Dagit. After updating, if there is an error with any code location, an error is surfaced for that code location within Dagit. All other code locations and Dagit will still operate normally.
 
-By default, dagit launches runs via the <PyObject module="dagster_k8s" object="K8sRunLauncher" />, which creates a new Kubernetes Job per run.
+</TabItem>
+<TabItem name="Dagit">
 
-### Database
+The Dagit webserver communicates with user code deployments via gRPC to fetch information needed to populate the Dagit UI. Dagit doesn't load or execute user-written code, and will remain available even when user code contains errors. Dagit frequently checks whether the user code deployment has been updated and if so, fetches the new information.
 
-The user can connect an external database (i.e. using a cloud provider's managed database service, like RDS) or run PostgreSQL on Kubernetes. This database stores runs event logs, and other metadata, and powers much of the real-time and historical data visible in Dagit. In order to maintain a referenceable history of events, we recommend connecting an external database for most use cases.
+Dagit can be horizontally scaled by setting the `dagit.replicaCount` field in `values.yaml`.
 
-### Run Worker
+By default, Dagit launches runs via the <PyObject module="dagster_k8s" object="K8sRunLauncher" />, which creates a new Kubernetes job per run.
 
-The run worker is responsible for executing launched Dagster runs. The run worker uses the same image as the user code deployment at the time the run was submitted. The run worker uses ephemeral compute, and completes once the run is finished. Events that occur during the run are written to the database, and are displayed in Dagit.
+</TabItem>
+<TabItem name="Daemon">
 
-The run worker jobs and pods are not automatically deleted, so that users are able to inspect results. It is up to the user to periodically delete old jobs and pods.
+The [daemon](/deployment/dagster-daemon) periodically checks the runs table in PostgreSQL for runs that are ready to be launched. The daemon also submits runs from [schedules](/concepts/partitions-schedules-sensors/schedules) and [sensors](/concepts/partitions-schedules-sensors/sensors).
 
-### Executor
+The daemon launches runs via the <PyObject module="dagster_k8s" object="K8sRunLauncher" />, creating a run worker [job](https://kubernetes.io/docs/concepts/workloads/controllers/job/) with the image specified in the user code deployment.
 
-Each Dagster job specifies an [executor](/deployment/executors) that determines how the run worker will execute each step of the job. Different executors offer different levels of isolation and concurrency. Common choices are <PyObject module="dagster" object="in_process_executor" /> (all steps run serially in a single process in a single pod), <PyObject module="dagster" object="multiprocess_executor" /> (multiple processes in a single pod), and <PyObject module="dagster_k8s" object="k8s_job_executor" /> (each step runs in a separate Kubernetes job). Generally, increasing isolation incurs some additional overhead per step (e.g. starting up a new Kubernetes job vs starting a new process within a pod). The [executor](/deployment/executors) can be configured per-run in the `execution` block.
+</TabItem>
+<TabItem name="Run worker">
 
-### User Code Deployment
+The run worker is responsible for executing launched Dagster runs. The run worker uses the same image as the user code deployment at the time the run was submitted. The run worker uses ephemeral compute and completes once the run is finished. Events that occur during the run are written to the database and then displayed in Dagit.
 
-A user code deployment runs a gRPC server and responds to Dagit's requests for information (such as: "List all of the jobs in each repository" or "What is the dependency structure of job X?"). The user-provided image for the user code deployment must contain a [repository definition](/concepts/repositories-workspaces/repositories) and all of the packages needed to execute within the repository.
+Run worker jobs and pods are not automatically deleted so that users are able to inspect results. It's up to the user to periodically delete old jobs and pods.
 
-Users can have multiple user code deployments. A common pattern is for each user code deployment to correspond to a different repository.
+</TabItem>
+<TabItem name="Executor">
 
-User code deployments can be updated independently from other Dagster components, including Dagit. As a result, updates to repositories can occur without causing downtime to any other repository or to Dagit. After updating, if there is an error with any repository, an error is surfaced for that repository within Dagit; all other repositories and Dagit will still operate normally.
+Each Dagster job specifies an [executor](/deployment/executors) that determines how the run worker will execute each step of the job. Different executors offer different levels of isolation and concurrency. Common choices are:
+
+- <PyObject module="dagster" object="in_process_executor" /> - All steps run serially
+  in a single process in a single pod
+- <PyObject module="dagster" object="multiprocess_executor" /> - Multiple processes
+  run in a single pod
+- <PyObject module="dagster_k8s" object="k8s_job_executor" /> - Each step runs in
+  a separate Kubernetes job
+
+Generally, increasing isolation incurs some additional overhead per step (e.g. starting up a new Kubernetes job vs starting a new process within a pod). The [executor](/deployment/executors) can be configured per-run in the `execution` block.
+
+</TabItem>
+<TabItem name="Database">
+
+An external database (i.e. using a cloud provider's managed database service, like RDS) can be connected, or you can run PostgreSQL on Kubernetes. This database stores run event logs, other metadata, and powers much of the real-time and historical data visible in Dagit. To maintain a referenceable history of events, we recommend connecting an external database for most use cases.
+
+</TabItem>
+</TabGroup>
+
+---
 
 ## Walkthrough
 
-### Configure kubectl
+- [Step 1: Configure kubectl](#step-1-configure-kubectl)
+- [Step 2: Build a Docker image for user code](#step-2-build-a-docker-image-for-user-code)
+- [Step 3: Push Docker image to registry](#step-3-push-docker-image-to-registry)
+- [Step 4: Set up Amazon S3](#step-4-set-up-amazon-s3)
+- [Step 5: Add the Dagster Helm chart repository](#step-5-add-the-dagster-helm-chart-repository)
+- [Step 6: Configure your user deployment](#step-6-configure-your-user-deployment)
+- [Step 7: Install the Dagster Helm chart](#step-7-install-the-dagster-helm-chart)
+- [Step 8: Run a job in your deployment](#step-8-run-a-job-in-your-deployment)
 
-First, configure the `kubectl` CLI to point at a kubernetes cluster.
+### Step 1: Configure kubectl
 
-You can use [docker-desktop](https://docs.docker.com/desktop/kubernetes/) to set up a local k8s cluster to develop against, or substitute with another k8s cluster as desired.
+First, configure the `kubectl` CLI to point at a kubernetes cluster. You can use [`docker-desktop`](https://docs.docker.com/desktop/kubernetes/) to set up a local k8s cluster to develop against or substitute with another k8s cluster as desired.
 
-If you're using docker-desktop and you have a local cluster set up, configure the `kubectl` CLI to point to the local k8s cluster:
+If you're using `docker-desktop` and you have a local cluster set up, configure the `kubectl` CLI to point to the local k8s cluster:
 
-    $ kubectl config set-context dagster --namespace default --cluster docker-desktop --user=docker-desktop
-    $ kubectl config use-context dagster
-
-### Build Docker image for User Code
-
-_Skip this step if using Dagster's example user code image [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example)._
-
-Build a Docker image containing your Dagster repository and any dependencies needed to execute the business logic in your code.
-
-For reference, here is an example [Dockerfile](https://github.com/dagster-io/dagster/blob/master/python_modules/automation/automation/docker/images/k8s-example/Dockerfile) and the corresponding [user code directory](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project). Here, we install all the Dagster-related dependencies in the Dockerfile, and then copy over the directory with the implementation of the Dagster repository into the root folder. We'll need to remember the path of this repository in a [subsequent step](/deployment/guides/kubernetes/deploying-with-helm#configure-your-user-deployment) to setup the gRPC server as a deployment.
-
-The example user code repository includes a `step_isolated_job` job that uses the `k8s_job_executor` to run each op in its own pod, and a `single_pod_job` job that runs all ops in a single pod.
-
-For projects with many dependencies, it is recommended that you publish your Python project as a package and install that package in your Dockerfile.
-
-### Push Docker image to registry
-
-_Skip this step if using Dagster's example user code image._
-
-Publish the image to a registry that is accessible from the Kubernetes cluster, such as AWS ECR or DockerHub.
-
-### Set up S3 (Optional)
-
-Several of the jobs in [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) use an [S3 IO Manager](/deployment/guides/aws#using-s3-for-io-management).
-
-To run these jobs, you'll need an AWS S3 bucket available, and access to a pair of `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` values. This is because the IO Manager uses [boto](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html).
-
-This tutorial also has the option of using [`minio`](https://min.io/) to mock an S3 endpoint locally in K8s. Note that this option utilizes `host.docker.internal` to access a host from within Docker - this behavior has only been tested for MacOS, so may need different configuration for other platforms.
-
-#### Using AWS S3
-
-_Skip this step if you'd like to use minio for a local S3 endpoint_
-
-If using S3, create a bucket in your AWS account -- for this tutorial, we'll create a bucket called `test-bucket`. Also, keep your `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` credentials handy. Now, you can create your k8s secrets:
-
-    $ kubectl create secret generic dagster-aws-access-key-id --from-literal=AWS_ACCESS_KEY_ID=<YOUR ACCESS KEY ID>
-    $ kubectl create secret generic dagster-aws-secret-access-key --from-literal=AWS_SECRET_ACCESS_KEY=<SECRET ACCESS KEY>
-
-#### Using Local S3 - Minio
-
-_Skip this step if you're using AWS S3_
-
-First, set up minio locally:
-
-```bash
-brew install minio/stable/minio # server
-brew install minio/stable/mc    # client
-mkdir $HOME/miniodata           # Prepare a directory for data
-minio server $HOME/miniodata    # start a server with default user/pass and no TLS
-mc --insecure alias set minio http://localhost:9000 minioadmin minioadmin
-# See it work
-mc ls minio
-date > date1.txt # create a sample file
-mc cp date1.txt minio://testbucket/date1.txt
-
-export AWS_ACCESS_KEY_ID="minioadmin"
-export AWS_SECRET_ACCESS_KEY="minioadmin"
-# See the aws cli work
-aws --endpoint-url http://localhost:9000 s3 mb s3://test-bucket
-aws --endpoint-url http://localhost:9000 s3 cp date1.txt s3://test-bucket/
+```shell
+kubectl config set-context dagster --namespace default --cluster docker-desktop --user=docker-desktop
+kubectl config use-context dagster
 ```
 
-Now, create your k8s AWS secrets:
+### Step 2: Build a Docker image for user code
 
-    $ kubectl create secret generic dagster-aws-access-key-id --from-literal=AWS_ACCESS_KEY_ID=minioadmin
-    $ kubectl create secret generic dagster-aws-secret-access-key --from-literal=AWS_SECRET_ACCESS_KEY=minioadmin
+<Note>
+  Skip this step if using Dagster's example user code image (
+  <a href="https://hub.docker.com/r/dagster/user-code-example">
+    <code>dagster/user-code-example</code>
+  </a>
+  ).
+</Note>
 
-### Add the Dagster Helm chart repository
+In this step, you'll build a Docker image containing your Dagster definitions and any dependencies needed to execute the business logic in your code. For reference, here is an example [Dockerfile](https://github.com/dagster-io/dagster/blob/master/python_modules/automation/automation/docker/images/k8s-example/Dockerfile) and the corresponding [user code directory](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project).
 
-The Dagster chart repository contains the versioned charts for all Dagster releases. Add the remote url under the namespace `dagster` to install the Dagster charts.
+Here, we install all the Dagster-related dependencies in the Dockerfile and then copy the directory with the implementation of the Dagster repository into the root folder. We'll need to remember the path of this repository in a [later step](/deployment/guides/kubernetes/deploying-with-helm#step-6-configure-your-user-deployment) to setup the gRPC server as a deployment.
 
-    $ helm repo add dagster https://dagster-io.github.io/helm
+The example user code repository includes:
 
-### Configure your User Deployment
+- A `step_isolated_job` job that uses the `k8s_job_executor` to run each op in its own pod, and
+- A `single_pod_job` job that runs all ops in a single pod
 
-Update the `dagster-user-deployments.deployments` section of the Dagster chart's `values.yaml` to include your deployment. Here, we can specify the configuration of the Kubernetes Deployment that will create the gRPC server for Dagit and the daemon to access the user code. The gRPC server is created through the arguments passed to `dagsterApiGrpcArgs`, which expects a list of arguments for [`dagster api grpc`](/concepts/code-locations/workspace-files#running-your-own-grpc-server).
+For projects with many dependencies, we recommend publishing your Python project as a package and installing it in your Dockerfile.
+
+### Step 3: Push Docker image to registry
+
+<Note>
+  Skip this step if using Dagster's example user code image (
+  <a href="https://hub.docker.com/r/dagster/user-code-example">
+    <code>dagster/user-code-example</code>
+  </a>
+  ).
+</Note>
+
+Next, publish the image to a registry that is accessible from the Kubernetes cluster, such as Amazon Web Services (AWS) ECR or DockerHub.
+
+### Step 4: Set up Amazon S3
+
+<Note>This step is optional.</Note>
+
+Several of the jobs in [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) use an [S3 I/O Manager](/deployment/guides/aws#using-s3-for-io-management). To run these jobs, you'll need an available AWS S3 bucket and access to a pair of `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` values. This is because the I/O Manager uses [boto](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html).
+
+This tutorial also has the option of using [`minio`](https://min.io/) to mock an S3 endpoint locally in k8s. **Note**: This option uses `host.docker.internal` to access a host from within Docker. This behavior has only been tested for MacOS and may need a different configuration for other platforms.
+
+<TabGroup>
+<TabItem name="Using Amazon S3">
+
+1. To use AWS S3, create a bucket in your AWS account. For this tutorial, we'll create a bucket called `test-bucket`.
+2. Retrieve your `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` credentials.
+3. Run the following to create your k8s secrets:
+
+```shell
+kubectl create secret generic dagster-aws-access-key-id --from-literal=AWS_ACCESS_KEY_ID=<YOUR ACCESS KEY ID>
+kubectl create secret generic dagster-aws-secret-access-key --from-literal=AWS_SECRET_ACCESS_KEY=<SECRET ACCESS KEY>
+```
+
+</TabItem>
+<TabItem name="Using local S3 - Minio">
+
+1. Set up Minio locally:
+
+   ```bash
+   brew install minio/stable/minio # server
+   brew install minio/stable/mc    # client
+   mkdir $HOME/miniodata           # Prepare a directory for data
+   minio server $HOME/miniodata    # start a server with default user/pass and no TLS
+   mc --insecure alias set minio http://localhost:9000 minioadmin minioadmin
+   # See it work
+   mc ls minio
+   date > date1.txt # create a sample file
+   mc cp date1.txt minio://testbucket/date1.txt
+
+   export AWS_ACCESS_KEY_ID="minioadmin"
+   export AWS_SECRET_ACCESS_KEY="minioadmin"
+   # See the aws cli work
+   aws --endpoint-url http://localhost:9000 s3 mb s3://test-bucket
+   aws --endpoint-url http://localhost:9000 s3 cp date1.txt s3://test-bucket/
+   ```
+
+2. Run the following to create your k8s AWS secrets:
+
+   ```shell
+   kubectl create secret generic dagster-aws-access-key-id --from-literal=AWS_ACCESS_KEY_ID=minioadmin
+   kubectl create secret generic dagster-aws-secret-access-key --from-literal=AWS_SECRET_ACCESS_KEY=minioadmin
+   ```
+
+</TabItem>
+</TabGroup>
+
+### Step 5: Add the Dagster Helm chart repository
+
+The Dagster chart repository contains the versioned charts for all Dagster releases. Add the remote URL under the namespace `dagster` to install the Dagster charts.
+
+```shell
+helm repo add dagster https://dagster-io.github.io/helm
+```
+
+### Step 6: Configure your user deployment
+
+- [Step 6.1: Configure the deployment](#step-61-configure-the-deployment)
+- [Step 6.2: Run step_isolated_job (optional)](#step-62-run-step_isolated_job)
+
+#### Step 6.1: Configure the deployment
+
+In this step, you'll update the `dagster-user-deployments.deployments` section of the Dagster chart's `values.yaml` to include your deployment.
+
+Here, we can specify the configuration of the Kubernetes deployment that creates the gRPC server for Dagit and the daemon to access the user code. The gRPC server is created through the arguments passed to `dagsterApiGrpcArgs`, which expects a list of arguments for [`dagster api grpc`](/concepts/code-locations/workspace-files#running-your-own-grpc-server).
 
 To get access to the Dagster `values.yaml`, run:
 
-    $ helm show values dagster/dagster > values.yaml
+```shell
+helm show values dagster/dagster > values.yaml
+```
 
-The following snippet works for Dagster's example user code image. Since our Dockerfile contains the repository definition in a path, we specify arguments for the gRPC server to find this path under `dagsterApiGrpcArgs`. Note that if you haven't set up an S3 endpoint, you can only run the job called `single_pod_job`.
+The following snippet works for Dagster's example user code image. Since our Dockerfile contains the code location definition in a path, we specify arguments for the gRPC server to find this path under `dagsterApiGrpcArgs`.
+
+**Note**: If you haven't set up an S3 endpoint, you can only run the job called `single_pod_job`.
 
 ```yaml
 dagster-user-deployments:
@@ -262,7 +345,7 @@ dagster-user-deployments:
       port: 3030
 ```
 
-`dagsterApiGrpcArgs` also supports loading repository definitions from a package name. To find the applicable arguments, [read here](/concepts/code-locations/workspace-files#running-your-own-grpc-server).
+`dagsterApiGrpcArgs` also supports loading code location definitions from a module name. Refer to the [code location documentation](/concepts/code-locations/workspace-files#running-your-own-grpc-server) for a list of arguments.
 
 You can also specify configuration like configmaps, secrets, volumes, resource limits, and labels for individual user code deployments:
 
@@ -303,13 +386,13 @@ dagster-user-deployments:
         enabled: true
 ```
 
-By default, this configuration will also be included in the pods for any runs that are launched for the user code deployment. You can disable this behavior for a user code deployment by setting `includeConfigInLaunchedRuns.enabled` to `false` for that deployment.
+By default, this configuration will also be included in the pods for any runs that are launched for the code location server. You can disable this behavior for a code location server by setting `includeConfigInLaunchedRuns.enabled` to `false` for that server.
 
-#### Running `step_isolated_job` (Optional)
+#### Step 6.2 Run step_isolated_job
 
-You'll need a slightly different configuration to run the job called `step_isolated_job`. This is because `step_isolated_job` uses an `s3_pickle_io_manager`, so you'll need to provide the user code k8s pods with AWS S3 credentials.
+You'll need a slightly different configuration to run the `step_isolated_job`. This is because `step_isolated_job` uses an `s3_pickle_io_manager`, so you'll need to provide the user code k8s pods with AWS S3 credentials.
 
-See the [set up S3](/deployment/guides/kubernetes/deploying-with-helm#set-up-s3-optional) section for setup instructions. The below snippet works for both AWS S3 and a local S3 endpoint via `minio`.
+Refer to [Step 4](/deployment/guides/kubernetes/deploying-with-helm#step-4-set-up-amazon-s3) for setup instructions. The below snippet works for both AWS S3 and a local S3 endpoint via `minio`:
 
 ```yaml
 dagster-user-deployments:
@@ -337,42 +420,50 @@ runLauncher:
         - name: dagster-aws-secret-access-key
 ```
 
-### Install the Dagster Helm chart
+### Step 7: Install the Dagster Helm chart
 
-Install the Helm chart and create a release. Below, we've named our release `dagster`. We use `helm upgrade --install` to create the release if it does not exist; otherwise, the existing `dagster` release will be modified:
+Next, you'll install the Helm chart and create a release. Below, we've named our release `dagster`. We use `helm upgrade --install` to create the release if it doesn't exist; otherwise, the existing `dagster` release will be modified:
 
-    helm upgrade --install dagster dagster/dagster -f /path/to/values.yaml
+```shell
+helm upgrade --install dagster dagster/dagster -f /path/to/values.yaml
+```
 
-Helm will launch several pods including PostgreSQL. You can check the status of the installation with `kubectl` - note that it might take a few minutes for the pods to move to a `Running` state.
+Helm will launch several pods including PostgreSQL. You can check the status of the installation with `kubectl`. Note that it might take a few minutes for the pods to move to a `Running` state.
 
 If everything worked correctly, you should see output like the following:
 
-    $ kubectl get pods
-    NAME                                              READY   STATUS    RESTARTS   AGE
-    dagster-dagit-645b7d59f8-6lwxh                    1/1     Running   0          11m
-    dagster-k8s-example-user-code-1-88764b4f4-ds7tn   1/1     Running   0          9m24s
-    dagster-postgresql-0                              1/1     Running   0          17m
+```shell
+$ kubectl get pods
+NAME                                              READY   STATUS    RESTARTS   AGE
+dagster-dagit-645b7d59f8-6lwxh                    1/1     Running   0          11m
+dagster-k8s-example-user-code-1-88764b4f4-ds7tn   1/1     Running   0          9m24s
+dagster-postgresql-0                              1/1     Running   0          17m
+```
 
-### Run a job in your deployment
+### Step 8: Run a job in your deployment
 
-After Helm has successfully installed all the required kubernetes resources, start port forwarding to the Dagit pod via:
+After Helm has successfully installed all the required Kubernetes resources, start port forwarding to the Dagit pod via:
 
-    export DAGIT_POD_NAME=$(kubectl get pods --namespace default \
-      -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=dagit" \
-      -o jsonpath="{.items[0].metadata.name}")
-    kubectl --namespace default port-forward $DAGIT_POD_NAME 8080:80
+```shell
+export DAGIT_POD_NAME=$(kubectl get pods --namespace default \
+  -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=dagit" \
+  -o jsonpath="{.items[0].metadata.name}")
+kubectl --namespace default port-forward $DAGIT_POD_NAME 8080:80
+```
 
-Now try running a job. Visit <http://127.0.0.1:8080>, navigate to the [launchpad](http://127.0.0.1:8080/workspace/example_repo@k8s-example-user-code-1/jobs/single_pod_job/launchpad) and click _Launch Run_.
+Next, try running a job. Navigate to <http://127.0.0.1:8080>, then the [**Launchpad** tab](http://127.0.0.1:8080/workspace/example_repo@k8s-example-user-code-1/jobs/single_pod_job/launchpad), and click **Launch Run**.
 
 You can introspect the jobs that were launched with `kubectl`:
 
-    $ kubectl get jobs
-    NAME                                               COMPLETIONS   DURATION   AGE
-    dagster-run-5ee8a0b3-7ca5-44e6-97a6-8f4bd86ee630   1/1           4s         11s
+```shell
+$ kubectl get jobs
+NAME                                               COMPLETIONS   DURATION   AGE
+dagster-run-5ee8a0b3-7ca5-44e6-97a6-8f4bd86ee630   1/1           4s         11s
+```
 
 Now, you can try a run with step isolation. Switch to the `step_isolated_job` job, changing the default config to point to your S3 bucket if needed, and launch the run.
 
-If you're using minio, change your config to look like this:
+If you're using Minio, change your config to look like this:
 
 ```yaml
 resources:
@@ -394,39 +485,64 @@ ops:
 
 Again, you can view the launched jobs:
 
-    $ kubectl get jobs
-    NAME                                               COMPLETIONS   DURATION   AGE
-    dagster-run-5ee8a0b3-7ca5-44e6-97a6-8f4bd86ee630   1/1           4s         11s
-    dagster-run-733baf75-fab2-4366-9542-0172fa4ebc1f   1/1           4s         100s
+```shell
+kubectl get jobs
+NAME                                               COMPLETIONS   DURATION   AGE
+dagster-run-5ee8a0b3-7ca5-44e6-97a6-8f4bd86ee630   1/1           4s         11s
+dagster-run-733baf75-fab2-4366-9542-0172fa4ebc1f   1/1           4s         100s
+```
+
+That's it! You deployed Dagster, configured with the default <PyObject module="dagster_k8s" object="K8sRunLauncher" />, onto a Kubernetes cluster using Helm.
+
+---
 
 ## Debugging
 
-Some of the following commands will be useful if you'd like to debug issues with deploying on Helm:
+Running into issues deploying on Helm? Use these commands to help with debugging.
 
-    # Get the Dagit pod's name
-    $ export DAGIT_POD_NAME=$(kubectl get pods --namespace default \
-          -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=dagit" \
-          -o jsonpath="{.items[0].metadata.name}")
+### Get the name of the Dagit pod
 
-    # Start a shell in the dagit pod
-    $ kubectl exec --stdin --tty $DAGIT_POD_NAME -- /bin/bash
+```shell
+export DAGIT_POD_NAME=$(kubectl get pods --namespace default \
+      -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=dagit" \
+      -o jsonpath="{.items[0].metadata.name}")
+```
 
-    # Get debug data from $RUN_ID
-    $ kubectl exec $DAGIT_POD_NAME -- dagster debug export $RUN_ID debug_info.gzip
+### Start a shell in the Dagit pod
 
-    # Get a list of recently failed runs
-    $ kubectl exec $DAGIT_POD -- dagster debug export fakename fakename.gzip
+```shell
+kubectl exec --stdin --tty $DAGIT_POD_NAME -- /bin/bash
+```
 
-    # Get debug output of a failed run - note that this information is also available in Dagit
-    $ kubectl exec $DAGIT_POD -- dagster debug export 360d7882-e631-4ac7-8632-43c75cb4d426 debug.gzip
+### Get debug data from $RUN_ID
 
-    # Extract the debug.gzip from the pod
-    $ kubectl cp $DAGIT_POD:debug.gzip debug.gzip
+```shell
+kubectl exec $DAGIT_POD_NAME -- dagster debug export $RUN_ID debug_info.gzip
+```
 
-    # List config maps
-    $ kubectl get configmap # Make note of the "user-deployments" configmap
-    $ kubectl get configmap dagster-dagster-user-deployments-$NAME
+### Get a list of recently failed runs
 
-## Conclusion
+```shell
+kubectl exec $DAGIT_POD -- dagster debug export fakename fakename.gzip
+```
 
-We deployed Dagster, configured with the default <PyObject module="dagster_k8s" object="K8sRunLauncher" />, onto a Kubernetes cluster using Helm.
+### Get debug output of a failed run
+
+**Note**: This information is also available in Dagit
+
+```shell
+kubectl exec $DAGIT_POD -- dagster debug export 360d7882-e631-4ac7-8632-43c75cb4d426 debug.gzip
+```
+
+### Extract the debug.gzip from the pod
+
+```shell
+kubectl cp $DAGIT_POD:debug.gzip debug.gzip
+```
+
+### List config maps
+
+```shell
+kubectl get configmap # Make note of the "user-deployments" configmap
+kubectl get configmap dagster-dagster-user-deployments-$NAME
+```

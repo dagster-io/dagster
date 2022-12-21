@@ -10,18 +10,16 @@ import {
   Spinner,
   MiddleTruncate,
 } from '@dagster-io/ui';
-import moment from 'moment-timezone';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {TimezoneContext} from '../app/time/TimezoneContext';
-import {browserTimezone} from '../app/time/browserTimezone';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
 import {AnchorButton} from '../ui/AnchorButton';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
+import {useFormatDateTime} from '../ui/useFormatDateTime';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
@@ -312,40 +310,42 @@ interface TimeDividersProps {
   range: [number, number];
 }
 
+const dateTimeOptions: Intl.DateTimeFormatOptions = {
+  month: 'numeric',
+  day: 'numeric',
+  year: 'numeric',
+};
+
+const dateTimeOptionsWithTimezone: Intl.DateTimeFormatOptions = {
+  month: 'numeric',
+  day: 'numeric',
+  year: 'numeric',
+  timeZoneName: 'short',
+};
+
+const timeOnlyOptions: Intl.DateTimeFormatOptions = {
+  hour: 'numeric',
+};
+
 const TimeDividers = (props: TimeDividersProps) => {
   const {interval, range, height} = props;
   const [start, end] = range;
-  const locale = navigator.language;
-  const [tz] = React.useContext(TimezoneContext);
-  const timeZone = tz === 'Automatic' ? browserTimezone() : tz;
-
-  const dateFormat = React.useMemo(() => {
-    return new Intl.DateTimeFormat(locale, {
-      month: 'numeric',
-      day: 'numeric',
-      year: 'numeric',
-      timeZone,
-    });
-  }, [locale, timeZone]);
-
-  const timeFormat = React.useMemo(() => {
-    return new Intl.DateTimeFormat(locale, {
-      hour: 'numeric',
-      timeZone,
-    });
-  }, [locale, timeZone]);
+  const formatDateTime = useFormatDateTime();
 
   const dateMarkers: DateMarker[] = React.useMemo(() => {
     const totalTime = end - start;
-    const startAtTimezone = moment.tz(start, timeZone);
+    const startDate = new Date(start);
+    const startDateStringWithTimezone = formatDateTime(startDate, dateTimeOptionsWithTimezone);
 
     const dayBoundaries = [];
-    const cursor = startAtTimezone.startOf('day');
+
+    // Create a date at midnight on this date in this timezone.
+    let cursor = new Date(startDateStringWithTimezone);
 
     while (cursor.valueOf() < end) {
-      const dayStart = cursor.valueOf();
-      cursor.add(1, 'day');
-      const dayEnd = cursor.valueOf();
+      const dayStart = cursor.getTime();
+      const dayEnd = new Date(dayStart).setDate(cursor.getDate() + 1); // Increment by one day.
+      cursor = new Date(dayEnd);
       dayBoundaries.push({dayStart, dayEnd});
     }
 
@@ -359,13 +359,13 @@ const TimeDividers = (props: TimeDividersProps) => {
       const right = Math.min(100, (endRight / totalTime) * 100);
 
       return {
-        label: dateFormat.format(date),
+        label: formatDateTime(date, dateTimeOptions),
         key: date.toString(),
         left,
         width: right - left,
       };
     });
-  }, [dateFormat, end, start, timeZone]);
+  }, [end, formatDateTime, start]);
 
   const timeMarkers: TimeMarker[] = React.useMemo(() => {
     const totalTime = end - start;
@@ -376,7 +376,7 @@ const TimeDividers = (props: TimeDividersProps) => {
       .map((_, ii) => {
         const time = firstMarker + ii * interval;
         const date = new Date(time);
-        const label = timeFormat.format(date).replace(' ', '');
+        const label = formatDateTime(date, timeOnlyOptions).replace(' ', '');
         return {
           label,
           key: date.toString(),
@@ -384,7 +384,7 @@ const TimeDividers = (props: TimeDividersProps) => {
         };
       })
       .filter((marker) => marker.left > 0);
-  }, [end, start, interval, timeFormat]);
+  }, [end, start, interval, formatDateTime]);
 
   const now = Date.now();
   const nowLeft = `${(((now - start) / (end - start)) * 100).toPrecision(3)}%`;

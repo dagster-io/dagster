@@ -432,7 +432,7 @@ def test_custom_class_handler(capsys):
             "dagster_handler_config": {
                 "handlers": {
                     "handlerOne": {
-                        "()": "dagster_tests.core_tests.test_logging.CaptureHandler",
+                        "()": "dagster_tests.logging_tests.test_logging.CaptureHandler",
                         "level": "INFO",
                         "output": output_msg,
                     }

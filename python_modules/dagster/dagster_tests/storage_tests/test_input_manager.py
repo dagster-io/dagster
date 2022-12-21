@@ -3,19 +3,24 @@ import tempfile
 import pytest
 
 from dagster import (
+    AssetIn,
+    AssetKey,
     DagsterInstance,
     DagsterInvalidDefinitionError,
     IOManager,
+    IOManagerDefinition,
     In,
     InputManager,
     MetadataEntry,
     Out,
     PythonObjectDagsterType,
     RootInputManagerDefinition,
+    asset,
     graph,
     input_manager,
     io_manager,
     job,
+    materialize,
     op,
     resource,
     root_input_manager,
@@ -377,6 +382,37 @@ def test_input_manager_class():
         second_op(out)
 
     check_input_managers.execute_in_process()
+
+
+def test_input_manager_with_assets():
+    @asset
+    def upstream() -> int:
+        return 1
+
+    @asset(ins={"upstream": AssetIn(input_manager_key="special_io_manager")})
+    def downstream(upstream) -> int:
+        return upstream + 1
+
+    class MyIOManager(IOManager):
+        def load_input(self, context):
+            assert context.upstream_output is not None
+            assert context.upstream_output.asset_key == AssetKey(["upstream"])
+
+            return 2
+
+        def handle_output(self, context, obj):
+            ...
+
+    materialize([upstream])
+    output = materialize(
+        [*upstream.to_source_assets(), downstream],
+        resources={"special_io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+
+    assert (
+        output._get_output_for_handle("downstream", "result")  # pylint: disable=protected-access
+        == 3
+    )
 
 
 ##################################################
