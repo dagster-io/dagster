@@ -169,7 +169,7 @@ class DbIOManager(IOManager):
                     f"{output_context.resource_config.get('schema')} was provided via run_config. "
                     "Schema can only be specified one way."
                 )
-            elif output_context.resource_config and output_context_metadata.get("schema"):
+            elif output_context_metadata.get("schema"):
                 schema = cast(str, output_context_metadata["schema"])
             elif output_context.resource_config and output_context.resource_config.get("schema"):
                 schema = cast(str, output_context.resource_config["schema"])
