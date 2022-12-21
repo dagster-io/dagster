@@ -470,7 +470,6 @@ def get_execution_time_window_for_constraints(
     execution_window_start = None
     execution_window_end = None
     min_dt = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
-    failed_until_time = min_dt
 
     for constraint in sorted(constraints, key=lambda c: c.required_by_time):
 
@@ -483,6 +482,7 @@ def get_execution_time_window_for_constraints(
             # be satisfied by a run that failed
             (current_data_times.get(key) or min_dt) >= constraint.required_data_time
             or (in_progress_data_times.get(key) or min_dt) >= constraint.required_data_time
+            or (failed_data_times.get(key) or min_dt) >= constraint.required_data_time
             for key in relevant_constraint_keys
         ):
             # for this constraint, if all required data times will be satisfied by an execution
@@ -492,14 +492,6 @@ def get_execution_time_window_for_constraints(
                 for key in relevant_constraint_keys
             ):
                 currently_executable = True
-
-            # if the asset failed to be materialized in its last run, do not attempt to rematerialize
-            # it until after the unsatisfied constraints that required that data time out
-            if all(
-                (failed_data_times.get(key) or min_dt) >= constraint.required_data_time
-                for key in relevant_constraint_keys
-            ):
-                failed_until_time = max(failed_until_time, constraint.required_by_time)
 
             # you can solve this constraint within the existing execution window
             if execution_window_end is None or constraint.required_data_time < execution_window_end:
@@ -514,10 +506,10 @@ def get_execution_time_window_for_constraints(
             else:
                 break
 
-    if not currently_executable or not execution_window_start:
+    if not currently_executable:
         return None, execution_window_end
 
-    return max(failed_until_time, execution_window_start), execution_window_end
+    return execution_window_start, execution_window_end
 
 
 def determine_asset_partitions_to_reconcile_for_freshness(

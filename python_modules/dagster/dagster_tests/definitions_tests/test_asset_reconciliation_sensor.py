@@ -951,6 +951,29 @@ scenarios = {
         unevaluated_runs=[run(["asset1", "asset3", "asset5"]), run(["asset2", "asset4", "asset6"])],
         expected_run_requests=[],
     ),
+    "freshness_overlapping_failure": AssetReconciliationScenario(
+        assets=overlapping_freshness,
+        unevaluated_runs=[
+            run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"]),
+            run(["asset1"], failed_asset_keys=["asset1"]),
+        ],
+        between_runs_delta=datetime.timedelta(minutes=35),
+        # need new data, but don't want to re-run immediately
+        expected_run_requests=[],
+    ),
+    "freshness_overlapping_failure_after_delay": AssetReconciliationScenario(
+        assets=overlapping_freshness,
+        unevaluated_runs=[
+            run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"]),
+            run(["asset1"], failed_asset_keys=["asset1"]),
+        ],
+        between_runs_delta=datetime.timedelta(minutes=35),
+        evaluation_delta=datetime.timedelta(minutes=35),
+        # after 30 minutes, we can try to kick off a run again
+        expected_run_requests=[
+            run_request(asset_keys=["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])
+        ],
+    ),
     "freshness_overlapping_runs_half_stale": AssetReconciliationScenario(
         assets=overlapping_freshness_inf,
         unevaluated_runs=[run(["asset1", "asset3", "asset5"]), run(["asset2", "asset4", "asset6"])],
