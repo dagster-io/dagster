@@ -25,17 +25,23 @@ export interface StopSchedule_stopRunningSchedule_ScheduleStateResult {
   scheduleState: StopSchedule_stopRunningSchedule_ScheduleStateResult_scheduleState;
 }
 
-export interface StopSchedule_stopRunningSchedule_PythonError_causes {
+export interface StopSchedule_stopRunningSchedule_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface StopSchedule_stopRunningSchedule_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: StopSchedule_stopRunningSchedule_PythonError_errorChain_error;
 }
 
 export interface StopSchedule_stopRunningSchedule_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: StopSchedule_stopRunningSchedule_PythonError_causes[];
+  errorChain: StopSchedule_stopRunningSchedule_PythonError_errorChain[];
 }
 
 export type StopSchedule_stopRunningSchedule = StopSchedule_stopRunningSchedule_UnauthorizedError | StopSchedule_stopRunningSchedule_ScheduleStateResult | StopSchedule_stopRunningSchedule_PythonError;

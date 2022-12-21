@@ -7,17 +7,23 @@
 // GraphQL query operation: InstanceHealthForBackfillsQuery
 // ====================================================
 
-export interface InstanceHealthForBackfillsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes {
+export interface InstanceHealthForBackfillsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface InstanceHealthForBackfillsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: InstanceHealthForBackfillsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_errorChain_error;
 }
 
 export interface InstanceHealthForBackfillsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: InstanceHealthForBackfillsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes[];
+  errorChain: InstanceHealthForBackfillsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_errorChain[];
 }
 
 export interface InstanceHealthForBackfillsQuery_instance_daemonHealth_allDaemonStatuses {

@@ -13,17 +13,23 @@ export interface SingleScheduleQuery_scheduleOrError_ScheduleNotFoundError {
   __typename: "ScheduleNotFoundError" | "PythonError";
 }
 
-export interface SingleScheduleQuery_scheduleOrError_Schedule_scheduleState_ticks_error_causes {
+export interface SingleScheduleQuery_scheduleOrError_Schedule_scheduleState_ticks_error_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface SingleScheduleQuery_scheduleOrError_Schedule_scheduleState_ticks_error_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: SingleScheduleQuery_scheduleOrError_Schedule_scheduleState_ticks_error_errorChain_error;
 }
 
 export interface SingleScheduleQuery_scheduleOrError_Schedule_scheduleState_ticks_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: SingleScheduleQuery_scheduleOrError_Schedule_scheduleState_ticks_error_causes[];
+  errorChain: SingleScheduleQuery_scheduleOrError_Schedule_scheduleState_ticks_error_errorChain[];
 }
 
 export interface SingleScheduleQuery_scheduleOrError_Schedule_scheduleState_ticks {

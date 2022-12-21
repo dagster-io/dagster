@@ -214,17 +214,23 @@ export interface PreviewConfigQuery_isPipelineConfigValid_InvalidSubsetError {
   message: string;
 }
 
-export interface PreviewConfigQuery_isPipelineConfigValid_PythonError_causes {
+export interface PreviewConfigQuery_isPipelineConfigValid_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface PreviewConfigQuery_isPipelineConfigValid_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: PreviewConfigQuery_isPipelineConfigValid_PythonError_errorChain_error;
 }
 
 export interface PreviewConfigQuery_isPipelineConfigValid_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: PreviewConfigQuery_isPipelineConfigValid_PythonError_causes[];
+  errorChain: PreviewConfigQuery_isPipelineConfigValid_PythonError_errorChain[];
 }
 
 export type PreviewConfigQuery_isPipelineConfigValid = PreviewConfigQuery_isPipelineConfigValid_PipelineConfigValidationValid | PreviewConfigQuery_isPipelineConfigValid_RunConfigValidationInvalid | PreviewConfigQuery_isPipelineConfigValid_PipelineNotFoundError | PreviewConfigQuery_isPipelineConfigValid_InvalidSubsetError | PreviewConfigQuery_isPipelineConfigValid_PythonError;

@@ -23,17 +23,23 @@ export interface LaunchPartitionBackfill_launchPartitionBackfill_PartitionSetNot
   message: string;
 }
 
-export interface LaunchPartitionBackfill_launchPartitionBackfill_PythonError_causes {
+export interface LaunchPartitionBackfill_launchPartitionBackfill_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface LaunchPartitionBackfill_launchPartitionBackfill_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: LaunchPartitionBackfill_launchPartitionBackfill_PythonError_errorChain_error;
 }
 
 export interface LaunchPartitionBackfill_launchPartitionBackfill_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: LaunchPartitionBackfill_launchPartitionBackfill_PythonError_causes[];
+  errorChain: LaunchPartitionBackfill_launchPartitionBackfill_PythonError_errorChain[];
 }
 
 export interface LaunchPartitionBackfill_launchPartitionBackfill_InvalidStepError {

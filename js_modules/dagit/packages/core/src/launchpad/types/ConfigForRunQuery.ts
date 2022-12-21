@@ -19,17 +19,23 @@ export interface ConfigForRunQuery_runOrError_Run {
   solidSelection: string[] | null;
 }
 
-export interface ConfigForRunQuery_runOrError_PythonError_causes {
+export interface ConfigForRunQuery_runOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface ConfigForRunQuery_runOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: ConfigForRunQuery_runOrError_PythonError_errorChain_error;
 }
 
 export interface ConfigForRunQuery_runOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: ConfigForRunQuery_runOrError_PythonError_causes[];
+  errorChain: ConfigForRunQuery_runOrError_PythonError_errorChain[];
 }
 
 export type ConfigForRunQuery_runOrError = ConfigForRunQuery_runOrError_RunNotFoundError | ConfigForRunQuery_runOrError_Run | ConfigForRunQuery_runOrError_PythonError;

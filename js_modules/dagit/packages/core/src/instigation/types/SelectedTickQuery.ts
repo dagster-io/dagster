@@ -13,17 +13,23 @@ export interface SelectedTickQuery_instigationStateOrError_InstigationStateNotFo
   __typename: "InstigationStateNotFoundError" | "PythonError";
 }
 
-export interface SelectedTickQuery_instigationStateOrError_InstigationState_tick_error_causes {
+export interface SelectedTickQuery_instigationStateOrError_InstigationState_tick_error_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface SelectedTickQuery_instigationStateOrError_InstigationState_tick_error_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: SelectedTickQuery_instigationStateOrError_InstigationState_tick_error_errorChain_error;
 }
 
 export interface SelectedTickQuery_instigationStateOrError_InstigationState_tick_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: SelectedTickQuery_instigationStateOrError_InstigationState_tick_error_causes[];
+  errorChain: SelectedTickQuery_instigationStateOrError_InstigationState_tick_error_errorChain[];
 }
 
 export interface SelectedTickQuery_instigationStateOrError_InstigationState_tick {

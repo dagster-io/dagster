@@ -7,17 +7,23 @@
 // GraphQL query operation: AssetJobPartitionSetsQuery
 // ====================================================
 
-export interface AssetJobPartitionSetsQuery_partitionSetsOrError_PythonError_causes {
+export interface AssetJobPartitionSetsQuery_partitionSetsOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface AssetJobPartitionSetsQuery_partitionSetsOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: AssetJobPartitionSetsQuery_partitionSetsOrError_PythonError_errorChain_error;
 }
 
 export interface AssetJobPartitionSetsQuery_partitionSetsOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: AssetJobPartitionSetsQuery_partitionSetsOrError_PythonError_causes[];
+  errorChain: AssetJobPartitionSetsQuery_partitionSetsOrError_PythonError_errorChain[];
 }
 
 export interface AssetJobPartitionSetsQuery_partitionSetsOrError_PipelineNotFoundError {

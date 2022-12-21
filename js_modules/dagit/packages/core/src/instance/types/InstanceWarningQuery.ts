@@ -7,17 +7,23 @@
 // GraphQL query operation: InstanceWarningQuery
 // ====================================================
 
-export interface InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes {
+export interface InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_errorChain_error;
 }
 
 export interface InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes[];
+  errorChain: InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_errorChain[];
 }
 
 export interface InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses {

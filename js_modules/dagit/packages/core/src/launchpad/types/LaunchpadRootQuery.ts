@@ -16,17 +16,23 @@ export interface LaunchpadRootQuery_pipelineOrError_PipelineNotFoundError {
   message: string;
 }
 
-export interface LaunchpadRootQuery_pipelineOrError_PythonError_causes {
+export interface LaunchpadRootQuery_pipelineOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface LaunchpadRootQuery_pipelineOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: LaunchpadRootQuery_pipelineOrError_PythonError_errorChain_error;
 }
 
 export interface LaunchpadRootQuery_pipelineOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: LaunchpadRootQuery_pipelineOrError_PythonError_causes[];
+  errorChain: LaunchpadRootQuery_pipelineOrError_PythonError_errorChain[];
 }
 
 export interface LaunchpadRootQuery_pipelineOrError_Pipeline_presets_tags {
@@ -88,17 +94,23 @@ export interface LaunchpadRootQuery_partitionSetsOrError_PipelineNotFoundError {
   message: string;
 }
 
-export interface LaunchpadRootQuery_partitionSetsOrError_PythonError_causes {
+export interface LaunchpadRootQuery_partitionSetsOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface LaunchpadRootQuery_partitionSetsOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: LaunchpadRootQuery_partitionSetsOrError_PythonError_errorChain_error;
 }
 
 export interface LaunchpadRootQuery_partitionSetsOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: LaunchpadRootQuery_partitionSetsOrError_PythonError_causes[];
+  errorChain: LaunchpadRootQuery_partitionSetsOrError_PythonError_errorChain[];
 }
 
 export type LaunchpadRootQuery_partitionSetsOrError = LaunchpadRootQuery_partitionSetsOrError_PartitionSets | LaunchpadRootQuery_partitionSetsOrError_PipelineNotFoundError | LaunchpadRootQuery_partitionSetsOrError_PythonError;

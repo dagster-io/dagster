@@ -52,17 +52,23 @@ export interface AssetCatalogTableQuery_assetsOrError_AssetConnection {
   nodes: AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes[];
 }
 
-export interface AssetCatalogTableQuery_assetsOrError_PythonError_causes {
+export interface AssetCatalogTableQuery_assetsOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface AssetCatalogTableQuery_assetsOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: AssetCatalogTableQuery_assetsOrError_PythonError_errorChain_error;
 }
 
 export interface AssetCatalogTableQuery_assetsOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: AssetCatalogTableQuery_assetsOrError_PythonError_causes[];
+  errorChain: AssetCatalogTableQuery_assetsOrError_PythonError_errorChain[];
 }
 
 export type AssetCatalogTableQuery_assetsOrError = AssetCatalogTableQuery_assetsOrError_AssetConnection | AssetCatalogTableQuery_assetsOrError_PythonError;
