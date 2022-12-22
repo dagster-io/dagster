@@ -670,7 +670,7 @@ def _run_requests_with_base_asset_jobs(
         else:
             asset_keys = outer_asset_selection.resolve(asset_graph)
 
-        base_job = context.repository_def.get_base_job_for_assets(asset_keys)
+        base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)
         result.append(
             run_request.with_replaced_attrs(
                 job_name=base_job.name, asset_selection=list(asset_keys)
