@@ -1,7 +1,9 @@
-## 1.0.6 (December 21, 2022)
+## 1.0.7 (December 22, 2022)
 
 - Disallow `moment`
 - Bump dependencies
+
+## 1.0.6 (November 16, 2022)
 
 ## 1.0.5 (June 2, 2022)
 
