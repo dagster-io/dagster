@@ -1359,7 +1359,6 @@ class RepositoryDefinition:
         the same partitioning schema and one wants to access their corresponding implicit job
         easily.
         """
-
         if not self.has_job(ASSET_BASE_JOB_PREFIX):
             raise DagsterInvariantViolationError(
                 "There is no single global asset job, likely due to assets using "
