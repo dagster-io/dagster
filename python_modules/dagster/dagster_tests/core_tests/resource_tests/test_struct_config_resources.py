@@ -1,12 +1,14 @@
 from abc import ABC, abstractmethod
 from functools import cached_property
+from typing import Callable
 
 import pytest
 from pydantic import ValidationError
 
-from dagster import asset, job, op
-from dagster._config.structured_config import Resource
+from dagster import asset, job, op, resource
+from dagster._config.structured_config import Resource, StructuredResourceAdapter
 from dagster._core.definitions.assets_job import build_assets_job
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_output import ResourceOutput
 from dagster._utils.cached_method import cached_method
 
@@ -200,3 +202,44 @@ def test_yield_in_resource_function():
     assert the_job.execute_in_process().success
 
     assert called == ["creation_1", "creation_2", "op", "cleanup_2", "cleanup_1"]
+
+
+def test_wrapping_function_resource():
+
+    out_txt = []
+
+    @resource(config_schema={"prefix": str})
+    def writer_resource(context):
+        prefix = context.resource_config["prefix"]
+
+        def output(text: str) -> None:
+            out_txt.append(f"{prefix}{text}")
+
+        return output
+
+    class WriterResource(StructuredResourceAdapter):
+        prefix: str
+
+        @property
+        def wrapped_resource(self) -> ResourceDefinition:
+            return writer_resource
+
+    @op
+    def hello_world_op(writer: ResourceOutput[Callable[[str], None]]):
+        writer("hello, world!")
+
+    @job(resource_defs={"writer": WriterResource(prefix="")})
+    def no_prefix_job():
+        hello_world_op()
+
+    assert no_prefix_job.execute_in_process().success
+    assert out_txt == ["hello, world!"]
+
+    out_txt.clear()
+
+    @job(resource_defs={"writer": WriterResource(prefix="greeting: ")})
+    def prefix_job():
+        hello_world_op()
+
+    assert prefix_job.execute_in_process().success
+    assert out_txt == ["greeting: hello, world!"]
