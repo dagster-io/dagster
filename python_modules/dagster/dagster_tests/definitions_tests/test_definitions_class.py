@@ -504,8 +504,8 @@ def test_implicit_job_with_source_assets():
     source_asset = SourceAsset("source_asset")
 
     @asset
-    def downstream_of_source(_source_asset):
-        pass
+    def downstream_of_source(source_asset):
+        raise Exception("not executed")
 
     defs = Definitions(assets=[source_asset, downstream_of_source])
     assert defs.get_all_job_defs()
