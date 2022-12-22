@@ -4,6 +4,7 @@ import pytest
 
 from dagster import AssetsDefinition, ResourceDefinition, asset, job, op, resource, with_resources
 from dagster._check import ParameterCheckError
+from dagster._config.structured_config import Config
 from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
@@ -197,3 +198,37 @@ def test_both_decorator_and_argument_error():
         @op(required_resource_keys={"foo"})
         def my_op(bar: ResourceOutput[Any]):
             pass
+
+
+def test_asset_with_structured_config():
+    class AnAssetConfig(Config):
+        a_string: str
+        an_int: int
+
+    executed = {}
+
+    @asset
+    def the_asset(context, config: AnAssetConfig, foo: ResourceOutput[str]):
+        assert context.resources.foo == "blah"
+        assert foo == "blah"
+        assert context.op_config["a_string"] == "foo"
+        assert config.a_string == "foo"
+        assert config.an_int == 2
+        executed["the_asset"] = True
+
+    transformed_asset = with_resources(
+        [the_asset],
+        {"foo": ResourceDefinition.hardcoded_resource("blah")},
+    )[0]
+    assert isinstance(transformed_asset, AssetsDefinition)
+
+    assert (
+        build_assets_job(
+            "the_job",
+            [transformed_asset],
+            config={"ops": {"the_asset": {"config": {"a_string": "foo", "an_int": 2}}}},
+        )
+        .execute_in_process()
+        .success
+    )
+    assert executed["the_asset"]
