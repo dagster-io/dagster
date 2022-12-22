@@ -211,6 +211,7 @@ def test_get_used_data(ignore_asset_tags, relative_to, runs_to_expected_data_tim
                     }
 
 
+@pytest.mark.parametrize("allow_set_known_used_data", [True, False])
 @pytest.mark.parametrize(
     ["runs_to_expected_data_times_index"],
     [
@@ -262,7 +263,9 @@ def test_get_used_data(ignore_asset_tags, relative_to, runs_to_expected_data_tim
         ),
     ],
 )
-def test_get_used_data_with_source_version(runs_to_expected_data_times_index):
+def test_get_used_data_with_source_version(
+    allow_set_known_used_data, runs_to_expected_data_times_index
+):
 
     files_version = None
 
@@ -320,11 +323,22 @@ def test_get_used_data_with_source_version(runs_to_expected_data_times_index):
                     latest_asset_record = data_time_queryer.get_latest_materialization_record(
                         AssetKey(ak)
                     )
-                    upstream_data_times = data_time_queryer.get_used_data_times_for_record(
-                        asset_graph=asset_graph,
-                        record=latest_asset_record,
-                        evaluation_time=evaluation_time,
-                    )
+                    if not allow_set_known_used_data:
+                        # simulate an environment where materialization tags were not populated
+                        with mock.patch(
+                            "dagster._utils.caching_instance_queryer.CachingInstanceQueryer.set_known_used_data",
+                        ):
+                            upstream_data_times = data_time_queryer.get_used_data_times_for_record(
+                                asset_graph=asset_graph,
+                                record=latest_asset_record,
+                                evaluation_time=evaluation_time,
+                            )
+                    else:
+                        upstream_data_times = data_time_queryer.get_used_data_times_for_record(
+                            asset_graph=asset_graph,
+                            record=latest_asset_record,
+                            evaluation_time=evaluation_time,
+                        )
                     assert upstream_data_times == {
                         AssetKey("files"): evaluation_time
                         if expected_data_time_idx is None

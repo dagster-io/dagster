@@ -136,6 +136,7 @@ class CachingInstanceQueryer:
         limit: int,
         after_cursor: Optional[int] = None,
         before_cursor: Optional[int] = None,
+        ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
         return list(
             self._instance.get_event_records(
@@ -148,7 +149,7 @@ class CachingInstanceQueryer:
                     after_cursor=after_cursor,
                     before_cursor=before_cursor,
                 ),
-                ascending=False,
+                ascending=ascending,
                 limit=limit,
             )
         )
@@ -395,6 +396,7 @@ class CachingInstanceQueryer:
                 asset_partition=AssetKeyPartitionKey(asset_key, None),
                 after_cursor=current_id,
                 limit=5,
+                ascending=True,
             ):
                 current_id = record.storage_id
                 current_version = extract_logical_version_from_entry(record.event_log_entry)
