@@ -25,17 +25,23 @@ export interface StartSchedule_startSchedule_ScheduleStateResult {
   scheduleState: StartSchedule_startSchedule_ScheduleStateResult_scheduleState;
 }
 
-export interface StartSchedule_startSchedule_PythonError_causes {
+export interface StartSchedule_startSchedule_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface StartSchedule_startSchedule_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: StartSchedule_startSchedule_PythonError_errorChain_error;
 }
 
 export interface StartSchedule_startSchedule_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: StartSchedule_startSchedule_PythonError_causes[];
+  errorChain: StartSchedule_startSchedule_PythonError_errorChain[];
 }
 
 export type StartSchedule_startSchedule = StartSchedule_startSchedule_UnauthorizedError | StartSchedule_startSchedule_ScheduleStateResult | StartSchedule_startSchedule_PythonError;

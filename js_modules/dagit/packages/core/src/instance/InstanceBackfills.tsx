@@ -138,7 +138,6 @@ const BACKFILLS_QUERY = gql`
         results {
           backfillId
           status
-          numRequested
           numPartitions
           timestamp
           partitionSetName

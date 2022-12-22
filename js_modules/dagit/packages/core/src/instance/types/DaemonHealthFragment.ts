@@ -7,17 +7,23 @@
 // GraphQL fragment: DaemonHealthFragment
 // ====================================================
 
-export interface DaemonHealthFragment_allDaemonStatuses_lastHeartbeatErrors_causes {
+export interface DaemonHealthFragment_allDaemonStatuses_lastHeartbeatErrors_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface DaemonHealthFragment_allDaemonStatuses_lastHeartbeatErrors_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: DaemonHealthFragment_allDaemonStatuses_lastHeartbeatErrors_errorChain_error;
 }
 
 export interface DaemonHealthFragment_allDaemonStatuses_lastHeartbeatErrors {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: DaemonHealthFragment_allDaemonStatuses_lastHeartbeatErrors_causes[];
+  errorChain: DaemonHealthFragment_allDaemonStatuses_lastHeartbeatErrors_errorChain[];
 }
 
 export interface DaemonHealthFragment_allDaemonStatuses {

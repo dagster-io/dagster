@@ -59,17 +59,23 @@ export interface LaunchedRunListQuery_pipelineRunsOrError_InvalidPipelineRunsFil
   message: string;
 }
 
-export interface LaunchedRunListQuery_pipelineRunsOrError_PythonError_causes {
+export interface LaunchedRunListQuery_pipelineRunsOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface LaunchedRunListQuery_pipelineRunsOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: LaunchedRunListQuery_pipelineRunsOrError_PythonError_errorChain_error;
 }
 
 export interface LaunchedRunListQuery_pipelineRunsOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: LaunchedRunListQuery_pipelineRunsOrError_PythonError_causes[];
+  errorChain: LaunchedRunListQuery_pipelineRunsOrError_PythonError_errorChain[];
 }
 
 export type LaunchedRunListQuery_pipelineRunsOrError = LaunchedRunListQuery_pipelineRunsOrError_Runs | LaunchedRunListQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | LaunchedRunListQuery_pipelineRunsOrError_PythonError;

@@ -4,12 +4,20 @@ import pytest
 
 from dagster import (
     AssetIn,
+    AssetKey,
+    AssetOut,
+    AssetsDefinition,
     DailyPartitionsDefinition,
+    GraphOut,
     HourlyPartitionsDefinition,
     LastPartitionMapping,
+    Out,
     PartitionMapping,
     StaticPartitionsDefinition,
     asset,
+    graph,
+    multi_asset,
+    op,
     repository,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
@@ -59,6 +67,8 @@ def test_basics():
         assert not asset_graph.have_same_partitioning(asset1.key, asset3.key)
         assert asset_graph.get_children(asset0.key) == {asset1.key, asset2.key}
         assert asset_graph.get_parents(asset3.key) == {asset1.key, asset2.key}
+        for asset_def in assets:
+            assert asset_graph.get_required_multi_asset_keys(asset_def.key) == set()
 
     assert_stuff(internal_asset_graph)
     assert_stuff(external_asset_graph)
@@ -218,3 +228,75 @@ def test_custom_unsupported_partition_mapping():
     assert external_asset_graph.get_parents_partitions(child.key, "2") == {
         AssetKeyPartitionKey(parent.key, "2")
     }
+
+
+def test_required_multi_asset_sets_non_subsettable_multi_asset():
+    @multi_asset(outs={"a": AssetOut(dagster_type=None), "b": AssetOut(dagster_type=None)})
+    def non_subsettable_multi_asset():
+        ...
+
+    for asset_graph in [
+        AssetGraph.from_assets([non_subsettable_multi_asset]),
+        to_external_asset_graph([non_subsettable_multi_asset]),
+    ]:
+        for asset_key in non_subsettable_multi_asset.keys:
+            assert (
+                asset_graph.get_required_multi_asset_keys(asset_key)
+                == non_subsettable_multi_asset.keys
+            )
+
+
+def test_required_multi_asset_sets_subsettable_multi_asset():
+    @multi_asset(
+        outs={"a": AssetOut(dagster_type=None), "b": AssetOut(dagster_type=None)}, can_subset=True
+    )
+    def subsettable_multi_asset():
+        ...
+
+    for asset_graph in [
+        AssetGraph.from_assets([subsettable_multi_asset]),
+        to_external_asset_graph([subsettable_multi_asset]),
+    ]:
+        for asset_key in subsettable_multi_asset.keys:
+            assert asset_graph.get_required_multi_asset_keys(asset_key) == set()
+
+
+def test_required_multi_asset_sets_graph_backed_multi_asset():
+    @op
+    def op1():
+        return 1
+
+    @op(out={"b": Out(), "c": Out()})
+    def op2():
+        return 4, 5
+
+    @graph(out={"a": GraphOut(), "b": GraphOut(), "c": GraphOut()})
+    def graph1():
+        a = op1()
+        b, c = op2()
+        return a, b, c
+
+    graph_backed_multi_asset = AssetsDefinition.from_graph(graph1)
+    for asset_graph in [
+        AssetGraph.from_assets([graph_backed_multi_asset]),
+        to_external_asset_graph([graph_backed_multi_asset]),
+    ]:
+        for asset_key in graph_backed_multi_asset.keys:
+            assert (
+                asset_graph.get_required_multi_asset_keys(asset_key)
+                == graph_backed_multi_asset.keys
+            )
+
+
+def test_required_multi_asset_sets_same_op_in_different_assets():
+    @op
+    def op1():
+        ...
+
+    asset1 = AssetsDefinition.from_op(op1, keys_by_output_name={"result": AssetKey("a")})
+    asset2 = AssetsDefinition.from_op(op1, keys_by_output_name={"result": AssetKey("b")})
+    assets = [asset1, asset2]
+
+    for asset_graph in [AssetGraph.from_assets(assets), to_external_asset_graph(assets)]:
+        for asset_def in assets:
+            assert asset_graph.get_required_multi_asset_keys(asset_def.key) == set()

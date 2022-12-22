@@ -12,17 +12,23 @@ export interface LogTelemetryMutation_logTelemetry_LogTelemetrySuccess {
   action: string;
 }
 
-export interface LogTelemetryMutation_logTelemetry_PythonError_causes {
+export interface LogTelemetryMutation_logTelemetry_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface LogTelemetryMutation_logTelemetry_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: LogTelemetryMutation_logTelemetry_PythonError_errorChain_error;
 }
 
 export interface LogTelemetryMutation_logTelemetry_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: LogTelemetryMutation_logTelemetry_PythonError_causes[];
+  errorChain: LogTelemetryMutation_logTelemetry_PythonError_errorChain[];
 }
 
 export type LogTelemetryMutation_logTelemetry = LogTelemetryMutation_logTelemetry_LogTelemetrySuccess | LogTelemetryMutation_logTelemetry_PythonError;

@@ -32,17 +32,23 @@ export interface WorkspaceAssetsQuery_repositoryOrError_Repository {
   assetNodes: WorkspaceAssetsQuery_repositoryOrError_Repository_assetNodes[];
 }
 
-export interface WorkspaceAssetsQuery_repositoryOrError_PythonError_causes {
+export interface WorkspaceAssetsQuery_repositoryOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface WorkspaceAssetsQuery_repositoryOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: WorkspaceAssetsQuery_repositoryOrError_PythonError_errorChain_error;
 }
 
 export interface WorkspaceAssetsQuery_repositoryOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: WorkspaceAssetsQuery_repositoryOrError_PythonError_causes[];
+  errorChain: WorkspaceAssetsQuery_repositoryOrError_PythonError_errorChain[];
 }
 
 export type WorkspaceAssetsQuery_repositoryOrError = WorkspaceAssetsQuery_repositoryOrError_RepositoryNotFoundError | WorkspaceAssetsQuery_repositoryOrError_Repository | WorkspaceAssetsQuery_repositoryOrError_PythonError;

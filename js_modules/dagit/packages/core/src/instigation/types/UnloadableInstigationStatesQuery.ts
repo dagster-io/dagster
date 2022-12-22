@@ -32,17 +32,23 @@ export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrE
   updateTime: number | null;
 }
 
-export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_causes {
+export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_errorChain_error;
 }
 
 export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_causes[];
+  errorChain: UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_errorChain[];
 }
 
 export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks {
@@ -77,17 +83,23 @@ export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrE
   results: UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates_results[];
 }
 
-export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_PythonError_causes {
+export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_PythonError_errorChain_error;
 }
 
 export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_PythonError_causes[];
+  errorChain: UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_PythonError_errorChain[];
 }
 
 export type UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError = UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates | UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_PythonError;

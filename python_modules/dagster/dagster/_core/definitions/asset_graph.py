@@ -102,6 +102,7 @@ class AssetGraph(NamedTuple):
         )
         group_names_by_key = {}
         freshness_policies_by_key = {}
+        asset_keys_by_atomic_execution_unit_id: Dict[str, Set[AssetKey]] = defaultdict(set)
 
         for node in external_asset_nodes:
             if node.is_source:
@@ -123,6 +124,17 @@ class AssetGraph(NamedTuple):
             group_names_by_key[node.asset_key] = node.group_name
             freshness_policies_by_key[node.asset_key] = node.freshness_policy
 
+            if node.atomic_execution_unit_id is not None:
+                asset_keys_by_atomic_execution_unit_id[node.atomic_execution_unit_id].add(
+                    node.asset_key
+                )
+
+        required_multi_asset_sets_by_key: Dict[AssetKey, AbstractSet[AssetKey]] = {}
+        for _, asset_keys in asset_keys_by_atomic_execution_unit_id.items():
+            if len(asset_keys) > 1:
+                for asset_key in asset_keys:
+                    required_multi_asset_sets_by_key[asset_key] = asset_keys
+
         return AssetGraph(
             asset_dep_graph={"upstream": upstream, "downstream": downstream},
             source_asset_keys=source_asset_keys,
@@ -131,7 +143,7 @@ class AssetGraph(NamedTuple):
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
-            required_multi_asset_sets_by_key=None,
+            required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
         )
 
     @property

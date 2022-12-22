@@ -25,17 +25,23 @@ export interface TickHistoryQuery_instigationStateOrError_InstigationState_ticks
   runId: string;
 }
 
-export interface TickHistoryQuery_instigationStateOrError_InstigationState_ticks_error_causes {
+export interface TickHistoryQuery_instigationStateOrError_InstigationState_ticks_error_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface TickHistoryQuery_instigationStateOrError_InstigationState_ticks_error_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: TickHistoryQuery_instigationStateOrError_InstigationState_ticks_error_errorChain_error;
 }
 
 export interface TickHistoryQuery_instigationStateOrError_InstigationState_ticks_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: TickHistoryQuery_instigationStateOrError_InstigationState_ticks_error_causes[];
+  errorChain: TickHistoryQuery_instigationStateOrError_InstigationState_ticks_error_errorChain[];
 }
 
 export interface TickHistoryQuery_instigationStateOrError_InstigationState_ticks {
@@ -61,17 +67,23 @@ export interface TickHistoryQuery_instigationStateOrError_InstigationState {
   ticks: TickHistoryQuery_instigationStateOrError_InstigationState_ticks[];
 }
 
-export interface TickHistoryQuery_instigationStateOrError_PythonError_causes {
+export interface TickHistoryQuery_instigationStateOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface TickHistoryQuery_instigationStateOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: TickHistoryQuery_instigationStateOrError_PythonError_errorChain_error;
 }
 
 export interface TickHistoryQuery_instigationStateOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: TickHistoryQuery_instigationStateOrError_PythonError_causes[];
+  errorChain: TickHistoryQuery_instigationStateOrError_PythonError_errorChain[];
 }
 
 export type TickHistoryQuery_instigationStateOrError = TickHistoryQuery_instigationStateOrError_InstigationStateNotFoundError | TickHistoryQuery_instigationStateOrError_InstigationState | TickHistoryQuery_instigationStateOrError_PythonError;

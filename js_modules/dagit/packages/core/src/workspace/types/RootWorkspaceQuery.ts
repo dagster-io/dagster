@@ -110,17 +110,23 @@ export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_l
   repositories: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories[];
 }
 
-export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_causes {
+export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_errorChain_error;
 }
 
 export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_causes[];
+  errorChain: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_errorChain[];
 }
 
 export type RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError = RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation | RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError;
@@ -140,17 +146,23 @@ export interface RootWorkspaceQuery_workspaceOrError_Workspace {
   locationEntries: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries[];
 }
 
-export interface RootWorkspaceQuery_workspaceOrError_PythonError_causes {
+export interface RootWorkspaceQuery_workspaceOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface RootWorkspaceQuery_workspaceOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: RootWorkspaceQuery_workspaceOrError_PythonError_errorChain_error;
 }
 
 export interface RootWorkspaceQuery_workspaceOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: RootWorkspaceQuery_workspaceOrError_PythonError_causes[];
+  errorChain: RootWorkspaceQuery_workspaceOrError_PythonError_errorChain[];
 }
 
 export type RootWorkspaceQuery_workspaceOrError = RootWorkspaceQuery_workspaceOrError_Workspace | RootWorkspaceQuery_workspaceOrError_PythonError;

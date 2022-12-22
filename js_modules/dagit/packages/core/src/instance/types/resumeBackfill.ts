@@ -17,17 +17,23 @@ export interface resumeBackfill_resumePartitionBackfill_UnauthorizedError {
   message: string;
 }
 
-export interface resumeBackfill_resumePartitionBackfill_PythonError_causes {
+export interface resumeBackfill_resumePartitionBackfill_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface resumeBackfill_resumePartitionBackfill_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: resumeBackfill_resumePartitionBackfill_PythonError_errorChain_error;
 }
 
 export interface resumeBackfill_resumePartitionBackfill_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: resumeBackfill_resumePartitionBackfill_PythonError_causes[];
+  errorChain: resumeBackfill_resumePartitionBackfill_PythonError_errorChain[];
 }
 
 export type resumeBackfill_resumePartitionBackfill = resumeBackfill_resumePartitionBackfill_ResumeBackfillSuccess | resumeBackfill_resumePartitionBackfill_UnauthorizedError | resumeBackfill_resumePartitionBackfill_PythonError;

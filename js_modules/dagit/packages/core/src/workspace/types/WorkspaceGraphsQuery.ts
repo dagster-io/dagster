@@ -64,17 +64,23 @@ export interface WorkspaceGraphsQuery_repositoryOrError_Repository {
   pipelines: WorkspaceGraphsQuery_repositoryOrError_Repository_pipelines[];
 }
 
-export interface WorkspaceGraphsQuery_repositoryOrError_PythonError_causes {
+export interface WorkspaceGraphsQuery_repositoryOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface WorkspaceGraphsQuery_repositoryOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: WorkspaceGraphsQuery_repositoryOrError_PythonError_errorChain_error;
 }
 
 export interface WorkspaceGraphsQuery_repositoryOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: WorkspaceGraphsQuery_repositoryOrError_PythonError_causes[];
+  errorChain: WorkspaceGraphsQuery_repositoryOrError_PythonError_errorChain[];
 }
 
 export type WorkspaceGraphsQuery_repositoryOrError = WorkspaceGraphsQuery_repositoryOrError_RepositoryNotFoundError | WorkspaceGraphsQuery_repositoryOrError_Repository | WorkspaceGraphsQuery_repositoryOrError_PythonError;

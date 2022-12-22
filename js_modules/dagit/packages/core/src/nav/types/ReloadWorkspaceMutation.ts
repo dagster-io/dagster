@@ -28,17 +28,23 @@ export interface ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntri
   repositories: ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories[];
 }
 
-export interface ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_PythonError_causes {
+export interface ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_PythonError_errorChain_error;
 }
 
 export interface ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_PythonError_causes[];
+  errorChain: ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_PythonError_errorChain[];
 }
 
 export type ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError = ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_RepositoryLocation | ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries_locationOrLoadError_PythonError;
@@ -61,17 +67,23 @@ export interface ReloadWorkspaceMutation_reloadWorkspace_UnauthorizedError {
   message: string;
 }
 
-export interface ReloadWorkspaceMutation_reloadWorkspace_PythonError_causes {
+export interface ReloadWorkspaceMutation_reloadWorkspace_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface ReloadWorkspaceMutation_reloadWorkspace_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: ReloadWorkspaceMutation_reloadWorkspace_PythonError_errorChain_error;
 }
 
 export interface ReloadWorkspaceMutation_reloadWorkspace_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: ReloadWorkspaceMutation_reloadWorkspace_PythonError_causes[];
+  errorChain: ReloadWorkspaceMutation_reloadWorkspace_PythonError_errorChain[];
 }
 
 export type ReloadWorkspaceMutation_reloadWorkspace = ReloadWorkspaceMutation_reloadWorkspace_Workspace | ReloadWorkspaceMutation_reloadWorkspace_UnauthorizedError | ReloadWorkspaceMutation_reloadWorkspace_PythonError;

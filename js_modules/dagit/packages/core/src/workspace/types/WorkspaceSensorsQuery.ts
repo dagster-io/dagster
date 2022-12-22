@@ -27,17 +27,23 @@ export interface WorkspaceSensorsQuery_repositoryOrError_Repository {
   sensors: WorkspaceSensorsQuery_repositoryOrError_Repository_sensors[];
 }
 
-export interface WorkspaceSensorsQuery_repositoryOrError_PythonError_causes {
+export interface WorkspaceSensorsQuery_repositoryOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface WorkspaceSensorsQuery_repositoryOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: WorkspaceSensorsQuery_repositoryOrError_PythonError_errorChain_error;
 }
 
 export interface WorkspaceSensorsQuery_repositoryOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: WorkspaceSensorsQuery_repositoryOrError_PythonError_causes[];
+  errorChain: WorkspaceSensorsQuery_repositoryOrError_PythonError_errorChain[];
 }
 
 export type WorkspaceSensorsQuery_repositoryOrError = WorkspaceSensorsQuery_repositoryOrError_RepositoryNotFoundError | WorkspaceSensorsQuery_repositoryOrError_Repository | WorkspaceSensorsQuery_repositoryOrError_PythonError;

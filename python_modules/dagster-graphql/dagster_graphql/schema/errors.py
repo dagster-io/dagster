@@ -14,6 +14,15 @@ class GrapheneError(graphene.Interface):
         name = "Error"
 
 
+class GrapheneErrorChainLink(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "ErrorChainLink"
+
+    error = graphene.NonNull(lambda: GraphenePythonError)
+    isExplicitLink = graphene.NonNull(graphene.Boolean)
+
+
 class GraphenePythonError(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneError,)
@@ -25,7 +34,7 @@ class GraphenePythonError(graphene.ObjectType):
 
     """
     A list of all recursive errors deeper in the exception stack that caused this error to be
-    raised. For example, in a block of code like:
+    raised, only including explicit raises. For example, in a block of code like:
     ```
         try:
             try:
@@ -39,12 +48,30 @@ class GraphenePythonError(graphene.ObjectType):
     """
     causes = non_null_list("dagster_graphql.schema.errors.GraphenePythonError")
 
+    """
+    A list of all recursive errors deeper in the exception stack that caused this error to be
+    raised, including both explicit and implicit links. For example, in a block of code like:
+    ```
+        try:
+            try:
+                raise Exception("Inner")
+            except Exception as e:
+                raise Exception("Middle")
+        except Exception as e:
+            raise Exception("Outer") from e
+    ```
+    The PythonError returned will correspond to Outer, with two links in the chain - one explicit (Middle) then one implicit (Inner)
+    """
+
+    errorChain = non_null_list(GrapheneErrorChainLink)
+
     def __init__(self, error_info):
         super().__init__()
-        check.inst_param(error_info, "error_info", SerializableErrorInfo)
+        self._error_info = check.inst_param(error_info, "error_info", SerializableErrorInfo)
         self.message = error_info.message
         self.stack = error_info.stack
         self.cause = error_info.cause
+        self.context = error_info.context
         self.className = error_info.cls_name
 
     def resolve_causes(self, _graphene_info):
@@ -54,6 +81,20 @@ class GraphenePythonError(graphene.ObjectType):
             causes.append(GraphenePythonError(current_error))
             current_error = current_error.cause
         return causes
+
+    def resolve_errorChain(self, _graphene_info):
+        current_error = self._error_info
+        chain = []
+        while len(chain) < 10:  # Sanity check the length of the chain
+            if current_error.cause:
+                current_error = current_error.cause
+                chain.append(GrapheneErrorChainLink(error=current_error, isExplicitLink=True))
+            elif current_error.context:
+                current_error = current_error.context
+                chain.append(GrapheneErrorChainLink(error=current_error, isExplicitLink=False))
+            else:
+                break
+        return chain
 
 
 class GrapheneSchedulerNotDefinedError(graphene.ObjectType):

@@ -1425,6 +1425,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "uploadExtraArgs": {
+                    "title": "Uploadextraargs",
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [

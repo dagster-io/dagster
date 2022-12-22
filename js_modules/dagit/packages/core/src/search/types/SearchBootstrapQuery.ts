@@ -7,17 +7,23 @@
 // GraphQL query operation: SearchBootstrapQuery
 // ====================================================
 
-export interface SearchBootstrapQuery_workspaceOrError_PythonError_causes {
+export interface SearchBootstrapQuery_workspaceOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface SearchBootstrapQuery_workspaceOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: SearchBootstrapQuery_workspaceOrError_PythonError_errorChain_error;
 }
 
 export interface SearchBootstrapQuery_workspaceOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: SearchBootstrapQuery_workspaceOrError_PythonError_causes[];
+  errorChain: SearchBootstrapQuery_workspaceOrError_PythonError_errorChain[];
 }
 
 export interface SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError {

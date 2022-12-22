@@ -18,17 +18,23 @@ export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_
   yaml: string;
 }
 
-export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError_PythonError_causes {
+export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError_PythonError_errorChain_error;
 }
 
 export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError_PythonError_causes[];
+  errorChain: ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError_PythonError_errorChain[];
 }
 
 export type ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError = ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError_PartitionRunConfig | ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError_PythonError;
@@ -44,17 +50,23 @@ export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_
   results: ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PartitionTags_results[];
 }
 
-export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PythonError_causes {
+export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PythonError_errorChain_error;
 }
 
 export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PythonError_causes[];
+  errorChain: ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PythonError_errorChain[];
 }
 
 export type ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError = ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PartitionTags | ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PythonError;

@@ -25,17 +25,23 @@ export interface StartSensor_startSensor_Sensor {
   sensorState: StartSensor_startSensor_Sensor_sensorState;
 }
 
-export interface StartSensor_startSensor_PythonError_causes {
+export interface StartSensor_startSensor_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface StartSensor_startSensor_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: StartSensor_startSensor_PythonError_errorChain_error;
 }
 
 export interface StartSensor_startSensor_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: StartSensor_startSensor_PythonError_causes[];
+  errorChain: StartSensor_startSensor_PythonError_errorChain[];
 }
 
 export type StartSensor_startSensor = StartSensor_startSensor_SensorNotFoundError | StartSensor_startSensor_Sensor | StartSensor_startSensor_PythonError;

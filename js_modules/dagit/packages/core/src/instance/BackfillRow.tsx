@@ -176,8 +176,7 @@ const BackfillMenu = ({
         <Menu>
           {canCancelPartitionBackfill.enabled ? (
             <>
-              {backfill.numRequested < statusData.results.length &&
-              backfill.status === BulkActionStatus.REQUESTED ? (
+              {backfill.numCancelable > 0 ? (
                 <MenuItem
                   text="Cancel backfill submission"
                   icon="cancel"

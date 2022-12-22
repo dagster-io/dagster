@@ -339,21 +339,7 @@
         "children": [
           {
             "title": "Getting started",
-            "path": "/dagster-cloud/getting-started",
-            "children": [
-              {
-                "title": "Serverless Deployment",
-                "path": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment"
-              },
-              {
-                "title": "Hybrid Deployment",
-                "path": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment"
-              },
-              {
-                "title": "Environment variables and secrets",
-                "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets"
-              }
-            ]
+            "path": "/dagster-cloud/getting-started"
           },
           {
             "title": "Deployment types",
@@ -573,6 +559,10 @@
           {
             "title": "Learning Dagster from Airflow",
             "path": "/integrations/airflow/from-airflow-to-dagster"
+          },
+          {
+            "title": "Airflow Migration Guide",
+            "path": "/integrations/airflow/migrating-to-dagster"
           },
           {
             "title": "Reference",

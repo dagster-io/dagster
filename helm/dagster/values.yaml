@@ -207,12 +207,14 @@ computeLogManager:
   #     secretKey: ~
   #     localDir: ~
   #     prefix: ~
+  #     uploadInterval: ~
   ##  Uncomment this configuration if the GCSComputeLogManager is selected
   #   gcsComputeLogManager:
   #     bucket: ~
   #     localDir: ~
   #     prefix: ~
   #     jsonCredentialsEnvvar: ~
+  #     uploadInterval: ~
   ##  Uncomment this configuration if the S3ComputeLogManager is selected
   #   s3ComputeLogManager:
   #     bucket: ~
@@ -223,6 +225,8 @@ computeLogManager:
   #     verifyCertPath: ~
   #     endpointUrl: ~
   #     skipEmptyFiles: ~
+  #     uploadInterval: ~
+  #     uploadExtraArgs: {}
   ##  Uncomment this configuration if the CustomComputeLogManager is selected.
   ##  Using this setting requires a custom Dagit image that defines the user specified
   ##  compute log manager in an installed python module.
@@ -1026,7 +1030,6 @@ dagsterDaemon:
         dequeueIntervalSeconds: ~
         dequeueUseThreads: ~
         dequeueNumWorkers: ~
-
 
     ##  Uncomment this configuration if the CustomRunCoordinator is selected.
     ##  Using this setting requires a custom Daemon image that defines the user specified

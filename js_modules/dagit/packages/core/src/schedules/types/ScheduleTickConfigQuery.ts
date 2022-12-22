@@ -26,17 +26,23 @@ export interface ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_eva
   tags: ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_runRequests_tags[];
 }
 
-export interface ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_error_causes {
+export interface ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_error_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_error_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_error_errorChain_error;
 }
 
 export interface ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_error_causes[];
+  errorChain: ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_error_errorChain[];
 }
 
 export interface ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult {
