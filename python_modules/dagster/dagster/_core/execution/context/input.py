@@ -20,6 +20,7 @@ from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow, TimeWindowPartitionsSubset
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.instance import DagsterInstance
 
 if TYPE_CHECKING:
     from dagster._core.definitions import OpDefinition, PartitionsDefinition
@@ -79,6 +80,7 @@ class InputContext:
 
     def __init__(
         self,
+        *,
         name: Optional[str] = None,
         job_name: Optional[str] = None,
         solid_def: Optional["OpDefinition"] = None,
@@ -95,6 +97,7 @@ class InputContext:
         partition_key: Optional[str] = None,
         asset_partitions_subset: Optional[PartitionsSubset] = None,
         asset_partitions_def: Optional["PartitionsDefinition"] = None,
+        instance: Optional[DagsterInstance] = None,
     ):
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
@@ -135,6 +138,7 @@ class InputContext:
         self._events: List["DagsterEvent"] = []
         self._observations: List[AssetObservation] = []
         self._metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]] = []
+        self._instance = instance
 
     def __enter__(self):
         if self._resources_cm:
@@ -148,6 +152,15 @@ class InputContext:
     def __del__(self):
         if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
             self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
+
+    @property
+    def instance(self) -> DagsterInstance:
+        if self._instance is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access instance, "
+                "but it was not provided when constructing the InputContext"
+            )
+        return self._instance
 
     @public  # type: ignore
     @property
@@ -539,6 +552,7 @@ def build_input_context(
     partition_key: Optional[str] = None,
     asset_partition_key_range: Optional[PartitionKeyRange] = None,
     asset_partitions_def: Optional["PartitionsDefinition"] = None,
+    instance: Optional[DagsterInstance] = None,
 ) -> "InputContext":
     """Builds input context from provided parameters.
 
@@ -624,6 +638,7 @@ def build_input_context(
         partition_key=partition_key,
         asset_partitions_subset=asset_partitions_subset,
         asset_partitions_def=asset_partitions_def,
+        instance=instance,
     )
 
 
