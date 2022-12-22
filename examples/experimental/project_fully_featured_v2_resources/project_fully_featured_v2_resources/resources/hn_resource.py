@@ -28,7 +28,6 @@ class HNClient(ABC):
 
 class HNAPIClient(HNClient):
     def fetch_item_by_id(self, item_id: int) -> Optional[HNItemRecord]:
-
         item_url = f"{HN_BASE_URL}/item/{item_id}.json"
         item = requests.get(item_url, timeout=5).json()
         return item

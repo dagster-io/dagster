@@ -23,7 +23,7 @@ def test_make_definitions(
     expected_job_names,
 ):
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        for (path, content) in path_and_content_tuples:
+        for path, content in path_and_content_tuples:
             with open(os.path.join(tmpdir_path, path), "wb") as f:
                 f.write(bytes(content.encode("utf-8")))
 

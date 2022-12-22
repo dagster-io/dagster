@@ -289,7 +289,6 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         run_queue_config: RunQueueConfig,
         fixed_iteration_time: Optional[float],
     ) -> bool:
-
         # double check that the run is still queued before dequeing
         run = check.not_none(instance.get_run_by_id(run.run_id))
 
@@ -311,7 +310,10 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         if location_name and self._is_location_pausing_dequeues(location_name, now):
             self._logger.info(
-                "Pausing dequeues for runs from code location %s to give its code server time to recover",
+                (
+                    "Pausing dequeues for runs from code location %s to give its code server time"
+                    " to recover"
+                ),
                 location_name,
             )
             return False
@@ -336,13 +338,13 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             # Make sure we don't re-enqueue a run if it has already finished or moved into STARTED:
             if run.status not in (DagsterRunStatus.QUEUED, DagsterRunStatus.STARTING):
                 self._logger.info(
-                    f"Run {run.run_id} failed while being dequeued, but has already advanced to {run.status} - moving on. Error: {error.to_string()}"
+                    f"Run {run.run_id} failed while being dequeued, but has already advanced to"
+                    f" {run.status} - moving on. Error: {error.to_string()}"
                 )
                 return False
             elif run_queue_config.max_user_code_failure_retries and isinstance(
                 e, (DagsterUserCodeUnreachableError, DagsterRepositoryLocationLoadError)
             ):
-
                 if location_name:
                     with self._location_timeouts_lock:
                         # Don't try to dequeue runs from this location for another N seconds
@@ -359,7 +361,10 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 num_retries_so_far = len(enqueue_event_records) - 1
 
                 if num_retries_so_far >= run_queue_config.max_user_code_failure_retries:
-                    message = f"Run dequeue failed to reach the user code server after {run_queue_config.max_user_code_failure_retries} attempts, failing run"
+                    message = (
+                        "Run dequeue failed to reach the user code server after"
+                        f" {run_queue_config.max_user_code_failure_retries} attempts, failing run"
+                    )
                     message_with_full_error = f"{message}: {error.to_string()}"
                     self._logger.error(message_with_full_error)
                     instance.report_engine_event(
@@ -374,7 +379,10 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                         run_queue_config.max_user_code_failure_retries - num_retries_so_far
                     )
                     retries_str = "retr" + ("y" if retries_left == 1 else "ies")
-                    message = f"Run dequeue failed to reach the user code server, re-submitting the run into the queue ({retries_left} {retries_str} remaining)"
+                    message = (
+                        "Run dequeue failed to reach the user code server, re-submitting the run"
+                        f" into the queue ({retries_left} {retries_str} remaining)"
+                    )
                     message_with_full_error = f"{message}: {error.to_string()}"
                     self._logger.warning(message_with_full_error)
 
@@ -391,7 +399,10 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     instance.report_dagster_event(enqueued_event, run_id=run.run_id)
                     return False
             else:
-                message = "Caught an unrecoverable error while dequeuing the run. Marking the run as failed and dropping it from the queue"
+                message = (
+                    "Caught an unrecoverable error while dequeuing the run. Marking the run as"
+                    " failed and dropping it from the queue"
+                )
                 message_with_full_error = f"{message}: {error.to_string()}"
                 self._logger.error(message_with_full_error)
 

@@ -1097,7 +1097,6 @@ def test_instance_set_on_asset_loader():
         return an_asset + 1
 
     with DagsterInstance.ephemeral() as instance:
-
         defs = Definitions(
             assets=[an_asset, another_asset],
             resources={"io_manager": AssertingContextInputOnLoadInputIOManager()},

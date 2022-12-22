@@ -466,7 +466,6 @@ def get_execution_time_window_for_constraints(
     min_dt = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
 
     for constraint in sorted(constraints, key=lambda c: c.required_by_time):
-
         # the set of keys in this constraint that are actually upstream of this asset
         relevant_constraint_keys = constraint.asset_keys & relevant_upstream_keys
 
@@ -575,7 +574,6 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 # recieve the current contents of the asset
                 execution_window_start = None
             else:
-
                 # calculate the data times you would expect after all currently-executing runs
                 # were to successfully complete
                 in_progress_data_times = instance_queryer.get_in_progress_data_times_for_key(

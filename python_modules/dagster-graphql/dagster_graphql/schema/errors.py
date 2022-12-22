@@ -77,16 +77,22 @@ class GraphenePythonError(graphene.ObjectType):
     def resolve_message(self, _graphene_info):
         check.invariant(
             isinstance(self, GraphenePythonError),
-            f"GraphenePythonError methods called on a {type(self)} - this usually indicates that "
-            "a SerializableErrorInfo was passed in where a GraphenePythonError was expected",
+            (
+                f"GraphenePythonError methods called on a {type(self)} - this usually indicates"
+                " that a SerializableErrorInfo was passed in where a GraphenePythonError was"
+                " expected"
+            ),
         )
         return self._message
 
     def resolve_stack(self, _graphene_info):
         check.invariant(
             isinstance(self, GraphenePythonError),
-            f"GraphenePythonError methods called on a {type(self)} - this usually indicates that "
-            "a SerializableErrorInfo was passed in where a GraphenePythonError was expected",
+            (
+                f"GraphenePythonError methods called on a {type(self)} - this usually indicates"
+                " that a SerializableErrorInfo was passed in where a GraphenePythonError was"
+                " expected"
+            ),
         )
         return self._stack
 
@@ -99,8 +105,11 @@ class GraphenePythonError(graphene.ObjectType):
     def resolve_className(self, _graphene_info):
         check.invariant(
             isinstance(self, GraphenePythonError),
-            f"GraphenePythonError methods called on a {type(self)} - this usually indicates that "
-            "a SerializableErrorInfo was passed in where a GraphenePythonError was expected",
+            (
+                f"GraphenePythonError methods called on a {type(self)} - this usually indicates"
+                " that a SerializableErrorInfo was passed in where a GraphenePythonError was"
+                " expected"
+            ),
         )
         return self._className
 

@@ -79,7 +79,8 @@ class BranchingIOManager(IOManager):
             == self.branch_name
         ):
             context.log.info(
-                f'Branching Manager: Loading "{context.asset_key.to_user_string()}" from "{self.branch_name}"'
+                f'Branching Manager: Loading "{context.asset_key.to_user_string()}" from'
+                f' "{self.branch_name}"'
             )
             return self.branch_io_manager.load_input(context)
 
@@ -96,5 +97,6 @@ class BranchingIOManager(IOManager):
         context.add_output_metadata({self.branch_metadata_key: self.branch_name})
 
         context.log.info(
-            f'Branching Manager: Writing "{context.asset_key.to_user_string()}" to branch "{self.branch_name}"'
+            f'Branching Manager: Writing "{context.asset_key.to_user_string()}" to branch'
+            f' "{self.branch_name}"'
         )

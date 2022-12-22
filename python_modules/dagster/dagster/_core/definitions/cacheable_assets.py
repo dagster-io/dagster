@@ -242,7 +242,10 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
                 prefix_for_all_assets
                 and (output_asset_key_replacements or input_asset_key_replacements)
             ),
-            "Cannot set both prefix_for_all_assets and output_asset_key_replacements or input_asset_key_replacements",
+            (
+                "Cannot set both prefix_for_all_assets and output_asset_key_replacements or"
+                " input_asset_key_replacements"
+            ),
         )
 
         super().__init__(

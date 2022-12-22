@@ -1354,7 +1354,8 @@ class RepositoryDefinition:
         return self._repository_data.get_assets_defs_by_key()
 
     def has_implicit_global_asset_job_def(self) -> bool:
-        """Returns true is there is a single implicit asset job for all asset keys in a repository."""
+        """Returns true is there is a single implicit asset job for all asset keys in a repository.
+        """
         return self.has_job(ASSET_BASE_JOB_PREFIX)
 
     def get_implicit_global_asset_job_def(self) -> JobDefinition:

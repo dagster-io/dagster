@@ -175,19 +175,24 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
                 config=IntSource,
                 is_required=False,
                 default_value=0,
-                description="If there is an error reaching a Dagster gRPC server while dequeuing "
-                "the run, how many times to retry the dequeue before failing it. The only run "
-                "launcher that requires the gRPC server to be running is the DefaultRunLauncher, "
-                "so setting this will have no effect unless that run launcher is being used.",
+                description=(
+                    "If there is an error reaching a Dagster gRPC server while dequeuing the run,"
+                    " how many times to retry the dequeue before failing it. The only run launcher"
+                    " that requires the gRPC server to be running is the DefaultRunLauncher, so"
+                    " setting this will have no effect unless that run launcher is being used."
+                ),
             ),
             "user_code_failure_retry_delay": Field(
                 config=IntSource,
                 is_required=False,
                 default_value=60,
-                description="If there is an error reaching a Dagster gRPC server while dequeuing "
-                "the run, how long to wait before retrying any runs from that same code location. The only run "
-                "launcher that requires the gRPC server to be running is the DefaultRunLauncher, "
-                "so setting this will have no effect unless that run launcher is being used.",
+                description=(
+                    "If there is an error reaching a Dagster gRPC server while dequeuing the run,"
+                    " how long to wait before retrying any runs from that same code location. The"
+                    " only run launcher that requires the gRPC server to be running is the"
+                    " DefaultRunLauncher, so setting this will have no effect unless that run"
+                    " launcher is being used."
+                ),
             ),
         }
 

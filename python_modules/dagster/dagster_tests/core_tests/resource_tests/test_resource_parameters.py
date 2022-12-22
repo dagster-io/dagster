@@ -196,7 +196,6 @@ def test_resource_not_provided():
 
 
 def test_resource_class():
-
     resource_called = {}
 
     class MyResource(ResourceDefinition):
@@ -225,7 +224,9 @@ def test_resource_class():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="resource with key 'not_provided' required by op 'consumes_nonexistent_resource_class'",
+        match=(
+            "resource with key 'not_provided' required by op 'consumes_nonexistent_resource_class'"
+        ),
     ):
         with_resources([consumes_nonexistent_resource_class], {})
 
@@ -233,7 +234,10 @@ def test_resource_class():
 def test_both_decorator_and_argument_error():
     with pytest.raises(
         ParameterCheckError,
-        match="Invariant violation for parameter Cannot specify resource requirements in both @asset decorator and as arguments to the decorated function",
+        match=(
+            "Invariant violation for parameter Cannot specify resource requirements in both @asset"
+            " decorator and as arguments to the decorated function"
+        ),
     ):
 
         @asset(required_resource_keys={"foo"})
@@ -242,7 +246,10 @@ def test_both_decorator_and_argument_error():
 
     with pytest.raises(
         ParameterCheckError,
-        match="Invariant violation for parameter Cannot specify resource requirements in both @multi_asset decorator and as arguments to the decorated function",
+        match=(
+            "Invariant violation for parameter Cannot specify resource requirements in both"
+            " @multi_asset decorator and as arguments to the decorated function"
+        ),
     ):
 
         @multi_asset(
@@ -254,7 +261,10 @@ def test_both_decorator_and_argument_error():
 
     with pytest.raises(
         ParameterCheckError,
-        match="Invariant violation for parameter Cannot specify resource requirements in both @op decorator and as arguments to the decorated function",
+        match=(
+            "Invariant violation for parameter Cannot specify resource requirements in both @op"
+            " decorator and as arguments to the decorated function"
+        ),
     ):
 
         @op(required_resource_keys={"foo"})

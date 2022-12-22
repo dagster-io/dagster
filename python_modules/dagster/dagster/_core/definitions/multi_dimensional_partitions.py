@@ -241,8 +241,10 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         partition_key_strs = partition_key_str.split("|")
         check.invariant(
             len(partition_key_strs) == len(self.partitions_defs),
-            f"Expected {len(self.partitions_defs)} partition keys in partition key string {partition_key_str}, "
-            f"but got {len(partition_key_strs)}",
+            (
+                f"Expected {len(self.partitions_defs)} partition keys in partition key string"
+                f" {partition_key_str}, but got {len(partition_key_strs)}"
+            ),
         )
         keys_per_dimension = [
             (dim.name, dim.partitions_def.get_partition_keys()) for dim in self._partitions_defs

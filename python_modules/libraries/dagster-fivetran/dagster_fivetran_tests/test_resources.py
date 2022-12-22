@@ -72,7 +72,8 @@ def test_get_connector_details_flake(max_retries, n_flakes):
         with pytest.raises(
             Failure,
             match=re.escape(
-                f"Max retries ({max_retries}) exceeded with url: https://api.fivetran.com/v1/connectors/some_connector."
+                f"Max retries ({max_retries}) exceeded with url:"
+                " https://api.fivetran.com/v1/connectors/some_connector."
             ),
         ):
             _mock_interaction()

@@ -276,7 +276,10 @@ class _Asset:
             )
             check.param_invariant(
                 len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
-                "Cannot specify resource requirements in both @asset decorator and as arguments to the decorated function",
+                (
+                    "Cannot specify resource requirements in both @asset decorator and as arguments"
+                    " to the decorated function"
+                ),
             )
 
             if isinstance(self.io_manager, str):
@@ -438,7 +441,10 @@ def multi_asset(
         arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
         check.param_invariant(
             len(required_resource_keys or []) == 0 or len(arg_resource_keys) == 0,
-            "Cannot specify resource requirements in both @multi_asset decorator and as arguments to the decorated function",
+            (
+                "Cannot specify resource requirements in both @multi_asset decorator and as"
+                " arguments to the decorated function"
+            ),
         )
 
         # validate that the asset_deps make sense

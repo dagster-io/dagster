@@ -374,7 +374,6 @@ def test_tag_concurrency_limits():
     with plan.start(
         RetryMode.DISABLED, tag_concurrency_limits=tag_concurrency_limits
     ) as active_execution:
-
         steps = active_execution.get_steps_to_execute()
 
         assert len(steps) == 5

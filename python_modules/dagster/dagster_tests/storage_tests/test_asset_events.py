@@ -342,7 +342,6 @@ def test_asset_materialization_accessors():
         return 1
 
     with DagsterInstance.ephemeral() as instance:
-
         defs = Definitions(assets=[return_one])
         defs.get_job_def("__ASSET_JOB").execute_in_process(instance=instance)
 

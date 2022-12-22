@@ -130,7 +130,8 @@ def test_request_flake(max_retries, n_flakes):
         with pytest.raises(
             Failure,
             match=re.escape(
-                f"Max retries ({max_retries}) exceeded with url: https://cloud.getdbt.com/api/v2/accounts/30000/runs/5000000/."
+                f"Max retries ({max_retries}) exceeded with url:"
+                " https://cloud.getdbt.com/api/v2/accounts/30000/runs/5000000/."
             ),
         ):
             _mock_interaction()
