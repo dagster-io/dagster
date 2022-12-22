@@ -200,19 +200,19 @@ def find_parent_materialized_asset_partitions(
 
     target_asset_keys = target_asset_selection.resolve(asset_graph)
 
-    for asset_key, record in instance_queryer.get_latest_materialization_records_by_key(
-        target_asset_selection.upstream(depth=1).resolve(asset_graph),
-        latest_storage_id,
-    ).items():
-        # The children of updated assets might now be unreconciled:
-        for child in asset_graph.get_children_partitions(asset_key, record.partition_key):
-            if child.asset_key in target_asset_keys and not instance_queryer.is_asset_in_run(
-                record.run_id, child
-            ):
-                result_asset_partitions.add(child)
+    for asset_key in target_asset_selection.upstream(depth=1).resolve(asset_graph):
+        records = instance_queryer.get_materialization_records(
+            asset_key=asset_key, after_cursor=latest_storage_id
+        )
+        for record in records:
+            for child in asset_graph.get_children_partitions(asset_key, record.partition_key):
+                if child.asset_key in target_asset_keys and not instance_queryer.is_asset_in_run(
+                    record.run_id, child
+                ):
+                    result_asset_partitions.add(child)
 
-        if result_latest_storage_id is None or record.storage_id > result_latest_storage_id:
-            result_latest_storage_id = record.storage_id
+            if result_latest_storage_id is None or record.storage_id > result_latest_storage_id:
+                result_latest_storage_id = record.storage_id
 
     return (result_asset_partitions, result_latest_storage_id)
 
