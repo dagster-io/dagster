@@ -14,7 +14,8 @@ from starlette.concurrency import (
     run_in_threadpool,  # can provide this indirectly if we dont want starlette dep in dagster-graphql
 )
 
-from dagster_graphql.schema.util import HasContext
+if TYPE_CHECKING:
+    pass
 
 from ..utils import capture_error
 
@@ -23,16 +24,6 @@ from .backfill import (
     cancel_partition_backfill as cancel_partition_backfill,
     create_and_launch_partition_backfill as create_and_launch_partition_backfill,
     resume_partition_backfill as resume_partition_backfill,
-)
-from .launch_execution import (
-    launch_pipeline_execution as launch_pipeline_execution,
-    launch_pipeline_reexecution as launch_pipeline_reexecution,
-    launch_reexecution_from_parent_run as launch_reexecution_from_parent_run,
-)
-from .launch_execution import (
-    launch_pipeline_execution,
-    launch_pipeline_reexecution,
-    launch_reexecution_from_parent_run,
 )
 
 if TYPE_CHECKING:

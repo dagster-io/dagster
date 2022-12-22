@@ -1,7 +1,6 @@
 from typing import Any
 
 import pytest
-
 from dagster import AssetsDefinition, ResourceDefinition, asset, job, op, resource, with_resources
 from dagster._check import ParameterCheckError
 from dagster._config.structured_config import Config

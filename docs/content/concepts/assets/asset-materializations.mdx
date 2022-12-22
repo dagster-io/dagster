@@ -86,7 +86,9 @@ height={2414}
 To record that an <PyObject object ="IOManager"/> has mutated or created an asset, we can log an <PyObject module="dagster" object="AssetMaterialization" /> event from its `handle_output` method. We do this via the method <PyObject object="OutputContext" method="log_event" />.
 
 ```python file=/concepts/assets/materialization_io_managers.py startafter=start_marker_0 endbefore=end_marker_0
-from dagster import AssetMaterialization, IOManager
+import os
+
+from dagster import AssetKey, AssetMaterialization, IOManager
 
 
 class PandasCsvIOManager(IOManager):

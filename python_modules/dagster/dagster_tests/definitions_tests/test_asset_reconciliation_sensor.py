@@ -151,9 +151,7 @@ def do_run(
                 assets_in_run.extend(a.to_source_assets())
             else:
                 assets_in_run.append(a.subset_for(asset_keys_set))
-                assets_in_run.extend(
-                    a.subset_for(a.keys - selected_keys).to_source_assets()
-                )
+                assets_in_run.extend(a.subset_for(a.keys - selected_keys).to_source_assets())
     materialize_to_memory(
         instance=instance,
         partition_key=partition_key,

@@ -12,8 +12,6 @@ from dagster._core.utils import make_new_run_id
 from dagster._utils.merger import merge_dicts
 from graphene import ResolveInfo
 
-from dagster_graphql.schema.util import HasContext
-
 from ..external import ensure_valid_config, get_external_execution_plan_or_raise
 from ..utils import ExecutionParams, UserFacingGraphQLError
 

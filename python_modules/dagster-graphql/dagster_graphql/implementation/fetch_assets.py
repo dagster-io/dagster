@@ -25,7 +25,9 @@ from dagster_graphql.implementation.loader import (
     CrossRepoAssetDependedByLoader,
     ProjectedLogicalVersionLoader,
 )
-from dagster_graphql.schema.util import HasContext
+
+if TYPE_CHECKING:
+    pass
 
 from .utils import capture_error
 

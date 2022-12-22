@@ -15,8 +15,6 @@ from dagster._core.storage.tags import TagType, get_tag_type
 from dagster._legacy import DagsterRunStatus, PipelineDefinition
 from graphene import ResolveInfo
 
-from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
-
 from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import UserFacingGraphQLError, capture_error
 

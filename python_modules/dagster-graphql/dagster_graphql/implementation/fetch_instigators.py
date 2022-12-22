@@ -8,9 +8,6 @@ from dagster._core.host_representation import InstigatorSelector
 from dagster._core.log_manager import DAGSTER_META_KEY
 from dagster._core.scheduler.instigation import InstigatorStatus
 
-from dagster_graphql.schema.logs.log_level import GrapheneLogLevel
-from dagster_graphql.schema.util import HasContext
-
 from .utils import capture_error
 
 if TYPE_CHECKING:

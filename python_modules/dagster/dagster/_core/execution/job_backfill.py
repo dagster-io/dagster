@@ -30,8 +30,8 @@ from dagster._core.telemetry import BACKFILL_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._core.workspace.workspace import IWorkspace
-from dagster._utils import merge_dicts
 from dagster._utils.error import SerializableErrorInfo
+from dagster._utils.merger import merge_dicts
 
 from .backfill import BulkActionStatus, PartitionBackfill
 
