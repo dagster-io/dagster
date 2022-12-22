@@ -1,5 +1,3 @@
-from re import A
-
 import pytest
 
 from dagster import (
@@ -19,7 +17,6 @@ from dagster import (
     with_resources,
 )
 from dagster._check import CheckError
-from dagster._core.definitions import asset_selection
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
@@ -29,7 +26,6 @@ from dagster._core.definitions.definitions_class import create_repository_using_
 from dagster._core.definitions.executor_definition import executor
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import logger
-from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
@@ -508,13 +504,12 @@ def test_implicit_job_with_source_assets():
     source_asset = SourceAsset("source_asset")
 
     @asset
-    def downstream_of_source(source_asset):
+    def downstream_of_source(_source_asset):
         pass
 
     defs = Definitions(assets=[source_asset, downstream_of_source])
     assert defs.get_all_job_defs()
     assert len(defs.get_all_job_defs()) == 1
-    job_zero = defs.get_all_job_defs()[0]
     assert defs.get_implicit_job_def_for_assets(asset_keys=[AssetKey("downstream_of_source")])
     assert defs.has_implicit_global_asset_job_def()
     assert defs.get_implicit_global_asset_job_def()
