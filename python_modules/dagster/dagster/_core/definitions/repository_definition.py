@@ -21,6 +21,8 @@ from typing import (
     cast,
 )
 
+from anyio import maybe_async
+
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
@@ -1348,21 +1350,29 @@ class RepositoryDefinition:
     def _assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._repository_data.get_assets_defs_by_key()
 
-    def has_implicit_global_asset_job(self) -> bool:
-        return bool(self._get_maybe_implicit_global_asset_job())
+    def has_implicit_global_asset_job_def(self) -> bool:
+        """Returns true is there is a single implicit asset job for all asset keys in a repository."""
+        return bool(self.get_base_job_for_assets(self._get_all_executable_asset_keys()))
 
-    def get_implicit_global_asset_job(self) -> JobDefinition:
-        """A useful conveninence method for repositories where there are assets and nodefined jobs"""
-        return check.not_none(
-            self._get_maybe_implicit_global_asset_job(),
-            "There are other jobs defined and therefore there is not implicit global job.",
-        )
+    def get_implicit_global_asset_job_def(self) -> JobDefinition:
+        """A useful conveninence method for repositories where there are a set of assets with
+        the same partitioning schema and one wants to access their corresponding implicit job
+        easily."""
 
-    def _get_maybe_implicit_global_asset_job(self) -> Optional[JobDefinition]:
-        all_asset_keys = list(self._assets_defs_by_key.keys()) + list(
-            self.source_assets_by_key.keys()
-        )
-        return self.get_base_job_for_assets(all_asset_keys)
+        maybe_job = self.get_base_job_for_assets(self._get_all_executable_asset_keys())
+
+        if not maybe_job:
+            raise DagsterInvariantViolationError(
+                "There is no global asset job that contains all keys, likely due to assets using "
+                "different partitioning schemes via their partitions_def parameter. You must "
+                "used get_base_job_for_assets in order to access to correct implicit job."
+            )
+
+        return maybe_job
+
+    def _get_all_executable_asset_keys(self) -> List[AssetKey]:
+        """Get all asset keys except for source assets."""
+        return list(self._assets_defs_by_key.keys())
 
     def get_base_asset_job_names(self) -> Sequence[str]:
         return [

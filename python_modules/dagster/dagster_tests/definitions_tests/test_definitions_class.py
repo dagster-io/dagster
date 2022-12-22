@@ -1,9 +1,12 @@
+from re import A
+
 import pytest
 
 from dagster import (
     AssetKey,
     AssetsDefinition,
     Definitions,
+    OpExecutionContext,
     ResourceDefinition,
     ScheduleDefinition,
     SourceAsset,
@@ -16,6 +19,7 @@ from dagster import (
     with_resources,
 )
 from dagster._check import CheckError
+from dagster._core.definitions import asset_selection
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
@@ -25,11 +29,17 @@ from dagster._core.definitions.definitions_class import create_repository_using_
 from dagster._core.definitions.executor_definition import executor
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import logger
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
 )
 from dagster._core.definitions.sensor_definition import SensorDefinition
+from dagster._core.definitions.time_window_partitions import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+)
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
@@ -431,7 +441,7 @@ def test_with_resources_override():
         resources={"b_resource": "passed-through-definitions"},
     )
 
-    defs.get_implicit_global_asset_job().execute_in_process()
+    defs.get_implicit_global_asset_job_def().execute_in_process()
 
     assert executed["asset_one"]
     assert executed["asset_two"]
@@ -444,7 +454,8 @@ def test_implicit_global_job():
 
     defs = Definitions(assets=[asset_one])
 
-    assert defs.has_implicit_global_asset_job()
+    assert defs.has_implicit_global_asset_job_def()
+    assert len(defs.get_all_job_defs()) == 1
 
 
 def test_implicit_global_job_with_job_defined():
@@ -454,5 +465,56 @@ def test_implicit_global_job_with_job_defined():
 
     defs = Definitions(assets=[asset_one], jobs=[define_asset_job("all_assets_job", selection="*")])
 
-    # I officially do not understand the semantics of the global implicit job at this point
-    assert defs.has_implicit_global_asset_job()
+    assert defs.has_implicit_global_asset_job_def()
+    assert defs.get_job_def("all_assets_job")
+    assert defs.get_job_def("all_assets_job") is not defs.get_implicit_global_asset_job_def()
+
+    assert len(defs.get_all_job_defs()) == 2
+
+
+def test_implicit_global_job_with_partitioned_asset():
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
+    def daily_partition_asset(context: OpExecutionContext):
+        return context.partition_key
+
+    @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-02-02-10:00"))
+    def hourly_partition_asset(context: OpExecutionContext):
+        return context.partition_key
+
+    @asset
+    def unpartitioned_asset():
+        pass
+
+    defs = Definitions(
+        assets=[daily_partition_asset, unpartitioned_asset, hourly_partition_asset],
+    )
+
+    assert len(defs.get_all_job_defs()) == 2
+
+    assert defs.get_implicit_job_def_for_assets(
+        [AssetKey("daily_partition_asset"), AssetKey("unpartitioned_asset")]
+    )
+
+    assert defs.get_implicit_job_def_for_assets(
+        [AssetKey("hourly_partition_asset"), AssetKey("unpartitioned_asset")]
+    )
+
+    with pytest.raises(DagsterInvariantViolationError):  # type: ignore
+        defs.get_implicit_global_asset_job_def()
+
+
+def test_implicit_job_with_source_assets():
+
+    source_asset = SourceAsset("source_asset")
+
+    @asset
+    def downstream_of_source(source_asset):
+        pass
+
+    defs = Definitions(assets=[source_asset, downstream_of_source])
+    assert defs.get_all_job_defs()
+    assert len(defs.get_all_job_defs()) == 1
+    job_zero = defs.get_all_job_defs()[0]
+    assert defs.get_implicit_job_def_for_assets(asset_keys=[AssetKey("downstream_of_source")])
+    assert defs.has_implicit_global_asset_job_def()
+    assert defs.get_implicit_global_asset_job_def()
