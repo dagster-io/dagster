@@ -8,8 +8,10 @@ from dagster._config.structured_config import Config
 from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
+from dagster._core.definitions.input import In
 from dagster._core.definitions.resource_output import ResourceOutput
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.types.dagster_type import Nothing
 
 
 def test_filter_out_resources():
@@ -80,6 +82,49 @@ def test_init_resources():
     assert set(resources_initted.keys()) == {"a", "b"}
 
 
+def test_ops_with_dependencies():
+    completed = set()
+
+    @op
+    def first_op(foo: ResourceOutput[str]):
+        assert foo == "foo"
+        completed.add("first_op")
+        return "hello"
+
+    @op
+    def second_op(foo: ResourceOutput[str], first_op_result: str):
+        assert foo == "foo"
+        assert first_op_result == "hello"
+        completed.add("second_op")
+        return first_op_result + " world"
+
+    @op
+    def third_op():
+        completed.add("third_op")
+        return "!"
+
+    # Ensure ordering of resource args doesn't matter
+    @op
+    def fourth_op(
+        context, second_op_result: str, foo: ResourceOutput[str], third_op_result: str
+    ):  # pylint: disable=unused-argument
+        assert foo == "foo"
+        assert second_op_result == "hello world"
+        assert third_op_result == "!"
+        completed.add("fourth_op")
+        return second_op_result + third_op_result
+
+    @job(
+        resource_defs={"foo": ResourceDefinition.hardcoded_resource("foo")},
+    )
+    def op_dependencies_job():
+        fourth_op(second_op_result=second_op(first_op()), third_op_result=third_op())
+
+    assert op_dependencies_job.execute_in_process().success
+
+    assert completed == {"first_op", "second_op", "third_op", "fourth_op"}
+
+
 def test_assets():
     executed = {}
 
@@ -88,15 +133,34 @@ def test_assets():
         assert context.resources.foo == "blah"
         assert foo == "blah"
         executed["the_asset"] = True
+        return "hello"
 
-    transformed_asset = with_resources(
-        [the_asset],
+    @asset
+    def the_other_asset(context, the_asset, foo: ResourceOutput[str]):
+        assert context.resources.foo == "blah"
+        assert foo == "blah"
+        assert the_asset == "hello"
+        executed["the_other_asset"] = True
+        return "world"
+
+    # Ensure ordering of resource args doesn't matter
+    @asset
+    def the_third_asset(context, the_asset, foo: ResourceOutput[str], the_other_asset):
+        assert context.resources.foo == "blah"
+        assert foo == "blah"
+        assert the_asset == "hello"
+        assert the_other_asset == "world"
+        executed["the_third_asset"] = True
+
+    transformed_assets = with_resources(
+        [the_asset, the_other_asset, the_third_asset],
         {"foo": ResourceDefinition.hardcoded_resource("blah")},
-    )[0]
-    assert isinstance(transformed_asset, AssetsDefinition)
+    )
 
-    assert build_assets_job("the_job", [transformed_asset]).execute_in_process().success
+    assert build_assets_job("the_job", transformed_assets).execute_in_process().success
     assert executed["the_asset"]
+    assert executed["the_other_asset"]
+    assert executed["the_third_asset"]
 
 
 def test_multi_assets():
