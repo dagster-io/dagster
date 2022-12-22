@@ -21,8 +21,6 @@ from typing import (
     cast,
 )
 
-from anyio import maybe_async
-
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
