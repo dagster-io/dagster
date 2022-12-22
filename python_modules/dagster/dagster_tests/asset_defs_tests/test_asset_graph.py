@@ -1,4 +1,6 @@
 # pylint: disable=unused-argument
+from unittest.mock import MagicMock
+
 import pendulum
 import pytest
 
@@ -22,6 +24,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.host_representation.external_data import external_asset_graph_from_defs
 from dagster._seven.compat.pendulum import create_pendulum_time
@@ -35,7 +38,9 @@ def to_external_asset_graph(assets) -> AssetGraph:
     external_asset_nodes = external_asset_graph_from_defs(
         repo.get_all_pipelines(), source_assets_by_key={}
     )
-    return AssetGraph.from_external_assets(external_asset_nodes)
+    return ExternalAssetGraph.from_repository_handles_and_external_asset_nodes(
+        [(MagicMock(), asset_node) for asset_node in external_asset_nodes]
+    )
 
 
 def test_basics():

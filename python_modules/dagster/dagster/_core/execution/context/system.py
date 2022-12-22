@@ -634,6 +634,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             asset_key=asset_key,
             asset_partitions_subset=asset_partitions_subset,
             asset_partitions_def=asset_partitions_def,
+            instance=self.instance,
         )
 
     def for_hook(self, hook_def: HookDefinition) -> "HookContext":

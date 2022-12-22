@@ -2,8 +2,9 @@ from typing import Any, Dict, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
+from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.events import DagsterEvent
+from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.utils import coerce_valid_log_level
 from dagster._serdes.serdes import (
     DefaultNamedTupleSerializer,
@@ -150,6 +151,18 @@ class EventLogEntry(
                 return msg
 
         return self.user_message
+
+    @property
+    def asset_materialization(self) -> Optional[AssetMaterialization]:
+        if (
+            self.dagster_event
+            and self.dagster_event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION
+        ):
+            materialization = self.dagster_event.step_materialization_data.materialization
+            if isinstance(materialization, AssetMaterialization):
+                return materialization
+
+        return None
 
 
 def construct_event_record(logger_message: StructuredLoggerMessage) -> EventLogEntry:

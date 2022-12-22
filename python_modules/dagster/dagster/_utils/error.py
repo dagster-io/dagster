@@ -33,10 +33,10 @@ class SerializableErrorInfo(
     ):
         return super().__new__(cls, message, stack, cls_name, cause, context)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.to_string()
 
-    def to_string(self):
+    def to_string(self) -> str:
         stack_str = "\nStack Trace:\n" + "".join(self.stack) if self.stack else ""
         cause_str = (
             "\nThe above exception was caused by the following exception:\n"
@@ -54,6 +54,14 @@ class SerializableErrorInfo(
         return "{err.message}{stack}{cause}{context}".format(
             err=self, stack=stack_str, cause=cause_str, context=context_str
         )
+
+    def to_exception_message_only(self) -> "SerializableErrorInfo":
+        """
+        Return a new SerializableErrorInfo with only the message and cause set.
+
+        This is done in cases when the context about the error should not be exposed to the user.
+        """
+        return SerializableErrorInfo(message=self.message, stack=[], cls_name=self.cls_name)
 
 
 def _serializable_error_info_from_tb(tb: traceback.TracebackException) -> SerializableErrorInfo:
