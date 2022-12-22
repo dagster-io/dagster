@@ -83,9 +83,13 @@ class _Op:
         elif self.out is not None:
             outs = check.mapping_param(self.out, "out", key_type=str, value_type=Out)
 
-        resolved_resource_keys = set(self.required_resource_keys or []).union(
-            {arg.name for arg in compute_fn.get_resource_args()}
+        arg_resource_keys = {arg.name for arg in compute_fn.get_resource_args()}
+        decorator_resource_keys = set(self.required_resource_keys or [])
+        check.param_invariant(
+            len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
+            "Cannot specify resource requirements in both @op decorator and as arguments to the decorated function",
         )
+        resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
 
         op_def = OpDefinition(
             name=self.name,

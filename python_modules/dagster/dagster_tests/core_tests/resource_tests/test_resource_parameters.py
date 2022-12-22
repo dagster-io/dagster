@@ -1,7 +1,12 @@
+from typing import Any
+
 import pytest
 
 from dagster import AssetsDefinition, ResourceDefinition, asset, job, op, resource, with_resources
+from dagster._check import ParameterCheckError
+from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.assets_job import build_assets_job
+from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.resource_output import ResourceOutput
 from dagster._core.errors import DagsterInvalidDefinitionError
 
@@ -74,11 +79,14 @@ def test_init_resources():
     assert set(resources_initted.keys()) == {"a", "b"}
 
 
-def test_with_assets():
+def test_assets():
+    executed = {}
+
     @asset
     def the_asset(context, foo: ResourceOutput[str]):
         assert context.resources.foo == "blah"
         assert foo == "blah"
+        executed["the_asset"] = True
 
     transformed_asset = with_resources(
         [the_asset],
@@ -87,6 +95,27 @@ def test_with_assets():
     assert isinstance(transformed_asset, AssetsDefinition)
 
     assert build_assets_job("the_job", [transformed_asset]).execute_in_process().success
+    assert executed["the_asset"]
+
+
+def test_multi_assets():
+    executed = {}
+
+    @multi_asset(outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")})
+    def two_assets(context, foo: ResourceOutput[str]):
+        assert context.resources.foo == "blah"
+        assert foo == "blah"
+        executed["two_assets"] = True
+        return 1, 2
+
+    transformed_assets = with_resources(
+        [two_assets],
+        {"foo": ResourceDefinition.hardcoded_resource("blah")},
+    )[0]
+    assert isinstance(transformed_assets, AssetsDefinition)
+
+    assert build_assets_job("the_job", [transformed_assets]).execute_in_process().success
+    assert executed["two_assets"]
 
 
 def test_resource_not_provided():
@@ -136,3 +165,35 @@ def test_resource_class():
         match="resource with key 'not_provided' required by op 'consumes_nonexistent_resource_class'",
     ):
         with_resources([consumes_nonexistent_resource_class], {})
+
+
+def test_both_decorator_and_argument_error():
+    with pytest.raises(
+        ParameterCheckError,
+        match="Invariant violation for parameter Cannot specify resource requirements in both @asset decorator and as arguments to the decorated function",
+    ):
+
+        @asset(required_resource_keys={"foo"})
+        def my_asset(bar: ResourceOutput[Any]):
+            pass
+
+    with pytest.raises(
+        ParameterCheckError,
+        match="Invariant violation for parameter Cannot specify resource requirements in both @multi_asset decorator and as arguments to the decorated function",
+    ):
+
+        @multi_asset(
+            outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")},
+            required_resource_keys={"foo"},
+        )
+        def my_assets(bar: ResourceOutput[Any]):
+            pass
+
+    with pytest.raises(
+        ParameterCheckError,
+        match="Invariant violation for parameter Cannot specify resource requirements in both @op decorator and as arguments to the decorated function",
+    ):
+
+        @op(required_resource_keys={"foo"})
+        def my_op(bar: ResourceOutput[Any]):
+            pass

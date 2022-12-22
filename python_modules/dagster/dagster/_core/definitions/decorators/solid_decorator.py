@@ -157,9 +157,14 @@ class _Solid:
             explicit_input_defs=self.input_defs,
             exclude_nothing=True,
         )
-        resolved_resource_keys = set(self.required_resource_keys or []).union(
-            {arg.name for arg in compute_fn.get_resource_args()}
+
+        arg_resource_keys = {arg.name for arg in compute_fn.get_resource_args()}
+        decorator_resource_keys = set(self.required_resource_keys or [])
+        check.param_invariant(
+            len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
+            "Cannot specify resource requirements in both @solid decorator and as arguments to the decorated function",
         )
+        resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
 
         solid_def = OpDefinition(
             name=self.name,

@@ -264,10 +264,13 @@ class _Asset:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-            required_resource_keys = (
-                set(self.required_resource_keys)
-                .union(set(self.resource_defs.keys()))
-                .union({arg.name for arg in get_resource_args(fn)})
+            arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
+            decorator_resource_keys = set(self.required_resource_keys).union(
+                set(self.resource_defs.keys())
+            )
+            check.param_invariant(
+                len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
+                "Cannot specify resource requirements in both @asset decorator and as arguments to the decorated function",
             )
 
             if isinstance(self.io_manager, str):
@@ -295,7 +298,9 @@ class _Asset:
                 description=self.description,
                 ins=dict(asset_ins.values()),
                 out=out,
-                required_resource_keys=required_resource_keys,
+                # Any resource requirements specified as arguments will be identified as
+                # part of the Op definition instantiation
+                required_resource_keys=decorator_resource_keys,
                 tags={
                     **({"kind": self.compute_kind} if self.compute_kind else {}),
                     **(self.op_tags or {}),
@@ -408,6 +413,7 @@ def multi_asset(
     )
 
     required_resource_keys = set(required_resource_keys).union(set(resource_defs.keys()))
+
     for out in outs.values():
         if isinstance(out, Out) and not isinstance(out, AssetOut):
             deprecation_warning(
@@ -423,6 +429,12 @@ def multi_asset(
             fn, ins or {}, non_argument_deps=_make_asset_keys(non_argument_deps)
         )
         asset_outs = build_asset_outs(outs)
+
+        arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
+        check.param_invariant(
+            len(required_resource_keys) == 0 or len(arg_resource_keys) == 0,
+            "Cannot specify resource requirements in both @multi_asset decorator and as arguments to the decorated function",
+        )
 
         # validate that the asset_deps make sense
         valid_asset_deps = set(asset_ins.keys()) | set(asset_outs.keys())
