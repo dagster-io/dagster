@@ -3,6 +3,27 @@ title: Dagster with Pandas | Dagster
 description: The dagster-pandas library provides the ability to perform data validation, emit summary statistics, and enable reliable dataframe serialization/deserialization.
 ---
 
+<Note>
+  This page describes the <code>dagster-pandas</code> library which is used if you want to
+  perform data validation. If you are simply interested in using pandas with
+  dagster, we recommend starting with the{" "}
+  <a href="/tutorial/assets/defining-an-asset" target="new">
+    tutorial.
+  </a>{" "}
+  Dagster makes it easy to use pandas code to manipulate data and then store
+  that data in other systems such as{" "}
+  <a
+    href="/_apidocs/libraries/dagster-aws#dagster_aws.s3.s3_pickle_io_manager"
+    target="new"
+  >
+    files on s3
+  </a>{" "}
+  or{" "}
+  <a href="/integrations/snowflake/using-snowflake-with-dagster" target="new">
+    tables in Snowflake.
+  </a>{" "}
+</Note>
+
 # Validating Pandas DataFrames with Dagster Types
 
 - [Creating Dagster DataFrame Types](#creating-dagster-dataframe-types)
