@@ -1047,10 +1047,9 @@ def test_instance_set_on_input_context():
     @op
     def op1():
         pass
-        ...
 
     @op
-    def op2(arg):
+    def op2(_):
         pass
 
     asserting_io_manager = AssertingContextInputOnLoadInputIOManager()
