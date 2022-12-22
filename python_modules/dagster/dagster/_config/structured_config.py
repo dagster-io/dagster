@@ -10,6 +10,9 @@ except ImportError:
 
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Type
+from dagster._core.decorator_utils import get_function_params
+from dagster._core.execution.context.input import InputContext
+from dagster._core.execution.context.output import OutputContext
 
 from pydantic import BaseModel
 from pydantic.fields import SHAPE_SINGLETON, ModelField
@@ -193,8 +196,48 @@ class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
     of :py:class:`Config`.
     """
 
+    class InputConfigSchema(Config):
+        pass
+
+    class OutputConfigSchema(Config):
+        pass
+
     def resource_function(self, context) -> IOManager:
         return self
+
+    def load_input(self, context: InputContext) -> Any:
+        print(context.config)
+
+        additional_args = (
+            {}
+            if not self._load_input_has_config_arg
+            else {"config": self.InputConfigSchema(**(context.config or {}))}
+        )
+        return self._load_input(context, **additional_args)
+
+    def handle_output(self, context: OutputContext, obj: Any) -> Any:
+        additional_args = (
+            {}
+            if not self._handle_output_has_config_arg
+            else {"config": self.OutputConfigSchema(**(context.config or {}))}
+        )
+        return self._handle_output(context, obj=obj, **additional_args)
+
+    @abstractmethod
+    def _load_input(self, context: InputContext, config: InputConfigSchema) -> Any:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _handle_output(self, context: OutputContext, config: OutputConfigSchema, obj: Any) -> Any:
+        raise NotImplementedError()
+
+    @cached_property
+    def _load_input_has_config_arg(self) -> bool:
+        return any(param.name == "config" for param in get_function_params(self._load_input))
+
+    @cached_property
+    def _handle_output_has_config_arg(self) -> bool:
+        return any(param.name == "config" for param in get_function_params(self._handle_output))
 
 
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:

@@ -1,4 +1,5 @@
 # pylint: disable=unused-argument
+
 import pytest
 
 from dagster import DagsterInvalidConfigError, In, io_manager, job, op
@@ -9,6 +10,9 @@ from dagster._config.structured_config import (
 )
 from dagster._config.type_printer import print_config_type_to_string
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
+from dagster._core.definitions.output import Out
+from dagster._core.execution.context.input import InputContext
+from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManagerDefinition
 
 
@@ -102,3 +106,66 @@ def test_load_input_handle_output():
                 "ops": {"second_op": {"inputs": {"an_input": {"config_value": "a_string"}}}}
             }
         )
+
+
+def test_config_param_load_input_handle_output():
+
+    storage = {}
+
+    class MyIOManager(StructuredConfigIOManager):
+        prefix_output: str
+
+        class InputConfigSchema(Config):
+            prefix_input: str
+
+        class OutputConfigSchema(Config):
+            postfix_output: str
+
+        def _load_input(self, context: InputContext, config: InputConfigSchema):
+            return f"{config.prefix_input}{storage[context.name]}"
+
+        def _handle_output(self, context: OutputContext, config: OutputConfigSchema, obj: str):
+            storage[context.name] = f"{self.prefix_output}{obj}{config.postfix_output}"
+
+    did_run = {}
+
+    @op(out={"first_op": Out(io_manager_key="io_manager")})
+    def first_op():
+        did_run["first_op"] = True
+        return "foo"
+
+    @op(
+        ins={"first_op": In(input_manager_key="io_manager")},
+        out={"second_op": Out(io_manager_key="io_manager")},
+    )
+    def second_op(first_op):
+        assert first_op == "barprefoopost"
+        did_run["second_op"] = True
+        return first_op
+
+    @job(
+        resource_defs={
+            "io_manager": MyIOManager(
+                prefix_output="pre",
+            ),
+        }
+    )
+    def check_input_managers():
+        out = first_op()
+        second_op(out)
+
+    check_input_managers.execute_in_process(
+        run_config={
+            "ops": {
+                "first_op": {"outputs": {"first_op": {"postfix_output": "post"}}},
+                "second_op": {
+                    "inputs": {"first_op": {"prefix_input": "bar"}},
+                    "outputs": {"second_op": {"postfix_output": "post"}},
+                },
+            }
+        }
+    )
+    assert did_run["first_op"]
+    assert did_run["second_op"]
+    assert storage["first_op"] == "prefoopost"
+    assert storage["second_op"] == "prebarprefoopostpost"
