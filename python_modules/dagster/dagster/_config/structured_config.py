@@ -57,7 +57,9 @@ class Resource(
         ResourceDefinition.__init__(
             self,
             resource_fn=self.resource_function,
-            config_schema=configured_resource_def.config_schema,
+            # mypy worries that configured_resource_def could be self, which
+            # has not had config_schema initialized yet, but we know that's not the case
+            config_schema=configured_resource_def.config_schema,  # type: ignore[attr-defined]
             description=self.__doc__,
         )
 
