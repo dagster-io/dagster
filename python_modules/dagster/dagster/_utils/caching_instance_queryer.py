@@ -53,35 +53,6 @@ class CachingInstanceQueryer:
         # materialization record for a >= cursor, we don't need to query the instance
         self._no_materializations_after_cursor_cache: Dict[AssetKeyPartitionKey, int] = {}
 
-    @cached_method
-    def failed_in_latest_run(self, asset_key: AssetKey) -> bool:
-        asset_records = self._instance.get_asset_records([asset_key])
-        asset_record = next(iter(asset_records), None)
-
-        # no latest run
-        if asset_record is None or asset_record.asset_entry.last_run_id is None:
-            return False
-
-        run_id = asset_record.asset_entry.last_run_id
-        latest_run_record = self._get_run_record_by_id(run_id=run_id)
-
-        # latest run did not fail
-        if (
-            latest_run_record is None
-            or latest_run_record.pipeline_run.status != DagsterRunStatus.FAILURE
-        ):
-            return False
-
-        # if asset was still materialized in the run count as success
-        latest_materialization = asset_record.asset_entry.last_materialization
-        if (
-            latest_materialization is not None
-            and latest_materialization.run_id == latest_run_record.pipeline_run.run_id
-        ):
-            return False
-
-        return True
-
     def is_asset_in_run(self, run_id: str, asset: Union[AssetKey, AssetKeyPartitionKey]) -> bool:
         run = self._get_run_by_id(run_id=run_id)
         if not run:
@@ -542,6 +513,55 @@ class CachingInstanceQueryer:
                         in_progress_times.get(upstream_key, upstream_time), upstream_time
                     )
         return in_progress_times
+
+    def get_failed_data_times_for_key(
+        self,
+        asset_graph: AssetGraph,
+        asset_key: AssetKey,
+        upstream_keys: AbstractSet[AssetKey],
+    ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
+        """If the latest run for this asset failed to materialize it, returns a mapping containing
+        the expected data times for that asset once the run completed. Otherwise, returns an empty
+        mapping.
+        """
+        asset_records = self._instance.get_asset_records([asset_key])
+        asset_record = next(iter(asset_records), None)
+
+        # no latest run
+        if asset_record is None or asset_record.asset_entry.last_run_id is None:
+            return {}
+
+        run_id = asset_record.asset_entry.last_run_id
+        latest_run_record = self._get_run_record_by_id(run_id=run_id)
+
+        # latest run did not fail
+        if (
+            latest_run_record is None
+            or latest_run_record.pipeline_run.status != DagsterRunStatus.FAILURE
+        ):
+            return {}
+
+        # run failed, but asset was materialized successfully
+        latest_materialization = asset_record.asset_entry.last_materialization
+        if (
+            latest_materialization is not None
+            and latest_materialization.run_id == latest_run_record.pipeline_run.run_id
+        ):
+            return {}
+
+        run_failure_time = datetime.datetime.utcfromtimestamp(latest_run_record.end_time).replace(
+            tzinfo=datetime.timezone.utc
+        )
+        return {
+            key: min(run_failure_time, data_time) if data_time is not None else None
+            for key, data_time in self._get_in_progress_data_times_for_key_in_run(
+                run_id=run_id,
+                current_time=run_failure_time,
+                asset_graph=asset_graph,
+                asset_key=asset_key,
+                required_keys=upstream_keys,
+            ).items()
+        }
 
     def get_current_minutes_late_for_key(
         self,
