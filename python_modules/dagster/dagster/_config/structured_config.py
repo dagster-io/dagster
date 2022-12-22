@@ -20,14 +20,32 @@ class Config(BaseModel):
     """
 
 
-class StructuredConfigResource(
+class Resource(
     ResourceDefinition,
     Config,
 ):
+    """
+    Base class for Dagster resources that utilize structured config.
+
+    This class is a subclass of both :py:class:`ResourceDefinition` and :py:class:`Config`, and
+    provides a default implementation of the resource_fn that returns the resource itself.
+
+    Example:
+
+    .. code-block:: python
+
+        class WriterResource(Resource):
+            prefix: str
+
+            def output(self, text: str) -> None:
+                print(f"{self.prefix}{text}")
+
+    """
+
     def __init__(self, **data: Any):
         schema = infer_schema_from_config_class(self.__class__)
 
-        inner_resource_def = ResourceDefinition(self.resource_fn, schema)
+        inner_resource_def = ResourceDefinition(self.resource_function, schema)
         configured_resource_def = inner_resource_def.configured(
             config_dictionary_from_values(
                 data,
@@ -38,7 +56,7 @@ class StructuredConfigResource(
         Config.__init__(self, **data)
         ResourceDefinition.__init__(
             self,
-            resource_fn=self.resource_fn,
+            resource_fn=self.resource_function,
             config_schema=configured_resource_def.config_schema,
             description=self.__doc__,
         )
@@ -54,7 +72,7 @@ class StructuredConfigResource(
 
         return super().__setattr__(name, value)
 
-    def resource_fn(self, context) -> Any:  # pylint: disable=unused-argument
+    def resource_function(self, context) -> Any:  # pylint: disable=unused-argument
         # Default behavior, for "new-style" resources, is to return the resource itself, so that
         # initialization is a no-op
         return self
