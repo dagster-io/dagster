@@ -10,6 +10,7 @@ from dagster import (
     AssetMaterialization,
     DagsterInstance,
     DagsterInvariantViolationError,
+    Definitions,
     DynamicOut,
     DynamicOutput,
     Field,
@@ -1027,3 +1028,79 @@ def test_nothing_output_something_input():
 
     assert my_io_manager.handle_output_calls == 2
     assert my_io_manager.handle_input_calls == 1
+
+
+def test_instance_set_on_input_context():
+    executed = {}
+
+    class AssertingContextInputOnLoadInputIOManager(IOManager):
+        def __init__(self):
+            pass
+
+        def load_input(self, context):
+            assert context.instance
+            executed["yes"] = True
+
+        def handle_output(self, _context, _obj):
+            pass
+
+    @op
+    def op1():
+        pass
+        ...
+
+    @op
+    def op2(arg):
+        pass
+
+    asserting_io_manager = AssertingContextInputOnLoadInputIOManager()
+
+    @job(
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(asserting_io_manager)}
+    )
+    def job1():
+        op2(op1())
+
+    job1.execute_in_process()
+
+    assert executed["yes"]
+
+
+def test_instance_set_on_asset_loader():
+    executed = {}
+
+    class AssertingContextInputOnLoadInputIOManager(IOManager):
+        def __init__(self):
+            pass
+
+        def load_input(self, context):
+            assert context.instance
+            executed["yes"] = True
+            return 1
+
+        def handle_output(self, _context, _obj):
+            pass
+
+    @asset
+    def an_asset() -> int:
+        return 1
+
+    @asset
+    def another_asset(an_asset: int) -> int:
+        return an_asset + 1
+
+    with DagsterInstance.ephemeral() as instance:
+
+        defs = Definitions(
+            assets=[an_asset, another_asset],
+            resources={"io_manager": AssertingContextInputOnLoadInputIOManager()},
+        )
+        defs.get_job_def("__ASSET_JOB").execute_in_process(
+            asset_selection=[AssetKey("an_asset")], instance=instance
+        )
+        # load_input not called when asset does not have any inputs
+        assert not executed.get("yes")
+
+        defs.load_asset_value("another_asset", instance=instance)
+
+        assert executed["yes"]
