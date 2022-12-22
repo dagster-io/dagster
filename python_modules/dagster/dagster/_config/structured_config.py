@@ -8,6 +8,7 @@ except ImportError:
         pass
 
 
+from abc import ABC, abstractmethod
 from typing import Any, Optional, Type
 
 from pydantic import BaseModel
@@ -20,7 +21,12 @@ from dagster._config.field_utils import (
     config_dictionary_from_values,
     convert_potential_field,
 )
+from dagster._core.definitions.definition_config_schema import (
+    IDefinitionConfigSchema,
+    convert_user_facing_definition_config_schema,
+)
 from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 
 
 class Config(BaseModel):
@@ -93,6 +99,101 @@ class Resource(
     def resource_function(self, context) -> Any:  # pylint: disable=unused-argument
         # Default behavior, for "new-style" resources, is to return the resource itself, so that
         # initialization is a no-op
+        return self
+
+
+class StructuredConfigIOManagerBase(IOManagerDefinition, Config, ABC):
+    """
+    Base class for Dagster IO managers that utilize structured config. This base class
+    is useful for cases in which the returned IO manager is not the same as the class itself
+    (e.g. when it is a wrapper around the actual IO manager implementation).
+
+    This class is a subclass of both :py:class:`IOManagerDefinition` and :py:class:`Config`.
+    Implementers should provide an implementation of the :py:meth:`resource_function` method,
+    which should return an instance of :py:class:`IOManager`.
+
+    To specify the input and output config schemas, implementers should provide an inner class
+    named ``InputConfigSchema`` and/or ``OutputConfigSchema``. These classes should be subclasses
+    of :py:class:`Config`.
+    """
+
+    class InputConfigSchema(Config):
+        pass
+
+    class OutputConfigSchema(Config):
+        pass
+
+    def __init__(self, **data: Any):
+        schema = infer_schema_from_config_class(self.__class__)
+
+        inner_resource_def = ResourceDefinition(self.resource_function, schema)
+        configured_resource_def = inner_resource_def.configured(
+            config_dictionary_from_values(
+                data,
+                schema,
+            ),
+        )
+
+        Config.__init__(self, **data)
+        IOManagerDefinition.__init__(
+            self,
+            resource_fn=self.resource_function,
+            # mypy worries that configured_resource_def could be self, which
+            # has not had config_schema initialized yet, but we know that's not the case
+            config_schema=configured_resource_def.config_schema,  # type: ignore[attr-defined]
+            description=self.__doc__,
+        )
+
+    def __setattr__(self, name: str, value: Any):
+        # This is a hack to allow us to set attributes on the class that are not part of the
+        # config schema. Pydantic will normally raise an error if you try to set an attribute
+        # that is not part of the schema.
+
+        if name.startswith("_"):
+            object.__setattr__(self, name, value)
+            return
+
+        return super().__setattr__(name, value)
+
+    @property
+    def _input_config_schema_from_inner_class(self) -> IDefinitionConfigSchema:
+        input_schema = infer_schema_from_config_class(self.InputConfigSchema)
+        return convert_user_facing_definition_config_schema(input_schema)
+
+    @property
+    def _output_config_schema_from_inner_class(self) -> IDefinitionConfigSchema:
+        output_schema = infer_schema_from_config_class(self.OutputConfigSchema)
+        return (
+            convert_user_facing_definition_config_schema(output_schema) if output_schema else None
+        )
+
+    @property
+    def input_config_schema(self) -> IDefinitionConfigSchema:
+        return self._input_config_schema_from_inner_class
+
+    @property
+    def output_config_schema(self) -> Optional[IDefinitionConfigSchema]:
+        return self._output_config_schema_from_inner_class
+
+    @abstractmethod
+    def resource_function(self, context) -> IOManager:
+        raise NotImplementedError()
+
+
+class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
+    """
+    Base class for Dagster IO managers that utilize structured config.
+
+    This class is a subclass of both :py:class:`IOManagerDefinition`, :py:class:`Config`,
+    and :py:class:`IOManager`. Implementers must provide an implementation of the
+    :py:meth:`handle_output` and :py:meth:`load_input` methods.
+
+    To specify the input and output config schemas, implementers should provide an inner class
+    named ``InputConfigSchema`` and/or ``OutputConfigSchema``. These classes should be subclasses
+    of :py:class:`Config`.
+    """
+
+    def resource_function(self, context) -> IOManager:
         return self
 
 
