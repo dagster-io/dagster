@@ -432,7 +432,7 @@ def multi_asset(
 
         arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
         check.param_invariant(
-            len(required_resource_keys) == 0 or len(arg_resource_keys) == 0,
+            len(required_resource_keys or []) == 0 or len(arg_resource_keys) == 0,
             "Cannot specify resource requirements in both @multi_asset decorator and as arguments to the decorated function",
         )
 

@@ -175,7 +175,7 @@ def test_both_decorator_and_argument_error():
     ):
 
         @asset(required_resource_keys={"foo"})
-        def my_asset(bar: ResourceOutput[Any]):
+        def my_asset(bar: ResourceOutput[Any]):  # pylint: disable=unused-argument
             pass
 
     with pytest.raises(
@@ -187,7 +187,7 @@ def test_both_decorator_and_argument_error():
             outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")},
             required_resource_keys={"foo"},
         )
-        def my_assets(bar: ResourceOutput[Any]):
+        def my_assets(bar: ResourceOutput[Any]):  # pylint: disable=unused-argument
             pass
 
     with pytest.raises(
@@ -196,7 +196,7 @@ def test_both_decorator_and_argument_error():
     ):
 
         @op(required_resource_keys={"foo"})
-        def my_op(bar: ResourceOutput[Any]):
+        def my_op(bar: ResourceOutput[Any]):  # pylint: disable=unused-argument
             pass
 
 
