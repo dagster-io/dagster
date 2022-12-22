@@ -239,9 +239,9 @@ class UnboundOpExecutionContext(OpExecutionContext):
 
         _validate_resource_requirements(self._resource_defs, op_def)
 
-        from dagster._core.definitions.resource_invocation import _resolve_bound_config
+        from dagster._core.definitions.resource_invocation import resolve_bound_config
 
-        solid_config = _resolve_bound_config(self.solid_config, op_def)
+        solid_config = resolve_bound_config(self.solid_config, op_def)
 
         return BoundOpExecutionContext(
             op_def=op_def,
