@@ -176,6 +176,105 @@ def test_launcher_with_container_context(kubeconfig_file):
         )
 
 
+def test_launcher_with_k8s_config(kubeconfig_file):
+    # Construct a K8s run launcher in a fake k8s environment.
+    mock_k8s_client_batch_api = mock.MagicMock()
+    k8s_run_launcher = K8sRunLauncher(
+        service_account_name="dagit-admin",
+        instance_config_map="dagster-instance",
+        postgres_password_secret="dagster-postgresql-secret",
+        dagster_home="/opt/dagster/dagster_home",
+        job_image="fake_job_image",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+        env_vars=["FOO_TEST=foo"],
+        scheduler_name="test-scheduler",
+        run_k8s_config={
+            "container_config": {"command": ["echo", "RUN"], "tty": True},
+            "pod_template_spec_metadata": {"namespace": "my_pod_namespace"},
+            "pod_spec_config": {"dns_policy": "value"},
+            "job_metadata": {
+                "namespace": "my_job_value",
+            },
+            "job_spec_config": {"backoff_limit": 120},
+        },
+    )
+
+    container_context_config = {
+        "k8s": {
+            "run_k8s_config": {
+                "container_config": {"command": ["echo", "REPLACED"]},
+            }
+        }
+    }
+
+    run_tags_k8s_config = UserDefinedDagsterK8sConfig(
+        container_config={"working_dir": "my_working_dir"},
+    )
+    user_defined_k8s_config_json = json.dumps(run_tags_k8s_config.to_dict())
+    run_tags = {"dagster-k8s/config": user_defined_k8s_config_json}
+
+    # Create fake external pipeline.
+    recon_pipeline = reconstructable(fake_pipeline)
+    recon_repo = recon_pipeline.repository
+    repo_def = recon_repo.get_definition()
+
+    python_origin = recon_pipeline.get_python_origin()
+    python_origin = python_origin._replace(
+        repository_origin=python_origin.repository_origin._replace(
+            container_context=container_context_config,
+        )
+    )
+    loadable_target_origin = LoadableTargetOrigin(python_file=__file__)
+
+    with instance_for_test() as instance:
+        with in_process_test_workspace(instance, loadable_target_origin) as workspace:
+            location = workspace.get_repository_location(workspace.repository_location_names[0])
+            repo_handle = RepositoryHandle(
+                repository_name=repo_def.name,
+                repository_location=location,
+            )
+            fake_external_pipeline = external_pipeline_from_recon_pipeline(
+                recon_pipeline,
+                solid_selection=None,
+                repository_handle=repo_handle,
+            )
+
+            # Launch the run in a fake Dagster instance.
+            pipeline_name = "demo_pipeline"
+            run = create_run_for_test(
+                instance,
+                pipeline_name=pipeline_name,
+                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
+                pipeline_code_origin=python_origin,
+                tags=run_tags,
+            )
+            k8s_run_launcher.register_instance(instance)
+            k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
+
+            updated_run = instance.get_run_by_id(run.run_id)
+            assert updated_run.tags[DOCKER_IMAGE_TAG] == "fake_job_image"
+
+        # Check that user defined k8s config was passed down to the k8s job.
+        mock_method_calls = mock_k8s_client_batch_api.method_calls
+        assert len(mock_method_calls) > 0
+        method_name, _args, kwargs = mock_method_calls[0]
+        assert method_name == "create_namespaced_job"
+
+        container = kwargs["body"].spec.template.spec.containers[0]
+
+        # config from container context applied
+        command = container.command
+        assert command == ["echo", "REPLACED"]
+
+        # config from run launcher applied
+        assert container.tty
+
+        # config from run tags applied
+        assert container.working_dir == "my_working_dir"
+
+
 def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
 
     labels = {"foo_label_key": "bar_label_value"}
