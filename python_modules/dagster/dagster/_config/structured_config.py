@@ -24,6 +24,13 @@ class Config(BaseModel):
 class Resource(
     ResourceDefinition,
     Config,
+    # Various pydantic model config (https://docs.pydantic.dev/usage/model_config/)
+    # Necessary to allow for caching decorators
+    arbitrary_types_allowed=True,
+    # Avoid pydantic reading a cached property class as part of the schema
+    keep_untouched=(cached_property,),
+    # Ensure the class is serializable, for caching purposes
+    frozen=True,
 ):
     """
     Base class for Dagster resources that utilize structured config.
@@ -42,11 +49,6 @@ class Resource(
                 print(f"{self.prefix}{text}")
 
     """
-
-    class Config:
-        arbitrary_types_allowed = True
-        keep_untouched = (cached_property,)
-        frozen = True
 
     def __init__(self, **data: Any):
         schema = infer_schema_from_config_class(self.__class__)
