@@ -1,4 +1,5 @@
 import inspect
+from functools import cached_property, lru_cache
 from typing import Any, Optional, Type
 
 from pydantic import BaseModel
@@ -18,6 +19,23 @@ class Config(BaseModel):
     """
     Base class for Dagster configuration models.
     """
+
+
+class cached_method:
+    """
+    Caches an instance method on a structured config class using :py:method:`functools.lru_cache`.
+    """
+
+    def __init__(self, function):
+        self.function = lru_cache()(function)
+
+    def __call__(self, *args, **kwargs):
+        return self.function(*args, **kwargs)
+
+    def __get__(self, instance, _):
+        from functools import partial
+
+        return partial(self.__call__, instance)
 
 
 class Resource(
@@ -41,6 +59,11 @@ class Resource(
                 print(f"{self.prefix}{text}")
 
     """
+
+    class Config:
+        arbitrary_types_allowed = True
+        keep_untouched = (cached_property, cached_method)
+        frozen = True
 
     def __init__(self, **data: Any):
         schema = infer_schema_from_config_class(self.__class__)
