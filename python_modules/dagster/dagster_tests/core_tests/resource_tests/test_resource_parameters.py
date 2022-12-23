@@ -8,10 +8,8 @@ from dagster._config.structured_config import Config
 from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
-from dagster._core.definitions.input import In
 from dagster._core.definitions.resource_output import ResourceOutput
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.types.dagster_type import Nothing
 
 
 def test_filter_out_resources():
