@@ -1,3 +1,4 @@
+import sys
 from abc import ABC, abstractmethod
 from typing import Callable
 
@@ -53,14 +54,12 @@ def test_invalid_config():
         MyResource(foo="why")
 
 
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8")
 def test_caching_within_resource():
 
     called = {"greeting": 0, "get_introduction": 0}
 
-    try:
-        from functools import cached_property
-    except ImportError:
-        return
+    from functools import cached_property
 
     class GreetingResource(Resource):
         name: str
