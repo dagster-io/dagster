@@ -180,7 +180,7 @@ def test_yield_in_resource_function():
     class ResourceWithCleanup(Resource):
         idx: int
 
-        def resource_function(self, context):
+        def create_object_to_pass_to_user_code(self, context):
             called.append(f"creation_{self.idx}")
             yield True
             called.append(f"cleanup_{self.idx}")
