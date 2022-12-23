@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from functools import cached_property
 from typing import Callable
 
 import pytest
@@ -57,6 +56,11 @@ def test_invalid_config():
 def test_caching_within_resource():
 
     called = {"greeting": 0, "get_introduction": 0}
+
+    try:
+        from functools import cached_property
+    except ImportError:
+        return
 
     class GreetingResource(Resource):
         name: str
