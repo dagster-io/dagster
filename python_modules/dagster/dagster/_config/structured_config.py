@@ -1,4 +1,13 @@
 import inspect
+
+try:
+    from functools import cached_property
+except ImportError:
+
+    class cached_property:  # type: ignore[no-redef]
+        pass
+
+
 from typing import Any, Optional, Type
 
 from pydantic import BaseModel
@@ -6,13 +15,85 @@ from pydantic.fields import SHAPE_SINGLETON, ModelField
 
 import dagster._check as check
 from dagster import Field, Shape
-from dagster._config.field_utils import FIELD_NO_DEFAULT_PROVIDED, convert_potential_field
+from dagster._config.field_utils import (
+    FIELD_NO_DEFAULT_PROVIDED,
+    config_dictionary_from_values,
+    convert_potential_field,
+)
+from dagster._core.definitions.resource_definition import ResourceDefinition
 
 
 class Config(BaseModel):
     """
     Base class for Dagster configuration models.
     """
+
+
+class Resource(
+    ResourceDefinition,
+    Config,
+    # Various pydantic model config (https://docs.pydantic.dev/usage/model_config/)
+    # Necessary to allow for caching decorators
+    arbitrary_types_allowed=True,
+    # Avoid pydantic reading a cached property class as part of the schema
+    keep_untouched=(cached_property,),
+    # Ensure the class is serializable, for caching purposes
+    frozen=True,
+):
+    """
+    Base class for Dagster resources that utilize structured config.
+
+    This class is a subclass of both :py:class:`ResourceDefinition` and :py:class:`Config`, and
+    provides a default implementation of the resource_fn that returns the resource itself.
+
+    Example:
+
+    .. code-block:: python
+
+        class WriterResource(Resource):
+            prefix: str
+
+            def output(self, text: str) -> None:
+                print(f"{self.prefix}{text}")
+
+    """
+
+    def __init__(self, **data: Any):
+        schema = infer_schema_from_config_class(self.__class__)
+
+        inner_resource_def = ResourceDefinition(self.resource_function, schema)
+        configured_resource_def = inner_resource_def.configured(
+            config_dictionary_from_values(
+                data,
+                schema,
+            ),
+        )
+
+        Config.__init__(self, **data)
+        ResourceDefinition.__init__(
+            self,
+            resource_fn=self.resource_function,
+            # mypy worries that configured_resource_def could be self, which
+            # has not had config_schema initialized yet, but we know that's not the case
+            config_schema=configured_resource_def.config_schema,  # type: ignore[attr-defined]
+            description=self.__doc__,
+        )
+
+    def __setattr__(self, name: str, value: Any):
+        # This is a hack to allow us to set attributes on the class that are not part of the
+        # config schema. Pydantic will normally raise an error if you try to set an attribute
+        # that is not part of the schema.
+
+        if name.startswith("_") or name.endswith("_cache"):
+            object.__setattr__(self, name, value)
+            return
+
+        return super().__setattr__(name, value)
+
+    def resource_function(self, context) -> Any:  # pylint: disable=unused-argument
+        # Default behavior, for "new-style" resources, is to return the resource itself, so that
+        # initialization is a no-op
+        return self
 
 
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
