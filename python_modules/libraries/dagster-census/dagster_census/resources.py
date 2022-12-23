@@ -61,6 +61,7 @@ class CensusResource:
         Returns:
             Dict[str, Any]: JSON data from the response to this request
         """
+        url = f"{self.api_base_url}/{endpoint}"
         headers = {
             "User-Agent": f"dagster-census/{__version__}",
             "Content-Type": "application/json;version=2",
@@ -71,7 +72,7 @@ class CensusResource:
             try:
                 response = requests.request(
                     method=method,
-                    url=f"{self.api_base_url}/{endpoint}",
+                    url=url,
                     headers=headers,
                     auth=HTTPBasicAuth("bearer", self._api_key),
                     data=data,
@@ -85,7 +86,7 @@ class CensusResource:
                 num_retries += 1
                 time.sleep(self._request_retry_delay)
 
-        raise Failure("Exceeded max number of retries.")
+        raise Failure(f"Max retries ({self._request_max_retries}) exceeded with url: {url}.")
 
     def get_sync(self, sync_id: int) -> Mapping[str, Any]:
         """
