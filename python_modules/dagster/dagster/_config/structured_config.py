@@ -1,5 +1,13 @@
 import inspect
-from functools import cached_property
+
+try:
+    from functools import cached_property
+except ImportError:
+
+    class cached_property:  # type: ignore[no-redef]
+        pass
+
+
 from typing import Any, Optional, Type
 
 from pydantic import BaseModel
