@@ -150,7 +150,7 @@ def test_abc_resource():
 
     # Can't instantiate abstract class
     with pytest.raises(TypeError):
-        WriterResource()
+        WriterResource()  # pylint: disable=abstract-class-instantiated
 
     @job(resource_defs={"writer": PrefixedWriterResource(prefix="greeting: ")})
     def prefixed_job():
