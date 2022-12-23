@@ -8,6 +8,7 @@ except ImportError:
         pass
 
 
+from abc import ABC, abstractmethod
 from typing import Any, Optional, Type
 
 from pydantic import BaseModel
@@ -20,7 +21,7 @@ from dagster._config.field_utils import (
     config_dictionary_from_values,
     convert_potential_field,
 )
-from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
 
 
 class Config(BaseModel):
@@ -94,6 +95,48 @@ class Resource(
         # Default behavior, for "new-style" resources, is to return the resource itself, so that
         # initialization is a no-op
         return self
+
+
+class StructuredResourceAdapter(Resource, ABC):
+    """
+    Adapter base class for wrapping a decorated, function-style resource
+    with structured config.
+
+    To use this class, subclass it, define config schema fields using Pydantic,
+    and implement the ``wrapped_resource`` method.
+
+    Example:
+
+    .. code-block:: python
+
+        @resource(config_schema={"prefix": str})
+        def writer_resource(context):
+            prefix = context.resource_config["prefix"]
+
+            def output(text: str) -> None:
+                out_txt.append(f"{prefix}{text}")
+
+            return output
+
+        class WriterResource(StructuredResourceAdapter):
+            prefix: str
+
+            @property
+            def wrapped_resource(self) -> ResourceDefinition:
+                return writer_resource
+    """
+
+    @property
+    @abstractmethod
+    def wrapped_resource(self) -> ResourceDefinition:
+        raise NotImplementedError()
+
+    @property
+    def resource_fn(self) -> ResourceFunction:
+        return self.wrapped_resource.resource_fn
+
+    def __call__(self, *args, **kwargs):
+        return self.wrapped_resource(*args, **kwargs)
 
 
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
