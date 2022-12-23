@@ -8,7 +8,7 @@ except ImportError:
         pass
 
 
-from typing import Any, Optional, Type
+from typing import Any, Dict, Optional, Type
 
 from pydantic import BaseModel
 from pydantic.fields import SHAPE_SINGLETON, ModelField
@@ -62,9 +62,11 @@ class Resource(
         schema = infer_schema_from_config_class(self.__class__)
 
         inner_resource_def = ResourceDefinition(self.resource_function, schema)
+        # We need to remove any fields which are resource dependencies from the config dictionary
+        data_without_resource_fields = _data_without_resource_fields(self.__class__, data)
         configured_resource_def = inner_resource_def.configured(
             config_dictionary_from_values(
-                data,
+                data_without_resource_fields,
                 schema,
             ),
         )
@@ -96,10 +98,13 @@ class Resource(
         return self
 
 
-def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
+def _convert_pydantic_field(pydantic_field: ModelField) -> Optional[Field]:
     """
     Transforms a Pydantic field into a corresponding Dagster config field.
     """
+
+    if _safe_is_subclass(pydantic_field.type_, Resource):
+        return None
 
     if _safe_is_subclass(pydantic_field.type_, Config):
         return infer_schema_from_config_class(
@@ -162,7 +167,28 @@ def infer_schema_from_config_class(
 
     fields = {}
     for pydantic_field_name, pydantic_field in model_cls.__fields__.items():
-        fields[pydantic_field_name] = _convert_pydantic_field(pydantic_field)
+        dagster_field = _convert_pydantic_field(pydantic_field)
+        if dagster_field:
+            fields[pydantic_field_name] = dagster_field
 
     docstring = model_cls.__doc__.strip() if model_cls.__doc__ else None
     return Field(config=Shape(fields), description=description or docstring)
+
+
+def _data_without_resource_fields(
+    model_cls: Type[Resource], data: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Returns the set of fields in a structured config Resource class which
+    are themselves Resources. These should not be included in the config
+    schema.
+    """
+
+    filtered_data = {}
+
+    fields = set()
+    for pydantic_field_name, pydantic_field in model_cls.__fields__.items():
+        if _safe_is_subclass(pydantic_field.type_, Resource):
+            fields.add(pydantic_field_name)
+
+    return {k: v for k, v in data.items() if k not in fields}

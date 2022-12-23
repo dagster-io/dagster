@@ -1,5 +1,7 @@
+import json
 from abc import ABC, abstractmethod
 from functools import cached_property
+from typing import Any
 
 import pytest
 from pydantic import ValidationError
@@ -52,6 +54,61 @@ def test_invalid_config():
         MyResource(foo="why")
 
 
+def test_err_on_setting_attribute():
+    class WriterResource(Resource):
+        prefix: str
+
+    writer = WriterResource(prefix="")
+
+    # Frozen, so can't set attributes
+    with pytest.raises(TypeError):
+        writer.prefix = "foo"
+
+    # Can't set attributes that don't exist
+    with pytest.raises(ValueError):
+        writer.foo = "bar"
+
+    # Can set private attributes
+    writer._foo = "bar"
+
+
+def test_nested_resources():
+    out_txt = []
+
+    class WriterResource(Resource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    class JsonWriterResource(Resource):
+        writer: WriterResource
+        indent: int
+
+        def output(self, obj: Any) -> None:
+            self.writer.output(json.dumps(obj, indent=self.indent))
+
+    @asset
+    def hello_world_asset(writer: JsonWriterResource):
+        writer.output({"hello": "world"})
+
+    # Construct a resource that is needed by another resource
+    writer_resource = WriterResource(prefix="greeting: ")
+    json_writer_resource = JsonWriterResource(writer=writer_resource, indent=2)
+
+    assert (
+        build_assets_job(
+            "blah",
+            [hello_world_asset],
+            resource_defs={"writer": json_writer_resource},
+        )
+        .execute_in_process()
+        .success
+    )
+
+    assert out_txt == ['greeting: {\n  "hello": "world"\n}']
+
+
 def test_caching_within_resource():
 
     called = {"greeting": 0, "get_introduction": 0}
@@ -64,7 +121,6 @@ def test_caching_within_resource():
             called["greeting"] += 1
             return f"Hello, {self.name}"
 
-        # Custom decorator which caches an instance method
         @cached_method
         def get_introduction(self, verbose: bool) -> str:
             called["get_introduction"] += 1
@@ -89,10 +145,11 @@ def test_caching_within_resource():
 
     assert hello_world_job.execute_in_process().success
 
-    # Each should only be called once, because of the caching
     assert called["greeting"] == 1
+    # Once with verbose=True, once with verbose=False
     assert called["get_introduction"] == 2
 
+    # Repeat test with assets
     called = {"greeting": 0, "get_introduction": 0}
 
     @asset
@@ -120,6 +177,7 @@ def test_caching_within_resource():
     )
 
     assert called["greeting"] == 1
+    # Once with verbose=True, once with verbose=False
     assert called["get_introduction"] == 2
 
 
