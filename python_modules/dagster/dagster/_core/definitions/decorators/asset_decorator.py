@@ -18,6 +18,7 @@ from dagster._builtins import Nothing
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.resource_output import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.types.dagster_type import DagsterType
@@ -263,8 +264,13 @@ class _Asset:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-            required_resource_keys = set(self.required_resource_keys).union(
+            arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
+            decorator_resource_keys = set(self.required_resource_keys).union(
                 set(self.resource_defs.keys())
+            )
+            check.param_invariant(
+                len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
+                "Cannot specify resource requirements in both @asset decorator and as arguments to the decorated function",
             )
 
             if isinstance(self.io_manager, str):
@@ -292,7 +298,9 @@ class _Asset:
                 description=self.description,
                 ins=dict(asset_ins.values()),
                 out=out,
-                required_resource_keys=required_resource_keys,
+                # Any resource requirements specified as arguments will be identified as
+                # part of the Op definition instantiation
+                required_resource_keys=decorator_resource_keys,
                 tags={
                     **({"kind": self.compute_kind} if self.compute_kind else {}),
                     **(self.op_tags or {}),
@@ -405,6 +413,7 @@ def multi_asset(
     )
 
     required_resource_keys = set(required_resource_keys).union(set(resource_defs.keys()))
+
     for out in outs.values():
         if isinstance(out, Out) and not isinstance(out, AssetOut):
             deprecation_warning(
@@ -420,6 +429,12 @@ def multi_asset(
             fn, ins or {}, non_argument_deps=_make_asset_keys(non_argument_deps)
         )
         asset_outs = build_asset_outs(outs)
+
+        arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
+        check.param_invariant(
+            len(required_resource_keys or []) == 0 or len(arg_resource_keys) == 0,
+            "Cannot specify resource requirements in both @multi_asset decorator and as arguments to the decorated function",
+        )
 
         # validate that the asset_deps make sense
         valid_asset_deps = set(asset_ins.keys()) | set(asset_outs.keys())
@@ -522,17 +537,21 @@ def build_asset_ins(
     )
     input_params = params[1:] if is_context_provided else params
 
-    # Filter config
-    filtered_input_params = [param for param in input_params if param.name != "config"]
+    # Filter config, resource args
+    resource_arg_names = {arg.name for arg in get_resource_args(fn)}
+
+    new_input_args = []
+    for input_arg in input_params:
+        if input_arg.name != "config" and input_arg.name not in resource_arg_names:
+            new_input_args.append(input_arg)
+    input_params = new_input_args
 
     non_var_input_param_names = [
         param.name
-        for param in filtered_input_params
+        for param in new_input_args
         if param.kind == funcsigs.Parameter.POSITIONAL_OR_KEYWORD
     ]
-    has_kwargs = any(
-        param.kind == funcsigs.Parameter.VAR_KEYWORD for param in filtered_input_params
-    )
+    has_kwargs = any(param.kind == funcsigs.Parameter.VAR_KEYWORD for param in new_input_args)
 
     all_input_names = set(non_var_input_param_names) | asset_ins.keys()
 
