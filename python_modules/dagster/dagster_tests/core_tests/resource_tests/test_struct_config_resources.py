@@ -5,9 +5,10 @@ import pytest
 from pydantic import ValidationError
 
 from dagster import asset, job, op
-from dagster._config.structured_config import Resource, cached_method
+from dagster._config.structured_config import Resource
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.resource_output import ResourceOutput
+from dagster._utils.cached_method import cached_method
 
 
 def test_basic_structured_resource():
