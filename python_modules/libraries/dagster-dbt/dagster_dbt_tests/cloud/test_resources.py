@@ -1,5 +1,3 @@
-import re
-
 import pytest
 import responses
 from dagster_dbt import dbt_cloud_resource
@@ -132,12 +130,7 @@ def test_request_flake(max_retries, n_flakes):
             return dc_resource.get_run(SAMPLE_RUN_ID)
 
     if n_flakes > max_retries:
-        with pytest.raises(
-            Failure,
-            match=re.escape(
-                f"Max retries ({max_retries}) exceeded with url: https://cloud.getdbt.com/api/v2/accounts/30000/runs/5000000/."
-            ),
-        ):
+        with pytest.raises(Failure, match="Exceeded max number of retries."):
             _mock_interaction()
     else:
         assert _mock_interaction() == sample_run_details()["data"]

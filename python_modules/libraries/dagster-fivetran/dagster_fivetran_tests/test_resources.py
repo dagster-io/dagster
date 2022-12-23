@@ -1,5 +1,4 @@
 import datetime
-import re
 
 import pytest
 import responses
@@ -71,12 +70,7 @@ def test_get_connector_details_flake(max_retries, n_flakes):
             return ft_resource.get_connector_details(DEFAULT_CONNECTOR_ID)
 
     if n_flakes > max_retries:
-        with pytest.raises(
-            Failure,
-            match=re.escape(
-                f"Max retries ({max_retries}) exceeded with url: https://api.fivetran.com/v1/connectors/some_connector."
-            ),
-        ):
+        with pytest.raises(Failure, match="Exceeded max number of retries."):
             _mock_interaction()
     else:
         assert _mock_interaction() == get_sample_connector_response()["data"]
