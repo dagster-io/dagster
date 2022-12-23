@@ -141,6 +141,7 @@ def test_dbt_rpc_sync_resource():
     assert it["ran"]
 
 
+# am i failing
 @pytest.mark.parametrize(
     "client_class,resource",
     [(DbtRpcResource, dbt_rpc_resource), (DbtRpcSyncResource, dbt_rpc_sync_resource)],
