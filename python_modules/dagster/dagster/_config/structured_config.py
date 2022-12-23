@@ -24,7 +24,7 @@ from dagster._config.field_utils import (
     convert_potential_field,
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
-from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
+from dagster._core.storage.io_manager import IOManager, IOManagerDefinition, IOManagerFunction
 
 
 class MakeConfigCacheable(
@@ -153,6 +153,7 @@ class StructuredResourceAdapter(Resource, ABC):
 
     @property
     def resource_fn(self) -> ResourceFunction:
+        # Overrides ResourceDefinition.resource_fn
         return self.wrapped_resource.resource_fn
 
     def __call__(self, *args, **kwargs):
@@ -197,6 +198,23 @@ class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
 
     def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
         return self
+
+
+class StructuredConfigIOManagerAdapter(StructuredConfigIOManagerBase):
+    @property
+    @abstractmethod
+    def wrapped_io_manager_def(self) -> IOManagerDefinition:
+        raise NotImplementedError()
+
+    @property
+    def resource_fn(self) -> IOManagerFunction:
+        return self.wrapped_io_manager_def.resource_fn
+
+    def io_manager_factory_method(self, context) -> IOManager:
+        return self.wrapped_io_manager_def.resource_fn(context)
+
+    def __call__(self, *args, **kwargs):
+        return self.wrapped_io_manager_def(*args, **kwargs)
 
 
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
