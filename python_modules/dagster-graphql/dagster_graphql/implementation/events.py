@@ -1,8 +1,6 @@
 from math import isnan
 from typing import Any, Iterator, Sequence, no_type_check
 
-from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
-
 import dagster._check as check
 import dagster._seven as seven
 from dagster import (
@@ -31,6 +29,8 @@ MIN_INT = -2147483648
 
 
 def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Iterator[Any]:
+    from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
+
     from ..schema.metadata import (
         GrapheneAssetMetadataEntry,
         GrapheneBoolMetadataEntry,

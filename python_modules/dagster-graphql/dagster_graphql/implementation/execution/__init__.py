@@ -3,7 +3,6 @@ import os
 import sys
 from typing import TYPE_CHECKING, Any, AsyncIterator, Optional, Sequence, Tuple, Union
 
-from dagster_graphql.schema.util import HasContext
 from starlette.concurrency import (
     run_in_threadpool,  # can provide this indirectly if we dont want starlette dep in dagster-graphql
 )
@@ -37,6 +36,7 @@ if TYPE_CHECKING:
         GraphenePipelineRunLogsSubscriptionFailure,
         GraphenePipelineRunLogsSubscriptionSuccess,
     )
+    from dagster_graphql.schema.util import HasContext
 
 
 def _force_mark_as_canceled(instance: DagsterInstance, run_id):
@@ -118,7 +118,7 @@ def terminate_pipeline_execution(instance: DagsterInstance, run_id, terminate_po
 
 
 @capture_error
-def delete_pipeline_run(graphene_info: HasContext, run_id: str):
+def delete_pipeline_run(graphene_info: "HasContext", run_id: str):
     from ...schema.errors import GrapheneRunNotFoundError
     from ...schema.roots.mutation import GrapheneDeletePipelineRunSuccess
 
@@ -137,7 +137,7 @@ def get_chunk_size() -> int:
 
 
 async def gen_events_for_run(
-    graphene_info: HasContext,
+    graphene_info: "HasContext",
     run_id: str,
     after_cursor: Optional[str] = None,
 ) -> AsyncIterator[
@@ -220,7 +220,7 @@ async def gen_events_for_run(
 
 
 async def gen_compute_logs(
-    graphene_info: HasContext,
+    graphene_info: "HasContext",
     run_id: str,
     step_key: str,
     io_type: ComputeIOType,
@@ -254,7 +254,7 @@ async def gen_compute_logs(
 
 
 async def gen_captured_log_data(
-    graphene_info: HasContext, log_key: Sequence[str], cursor: Optional[str] = None
+    graphene_info: "HasContext", log_key: Sequence[str], cursor: Optional[str] = None
 ):
     from ...schema.logs.compute_logs import from_captured_log_data
 
@@ -284,7 +284,7 @@ async def gen_captured_log_data(
 
 
 @capture_error
-def wipe_assets(graphene_info: HasContext, asset_keys):
+def wipe_assets(graphene_info: "HasContext", asset_keys):
     from ...schema.roots.mutation import GrapheneAssetWipeSuccess
 
     instance = graphene_info.context.instance
