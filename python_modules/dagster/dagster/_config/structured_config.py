@@ -22,6 +22,7 @@ from dagster._config.field_utils import (
     convert_potential_field,
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
+from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 
 
 class Config(BaseModel):
@@ -137,6 +138,67 @@ class StructuredResourceAdapter(Resource, ABC):
 
     def __call__(self, *args, **kwargs):
         return self.wrapped_resource(*args, **kwargs)
+
+
+class StructuredConfigIOManagerBase(IOManagerDefinition, Config, ABC):
+    """
+    Base class for Dagster IO managers that utilize structured config. This base class
+    is useful for cases in which the returned IO manager is not the same as the class itself
+    (e.g. when it is a wrapper around the actual IO manager implementation).
+
+    This class is a subclass of both :py:class:`IOManagerDefinition` and :py:class:`Config`.
+    Implementers should provide an implementation of the :py:meth:`resource_function` method,
+    which should return an instance of :py:class:`IOManager`.
+    """
+
+    def __init__(self, **data: Any):
+        schema = infer_schema_from_config_class(self.__class__)
+
+        inner_resource_def = ResourceDefinition(self.resource_function, schema)
+        configured_resource_def = inner_resource_def.configured(
+            config_dictionary_from_values(
+                data,
+                schema,
+            ),
+        )
+
+        Config.__init__(self, **data)
+        IOManagerDefinition.__init__(
+            self,
+            resource_fn=self.resource_function,
+            # mypy worries that configured_resource_def could be self, which
+            # has not had config_schema initialized yet, but we know that's not the case
+            config_schema=configured_resource_def.config_schema,  # type: ignore[attr-defined]
+            description=self.__doc__,
+        )
+
+    def __setattr__(self, name: str, value: Any):
+        # This is a hack to allow us to set attributes on the class that are not part of the
+        # config schema. Pydantic will normally raise an error if you try to set an attribute
+        # that is not part of the schema.
+
+        if name.startswith("_"):
+            object.__setattr__(self, name, value)
+            return
+
+        return super().__setattr__(name, value)
+
+    @abstractmethod
+    def resource_function(self, context) -> IOManager:
+        raise NotImplementedError()
+
+
+class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
+    """
+    Base class for Dagster IO managers that utilize structured config.
+
+    This class is a subclass of both :py:class:`IOManagerDefinition`, :py:class:`Config`,
+    and :py:class:`IOManager`. Implementers must provide an implementation of the
+    :py:meth:`handle_output` and :py:meth:`load_input` methods.
+    """
+
+    def resource_function(self, context) -> IOManager:
+        return self
 
 
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
