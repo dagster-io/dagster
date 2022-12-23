@@ -2,10 +2,12 @@
 
 from pandas import DataFrame
 from project_fully_featured.partitions import hourly_partitions
+from project_fully_featured.resources.hn_resource import HNClient
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql.types import ArrayType, DoubleType, LongType, StringType, StructField, StructType
 
-from dagster import Output, asset
+from dagster import Output, asset, get_dagster_logger
+from dagster._core.definitions.resource_output import ResourceOutput
 
 from .id_range_for_time import id_range_for_time
 
@@ -30,21 +32,23 @@ ITEM_FIELD_NAMES = [field.name for field in HN_ITEMS_SCHEMA.fields]
 
 @asset(
     io_manager_key="parquet_io_manager",
-    required_resource_keys={"hn_client"},
     partitions_def=hourly_partitions,
     key_prefix=["s3", "core"],
 )
-def items(context) -> Output[DataFrame]:
+def items(context, hn_client: ResourceOutput[HNClient]) -> Output[DataFrame]:
     """Items from the Hacker News API: each is a story or a comment on a story."""
-    (start_id, end_id), item_range_metadata = id_range_for_time(context)
+    start, end = context.asset_partitions_time_window_for_output()
+    (start_id, end_id), item_range_metadata = id_range_for_time(start, end, hn_client)
 
-    context.log.info(f"Downloading range {start_id} up to {end_id}: {end_id - start_id} items.")
+    logger = get_dagster_logger()
+
+    logger.info(f"Downloading range {start_id} up to {end_id}: {end_id - start_id} items.")
 
     rows = []
     for item_id in range(start_id, end_id):
-        rows.append(context.resources.hn_client.fetch_item_by_id(item_id))
+        rows.append(hn_client.fetch_item_by_id(item_id))
         if len(rows) % 100 == 0:
-            context.log.info(f"Downloaded {len(rows)} items!")
+            logger.info(f"Downloaded {len(rows)} items!")
 
     non_none_rows = [row for row in rows if row is not None]
     result = DataFrame(non_none_rows, columns=ITEM_FIELD_NAMES).drop_duplicates(subset=["id"])

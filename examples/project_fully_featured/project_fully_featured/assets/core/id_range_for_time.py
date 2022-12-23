@@ -83,9 +83,8 @@ def _id_range_for_time(start: int, end: int, hn_client):
     return id_range, metadata
 
 
-def id_range_for_time(context) -> Tuple[Tuple[int, int], Mapping[str, Any]]:
+def id_range_for_time(start, end, hn_client) -> Tuple[Tuple[int, int], Mapping[str, Any]]:
     """
     For the configured time partition, searches for the range of ids that were created in that time.
     """
-    start, end = context.asset_partitions_time_window_for_output()
-    return _id_range_for_time(start.timestamp(), end.timestamp(), context.resources.hn_client)
+    return _id_range_for_time(start.timestamp(), end.timestamp(), hn_client)
