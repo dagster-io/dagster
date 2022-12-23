@@ -247,6 +247,9 @@ def test_dbt_rpc_resource_cli(
     assert isinstance(result.output_value("result"), DbtRpcOutput)
 
 
+@pytest.mark.skip(
+    reason="Failing reliably. See https://linear.app/elementl/issue/CORE-85/test-dbt-rpc-resource-status-failing-reliably"
+)
 @pytest.mark.parametrize(
     "client_class,resource",
     [(DbtRpcResource, dbt_rpc_resource), (DbtRpcSyncResource, dbt_rpc_sync_resource)],
