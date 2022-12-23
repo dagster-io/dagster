@@ -141,6 +141,7 @@ def test_dbt_rpc_sync_resource():
     assert it["ran"]
 
 
+@pytest.mark.skip(reason="#11308 may have introduced instability")
 @pytest.mark.parametrize(
     "client_class,resource",
     [(DbtRpcResource, dbt_rpc_resource), (DbtRpcSyncResource, dbt_rpc_sync_resource)],
