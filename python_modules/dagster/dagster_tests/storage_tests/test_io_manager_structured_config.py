@@ -1,18 +1,14 @@
-from typing import Callable, Optional
-
-from dagster import job, op, resource, io_manager, In, DagsterInvalidConfigError
+# pylint: disable=unused-argument
 import pytest
-from dagster._config.field_utils import convert_potential_field
+
+from dagster import DagsterInvalidConfigError, In, io_manager, job, op
 from dagster._config.structured_config import (
     Config,
-    Resource,
-    StructuredConfigIOManagerBase,
     StructuredConfigIOManager,
+    StructuredConfigIOManagerBase,
 )
 from dagster._config.type_printer import print_config_type_to_string
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.resource_output import ResourceOutput
 from dagster._core.storage.io_manager import IOManagerDefinition
 
 

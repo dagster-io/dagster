@@ -161,7 +161,7 @@ class StructuredConfigIOManagerBase(IOManagerDefinition, Config, ABC):
         return convert_user_facing_definition_config_schema(input_schema)
 
     @property
-    def _output_config_schema_from_inner_class(self) -> IDefinitionConfigSchema:
+    def _output_config_schema_from_inner_class(self) -> Optional[IDefinitionConfigSchema]:
         output_schema = infer_schema_from_config_class(self.OutputConfigSchema)
         return (
             convert_user_facing_definition_config_schema(output_schema) if output_schema else None
