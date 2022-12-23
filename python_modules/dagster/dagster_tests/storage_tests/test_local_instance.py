@@ -242,7 +242,10 @@ def test_run_step_stats_with_retries():
         assert step_stats[0].attempts == 4
         assert not _called
 
-@pytest.mark.skip(reason="Flakey test. See https://linear.app/elementl/issue/CORE-86/test-threaded-ephemeral-instance-flakes")
+
+@pytest.mark.skip(
+    reason="Flakey test. See https://linear.app/elementl/issue/CORE-86/test-threaded-ephemeral-instance-flakes"
+)
 def test_threaded_ephemeral_instance(caplog):
     def _instantiate_ephemeral_instance():
         with DagsterInstance.ephemeral() as instance:
