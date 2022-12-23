@@ -21,10 +21,6 @@ from dagster._config.field_utils import (
     config_dictionary_from_values,
     convert_potential_field,
 )
-from dagster._core.definitions.definition_config_schema import (
-    IDefinitionConfigSchema,
-    convert_user_facing_definition_config_schema,
-)
 from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 
@@ -153,17 +149,7 @@ class StructuredConfigIOManagerBase(IOManagerDefinition, Config, ABC):
     This class is a subclass of both :py:class:`IOManagerDefinition` and :py:class:`Config`.
     Implementers should provide an implementation of the :py:meth:`resource_function` method,
     which should return an instance of :py:class:`IOManager`.
-
-    To specify the input and output config schemas, implementers should provide an inner class
-    named ``InputConfigSchema`` and/or ``OutputConfigSchema``. These classes should be subclasses
-    of :py:class:`Config`.
     """
-
-    class InputConfigSchema(Config):
-        pass
-
-    class OutputConfigSchema(Config):
-        pass
 
     def __init__(self, **data: Any):
         schema = infer_schema_from_config_class(self.__class__)
@@ -197,26 +183,6 @@ class StructuredConfigIOManagerBase(IOManagerDefinition, Config, ABC):
 
         return super().__setattr__(name, value)
 
-    @property
-    def _input_config_schema_from_inner_class(self) -> IDefinitionConfigSchema:
-        input_schema = infer_schema_from_config_class(self.InputConfigSchema)
-        return convert_user_facing_definition_config_schema(input_schema)
-
-    @property
-    def _output_config_schema_from_inner_class(self) -> Optional[IDefinitionConfigSchema]:
-        output_schema = infer_schema_from_config_class(self.OutputConfigSchema)
-        return (
-            convert_user_facing_definition_config_schema(output_schema) if output_schema else None
-        )
-
-    @property
-    def input_config_schema(self) -> IDefinitionConfigSchema:
-        return self._input_config_schema_from_inner_class
-
-    @property
-    def output_config_schema(self) -> Optional[IDefinitionConfigSchema]:
-        return self._output_config_schema_from_inner_class
-
     @abstractmethod
     def resource_function(self, context) -> IOManager:
         raise NotImplementedError()
@@ -229,10 +195,6 @@ class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
     This class is a subclass of both :py:class:`IOManagerDefinition`, :py:class:`Config`,
     and :py:class:`IOManager`. Implementers must provide an implementation of the
     :py:meth:`handle_output` and :py:meth:`load_input` methods.
-
-    To specify the input and output config schemas, implementers should provide an inner class
-    named ``InputConfigSchema`` and/or ``OutputConfigSchema``. These classes should be subclasses
-    of :py:class:`Config`.
     """
 
     def resource_function(self, context) -> IOManager:
