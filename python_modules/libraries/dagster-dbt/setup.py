@@ -34,6 +34,7 @@ setup(
     packages=find_packages(exclude=["dagster_dbt_tests*"]),
     install_requires=[
         f"dagster{pin}",
+        "mashumaro<3.2",
         "dbt-core",
         "requests",
         "attrs",
