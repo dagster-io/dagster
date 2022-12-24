@@ -267,10 +267,10 @@ def test_wrapping_io_manager_with_context():
         def __init__(self, a_str: str):
             self.a_str = a_str
 
-        def load_input(self, context: "InputContext") -> Any:
+        def load_input(self, context: InputContext) -> Any:
             pass
 
-        def handle_output(self, context: "OutputContext", obj: Any) -> None:
+        def handle_output(self, context: OutputContext, obj: Any) -> None:
             pass
 
     counts = {"num_calls_to_factory": 0}
@@ -309,10 +309,10 @@ def test_wrapping_io_manager_with_context():
 
 def test_wrapping_io_manager_no_context():
     class APreexistingIOManager(IOManager):
-        def load_input(self, context: "InputContext") -> Any:
+        def load_input(self, context: InputContext) -> Any:
             pass
 
-        def handle_output(self, context: "OutputContext", obj: Any) -> None:
+        def handle_output(self, context: OutputContext, obj: Any) -> None:
             pass
 
     counts = {"num_calls_to_factory": 0}
