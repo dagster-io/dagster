@@ -69,7 +69,6 @@ class ExternalAssetGraph(AssetGraph):
             (repo.handle, external_asset_node)
             for repo in repos
             for external_asset_node in repo.get_external_asset_nodes()
-            if not external_asset_node.is_source
         ]
 
         return cls.from_repository_handles_and_external_asset_nodes(
@@ -93,7 +92,6 @@ class ExternalAssetGraph(AssetGraph):
         repo_handle_external_asset_nodes: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
     ) -> "ExternalAssetGraph":
         upstream = {}
-        downstream = {}
         source_asset_keys = set()
         partitions_defs_by_key = {}
         partition_mappings_by_key: Dict[AssetKey, Dict[AssetKey, PartitionMapping]] = defaultdict(
@@ -103,17 +101,29 @@ class ExternalAssetGraph(AssetGraph):
         freshness_policies_by_key = {}
         asset_keys_by_atomic_execution_unit_id: Dict[str, Set[AssetKey]] = defaultdict(set)
         repo_handles_by_key = {
-            node.asset_key: repo_handle for repo_handle, node in repo_handle_external_asset_nodes
+            node.asset_key: repo_handle
+            for repo_handle, node in repo_handle_external_asset_nodes
+            if not node.is_source
         }
         job_names_by_key = {
-            node.asset_key: node.job_names for _, node in repo_handle_external_asset_nodes
+            node.asset_key: node.job_names
+            for _, node in repo_handle_external_asset_nodes
+            if not node.is_source
+        }
+
+        all_non_source_keys = {
+            node.asset_key for _, node in repo_handle_external_asset_nodes if not node.is_source
         }
 
         for repo_handle, node in repo_handle_external_asset_nodes:
             if node.is_source:
+                if node.asset_key in all_non_source_keys:
+                    # one repo's source is another repo's non-source
+                    continue
+
                 source_asset_keys.add(node.asset_key)
+
             upstream[node.asset_key] = {dep.upstream_asset_key for dep in node.dependencies}
-            downstream[node.asset_key] = {dep.downstream_asset_key for dep in node.depended_by}
             for dep in node.dependencies:
                 if dep.partition_mapping is not None:
                     partition_mappings_by_key[node.asset_key][
@@ -131,6 +141,11 @@ class ExternalAssetGraph(AssetGraph):
                 asset_keys_by_atomic_execution_unit_id[node.atomic_execution_unit_id].add(
                     node.asset_key
                 )
+
+        downstream: Dict[AssetKey, Set[AssetKey]] = defaultdict(set)
+        for asset_key, upstream_keys in upstream.items():
+            for upstream_key in upstream_keys:
+                downstream[upstream_key].add(asset_key)
 
         required_multi_asset_sets_by_key: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         for _, asset_keys in asset_keys_by_atomic_execution_unit_id.items():
