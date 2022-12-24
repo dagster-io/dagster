@@ -23,7 +23,11 @@ from dagster._config.field_utils import (
     config_dictionary_from_values,
     convert_potential_field,
 )
-from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
+from dagster._core.definitions.resource_definition import (
+    ResourceDefinition,
+    ResourceFunction,
+    is_context_provided,
+)
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition, IOManagerFunction
 
 
@@ -210,8 +214,12 @@ class StructuredConfigIOManagerAdapter(StructuredConfigIOManagerBase):
     def resource_fn(self) -> IOManagerFunction:
         return self.wrapped_io_manager_def.resource_fn
 
-    def io_manager_factory_method(self, context) -> IOManager:
-        return self.wrapped_io_manager_def.resource_fn(context)
+    def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
+        fn = self.wrapped_io_manager_def.resource_fn
+        if is_context_provided(fn):
+            return fn(context)
+        else:
+            return fn()
 
     def __call__(self, *args, **kwargs):
         return self.wrapped_io_manager_def(*args, **kwargs)

@@ -1,10 +1,6 @@
 import sys
 from abc import ABC, abstractmethod
 from typing import Any, Callable
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.execution.context.input import InputContext
-from dagster._core.execution.context.output import OutputContext
-from dagster._core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 
 import pytest
 from pydantic import ValidationError
@@ -12,13 +8,16 @@ from pydantic import ValidationError
 from dagster import asset, job, op, resource
 from dagster._config.structured_config import (
     Resource,
-    StructuredConfigIOManager,
     StructuredConfigIOManagerAdapter,
     StructuredResourceAdapter,
 )
 from dagster._core.definitions.assets_job import build_assets_job
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_output import ResourceOutput
+from dagster._core.execution.context.input import InputContext
+from dagster._core.execution.context.output import OutputContext
+from dagster._core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 from dagster._utils.cached_method import cached_method
 
 
@@ -263,7 +262,7 @@ def test_wrapping_function_resource():
     assert out_txt == ["greeting: hello, world!"]
 
 
-def test_wrapping_io_manager():
+def test_wrapping_io_manager_with_context():
     class APreexistingIOManager(IOManager):
         def __init__(self, a_str: str):
             self.a_str = a_str
@@ -298,6 +297,43 @@ def test_wrapping_io_manager():
     defs = Definitions(
         assets=[an_asset], resources={"io_manager": TypedPreexistingIOManager(a_str="foo")}
     )
+
+    assert counts["num_calls_to_factory"] == 0
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+
+    assert counts["num_calls_to_factory"] == 1
+
+    assert executed["yes"]
+
+
+def test_wrapping_io_manager_no_context():
+    class APreexistingIOManager(IOManager):
+        def load_input(self, context: "InputContext") -> Any:
+            pass
+
+        def handle_output(self, context: "OutputContext", obj: Any) -> None:
+            pass
+
+    counts = {"num_calls_to_factory": 0}
+
+    @io_manager
+    def a_preexisting_io_manager_no_context():
+        counts["num_calls_to_factory"] += 1
+        return APreexistingIOManager()
+
+    class WrapAPreexistingIOManager(StructuredConfigIOManagerAdapter):
+        @property
+        def wrapped_io_manager_def(self) -> IOManagerDefinition:
+            return a_preexisting_io_manager_no_context
+
+    executed = {}
+
+    @asset
+    def an_asset(_):
+        executed["yes"] = True
+
+    defs = Definitions(assets=[an_asset], resources={"io_manager": WrapAPreexistingIOManager()})
 
     assert counts["num_calls_to_factory"] == 0
 
