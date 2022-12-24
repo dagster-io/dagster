@@ -219,7 +219,8 @@ class StructuredConfigIOManagerAdapter(StructuredConfigIOManagerBase):
         if is_context_provided(fn):
             return fn(context)
         else:
-            return fn()
+            # mypy might not understand typeguard?
+            return fn()  # type: ignore
 
     def __call__(self, *args, **kwargs):
         return self.wrapped_io_manager_def(*args, **kwargs)
