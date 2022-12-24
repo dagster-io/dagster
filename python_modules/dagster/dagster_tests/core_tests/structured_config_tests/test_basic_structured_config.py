@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 from pydantic import BaseModel
 
@@ -12,6 +14,7 @@ from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.errors import DagsterInvalidConfigDefinitionError, DagsterInvalidConfigError
 from dagster._core.execution.context.invocation import build_op_context
 from dagster._legacy import pipeline
+from dagster._utils.cached_method import cached_method
 
 
 def test_disallow_config_schema_conflict():
@@ -351,3 +354,88 @@ def test_validate_run_config():
 
     with pytest.raises(DagsterInvalidConfigError):
         validate_run_config(pipeline_requires_config)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8")
+def test_cached_property():
+    from functools import cached_property
+
+    counts = {
+        "plus": 0,
+        "mult": 0,
+    }
+
+    class SomeConfig(Config):
+        x: int
+        y: int
+
+        @cached_property
+        def plus(self):
+            counts["plus"] += 1
+            return self.x + self.y
+
+        @cached_property
+        def mult(self):
+            counts["mult"] += 1
+            return self.x * self.y
+
+    config = SomeConfig(x=3, y=5)
+
+    assert counts["plus"] == 0
+    assert counts["mult"] == 0
+
+    assert config.plus == 8
+
+    assert counts["plus"] == 1
+    assert counts["mult"] == 0
+
+    assert config.plus == 8
+
+    assert counts["plus"] == 1
+    assert counts["mult"] == 0
+
+    assert config.mult == 15
+
+    assert counts["plus"] == 1
+    assert counts["mult"] == 1
+
+
+def test_cached_method():
+    counts = {
+        "plus": 0,
+        "mult": 0,
+    }
+
+    class SomeConfig(Config):
+        x: int
+        y: int
+
+        @cached_method
+        def plus(self):
+            counts["plus"] += 1
+            return self.x + self.y
+
+        @cached_method
+        def mult(self):
+            counts["mult"] += 1
+            return self.x * self.y
+
+    config = SomeConfig(x=3, y=5)
+
+    assert counts["plus"] == 0
+    assert counts["mult"] == 0
+
+    assert config.plus() == 8
+
+    assert counts["plus"] == 1
+    assert counts["mult"] == 0
+
+    assert config.plus() == 8
+
+    assert counts["plus"] == 1
+    assert counts["mult"] == 0
+
+    assert config.mult() == 15
+
+    assert counts["plus"] == 1
+    assert counts["mult"] == 1
