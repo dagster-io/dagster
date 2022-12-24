@@ -52,25 +52,6 @@ class OutputContext:
     `OutputContext` for testing an IO Manager's `handle_output` method, use
     :py:func:`dagster.build_output_context`.
 
-    Attributes:
-        step_key (Optional[str]): The step_key for the compute step that produced the output.
-        name (Optional[str]): The name of the output that produced the output.
-        run_id (Optional[str]): The id of the run that produced the output.
-        metadata (Optional[Mapping[str, RawMetadataValue]]): A dict of the metadata that is assigned to the
-            OutputDefinition that produced the output.
-        mapping_key (Optional[str]): The key that identifies a unique mapped output. None for regular outputs.
-        config (Optional[Any]): The configuration for the output.
-        dagster_type (Optional[DagsterType]): The type of this output.
-        log (Optional[DagsterLogManager]): The log manager to use for this output.
-        version (Optional[str]): (Experimental) The version of the output.
-        resource_config (Optional[Mapping[str, Any]]): The config associated with the resource that
-            initializes the RootInputManager.
-        resources (Optional[Resources]): The resources required by the output manager, specified by the
-            `required_resource_keys` parameter.
-        op_def (Optional[OpDefinition]): The definition of the op that produced the output.
-        asset_info: Optional[AssetOutputInfo]: (Experimental) Asset info corresponding to the
-            output.
-
     Example:
 
     .. code-block:: python
@@ -185,6 +166,7 @@ class OutputContext:
     @public  # type: ignore
     @property
     def step_key(self) -> str:
+        """The step_key for the compute step that produced the output."""
         if self._step_key is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access step_key, "
@@ -196,6 +178,7 @@ class OutputContext:
     @public  # type: ignore
     @property
     def name(self) -> str:
+        """The name of the output that produced the output."""
         if self._name is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access name, "
@@ -217,6 +200,7 @@ class OutputContext:
     @public  # type: ignore
     @property
     def run_id(self) -> str:
+        """The id of the run that produced the output."""
         if self._run_id is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access run_id, "
@@ -228,21 +212,25 @@ class OutputContext:
     @public  # type: ignore
     @property
     def metadata(self) -> Optional[Mapping[str, object]]:
+        """A dict of the metadata that is assigned to the OutputDefinition that produced the output."""
         return self._metadata
 
     @public  # type: ignore
     @property
     def mapping_key(self) -> Optional[str]:
+        """The key that identifies a unique mapped output. None for regular outputs."""
         return self._mapping_key
 
     @public  # type: ignore
     @property
     def config(self) -> Any:
+        """The configuration for the output."""
         return self._config
 
     @public  # type: ignore
     @property
     def op_def(self) -> "OpDefinition":
+        """The definition of the op that produced the output."""
         from dagster._core.definitions import OpDefinition
 
         if self._op_def is None:
@@ -256,6 +244,7 @@ class OutputContext:
     @public  # type: ignore
     @property
     def dagster_type(self) -> "DagsterType":
+        """The type of this output."""
         if self._dagster_type is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access dagster_type, "
@@ -267,6 +256,7 @@ class OutputContext:
     @public  # type: ignore
     @property
     def log(self) -> "DagsterLogManager":
+        """The log manager to use for this output."""
         if self._log is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access log, "
@@ -278,16 +268,19 @@ class OutputContext:
     @public  # type: ignore
     @property
     def version(self) -> Optional[str]:
+        """(Experimental) The version of the output."""
         return self._version
 
     @public  # type: ignore
     @property
     def resource_config(self) -> Optional[Mapping[str, object]]:
+        """The config associated with the resource that initializes the RootInputManager."""
         return self._resource_config
 
     @public  # type: ignore
     @property
     def resources(self) -> Any:
+        """The resources required by the output manager, specified by the required_resource_keys parameter."""
         if self._resources is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access resources, "
@@ -309,11 +302,16 @@ class OutputContext:
     @public  # type: ignore
     @property
     def has_asset_key(self) -> bool:
+        """Whether an asset is associated with this output."""
         return self._asset_info is not None
 
     @public  # type: ignore
     @property
     def asset_key(self) -> AssetKey:
+        """The asset key corresponding to the output asset.
+        
+        Raises an error if no asset is associated with this output.
+        """
         if self._asset_info is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access asset_key, "
@@ -356,7 +354,7 @@ class OutputContext:
     @public  # type: ignore
     @property
     def has_partition_key(self) -> bool:
-        """Whether the current run is a partitioned run"""
+        """Whether the current run is a partitioned run."""
         if self._warn_on_step_context_use:
             warnings.warn(
                 "You are using InputContext.upstream_output.has_partition_key"
@@ -392,6 +390,7 @@ class OutputContext:
     @public  # type: ignore
     @property
     def has_asset_partitions(self) -> bool:
+        """Whether the output asset is a partitioned asset."""
         if self._warn_on_step_context_use:
             warnings.warn(
                 "You are using InputContext.upstream_output.has_asset_partitions"
@@ -569,6 +568,11 @@ class OutputContext:
 
     @public
     def get_asset_identifier(self) -> Sequence[str]:
+        """Utility method to get a collection of identifiers corresponding to the output asset.
+        The collection consists of a List containing the asset key (unpacked) and the asset partition key.
+        
+        Raises an error if no asset is associated with this output.
+        """
         if self.asset_key is not None:
             if self.has_asset_partitions:
                 return [*self.asset_key.path, self.asset_partition_key]
