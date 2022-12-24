@@ -27,7 +27,34 @@ from dagster._core.definitions.resource_definition import ResourceDefinition, Re
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 
 
-class Config(BaseModel):
+class MakeConfigCacheable(
+    BaseModel,
+    # Various pydantic model config (https://docs.pydantic.dev/usage/model_config/)
+    # Necessary to allow for caching decorators
+    arbitrary_types_allowed=True,
+    # Avoid pydantic reading a cached property class as part of the schema
+    keep_untouched=(cached_property,),
+    # Ensure the class is serializable, for caching purposes
+    frozen=True,
+):
+    """This class centralizes and implements all the chicanery we need in order
+    to support caching decorators. If we decide this is a bad idea we can remove it
+    all in one go.
+    """
+
+    def __setattr__(self, name: str, value: Any):
+        # This is a hack to allow us to set attributes on the class that are not part of the
+        # config schema. Pydantic will normally raise an error if you try to set an attribute
+        # that is not part of the schema.
+
+        if name.startswith("_") or name.endswith("_cache"):
+            object.__setattr__(self, name, value)
+            return
+
+        return super().__setattr__(name, value)
+
+
+class Config(MakeConfigCacheable):
     """
     Base class for Dagster configuration models.
     """
@@ -53,13 +80,6 @@ def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSch
 class Resource(
     ResourceDefinition,
     Config,
-    # Various pydantic model config (https://docs.pydantic.dev/usage/model_config/)
-    # Necessary to allow for caching decorators
-    arbitrary_types_allowed=True,
-    # Avoid pydantic reading a cached property class as part of the schema
-    keep_untouched=(cached_property,),
-    # Ensure the class is serializable, for caching purposes
-    frozen=True,
 ):
     """
     Base class for Dagster resources that utilize structured config.
@@ -88,17 +108,6 @@ class Resource(
             config_schema=_curry_config_schema(schema, data),
             description=self.__doc__,
         )
-
-    def __setattr__(self, name: str, value: Any):
-        # This is a hack to allow us to set attributes on the class that are not part of the
-        # config schema. Pydantic will normally raise an error if you try to set an attribute
-        # that is not part of the schema.
-
-        if name.startswith("_") or name.endswith("_cache"):
-            object.__setattr__(self, name, value)
-            return
-
-        return super().__setattr__(name, value)
 
     def create_object_to_pass_to_user_code(self, context) -> Any:  # pylint: disable=unused-argument
         # This acts identically to the function decorator with @resource in the old style
@@ -170,17 +179,6 @@ class StructuredConfigIOManagerBase(IOManagerDefinition, Config, ABC):
             config_schema=_curry_config_schema(schema, data),
             description=self.__doc__,
         )
-
-    def __setattr__(self, name: str, value: Any):
-        # This is a hack to allow us to set attributes on the class that are not part of the
-        # config schema. Pydantic will normally raise an error if you try to set an attribute
-        # that is not part of the schema.
-
-        if name.startswith("_"):
-            object.__setattr__(self, name, value)
-            return
-
-        return super().__setattr__(name, value)
 
     @abstractmethod
     def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
