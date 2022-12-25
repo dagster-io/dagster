@@ -30,6 +30,7 @@ from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
+    AssetBackfillIterationResult,
     execute_asset_backfill_iteration_inner,
 )
 from dagster._core.host_representation.external_data import external_asset_graph_from_defs
@@ -137,6 +138,24 @@ def test_scenario_to_completion(scenario_name: str, failures: str, some_or_all: 
         )
 
 
+def execute_asset_backfill_iteration_consume_generator(
+    backfill_id: str,
+    asset_backfill_data: AssetBackfillData,
+    asset_graph: ExternalAssetGraph,
+    instance: DagsterInstance,
+) -> AssetBackfillIterationResult:
+    for result in execute_asset_backfill_iteration_inner(
+        backfill_id=backfill_id,
+        asset_backfill_data=asset_backfill_data,
+        instance=instance,
+        asset_graph=asset_graph,
+    ):
+        if isinstance(result, AssetBackfillIterationResult):
+            return result
+
+    assert False
+
+
 def run_backfill_to_completion(
     asset_graph: ExternalAssetGraph,
     assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
@@ -156,7 +175,7 @@ def run_backfill_to_completion(
 
     while not backfill_data.is_complete():
         iteration_count += 1
-        result1 = execute_asset_backfill_iteration_inner(
+        result1 = execute_asset_backfill_iteration_consume_generator(
             backfill_id=backfill_id,
             asset_backfill_data=backfill_data,
             asset_graph=asset_graph,
@@ -166,7 +185,7 @@ def run_backfill_to_completion(
         assert result1.backfill_data != backfill_data
 
         # if nothing changes, nothing should happen in the iteration
-        result2 = execute_asset_backfill_iteration_inner(
+        result2 = execute_asset_backfill_iteration_consume_generator(
             backfill_id=backfill_id,
             asset_backfill_data=result1.backfill_data,
             asset_graph=asset_graph,

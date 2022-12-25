@@ -96,7 +96,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     numPartitions = graphene.NonNull(graphene.Int)
     numCancelable = graphene.NonNull(graphene.Int)
     fromFailure = graphene.NonNull(graphene.Boolean)
-    reexecutionSteps = non_null_list(graphene.String)
+    reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
     partitionSetName = graphene.NonNull(graphene.String)
     timestamp = graphene.NonNull(graphene.Float)
