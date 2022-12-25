@@ -143,7 +143,7 @@ class GraphenePartitionSetSelector(graphene.InputObjectType):
 
 
 class GrapheneLaunchBackfillParams(graphene.InputObjectType):
-    selector = graphene.NonNull(GraphenePartitionSetSelector)
+    selector = GraphenePartitionSetSelector
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.InputField(graphene.List(graphene.NonNull(GrapheneAssetKeyInput)))
