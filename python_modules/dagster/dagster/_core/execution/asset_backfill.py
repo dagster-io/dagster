@@ -65,6 +65,45 @@ class AssetBackfillData(NamedTuple):
             self.target_subset.filter_asset_keys(root_asset_keys).iterate_asset_partitions()
         )
 
+    def get_num_partitions(self) -> int:
+        """
+        Only valid when the same number of partitions are targeted in every asset.
+
+        When not valid, raises an error.
+        """
+        asset_partition_nums = {
+            len(subset)
+            for subset in self.target_asset_partitions.partitions_subsets_by_asset_key.values()
+        }
+        if len(asset_partition_nums) == 0:
+            return 0
+        elif len(asset_partition_nums) == 1:
+            return next(iter(asset_partition_nums))
+        else:
+            check.failed(
+                "Can't compute number of partitions for asset backfill because different assets "
+                "have different numbers of partitions"
+            )
+
+    def get_partition_names(self) -> Sequence[str]:
+        """
+        Only valid when the same number of partitions are targeted in every asset.
+
+        When not valid, raises an error.
+        """
+        subsets = self.target_asset_partitions.partitions_subsets_by_asset_key.values()
+        if len(subsets) == 0:
+            return []
+
+        first_subset = next(iter(subsets))
+        if any(subset != subset for subset in subsets):
+            check.failed(
+                "Can't find partition names for asset backfill because different assets "
+                "have different partitions"
+            )
+
+        return list(first_subset.get_partition_keys())
+
     @classmethod
     def empty(cls, target_subset: AssetGraphSubset) -> "AssetBackfillData":
         asset_graph = target_subset.asset_graph

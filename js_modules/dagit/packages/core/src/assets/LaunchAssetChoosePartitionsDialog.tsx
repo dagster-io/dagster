@@ -226,13 +226,6 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         mutation: LAUNCH_PARTITION_BACKFILL_MUTATION,
         variables: {
           backfillParams: {
-            selector: {
-              partitionSetName: partitionSet.name,
-              repositorySelector: {
-                repositoryLocationName: repoAddress.location,
-                repositoryName: repoAddress.name,
-              },
-            },
             assetSelection: assets.map((a) => ({path: a.assetKey.path})),
             partitionNames: allSelected.map((k) => k.partitionKey),
             fromFailure: false,

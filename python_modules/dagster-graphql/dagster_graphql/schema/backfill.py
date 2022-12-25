@@ -98,7 +98,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     fromFailure = graphene.NonNull(graphene.Boolean)
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
-    partitionSetName = graphene.NonNull(graphene.String)
+    partitionSetName = graphene.Field(graphene.String)
     timestamp = graphene.NonNull(graphene.Float)
     partitionSet = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
     runs = graphene.Field(
@@ -122,16 +122,18 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
         super().__init__(
             backfillId=backfill_job.backfill_id,
-            partitionSetName=backfill_job.partition_set_origin.partition_set_name,
+            partitionSetName=backfill_job.partition_set_name,
             status=backfill_job.status.value,
             fromFailure=bool(backfill_job.from_failure),
             reexecutionSteps=backfill_job.reexecution_steps,
-            partitionNames=backfill_job.partition_names,
             timestamp=backfill_job.backfill_timestamp,
             assetSelection=backfill_job.asset_selection,
         )
 
     def _get_partition_set(self, graphene_info):
+        if self._backfill_job.partition_set_origin is None:
+            return None
+
         origin = self._backfill_job.partition_set_origin
         location_name = origin.external_repository_origin.repository_location_origin.location_name
         repository_name = origin.external_repository_origin.repository_name
@@ -186,8 +188,11 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         records = self._get_records(graphene_info)
         return [GrapheneRun(record) for record in records]
 
+    def resolve_partitionNames(self, _graphene_info):
+        return self._backfill_job.get_partition_names(_graphene_info.context)
+
     def resolve_numPartitions(self, _graphene_info):
-        return len(self._backfill_job.partition_names)
+        return self._backfill_job.get_num_partitions(_graphene_info.context)
 
     def resolve_numCancelable(self, _graphene_info):
         if self._backfill_job.status != BulkActionStatus.REQUESTED:
@@ -216,12 +221,15 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         )
 
     def resolve_partitionStatuses(self, graphene_info):
-        partition_set_name = self._backfill_job.partition_set_origin.partition_set_name
+        partition_set_origin = self._backfill_job.partition_set_origin
+        partition_set_name = (
+            partition_set_origin.partition_set_name if partition_set_origin else None
+        )
         partition_run_data = self._get_partition_run_data(graphene_info)
         return partition_statuses_from_run_partition_data(
             partition_set_name,
             partition_run_data,
-            self._backfill_job.partition_names,
+            self._backfill_job.get_partition_names(graphene_info.context),
             backfill_id=self._backfill_job.backfill_id,
         )
 

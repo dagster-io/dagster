@@ -2248,7 +2248,7 @@ input MarshalledOutput {
 }
 
 input LaunchBackfillParams {
-  selector: PartitionSetSelector!
+  selector: PartitionSetSelector = null
   partitionNames: [String!]
   reexecutionSteps: [String!]
   assetSelection: [AssetKeyInput!]
