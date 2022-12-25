@@ -24,6 +24,7 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions import Partition, PartitionSetDefinition, StaticPartitionsDefinition
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.execution.api import execute_pipeline
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation import (
@@ -660,6 +661,46 @@ def test_backfill_with_asset_selection(instance, workspace_context, external_rep
         assert run.tags[BACKFILL_ID_TAG] == "backfill_with_asset_selection"
         assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
         assert run.tags[PARTITION_SET_TAG] == partition_set_name
+        assert step_succeeded(instance, run, "foo")
+        assert step_succeeded(instance, run, "reusable")
+        assert step_succeeded(instance, run, "bar")
+    # selected
+    for asset_key in asset_selection:
+        assert len(instance.run_ids_for_asset_key(asset_key)) == 3
+    # not selected
+    for asset_key in [AssetKey("a2"), AssetKey("b2"), AssetKey("baz")]:
+        assert len(instance.run_ids_for_asset_key(asset_key)) == 0
+
+
+def test_pure_asset_backfill(instance, workspace_context, external_repo):
+    del external_repo
+
+    partition_name_list = [partition.name for partition in static_partitions.get_partitions()]
+    asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=ExternalAssetGraph.from_workspace_request_context(
+                workspace_context.create_request_context()
+            ),
+            backfill_id="backfill_with_asset_selection",
+            tags={},
+            backfill_timestamp=pendulum.now().timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_name_list,
+        )
+    )
+    assert instance.get_runs_count() == 0
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    assert instance.get_runs_count() == 3
+    wait_for_all_runs_to_start(instance, timeout=30)
+    assert instance.get_runs_count() == 3
+    wait_for_all_runs_to_finish(instance, timeout=30)
+
+    assert instance.get_runs_count() == 3
+    runs = reversed(instance.get_runs())
+    for run in runs:
+        assert run.tags[BACKFILL_ID_TAG] == "backfill_with_asset_selection"
         assert step_succeeded(instance, run, "foo")
         assert step_succeeded(instance, run, "reusable")
         assert step_succeeded(instance, run, "bar")

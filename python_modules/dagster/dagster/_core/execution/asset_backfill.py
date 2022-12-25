@@ -11,12 +11,18 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.run_request import RunRequest
+from dagster._core.host_representation.selector import PipelineSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
+from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+
+if TYPE_CHECKING:
+    from .backfill import PartitionBackfill
 
 
 class AssetBackfillData(NamedTuple):
@@ -95,6 +101,104 @@ class AssetBackfillData(NamedTuple):
             "serialized_failed_asset_partitions": self.failed_asset_partitions.to_storage_dict(),
         }
         return json.dumps(storage_dict)
+
+
+def execute_asset_backfill_iteration(
+    backfill: "PartitionBackfill", workspace: BaseWorkspaceRequestContext, instance: DagsterInstance
+) -> None:
+    """
+    Runs an iteration of the backfill, including submitting runs and updating the backfill object
+    in the DB.
+    """
+    asset_graph = ExternalAssetGraph.from_workspace_request_context(workspace)
+    if backfill.serialized_asset_backfill_data is None:
+        check.failed("Asset backfill missing serialized_asset_backfill_data")
+
+    asset_backfill_data = AssetBackfillData.from_serialized(
+        backfill.serialized_asset_backfill_data, asset_graph
+    )
+
+    result = execute_asset_backfill_iteration_inner(
+        backfill_id=backfill.backfill_id,
+        asset_backfill_data=asset_backfill_data,
+        instance=instance,
+        asset_graph=asset_graph,
+    )
+
+    updated_backfill = backfill.with_asset_backfill_data(result.backfill_data)
+
+    for run_request in result.run_requests:
+        submit_run_request(
+            run_request=run_request, asset_graph=asset_graph, workspace=workspace, instance=instance
+        )
+
+    instance.update_backfill(updated_backfill)
+
+
+def submit_run_request(
+    asset_graph: ExternalAssetGraph,
+    run_request: RunRequest,
+    instance: DagsterInstance,
+    workspace: BaseWorkspaceRequestContext,
+) -> None:
+    """
+    Creates and submits a run for the given run request
+    """
+    repo_handle = asset_graph.get_repository_handle(
+        cast(Sequence[AssetKey], run_request.asset_selection)[0]
+    )
+    location_name = repo_handle.repository_location_origin.location_name
+    repo_location = workspace.get_repository_location(
+        repo_handle.repository_location_origin.location_name
+    )
+    job_name = _get_implicit_job_name_for_assets(
+        asset_graph, cast(Sequence[AssetKey], run_request.asset_selection)
+    )
+    if job_name is None:
+        check.failed(
+            f"Could not find an implicit asset job for the given assets: {run_request.asset_selection}"
+        )
+    pipeline_selector = PipelineSelector(
+        location_name=location_name,
+        repository_name=repo_handle.repository_name,
+        pipeline_name=job_name,
+        asset_selection=run_request.asset_selection,
+        solid_selection=None,
+    )
+    external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
+
+    external_execution_plan = repo_location.get_external_execution_plan(
+        external_pipeline,
+        {},
+        DEFAULT_MODE_NAME,
+        step_keys_to_execute=None,
+        known_state=None,
+        instance=instance,
+    )
+
+    if not run_request.asset_selection:
+        check.failed("Expected RunRequest to have an asset selection")
+
+    run = instance.create_run(
+        pipeline_snapshot=external_pipeline.pipeline_snapshot,
+        execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
+        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
+        pipeline_name=external_pipeline.name,
+        run_id=None,
+        solids_to_execute=None,
+        run_config={},
+        mode=DEFAULT_MODE_NAME,
+        step_keys_to_execute=None,
+        tags=run_request.tags,
+        root_run_id=None,
+        parent_run_id=None,
+        status=DagsterRunStatus.NOT_STARTED,
+        external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=external_pipeline.get_python_origin(),
+        asset_selection=frozenset(run_request.asset_selection),
+    )
+
+    instance.submit_run(run.run_id, workspace)
 
 
 def _get_implicit_job_name_for_assets(

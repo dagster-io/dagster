@@ -1,6 +1,5 @@
 import logging
 import os
-import sys
 import time
 from typing import Iterable, Mapping, Optional, Sequence, Tuple, cast
 
@@ -33,7 +32,7 @@ from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._utils import merge_dicts
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo
 
 from .backfill import BulkActionStatus, PartitionBackfill
 
@@ -61,53 +60,45 @@ def execute_job_backfill_iteration(
         ExternalPartitionSetOrigin, backfill.partition_set_origin
     ).external_repository_origin.repository_location_origin
 
-    try:
-        repo_location = workspace.get_repository_location(origin.location_name)
+    repo_location = workspace.get_repository_location(origin.location_name)
 
-        _check_repo_has_partition_set(repo_location, backfill)
+    _check_repo_has_partition_set(repo_location, backfill)
 
-        has_more = True
-        while has_more:
-            if backfill.status != BulkActionStatus.REQUESTED:
-                break
+    has_more = True
+    while has_more:
+        if backfill.status != BulkActionStatus.REQUESTED:
+            break
 
-            chunk, checkpoint, has_more = _get_partitions_chunk(
-                instance, logger, backfill, CHECKPOINT_COUNT
-            )
-            _check_for_debug_crash(debug_crash_flags, "BEFORE_SUBMIT")
-
-            if chunk:
-                for _run_id in submit_backfill_runs(
-                    instance, workspace, repo_location, backfill, chunk
-                ):
-                    yield None
-                    # before submitting, refetch the backfill job to check for status changes
-                    backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
-                    if backfill.status != BulkActionStatus.REQUESTED:
-                        return
-
-            _check_for_debug_crash(debug_crash_flags, "AFTER_SUBMIT")
-
-            if has_more:
-                # refetch, in case the backfill was updated in the meantime
-                backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
-                instance.update_backfill(backfill.with_partition_checkpoint(checkpoint))
-                yield None
-                time.sleep(CHECKPOINT_INTERVAL)
-            else:
-                partition_names = cast(Sequence[str], backfill.partition_names)
-                logger.info(
-                    f"Backfill completed for {backfill.backfill_id} for {len(partition_names)} partitions"
-                )
-                instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED))
-                yield None
-    except Exception:
-        error_info = serializable_error_info_from_exc_info(sys.exc_info())
-        instance.update_backfill(
-            backfill.with_status(BulkActionStatus.FAILED).with_error(error_info)
+        chunk, checkpoint, has_more = _get_partitions_chunk(
+            instance, logger, backfill, CHECKPOINT_COUNT
         )
-        logger.error(f"Backfill failed for {backfill.backfill_id}: {error_info.to_string()}")
-        yield error_info
+        _check_for_debug_crash(debug_crash_flags, "BEFORE_SUBMIT")
+
+        if chunk:
+            for _run_id in submit_backfill_runs(
+                instance, workspace, repo_location, backfill, chunk
+            ):
+                yield None
+                # before submitting, refetch the backfill job to check for status changes
+                backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
+                if backfill.status != BulkActionStatus.REQUESTED:
+                    return
+
+        _check_for_debug_crash(debug_crash_flags, "AFTER_SUBMIT")
+
+        if has_more:
+            # refetch, in case the backfill was updated in the meantime
+            backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
+            instance.update_backfill(backfill.with_partition_checkpoint(checkpoint))
+            yield None
+            time.sleep(CHECKPOINT_INTERVAL)
+        else:
+            partition_names = cast(Sequence[str], backfill.partition_names)
+            logger.info(
+                f"Backfill completed for {backfill.backfill_id} for {len(partition_names)} partitions"
+            )
+            instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED))
+            yield None
 
 
 def _check_repo_has_partition_set(
