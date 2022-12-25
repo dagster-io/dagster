@@ -53,6 +53,10 @@ class CachingInstanceQueryer:
         # materialization record for a >= cursor, we don't need to query the instance
         self._no_materializations_after_cursor_cache: Dict[AssetKeyPartitionKey, int] = {}
 
+    @property
+    def instance(self) -> "DagsterInstance":
+        return self._instance
+
     def is_asset_in_run(self, run_id: str, asset: Union[AssetKey, AssetKeyPartitionKey]) -> bool:
         run = self._get_run_by_id(run_id=run_id)
         if not run:
@@ -65,7 +69,7 @@ class CachingInstanceQueryer:
         else:
             asset_key = asset
 
-        return asset_key in self._get_planned_materializations_for_run(run_id=run_id)
+        return asset_key in self.get_planned_materializations_for_run(run_id=run_id)
 
     def _get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
         run_record = self._get_run_record_by_id(run_id=run_id)
@@ -85,13 +89,12 @@ class CachingInstanceQueryer:
         self, run_id: str
     ) -> AbstractSet[AssetKey]:
         materializations_planned = self._instance.get_records_for_run(
-            run_id=run_id,
-            of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+            run_id=run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
         ).records
         return set(cast(AssetKey, record.asset_key) for record in materializations_planned)
 
     @cached_method
-    def _get_planned_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
+    def get_planned_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
         run = self._get_run_by_id(run_id=run_id)
         if run is None:
             return set()
@@ -103,7 +106,7 @@ class CachingInstanceQueryer:
             return self._get_planned_materializations_for_run_from_events(run_id=run_id)
 
     @cached_method
-    def _get_current_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
+    def get_current_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
         materializations = self._instance.get_records_for_run(
             run_id=run_id,
             of_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -443,8 +446,8 @@ class CachingInstanceQueryer:
         """Returns the upstream data times that a given asset key will be expected to have at the
         completion of the given run.
         """
-        planned_keys = self._get_planned_materializations_for_run(run_id=run_id)
-        materialized_keys = self._get_current_materializations_for_run(run_id=run_id)
+        planned_keys = self.get_planned_materializations_for_run(run_id=run_id)
+        materialized_keys = self.get_current_materializations_for_run(run_id=run_id)
 
         # if key is not pending materialization within the run, then downstream pending
         # materializations will (in general) read from the current state of the data
