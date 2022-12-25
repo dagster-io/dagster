@@ -1594,7 +1594,7 @@ export type LaunchBackfillParams = {
   fromFailure?: InputMaybe<Scalars['Boolean']>;
   partitionNames?: InputMaybe<Array<Scalars['String']>>;
   reexecutionSteps?: InputMaybe<Array<Scalars['String']>>;
-  selector: PartitionSetSelector;
+  selector?: InputMaybe<PartitionSetSelector>;
   tags?: InputMaybe<Array<ExecutionTag>>;
 };
 
@@ -1998,7 +1998,7 @@ export type PartitionBackfill = {
   numPartitions: Scalars['Int'];
   partitionNames: Array<Scalars['String']>;
   partitionSet: Maybe<PartitionSet>;
-  partitionSetName: Scalars['String'];
+  partitionSetName: Maybe<Scalars['String']>;
   partitionStatuses: PartitionStatuses;
   reexecutionSteps: Maybe<Array<Scalars['String']>>;
   runs: Array<Run>;
@@ -3675,7 +3675,7 @@ export type LaunchAssetCheckUpstreamQueryQuery = { __typename: 'DagitQuery', ass
 export type RunningBackfillsNoticeQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type RunningBackfillsNoticeQueryQuery = { __typename: 'DagitQuery', partitionBackfillsOrError: { __typename: 'PartitionBackfills', results: Array<{ __typename: 'PartitionBackfill', partitionSetName: string, backfillId: string }> } | { __typename: 'PythonError' } };
+export type RunningBackfillsNoticeQueryQuery = { __typename: 'DagitQuery', partitionBackfillsOrError: { __typename: 'PartitionBackfills', results: Array<{ __typename: 'PartitionBackfill', partitionSetName: string | null, backfillId: string }> } | { __typename: 'PythonError' } };
 
 export type PartitionHealthQueryQueryVariables = Exact<{
   assetKey: AssetKeyInput;
@@ -3789,7 +3789,7 @@ export type SingleBackfillQueryQuery = { __typename: 'DagitQuery', partitionBack
 
 export type PartitionStatusesForBackfillFragment = { __typename: 'PartitionStatuses', results: Array<{ __typename: 'PartitionStatus', id: string, partitionName: string, runId: string | null, runStatus: RunStatus | null }> };
 
-export type BackfillTableFragmentFragment = { __typename: 'PartitionBackfill', backfillId: string, status: BulkActionStatus, numCancelable: number, partitionNames: Array<string>, numPartitions: number, timestamp: number, partitionSetName: string, partitionSet: { __typename: 'PartitionSet', id: string, name: string, mode: string, pipelineName: string, repositoryOrigin: { __typename: 'RepositoryOrigin', id: string, repositoryName: string, repositoryLocationName: string } } | null, assetSelection: Array<{ __typename: 'AssetKey', path: Array<string> }> | null, error: { __typename: 'PythonError', message: string, stack: Array<string>, errorChain: Array<{ __typename: 'ErrorChainLink', isExplicitLink: boolean, error: { __typename: 'PythonError', message: string, stack: Array<string> } }> } | null };
+export type BackfillTableFragmentFragment = { __typename: 'PartitionBackfill', backfillId: string, status: BulkActionStatus, numCancelable: number, partitionNames: Array<string>, numPartitions: number, timestamp: number, partitionSetName: string | null, partitionSet: { __typename: 'PartitionSet', id: string, name: string, mode: string, pipelineName: string, repositoryOrigin: { __typename: 'RepositoryOrigin', id: string, repositoryName: string, repositoryLocationName: string } } | null, assetSelection: Array<{ __typename: 'AssetKey', path: Array<string> }> | null, error: { __typename: 'PythonError', message: string, stack: Array<string>, errorChain: Array<{ __typename: 'ErrorChainLink', isExplicitLink: boolean, error: { __typename: 'PythonError', message: string, stack: Array<string> } }> } | null };
 
 export type PartitionSetForBackfillTableFragment = { __typename: 'PartitionSet', id: string, name: string, mode: string, pipelineName: string, repositoryOrigin: { __typename: 'RepositoryOrigin', id: string, repositoryName: string, repositoryLocationName: string } };
 
@@ -3829,7 +3829,7 @@ export type InstanceBackfillsQueryQueryVariables = Exact<{
 }>;
 
 
-export type InstanceBackfillsQueryQuery = { __typename: 'DagitQuery', partitionBackfillsOrError: { __typename: 'PartitionBackfills', results: Array<{ __typename: 'PartitionBackfill', backfillId: string, status: BulkActionStatus, numPartitions: number, timestamp: number, partitionSetName: string, numCancelable: number, partitionNames: Array<string>, partitionSet: { __typename: 'PartitionSet', id: string, name: string, mode: string, pipelineName: string, repositoryOrigin: { __typename: 'RepositoryOrigin', id: string, repositoryName: string, repositoryLocationName: string } } | null, error: { __typename: 'PythonError', message: string, stack: Array<string>, errorChain: Array<{ __typename: 'ErrorChainLink', isExplicitLink: boolean, error: { __typename: 'PythonError', message: string, stack: Array<string> } }> } | null, assetSelection: Array<{ __typename: 'AssetKey', path: Array<string> }> | null }> } | { __typename: 'PythonError', message: string, stack: Array<string>, errorChain: Array<{ __typename: 'ErrorChainLink', isExplicitLink: boolean, error: { __typename: 'PythonError', message: string, stack: Array<string> } }> } };
+export type InstanceBackfillsQueryQuery = { __typename: 'DagitQuery', partitionBackfillsOrError: { __typename: 'PartitionBackfills', results: Array<{ __typename: 'PartitionBackfill', backfillId: string, status: BulkActionStatus, numPartitions: number, timestamp: number, partitionSetName: string | null, numCancelable: number, partitionNames: Array<string>, partitionSet: { __typename: 'PartitionSet', id: string, name: string, mode: string, pipelineName: string, repositoryOrigin: { __typename: 'RepositoryOrigin', id: string, repositoryName: string, repositoryLocationName: string } } | null, error: { __typename: 'PythonError', message: string, stack: Array<string>, errorChain: Array<{ __typename: 'ErrorChainLink', isExplicitLink: boolean, error: { __typename: 'PythonError', message: string, stack: Array<string> } }> } | null, assetSelection: Array<{ __typename: 'AssetKey', path: Array<string> }> | null }> } | { __typename: 'PythonError', message: string, stack: Array<string>, errorChain: Array<{ __typename: 'ErrorChainLink', isExplicitLink: boolean, error: { __typename: 'PythonError', message: string, stack: Array<string> } }> } };
 
 export type InstanceConfigQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -4185,7 +4185,7 @@ export type JobBackfillsQueryQueryVariables = Exact<{
 }>;
 
 
-export type JobBackfillsQueryQuery = { __typename: 'DagitQuery', partitionSetOrError: { __typename: 'PartitionSet', id: string, pipelineName: string, backfills: Array<{ __typename: 'PartitionBackfill', backfillId: string, status: BulkActionStatus, numCancelable: number, partitionNames: Array<string>, numPartitions: number, timestamp: number, partitionSetName: string, partitionSet: { __typename: 'PartitionSet', id: string, name: string, mode: string, pipelineName: string, repositoryOrigin: { __typename: 'RepositoryOrigin', id: string, repositoryName: string, repositoryLocationName: string } } | null, assetSelection: Array<{ __typename: 'AssetKey', path: Array<string> }> | null, error: { __typename: 'PythonError', message: string, stack: Array<string>, errorChain: Array<{ __typename: 'ErrorChainLink', isExplicitLink: boolean, error: { __typename: 'PythonError', message: string, stack: Array<string> } }> } | null }> } | { __typename: 'PartitionSetNotFoundError' } | { __typename: 'PythonError' } };
+export type JobBackfillsQueryQuery = { __typename: 'DagitQuery', partitionSetOrError: { __typename: 'PartitionSet', id: string, pipelineName: string, backfills: Array<{ __typename: 'PartitionBackfill', backfillId: string, status: BulkActionStatus, numCancelable: number, partitionNames: Array<string>, numPartitions: number, timestamp: number, partitionSetName: string | null, partitionSet: { __typename: 'PartitionSet', id: string, name: string, mode: string, pipelineName: string, repositoryOrigin: { __typename: 'RepositoryOrigin', id: string, repositoryName: string, repositoryLocationName: string } } | null, assetSelection: Array<{ __typename: 'AssetKey', path: Array<string> }> | null, error: { __typename: 'PythonError', message: string, stack: Array<string>, errorChain: Array<{ __typename: 'ErrorChainLink', isExplicitLink: boolean, error: { __typename: 'PythonError', message: string, stack: Array<string> } }> } | null }> } | { __typename: 'PartitionSetNotFoundError' } | { __typename: 'PythonError' } };
 
 export type PartitionsStatusQueryQueryVariables = Exact<{
   partitionSetName: Scalars['String'];

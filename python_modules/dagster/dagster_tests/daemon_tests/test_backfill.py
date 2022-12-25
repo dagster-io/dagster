@@ -679,7 +679,7 @@ def test_pure_asset_backfill(instance, workspace_context, external_repo):
     asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
     instance.add_backfill(
         PartitionBackfill.from_asset_partitions(
-            asset_graph=ExternalAssetGraph.from_workspace_request_context(
+            asset_graph=ExternalAssetGraph.from_workspace(
                 workspace_context.create_request_context()
             ),
             backfill_id="backfill_with_asset_selection",
