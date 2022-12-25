@@ -53,6 +53,10 @@ class CachingInstanceQueryer:
         # materialization record for a >= cursor, we don't need to query the instance
         self._no_materializations_after_cursor_cache: Dict[AssetKeyPartitionKey, int] = {}
 
+    @property
+    def instance(self) -> "DagsterInstance":
+        return self._instance
+
     def is_asset_in_run(self, run_id: str, asset: Union[AssetKey, AssetKeyPartitionKey]) -> bool:
         run = self._get_run_by_id(run_id=run_id)
         if not run:
@@ -81,12 +85,11 @@ class CachingInstanceQueryer:
         )
 
     @cached_method
-    def _get_planned_materializations_for_run_from_events(
+    def get_planned_materializations_for_run_from_events(
         self, run_id: str
     ) -> AbstractSet[AssetKey]:
         materializations_planned = self._instance.get_records_for_run(
-            run_id=run_id,
-            of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+            run_id=run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
         ).records
         return set(cast(AssetKey, record.asset_key) for record in materializations_planned)
 
@@ -100,10 +103,10 @@ class CachingInstanceQueryer:
             return run.asset_selection
         else:
             # must resort to querying the event log
-            return self._get_planned_materializations_for_run_from_events(run_id=run_id)
+            return self.get_planned_materializations_for_run_from_events(run_id=run_id)
 
     @cached_method
-    def _get_current_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
+    def get_current_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
         materializations = self._instance.get_records_for_run(
             run_id=run_id,
             of_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -444,7 +447,7 @@ class CachingInstanceQueryer:
         completion of the given run.
         """
         planned_keys = self._get_planned_materializations_for_run(run_id=run_id)
-        materialized_keys = self._get_current_materializations_for_run(run_id=run_id)
+        materialized_keys = self.get_current_materializations_for_run(run_id=run_id)
 
         # if key is not pending materialization within the run, then downstream pending
         # materializations will (in general) read from the current state of the data
