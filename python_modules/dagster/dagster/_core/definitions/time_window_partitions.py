@@ -1180,6 +1180,6 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
 
         return any(
             time_window.start >= included_time_window.start
-            and time_window.start <= included_time_window.end
+            and time_window.start < included_time_window.end
             for included_time_window in self._included_time_windows
         )
