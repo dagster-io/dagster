@@ -1,6 +1,18 @@
 import json
-from typing import AbstractSet, Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Dict,
+    Iterable,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    cast,
+)
 
+from dagster import _check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_reconciliation_sensor import (
@@ -12,7 +24,6 @@ from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
-from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.host_representation.selector import PipelineSelector
 from dagster._core.instance import DagsterInstance
@@ -39,11 +50,8 @@ class AssetBackfillData(NamedTuple):
     failed_asset_partitions: AssetGraphSubset
 
     def is_complete(self) -> bool:
-        return all(
-            len(self.materialized_asset_partitions.get_partitions_subset(asset_key))
-            + len(self.failed_asset_partitions.get_partitions_subset(asset_key))
-            == len(self.target_asset_partitions.get_partitions_subset(asset_key))
-            for asset_key in self.target_asset_partitions.asset_keys
+        return len(self.materialized_asset_partitions) + len(self.failed_asset_partitions) == len(
+            self.target_asset_partitions
         )
 
     def get_target_root_asset_partitions(self) -> Iterable[AssetKeyPartitionKey]:
@@ -52,25 +60,16 @@ class AssetBackfillData(NamedTuple):
             .sources()
             .resolve(self.target_asset_partitions.asset_graph)
         )
-        return [
-            AssetKeyPartitionKey(asset_key, partition_key)
-            for asset_key in root_asset_keys
-            for partition_key in self.target_asset_partitions.get_partitions_subset(
-                asset_key
-            ).get_partition_keys()
-        ]
+        return list((self.target_asset_partitions & root_asset_keys).iterate_asset_partitions())
 
     @classmethod
-    def empty(
-        cls,
-        target_subsets_by_asset_key: Mapping[AssetKey, PartitionsSubset],
-        asset_graph: AssetGraph,
-    ) -> "AssetBackfillData":
+    def empty(cls, target_asset_partitions: AssetGraphSubset) -> "AssetBackfillData":
+        asset_graph = target_asset_partitions.asset_graph
         return cls(
-            target_asset_partitions=AssetGraphSubset(target_subsets_by_asset_key, asset_graph),
+            target_asset_partitions=target_asset_partitions,
             roots_were_requested=False,
-            materialized_asset_partitions=AssetGraphSubset({}, asset_graph),
-            failed_asset_partitions=AssetGraphSubset({}, asset_graph),
+            materialized_asset_partitions=AssetGraphSubset({}, set(), asset_graph),
+            failed_asset_partitions=AssetGraphSubset({}, set(), asset_graph),
             latest_storage_id=None,
         )
 
@@ -243,15 +242,18 @@ def execute_asset_backfill_iteration_inner(
     )
     initial_candidates.update(parent_materialized_asset_partitions)
 
-    recently_materialized_partitions_by_asset_key: Mapping[AssetKey, AbstractSet[str]] = {
-        asset_key: {
-            cast(str, record.partition_key)
-            for record in instance_queryer.get_materialization_records(
-                asset_key=asset_key, after_cursor=asset_backfill_data.latest_storage_id
-            )
-        }
-        for asset_key in asset_backfill_data.target_asset_partitions.asset_keys
-    }
+    recently_materialized_partitions_by_asset_key: Dict[AssetKey, Optional[AbstractSet[str]]] = {}
+    for asset_key in asset_backfill_data.target_asset_partitions.asset_keys:
+        records = instance_queryer.get_materialization_records(
+            asset_key=asset_key, after_cursor=asset_backfill_data.latest_storage_id
+        )
+        if records:
+            if asset_graph.get_partitions_def(asset_key) is not None:
+                recently_materialized_partitions_by_asset_key[asset_key] = {
+                    cast(str, record.partition_key) for record in records
+                }
+            else:
+                recently_materialized_partitions_by_asset_key[asset_key] = None
 
     updated_materialized_asset_partitions = (
         asset_backfill_data.materialized_asset_partitions
@@ -355,7 +357,7 @@ def _get_failed_asset_partitions(
     result: List[AssetKeyPartitionKey] = []
 
     for run in runs:
-        partition_key = run.tags[PARTITION_NAME_TAG]
+        partition_key = run.tags.get(PARTITION_NAME_TAG)
         planned_asset_keys = instance_queryer.get_planned_materializations_for_run_from_events(
             run_id=run.run_id
         )

@@ -1,10 +1,11 @@
 from enum import Enum
-from typing import Dict, Mapping, NamedTuple, Optional, Sequence, cast
+from typing import Dict, Mapping, NamedTuple, Optional, Sequence, Set
 
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster._serdes import whitelist_for_serdes
@@ -186,11 +187,15 @@ class PartitionBackfill(
         tags: Mapping[str, str],
     ) -> "PartitionBackfill":
         target_subsets_by_asset_key: Dict[AssetKey, PartitionsSubset] = {}
+        non_partitioned_asset_keys: Set[AssetKey] = set()
         for asset_key in asset_selection:
-            partitions_def = cast(PartitionsDefinition, asset_graph.get_partitions_def(asset_key))
-            target_subsets_by_asset_key[
-                asset_key
-            ] = partitions_def.empty_subset().with_partition_keys(partition_names)
+            partitions_def = asset_graph.get_partitions_def(asset_key)
+            if partitions_def:
+                target_subsets_by_asset_key[
+                    asset_key
+                ] = partitions_def.empty_subset().with_partition_keys(partition_names)
+            else:
+                non_partitioned_asset_keys.add(asset_key)
 
         return cls(
             backfill_id=backfill_id,
@@ -200,6 +205,8 @@ class PartitionBackfill(
             backfill_timestamp=backfill_timestamp,
             asset_selection=asset_selection,
             serialized_asset_backfill_data=AssetBackfillData.empty(
-                target_subsets_by_asset_key, asset_graph
+                AssetGraphSubset(
+                    target_subsets_by_asset_key, non_partitioned_asset_keys, asset_graph
+                )
             ).serialize(),
         )
