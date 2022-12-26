@@ -72,6 +72,7 @@ def asset(
     freshness_policy: Optional[FreshnessPolicy] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
+    coalesce_backfills: bool = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -99,6 +100,7 @@ def asset(
     freshness_policy: Optional[FreshnessPolicy] = None,
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
+    coalesce_backfills: bool = False,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -159,6 +161,9 @@ def asset(
         code_version (Optional[str]): (Experimental) Version of the code that generates this asset. In
             general, versions should be set only for code that deterministically produces the same
             output when given the same inputs.
+        coalesce_backfills (bool): (Experimental) If True, when backfilling the asset, all partitions
+            will be filled in a single step. If False, a separate step will be launched for each
+            partition. Defaults to false.
 
     Examples:
 
@@ -202,6 +207,7 @@ def asset(
             freshness_policy=freshness_policy,
             retry_policy=retry_policy,
             code_version=code_version,
+            coalesce_backfills=coalesce_backfills,
         )(fn)
 
     return inner
@@ -229,6 +235,7 @@ class _Asset:
         freshness_policy: Optional[FreshnessPolicy] = None,
         retry_policy: Optional[RetryPolicy] = None,
         code_version: Optional[str] = None,
+        coalesce_backfills: bool = False,
     ):
         self.name = name
 
@@ -254,6 +261,7 @@ class _Asset:
         self.freshness_policy = freshness_policy
         self.retry_policy = retry_policy
         self.code_version = code_version
+        self.coalesce_backfills = coalesce_backfills
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -330,6 +338,7 @@ class _Asset:
             freshness_policies_by_key={out_asset_key: self.freshness_policy}
             if self.freshness_policy
             else None,
+            coalesce_backfills=self.coalesce_backfills,
         )
 
 

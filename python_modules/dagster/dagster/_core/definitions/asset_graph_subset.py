@@ -57,6 +57,12 @@ class AssetGraphSubset:
 
         return AssetGraphSubset(result_partition_subsets_by_asset_key, self.asset_graph)
 
+    def __and__(self, other: "AssetGraphSubset") -> "AssetGraphSubset":
+        ...
+
+    def __sub__(self, other: "AssetGraphSubset") -> "AssetGraphSubset":
+        ...
+
     @classmethod
     def from_asset_partition_set(
         cls, asset_partitions_set: AbstractSet[AssetKeyPartitionKey], asset_graph: AssetGraph

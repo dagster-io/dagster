@@ -86,6 +86,7 @@ class AssetsDefinition(ResourceAddable):
     _metadata_by_key: Mapping[AssetKey, MetadataUserInput]
     _freshness_policies_by_key: Mapping[AssetKey, FreshnessPolicy]
     _code_versions_by_key: Mapping[AssetKey, Optional[str]]
+    _coalesce_backfills: bool
 
     def __init__(
         self,
@@ -102,6 +103,7 @@ class AssetsDefinition(ResourceAddable):
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         metadata_by_key: Optional[Mapping[AssetKey, MetadataUserInput]] = None,
         freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]] = None,
+        coalesce_backfills: bool = False
         # if adding new fields, make sure to handle them in the with_prefix_or_group
         # and from_graph methods
     ):
@@ -199,6 +201,8 @@ class AssetsDefinition(ResourceAddable):
             key_type=AssetKey,
             value_type=FreshnessPolicy,
         )
+
+        self._coalesce_backfills = check.bool_param(coalesce_backfills, "coalesce_backfills")
 
         _validate_self_deps(
             input_keys=self._keys_by_input_name.values(),
@@ -464,6 +468,11 @@ class AssetsDefinition(ResourceAddable):
 
     @public  # type: ignore
     @property
+    def coalesce_backfills(self) -> bool:
+        return self._coalesce_backfills
+
+    @public  # type: ignore
+    @property
     def group_names_by_key(self) -> Mapping[AssetKey, str]:
         return self._group_names_by_key
 
@@ -682,6 +691,7 @@ class AssetsDefinition(ResourceAddable):
                 for key, value in self.metadata_by_key.items()
             },
             freshness_policies_by_key=replaced_freshness_policies_by_key,
+            coalesce_backfills=self.coalesce_backfills,
         )
 
     def _subset_graph_backed_asset(
@@ -790,6 +800,7 @@ class AssetsDefinition(ResourceAddable):
                 group_names_by_key=self.group_names_by_key,
                 metadata_by_key=self.metadata_by_key,
                 freshness_policies_by_key=self.freshness_policies_by_key,
+                coalesce_backfills=self.coalesce_backfills,
             )
         else:
             # multi_asset subsetting
@@ -807,6 +818,7 @@ class AssetsDefinition(ResourceAddable):
                 group_names_by_key=self.group_names_by_key,
                 metadata_by_key=self.metadata_by_key,
                 freshness_policies_by_key=self.freshness_policies_by_key,
+                coalesce_backfills=self.coalesce_backfills,
             )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
@@ -906,6 +918,7 @@ class AssetsDefinition(ResourceAddable):
             group_names_by_key=self.group_names_by_key,
             metadata_by_key=self.metadata_by_key,
             freshness_policies_by_key=self.freshness_policies_by_key,
+            coalesce_backfills=self.coalesce_backfills,
         )
 
 

@@ -855,6 +855,7 @@ class ExternalAssetNode(
             ("freshness_policy", Optional[FreshnessPolicy]),
             ("is_source", bool),
             ("is_observable", bool),
+            ("coalesce_backfills", bool),
             # If a set of assets can't be materialized independently from each other, they will all
             # have the same atomic_execution_unit_id. This ID should be stable across reloads and
             # unique deployment-wide.
@@ -889,6 +890,7 @@ class ExternalAssetNode(
         is_source: Optional[bool] = None,
         is_observable: bool = False,
         atomic_execution_unit_id: Optional[str] = None,
+        coalesce_backfills: bool = False,
     ):
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
@@ -936,6 +938,7 @@ class ExternalAssetNode(
             atomic_execution_unit_id=check.opt_str_param(
                 atomic_execution_unit_id, "atomic_execution_unit_id"
             ),
+            coalesce_backfills=check.bool_param(coalesce_backfills, "coalesce_backfills"),
         )
 
 
@@ -1146,6 +1149,7 @@ def external_asset_graph_from_defs(
                 group_name=group_name_by_asset_key.get(asset_key, DEFAULT_GROUP_NAME),
                 freshness_policy=freshness_policy_by_asset_key.get(asset_key),
                 atomic_execution_unit_id=atomic_execution_unit_ids_by_asset_key.get(asset_key),
+                coalesce_backfills=coalesce_backfills_by_asset_key[asset_key],
             )
         )
 

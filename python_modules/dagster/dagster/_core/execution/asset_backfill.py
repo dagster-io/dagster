@@ -297,7 +297,7 @@ def execute_asset_backfill_iteration_inner(
 
 def should_backfill_atomic_asset_partitions_unit(
     asset_graph: ExternalAssetGraph,
-    candidates_unit: Iterable[AssetKeyPartitionKey],
+    candidates_unit: AssetGraphSubset,
     asset_partitions_to_request: AbstractSet[AssetKeyPartitionKey],
     target_asset_partitions: AssetGraphSubset,
     materialized_asset_partitions: AssetGraphSubset,
@@ -308,15 +308,21 @@ def should_backfill_atomic_asset_partitions_unit(
         candidates_unit: A set of asset partitions that must all be materialized if any is
             materialized.
     """
-    for candidate in candidates_unit:
-        if (
-            candidate not in target_asset_partitions
-            or candidate in failed_asset_partitions
-            or candidate in materialized_asset_partitions
-        ):
-            return False
+    candidates_unit &= target_asset_partitions
+    candidates_unit -= failed_asset_partitions
+    candidates_unit -= materialized_asset_partitions
 
-        for parent in asset_graph.get_parents_partitions(*candidate):
+    # if it's coalesced and the backfill targets any asset partitions that are not included in the
+    # unit, reject the whole unit
+    if coalesced and targeted_by_backfill(candidates_unit.asset_keys) != candidates_unit:
+        return AssetGraphSubset.empty()
+
+    for asset_key in candidates_unit.asset_keys:
+        for parent in asset_graph.get_parents(asset_key):
+            # assume that all candidates in a unit live in the same repository
+            if repositories_different_for_any_parents:
+                return AssetGraphSubset.empty()
+
             can_run_with_parent = (
                 parent in asset_partitions_to_request
                 and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
@@ -325,12 +331,23 @@ def should_backfill_atomic_asset_partitions_unit(
                 is asset_graph.get_repository_handle(parent.asset_key)
             )
 
-            if (
-                parent in target_asset_partitions
-                and not can_run_with_parent
-                and parent not in materialized_asset_partitions
-            ):
-                return False
+            if parent == asset_key:
+                """
+                Handle the gnarly self-dep situation
+                """
+
+            parent_asset_partitions: AssetGraphSubset = ...
+            target_parents = target_asset_partitions & parent_asset_partitions
+
+            target_absent_parents: AssetGraphSubset = (
+                targeted_parents - materialized_asset_partitions - asset_partitions_to_request
+            )
+
+            children_of_target_absent_parents = target_absent_parents.get_children(asset_key)
+            candidates_unit -= children_of_target_absent_parents
+
+            if empty:
+                return empty
 
     return True
 
