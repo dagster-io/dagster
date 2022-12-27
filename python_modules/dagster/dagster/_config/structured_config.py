@@ -220,6 +220,7 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     return Field(
         config=_config_type_for_pydantic_field(pydantic_field),
         description=pydantic_field.field_info.description,
+        is_required=_is_pydantic_field_required(pydantic_field),
         default_value=pydantic_field.default
         if pydantic_field.default
         else FIELD_NO_DEFAULT_PROVIDED,
@@ -238,6 +239,18 @@ def _config_type_for_pydantic_field(pydantic_field: ModelField):
         return BoolSource
     else:
         return convert_potential_field(potential_dagster_type).config_type
+
+
+def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
+    # required is of type BoolUndefined = Union[bool, UndefinedType] in Pydantic
+    if isinstance(pydantic_field.required, bool):
+        return pydantic_field.required
+
+    raise Exception(
+        "pydantic.field.required is their UndefinedType sentinel value which we "
+        "do not fully understand the semantics of right now. For the time being going "
+        "to throw an error to figure see when we actually encounter this state."
+    )
 
 
 class StructuredIOManagerAdapter(StructuredConfigIOManagerBase):
