@@ -1,6 +1,7 @@
 import sys
 from typing import Optional
 
+import pydantic
 import pytest
 from pydantic import BaseModel
 
@@ -480,3 +481,12 @@ def test_optional_int_source_default():
     assert print_config_type_to_string(
         {"an_int": dagster.Field(IntSource, is_required=False)}
     ) == print_config_type_to_string(infer_schema_from_config_class(OptionalInt).config_type)
+
+
+def test_schema_aliased_field():
+    class ConfigWithSchema(Config):
+        aliased_schema: str = pydantic.Field(alias="schema")
+
+    assert print_config_type_to_string(
+        {"schema": dagster.Field(StringSource)}
+    ) == print_config_type_to_string(infer_schema_from_config_class(ConfigWithSchema).config_type)
