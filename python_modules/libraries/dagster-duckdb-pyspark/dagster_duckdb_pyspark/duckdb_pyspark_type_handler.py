@@ -1,7 +1,10 @@
-from typing import Optional
-
 import pyspark
-from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckdb_io_manager
+from dagster_duckdb.io_manager import (
+    DuckDbClient,
+    DuckDbIOManagerConfigSchema,
+    _connect_duckdb,
+    build_duckdb_io_manager,
+)
 from pyspark.sql import SparkSession
 
 from dagster import (
@@ -141,9 +144,7 @@ Examples:
 """
 
 
-class DuckDbPySparkIOManager(StructuredIOManagerAdapter):
-    database: str
-    schema: Optional[str]
-
+class DuckDbPySparkIOManager(DuckDbIOManagerConfigSchema, StructuredIOManagerAdapter):
+    @property
     def wrapped_io_manager(self) -> IOManagerDefinition:
         return duckdb_pyspark_io_manager
