@@ -462,6 +462,10 @@ two_assets_in_sequence_one_partition = [
     asset_def("asset1", partitions_def=one_partition_partitions_def),
     asset_def("asset2", ["asset1"], partitions_def=one_partition_partitions_def),
 ]
+two_assets_in_sequence_two_partitions = [
+    asset_def("asset1", partitions_def=two_partitions_partitions_def),
+    asset_def("asset2", ["asset1"], partitions_def=two_partitions_partitions_def),
+]
 
 two_assets_in_sequence_fan_in_partitions = [
     asset_def("asset1", partitions_def=fanned_out_partitions_def),
@@ -666,6 +670,14 @@ scenarios = {
         assets=two_assets_in_sequence_one_partition,
         unevaluated_runs=[run(["asset1", "asset2"], partition_key="a")],
         expected_run_requests=[],
+    ),
+    "two_assets_both_upstream_partitions_materialized": AssetReconciliationScenario(
+        assets=two_assets_in_sequence_two_partitions,
+        unevaluated_runs=[run(["asset1"], partition_key="a"), run(["asset1"], partition_key="b")],
+        expected_run_requests=[
+            run_request(asset_keys=["asset2"], partition_key="a"),
+            run_request(asset_keys=["asset2"], partition_key="b"),
+        ],
     ),
     "parent_one_partition_one_run": AssetReconciliationScenario(
         assets=two_assets_in_sequence_one_partition,
