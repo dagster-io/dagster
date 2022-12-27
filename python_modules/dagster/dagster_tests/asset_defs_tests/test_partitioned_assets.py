@@ -39,6 +39,9 @@ from dagster._core.test_utils import assert_namedtuple_lists_equal
 @pytest.fixture(autouse=True)
 def check_experimental_warnings():
     with warnings.catch_warnings(record=True) as record:
+        # turn off any outer warnings filters
+        warnings.resetwarnings()
+
         yield
 
         for w in record:
