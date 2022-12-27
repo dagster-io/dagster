@@ -219,18 +219,29 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     if potential_dagster_type is str:
         inner_config_type = StringSource
     elif potential_dagster_type is int:
-        inner_config_type = IntSource # type: ignore
+        inner_config_type = IntSource  # type: ignore
     elif potential_dagster_type is bool:
-        inner_config_type = BoolSource # type: ignore
+        inner_config_type = BoolSource  # type: ignore
     else:
         inner_config_type = convert_potential_field(potential_dagster_type).config_type
 
     return Field(
         config=inner_config_type,
         description=pydantic_field.field_info.description,
+        is_required=_is_pydantic_field_required(pydantic_field),
         default_value=pydantic_field.default
         if pydantic_field.default
         else FIELD_NO_DEFAULT_PROVIDED,
+    )
+
+
+def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
+    # required is BoolUndefined = Union[bool, UndefinedType] in Pydantic
+    if isinstance(pydantic_field.required, bool):
+        return pydantic_field.required
+
+    raise Exception(
+        "pydantic.field.required is their UndefinedType sentinel value which we do not fully understand the semantics right now. For the time being going to throw an error to figure see when we actually encounter this state."
     )
 
 

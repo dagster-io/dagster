@@ -1,8 +1,10 @@
 import sys
+from typing import Optional
 
 import pytest
 from pydantic import BaseModel
 
+import dagster
 from dagster import AssetOut
 from dagster import _check as check
 from dagster import asset, job, multi_asset, op, validate_run_config
@@ -449,3 +451,32 @@ def test_string_source_default():
     assert print_config_type_to_string({"a_str": StringSource}) == print_config_type_to_string(
         infer_schema_from_config_class(RawStringConfigSchema).config_type
     )
+
+
+def test_optional_string_source_default():
+    class RawStringConfigSchema(Config):
+        a_str: Optional[str]
+
+    assert print_config_type_to_string(
+        {"a_str": dagster.Field(StringSource, is_required=False)}
+    ) == print_config_type_to_string(
+        infer_schema_from_config_class(RawStringConfigSchema).config_type
+    )
+
+
+def test_int_source_default():
+    class IntSchema(Config):
+        an_int: int
+
+    assert print_config_type_to_string(
+        {"an_int": dagster.Field(IntSource)}
+    ) == print_config_type_to_string(infer_schema_from_config_class(IntSchema).config_type)
+
+
+def test_optional_int_source_default():
+    class OptionalInt(Config):
+        an_int: Optional[int]
+
+    assert print_config_type_to_string(
+        {"an_int": dagster.Field(IntSource, is_required=False)}
+    ) == print_config_type_to_string(infer_schema_from_config_class(OptionalInt).config_type)
