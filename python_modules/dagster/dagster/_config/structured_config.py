@@ -1,6 +1,9 @@
 import inspect
 
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
+from dagster._core.execution.context.input import InputContext
+from dagster._core.execution.context.output import OutputContext
+from dagster._utils.cached_method import cached_method
 
 try:
     from functools import cached_property
@@ -221,6 +224,20 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
         if pydantic_field.default
         else FIELD_NO_DEFAULT_PROVIDED,
     )
+
+
+class StructuredIOManagerAdapter(StructuredConfigIOManagerBase):
+    @property
+    @abstractmethod
+    def wrapped_io_manager(self) -> IOManagerDefinition:
+        raise NotImplementedError()
+
+    def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
+        raise Exception("called?")
+
+    @property
+    def resource_fn(self) -> ResourceFunction:
+        return self.wrapped_io_manager.resource_fn
 
 
 def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any) -> Field:
