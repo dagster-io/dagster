@@ -1,9 +1,10 @@
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
 import duckdb
 import pydantic
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
+from dagster._config.structured_config import Config, infer_schema_from_config_class
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
@@ -12,7 +13,6 @@ from dagster._core.storage.db_io_manager import (
     TableSlice,
 )
 from dagster._utils.backoff import backoff
-from dagster._config.structured_config import Config, infer_schema_from_config_class
 
 DUCKDB_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 

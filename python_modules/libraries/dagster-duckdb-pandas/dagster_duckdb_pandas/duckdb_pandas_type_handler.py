@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pandas as pd
 from dagster_duckdb.io_manager import (
     DuckDbClient,
@@ -156,5 +154,6 @@ class ConfiguredIOManagerAdapter(IOManagerDefinition):
 
 
 class DuckDbPandasIOManager(DuckDbIOManagerConfigSchema, StructuredIOManagerAdapter):
+    @property
     def wrapped_io_manager(self) -> IOManagerDefinition:
         return duckdb_pandas_io_manager
