@@ -28,6 +28,7 @@ from dagster import (
     job,
     op,
 )
+from dagster._config.field_utils import EnvVar
 from dagster._core.storage.db_io_manager import TableSlice
 
 resource_config = {
@@ -218,9 +219,9 @@ def test_newstyle_io_manager_with_snowflake_pandas():
         @job(
             resource_defs={
                 "snowflake": SnowflakePandasIOManager(
-                    account=os.getenv("SNOWFLAKE_ACCOUNT", ""),
+                    account=EnvVar("SNOWFLAKE_ACCOUNT"),
                     user="BUILDKITE",
-                    password=os.getenv("SNOWFLAKE_BUILDKITE_PASSWORD", ""),
+                    password=EnvVar("SNOWFLAKE_BUILDKITE_PASSWORD"),
                     database="TEST_SNOWFLAKE_IO_MANAGER",
                 )
             },
