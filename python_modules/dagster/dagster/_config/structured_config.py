@@ -223,6 +223,22 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     )
 
 
+class StructuredIOManagerAdapter(StructuredConfigIOManagerBase):
+    @property
+    @abstractmethod
+    def wrapped_io_manager(self) -> IOManagerDefinition:
+        raise NotImplementedError()
+
+    def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
+        raise NotImplementedError(
+            "Because we override resource_fn in the adapter, this is never called."
+        )
+
+    @property
+    def resource_fn(self) -> ResourceFunction:
+        return self.wrapped_io_manager.resource_fn
+
+
 def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any) -> Field:
     """
     Parses a structured config class or primitive type and returns a corresponding Dagster config Field.
