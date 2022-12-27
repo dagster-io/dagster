@@ -11,6 +11,7 @@ from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler, snowflake_pandas_io_manager
 from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
+    SnowflakePandasIOManager,
     _convert_string_to_timestamp,
     _convert_timestamp_to_string,
 )
@@ -179,6 +180,49 @@ def test_io_manager_with_snowflake_pandas():
                         }
                     }
                 }
+            },
+        )
+        def io_manager_test_pipeline():
+            read_pandas_df(emit_pandas_df())
+
+        res = io_manager_test_pipeline.execute_in_process()
+        assert res.success
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+def test_newstyle_io_manager_with_snowflake_pandas():
+    with temporary_snowflake_table(
+        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
+        db_name="TEST_SNOWFLAKE_IO_MANAGER",
+        column_str="foo string, quux integer",
+    ) as table_name:
+
+        # Create a job with the temporary table name as an output, so that it will write to that table
+        # and not interfere with other runs of this test
+
+        @op(
+            out={
+                table_name: Out(
+                    io_manager_key="snowflake", metadata={"schema": "SNOWFLAKE_IO_MANAGER_SCHEMA"}
+                )
+            }
+        )
+        def emit_pandas_df(_):
+            return pandas.DataFrame({"foo": ["bar", "baz"], "quux": [1, 2]})
+
+        @op
+        def read_pandas_df(df: pandas.DataFrame):
+            assert set(df.columns) == {"foo", "quux"}
+            assert len(df.index) == 2
+
+        @job(
+            resource_defs={
+                "snowflake": SnowflakePandasIOManager(
+                    account=os.getenv("SNOWFLAKE_ACCOUNT", ""),
+                    user="BUILDKITE",
+                    password=os.getenv("SNOWFLAKE_BUILDKITE_PASSWORD", ""),
+                    database="TEST_SNOWFLAKE_IO_MANAGER",
+                )
             },
         )
         def io_manager_test_pipeline():
