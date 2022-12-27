@@ -111,6 +111,9 @@ def asset(
     about the upstream assets it depends on. The upstream assets are inferred from the arguments
     to the decorated function. The name of the argument designates the name of the upstream asset.
 
+    An asset has an op inside it to represent the function that computes it. The name of the op
+    will be the segments of the asset key, separated by double-underscores.
+
     Args:
         name (Optional[str]): The name of the asset.  If not provided, defaults to the name of the
             decorated function. The asset's name must be a valid name in dagster (ie only contains
