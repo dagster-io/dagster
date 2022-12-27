@@ -219,9 +219,9 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     if potential_dagster_type is str:
         inner_config_type = StringSource
     elif potential_dagster_type is int:
-        inner_config_type = IntSource
+        inner_config_type = IntSource # type: ignore
     elif potential_dagster_type is bool:
-        inner_config_type = BoolSource
+        inner_config_type = BoolSource # type: ignore
     else:
         inner_config_type = convert_potential_field(potential_dagster_type).config_type
 
