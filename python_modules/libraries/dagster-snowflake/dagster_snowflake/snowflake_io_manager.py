@@ -25,11 +25,13 @@ class SnowflakeIOManagerConfigSchema(Config):
     )
     user: str = pydantic.Field(description="User login name.")
     password: str = pydantic.Field(description="User password.")
-    warehouse: Optional[str] = pydantic.Field(description="Name of the warehouse to use.")
-    aliased_schema: Optional[str] = pydantic.Field(
-        alias="schema", description="Name of the schema to use"
+    warehouse: Optional[str] = pydantic.Field(
+        default=None, description="Name of the warehouse to use."
     )
-    role: Optional[str] = pydantic.Field(description="Name of the role to use")
+    aliased_schema: Optional[str] = pydantic.Field(
+        default=None, alias="schema", description="Name of the schema to use"
+    )
+    role: Optional[str] = pydantic.Field(default=None, description="Name of the role to use")
 
 
 def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManagerDefinition:
