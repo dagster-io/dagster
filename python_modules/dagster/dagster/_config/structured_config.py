@@ -1,5 +1,6 @@
 import inspect
 
+from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 
 try:
@@ -209,11 +210,21 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
             pydantic_field.type_, description=pydantic_field.field_info.description
         )
 
-    dagster_type = pydantic_field.type_
     if pydantic_field.shape != SHAPE_SINGLETON:
         raise NotImplementedError(f"Pydantic shape {pydantic_field.shape} not supported")
 
-    inner_config_type = convert_potential_field(dagster_type).config_type
+    potential_dagster_type = pydantic_field.type_
+
+    # special case raw python literals to their source equivalents
+    if potential_dagster_type is str:
+        inner_config_type = StringSource
+    elif potential_dagster_type is int:
+        inner_config_type = IntSource
+    elif potential_dagster_type is bool:
+        inner_config_type = BoolSource
+    else:
+        inner_config_type = convert_potential_field(potential_dagster_type).config_type
+
     return Field(
         config=inner_config_type,
         description=pydantic_field.field_info.description,
