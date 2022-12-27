@@ -10,7 +10,7 @@ except ImportError:
         pass
 
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from typing import Any, Optional, Type, cast
 
 from pydantic import BaseModel
@@ -146,8 +146,7 @@ class StructuredResourceAdapter(Resource, ABC):
                 return writer_resource
     """
 
-    @property
-    @abstractmethod
+    @abstractproperty
     def wrapped_resource(self) -> ResourceDefinition:
         raise NotImplementedError()
 
@@ -224,8 +223,7 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
 
 
 class StructuredIOManagerAdapter(StructuredConfigIOManagerBase):
-    @property
-    @abstractmethod
+    @abstractproperty
     def wrapped_io_manager(self) -> IOManagerDefinition:
         raise NotImplementedError()
 
