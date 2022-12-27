@@ -12,7 +12,7 @@ from dagster import (
 )
 from dagster._core.definitions.partition import DefaultPartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partition_mapping import SingleDimensionToMultiPartitionMapping
+from dagster._core.definitions.partition_mapping import SingleDimensionDependencyMapping
 
 
 def test_get_downstream_partitions_single_key_in_range():
@@ -21,7 +21,7 @@ def test_get_downstream_partitions_single_key_in_range():
         {"abc": upstream_partitions_def, "123": StaticPartitionsDefinition(["1", "2", "3"])}
     )
 
-    result = SingleDimensionToMultiPartitionMapping(
+    result = SingleDimensionDependencyMapping(
         partition_dimension_name="abc"
     ).get_downstream_partitions_for_partition_subset(
         upstream_partition_key_subset=PartitionKeyRange("a", "a"),
@@ -41,7 +41,7 @@ def test_get_downstream_partitions_single_key_in_range():
         {"abc": upstream_partitions_def, "xyz": StaticPartitionsDefinition(["x", "y", "z"])}
     )
 
-    result = SingleDimensionToMultiPartitionMapping(
+    result = SingleDimensionDependencyMapping(
         partition_dimension_name="abc"
     ).get_downstream_partitions_for_partition_subset(
         upstream_partition_key_subset=PartitionKeyRange("b", "b"),
@@ -64,7 +64,7 @@ def test_get_downstream_partitions_multiple_keys_in_range():
         {"abc": upstream_partitions_def, "123": StaticPartitionsDefinition(["1", "2", "3"])}
     )
 
-    result = SingleDimensionToMultiPartitionMapping(
+    result = SingleDimensionDependencyMapping(
         partition_dimension_name="abc"
     ).get_downstream_partitions_for_partition_subset(
         upstream_partition_key_subset=PartitionKeyRange("a", "b"),
@@ -90,7 +90,7 @@ def test_get_upstream_single_dimension_to_multi_partition_mapping():
         {"abc": upstream_partitions_def, "123": StaticPartitionsDefinition(["1", "2", "3"])}
     )
 
-    result = SingleDimensionToMultiPartitionMapping(
+    result = SingleDimensionDependencyMapping(
         partition_dimension_name="abc"
     ).get_upstream_partitions_for_partition_subset(
         PartitionKeyRange(
@@ -101,7 +101,7 @@ def test_get_upstream_single_dimension_to_multi_partition_mapping():
     )
     assert result == DefaultPartitionsSubset(upstream_partitions_def, {"a"})
 
-    result = SingleDimensionToMultiPartitionMapping(
+    result = SingleDimensionDependencyMapping(
         partition_dimension_name="abc"
     ).get_upstream_partitions_for_partition_subset(
         DefaultPartitionsSubset(

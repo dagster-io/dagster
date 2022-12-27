@@ -1,8 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import NamedTuple, Optional
-
-import dagster._check as check
-from dagster._annotations import public
 from typing import NamedTuple, Optional, Union, cast
 
 import dagster._check as check
@@ -224,11 +220,14 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
 
 
 @experimental
-class SingleDimensionToMultiPartitionMapping(PartitionMapping):
+class SingleDimensionDependencyMapping(PartitionMapping):
     """
     Defines a correspondence between an upstream single-dimensional partitions definition
     and a downstream MultiPartitionsDefinition. The upstream partitions definition must be
     a dimension of the downstream MultiPartitionsDefinition.
+
+    For an upstream partition key X, this partition mapping assumes that any downstream
+    multi-partition key with X in the selected dimension is a downstream dependency.
 
     Args:
         partition_dimension_name (str): The name of the partition dimension in the downstream
@@ -288,9 +287,6 @@ class SingleDimensionToMultiPartitionMapping(PartitionMapping):
         downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionKeyRange:
-        """
-        TODO docstring
-        """
         raise NotImplementedError()
 
     def get_upstream_partitions_for_partition_subset(
