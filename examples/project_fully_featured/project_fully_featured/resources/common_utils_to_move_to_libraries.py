@@ -2,8 +2,6 @@ from typing import Optional
 
 from dagster_aws.s3.utils import construct_s3_client
 
-from dagster import io_manager
-
 
 def build_s3_session(
     *,
@@ -20,11 +18,3 @@ def build_s3_session(
         endpoint_url=endpoint_url,
         profile_name=profile_name,
     )
-
-
-def deferred_io_manager(func):
-    @io_manager
-    def _a_io_manager(_):
-        return func()
-
-    return _a_io_manager
