@@ -715,10 +715,6 @@
         "path": "/guides/experimental-features",
         "children": [
           {
-            "title": "Versioning and memoization",
-            "path": "/guides/dagster/memoization"
-          },
-          {
             "title": "Using custom run coordinators",
             "path": "/guides/dagster/run-attribution"
           },
@@ -807,7 +803,7 @@
             "path": "/_apidocs/dynamic"
           },
           {
-            "title": "Versioning & Memoization",
+            "title": "Job Versioning & Memoization (Deprecated)",
             "path": "/_apidocs/memoization"
           },
           {

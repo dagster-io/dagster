@@ -194,9 +194,10 @@ def job(
             How this Job will be executed. Defaults to :py:class:`multiprocess_executor` .
         op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops in this job.
             Only used if retry policy is not defined on the op definition or op invocation.
-        version_strategy (Optional[VersionStrategy]):
+        version_strategy (Optional[VersionStrategy]): (Deprecated)
             Defines how each op (and optionally, resource) in the job can be versioned. If
-            provided, memoization will be enabled for this job.
+            provided, memoization will be enabled for this job. This is deprecated in favor of asset
+            versioning.
         partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition keys
             that can parameterize the job. If this argument is supplied, the config argument
             can't also be supplied.
