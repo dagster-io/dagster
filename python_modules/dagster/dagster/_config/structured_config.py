@@ -1,7 +1,5 @@
 import inspect
 
-import pydantic
-
 from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 
