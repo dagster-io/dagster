@@ -257,8 +257,6 @@ def test_wrapping_function_resource():
 
 
 def test_io_manager_adapter():
-    assert StructuredIOManagerAdapter
-
     class AnIOManager(IOManager):
         def __init__(self, a_config_value: str):
             self.a_config_value = a_config_value
