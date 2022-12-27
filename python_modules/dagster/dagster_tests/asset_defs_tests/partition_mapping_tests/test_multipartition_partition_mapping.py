@@ -1,14 +1,9 @@
 from datetime import datetime
 
 from dagster import (
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
-    MonthlyPartitionsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
-    TimeWindowPartitionsDefinition,
-    WeeklyPartitionsDefinition,
 )
 from dagster._core.definitions.partition import DefaultPartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -23,10 +18,11 @@ def test_get_downstream_partitions_single_key_in_range():
 
     result = SingleDimensionDependencyMapping(
         partition_dimension_name="abc"
-    ).get_downstream_partitions_for_partition_subset(
-        upstream_partition_key_subset=PartitionKeyRange("a", "a"),
+    ).get_downstream_partitions_for_partitions(
+        upstream_partitions_subset=upstream_partitions_def.empty_subset().with_partition_key_range(
+            PartitionKeyRange("a", "a")
+        ),
         downstream_partitions_def=downstream_partitions_def,
-        upstream_partitions_def=upstream_partitions_def,
     )
     assert result == DefaultPartitionsSubset(
         downstream_partitions_def,
@@ -43,10 +39,11 @@ def test_get_downstream_partitions_single_key_in_range():
 
     result = SingleDimensionDependencyMapping(
         partition_dimension_name="abc"
-    ).get_downstream_partitions_for_partition_subset(
-        upstream_partition_key_subset=PartitionKeyRange("b", "b"),
+    ).get_downstream_partitions_for_partitions(
+        upstream_partitions_subset=upstream_partitions_def.empty_subset().with_partition_key_range(
+            PartitionKeyRange("b", "b")
+        ),
         downstream_partitions_def=downstream_partitions_def,
-        upstream_partitions_def=upstream_partitions_def,
     )
     assert result == DefaultPartitionsSubset(
         downstream_partitions_def,
@@ -66,10 +63,11 @@ def test_get_downstream_partitions_multiple_keys_in_range():
 
     result = SingleDimensionDependencyMapping(
         partition_dimension_name="abc"
-    ).get_downstream_partitions_for_partition_subset(
-        upstream_partition_key_subset=PartitionKeyRange("a", "b"),
+    ).get_downstream_partitions_for_partitions(
+        upstream_partitions_subset=upstream_partitions_def.empty_subset().with_partition_key_range(
+            PartitionKeyRange("a", "b")
+        ),
         downstream_partitions_def=downstream_partitions_def,
-        upstream_partitions_def=upstream_partitions_def,
     )
     assert result == DefaultPartitionsSubset(
         downstream_partitions_def,
@@ -92,18 +90,20 @@ def test_get_upstream_single_dimension_to_multi_partition_mapping():
 
     result = SingleDimensionDependencyMapping(
         partition_dimension_name="abc"
-    ).get_upstream_partitions_for_partition_subset(
-        PartitionKeyRange(
-            MultiPartitionKey({"abc": "a", "123": "1"}), MultiPartitionKey({"abc": "a", "123": "1"})
+    ).get_upstream_partitions_for_partitions(
+        downstream_partitions_def.empty_subset().with_partition_key_range(
+            PartitionKeyRange(
+                MultiPartitionKey({"abc": "a", "123": "1"}),
+                MultiPartitionKey({"abc": "a", "123": "1"}),
+            )
         ),
-        downstream_partitions_def,
         upstream_partitions_def,
     )
     assert result == DefaultPartitionsSubset(upstream_partitions_def, {"a"})
 
     result = SingleDimensionDependencyMapping(
         partition_dimension_name="abc"
-    ).get_upstream_partitions_for_partition_subset(
+    ).get_upstream_partitions_for_partitions(
         DefaultPartitionsSubset(
             downstream_partitions_def,
             {
@@ -111,7 +111,6 @@ def test_get_upstream_single_dimension_to_multi_partition_mapping():
                 MultiPartitionKey({"abc": "a", "123": "2"}),
             },
         ),
-        downstream_partitions_def,
         upstream_partitions_def,
     )
     assert result == DefaultPartitionsSubset(upstream_partitions_def, {"a", "b"})

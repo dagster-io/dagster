@@ -263,23 +263,7 @@ class SingleDimensionDependencyMapping(PartitionMapping):
         downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionKeyRange:
-        if downstream_partition_key_range is None:
-            check.failed("Must provide downstream partition key range")
-        if not (
-            isinstance(downstream_partition_key_range.start, MultiPartitionKey)
-            and isinstance(downstream_partition_key_range.end, MultiPartitionKey)
-        ):
-            check.failed(
-                "Start and end fields of downstream partition key range must be MultiPartitionKeys"
-            )
-
-        range_start = cast(MultiPartitionKey, downstream_partition_key_range.start)
-        range_end = cast(MultiPartitionKey, downstream_partition_key_range.end)
-
-        return PartitionKeyRange(
-            range_start.keys_by_dimension[self.partition_dimension_name],
-            range_end.keys_by_dimension[self.partition_dimension_name],
-        )
+        raise NotImplementedError()
 
     def get_downstream_partitions_for_partition_range(
         self,
@@ -289,49 +273,32 @@ class SingleDimensionDependencyMapping(PartitionMapping):
     ) -> PartitionKeyRange:
         raise NotImplementedError()
 
-    def get_upstream_partitions_for_partition_subset(
+    def get_upstream_partitions_for_partitions(
         self,
-        downstream_partition_key_subset: Optional[Union[PartitionKeyRange, PartitionsSubset]],
-        downstream_partitions_def: Optional[PartitionsDefinition],
+        downstream_partitions_subset: Optional[PartitionsSubset],
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionsSubset:
-        if downstream_partitions_def is None or downstream_partition_key_subset is None:
+        if downstream_partitions_subset is None or not isinstance(
+            downstream_partitions_subset.partitions_def, MultiPartitionsDefinition
+        ):
             check.failed("downstream asset is not partitioned")
 
-        if not isinstance(downstream_partitions_def, MultiPartitionsDefinition):
-            check.failed("downstream asset is not multi-partitioned")
-
         self._check_upstream_partitions_def_equals_selected_dimension(
-            upstream_partitions_def, downstream_partitions_def
+            upstream_partitions_def, downstream_partitions_subset.partitions_def
         )
-
-        if isinstance(downstream_partition_key_subset, PartitionKeyRange):
-            return upstream_partitions_def.empty_subset().with_partition_keys(
-                upstream_partitions_def.get_partition_keys_in_range(
-                    self.get_upstream_partitions_for_partition_range(
-                        downstream_partition_key_subset,
-                        downstream_partitions_def,
-                        upstream_partitions_def,
-                    )
+        upstream_partitions = set()
+        for partition_key in downstream_partitions_subset.get_partition_keys():
+            if not isinstance(partition_key, MultiPartitionKey):
+                check.failed(
+                    "Partition keys in downstream partition key subset must be MultiPartitionKeys"
                 )
-            )
-        else:
-            upstream_partitions = set()
-            for partition_key in downstream_partition_key_subset.get_partition_keys():
-                if not isinstance(partition_key, MultiPartitionKey):
-                    check.failed(
-                        "Partition keys in downstream partition key subset must be MultiPartitionKeys"
-                    )
-                upstream_partitions.add(
-                    partition_key.keys_by_dimension[self.partition_dimension_name]
-                )
-            return upstream_partitions_def.empty_subset().with_partition_keys(upstream_partitions)
+            upstream_partitions.add(partition_key.keys_by_dimension[self.partition_dimension_name])
+        return upstream_partitions_def.empty_subset().with_partition_keys(upstream_partitions)
 
-    def get_downstream_partitions_for_partition_subset(
+    def get_downstream_partitions_for_partitions(
         self,
-        upstream_partition_key_subset: Union[PartitionKeyRange, PartitionsSubset],
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
+        upstream_partitions_subset: PartitionsSubset,
+        downstream_partitions_def: PartitionsDefinition,
     ) -> PartitionsSubset:
         if downstream_partitions_def is None or not isinstance(
             downstream_partitions_def, MultiPartitionsDefinition
@@ -339,15 +306,10 @@ class SingleDimensionDependencyMapping(PartitionMapping):
             check.failed("downstream asset is not multi-partitioned")
 
         self._check_upstream_partitions_def_equals_selected_dimension(
-            upstream_partitions_def, downstream_partitions_def
+            upstream_partitions_subset.partitions_def, downstream_partitions_def
         )
 
-        if isinstance(upstream_partition_key_subset, PartitionKeyRange):
-            upstream_keys = upstream_partitions_def.get_partition_keys_in_range(
-                upstream_partition_key_subset
-            )
-        else:
-            upstream_keys = list(upstream_partition_key_subset.get_partition_keys())
+        upstream_keys = list(upstream_partitions_subset.get_partition_keys())
 
         matching_keys = []
         for key in downstream_partitions_def.get_partition_keys():
