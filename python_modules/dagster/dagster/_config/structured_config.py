@@ -1,9 +1,6 @@
 import inspect
 
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
-from dagster._core.execution.context.input import InputContext
-from dagster._core.execution.context.output import OutputContext
-from dagster._utils.cached_method import cached_method
 
 try:
     from functools import cached_property
