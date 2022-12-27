@@ -1,7 +1,12 @@
 from typing import Optional
 
 import pandas as pd
-from dagster_duckdb.io_manager import DuckDbClient, DuckDbIOManagerConfigSchema, _connect_duckdb, build_duckdb_io_manager
+from dagster_duckdb.io_manager import (
+    DuckDbClient,
+    DuckDbIOManagerConfigSchema,
+    _connect_duckdb,
+    build_duckdb_io_manager,
+)
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._config.field_utils import config_dictionary_from_values
@@ -151,8 +156,5 @@ class ConfiguredIOManagerAdapter(IOManagerDefinition):
 
 
 class DuckDbPandasIOManager(DuckDbIOManagerConfigSchema, StructuredIOManagerAdapter):
-    database: str
-    schema: Optional[str]
-
     def wrapped_io_manager(self) -> IOManagerDefinition:
         return duckdb_pandas_io_manager
