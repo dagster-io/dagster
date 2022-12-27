@@ -1,8 +1,9 @@
-from typing import Sequence
+from typing import Sequence, Optional
 
 import duckdb
+import pydantic
 
-from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
+from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
@@ -11,15 +12,20 @@ from dagster._core.storage.db_io_manager import (
     TableSlice,
 )
 from dagster._utils.backoff import backoff
+from dagster._config.structured_config import Config, infer_schema_from_config_class
 
 DUCKDB_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
+class DuckDbIOManagerConfigSchema(Config):
+    database: str = pydantic.Field(description="Path to the DuckDB database")
+    schema_aliased: Optional[str] = pydantic.Field(
+        alias="schema", description="Name of the schema to use."
+    )
+
+
 def get_duckdb_io_manager_config_schema():
-    return {
-        "database": Field(StringSource, description="Path to the DuckDB database."),
-        "schema": Field(StringSource, description="Name of the schema to use.", is_required=False),
-    }
+    return infer_schema_from_config_class(DuckDbIOManagerConfigSchema)
 
 
 def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManagerDefinition:
