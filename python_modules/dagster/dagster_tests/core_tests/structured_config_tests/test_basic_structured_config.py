@@ -8,6 +8,7 @@ from dagster import _check as check
 from dagster import asset, job, multi_asset, op, validate_run_config
 from dagster._config.config_type import ConfigTypeKind
 from dagster._config.field_utils import convert_potential_field
+from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.structured_config import Config, infer_schema_from_config_class
 from dagster._config.type_printer import print_config_type_to_string
 from dagster._core.definitions.assets_job import build_assets_job
@@ -29,7 +30,7 @@ def test_disallow_config_schema_conflict():
 
 
 def test_infer_config_schema():
-    old_schema = {"a_string": str, "an_int": int}
+    old_schema = {"a_string": StringSource, "an_int": IntSource}
 
     class ConfigClassTest(Config):
         a_string: str
@@ -439,3 +440,30 @@ def test_cached_method():
 
     assert counts["plus"] == 1
     assert counts["mult"] == 1
+
+
+def test_string_source_default():
+    class RawStringConfigSchema(Config):
+        a_str: str
+
+    assert print_config_type_to_string({"a_str": StringSource}) == print_config_type_to_string(
+        infer_schema_from_config_class(RawStringConfigSchema).config_type
+    )
+
+
+def test_bool_source_default():
+    class RawBoolConfigSchema(Config):
+        a_bool: bool
+
+    assert print_config_type_to_string({"a_bool": BoolSource}) == print_config_type_to_string(
+        infer_schema_from_config_class(RawBoolConfigSchema).config_type
+    )
+
+
+def test_int_source_default():
+    class RawIntConfigSchema(Config):
+        an_int: int
+
+    assert print_config_type_to_string({"an_int": IntSource}) == print_config_type_to_string(
+        infer_schema_from_config_class(RawIntConfigSchema).config_type
+    )
