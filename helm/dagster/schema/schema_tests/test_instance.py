@@ -820,7 +820,16 @@ def test_compute_log_manager_has_schema(json_schema_model, compute_log_manager_c
 )
 def test_run_coordinator_has_schema(json_schema_model, run_coordinator_class):
     json_schema_fields = json_schema_model.schema()["properties"].keys()
-    run_coordinator_fields = set(map(to_camel_case, run_coordinator_class.config_type().keys()))
+    run_coordinator_fields = set(
+        map(
+            to_camel_case,
+            {
+                key
+                for key in run_coordinator_class.config_type().keys()
+                if key not in {"user_code_failure_retry_delay", "max_user_code_failure_retries"}
+            },
+        )
+    )
 
     assert json_schema_fields == run_coordinator_fields
 
