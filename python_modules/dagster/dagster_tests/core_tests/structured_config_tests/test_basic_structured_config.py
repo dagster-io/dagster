@@ -1,15 +1,16 @@
+import os
 import sys
 
 import pytest
 from pydantic import BaseModel
 
-from dagster import AssetOut
+from dagster import AssetOut, Definitions
 from dagster import _check as check
 from dagster import asset, job, multi_asset, op, validate_run_config
 from dagster._config.config_type import ConfigTypeKind
-from dagster._config.field_utils import convert_potential_field
+from dagster._config.field_utils import EnvVar, convert_potential_field
 from dagster._config.source import BoolSource, IntSource, StringSource
-from dagster._config.structured_config import Config, infer_schema_from_config_class
+from dagster._config.structured_config import Config, Resource, infer_schema_from_config_class
 from dagster._config.type_printer import print_config_type_to_string
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.errors import DagsterInvalidConfigDefinitionError, DagsterInvalidConfigError
@@ -467,3 +468,28 @@ def test_int_source_default():
     assert print_config_type_to_string({"an_int": IntSource}) == print_config_type_to_string(
         infer_schema_from_config_class(RawIntConfigSchema).config_type
     )
+
+
+def test_env_var():
+    os.environ["ENV_VARIABLE_FOR_TEST"] = "SOME_VALUE"
+    try:
+
+        class ResourceWithString(Resource):
+            a_str: str
+
+        executed = {}
+
+        @asset
+        def an_asset(a_resource: ResourceWithString):
+            assert a_resource.a_str == "SOME_VALUE"
+            executed["yes"] = True
+
+        defs = Definitions(
+            assets=[an_asset],
+            resources={"a_resource": ResourceWithString(a_str=EnvVar("ENV_VARIABLE_FOR_TEST"))},
+        )
+
+        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert executed["yes"]
+    finally:
+        del os.environ["ENV_VARIABLE_FOR_TEST"]
