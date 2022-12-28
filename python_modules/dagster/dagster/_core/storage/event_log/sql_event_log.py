@@ -1152,7 +1152,7 @@ class SqlEventLogStorage(EventLogStorage):
             AssetKeyTable.c.last_run_id,
             AssetKeyTable.c.asset_details,
         ]
-        if self.has_asset_key_col("cached_status_data"):
+        if self.can_cache_asset_status_data():
             columns.extend([AssetKeyTable.c.cached_status_data])
 
         is_partial_query = asset_keys is not None or bool(prefix) or bool(limit) or bool(cursor)
