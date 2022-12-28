@@ -79,7 +79,7 @@ class BranchingIOManager(IOManager):
             == self.branch_name
         ):
             context.log.info(
-                f'Branching Manager: Loading "{context.asset_key.to_user_string()}" from "{self.branch_name}'
+                f'Branching Manager: Loading "{context.asset_key.to_user_string()}" from "{self.branch_name}"'
             )
             return self.branch_io_manager.load_input(context)
 
