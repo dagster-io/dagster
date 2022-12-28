@@ -1,9 +1,11 @@
+import os
 import sys
 from abc import ABC, abstractmethod
 from typing import Callable
 
 import pytest
 from dagster import IOManager, asset, job, op, resource
+from dagster._config.field_utils import EnvVar
 from dagster._config.structured_config import (
     Resource,
     StructuredConfigIOManagerBase,
@@ -14,11 +16,11 @@ from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_output import ResourceOutput
+from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._utils.cached_method import cached_method
-from pydantic import ValidationError
 
 
 def test_basic_structured_resource():
@@ -56,7 +58,7 @@ def test_invalid_config():
         foo: int
 
     with pytest.raises(
-        ValidationError,
+        DagsterInvalidConfigError,
     ):
         MyResource(foo="why")
 
@@ -349,3 +351,79 @@ def test_structured_resource_runtime_config():
         .success
     )
     assert out_txt == ["greeting: hello, world!"]
+
+
+def test_env_var():
+    os.environ["ENV_VARIABLE_FOR_TEST"] = "SOME_VALUE"
+    os.environ["ENV_VARIABLE_FOR_TEST_INT"] = "3"
+    try:
+
+        class ResourceWithString(Resource):
+            a_str: str
+            a_int: int
+
+        executed = {}
+
+        @asset
+        def an_asset(a_resource: ResourceWithString):
+            assert a_resource.a_str == "SOME_VALUE"
+            assert a_resource.a_int == 3
+            executed["yes"] = True
+
+        defs = Definitions(
+            assets=[an_asset],
+            resources={
+                "a_resource": ResourceWithString(
+                    a_str=EnvVar("ENV_VARIABLE_FOR_TEST"), a_int=EnvVar("ENV_VARIABLE_FOR_TEST_INT")
+                )
+            },
+        )
+
+        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert executed["yes"]
+    finally:
+        del os.environ["ENV_VARIABLE_FOR_TEST"]
+        del os.environ["ENV_VARIABLE_FOR_TEST_INT"]
+
+
+def test_env_var_err():
+    if "UNSET_ENV_VAR" in os.environ:
+        del os.environ["UNSET_ENV_VAR"]
+
+    class ResourceWithString(Resource):
+        a_str: str
+
+    with pytest.raises(DagsterInvalidConfigError):
+        ResourceWithString(a_str=EnvVar("UNSET_ENV_VAR"))
+
+
+def test_runtime_config_env_var():
+    out_txt = []
+
+    class WriterResource(Resource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    @asset
+    def hello_world_asset(writer: WriterResource):
+        writer.output("hello, world!")
+
+    defs = Definitions(
+        assets=[hello_world_asset],
+        resources={"writer": WriterResource.configure_at_launch()},
+    )
+
+    os.environ["MY_PREFIX_FOR_TEST"] = "greeting: "
+    try:
+        assert (
+            defs.get_implicit_global_asset_job_def()
+            .execute_in_process(
+                {"resources": {"writer": {"config": {"prefix": EnvVar("MY_PREFIX_FOR_TEST")}}}}
+            )
+            .success
+        )
+        assert out_txt == ["greeting: hello, world!"]
+    finally:
+        del os.environ["MY_PREFIX_FOR_TEST"]
