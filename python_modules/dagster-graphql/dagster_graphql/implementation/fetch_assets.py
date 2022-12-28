@@ -315,49 +315,6 @@ def get_unique_asset_id(
     )
 
 
-def get_materialization_status_2d_array(
-    partitions_def: MultiPartitionsDefinition,
-    materialized_keys: Sequence[MultiPartitionKey],
-) -> List[List[bool]]:
-    """
-    Returns a 2d array of booleans representing the materialization status of each partition.
-
-    The rows represent each partition key of the first dimension, and the columns represent each
-    partition key of the second dimension. The dimensions follow the order of partitions definitions
-    defined in the MultiPartitionsDefinition, which are sorted alphabetically.
-
-    For example, with partition dimensions ab: [a, b] and xy: [x, y], the 2d array will be:
-    [
-        [a|x materialized?, a|y materialized?],
-        [b|x materialized?, b|y materialized?]
-    ]
-    """
-
-    materialization_status_by_dimension: Dict[str, Dict[str, bool]] = defaultdict(
-        lambda: defaultdict(lambda: False)
-    )
-    primary_dim, secondary_dim = (
-        partitions_def.partitions_defs[0],
-        partitions_def.partitions_defs[1],
-    )
-    for partition_key in materialized_keys:
-        keys_by_dim = partition_key.keys_by_dimension
-        materialization_status_by_dimension[keys_by_dim[primary_dim.name]][
-            keys_by_dim[secondary_dim.name]
-        ] = True
-
-    materialization_status_2d_arr: List[List[bool]] = []
-    secondary_dim_keys = secondary_dim.partitions_def.get_partition_keys()
-    for primary_dim_key in primary_dim.partitions_def.get_partition_keys():
-        materialization_status_2d_arr.append(
-            [
-                materialization_status_by_dimension[primary_dim_key][secondary_dim_key]
-                for secondary_dim_key in secondary_dim_keys
-            ]
-        )
-    return materialization_status_2d_arr
-
-
 def get_materialized_partitions_subset(
     instance: DagsterInstance,
     asset_key: AssetKey,

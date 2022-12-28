@@ -58,8 +58,6 @@ from .errors import GrapheneAssetNotFoundError
 from .freshness_policy import GrapheneAssetFreshnessInfo, GrapheneFreshnessPolicy
 from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
 from .pipelines.pipeline import (
-    GrapheneMaterializationStatusGroupedByDimension,
-    GrapheneMaterializationStatusSingleDimension,
     GrapheneMaterializedPartitions1D,
     GrapheneMaterializedPartitions2D,
     GraphenePartitionMaterializationStatus,
