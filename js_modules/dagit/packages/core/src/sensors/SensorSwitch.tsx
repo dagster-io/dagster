@@ -13,8 +13,6 @@ import {
   STOP_SENSOR_MUTATION,
 } from './SensorMutations';
 import {SensorSwitchFragment} from './types/SensorSwitchFragment';
-import {StartSensor, StartSensorVariables} from './types/StartSensor';
-import {StopRunningSensor, StopRunningSensorVariables} from './types/StopRunningSensor';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -33,14 +31,10 @@ export const SensorSwitch: React.FC<Props> = (props) => {
     sensorName: name,
   };
 
-  const [startSensor, {loading: toggleOnInFlight}] = useMutation<StartSensor, StartSensorVariables>(
-    START_SENSOR_MUTATION,
-    {onCompleted: displaySensorMutationErrors},
-  );
-  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<
-    StopRunningSensor,
-    StopRunningSensorVariables
-  >(STOP_SENSOR_MUTATION, {
+  const [startSensor, {loading: toggleOnInFlight}] = useMutation(START_SENSOR_MUTATION, {
+    onCompleted: displaySensorMutationErrors,
+  });
+  const [stopSensor, {loading: toggleOffInFlight}] = useMutation(STOP_SENSOR_MUTATION, {
     onCompleted: displaySensorMutationErrors,
   });
 

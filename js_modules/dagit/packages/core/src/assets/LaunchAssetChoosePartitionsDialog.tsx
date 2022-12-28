@@ -21,11 +21,11 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {AssetKey} from '../assets/types';
-import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {
-  LaunchPartitionBackfill,
-  LaunchPartitionBackfillVariables,
-} from '../instance/types/LaunchPartitionBackfill';
+  LaunchPartitionBackfillMutation,
+  LaunchPartitionBackfillMutationVariables,
+} from '../graphql/graphql';
+import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {
@@ -222,8 +222,8 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       }
     } else {
       const {data: launchBackfillData} = await client.mutate<
-        LaunchPartitionBackfill,
-        LaunchPartitionBackfillVariables
+        LaunchPartitionBackfillMutation,
+        LaunchPartitionBackfillMutationVariables
       >({
         mutation: LAUNCH_PARTITION_BACKFILL_MUTATION,
         variables: {

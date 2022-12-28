@@ -5,15 +5,15 @@ import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
 import {useInvalidateConfigsForRepo} from '../app/ExecutionSessionStorage';
-import {PYTHON_ERROR_FRAGMENT, UNAUTHORIZED_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
+import {graphql} from '../graphql';
+import {
+  ReloadWorkspaceMutationMutation,
+  ReloadRepositoryLocationMutationMutation,
+  ReloadRepositoryLocationMutationMutationVariables,
+} from '../graphql/graphql';
 import {RepositoryLocationLoadStatus} from '../types/globalTypes';
 
-import {
-  ReloadRepositoryLocationMutation,
-  ReloadRepositoryLocationMutationVariables,
-} from './types/ReloadRepositoryLocationMutation';
-import {ReloadWorkspaceMutation} from './types/ReloadWorkspaceMutation';
 import {RepositoryLocationStatusQuery} from './types/RepositoryLocationStatusQuery';
 
 type State = {
@@ -241,13 +241,12 @@ const REPOSITORY_LOCATION_STATUS_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 // Reload Function - Workspace
 
 export const reloadFnForWorkspace = async (client: ApolloClient<any>): Promise<Action> => {
-  const {data} = await client.mutate<ReloadWorkspaceMutation>({
+  const {data} = await client.mutate<ReloadWorkspaceMutationMutation>({
     mutation: RELOAD_WORKSPACE_MUTATION,
   });
   if (!data) {
@@ -265,7 +264,7 @@ export const reloadFnForWorkspace = async (client: ApolloClient<any>): Promise<A
   };
 };
 
-const RELOAD_WORKSPACE_MUTATION = gql`
+const RELOAD_WORKSPACE_MUTATION = graphql(`
   mutation ReloadWorkspaceMutation {
     reloadWorkspace {
       ... on Workspace {
@@ -295,17 +294,15 @@ const RELOAD_WORKSPACE_MUTATION = gql`
       ...PythonErrorFragment
     }
   }
-  ${UNAUTHORIZED_ERROR_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);
 
 // Reload Function - Single Location
 
 export const buildReloadFnForLocation = (location: string) => {
   return async (client: ApolloClient<any>): Promise<Action> => {
     const {data} = await client.mutate<
-      ReloadRepositoryLocationMutation,
-      ReloadRepositoryLocationMutationVariables
+      ReloadRepositoryLocationMutationMutation,
+      ReloadRepositoryLocationMutationMutationVariables
     >({
       mutation: RELOAD_REPOSITORY_LOCATION_MUTATION,
       variables: {location},
@@ -329,7 +326,7 @@ export const buildReloadFnForLocation = (location: string) => {
   };
 };
 
-const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
+const RELOAD_REPOSITORY_LOCATION_MUTATION = graphql(`
   mutation ReloadRepositoryLocationMutation($location: String!) {
     reloadRepositoryLocation(repositoryLocationName: $location) {
       __typename
@@ -348,5 +345,4 @@ const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
       ...PythonErrorFragment
     }
   }
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);

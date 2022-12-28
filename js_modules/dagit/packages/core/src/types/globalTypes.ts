@@ -122,11 +122,6 @@ export enum ObjectStoreOperationType {
   SET_OBJECT = "SET_OBJECT",
 }
 
-export enum ReexecutionStrategy {
-  ALL_STEPS = "ALL_STEPS",
-  FROM_FAILURE = "FROM_FAILURE",
-}
-
 export enum RepositoryLocationLoadStatus {
   LOADED = "LOADED",
   LOADING = "LOADING",
@@ -157,11 +152,6 @@ export enum StepKind {
   UNRESOLVED_MAPPED = "UNRESOLVED_MAPPED",
 }
 
-export enum TerminateRunPolicy {
-  MARK_AS_CANCELED_IMMEDIATELY = "MARK_AS_CANCELED_IMMEDIATELY",
-  SAFE_TERMINATE = "SAFE_TERMINATE",
-}
-
 export interface AssetGroupSelector {
   groupName: string;
   repositoryName: string;
@@ -170,22 +160,6 @@ export interface AssetGroupSelector {
 
 export interface AssetKeyInput {
   path: string[];
-}
-
-export interface ExecutionMetadata {
-  runId?: string | null;
-  tags?: ExecutionTag[] | null;
-  rootRunId?: string | null;
-  parentRunId?: string | null;
-}
-
-export interface ExecutionParams {
-  selector: JobOrPipelineSelector;
-  runConfigData?: any | null;
-  mode?: string | null;
-  executionMetadata?: ExecutionMetadata | null;
-  stepKeys?: string[] | null;
-  preset?: string | null;
 }
 
 export interface ExecutionTag {
@@ -205,42 +179,12 @@ export interface InstigationSelector {
   name: string;
 }
 
-export interface JobOrPipelineSelector {
-  pipelineName?: string | null;
-  jobName?: string | null;
-  repositoryName: string;
-  repositoryLocationName: string;
-  solidSelection?: string[] | null;
-  assetSelection?: AssetKeyInput[] | null;
-}
-
-export interface LaunchBackfillParams {
-  selector: PartitionSetSelector;
-  partitionNames?: string[] | null;
-  reexecutionSteps?: string[] | null;
-  assetSelection?: AssetKeyInput[] | null;
-  fromFailure?: boolean | null;
-  allPartitions?: boolean | null;
-  tags?: ExecutionTag[] | null;
-  forceSynchronousSubmission?: boolean | null;
-}
-
-export interface PartitionSetSelector {
-  partitionSetName: string;
-  repositorySelector: RepositorySelector;
-}
-
 export interface PipelineSelector {
   pipelineName: string;
   repositoryName: string;
   repositoryLocationName: string;
   solidSelection?: string[] | null;
   assetSelection?: AssetKeyInput[] | null;
-}
-
-export interface ReexecutionParams {
-  parentRunId: string;
-  strategy: ReexecutionStrategy;
 }
 
 export interface RepositorySelector {

@@ -13,8 +13,6 @@ import {
   STOP_SCHEDULE_MUTATION,
 } from './ScheduleMutations';
 import {ScheduleSwitchFragment} from './types/ScheduleSwitchFragment';
-import {StartThisSchedule, StartThisScheduleVariables} from './types/StartThisSchedule';
-import {StopSchedule, StopScheduleVariables} from './types/StopSchedule';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -29,16 +27,10 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
 
   const {canStartSchedule, canStopRunningSchedule} = usePermissions();
 
-  const [startSchedule, {loading: toggleOnInFlight}] = useMutation<
-    StartThisSchedule,
-    StartThisScheduleVariables
-  >(START_SCHEDULE_MUTATION, {
+  const [startSchedule, {loading: toggleOnInFlight}] = useMutation(START_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,
   });
-  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<
-    StopSchedule,
-    StopScheduleVariables
-  >(STOP_SCHEDULE_MUTATION, {
+  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation(STOP_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,
   });
 

@@ -14,10 +14,10 @@ import {
   LiveData,
   toGraphId,
 } from '../asset-graph/Utils';
+import {LaunchPipelineExecutionMutationVariables} from '../graphql/graphql';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {DagsterTag} from '../runs/RunTag';
-import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -61,7 +61,7 @@ type LaunchAssetsState =
     }
   | {
       type: 'single-run';
-      executionParams: LaunchPipelineExecutionVariables['executionParams'];
+      executionParams: LaunchPipelineExecutionMutationVariables['executionParams'];
     };
 
 const countOrBlank = (k: unknown[]) => (k.length > 1 ? ` (${k.length})` : '');
@@ -484,7 +484,7 @@ export function executionParamsForAssetJob(
   jobName: string,
   assets: {assetKey: AssetKey; opNames: string[]}[],
   tags: {key: string; value: string}[],
-): LaunchPipelineExecutionVariables['executionParams'] {
+): LaunchPipelineExecutionMutationVariables['executionParams'] {
   return {
     mode: 'default',
     executionMetadata: {

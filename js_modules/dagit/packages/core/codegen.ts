@@ -8,6 +8,9 @@ const config: CodegenConfig = {
     './src/graphql/': {
       preset: 'client',
       config: {
+        avoidOptionals: {
+          field: true,
+        },
         nonOptionalTypename: true,
         namingConvention: {
           enumValues: 'keep',
