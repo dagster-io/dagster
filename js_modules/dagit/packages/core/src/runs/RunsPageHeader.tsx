@@ -13,7 +13,6 @@ import {
 import {RunListTabs, RUN_TABS_COUNT_QUERY} from './RunListTabs';
 import {inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {runsFilterForSearchTokens, useQueryPersistedRunFilters} from './RunsFilterInput';
-import {RunTabsCountQuery, RunTabsCountQueryVariables} from './types/RunTabsCountQuery';
 
 interface Props {
   refreshStates: QueryRefreshState[];
@@ -25,15 +24,12 @@ export const RunsPageHeader = (props: Props) => {
   const [filterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
 
-  const runCountResult = useQuery<RunTabsCountQuery, RunTabsCountQueryVariables>(
-    RUN_TABS_COUNT_QUERY,
-    {
-      variables: {
-        queuedFilter: {...filter, statuses: Array.from(queuedStatuses)},
-        inProgressFilter: {...filter, statuses: Array.from(inProgressStatuses)},
-      },
+  const runCountResult = useQuery(RUN_TABS_COUNT_QUERY, {
+    variables: {
+      queuedFilter: {...filter, statuses: Array.from(queuedStatuses)},
+      inProgressFilter: {...filter, statuses: Array.from(inProgressStatuses)},
     },
-  );
+  });
 
   const {data: countData} = runCountResult;
   const {queuedCount, inProgressCount} = React.useMemo(() => {
