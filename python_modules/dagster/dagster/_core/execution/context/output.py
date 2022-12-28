@@ -212,7 +212,7 @@ class OutputContext:
     @public  # type: ignore
     @property
     def metadata(self) -> Optional[Mapping[str, object]]:
-        """A dict of the metadata that is assigned to the OutputDefinition that produced the output."""
+        """A dict of the metadata that is assigned to the op Out or asset definition that produced the output."""
         return self._metadata
 
     @public  # type: ignore
@@ -244,7 +244,7 @@ class OutputContext:
     @public  # type: ignore
     @property
     def dagster_type(self) -> "DagsterType":
-        """The type of this output."""
+        """The Dagster type of this output."""
         if self._dagster_type is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access dagster_type, "
@@ -274,7 +274,7 @@ class OutputContext:
     @public  # type: ignore
     @property
     def resource_config(self) -> Optional[Mapping[str, object]]:
-        """The config associated with the resource that initializes the RootInputManager."""
+        """The config associated with the resource that initializes the IOManager or RootInputManager."""
         return self._resource_config
 
     @public  # type: ignore
@@ -308,8 +308,9 @@ class OutputContext:
     @public  # type: ignore
     @property
     def asset_key(self) -> AssetKey:
-        """The asset key corresponding to the output asset.
-        
+        """
+        The asset key corresponding to the output asset.
+
         Raises an error if no asset is associated with this output.
         """
         if self._asset_info is None:
@@ -368,7 +369,8 @@ class OutputContext:
     @public  # type: ignore
     @property
     def partition_key(self) -> str:
-        """The partition key for the current run.
+        """
+        The partition key for the current run.
 
         Raises an error if the current run is not a partitioned run.
         """
@@ -407,7 +409,8 @@ class OutputContext:
     @public  # type: ignore
     @property
     def asset_partition_key(self) -> str:
-        """The partition key for output asset.
+        """
+        The partition key for output asset.
 
         Raises an error if the output asset has no partitioning, or if the run covers a partition
         range for the output asset.
@@ -425,7 +428,8 @@ class OutputContext:
     @public  # type: ignore
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
-        """The partition key range for output asset.
+        """
+        The partition key range for output asset.
 
         Raises an error if the output asset has no partitioning.
         """
@@ -442,7 +446,8 @@ class OutputContext:
     @public  # type: ignore
     @property
     def asset_partition_keys(self) -> Sequence[str]:
-        """The partition keys for the output asset.
+        """
+        The partition keys for the output asset.
 
         Raises an error if the output asset has no partitioning.
         """
@@ -461,7 +466,8 @@ class OutputContext:
     @public  # type: ignore
     @property
     def asset_partitions_time_window(self) -> TimeWindow:
-        """The time window for the partitions of the output asset.
+        """
+        The time window for the partitions of the output asset.
 
         Raises an error if either of the following are true:
         - The output asset has no partitioning.
@@ -478,7 +484,8 @@ class OutputContext:
         return self.step_context.asset_partitions_time_window_for_output(self.name)
 
     def get_run_scoped_output_identifier(self) -> Sequence[str]:
-        """Utility method to get a collection of identifiers that as a whole represent a unique
+        """
+        Utility method to get a collection of identifiers that as a whole represent a unique
         step output.
 
         The unique identifier collection consists of
@@ -522,7 +529,8 @@ class OutputContext:
 
     @public
     def get_identifier(self) -> Sequence[str]:
-        """Utility method to get a collection of identifiers that as a whole represent a unique
+        """
+        Utility method to get a collection of identifiers that as a whole represent a unique
         step output.
 
         If not using memoization, the unique identifier collection consists of
@@ -568,9 +576,10 @@ class OutputContext:
 
     @public
     def get_asset_identifier(self) -> Sequence[str]:
-        """Utility method to get a collection of identifiers corresponding to the output asset.
+        """
+        Utility method to get a collection of identifiers corresponding to the output asset.
         The collection consists of a List containing the asset key (unpacked) and the asset partition key.
-        
+
         Raises an error if no asset is associated with this output.
         """
         if self.asset_key is not None:
@@ -593,7 +602,8 @@ class OutputContext:
     def log_event(
         self, event: Union[AssetObservation, AssetMaterialization, Materialization]
     ) -> None:
-        """Log an AssetMaterialization or AssetObservation from within the body of an io manager's `handle_output` method.
+        """
+        Log an AssetMaterialization or AssetObservation from within the body of an io manager's `handle_output` method.
 
         Events logged with this method will appear in the event log.
 
@@ -630,7 +640,8 @@ class OutputContext:
             check.failed("Unexpected event {event}".format(event=event))
 
     def consume_events(self) -> Iterator["DagsterEvent"]:
-        """Pops and yields all user-generated events that have been recorded from this context.
+        """
+        Pops and yields all user-generated events that have been recorded from this context.
 
         If consume_events has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
         """
@@ -642,7 +653,8 @@ class OutputContext:
     def get_logged_events(
         self,
     ) -> Sequence[Union[AssetMaterialization, Materialization, AssetObservation]]:
-        """Retrieve the list of user-generated events that were logged via the context.
+        """
+        Retrieve the list of user-generated events that were logged via the context.
 
 
         User-generated events that were yielded will not appear in this list.
@@ -670,7 +682,8 @@ class OutputContext:
 
     @public
     def add_output_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> None:
-        """Add a dictionary of metadata to the handled output.
+        """
+        Add a dictionary of metadata to the handled output.
 
         Metadata entries added will show up in the HANDLED_OUTPUT and ASSET_MATERIALIZATION events for the run.
 
@@ -708,7 +721,8 @@ class OutputContext:
     def consume_logged_metadata_entries(
         self,
     ) -> Sequence[Union[MetadataEntry, PartitionMetadataEntry]]:
-        """Pops and yields all user-generated metadata entries that have been recorded from this context.
+        """
+        Pops and yields all user-generated metadata entries that have been recorded from this context.
 
         If consume_logged_metadata_entries has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_logged_metadata_entries has been called, it will yield all events since the last time consume_logged_metadata_entries was called. Designed for internal use. Users should never need to invoke this method.
         """
@@ -818,7 +832,8 @@ def build_output_context(
     asset_key: Optional[Union[AssetKey, str]] = None,
     partition_key: Optional[str] = None,
 ) -> "OutputContext":
-    """Builds output context from provided parameters.
+    """
+    Builds output context from provided parameters.
 
     ``build_output_context`` can be used as either a function, or a context manager. If resources
     that are also context managers are provided, then ``build_output_context`` must be used as a
@@ -828,10 +843,10 @@ def build_output_context(
         step_key (Optional[str]): The step_key for the compute step that produced the output.
         name (Optional[str]): The name of the output that produced the output.
         metadata (Optional[Mapping[str, Any]]): A dict of the metadata that is assigned to the
-            OutputDefinition that produced the output.
+            op Out or asset definition that produced the output.
         mapping_key (Optional[str]): The key that identifies a unique mapped output. None for regular outputs.
         config (Optional[Any]): The configuration for the output.
-        dagster_type (Optional[DagsterType]): The type of this output.
+        dagster_type (Optional[DagsterType]): The Dagster type of this output.
         version (Optional[str]): (Experimental) The version of the output.
         resource_config (Optional[Mapping[str, Any]]): The resource config to make available from the
             input context. This usually corresponds to the config provided to the resource that
@@ -841,7 +856,7 @@ def build_output_context(
             definition.
         op_def (Optional[OpDefinition]): The definition of the op that produced the output.
         asset_key: Optional[Union[AssetKey, Sequence[str], str]]: The asset key corresponding to the
-            output.
+            output asset.
         partition_key: Optional[str]: String value representing partition key to execute with.
 
     Examples:

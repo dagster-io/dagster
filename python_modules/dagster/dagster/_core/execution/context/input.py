@@ -141,8 +141,10 @@ class InputContext:
     @public  # type: ignore
     @property
     def has_input_name(self) -> bool:
-        """If we're the InputContext is being used to load the result of a run from outside the run,
-        then it won't have an input name."""
+        """
+        If we're the InputContext is being used to load the result of a run from outside the run,
+        then it won't have an input name.
+        """
         return self._name is not None
 
     @public  # type: ignore
@@ -203,10 +205,12 @@ class InputContext:
     @public  # type: ignore
     @property
     def metadata(self) -> Optional[Mapping[str, Any]]:
-        """A dict of metadata that is assigned to the InputDefinition that we’re loading for. 
-        This property only contains metadata passed in explicitly with AssetIn or In. 
-        To access metadata of an upstream asset or operation definition, 
-        use the metadata in InputContext.upstream_output."""
+        """
+        A dict of metadata that is assigned to the op In or asset definition that we’re loading for.
+        This property only contains metadata passed in explicitly with AssetIn or In.
+        To access metadata of an upstream asset or operation definition,
+        use the metadata in InputContext.upstream_output.
+        """
         return self._metadata
 
     @public  # type: ignore
@@ -218,10 +222,12 @@ class InputContext:
     @public  # type: ignore
     @property
     def dagster_type(self) -> "DagsterType":
-        """The type of this input. Dagster types do not propagate from an upstream output 
-        to downstream inputs, and this property only captures type information for the input 
-        that is either passed in explicitly with AssetIn or In, or can be infered from type hints. 
-        For an asset input, the Dagster type from the upstream asset definition is ignored."""
+        """
+        The Dagster type of this input. Dagster types do not propagate from an upstream output
+        to downstream inputs, and this property only captures type information for the input
+        that is either passed in explicitly with AssetIn or In, or can be infered from type hints.
+        For an asset input, the Dagster type from the upstream asset definition is ignored.
+        """
         if self._dagster_type is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access dagster_type, "
@@ -245,15 +251,17 @@ class InputContext:
     @public  # type: ignore
     @property
     def resource_config(self) -> Optional[Mapping[str, Any]]:
-        """The config associated with the resource that initializes the RootInputManager."""
+        """The config associated with the resource that initializes the IOManager or RootInputManager."""
         return self._resource_config
 
     @public  # type: ignore
     @property
     def resources(self) -> Any:
-        """The resources required by the resource that initializes the input manager. 
-        If using the @root_input_manager() decorator, these resources correspond 
-        to those requested with the required_resource_keys parameter."""
+        """
+        The resources required by the resource that initializes the input manager.
+        If using the @root_input_manager() decorator, these resources correspond
+        to those requested with the required_resource_keys parameter.
+        """
         if self._resources is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access resources, "
@@ -277,8 +285,9 @@ class InputContext:
     @public  # type: ignore
     @property
     def asset_key(self) -> AssetKey:
-        """The asset key corresponding to the input asset.
-        
+        """
+        The asset key corresponding to the input asset.
+
         Raises an error if no asset is associated with this input.
         """
         if self._asset_key is None:
@@ -343,7 +352,8 @@ class InputContext:
     @public  # type: ignore
     @property
     def asset_partition_key(self) -> str:
-        """The partition key for input asset.
+        """
+        The partition key for input asset.
 
         Raises an error if the input asset has no partitioning, or if the run covers a partition
         range for the input asset.
@@ -365,7 +375,8 @@ class InputContext:
     @public  # type: ignore
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
-        """The partition key range for input asset.
+        """
+        The partition key range for input asset.
 
         Raises an error if the input asset has no partitioning.
         """
@@ -388,7 +399,8 @@ class InputContext:
     @public  # type: ignore
     @property
     def asset_partition_keys(self) -> Sequence[str]:
-        """The partition keys for input asset.
+        """
+        The partition keys for input asset.
 
         Raises an error if the input asset has no partitioning.
         """
@@ -402,7 +414,8 @@ class InputContext:
     @public  # type: ignore
     @property
     def asset_partitions_time_window(self) -> TimeWindow:
-        """The time window for the partitions of the input asset.
+        """
+        The time window for the partitions of the input asset.
 
         Raises an error if either of the following are true:
         - The input asset has no partitioning.
@@ -431,7 +444,8 @@ class InputContext:
 
     @public
     def get_identifier(self) -> Sequence[str]:
-        """Utility method to get a collection of identifiers that as a whole represent a unique
+        """
+        Utility method to get a collection of identifiers that as a whole represent a unique
         step input.
 
         If not using memoization, the unique identifier collection consists of
@@ -458,9 +472,10 @@ class InputContext:
 
     @public
     def get_asset_identifier(self) -> Sequence[str]:
-        """Utility method to get a collection of identifiers corresponding to the input asset.
+        """
+        Utility method to get a collection of identifiers corresponding to the input asset.
         The collection consists of a List containing the asset key (unpacked) and the asset partition key.
-        
+
         Raises an error if no asset is associated with this input.
         """
         if self.asset_key is not None:
@@ -472,7 +487,8 @@ class InputContext:
             check.failed("Can't get asset identifier for an input with no asset key")
 
     def consume_events(self) -> Iterator["DagsterEvent"]:
-        """Pops and yields all user-generated events that have been recorded from this context.
+        """
+        Pops and yields all user-generated events that have been recorded from this context.
 
         If consume_events has not yet been called, this will yield all logged events since the call to `handle_input`. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
         """
@@ -486,7 +502,8 @@ class InputContext:
         metadata: Mapping[str, Any],
         description: Optional[str] = None,
     ) -> None:
-        """Accepts a dictionary of metadata. Metadata entries will appear on the LOADED_INPUT event.
+        """
+        Accepts a dictionary of metadata. Metadata entries will appear on the LOADED_INPUT event.
         If the input is an asset, metadata will be attached to an asset observation.
 
         The asset observation will be yielded from the run and appear in the event log.
@@ -513,7 +530,8 @@ class InputContext:
     def get_observations(
         self,
     ) -> Sequence[AssetObservation]:
-        """Retrieve the list of user-generated asset observations that were observed via the context.
+        """
+        Retrieve the list of user-generated asset observations that were observed via the context.
 
         User-generated events that were yielded will not appear in this list.
 
@@ -558,7 +576,8 @@ def build_input_context(
     asset_partitions_def: Optional["PartitionsDefinition"] = None,
     instance: Optional[DagsterInstance] = None,
 ) -> "InputContext":
-    """Builds input context from provided parameters.
+    """
+    Builds input context from provided parameters.
 
     ``build_input_context`` can be used as either a function, or a context manager. If resources
     that are also context managers are provided, then ``build_input_context`` must be used as a
@@ -568,17 +587,17 @@ def build_input_context(
         name (Optional[str]): The name of the input that we're loading.
         config (Optional[Any]): The config attached to the input that we're loading.
         metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
-            InputDefinition that we're loading for.
+            op In or asset definition that we're loading for.
         upstream_output (Optional[OutputContext]): Info about the output that produced the object
             we're loading.
-        dagster_type (Optional[DagsterType]): The type of this input.
+        dagster_type (Optional[DagsterType]): The Dagster type of this input.
         resource_config (Optional[Dict[str, Any]]): The resource config to make available from the
             input context. This usually corresponds to the config provided to the resource that
             loads the input manager.
         resources (Optional[Dict[str, Any]]): The resources to make available from the context.
             For a given key, you can provide either an actual instance of an object, or a resource
             definition.
-        asset_key (Optional[AssetKey]): The asset key attached to the InputDefinition.
+        asset_key (Optional[AssetKey]): The asset key corresponding to the input asset.
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
         step_context (Optional[StepExecutionContext]): For internal use.
         partition_key (Optional[str]): String value representing partition key to execute with.
