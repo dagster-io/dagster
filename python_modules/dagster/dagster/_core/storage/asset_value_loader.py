@@ -66,7 +66,7 @@ class AssetValueLoader:
         *,
         python_type: Optional[Type] = None,
         partition_key: Optional[str] = None,
-        config: Optional[Any] = None
+        resource_config: Optional[Any] = None
     ) -> object:
         """
         Loads the contents of an asset as a Python object.
@@ -78,6 +78,8 @@ class AssetValueLoader:
             python_type (Optional[Type]): The python type to load the asset as. This is what will
                 be returned inside `load_input` by `context.dagster_type.typing_type`.
             partition_key (Optional[str]): The partition of the asset to load.
+            resource_config (Optional[Any]): resource_config (Optional[Dict]): A dictionary of 
+                resource configurations to be passed to the :py:class:`IOManager`
 
         Returns:
             The contents of an asset as a Python object.
@@ -92,8 +94,7 @@ class AssetValueLoader:
         io_manager_key = assets_def.get_io_manager_key_for_asset_key(asset_key)
         io_manager_def = resource_defs[io_manager_key]
         required_resource_keys = io_manager_def.required_resource_keys | {io_manager_key}
-        config = config or {}
-        resource_config = config.get('resources', {})
+
         self._ensure_resource_instances_in_cache(
             {k: v for k, v in resource_defs.items() if k in required_resource_keys},
             resource_config=resource_config
@@ -119,7 +120,6 @@ class AssetValueLoader:
             resources=self._resource_instance_cache,
             resource_config=io_manager_config[io_manager_key].config,
             partition_key=partition_key,
-            config=config,
             asset_partition_key_range=PartitionKeyRange(partition_key, partition_key)
             if partition_key is not None
             else None,

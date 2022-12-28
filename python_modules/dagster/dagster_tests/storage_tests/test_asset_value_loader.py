@@ -237,7 +237,7 @@ def test_partitions_with_fs_io_manager():
         with repo.get_asset_value_loader() as loader:
             value = loader.load_asset_value(AssetKey("asset1"), partition_key="2020-05-05")
             assert value == 5
-#%%
+
 def test_io_manager_with_config():
     class MyIOManager(IOManager):
 
@@ -262,17 +262,15 @@ def test_io_manager_with_config():
     def repo():
         return with_resources([asset1], resource_defs={"io_manager": my_io_manager})
     
-    config = {
-        'resources': {
-            'io_manager':{
-                'config': {
-                    'key': 5
-                }
+    resource_config = {
+        'io_manager':{
+            'config': {
+                'key': 5
             }
         }
     }
     with repo.get_asset_value_loader() as loader:
-        value = loader.load_asset_value(AssetKey("asset1"), config=config)
+        value = loader.load_asset_value(AssetKey("asset1"), resource_config=resource_config)
         assert value == 5
 
 def test_io_manager_resource_with_config():
@@ -307,16 +305,14 @@ def test_io_manager_resource_with_config():
                 "io_resource": io_resource
             })
     
-    config = {
-        'resources': {
-            'io_resource':{
-                'config': {
-                    'key': 5
-                }
+    resource_config = {
+        'io_resource':{
+            'config': {
+                'key': 5
             }
         }
     }
     with repo.get_asset_value_loader() as loader:
         
-        value = loader.load_asset_value(AssetKey("asset1"), config=config)
+        value = loader.load_asset_value(AssetKey("asset1"), resource_config=resource_config)
         assert value == 5
