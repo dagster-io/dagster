@@ -28,9 +28,12 @@ from dagster import (
 )
 from dagster import _check as check
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.multi_dimensional_partitions import PartitionDimensionDefinition
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.external_data import (
@@ -39,8 +42,8 @@ from dagster._core.host_representation.external_data import (
 )
 from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.storage.partition_status_cache import (
-    get_materialized_multipartitions,
     get_and_update_asset_status_cache_values,
+    get_materialized_multipartitions,
 )
 from dagster._core.storage.tags import get_dimension_from_partition_tag
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
@@ -58,6 +61,10 @@ from .utils import capture_error
 if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetNode
     from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
+    from ..schema.pipelines.pipeline import (
+        GrapheneMaterializedPartitions1D,
+        GrapheneMaterializedPartitions2D,
+    )
     from ..schema.util import HasContext
 
 
@@ -351,34 +358,11 @@ def get_materialization_status_2d_array(
     return materialization_status_2d_arr
 
 
-def get_single_dimension_materialization_status(
-    partitions_def: Optional[PartitionsDefinition],
-    materialized_keys: List[str],
-) -> List[bool]:
-    """
-    Returns an an array of booleans following the order of the partition keys. For partition keys
-    ["a", "b"], the result would be [True, False] if "a" has been materialized and "b" has not.
-    """
-    if not partitions_def:
-        return []
-
-    materialization_status_by_partition: Dict[str, bool] = defaultdict(lambda: False)
-    for partition_key in materialized_keys:
-        materialization_status_by_partition[partition_key] = True
-
-    ordered_materialization_counts: List[bool] = []
-    for partition_key in partitions_def.get_partition_keys():
-        ordered_materialization_counts.append(
-            materialization_status_by_partition.get(partition_key, False)
-        )
-    return ordered_materialization_counts
-
-
-def get_materialization_status_by_partition(
+def get_materialized_partitions_subset(
     instance: DagsterInstance,
     asset_key: AssetKey,
-    asset_graph: AssetGraph,
-) -> Union[List[bool], List[List[bool]]]:
+    asset_graph: ExternalAssetGraph,
+) -> Optional[PartitionsSubset]:
     """
     Returns the materialization status for each partition key. The materialization status
     is a boolean indicating whether the partition has been materialized: True if materialized,
@@ -386,9 +370,9 @@ def get_materialization_status_by_partition(
     """
     from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 
-    partitions_def = asset_graph.partitions_defs_by_key.get(asset_key)
+    partitions_def = asset_graph.get_partitions_def.get(asset_key)
     if not partitions_def:
-        return []
+        return None
 
     if instance.can_cache_asset_status_data():
         # When the "cached_status_data" column exists in storage, update the column to contain
@@ -401,35 +385,115 @@ def get_materialization_status_by_partition(
             if updated_cache_value
             else partitions_def.empty_subset()
         )
-        materialized_keys = materialized_subset.get_partition_keys()
 
-        if isinstance(partitions_def, MultiPartitionsDefinition):
-            return get_materialization_status_2d_array(
-                partitions_def, [cast(MultiPartitionKey, key) for key in materialized_keys]
-            )
-        else:
-            return get_single_dimension_materialization_status(
-                partitions_def, list(materialized_keys)
-            )
+        return materialized_subset
 
     else:
         # If the partition status can't be cached, fetch partition status from storage
         if isinstance(partitions_def, MultiPartitionsDefinition):
-            return get_materialization_status_2d_array(
-                partitions_def,
-                get_materialized_multipartitions(instance, asset_key, partitions_def),
+            materialized_keys = get_materialized_multipartitions(
+                instance, asset_key, partitions_def
             )
         else:
-            return get_single_dimension_materialization_status(
-                partitions_def,
-                [
-                    partition_key
-                    for partition_key, count in instance.get_materialization_count_by_partition(
-                        [asset_key]
-                    )[asset_key].items()
-                    if count > 0
-                ],
-            )
+            materialized_keys = [
+                partition_key
+                for partition_key, count in instance.get_materialization_count_by_partition(
+                    [asset_key]
+                )[asset_key].items()
+                if count > 0
+            ]
+        return partitions_def.empty_subset().with_partition_keys(materialized_keys)
+
+
+def get_1d_run_length_encoded_materialized_partitions(
+    partitions_subset: PartitionsSubset,
+) -> "GrapheneMaterializedPartitions1D":
+    from ..schema.pipelines.pipeline import (
+        Graphene1DMaterializedPartitionRange,
+        GrapheneMaterializedPartitions1D,
+    )
+
+    return GrapheneMaterializedPartitions1D(
+        ranges=[
+            Graphene1DMaterializedPartitionRange(start=range.start, end=range.end)
+            for range in partitions_subset.get_partition_key_ranges()
+        ]
+    )
+
+
+def _get_primary_and_secondary_dims(
+    partitions_def: MultiPartitionsDefinition,
+) -> Tuple[PartitionDimensionDefinition, PartitionDimensionDefinition]:
+    time_dimensions = [
+        dim
+        for dim in partitions_def.partitions_defs
+        if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
+    ]
+    if len(time_dimensions) == 1:
+        primary_dimension, secondary_dimension = time_dimensions[0], next(
+            iter([dim for dim in partitions_def.partitions_defs if dim != time_dimensions[0]])
+        )
+    else:
+        primary_dimension, secondary_dimension = (
+            partitions_def.partitions_defs[0],
+            partitions_def.partitions_defs[1],
+        )
+
+    return primary_dimension, secondary_dimension
+
+
+def get_2d_run_length_encoded_materialized_partitions(
+    partitions_subset: PartitionsSubset,
+) -> "GrapheneMaterializedPartitions2D":
+    from ..schema.pipelines.pipeline import (
+        Graphene2DMaterializedPartitionRange,
+        GrapheneMaterializedPartitions1D,
+        GrapheneMaterializedPartitions2D,
+    )
+
+    if not isinstance(partitions_subset.partitions_def, MultiPartitionsDefinition):
+        check.failed("Can only fetch 2D run length encoded partitions for multipartitioned assets")
+
+    primary_dim, secondary_dim = _get_primary_and_secondary_dims(partitions_subset.partitions_def)
+
+    dim2_partition_subset_by_dim1 = defaultdict(lambda: secondary_dim.partitions_def.empty_subset())
+    for partition_key in partitions_subset.get_partition_keys():
+        partition_key = cast(MultiPartitionKey, partition_key)
+        dim2_partition_subset_by_dim1[
+            partition_key.keys_by_dimension[primary_dim.name]
+        ] = dim2_partition_subset_by_dim1[
+            partition_key.keys_by_dimension[primary_dim.name]
+        ].with_partition_keys(
+            [partition_key.keys_by_dimension[secondary_dim.name]]
+        )
+
+    materialized_2d_ranges = []
+
+    dim1_keys = primary_dim.partitions_def.get_partition_keys()
+    unevaluated_idx = 0
+    range_start_idx = 0  # pointer to first dim1 partition with same dim2 materialization status
+
+    while unevaluated_idx <= len(dim1_keys):
+        if (
+            unevaluated_idx == len(dim1_keys)
+            or dim2_partition_subset_by_dim1[dim1_keys[unevaluated_idx]]
+            != dim2_partition_subset_by_dim1[dim1_keys[range_start_idx]]
+        ):
+            if len(dim2_partition_subset_by_dim1[dim1_keys[range_start_idx]]) > 0:
+                # Do not add to materialized_2d_ranges if the dim2 partition subset is empty
+                materialized_2d_ranges.append(
+                    Graphene2DMaterializedPartitionRange(
+                        primaryDimStart=dim1_keys[range_start_idx],
+                        primaryDimEnd=dim1_keys[unevaluated_idx - 1],
+                        secondaryDimRanges=GrapheneMaterializedPartitions1D(
+                            ranges=dim2_partition_subset_by_dim1[dim1_keys[range_start_idx]]
+                        ),
+                    )
+                )
+            range_start_idx = unevaluated_idx
+        unevaluated_idx += 1
+
+    return GrapheneMaterializedPartitions2D(ranges=materialized_2d_ranges)
 
 
 def get_freshness_info(

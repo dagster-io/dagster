@@ -95,6 +95,43 @@ class GrapheneMaterializationStatusSingleDimension(graphene.ObjectType):
         name = "MaterializationStatusSingleDimension"
 
 
+class Graphene1DMaterializedPartitionRange(graphene.ObjectType):
+    start = graphene.NonNull(graphene.String)
+    end = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "1DMaterializedPartitionRange"
+
+
+class GrapheneMaterializedPartitions1D(graphene.ObjectType):
+    ranges = non_null_list(Graphene1DMaterializedPartitionRange)
+
+    class Meta:
+        name = "MaterializedPartitions1D"
+
+
+class Graphene2DMaterializedPartitionRange(graphene.ObjectType):
+    """
+    The primary dimension of a multipartitioned asset is the time-partitioned dimension.
+    If both dimensions of the asset are static or time-partitioned, the primary dimension is
+    the first defined dimension.
+    """
+
+    primaryDimStart = graphene.NonNull(graphene.String)
+    primaryDimEnd = graphene.NonNull(graphene.String)
+    secondaryDimRanges = non_null_list(GrapheneMaterializedPartitions1D)
+
+    class Meta:
+        name = "2DMaterializedPartitionRange"
+
+
+class GrapheneMaterializedPartitions2D(graphene.ObjectType):
+    ranges = non_null_list(Graphene2DMaterializedPartitionRange)
+
+    class Meta:
+        name = "MaterializedPartitions2D"
+
+
 class GrapheneMaterializationStatusGroupedByDimension(graphene.ObjectType):
     # False if not materialized, true if materialized
     materializationStatusGrouped = graphene.NonNull(graphene.List(non_null_list(graphene.Boolean)))

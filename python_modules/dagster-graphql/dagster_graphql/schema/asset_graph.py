@@ -41,8 +41,10 @@ from dagster_graphql.schema.solids import (
 )
 
 from ..implementation.fetch_assets import (
+    get_1d_run_length_encoded_materialized_partitions,
+    get_2d_run_length_encoded_materialized_partitions,
     get_freshness_info,
-    get_materialization_status_by_partition,
+    get_materialized_partitions_subset,
 )
 from ..implementation.loader import (
     BatchMaterializationLoader,
@@ -58,6 +60,8 @@ from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
 from .pipelines.pipeline import (
     GrapheneMaterializationStatusGroupedByDimension,
     GrapheneMaterializationStatusSingleDimension,
+    GrapheneMaterializedPartitions1D,
+    GrapheneMaterializedPartitions2D,
     GraphenePartitionMaterializationStatus,
     GraphenePipeline,
     GrapheneRun,
@@ -656,26 +660,19 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_partitionMaterializationStatus(
         self, graphene_info
-    ) -> Union[
-        GrapheneMaterializationStatusSingleDimension,
-        GrapheneMaterializationStatusGroupedByDimension,
-    ]:
-        asset_graph = AssetGraph.from_external_assets(
-            self._external_repository.get_external_asset_nodes()
-        )
+    ) -> Union[GrapheneMaterializedPartitions1D, GrapheneMaterializedPartitions2D,]:
+        asset_graph = ExternalAssetGraph.from_external_repository(self._external_repository)
         asset_key = self._external_asset_node.asset_key
-        materialization_status_by_partition = get_materialization_status_by_partition(
+        materialized_partition_subset = get_materialized_partitions_subset(
             graphene_info.context.instance, asset_key, asset_graph=asset_graph
         )
 
+        if not materialized_partition_subset:
+            return GrapheneMaterializedPartitions1D(ranges=[])
         if not self.is_multipartitioned():
-            return GrapheneMaterializationStatusSingleDimension(
-                materializationStatus=iter(materialization_status_by_partition)
-            )
+            return get_1d_run_length_encoded_materialized_partitions(materialized_partition_subset)
         else:
-            return GrapheneMaterializationStatusGroupedByDimension(
-                materializationStatusGrouped=materialization_status_by_partition
-            )
+            return get_2d_run_length_encoded_materialized_partitions(materialized_partition_subset)
 
     def resolve_metadata_entries(self, _graphene_info) -> Sequence[GrapheneMetadataEntry]:
         return list(iterate_metadata_entries(self._external_asset_node.metadata_entries))
