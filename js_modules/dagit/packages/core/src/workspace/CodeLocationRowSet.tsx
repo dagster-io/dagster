@@ -13,6 +13,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {usePermissions} from '../app/Permissions';
+import {WorkspaceDisplayMetadataFragment} from '../graphql/graphql';
 import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
 import {
   buildReloadFnForLocation,
@@ -26,7 +27,6 @@ import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErro
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
 import {buildRepoAddress} from './buildRepoAddress';
 import {repoAddressAsHumanString} from './repoAddressAsString';
-import {RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_displayMetadata as DisplayMetadata} from './types/RootWorkspaceQuery';
 import {workspacePathFromAddress} from './workspacePath';
 
 interface Props {
@@ -103,7 +103,7 @@ export const CodeLocationRowSet: React.FC<Props> = ({locationNode}) => {
   );
 };
 
-export const ImageName: React.FC<{metadata: DisplayMetadata[]}> = ({metadata}) => {
+export const ImageName: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}> = ({metadata}) => {
   const imageKV = metadata.find(({key}) => key === 'image');
   if (imageKV) {
     return (
@@ -119,7 +119,9 @@ export const ImageName: React.FC<{metadata: DisplayMetadata[]}> = ({metadata}) =
   return null;
 };
 
-export const ModuleOrPackageOrFile: React.FC<{metadata: DisplayMetadata[]}> = ({metadata}) => {
+export const ModuleOrPackageOrFile: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}> = ({
+  metadata,
+}) => {
   const imageKV = metadata.find(
     ({key}) => key === 'module_name' || key === 'package_name' || key === 'python_file',
   );
