@@ -1423,7 +1423,7 @@ class RepositoryDefinition:
         python_type: Optional[Type] = None,
         instance: Optional[DagsterInstance] = None,
         partition_key: Optional[str] = None,
-        config: Optional[Any] = None
+        resource_config: Optional[Any] = None,
     ) -> object:
         """
         Load the contents of an asset as a Python object.
@@ -1439,6 +1439,8 @@ class RepositoryDefinition:
             python_type (Optional[Type]): The python type to load the asset as. This is what will
                 be returned inside `load_input` by `context.dagster_type.typing_type`.
             partition_key (Optional[str]): The partition of the asset to load.
+            resource_config (Optional[Any]): A dictionary of resource configurations to be passed
+                to the :py:class:`IOManager`.
 
         Returns:
             The contents of an asset as a Python object.
@@ -1447,7 +1449,10 @@ class RepositoryDefinition:
 
         with AssetValueLoader(self._assets_defs_by_key, instance=instance) as loader:
             return loader.load_asset_value(
-                asset_key, python_type=python_type, partition_key=partition_key, config=config
+                asset_key,
+                python_type=python_type,
+                partition_key=partition_key,
+                resource_config=resource_config,
             )
 
     @public

@@ -217,30 +217,9 @@ def test_partitions_with_fs_io_manager():
             value = loader.load_asset_value(AssetKey("asset1"), partition_key="2020-05-05")
             assert value == 5
 
-def test_partitions_with_fs_io_manager():
-    with tempfile.TemporaryDirectory() as tmpdir_path:
-        io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
-
-        @asset(
-            partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
-            io_manager_def=io_manager_def,
-        )
-        def asset1():
-            return 5
-
-        materialize([asset1], partition_key="2020-05-05")
-
-        @repository
-        def repo():
-            return [asset1]
-
-        with repo.get_asset_value_loader() as loader:
-            value = loader.load_asset_value(AssetKey("asset1"), partition_key="2020-05-05")
-            assert value == 5
 
 def test_io_manager_with_config():
     class MyIOManager(IOManager):
-
         def __init__(self, key):
             self.key = key
 
@@ -252,7 +231,7 @@ def test_io_manager_with_config():
 
     @io_manager(config_schema={"key": int})
     def my_io_manager(context):
-        return MyIOManager(context.resource_config['key'])
+        return MyIOManager(context.resource_config["key"])
 
     @asset
     def asset1():
@@ -261,35 +240,27 @@ def test_io_manager_with_config():
     @repository
     def repo():
         return with_resources([asset1], resource_defs={"io_manager": my_io_manager})
-    
-    resource_config = {
-        'io_manager':{
-            'config': {
-                'key': 5
-            }
-        }
-    }
+
+    resource_config = {"io_manager": {"config": {"key": 5}}}
     with repo.get_asset_value_loader() as loader:
         value = loader.load_asset_value(AssetKey("asset1"), resource_config=resource_config)
         assert value == 5
 
-def test_io_manager_resource_with_config():
 
+def test_io_manager_resource_with_config():
     @resource(config_schema={"key": int})
     def io_resource(context):
 
         return context.resource_config["key"]
 
-
     class MyIOManager(IOManager):
-
         def handle_output(self, context, obj):
             assert False
 
         def load_input(self, context):
             return context.resources.io_resource
 
-    @io_manager(required_resource_keys={'io_resource'})
+    @io_manager(required_resource_keys={"io_resource"})
     def my_io_manager(context):
         return MyIOManager()
 
@@ -299,20 +270,12 @@ def test_io_manager_resource_with_config():
 
     @repository
     def repo():
-        return with_resources([asset1], 
-            resource_defs={
-                "io_manager": my_io_manager,
-                "io_resource": io_resource
-            })
-    
-    resource_config = {
-        'io_resource':{
-            'config': {
-                'key': 5
-            }
-        }
-    }
+        return with_resources(
+            [asset1], resource_defs={"io_manager": my_io_manager, "io_resource": io_resource}
+        )
+
+    resource_config = {"io_resource": {"config": {"key": 5}}}
     with repo.get_asset_value_loader() as loader:
-        
+
         value = loader.load_asset_value(AssetKey("asset1"), resource_config=resource_config)
         assert value == 5
