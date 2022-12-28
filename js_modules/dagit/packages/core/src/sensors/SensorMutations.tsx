@@ -5,7 +5,10 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 
 import {StartSensor_startSensor_PythonError, StartSensor} from './types/StartSensor';
-import {StopSensor_stopSensor_PythonError, StopSensor} from './types/StopSensor';
+import {
+  StopRunningSensor_stopSensor_PythonError,
+  StopRunningSensor,
+} from './types/StopRunningSensor';
 
 export const START_SENSOR_MUTATION = gql`
   mutation StartSensor($sensorSelector: SensorSelector!) {
@@ -26,7 +29,7 @@ export const START_SENSOR_MUTATION = gql`
 `;
 
 export const STOP_SENSOR_MUTATION = gql`
-  mutation StopSensor($jobOriginId: String!, $jobSelectorId: String!) {
+  mutation StopRunningSensor($jobOriginId: String!, $jobSelectorId: String!) {
     stopSensor(jobOriginId: $jobOriginId, jobSelectorId: $jobSelectorId) {
       __typename
       ... on StopSensorMutationResult {
@@ -42,9 +45,9 @@ export const STOP_SENSOR_MUTATION = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-type PythonError = StartSensor_startSensor_PythonError | StopSensor_stopSensor_PythonError;
+type PythonError = StartSensor_startSensor_PythonError | StopRunningSensor_stopSensor_PythonError;
 
-export const displaySensorMutationErrors = (data: StartSensor | StopSensor) => {
+export const displaySensorMutationErrors = (data: StartSensor | StopRunningSensor) => {
   let error: PythonError | null = null;
 
   if ('startSensor' in data && data.startSensor.__typename === 'PythonError') {

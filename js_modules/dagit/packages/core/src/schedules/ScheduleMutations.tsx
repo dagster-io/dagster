@@ -4,11 +4,14 @@ import * as React from 'react';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 
-import {StartSchedule, StartSchedule_startSchedule_PythonError} from './types/StartSchedule';
+import {
+  StartThisSchedule,
+  StartThisSchedule_startSchedule_PythonError,
+} from './types/StartThisSchedule';
 import {StopSchedule, StopSchedule_stopRunningSchedule_PythonError} from './types/StopSchedule';
 
 export const START_SCHEDULE_MUTATION = gql`
-  mutation StartSchedule($scheduleSelector: ScheduleSelector!) {
+  mutation StartThisSchedule($scheduleSelector: ScheduleSelector!) {
     startSchedule(scheduleSelector: $scheduleSelector) {
       __typename
       ... on ScheduleStateResult {
@@ -48,9 +51,9 @@ export const STOP_SCHEDULE_MUTATION = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-export const displayScheduleMutationErrors = (data: StartSchedule | StopSchedule) => {
+export const displayScheduleMutationErrors = (data: StartThisSchedule | StopSchedule) => {
   let error:
-    | StartSchedule_startSchedule_PythonError
+    | StartThisSchedule_startSchedule_PythonError
     | StopSchedule_stopRunningSchedule_PythonError
     | null = null;
 
