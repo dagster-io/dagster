@@ -550,6 +550,28 @@ runLauncher:
       # https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container
       securityContext: ~
 
+      # Raw k8s configuration for the Kubernetes Job and Pod created for the run.
+      # See: https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
+      #
+      # Example:
+      # runK8sConfig:
+      #   containerConfig: # raw config for the pod's main container
+      #     resources:
+      #       cpu: 100m
+      #       memory: 128Mi
+      #   podTemplateSpecMetadata: # raw config for the pod's metadata
+      #     annotations:
+      #       mykey: myvalue
+      #   podSpecConfig: # raw config for the spec of the launched's pod
+      #     nodeSelector:
+      #       disktype: ssd
+      #   jobSpecConfig: # raw config for the kubernetes job's spec
+      #     ttlSecondsAfterFinished: 7200
+      #   jobMetadata: # raw config for the kubernetes job's metadata
+      #     annotations:
+      #       mykey: myvalue
+      runK8sConfig: {}
+
     # This configuration will only be used if the CeleryK8sRunLauncher is selected
     celeryK8sRunLauncher:
       # Change with caution! If you're using a fixed tag for pipeline run images, changing the

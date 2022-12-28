@@ -1905,6 +1905,68 @@
             "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
+        "RunK8sConfig": {
+            "title": "RunK8sConfig",
+            "type": "object",
+            "properties": {
+                "containerConfig": {
+                    "title": "Containerconfig",
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "podSpecConfig": {
+                    "title": "Podspecconfig",
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "podTemplateSpecMetadata": {
+                    "title": "Podtemplatespecmetadata",
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "jobSpecConfig": {
+                    "title": "Jobspecconfig",
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "jobMetadata": {
+                    "title": "Jobmetadata",
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "additionalProperties": false
+        },
         "K8sRunLauncherConfig": {
             "title": "K8sRunLauncherConfig",
             "type": "object",
@@ -2036,6 +2098,17 @@
                     "anyOf": [
                         {
                             "$ref": "#/definitions/SecurityContext"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "runK8sConfig": {
+                    "title": "RunK8sConfig",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/RunK8sConfig"
                         },
                         {
                             "type": "null"

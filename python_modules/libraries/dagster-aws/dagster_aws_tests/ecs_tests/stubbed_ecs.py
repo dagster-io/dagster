@@ -300,7 +300,7 @@ class StubbedEcs:
             )
         else:
             # Sleep for long enough that we hit the lock
-            time.sleep(0.01)
+            time.sleep(0.2)
             # Family must be <= 255 characters. Alphanumeric, dash, and underscore only.
             if len(family) > 255 or not re.match(r"^[\w\-]+$", family):
                 self.stubber.add_client_error(

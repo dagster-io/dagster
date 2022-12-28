@@ -105,17 +105,12 @@ class AssetReconciliationScenario(NamedTuple):
                                 asset.subset_for(asset.keys - selected_keys).to_source_assets()
                             )
 
-                materialize_to_memory(
-                    instance=instance,
+                do_run(
+                    asset_keys=run.asset_keys,
                     partition_key=run.partition_key,
-                    assets=assets_in_run,
-                    run_config={
-                        "ops": {
-                            failed_asset_key.path[-1]: {"config": {"fail": True}}
-                            for failed_asset_key in (run.failed_asset_keys or [])
-                        }
-                    },
-                    raise_on_error=False,
+                    all_assets=self.assets,
+                    instance=instance,
+                    failed_asset_keys=run.failed_asset_keys,
                 )
 
         if self.evaluation_delta is not None:
@@ -135,6 +130,45 @@ class AssetReconciliationScenario(NamedTuple):
             assert base_job is not None
 
         return run_requests, cursor
+
+
+def do_run(
+    asset_keys: Sequence[AssetKey],
+    partition_key: Optional[str],
+    all_assets: Sequence[Union[SourceAsset, AssetsDefinition]],
+    instance: DagsterInstance,
+    failed_asset_keys: Optional[Sequence[AssetKey]] = None,
+    tags: Optional[Mapping[str, str]] = None,
+) -> None:
+    assets_in_run: List[Union[SourceAsset, AssetsDefinition]] = []
+    asset_keys_set = set(asset_keys)
+    for asset in all_assets:
+        if isinstance(asset, SourceAsset):
+            assets_in_run.append(asset)
+        else:
+            selected_keys = asset_keys_set.intersection(asset.keys)
+            if selected_keys == asset.keys:
+                assets_in_run.append(asset)
+            elif not selected_keys:
+                assets_in_run.extend(asset.to_source_assets())
+            else:
+                assets_in_run.append(asset.subset_for(asset_keys_set))
+                assets_in_run.extend(
+                    asset.subset_for(asset.keys - selected_keys).to_source_assets()
+                )
+    materialize_to_memory(
+        instance=instance,
+        partition_key=partition_key,
+        assets=assets_in_run,
+        run_config={
+            "ops": {
+                failed_asset_key.path[-1]: {"config": {"fail": True}}
+                for failed_asset_key in (failed_asset_keys or [])
+            }
+        },
+        raise_on_error=False,
+        tags=tags,
+    )
 
 
 def single_asset_run(asset_key: str, partition_key: Optional[str] = None) -> RunSpec:
@@ -428,6 +462,10 @@ two_assets_in_sequence_one_partition = [
     asset_def("asset1", partitions_def=one_partition_partitions_def),
     asset_def("asset2", ["asset1"], partitions_def=one_partition_partitions_def),
 ]
+two_assets_in_sequence_two_partitions = [
+    asset_def("asset1", partitions_def=two_partitions_partitions_def),
+    asset_def("asset2", ["asset1"], partitions_def=two_partitions_partitions_def),
+]
 
 two_assets_in_sequence_fan_in_partitions = [
     asset_def("asset1", partitions_def=fanned_out_partitions_def),
@@ -632,6 +670,14 @@ scenarios = {
         assets=two_assets_in_sequence_one_partition,
         unevaluated_runs=[run(["asset1", "asset2"], partition_key="a")],
         expected_run_requests=[],
+    ),
+    "two_assets_both_upstream_partitions_materialized": AssetReconciliationScenario(
+        assets=two_assets_in_sequence_two_partitions,
+        unevaluated_runs=[run(["asset1"], partition_key="a"), run(["asset1"], partition_key="b")],
+        expected_run_requests=[
+            run_request(asset_keys=["asset2"], partition_key="a"),
+            run_request(asset_keys=["asset2"], partition_key="b"),
+        ],
     ),
     "parent_one_partition_one_run": AssetReconciliationScenario(
         assets=two_assets_in_sequence_one_partition,
