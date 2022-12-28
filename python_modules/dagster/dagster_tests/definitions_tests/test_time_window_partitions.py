@@ -541,3 +541,14 @@ def test_time_window_partitions_contains():
     assert "2015-01-05" not in subset
     assert "2015-01-09" not in subset
     assert "2015-01-11" not in subset
+
+
+def test_unique_identifier():
+    assert (
+        DailyPartitionsDefinition(start_date="2015-01-01").serializable_unique_identifier
+        != DailyPartitionsDefinition(start_date="2015-01-02").serializable_unique_identifier
+    )
+    assert (
+        DailyPartitionsDefinition(start_date="2015-01-01").serializable_unique_identifier
+        == DailyPartitionsDefinition(start_date="2015-01-01").serializable_unique_identifier
+    )

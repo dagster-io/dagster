@@ -3,9 +3,8 @@ import logging  # pylint: disable=unused-import; used by mock in string form
 import re
 import sys
 import time
-from collections import Counter
 from contextlib import ExitStack, contextmanager
-from typing import Optional, Sequence, cast
+from typing import List, Optional, Sequence, Tuple, cast
 
 import mock
 import pendulum
@@ -20,6 +19,7 @@ from dagster import (
     EventRecordsFilter,
     Field,
     In,
+    JobDefinition,
     Out,
     Output,
     RetryRequested,
@@ -44,6 +44,7 @@ from dagster._core.events.log import EventLogEntry, construct_event_logger
 from dagster._core.execution.api import execute_run
 from dagster._core.execution.plan.handle import StepHandle
 from dagster._core.execution.plan.objects import StepFailureData, StepSuccessData
+from dagster._core.execution.results import PipelineExecutionResult
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
@@ -51,11 +52,13 @@ from dagster._core.host_representation.origin import (
     InProcessRepositoryLocationOrigin,
 )
 from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
+from dagster._core.storage.event_log.base import EventLogStorage
 from dagster._core.storage.event_log.migration import (
     EVENT_LOG_DATA_MIGRATIONS,
     migrate_asset_key_data,
 )
 from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
+from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
@@ -219,7 +222,9 @@ def _default_loggers(event_callback):
 
 
 # This exists to create synthetic events to test the store
-def _synthesize_events(ops_fn, run_id=None, check_success=True, instance=None, run_config=None):
+def _synthesize_events(
+    ops_fn, run_id=None, check_success=True, instance=None, run_config=None
+) -> Tuple[List[EventLogEntry], PipelineExecutionResult]:
     events = []
 
     def _append_event(event):
@@ -232,6 +237,8 @@ def _synthesize_events(ops_fn, run_id=None, check_success=True, instance=None, r
     )
     def a_job():
         ops_fn()
+
+    result = None
 
     with ExitStack() as stack:
         if not instance:
@@ -248,7 +255,9 @@ def _synthesize_events(ops_fn, run_id=None, check_success=True, instance=None, r
         if check_success:
             assert result.success
 
-        return events, result
+    assert result
+
+    return events, result
 
 
 def _fetch_all_events(configured_storage, run_id=None):
@@ -312,12 +321,31 @@ def cursor_datetime_args():
     yield datetime.datetime.now()
 
 
-def _execute_job_and_store_events(instance, storage, job, run_id):
-    result = job.execute_in_process(instance=instance, raise_on_error=False, run_id=run_id)
+def _execute_job_and_store_events(
+    instance: DagsterInstance,
+    storage: EventLogStorage,
+    job: JobDefinition,
+    run_id: Optional[str] = None,
+    asset_selection: Optional[Sequence[AssetKey]] = None,
+    partition_key: Optional[str] = None,
+):
+    result = job.execute_in_process(
+        instance=instance,
+        raise_on_error=False,
+        run_id=run_id,
+        asset_selection=asset_selection,
+        partition_key=partition_key,
+    )
     events = instance.all_logs(run_id=result.run_id)
     for event in events:
         storage.store_event(event)
     return result
+
+
+def _get_cached_status_for_asset(storage, asset_key):
+    asset_records = list(storage.get_asset_records([asset_key]))
+    assert len(asset_records) == 1
+    return asset_records[0].asset_entry.cached_status
 
 
 class TestEventLogStorage:
@@ -376,6 +404,9 @@ class TestEventLogStorage:
 
     def can_watch(self):
         # Whether the storage is allowed to watch the event log
+        return True
+
+    def can_write_to_asset_key_table(self):
         return True
 
     def test_event_log_storage_store_events_and_wipe(self, test_run_id, storage):
@@ -615,6 +646,8 @@ class TestEventLogStorage:
         assert storage.has_secondary_index("_B")
 
     def test_basic_event_store(self, test_run_id, storage):
+        from collections import Counter as CollectionsCounter
+
         if not isinstance(storage, SqlEventLogStorage):
             pytest.skip("This test is for SQL-backed Event Log behavior")
 
@@ -628,9 +661,11 @@ class TestEventLogStorage:
         out_events = list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
         # messages can come out of order
-        event_type_counts = Counter(_event_types(out_events))
+        event_type_counts = CollectionsCounter(_event_types(out_events))
         assert event_type_counts
-        assert Counter(_event_types(out_events)) == Counter(_event_types(events))
+        assert CollectionsCounter(_event_types(out_events)) == CollectionsCounter(
+            _event_types(events)
+        )
 
     def test_basic_get_logs_for_run(self, test_run_id, storage):
 
@@ -2790,3 +2825,47 @@ class TestEventLogStorage:
                 ]
                 == 1
             )
+
+    def test_store_and_wipe_cached_status(self, storage, instance):
+        if not self.can_write_to_asset_key_table():
+            return
+
+        asset_key = AssetKey("yay")
+
+        @op
+        def yields_materialization():
+            yield AssetMaterialization(asset_key=asset_key)
+            yield Output(1)
+
+        run_id_1, run_id_2 = make_new_run_id(), make_new_run_id()
+        with create_and_delete_test_runs(instance, [run_id_1, run_id_2]):
+            events, _ = _synthesize_events(
+                lambda: yields_materialization(),
+                run_id=run_id_1,
+            )
+            for event in events:
+                storage.store_event(event)
+
+            assert _get_cached_status_for_asset(storage, asset_key) == None
+
+            cache_value = AssetStatusCacheValue(
+                latest_storage_id=1,
+                partitions_def_id="foo",
+                serialized_materialized_partition_subset="bar",
+            )
+            storage.update_asset_cached_status_data(asset_key=asset_key, cache_values=cache_value)
+
+            assert _get_cached_status_for_asset(storage, asset_key) == cache_value
+
+            if self.can_wipe():
+                storage.wipe_asset(asset_key)
+                assert storage.get_asset_records() == []
+
+                events, _ = _synthesize_events(
+                    lambda: yields_materialization(),
+                    run_id=run_id_2,
+                )
+                for event in events:
+                    storage.store_event(event)
+
+                assert _get_cached_status_for_asset(storage, asset_key) == None

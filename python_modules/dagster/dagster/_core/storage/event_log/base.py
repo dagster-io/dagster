@@ -1,7 +1,17 @@
 import base64
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Callable, Iterable, Mapping, NamedTuple, Optional, Sequence, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Iterable,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
 
 import dagster._check as check
 from dagster._core.assets import AssetDetails
@@ -17,6 +27,9 @@ from dagster._core.execution.stats import (
 from dagster._core.instance import MayHaveInstanceWeakref
 from dagster._core.storage.pipeline_run import PipelineRunStatsSnapshot
 from dagster._seven import json
+
+if TYPE_CHECKING:
+    from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 
 class EventLogConnection(NamedTuple):
@@ -79,6 +92,7 @@ class AssetEntry(
             ("last_materialization", Optional[EventLogEntry]),
             ("last_run_id", Optional[str]),
             ("asset_details", Optional[AssetDetails]),
+            ("cached_status", Optional["AssetStatusCacheValue"]),
         ],
     )
 ):
@@ -88,7 +102,10 @@ class AssetEntry(
         last_materialization: Optional[EventLogEntry] = None,
         last_run_id: Optional[str] = None,
         asset_details: Optional[AssetDetails] = None,
+        cached_status: Optional["AssetStatusCacheValue"] = None,
     ):
+        from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+
         return super(AssetEntry, cls).__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
@@ -97,6 +114,9 @@ class AssetEntry(
             ),
             last_run_id=check.opt_str_param(last_run_id, "last_run_id"),
             asset_details=check.opt_inst_param(asset_details, "asset_details", AssetDetails),
+            cached_status=check.opt_inst_param(
+                cached_status, "cached_status", AssetStatusCacheValue
+            ),
         )
 
 
@@ -253,6 +273,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         raise NotImplementedError()
 
     @abstractmethod
+    def can_cache_asset_status_data(self) -> bool:
+        pass
+
+    @abstractmethod
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
     ) -> Iterable[AssetRecord]:
@@ -264,6 +288,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def all_asset_keys(self) -> Iterable[AssetKey]:
+        pass
+
+    @abstractmethod
+    def update_asset_cached_status_data(
+        self, asset_key: AssetKey, cache_values: "AssetStatusCacheValue"
+    ) -> None:
         pass
 
     def get_asset_keys(
