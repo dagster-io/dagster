@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
     from dagster._core.snap.pipeline_snapshot import PipelineSnapshot
+    from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
     from dagster._core.storage.pipeline_run import (
         DagsterRun,
         JobBucket,
@@ -474,6 +475,16 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> Sequence[Mapping[str, str]]:
         return self._storage.event_log_storage.get_event_tags_for_asset(
             asset_key, filter_tags, filter_event_id
+        )
+
+    def can_cache_asset_status_data(self) -> bool:
+        return self._storage.event_log_storage.can_cache_asset_status_data()
+
+    def update_asset_cached_status_data(
+        self, asset_key: "AssetKey", cache_values: "AssetStatusCacheValue"
+    ) -> None:
+        self._storage.event_log_storage.update_asset_cached_status_data(
+            asset_key=asset_key, cache_values=cache_values
         )
 
     def get_records_for_run(
