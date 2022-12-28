@@ -31,6 +31,7 @@ def test_basic_materialize_to_memory():
     result = materialize_to_memory([the_asset])
     assert result.success
     assert len(result.asset_materializations_for_node("the_asset")[0].metadata_entries) == 0
+    assert result.asset_value(the_asset.key) == 5
 
 
 def test_materialize_config():
@@ -183,6 +184,7 @@ def test_materialize_graph_backed_asset():
     result = materialize_to_memory([cool_thing_asset, a, b])
     assert result.success
     assert result.output_for_node("create_cool_thing.combine_strings") == "aaaabb"
+    assert result.asset_value("cool_thing") == "aaaabb"
 
 
 def test_materialize_multi_asset():
