@@ -4,8 +4,8 @@ import React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissions} from '../app/Permissions';
+import {LaunchPipelineExecutionMutationVariables} from '../graphql/graphql';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
-import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
@@ -28,7 +28,7 @@ type ObserveAssetsState =
   | {type: 'error'; error: string}
   | {
       type: 'single-run';
-      executionParams: LaunchPipelineExecutionVariables['executionParams'];
+      executionParams: LaunchPipelineExecutionMutationVariables['executionParams'];
     };
 
 export const LaunchAssetObservationButton: React.FC<{
