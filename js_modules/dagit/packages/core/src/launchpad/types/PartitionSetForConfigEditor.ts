@@ -4,14 +4,13 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL query operation: InstanceConfigHasInfo
+// GraphQL fragment: PartitionSetForConfigEditor
 // ====================================================
 
-export interface InstanceConfigHasInfo_instance {
-  __typename: "Instance";
-  hasInfo: boolean;
-}
-
-export interface InstanceConfigHasInfo {
-  instance: InstanceConfigHasInfo_instance;
+export interface PartitionSetForConfigEditor {
+  __typename: "PartitionSet";
+  id: string;
+  name: string;
+  mode: string;
+  solidSelection: string[] | null;
 }

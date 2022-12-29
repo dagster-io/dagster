@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -10,32 +10,31 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {graphql} from '../graphql';
+import {
+  InstanceBackfillsQueryQuery,
+  InstanceBackfillsQueryQueryVariables,
+} from '../graphql/graphql';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {OverviewTabs} from '../overview/OverviewTabs';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Loading} from '../ui/Loading';
 
-import {BACKFILL_TABLE_FRAGMENT, BackfillTable} from './BackfillTable';
-import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
-import {
-  InstanceBackfillsQuery,
-  InstanceBackfillsQueryVariables,
-} from './types/InstanceBackfillsQuery';
-import {InstanceHealthForBackfillsQuery} from './types/InstanceHealthForBackfillsQuery';
+import {BackfillTable} from './BackfillTable';
 
 const PAGE_SIZE = 10;
 
 export const InstanceBackfills = () => {
   useTrackPageView();
 
-  const queryData = useQuery<InstanceHealthForBackfillsQuery>(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
+  const queryData = useQuery(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
-    InstanceBackfillsQuery,
-    InstanceBackfillsQueryVariables
+    InstanceBackfillsQueryQuery,
+    InstanceBackfillsQueryQueryVariables
   >({
     query: BACKFILLS_QUERY,
     variables: {},
@@ -121,17 +120,15 @@ export const InstanceBackfills = () => {
   );
 };
 
-const INSTANCE_HEALTH_FOR_BACKFILLS_QUERY = gql`
+const INSTANCE_HEALTH_FOR_BACKFILLS_QUERY = graphql(`
   query InstanceHealthForBackfillsQuery {
     instance {
       ...InstanceHealthFragment
     }
   }
+`);
 
-  ${INSTANCE_HEALTH_FRAGMENT}
-`;
-
-const BACKFILLS_QUERY = gql`
+const BACKFILLS_QUERY = graphql(`
   query InstanceBackfillsQuery($cursor: String, $limit: Int) {
     partitionBackfillsOrError(cursor: $cursor, limit: $limit) {
       ... on PartitionBackfills {
@@ -162,7 +159,4 @@ const BACKFILLS_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-
-  ${BACKFILL_TABLE_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);

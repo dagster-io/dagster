@@ -9,7 +9,6 @@ import {BulkActionStatus} from '../types/globalTypes';
 
 import {SINGLE_BACKFILL_QUERY} from './BackfillRow';
 import {BackfillTableFragment} from './types/BackfillTableFragment';
-import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/SingleBackfillQuery';
 
 interface Props {
   backfill?: BackfillTableFragment;
@@ -18,17 +17,14 @@ interface Props {
 }
 export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props) => {
   const [cancelBackfill] = useMutation(CANCEL_BACKFILL_MUTATION);
-  const {data} = useQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
-    SINGLE_BACKFILL_QUERY,
-    {
-      fetchPolicy: 'cache-and-network',
-      variables: {
-        backfillId: backfill?.backfillId || '',
-      },
-      notifyOnNetworkStatusChange: true,
-      skip: !backfill,
+  const {data} = useQuery(SINGLE_BACKFILL_QUERY, {
+    fetchPolicy: 'cache-and-network',
+    variables: {
+      backfillId: backfill?.backfillId || '',
     },
-  );
+    notifyOnNetworkStatusChange: true,
+    skip: !backfill,
+  });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const unfinishedMap = React.useMemo(() => {
     if (!backfill || !data || data.partitionBackfillOrError.__typename !== 'PartitionBackfill') {

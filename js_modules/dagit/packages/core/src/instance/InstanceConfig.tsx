@@ -1,6 +1,6 @@
 import 'codemirror/addon/search/searchcursor';
 
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {
   Box,
   Colors,
@@ -17,10 +17,10 @@ import {createGlobalStyle} from 'styled-components/macro';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {graphql} from '../graphql';
 
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
-import {InstanceConfigQuery} from './types/InstanceConfigQuery';
 
 const InstanceConfigStyle = createGlobalStyle`
   .react-codemirror2 .CodeMirror.cm-s-instance-config {
@@ -38,7 +38,7 @@ export const InstanceConfig = React.memo(() => {
   useTrackPageView();
 
   const {pageTitle} = React.useContext(InstancePageContext);
-  const queryResult = useQuery<InstanceConfigQuery>(INSTANCE_CONFIG_QUERY, {
+  const queryResult = useQuery(INSTANCE_CONFIG_QUERY, {
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
   });
@@ -97,11 +97,11 @@ export const InstanceConfig = React.memo(() => {
 // eslint-disable-next-line import/no-default-export
 export default InstanceConfig;
 
-export const INSTANCE_CONFIG_QUERY = gql`
+export const INSTANCE_CONFIG_QUERY = graphql(`
   query InstanceConfigQuery {
     version
     instance {
       info
     }
   }
-`;
+`);

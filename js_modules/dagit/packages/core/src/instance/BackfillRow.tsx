@@ -1,4 +1,4 @@
-import {gql, useLazyQuery} from '@apollo/client';
+import {useLazyQuery} from '@apollo/client';
 import {Box, Button, Colors, Icon, MenuItem, Menu, Popover, Tag, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
@@ -9,6 +9,8 @@ import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {graphql} from '../graphql';
+import {PartitionStatusesForBackfillFragment} from '../graphql/graphql';
 import {
   PartitionState,
   PartitionStatus,
@@ -27,13 +29,8 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {workspacePathFromAddress, workspacePipelinePath} from '../workspace/workspacePath';
 
 import {BackfillTableFragment} from './types/BackfillTableFragment';
-import {
-  SingleBackfillQuery,
-  SingleBackfillQueryVariables,
-  SingleBackfillQuery_partitionBackfillOrError_PartitionBackfill_partitionStatuses,
-} from './types/SingleBackfillQuery';
 
-type BackfillPartitionStatusData = SingleBackfillQuery_partitionBackfillOrError_PartitionBackfill_partitionStatuses;
+type BackfillPartitionStatusData = PartitionStatusesForBackfillFragment;
 
 export const BackfillRow = ({
   backfill,
@@ -53,10 +50,7 @@ export const BackfillRow = ({
   onShowPartitionsRequested: (backfill: BackfillTableFragment) => void;
 }) => {
   const history = useHistory();
-  const [queryBackfill, queryResult] = useLazyQuery<
-    SingleBackfillQuery,
-    SingleBackfillQueryVariables
-  >(SINGLE_BACKFILL_QUERY, {
+  const [queryBackfill, queryResult] = useLazyQuery(SINGLE_BACKFILL_QUERY, {
     fetchPolicy: 'cache-and-network',
     variables: {
       backfillId: backfill.backfillId,
@@ -406,19 +400,23 @@ const TagButton = styled.button`
   }
 `;
 
-export const SINGLE_BACKFILL_QUERY = gql`
+export const SINGLE_BACKFILL_QUERY = graphql(`
   query SingleBackfillQuery($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
         partitionStatuses {
-          results {
-            id
-            partitionName
-            runId
-            runStatus
-          }
+          ...PartitionStatusesForBackfill
         }
       }
     }
   }
-`;
+
+  fragment PartitionStatusesForBackfill on PartitionStatuses {
+    results {
+      id
+      partitionName
+      runId
+      runStatus
+    }
+  }
+`);
