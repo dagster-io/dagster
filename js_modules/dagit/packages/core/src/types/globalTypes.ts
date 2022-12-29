@@ -152,12 +152,6 @@ export enum StepKind {
   UNRESOLVED_MAPPED = "UNRESOLVED_MAPPED",
 }
 
-export interface AssetGroupSelector {
-  groupName: string;
-  repositoryName: string;
-  repositoryLocationName: string;
-}
-
 export interface AssetKeyInput {
   path: string[];
 }

@@ -10,8 +10,8 @@ import {
   LiveData,
   toGraphId,
 } from '../asset-graph/Utils';
-import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
+import {AssetNodeForGraphQueryFragment} from '../graphql/graphql';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Version} from '../versions/Version';
@@ -33,8 +33,8 @@ import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeDefinition: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
-  upstream: AssetGraphQuery_assetNodes[] | null;
-  downstream: AssetGraphQuery_assetNodes[] | null;
+  upstream: AssetNodeForGraphQueryFragment[] | null;
+  downstream: AssetNodeForGraphQueryFragment[] | null;
   liveDataByNode: LiveData;
   dependsOnSelf: boolean;
 }> = ({assetNode, upstream, downstream, liveDataByNode, dependsOnSelf}) => {
