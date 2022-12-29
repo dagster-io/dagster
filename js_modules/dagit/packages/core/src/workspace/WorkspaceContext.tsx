@@ -12,9 +12,9 @@ import {
   WorkspaceRepositoryFragment,
   WorkspaceScheduleFragment,
   WorkspaceSensorFragment,
+  PipelineSelector,
 } from '../graphql/graphql';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {PipelineSelector} from '../types/globalTypes';
 
 import {buildRepoAddress} from './buildRepoAddress';
 import {findRepoContainingPipeline} from './findRepoContainingPipeline';

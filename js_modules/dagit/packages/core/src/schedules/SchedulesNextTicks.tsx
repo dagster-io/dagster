@@ -1,4 +1,4 @@
-import {gql, useLazyQuery} from '@apollo/client';
+import {useLazyQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -25,8 +25,15 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {SharedToaster} from '../app/DomUtils';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useCopyToClipboard} from '../app/browser';
+import {graphql} from '../graphql';
+import {
+  RepositorySchedulesFragmentFragment,
+  ScheduleFragmentFragment,
+  ScheduleFutureTickEvaluationResultFragment,
+  ScheduleFutureTickRunRequestFragment,
+} from '../graphql/graphql';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunTags} from '../runs/RunTags';
 import {InstigationStatus} from '../types/globalTypes';
@@ -42,23 +49,15 @@ import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {TimestampDisplay} from './TimestampDisplay';
-import {RepositorySchedulesFragment} from './types/RepositorySchedulesFragment';
-import {ScheduleFragment} from './types/ScheduleFragment';
-import {
-  ScheduleTickConfigQuery,
-  ScheduleTickConfigQueryVariables,
-  ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult,
-  ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_runRequests,
-} from './types/ScheduleTickConfigQuery';
 
 interface ScheduleTick {
-  schedule: ScheduleFragment;
+  schedule: ScheduleFragmentFragment;
   timestamp: number;
   repoAddress: RepoAddress;
 }
 
 export const SchedulesNextTicks: React.FC<{
-  repos: RepositorySchedulesFragment[];
+  repos: RepositorySchedulesFragmentFragment[];
 }> = React.memo(({repos}) => {
   const nextTicks: ScheduleTick[] = [];
   let anyPipelines = false;
@@ -188,7 +187,7 @@ export const SchedulesNextTicks: React.FC<{
 
 const NextTickMenu: React.FC<{
   repoAddress: RepoAddress;
-  schedule: ScheduleFragment;
+  schedule: ScheduleFragmentFragment;
   tickTimestamp: number;
 }> = React.memo(({repoAddress, schedule, tickTimestamp}) => {
   const scheduleSelector = {
@@ -196,10 +195,7 @@ const NextTickMenu: React.FC<{
     scheduleName: schedule.name,
   };
   const [isOpen, setOpen] = React.useState<boolean>(false);
-  const [loadTickConfig, {called, loading, data}] = useLazyQuery<
-    ScheduleTickConfigQuery,
-    ScheduleTickConfigQueryVariables
-  >(SCHEDULE_TICK_CONFIG_QUERY, {
+  const [loadTickConfig, {called, loading, data}] = useLazyQuery(SCHEDULE_TICK_CONFIG_QUERY, {
     variables: {
       scheduleSelector,
       tickTimestamp,
@@ -250,8 +246,8 @@ const NextTickMenu: React.FC<{
 
 const NextTickMenuItems: React.FC<{
   repoAddress: RepoAddress;
-  evaluationResult: ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult | null;
-  schedule: ScheduleFragment;
+  evaluationResult: ScheduleFutureTickEvaluationResultFragment | null;
+  schedule: ScheduleFragmentFragment;
   loading: boolean;
   onItemOpen: (value: boolean) => void;
 }> = ({repoAddress, schedule, evaluationResult, loading, onItemOpen}) => {
@@ -312,14 +308,14 @@ const NextTickDialog: React.FC<{
   repoAddress: RepoAddress;
   isOpen: boolean;
   setOpen: (value: boolean) => void;
-  evaluationResult: ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult | null;
-  schedule: ScheduleFragment;
+  evaluationResult: ScheduleFutureTickEvaluationResultFragment | null;
+  schedule: ScheduleFragmentFragment;
   tickTimestamp: number;
 }> = ({repoAddress, evaluationResult, schedule, tickTimestamp, setOpen, isOpen}) => {
   const [
     selectedRunRequest,
     setSelectedRunRequest,
-  ] = React.useState<ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_runRequests | null>(
+  ] = React.useState<ScheduleFutureTickRunRequestFragment | null>(
     evaluationResult && evaluationResult.runRequests && evaluationResult.runRequests.length === 1
       ? evaluationResult.runRequests[0]
       : null,
@@ -487,32 +483,39 @@ const NextTickDialog: React.FC<{
   );
 };
 
-const SCHEDULE_TICK_CONFIG_QUERY = gql`
+const SCHEDULE_TICK_CONFIG_QUERY = graphql(`
   query ScheduleTickConfigQuery($scheduleSelector: ScheduleSelector!, $tickTimestamp: Int!) {
     scheduleOrError(scheduleSelector: $scheduleSelector) {
       ... on Schedule {
         id
         futureTick(tickTimestamp: $tickTimestamp) {
           evaluationResult {
-            runRequests {
-              runKey
-              runConfigYaml
-              tags {
-                key
-                value
-              }
-            }
-            skipReason
-            error {
-              ...PythonErrorFragment
-            }
+            ...ScheduleFutureTickEvaluationResult
           }
         }
       }
     }
   }
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+
+  fragment ScheduleFutureTickEvaluationResult on TickEvaluation {
+    runRequests {
+      ...ScheduleFutureTickRunRequest
+    }
+    skipReason
+    error {
+      ...PythonErrorFragment
+    }
+  }
+
+  fragment ScheduleFutureTickRunRequest on RunRequest {
+    runKey
+    runConfigYaml
+    tags {
+      key
+      value
+    }
+  }
+`);
 
 const RunRequestBody = styled.div`
   font-size: 13px;

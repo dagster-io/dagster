@@ -1,19 +1,15 @@
-import {gql, useLazyQuery} from '@apollo/client';
+import {useLazyQuery} from '@apollo/client';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {graphql} from '../graphql';
+import {SearchBootstrapQueryQuery, SearchSecondaryQueryQuery} from '../graphql/graphql';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
 import {SearchResult, SearchResultType} from './types';
-import {
-  SearchBootstrapQuery,
-  SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories as Repository,
-} from './types/SearchBootstrapQuery';
-import {SearchSecondaryQuery} from './types/SearchSecondaryQuery';
 
 const fuseOptions = {
   keys: ['label', 'segments', 'tags', 'type'],
@@ -22,7 +18,7 @@ const fuseOptions = {
   useExtendedSearch: true,
 };
 
-const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
+const bootstrapDataToSearchResults = (data?: SearchBootstrapQueryQuery) => {
   if (!data?.workspaceOrError || data?.workspaceOrError?.__typename !== 'Workspace') {
     return new Fuse([]);
   }
@@ -36,7 +32,7 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
     }
 
     const repoLocation = locationEntry.locationOrLoadError;
-    const repos: Repository[] = repoLocation.repositories;
+    const repos = repoLocation.repositories;
     return [
       ...accum,
       ...repos.reduce((inner, repo) => {
@@ -108,7 +104,7 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
   return new Fuse(allEntries, fuseOptions);
 };
 
-const secondaryDataToSearchResults = (data?: SearchSecondaryQuery) => {
+const secondaryDataToSearchResults = (data?: SearchSecondaryQueryQuery) => {
   if (!data?.assetsOrError || data.assetsOrError.__typename === 'PythonError') {
     return new Fuse([]);
   }
@@ -128,17 +124,17 @@ const secondaryDataToSearchResults = (data?: SearchSecondaryQuery) => {
 };
 
 export const useRepoSearch = () => {
-  const [
-    performBootstrapQuery,
-    {data: bootstrapData, loading: bootstrapLoading},
-  ] = useLazyQuery<SearchBootstrapQuery>(SEARCH_BOOTSTRAP_QUERY, {
-    fetchPolicy: 'cache-and-network',
-  });
+  const [performBootstrapQuery, {data: bootstrapData, loading: bootstrapLoading}] = useLazyQuery(
+    SEARCH_BOOTSTRAP_QUERY,
+    {
+      fetchPolicy: 'cache-and-network',
+    },
+  );
 
   const [
     performSecondaryQuery,
     {data: secondaryData, loading: secondaryLoading, called: secondaryQueryCalled},
-  ] = useLazyQuery<SearchSecondaryQuery>(SEARCH_SECONDARY_QUERY, {
+  ] = useLazyQuery(SEARCH_SECONDARY_QUERY, {
     fetchPolicy: 'cache-and-network',
   });
 
@@ -164,7 +160,7 @@ export const useRepoSearch = () => {
   return {performBootstrapQuery, loading, performSearch};
 };
 
-const SEARCH_BOOTSTRAP_QUERY = gql`
+const SEARCH_BOOTSTRAP_QUERY = graphql(`
   query SearchBootstrapQuery {
     workspaceOrError {
       __typename
@@ -208,10 +204,9 @@ const SEARCH_BOOTSTRAP_QUERY = gql`
       }
     }
   }
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);
 
-const SEARCH_SECONDARY_QUERY = gql`
+const SEARCH_SECONDARY_QUERY = graphql(`
   query SearchSecondaryQuery {
     assetsOrError {
       __typename
@@ -225,4 +220,4 @@ const SEARCH_SECONDARY_QUERY = gql`
       }
     }
   }
-`;
+`);

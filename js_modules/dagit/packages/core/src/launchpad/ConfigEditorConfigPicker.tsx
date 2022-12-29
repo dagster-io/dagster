@@ -28,9 +28,9 @@ import {
   ConfigEditorPipelinePresetFragment,
   ConfigPartitionResultFragment,
   PartitionSetForConfigEditorFragment,
+  RepositorySelector,
 } from '../graphql/graphql';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {RepositorySelector} from '../types/globalTypes';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';

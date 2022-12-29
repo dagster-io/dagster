@@ -10,7 +10,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {graphql} from '../graphql';
-import {SensorSelector} from '../types/globalTypes';
+import {SensorSelector} from '../graphql/graphql';
 
 export const EditCursorDialog: React.FC<{
   cursor: string;

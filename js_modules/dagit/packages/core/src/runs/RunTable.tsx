@@ -6,10 +6,10 @@ import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {RunsFilter} from '../graphql/graphql';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {RunsFilter} from '../types/globalTypes';
 import {
   findRepositoryAmongOptions,
   isThisThingAJob,

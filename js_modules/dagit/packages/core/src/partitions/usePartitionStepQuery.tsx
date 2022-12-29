@@ -1,21 +1,22 @@
-import {gql, useApolloClient, ApolloClient} from '@apollo/client';
+import {useApolloClient, ApolloClient} from '@apollo/client';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
+import {graphql} from '../graphql';
+import {
+  PartitionMatrixStepRunFragmentFragment,
+  PartitionStepLoaderQueryQuery,
+  PartitionStepLoaderQueryQueryVariables,
+  RepositorySelector,
+  RunStatus,
+} from '../graphql/graphql';
 import {DagsterTag} from '../runs/RunTag';
 import {RunFilterToken} from '../runs/RunsFilterInput';
-import {RepositorySelector, RunStatus} from '../types/globalTypes';
 
-import {PartitionMatrixStepRunFragment} from './types/PartitionMatrixStepRunFragment';
-import {
-  PartitionStepLoaderQuery,
-  PartitionStepLoaderQueryVariables,
-} from './types/PartitionStepLoaderQuery';
-import {PartitionRuns, PARTITION_MATRIX_STEP_RUN_FRAGMENT} from './useMatrixData';
+import {PartitionRuns} from './useMatrixData';
 
 interface DataState {
-  runs: PartitionMatrixStepRunFragment[];
+  runs: PartitionMatrixStepRunFragmentFragment[];
   partitionNames: string[];
   loading: boolean;
   loadingCursorIdx: number;
@@ -196,9 +197,12 @@ export function usePartitionStepQuery({
 
 async function fetchRunsForFilter(
   client: ApolloClient<any>,
-  variables: PartitionStepLoaderQueryVariables,
+  variables: PartitionStepLoaderQueryQueryVariables,
 ) {
-  const result = await client.query<PartitionStepLoaderQuery, PartitionStepLoaderQueryVariables>({
+  const result = await client.query<
+    PartitionStepLoaderQueryQuery,
+    PartitionStepLoaderQueryQueryVariables
+  >({
     fetchPolicy: 'network-only',
     query: PARTITION_STEP_LOADER_QUERY,
     variables,
@@ -234,7 +238,7 @@ function assemblePartitions(data: DataState, partitionTagName: string) {
   return results;
 }
 
-const PARTITION_STEP_LOADER_QUERY = gql`
+const PARTITION_STEP_LOADER_QUERY = graphql(`
   query PartitionStepLoaderQuery($filter: RunsFilter!, $cursor: String, $limit: Int) {
     pipelineRunsOrError(filter: $filter, cursor: $cursor, limit: $limit) {
       ... on Runs {
@@ -249,6 +253,4 @@ const PARTITION_STEP_LOADER_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-  ${PARTITION_MATRIX_STEP_RUN_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);

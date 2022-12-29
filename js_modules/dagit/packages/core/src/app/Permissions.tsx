@@ -1,8 +1,8 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {PermissionFragment} from './types/PermissionFragment';
-import {PermissionsQuery} from './types/PermissionsQuery';
+import {graphql} from '../graphql';
+import {PermissionFragmentFragment} from '../graphql/graphql';
 
 // used in tests, to ensure against permission renames.  Should make sure that the mapping in
 // extractPermissions is handled correctly
@@ -46,7 +46,7 @@ const DEFAULT_PERMISSIONS = {
   disabledReason: 'Disabled by your administrator',
 };
 
-const extractPermissions = (permissions: PermissionFragment[]) => {
+const extractPermissions = (permissions: PermissionFragmentFragment[]) => {
   const permsMap: PermissionsFromJSON = {};
   for (const item of permissions) {
     permsMap[item.permission] = {
@@ -75,12 +75,12 @@ const extractPermissions = (permissions: PermissionFragment[]) => {
 export type PermissionsMap = ReturnType<typeof extractPermissions>;
 
 export const PermissionsContext = React.createContext<{
-  data: PermissionFragment[];
+  data: PermissionFragmentFragment[];
   loading: boolean;
 }>({data: [], loading: true});
 
 export const PermissionsProvider: React.FC = (props) => {
-  const {data, loading} = useQuery<PermissionsQuery>(PERMISSIONS_QUERY);
+  const {data, loading} = useQuery(PERMISSIONS_QUERY);
   const value = React.useMemo(
     () => ({
       data: data?.permissions || [],
@@ -102,7 +102,7 @@ export const usePermissions = () => {
   );
 };
 
-const PERMISSIONS_QUERY = gql`
+const PERMISSIONS_QUERY = graphql(`
   query PermissionsQuery {
     permissions {
       ...PermissionFragment
@@ -114,4 +114,4 @@ const PERMISSIONS_QUERY = gql`
     value
     disabledReason
   }
-`;
+`);

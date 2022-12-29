@@ -1,32 +1,22 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {graphql} from '../graphql';
+import {PipelineExplorerRootQueryQuery} from '../graphql/graphql';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {Loading} from '../ui/Loading';
 import {buildPipelineSelector} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 import {explodeCompositesInHandleGraph} from './CompositeSupport';
-import {
-  GraphExplorer,
-  GraphExplorerOptions,
-  GRAPH_EXPLORER_ASSET_NODE_FRAGMENT,
-  GRAPH_EXPLORER_FRAGMENT,
-  GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT,
-} from './GraphExplorer';
+import {GraphExplorer, GraphExplorerOptions} from './GraphExplorer';
 import {NonIdealPipelineQueryResult} from './NonIdealPipelineQueryResult';
 import {ExplorerPath, explorerPathFromString, explorerPathToString} from './PipelinePathUtils';
-import {
-  PipelineExplorerRootQuery,
-  PipelineExplorerRootQueryVariables,
-} from './types/PipelineExplorerRootQuery';
 
 export const PipelineExplorerSnapshotRoot = () => {
   useTrackPageView();
@@ -72,20 +62,17 @@ export const PipelineExplorerContainer: React.FC<{
   const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
   const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
 
-  const pipelineResult = useQuery<PipelineExplorerRootQuery, PipelineExplorerRootQueryVariables>(
-    PIPELINE_EXPLORER_ROOT_QUERY,
-    {
-      variables: {
-        snapshotPipelineSelector: explorerPath.snapshotId ? undefined : pipelineSelector,
-        snapshotId: explorerPath.snapshotId ? explorerPath.snapshotId : undefined,
-        rootHandleID: parentNames.join('.'),
-        requestScopeHandleID: options.explodeComposites ? undefined : parentNames.join('.'),
-      },
+  const pipelineResult = useQuery(PIPELINE_EXPLORER_ROOT_QUERY, {
+    variables: {
+      snapshotPipelineSelector: explorerPath.snapshotId ? undefined : pipelineSelector,
+      snapshotId: explorerPath.snapshotId ? explorerPath.snapshotId : undefined,
+      rootHandleID: parentNames.join('.'),
+      requestScopeHandleID: options.explodeComposites ? undefined : parentNames.join('.'),
     },
-  );
+  });
 
   return (
-    <Loading<PipelineExplorerRootQuery> queryResult={pipelineResult}>
+    <Loading<PipelineExplorerRootQueryQuery> queryResult={pipelineResult}>
       {({pipelineSnapshotOrError: result}) => {
         if (result.__typename !== 'PipelineSnapshot') {
           return (
@@ -140,7 +127,7 @@ export const PipelineExplorerContainer: React.FC<{
   );
 };
 
-export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
+export const PIPELINE_EXPLORER_ROOT_QUERY = graphql(`
   query PipelineExplorerRootQuery(
     $snapshotPipelineSelector: PipelineSelector
     $snapshotId: String
@@ -185,9 +172,4 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-  ${METADATA_ENTRY_FRAGMENT}
-  ${GRAPH_EXPLORER_FRAGMENT}
-  ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
-  ${GRAPH_EXPLORER_ASSET_NODE_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);

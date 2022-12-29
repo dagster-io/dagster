@@ -1,6 +1,6 @@
+import {PartitionHealthQueryQuery} from '../graphql/graphql';
 import {PartitionState} from '../partitions/PartitionStatus';
 
-import {PartitionHealthQuery} from './types/PartitionHealthQuery';
 import {buildPartitionHealthData} from './usePartitionHealthData';
 
 const {SUCCESS_MISSING, SUCCESS, MISSING} = PartitionState;
@@ -16,7 +16,8 @@ const DIMENSION_ONE_KEYS = [
 
 const DIMENSION_TWO_KEYS = ['TN', 'CA', 'VA', 'NY', 'MN'];
 
-const ONE_DIMENSIONAL_ASSET: PartitionHealthQuery = {
+const ONE_DIMENSIONAL_ASSET: PartitionHealthQueryQuery = {
+  __typename: 'DagitQuery',
   assetNodeOrError: {
     __typename: 'AssetNode',
     id: '1234',
@@ -34,7 +35,8 @@ const ONE_DIMENSIONAL_ASSET: PartitionHealthQuery = {
   },
 };
 
-const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
+const TWO_DIMENSIONAL_ASSET: PartitionHealthQueryQuery = {
+  __typename: 'DagitQuery',
   assetNodeOrError: {
     __typename: 'AssetNode',
     id: '1234',

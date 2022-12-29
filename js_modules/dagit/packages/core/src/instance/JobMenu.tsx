@@ -1,17 +1,15 @@
-import {gql, useLazyQuery} from '@apollo/client';
+import {useLazyQuery} from '@apollo/client';
 import {Button, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {usePermissions} from '../app/Permissions';
+import {graphql} from '../graphql';
 import {canRunAllSteps, canRunFromFailure} from '../runs/RunActionButtons';
-import {RunFragments} from '../runs/RunFragments';
 import {RunTimeFragment} from '../runs/types/RunTimeFragment';
 import {useJobReExecution} from '../runs/useJobReExecution';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
-
-import {RunReExecutionQuery} from './types/RunReExecutionQuery';
 
 interface Props {
   job: {isJob: boolean; name: string; runs: RunTimeFragment[]};
@@ -26,7 +24,7 @@ export const JobMenu = (props: Props) => {
   const {job, repoAddress} = props;
   const lastRun = job.runs.length ? job.runs[0] : null;
   const {canLaunchPipelineReexecution} = usePermissions();
-  const [fetchHasExecutionPlan, {data}] = useLazyQuery<RunReExecutionQuery>(RUN_RE_EXECUTION_QUERY);
+  const [fetchHasExecutionPlan, {data}] = useLazyQuery(RUN_RE_EXECUTION_QUERY);
 
   const run = data?.pipelineRunOrError.__typename === 'Run' ? data?.pipelineRunOrError : null;
 
@@ -105,7 +103,7 @@ export const JobMenu = (props: Props) => {
   );
 };
 
-const RUN_RE_EXECUTION_QUERY = gql`
+const RUN_RE_EXECUTION_QUERY = graphql(`
   query RunReExecutionQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       ... on Run {
@@ -114,6 +112,4 @@ const RUN_RE_EXECUTION_QUERY = gql`
       }
     }
   }
-
-  ${RunFragments.RunFragment}
-`;
+`);

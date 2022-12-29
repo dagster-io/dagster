@@ -1,13 +1,12 @@
-import {useQuery, gql} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, NonIdealState} from '@dagster-io/ui';
 import React from 'react';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {graphql} from '../graphql';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSensors} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
@@ -15,10 +14,8 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';
 import {SensorsTable} from './SensorsTable';
-import {SensorsRootQuery, SensorsRootQueryVariables} from './types/SensorsRootQuery';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -32,7 +29,7 @@ export const SensorsRoot = (props: Props) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const repoName = repoAddressAsHumanString(repoAddress);
 
-  const queryResult = useQuery<SensorsRootQuery, SensorsRootQueryVariables>(SENSORS_ROOT_QUERY, {
+  const queryResult = useQuery(SENSORS_ROOT_QUERY, {
     variables: {
       repositorySelector,
       instigationType: InstigationType.SENSOR,
@@ -107,7 +104,7 @@ export const SensorsRoot = (props: Props) => {
   );
 };
 
-const SENSORS_ROOT_QUERY = gql`
+const SENSORS_ROOT_QUERY = graphql(`
   query SensorsRootQuery(
     $repositorySelector: RepositorySelector!
     $instigationType: InstigationType!
@@ -135,8 +132,4 @@ const SENSORS_ROOT_QUERY = gql`
       ...InstanceHealthFragment
     }
   }
-  ${PYTHON_ERROR_FRAGMENT}
-  ${INSTIGATION_STATE_FRAGMENT}
-  ${SENSOR_FRAGMENT}
-  ${INSTANCE_HEALTH_FRAGMENT}
-`;
+`);

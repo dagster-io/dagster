@@ -1,27 +1,24 @@
-import {gql, useLazyQuery} from '@apollo/client';
+import {useLazyQuery} from '@apollo/client';
 import {Box, Caption, Checkbox, Colors, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ASSET_NODE_LIVE_FRAGMENT} from '../asset-graph/AssetNode';
 import {AssetLatestRunWithNotices, AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {buildLiveDataForNode} from '../asset-graph/Utils';
-import {ASSET_LATEST_INFO_FRAGMENT} from '../asset-graph/useLiveDataForAssetKeys';
 import {AssetActionMenu} from '../assets/AssetActionMenu';
 import {AssetLink} from '../assets/AssetLink';
-import {ASSET_TABLE_FRAGMENT} from '../assets/AssetTableFragment';
 import {StaleTag} from '../assets/StaleTag';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment';
 import {AssetViewType} from '../assets/useAssetView';
+import {graphql} from '../graphql';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {RepoAddress} from './types';
-import {SingleAssetQuery, SingleAssetQueryVariables} from './types/SingleAssetQuery';
 import {workspacePathFromAddress} from './workspacePath';
 
 const TEMPLATE_COLUMNS = '1.3fr 1fr 1fr 80px';
@@ -56,13 +53,10 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
     view = 'flat',
   } = props;
 
-  const [queryAsset, queryResult] = useLazyQuery<SingleAssetQuery, SingleAssetQueryVariables>(
-    SINGLE_ASSET_QUERY,
-    {
-      fetchPolicy: 'cache-and-network',
-      variables: {input: {path}},
-    },
-  );
+  const [queryAsset, queryResult] = useLazyQuery(SINGLE_ASSET_QUERY, {
+    fetchPolicy: 'cache-and-network',
+    variables: {input: {path}},
+  });
 
   useDelayedRowQuery(queryAsset);
   const {data} = queryResult;
@@ -254,7 +248,7 @@ const RowGrid = styled(Box)<{$showRepoColumn: boolean}>`
   height: 100%;
 `;
 
-const SINGLE_ASSET_QUERY = gql`
+const SINGLE_ASSET_QUERY = graphql(`
   query SingleAssetQuery($input: AssetKeyInput!) {
     assetOrError(assetKey: $input) {
       ... on Asset {
@@ -274,8 +268,4 @@ const SINGLE_ASSET_QUERY = gql`
       ...AssetLatestInfoFragment
     }
   }
-
-  ${ASSET_TABLE_FRAGMENT}
-  ${ASSET_NODE_LIVE_FRAGMENT}
-  ${ASSET_LATEST_INFO_FRAGMENT}
-`;
+`);
