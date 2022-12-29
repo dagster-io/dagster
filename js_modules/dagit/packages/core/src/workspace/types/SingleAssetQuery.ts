@@ -105,8 +105,8 @@ export interface SingleAssetQuery_assetsLatestInfo_assetKey {
 
 export interface SingleAssetQuery_assetsLatestInfo_latestRun {
   __typename: "Run";
-  status: RunStatus;
   id: string;
+  status: RunStatus;
 }
 
 export interface SingleAssetQuery_assetsLatestInfo {
