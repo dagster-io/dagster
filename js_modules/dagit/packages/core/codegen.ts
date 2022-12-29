@@ -11,6 +11,7 @@ const config: CodegenConfig = {
         avoidOptionals: {
           field: true,
         },
+        dedupeFragments: true,
         nonOptionalTypename: true,
         namingConvention: {
           enumValues: 'keep',
