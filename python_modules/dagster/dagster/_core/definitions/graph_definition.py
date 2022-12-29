@@ -489,7 +489,6 @@ class GraphDefinition(NodeDefinition):
         name: str,
         description: Optional[str],
         config_schema: Any,
-        config_or_config_fn: Any,
     ):
         if not self.has_config_mapping:
             raise DagsterInvalidDefinitionError(

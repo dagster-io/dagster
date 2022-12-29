@@ -192,7 +192,6 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
         self,
         description: Optional[str],
         config_schema: CoercableToConfigSchema,
-        _,
     ) -> "ResourceDefinition":
         return ResourceDefinition(
             config_schema=config_schema,
