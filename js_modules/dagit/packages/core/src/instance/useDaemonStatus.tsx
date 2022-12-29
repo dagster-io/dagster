@@ -1,16 +1,15 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {graphql} from '../graphql';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 
 import {StatusAndMessage} from './DeploymentStatusType';
-import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
-import {InstanceWarningQuery} from './types/InstanceWarningQuery';
 
 export const useDaemonStatus = (skip = false): StatusAndMessage | null => {
   const {options} = useRepositoryOptions();
-  const queryResult = useQuery<InstanceWarningQuery>(INSTANCE_WARNING_QUERY, {
+  const queryResult = useQuery(INSTANCE_WARNING_QUERY, {
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
     skip,
@@ -91,7 +90,7 @@ export const useDaemonStatus = (skip = false): StatusAndMessage | null => {
   return null;
 };
 
-const INSTANCE_WARNING_QUERY = gql`
+const INSTANCE_WARNING_QUERY = graphql(`
   query InstanceWarningQuery {
     instance {
       ...InstanceHealthFragment
@@ -105,5 +104,4 @@ const INSTANCE_WARNING_QUERY = gql`
       }
     }
   }
-  ${INSTANCE_HEALTH_FRAGMENT}
-`;
+`);

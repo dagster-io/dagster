@@ -22,16 +22,14 @@ import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {AssetKey} from '../assets/types';
 import {
+  ConfigPartitionSelectionQueryQuery,
+  ConfigPartitionSelectionQueryQueryVariables,
   LaunchPartitionBackfillMutation,
   LaunchPartitionBackfillMutationVariables,
 } from '../graphql/graphql';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
-import {
-  ConfigPartitionSelectionQuery,
-  ConfigPartitionSelectionQueryVariables,
-} from '../launchpad/types/ConfigPartitionSelectionQuery';
 import {PartitionRangeWizard} from '../partitions/PartitionRangeWizard';
 import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
@@ -159,8 +157,8 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
     if (allSelected.length === 1) {
       const {data: tagAndConfigData} = await client.query<
-        ConfigPartitionSelectionQuery,
-        ConfigPartitionSelectionQueryVariables
+        ConfigPartitionSelectionQueryQuery,
+        ConfigPartitionSelectionQueryQueryVariables
       >({
         query: CONFIG_PARTITION_SELECTION_QUERY,
         fetchPolicy: 'network-only',

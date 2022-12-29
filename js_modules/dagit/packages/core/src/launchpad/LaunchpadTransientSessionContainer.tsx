@@ -6,17 +6,19 @@ import {
   IExecutionSessionChanges,
   useInitialDataForMode,
 } from '../app/ExecutionSessionStorage';
+import {
+  LaunchpadSessionPartitionSetsFragmentFragment,
+  LaunchpadSessionPipelineFragmentFragment,
+} from '../graphql/graphql';
 import {RepoAddress} from '../workspace/types';
 
 import {LaunchpadType} from './LaunchpadRoot';
 import LaunchpadSession from './LaunchpadSession';
-import {LaunchpadSessionPartitionSetsFragment} from './types/LaunchpadSessionPartitionSetsFragment';
-import {LaunchpadSessionPipelineFragment} from './types/LaunchpadSessionPipelineFragment';
 
 interface Props {
   launchpadType: LaunchpadType;
-  pipeline: LaunchpadSessionPipelineFragment;
-  partitionSets: LaunchpadSessionPartitionSetsFragment;
+  pipeline: LaunchpadSessionPipelineFragmentFragment;
+  partitionSets: LaunchpadSessionPartitionSetsFragmentFragment;
   repoAddress: RepoAddress;
   sessionPresets: Partial<IExecutionSession>;
 }
