@@ -1,20 +1,20 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
 import {TimezoneProvider} from '../app/time/TimezoneContext';
+import {graphql} from '../graphql';
 import {TestProvider} from '../testing/TestProvider';
 import {RunStatus} from '../types/globalTypes';
 
-import {RunDetails, RUN_DETAILS_FRAGMENT} from './RunDetails';
-import {RunDetailsTestQuery} from './types/RunDetailsTestQuery';
+import {RunDetails} from './RunDetails';
 
 jest.mock('../app/time/browserTimezone.ts', () => ({
   browserTimezone: () => 'America/Los_Angeles',
 }));
 
 describe('RunDetails', () => {
-  const RUN_DETAILS_TEST_QUERY = gql`
+  const RUN_DETAILS_TEST_QUERY = graphql(`
     query RunDetailsTestQuery {
       pipelineRunOrError(runId: "abc") {
         ... on Run {
@@ -23,11 +23,10 @@ describe('RunDetails', () => {
         }
       }
     }
-    ${RUN_DETAILS_FRAGMENT}
-  `;
+  `);
 
   const Test = () => {
-    const {data, loading} = useQuery<RunDetailsTestQuery>(RUN_DETAILS_TEST_QUERY, {
+    const {data, loading} = useQuery(RUN_DETAILS_TEST_QUERY, {
       fetchPolicy: 'no-cache',
     });
 
