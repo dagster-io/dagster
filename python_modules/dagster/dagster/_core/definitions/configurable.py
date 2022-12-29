@@ -6,10 +6,14 @@ from typing_extensions import Self
 from dagster import Field
 from dagster import _check as check
 from dagster._config import EvaluateValueResult
+from dagster._config.post_process import resolve_defaults
+from dagster._config.validate import validate_config
+from dagster._core.errors import DagsterInvalidConfigError
 
 from .definition_config_schema import (
     CoercableToConfigSchema,
     ConfiguredDefinitionConfigSchema,
+    DefinitionConfigSchema,
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
@@ -63,6 +67,74 @@ class ConfigurableDefinition(ABC):
         )
 
 
+def copy_with_default(old_field: Field, new_config_value: Any) -> Field:
+    return Field(
+        config=old_field.config_type,
+        default_value=new_config_value,
+        is_required=False,
+        description=old_field.description,
+    )
+
+
+def _apply_defaults_to_schema_field(field: Field, additional_default_values: Any) -> Field:
+    # This work by validating the top-level config and then
+    # just setting it at that top-level field. Config fields
+    # can actually take nested values so we only need to set it
+    # at a single level
+
+    evr = validate_config(field.config_type, additional_default_values)
+
+    if not evr.success:
+        raise DagsterInvalidConfigError(
+            "Incorrect values passed to .configured",
+            evr.errors,
+            additional_default_values,
+        )
+
+    if field.default_provided:
+        # In the case where there is already a default config value
+        # we can apply "additional" defaults by actually invoking
+        # the config machinery. Meaning we pass the new_additional_default_values
+        # and then resolve the existing defaults over them. This preserves the default
+        # values that are not specified in new_additional_default_values and then
+        # applies the new value as the default value of the field in question.
+        defaults_processed_evr = resolve_defaults(field.config_type, additional_default_values)
+        check.invariant(
+            defaults_processed_evr.success, "Since validation passed, this should always work."
+        )
+        default_to_pass = defaults_processed_evr.value
+        return copy_with_default(field, default_to_pass)
+    else:
+        return copy_with_default(field, additional_default_values)
+
+
+def _apply_new_defaults_and_get_new_schema(
+    config_schema: Optional[IDefinitionConfigSchema], additional_default_values: Any
+) -> IDefinitionConfigSchema:
+    schema_field_with_defaults_applied = _apply_defaults_to_schema_field(
+        # if self.config_schema is None convert_user_facing_definition_config_schema coerces it to Any
+        convert_user_facing_definition_config_schema(config_schema).as_field(),
+        additional_default_values,
+    )
+
+    # If the current definition we are configuring with values only (via applying default values)
+    # is itself a configured definition with a config mapping (meaning config_or_config_fn is a function)
+    # then we want to keep the same parent and same config_fn but just update the schema to
+    # include the new default values
+
+    # If the current definition is not part of a then we can just return a DefinitionConfigSchema
+
+    return (
+        ConfiguredDefinitionConfigSchema(
+            parent_definition=config_schema.parent_def,
+            config_schema=DefinitionConfigSchema(schema_field_with_defaults_applied),
+            config_or_config_fn=config_schema.config_or_config_fn,
+        )
+        if isinstance(config_schema, ConfiguredDefinitionConfigSchema)
+        else DefinitionConfigSchema(schema_field_with_defaults_applied)
+    )
+
+
 class AnonymousConfigurableDefinition(ConfigurableDefinition):
     """An interface that makes the `configured` method not accept a name argument."""
 
@@ -94,11 +166,25 @@ class AnonymousConfigurableDefinition(ConfigurableDefinition):
         Returns (ConfigurableDefinition): A configured version of this object.
         """
 
-        new_config_schema = ConfiguredDefinitionConfigSchema(
-            self, convert_user_facing_definition_config_schema(config_schema), config_or_config_fn
-        )
+        if callable(config_or_config_fn):
+            # Config mapping case
 
-        return self.copy_for_configured(description, new_config_schema)
+            new_config_schema = ConfiguredDefinitionConfigSchema(
+                self,
+                convert_user_facing_definition_config_schema(config_schema),
+                config_or_config_fn,
+            )
+
+            return self.copy_for_configured(description, new_config_schema)
+        else:
+            # config_schema is ignored in this codepath
+            return self.configure_with_values(config_or_config_fn, description)
+
+    def configure_with_values(self, config: Any, description: Optional[str] = None):
+        return self.copy_for_configured(
+            description=description,
+            config_schema=_apply_new_defaults_and_get_new_schema(self.config_schema, config),
+        )
 
     @abstractmethod
     def copy_for_configured(
@@ -144,12 +230,25 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         """
 
         name = check.str_param(name, "name")
+        if callable(config_or_config_fn):
+            # Config mapping case
 
-        new_config_schema = ConfiguredDefinitionConfigSchema(
-            self, convert_user_facing_definition_config_schema(config_schema), config_or_config_fn
+            new_config_schema = ConfiguredDefinitionConfigSchema(
+                self,
+                convert_user_facing_definition_config_schema(config_schema),
+                config_or_config_fn,
+            )
+
+            return self.copy_for_configured(name, description, new_config_schema)
+        else:
+            return self.configure_with_values(config_or_config_fn, name, description)
+
+    def configure_with_values(self, config: Any, name: str, description: Optional[str] = None):
+        return self.copy_for_configured(
+            name=name,
+            description=description,
+            config_schema=_apply_new_defaults_and_get_new_schema(self.config_schema, config),
         )
-
-        return self.copy_for_configured(name, description, new_config_schema)
 
     @abstractmethod
     def copy_for_configured(

@@ -57,9 +57,7 @@ def test_logger_with_config():
     with pytest.raises(DagsterInvalidConfigError, match="Error in config for logger"):
         int_logger(build_init_logger_context())
 
-    with pytest.raises(
-        DagsterInvalidConfigError, match="Error when applying config mapping for logger"
-    ):
+    with pytest.raises(DagsterInvalidConfigError, match="Incorrect values passed to .configured"):
         conf_logger = int_logger.configured("foo")
         conf_logger(build_init_logger_context())
 

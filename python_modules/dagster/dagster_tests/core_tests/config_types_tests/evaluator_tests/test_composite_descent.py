@@ -10,9 +10,12 @@ from dagster import (
     String,
     configured,
     mem_io_manager,
+    op,
 )
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.definitions.decorators.job_decorator import job
+from dagster._core.definitions.resource_definition import resource
 from dagster._core.system_config.composite_descent import composite_descent
 from dagster._legacy import InputDefinition, execute_pipeline, lambda_solid, pipeline, solid
 
@@ -686,6 +689,30 @@ def test_single_level_pipeline_with_complex_configured_solid_nested():
 
     assert result.success
     assert result.result_for_node("introduce_aj_20").output_value() == "AJ is 20 years old"
+
+
+def test_double_configured_resource():
+    @resource(config_schema={"age": int, "name": str})
+    def introduce(context):
+        return "{name} is {age} years old".format(**context.resource_config)
+
+    @configured(introduce, {"age": int})
+    def introduce_aj(config):
+        return {"name": "AJ", "age": config["age"]}
+
+    introduce_aj_20 = configured(introduce_aj)({"age": 20})
+
+    @op(required_resource_keys={"introduction"})
+    def requires_intro(context):
+        return context.resources.introduction
+
+    @job(resource_defs={"introduction": introduce_aj_20})
+    def a_job():
+        requires_intro()
+
+    result = a_job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("requires_intro") == "AJ is 20 years old"
 
 
 def test_single_level_pipeline_with_configured_graph():

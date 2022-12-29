@@ -3,13 +3,13 @@ from abc import ABC, abstractmethod
 from typing import Callable
 
 import pytest
-from pydantic import ValidationError
 
 from dagster import asset, job, op, resource
 from dagster._config.structured_config import Resource, StructuredResourceAdapter
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_output import ResourceOutput
+from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils.cached_method import cached_method
 
 
@@ -48,9 +48,8 @@ def test_invalid_config():
     class MyResource(Resource):
         foo: int
 
-    with pytest.raises(
-        ValidationError,
-    ):
+    with pytest.raises(DagsterInvalidConfigError):
+        # was from pydantic import ValidationError
         MyResource(foo="why")
 
 

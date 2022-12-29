@@ -123,6 +123,8 @@ class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
         else:
             self._config_fn = config_or_config_fn  # type: ignore
 
+        self.config_or_config_fn = config_or_config_fn
+
     def as_field(self) -> Field:
         return check.not_none(self._current_field)
 

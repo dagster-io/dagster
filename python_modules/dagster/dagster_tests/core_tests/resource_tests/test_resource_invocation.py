@@ -112,7 +112,7 @@ def test_resource_invocation_with_config():
 
     with pytest.raises(
         DagsterInvalidConfigError,
-        match="Error when applying config mapping for resource",
+        match="Incorrect values passed to .configured",
     ):
         resource_reqs_config.configured({"foobar": "bar"})(None)
 
