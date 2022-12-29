@@ -2,7 +2,10 @@ from airflow.plugins_manager import AirflowPlugin
 
 from dagster._core.utils import check_dagster_package_version
 
-from .dagster_job_factory import make_dagster_job_from_airflow_dag
+from .dagster_job_factory import (
+    make_dagster_definition_from_airflow_dag_bag,
+    make_dagster_job_from_airflow_dag,
+)
 from .dagster_pipeline_factory import (
     make_dagster_repo_from_airflow_dag_bag,
     make_dagster_repo_from_airflow_dags_path,
@@ -23,6 +26,7 @@ __all__ = [
     "make_airflow_dag_containerized",
     "make_dagster_repo_from_airflow_dags_path",
     "make_dagster_repo_from_airflow_dag_bag",
+    "make_dagster_definition_from_airflow_dag_bag",
     "make_dagster_job_from_airflow_dag",
     "DagsterHook",
     "DagsterLink",

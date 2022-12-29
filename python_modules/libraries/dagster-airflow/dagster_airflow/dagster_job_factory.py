@@ -1,4 +1,9 @@
-from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_airflow_dag
+from dagster_airflow.dagster_pipeline_factory import (
+    make_dagster_pipeline_from_airflow_dag,
+    make_dagster_repo_from_airflow_dag_bag,
+)
+
+from dagster import Definitions
 
 
 def make_dagster_job_from_airflow_dag(
@@ -78,4 +83,62 @@ def make_dagster_job_from_airflow_dag(
         resource_defs={"airflow_db": pipeline_def.mode_definitions[0].resource_defs["airflow_db"]}
         if use_ephemeral_airflow_db
         else {},
+    )
+
+def make_dagster_definition_from_airflow_dag_bag(
+    dag_bag,
+    refresh_from_airflow_db=False,
+    use_airflow_template_context=False,
+    mock_xcom=False,
+    use_ephemeral_airflow_db=False,
+    connections=None,
+):
+    """Construct a Dagster definition corresponding to Airflow DAGs in DagBag.
+
+    Usage:
+        Create `make_dagster_definition.py`:
+            from dagster_airflow import make_dagster_definition_from_airflow_dag_bag
+            from airflow_home import my_dag_bag
+
+            def make_definition_from_dag_bag():
+                return make_dagster_definition_from_airflow_dag_bag(my_dag_bag)
+
+        Use RepositoryDefinition as usual, for example:
+            `dagit -f path/to/make_dagster_definition.py`
+
+    Args:
+        dag_path (str): Path to directory or file that contains Airflow Dags
+        refresh_from_airflow_db (bool): If True, will refresh DAG if expired via DagBag.get_dag(),
+            which requires access to initialized Airflow DB. If False (recommended), gets dag from
+            DagBag's dags dict without depending on Airflow DB. (default: False)
+        use_airflow_template_context (bool): If True, will call get_template_context() on the
+            Airflow TaskInstance model which requires and modifies the DagRun table. The use_airflow_template_context
+            setting is ignored if use_ephemeral_airflow_db is True.
+            (default: False)
+        mock_xcom (bool): If True, dagster will mock out all calls made to xcom, features that
+            depend on xcom may not work as expected. (default: False)
+        use_ephemeral_airflow_db (bool): If True, dagster will create an ephemeral sqlite airflow
+            database for each run. (default: False)
+        connections (List[Connection]): List of Airflow Connections to be created in the Ephemeral
+            Airflow DB, if use_emphemeral_airflow_db is False this will be ignored.
+
+    Returns:
+        Definitions
+    """
+
+    repo = make_dagster_repo_from_airflow_dag_bag(
+        dag_bag,
+        "dagster_airflow_repo",
+        refresh_from_airflow_db,
+        use_airflow_template_context,
+        mock_xcom,
+        use_ephemeral_airflow_db,
+        connections,
+    )
+
+    return Definitions(
+        assets=repo._assets_defs_by_key.values(),
+        schedules=repo.get_all_schedules(),
+        sensors=repo.get_all_sensors(),
+        jobs=repo.get_all_jobs(),
     )
