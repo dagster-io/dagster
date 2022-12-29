@@ -222,12 +222,17 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         if self.permissions:
             self._grant_permissions(log, databricks_run_id)
 
+        completed = False
         try:
             # If this is being called within a `capture_interrupts` context, allow interrupts while
             # waiting for the  execution to complete, so that we can terminate slow or hanging steps
             with raise_execution_interrupts():
                 yield from self.step_events_iterator(step_context, step_key, databricks_run_id)
+            completed = True
         finally:
+            # if execution is interrupted before the step is completed, cancel the run
+            if not completed:
+                self.databricks_runner.client.client.jobs.cancel_run(databricks_run_id)
             self.log_compute_logs(log, run_id, step_key)
             # this is somewhat obsolete
             if self.wait_for_logs:
