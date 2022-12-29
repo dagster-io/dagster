@@ -771,7 +771,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert asset_node["partitionKeys"][1] == "2021-05-05-02:00"
 
     def test_latest_materialization_per_partition(self, graphql_context):
-        _create_run(graphql_context, "partition_materialization_job")
+        _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="c")
 
         selector = infer_pipeline_selector(graphql_context, "partition_materialization_job")
         result = execute_dagster_graphql(
@@ -800,7 +800,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         start_time = materialization["stepStats"]["startTime"]
         assert materialization["partition"] == "c"
 
-        _create_run(graphql_context, "partition_materialization_job")
+        _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="c")
         result = execute_dagster_graphql(
             graphql_context,
             GET_LATEST_MATERIALIZATION_PER_PARTITION,
@@ -1260,10 +1260,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data
         dimensions = result.data["assetNodes"][0]["partitionKeysByDimension"]
         assert len(dimensions) == 2
-        assert dimensions[0]["name"] == "12"
-        assert dimensions[0]["partitionKeys"] == ["1", "2"]
-        assert dimensions[1]["name"] == "ab"
-        assert dimensions[1]["partitionKeys"] == ["a", "b"]
+        assert dimensions[0]["name"] == "ab"
+        assert dimensions[0]["partitionKeys"] == ["a", "b", "c"]
+        assert dimensions[1]["name"] == "date"
+        assert dimensions[1]["partitionKeys"][0] == "2022-01-01"
 
     def test_multipartitions_get_materialization_status(self, graphql_context):
         # Test that when unmaterialized, no materialized partitions are returned
@@ -1374,7 +1374,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         first_run_id = _create_partitioned_run(
             graphql_context,
             "multipartitions_job",
-            MultiPartitionKey({"ab": "a", "12": "1"}),
+            MultiPartitionKey({"date": "2022-01-01", "ab": "a"}),
             [AssetKey("multipartitions_1")],
         )
         result = execute_dagster_graphql(
@@ -1388,7 +1388,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data
         materializations = result.data["assetOrError"]["assetMaterializations"]
         assert len(materializations) == 1
-        assert materializations[0]["partition"] == "1|a"
+        assert materializations[0]["partition"] == "a|2022-01-01"
         assert materializations[0]["runId"] == first_run_id
 
         result = execute_dagster_graphql(
@@ -1405,7 +1405,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         second_run_id = _create_partitioned_run(
             graphql_context,
             "multipartitions_job",
-            MultiPartitionKey({"ab": "b", "12": "2"}),
+            MultiPartitionKey({"ab": "b", "date": "2022-01-01"}),
             [AssetKey("multipartitions_1")],
         )
         result = execute_dagster_graphql(
@@ -1420,7 +1420,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         materializations = result.data["assetOrError"]["assetMaterializations"]
         # Should only fetch materializations where dimension "ab" partition is "b"
         assert len(materializations) == 1
-        assert materializations[0]["partition"] == "2|b"
+        assert materializations[0]["partition"] == "b|2022-01-01"
         assert materializations[0]["runId"] == second_run_id
 
     def test_freshness_info(self, graphql_context, snapshot):

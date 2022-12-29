@@ -6,11 +6,9 @@ from typing import (
     Iterator,
     List,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
     Tuple,
-    Union,
     cast,
 )
 
@@ -24,7 +22,6 @@ from dagster import (
     EventRecordsFilter,
     MultiPartitionKey,
     MultiPartitionsDefinition,
-    PartitionsDefinition,
 )
 from dagster import _check as check
 from dagster._core.definitions.asset_graph import AssetGraph
@@ -32,20 +29,17 @@ from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.multi_dimensional_partitions import PartitionDimensionDefinition
 from dagster._core.definitions.partition import PartitionsSubset
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
-    ExternalPartitionDimensionDefinition,
 )
 from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.storage.partition_status_cache import (
     get_and_update_asset_status_cache_values,
     get_materialized_multipartitions,
 )
-from dagster._core.storage.tags import get_dimension_from_partition_tag
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from dagster_graphql.implementation.loader import (
@@ -325,8 +319,6 @@ def get_materialized_partitions_subset(
     is a boolean indicating whether the partition has been materialized: True if materialized,
     False if not.
     """
-    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
-
     partitions_def = asset_graph.get_partitions_def(asset_key)
     if not partitions_def:
         return None
@@ -413,7 +405,9 @@ def get_2d_run_length_encoded_materialized_partitions(
 
     primary_dim, secondary_dim = _get_primary_and_secondary_dims(partitions_subset.partitions_def)
 
-    dim2_partition_subset_by_dim1 = defaultdict(lambda: secondary_dim.partitions_def.empty_subset())
+    dim2_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
+        lambda: secondary_dim.partitions_def.empty_subset()  # pylint: disable=unnecessary-lambda
+    )
     for partition_key in partitions_subset.get_partition_keys():
         partition_key = cast(MultiPartitionKey, partition_key)
         dim2_partition_subset_by_dim1[
