@@ -324,7 +324,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         # if you poll before the Databricks process has had a chance to create the file,
         # we expect to get this error
         except HTTPError as e:
-            if e.response.json().get("error_code") == "RESOURCE_DOES_NOT_EXIST":
+            if e.response and e.response.json().get("error_code") == "RESOURCE_DOES_NOT_EXIST":
                 return []
 
         return []
