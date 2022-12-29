@@ -207,3 +207,17 @@ def test_daily_to_daily_lag():
         subset_with_key_range(downstream_partitions_def, "2021-05-05", "2021-05-07"),
         upstream_partitions_def,
     ).get_partition_keys() == ["2021-05-05", "2021-05-06"]
+
+
+def test_daily_to_daily_lag_different_start_date():
+    upstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-05")
+    downstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-06")
+    mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+
+    assert mapping.get_upstream_partitions_for_partitions(
+        subset_with_key(downstream_partitions_def, "2021-05-06"), upstream_partitions_def
+    ).get_partition_keys() == ["2021-05-05"]
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_key(upstream_partitions_def, "2021-05-05"), downstream_partitions_def
+    ).get_partition_keys() == ["2021-05-06"]
