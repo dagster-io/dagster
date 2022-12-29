@@ -58,9 +58,9 @@ from .errors import GrapheneAssetNotFoundError
 from .freshness_policy import GrapheneAssetFreshnessInfo, GrapheneFreshnessPolicy
 from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
 from .pipelines.pipeline import (
+    GrapheneMaterializedPartitions,
     GrapheneMaterializedPartitions1D,
     GrapheneMaterializedPartitions2D,
-    GraphenePartitionMaterializationStatus,
     GraphenePipeline,
     GrapheneRun,
 )
@@ -192,7 +192,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene.NonNull(graphene.List(GrapheneMaterializationEvent)),
         partitions=graphene.List(graphene.String),
     )
-    partitionMaterializationStatus = graphene.NonNull(GraphenePartitionMaterializationStatus)
+    materializedPartitions = graphene.NonNull(GrapheneMaterializedPartitions)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
     op = graphene.Field(GrapheneSolidDefinition)
     opName = graphene.String()
@@ -656,16 +656,16 @@ class GrapheneAssetNode(graphene.ObjectType):
             for event in ordered_materializations
         ]
 
-    def resolve_partitionMaterializationStatus(
+    def resolve_materializedPartitions(
         self, graphene_info
-    ) -> Union[GrapheneMaterializedPartitions1D, GrapheneMaterializedPartitions2D,]:
+    ) -> Union[GrapheneMaterializedPartitions1D, GrapheneMaterializedPartitions2D]:
         asset_graph = ExternalAssetGraph.from_external_repository(self._external_repository)
         asset_key = self._external_asset_node.asset_key
         materialized_partition_subset = get_materialized_partitions_subset(
             graphene_info.context.instance, asset_key, asset_graph=asset_graph
         )
 
-        if not materialized_partition_subset:
+        if materialized_partition_subset is None:  # Unpartitioned
             return GrapheneMaterializedPartitions1D(ranges=[])
         if not self.is_multipartitioned():
             return get_1d_run_length_encoded_materialized_partitions(materialized_partition_subset)

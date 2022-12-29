@@ -87,22 +87,22 @@ def parse_time_range_args(args):
     return before_timestamp, after_timestamp
 
 
-class Graphene1DMaterializedPartitionRange(graphene.ObjectType):
+class GrapheneMaterializedPartitionRange1D(graphene.ObjectType):
     start = graphene.NonNull(graphene.String)
     end = graphene.NonNull(graphene.String)
 
     class Meta:
-        name = "1DMaterializedPartitionRange"
+        name = "MaterializedPartitionRange1D"
 
 
 class GrapheneMaterializedPartitions1D(graphene.ObjectType):
-    ranges = non_null_list(Graphene1DMaterializedPartitionRange)
+    ranges = non_null_list(GrapheneMaterializedPartitionRange1D)
 
     class Meta:
         name = "MaterializedPartitions1D"
 
 
-class Graphene2DMaterializedPartitionRange(graphene.ObjectType):
+class GrapheneMaterializedPartitionRange2D(graphene.ObjectType):
     """
     The primary dimension of a multipartitioned asset is the time-partitioned dimension.
     If both dimensions of the asset are static or time-partitioned, the primary dimension is
@@ -111,17 +111,23 @@ class Graphene2DMaterializedPartitionRange(graphene.ObjectType):
 
     primaryDimStart = graphene.NonNull(graphene.String)
     primaryDimEnd = graphene.NonNull(graphene.String)
-    secondaryDimRanges = non_null_list(GrapheneMaterializedPartitions1D)
+    secondaryDimRanges = non_null_list(GrapheneMaterializedPartitionRange1D)
 
     class Meta:
-        name = "2DMaterializedPartitionRange"
+        name = "MaterializedPartitionRange2D"
 
 
 class GrapheneMaterializedPartitions2D(graphene.ObjectType):
-    ranges = non_null_list(Graphene2DMaterializedPartitionRange)
+    ranges = non_null_list(GrapheneMaterializedPartitionRange2D)
 
     class Meta:
         name = "MaterializedPartitions2D"
+
+
+class GrapheneMaterializedPartitions(graphene.Union):
+    class Meta:
+        types = (GrapheneMaterializedPartitions1D, GrapheneMaterializedPartitions2D)
+        name = "MaterializedPartitions"
 
 
 class GrapheneAsset(graphene.ObjectType):

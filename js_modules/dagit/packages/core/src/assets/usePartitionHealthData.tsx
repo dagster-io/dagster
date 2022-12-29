@@ -183,12 +183,22 @@ const PARTITION_HEALTH_QUERY = gql`
           name
           partitionKeys
         }
-        partitionMaterializationStatus {
-          ... on MaterializationStatusGroupedByDimension {
-            materializationStatusGrouped
+        materializedPartitions {
+          ... on MaterializedPartitions1D {
+            ranges {
+              start
+              end
+            }
           }
-          ... on MaterializationStatusSingleDimension {
-            materializationStatus
+          ... on MaterializedPartitions2D {
+            ranges {
+              primaryDimStart
+              primaryDimEnd
+              secondaryDimRanges {
+                start
+                end
+              }
+            }
           }
         }
       }

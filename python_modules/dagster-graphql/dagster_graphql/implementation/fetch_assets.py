@@ -327,7 +327,7 @@ def get_materialized_partitions_subset(
     """
     from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 
-    partitions_def = asset_graph.get_partitions_def.get(asset_key)
+    partitions_def = asset_graph.get_partitions_def(asset_key)
     if not partitions_def:
         return None
 
@@ -366,13 +366,13 @@ def get_1d_run_length_encoded_materialized_partitions(
     partitions_subset: PartitionsSubset,
 ) -> "GrapheneMaterializedPartitions1D":
     from ..schema.pipelines.pipeline import (
-        Graphene1DMaterializedPartitionRange,
+        GrapheneMaterializedPartitionRange1D,
         GrapheneMaterializedPartitions1D,
     )
 
     return GrapheneMaterializedPartitions1D(
         ranges=[
-            Graphene1DMaterializedPartitionRange(start=range.start, end=range.end)
+            GrapheneMaterializedPartitionRange1D(start=range.start, end=range.end)
             for range in partitions_subset.get_partition_key_ranges()
         ]
     )
@@ -403,8 +403,8 @@ def get_2d_run_length_encoded_materialized_partitions(
     partitions_subset: PartitionsSubset,
 ) -> "GrapheneMaterializedPartitions2D":
     from ..schema.pipelines.pipeline import (
-        Graphene2DMaterializedPartitionRange,
-        GrapheneMaterializedPartitions1D,
+        GrapheneMaterializedPartitionRange1D,
+        GrapheneMaterializedPartitionRange2D,
         GrapheneMaterializedPartitions2D,
     )
 
@@ -439,12 +439,17 @@ def get_2d_run_length_encoded_materialized_partitions(
             if len(dim2_partition_subset_by_dim1[dim1_keys[range_start_idx]]) > 0:
                 # Do not add to materialized_2d_ranges if the dim2 partition subset is empty
                 materialized_2d_ranges.append(
-                    Graphene2DMaterializedPartitionRange(
+                    GrapheneMaterializedPartitionRange2D(
                         primaryDimStart=dim1_keys[range_start_idx],
                         primaryDimEnd=dim1_keys[unevaluated_idx - 1],
-                        secondaryDimRanges=GrapheneMaterializedPartitions1D(
-                            ranges=dim2_partition_subset_by_dim1[dim1_keys[range_start_idx]]
-                        ),
+                        secondaryDimRanges=[
+                            GrapheneMaterializedPartitionRange1D(
+                                start=curr_range.start, end=curr_range.end
+                            )
+                            for curr_range in dim2_partition_subset_by_dim1[
+                                dim1_keys[range_start_idx]
+                            ].get_partition_key_ranges()
+                        ],
                     )
                 )
             range_start_idx = unevaluated_idx
