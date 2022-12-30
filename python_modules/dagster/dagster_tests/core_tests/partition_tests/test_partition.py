@@ -823,3 +823,12 @@ def test_static_partitions_subset():
     assert len(with_some_partitions) == 2
     assert len(deserialized) == 2
     assert "bar" in with_some_partitions
+
+
+def test_static_partitions_invalid_chars():
+    with pytest.raises(DagsterInvalidDefinitionError):
+        StaticPartitionsDefinition(["foo...bar"])
+    with pytest.raises(DagsterInvalidDefinitionError, match="n"):
+        StaticPartitionsDefinition(["foo\nfoo"])
+    with pytest.raises(DagsterInvalidDefinitionError, match="b"):
+        StaticPartitionsDefinition(["foo\bfoo"])

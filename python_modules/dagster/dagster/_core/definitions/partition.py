@@ -75,6 +75,11 @@ PartitionSelectorFunction: TypeAlias = Callable[
 
 T = TypeVar("T")
 
+# Dagit selects partition ranges following the format '2022-01-13...2022-01-14'
+# "..." is an invalid substring in partition keys
+# The other escape characters are characters that may not display in Dagit
+INVALID_PARTITION_SUBSTRINGS = ["...", "\a", "\b", "\f", "\n", "\r", "\t", "\v", "\0"]
+
 
 class Partition(Generic[T]):
     """
@@ -273,10 +278,16 @@ class StaticPartitionsDefinition(
     def __init__(self, partition_keys: Sequence[str]):
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
 
-        # Dagit selects partition ranges following the format '2022-01-13...2022-01-14'
-        # "..." is an invalid substring in partition keys
-        if any(["..." in partition_key for partition_key in partition_keys]):
-            raise DagsterInvalidDefinitionError("'...' is an invalid substring in a partition key")
+        for partition_key in partition_keys:
+            found_invalid_substrs = [
+                invalid_substr
+                for invalid_substr in INVALID_PARTITION_SUBSTRINGS
+                if invalid_substr in partition_key
+            ]
+            if found_invalid_substrs:
+                raise DagsterInvalidDefinitionError(
+                    f"{found_invalid_substrs} are invalid substrings in a partition key"
+                )
 
         self._partitions = [Partition(key) for key in partition_keys]
 
