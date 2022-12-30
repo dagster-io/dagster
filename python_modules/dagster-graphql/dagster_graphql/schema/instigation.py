@@ -139,7 +139,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
             timestamp=tick.timestamp,
             runIds=tick.run_ids,
             runKeys=tick.run_keys,
-            error=tick.error,
+            error=GraphenePythonError(tick.error) if tick.error else None,
             skipReason=tick.skip_reason,
             originRunIds=tick.origin_run_ids,
             cursor=tick.cursor,
@@ -237,7 +237,11 @@ class GrapheneTickEvaluation(graphene.ObjectType):
             "schedule_data",
             (ScheduleExecutionData, SerializableErrorInfo),
         )
-        error = schedule_data if isinstance(schedule_data, SerializableErrorInfo) else None
+        error = (
+            GraphenePythonError(schedule_data)
+            if isinstance(schedule_data, SerializableErrorInfo)
+            else None
+        )
         skip_reason = (
             schedule_data.skip_message if isinstance(schedule_data, ScheduleExecutionData) else None
         )

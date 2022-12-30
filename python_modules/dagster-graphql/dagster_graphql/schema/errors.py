@@ -68,15 +68,45 @@ class GraphenePythonError(graphene.ObjectType):
     def __init__(self, error_info):
         super().__init__()
         self._error_info = check.inst_param(error_info, "error_info", SerializableErrorInfo)
-        self.message = error_info.message
-        self.stack = error_info.stack
-        self.cause = error_info.cause
-        self.context = error_info.context
-        self.className = error_info.cls_name
+        self._message = error_info.message
+        self._stack = error_info.stack
+        self._className = error_info.cls_name
+        self._cause = error_info.cause
+        self._context = error_info.context
+
+    def resolve_message(self, _graphene_info):
+        check.invariant(
+            isinstance(self, GraphenePythonError),
+            f"GraphenePythonError methods called on a {type(self)} - this usually indicates that "
+            "a SerializableErrorInfo was passed in where a GraphenePythonError was expected",
+        )
+        return self._message
+
+    def resolve_stack(self, _graphene_info):
+        check.invariant(
+            isinstance(self, GraphenePythonError),
+            f"GraphenePythonError methods called on a {type(self)} - this usually indicates that "
+            "a SerializableErrorInfo was passed in where a GraphenePythonError was expected",
+        )
+        return self._stack
+
+    def resolve_cause(self, _graphene_info):
+        return GraphenePythonError(self._cause) if self._cause else None
+
+    def resolve_context(self, _graphene_info):
+        return GraphenePythonError(self._context) if self._context else None
+
+    def resolve_className(self, _graphene_info):
+        check.invariant(
+            isinstance(self, GraphenePythonError),
+            f"GraphenePythonError methods called on a {type(self)} - this usually indicates that "
+            "a SerializableErrorInfo was passed in where a GraphenePythonError was expected",
+        )
+        return self._className
 
     def resolve_causes(self, _graphene_info):
         causes = []
-        current_error = self.cause
+        current_error = self._cause
         while current_error and len(causes) < 10:  # Sanity check the depth of the causes
             causes.append(GraphenePythonError(current_error))
             current_error = current_error.cause
@@ -88,10 +118,18 @@ class GraphenePythonError(graphene.ObjectType):
         while len(chain) < 10:  # Sanity check the length of the chain
             if current_error.cause:
                 current_error = current_error.cause
-                chain.append(GrapheneErrorChainLink(error=current_error, isExplicitLink=True))
+                chain.append(
+                    GrapheneErrorChainLink(
+                        error=GraphenePythonError(current_error), isExplicitLink=True
+                    )
+                )
             elif current_error.context:
                 current_error = current_error.context
-                chain.append(GrapheneErrorChainLink(error=current_error, isExplicitLink=False))
+                chain.append(
+                    GrapheneErrorChainLink(
+                        error=GraphenePythonError(current_error), isExplicitLink=False
+                    )
+                )
             else:
                 break
         return chain

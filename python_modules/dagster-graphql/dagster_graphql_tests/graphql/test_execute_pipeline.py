@@ -51,6 +51,13 @@ query pipelineRunEvents($runId: ID!) {
               className
               stack
             }
+            errorChain {
+              error {
+                message
+                stack
+              }
+              isExplicitLink
+            }
           }
         }
       }
@@ -595,8 +602,19 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             "Exception: Outer exception\n",
             "Exception: bad programmer, bad\n",
         ]
-
         assert all([len(cause["stack"]) > 0 for cause in causes])
+
+        error_chain = step_run_log_entry["error"]["errorChain"]
+        assert len(error_chain) == 4
+        assert [
+            (chain_link["error"]["message"], chain_link["isExplicitLink"])
+            for chain_link in error_chain
+        ] == [
+            ("Exception: Even more outer exception\n", True),
+            ("Exception: Outer exception\n", True),
+            ("Exception: bad programmer, bad\n", True),
+            ("Exception: The inner sanctum\n", False),
+        ]
 
     def test_subscribe_bad_run_id(self, graphql_context):
         run_id = "nope"
