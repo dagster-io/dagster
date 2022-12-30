@@ -1,11 +1,9 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 
 import {graphql} from '../graphql';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 
-import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetViewParams} from './AssetView';
 import {AssetKey} from './types';
 
@@ -79,7 +77,7 @@ export function useRecentAssetEvents(
   }, [data, loading, refetch, loadUsingPartitionKeys, xAxis]);
 }
 
-export const ASSET_MATERIALIZATION_FRAGMENT = gql`
+export const ASSET_MATERIALIZATION_FRAGMENT = graphql(`
   fragment AssetMaterializationFragment on MaterializationEvent {
     partition
     runOrError {
@@ -109,11 +107,9 @@ export const ASSET_MATERIALIZATION_FRAGMENT = gql`
       ...AssetLineageFragment
     }
   }
-  ${METADATA_ENTRY_FRAGMENT}
-  ${ASSET_LINEAGE_FRAGMENT}
-`;
+`);
 
-export const ASSET_OBSERVATION_FRAGMENT = gql`
+export const ASSET_OBSERVATION_FRAGMENT = graphql(`
   fragment AssetObservationFragment on ObservationEvent {
     partition
     runOrError {
@@ -140,8 +136,7 @@ export const ASSET_OBSERVATION_FRAGMENT = gql`
       ...MetadataEntryFragment
     }
   }
-  ${METADATA_ENTRY_FRAGMENT}
-`;
+`);
 
 const ASSET_EVENTS_QUERY = graphql(`
   query AssetEventsQuery(

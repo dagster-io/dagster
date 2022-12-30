@@ -1,12 +1,14 @@
 import groupBy from 'lodash/groupBy';
 import React from 'react';
 
-import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
-import {AssetObservationFragment} from './types/AssetObservationFragment';
+import {
+  AssetMaterializationFragmentFragment,
+  AssetObservationFragmentFragment,
+} from '../graphql/graphql';
 
 const NO_PARTITION_KEY = '__NO_PARTITION__';
 
-type Event = AssetMaterializationFragment | AssetObservationFragment;
+type Event = AssetMaterializationFragmentFragment | AssetObservationFragmentFragment;
 
 export type AssetEventGroup = {
   latest: Event | null;

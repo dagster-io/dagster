@@ -20,7 +20,7 @@ import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {graphql} from '../graphql';
-import {ReexecutionStrategy} from '../graphql/graphql';
+import {ReexecutionStrategy, RunTableRunFragmentFragment} from '../graphql/graphql';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
@@ -36,10 +36,9 @@ import {
   handleLaunchResult,
 } from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
-import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 export const RunActionsMenu: React.FC<{
-  run: RunTableRunFragment;
+  run: RunTableRunFragmentFragment;
 }> = React.memo(({run}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<
@@ -239,7 +238,7 @@ export const RunActionsMenu: React.FC<{
 });
 
 export const RunBulkActionsMenu: React.FC<{
-  selected: RunTableRunFragment[];
+  selected: RunTableRunFragmentFragment[];
   clearSelection: () => void;
 }> = React.memo(({selected, clearSelection}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);

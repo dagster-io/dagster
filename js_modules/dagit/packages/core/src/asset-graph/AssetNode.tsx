@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Colors, Icon, FontFamily, Box, Caption, Spinner} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
@@ -8,16 +7,17 @@ import {withMiddleTruncation} from '../app/Util';
 import {humanizedLateString, isAssetLate} from '../assets/CurrentMinutesLateTag';
 import {isAssetStale} from '../assets/StaleTag';
 import {OpTags} from '../graph/OpTags';
+import {graphql} from '../graphql';
+import {AssetNodeFragmentFragment} from '../graphql/graphql';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 import {AssetLatestRunSpinner, AssetRunLink} from './AssetRunLinking';
 import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
-import {AssetNodeFragment} from './types/AssetNodeFragment';
 
 export const AssetNode: React.FC<{
-  definition: AssetNodeFragment;
+  definition: AssetNodeFragmentFragment;
   liveData?: LiveDataForNode;
   selected: boolean;
 }> = React.memo(({definition, selected, liveData}) => {
@@ -116,7 +116,7 @@ export const AssetNodeStatusBox: React.FC<{background: string}> = ({background, 
 );
 
 export const AssetNodeStatusRow: React.FC<{
-  definition: AssetNodeFragment;
+  definition: AssetNodeFragmentFragment;
   liveData: LiveDataForNode | undefined;
   stepKey: string;
 }> = ({definition, liveData, stepKey}) => {
@@ -214,7 +214,7 @@ export const AssetNodeStatusRow: React.FC<{
 export const AssetNodeMinimal: React.FC<{
   selected: boolean;
   liveData?: LiveDataForNode;
-  definition: AssetNodeFragment;
+  definition: AssetNodeFragmentFragment;
 }> = ({selected, definition, liveData}) => {
   const {isSource, assetKey} = definition;
   const displayName = assetKey.path[assetKey.path.length - 1];
@@ -253,7 +253,7 @@ export const AssetNodeMinimal: React.FC<{
   );
 };
 
-export const ASSET_NODE_LIVE_FRAGMENT = gql`
+export const ASSET_NODE_LIVE_FRAGMENT = graphql(`
   fragment AssetNodeLiveFragment on AssetNode {
     id
     opNames
@@ -297,13 +297,13 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     timestamp
     runId
   }
-`;
+`);
 
 // Note: This fragment should only contain fields that are needed for
 // useAssetGraphData and the Asset DAG. Some pages of Dagit request this
 // fragment for every AssetNode on the instance. Add fields with care!
 //
-export const ASSET_NODE_FRAGMENT = gql`
+export const ASSET_NODE_FRAGMENT = graphql(`
   fragment AssetNodeFragment on AssetNode {
     id
     graphName
@@ -323,7 +323,7 @@ export const ASSET_NODE_FRAGMENT = gql`
   fragment AssetNodeKey on AssetKey {
     path
   }
-`;
+`);
 
 const AssetInsetForHoverEffect = styled.div`
   padding: 10px 4px 2px 4px;

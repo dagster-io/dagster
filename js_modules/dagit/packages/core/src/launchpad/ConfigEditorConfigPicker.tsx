@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {HTMLInputProps, InputGroupProps2, Intent} from '@blueprintjs/core';
 import {
@@ -22,9 +22,9 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {graphql} from '../graphql';
 import {
+  ConfigEditorGeneratorPipelineFragmentFragment,
   ConfigEditorPipelinePresetFragment,
   ConfigPartitionResultFragment,
   PartitionSetForConfigEditorFragment,
@@ -35,9 +35,7 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {ConfigEditorGeneratorPipelineFragment} from './types/ConfigEditorGeneratorPipelineFragment';
-
-type Pipeline = ConfigEditorGeneratorPipelineFragment;
+type Pipeline = ConfigEditorGeneratorPipelineFragmentFragment;
 type Preset = ConfigEditorPipelinePresetFragment;
 type PartitionSet = PartitionSetForConfigEditorFragment;
 type Partition = ConfigPartitionResultFragment;
@@ -173,7 +171,7 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
       return sortOrder === 'asc' ? retrieved : [...retrieved].reverse();
     }, [data, sortOrder]);
 
-    const error: PythonErrorFragment | null =
+    const error =
       data?.partitionSetOrError.__typename === 'PartitionSet' &&
       data?.partitionSetOrError.partitionsOrError.__typename !== 'Partitions'
         ? data.partitionSetOrError.partitionsOrError
@@ -446,7 +444,7 @@ export const CONFIG_PARTITION_SELECTION_QUERY = graphql(`
   }
 `);
 
-export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = gql`
+export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = graphql(`
   fragment ConfigEditorGeneratorPipelineFragment on Pipeline {
     id
     isJob
@@ -470,9 +468,9 @@ export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = gql`
       value
     }
   }
-`;
+`);
 
-export const CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT = gql`
+export const CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT = graphql(`
   fragment ConfigEditorGeneratorPartitionSetsFragment on PartitionSets {
     results {
       id
@@ -486,4 +484,4 @@ export const CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT = gql`
     mode
     solidSelection
   }
-`;
+`);

@@ -18,6 +18,10 @@ import styled from 'styled-components/macro';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {
+  AssetMaterializationFragmentFragment,
+  AssetObservationFragmentFragment,
+} from '../graphql/graphql';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
@@ -27,8 +31,6 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
 import {AssetEventGroup} from './groupByPartition';
-import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
-import {AssetObservationFragment} from './types/AssetObservationFragment';
 
 export const AssetEventsTable: React.FC<{
   hasPartitions: boolean;
@@ -277,7 +279,7 @@ const DetailsTable = styled.table`
 interface PredecessorDialogProps {
   hasLineage: boolean;
   hasPartitions: boolean;
-  events: (AssetMaterializationFragment | AssetObservationFragment)[];
+  events: (AssetMaterializationFragmentFragment | AssetObservationFragmentFragment)[];
 }
 
 export const AllIndividualEventsLink: React.FC<PredecessorDialogProps> = ({

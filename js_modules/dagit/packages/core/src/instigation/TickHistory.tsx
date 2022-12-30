@@ -30,11 +30,12 @@ import {
   HistoryTickFragment,
   TickHistoryQueryQuery,
   TickHistoryQueryQueryVariables,
+  InstigationTickStatus,
+  InstigationType,
 } from '../graphql/graphql';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -42,7 +43,6 @@ import {TickTag} from './InstigationTick';
 import {RunStatusLink} from './InstigationUtils';
 import {LiveTickTimeline} from './LiveTickTimeline';
 import {TickDetailsDialog} from './TickDetailsDialog';
-import {RunStatusFragment} from './types/RunStatusFragment';
 
 Chart.register(zoomPlugin);
 
@@ -240,7 +240,7 @@ export const TicksTable = ({
                 ) : null}
                 <td>
                   {tick.runIds.length ? (
-                    tick.runs.map((run: RunStatusFragment) => (
+                    tick.runs.map((run) => (
                       <>
                         <RunStatusLink key={run.id} run={run} />
                       </>

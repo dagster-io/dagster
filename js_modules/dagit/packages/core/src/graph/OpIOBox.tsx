@@ -3,12 +3,15 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {DEFAULT_RESULT_NAME, titleOfIO} from '../app/titleOfIO';
-import {OpNodeInputDefinitionFragment, OpNodeOutputDefinitionFragment} from '../graphql/graphql';
+import {
+  OpNodeDefinitionFragmentFragment,
+  OpNodeInputDefinitionFragment,
+  OpNodeInvocationFragmentFragment,
+  OpNodeOutputDefinitionFragment,
+} from '../graphql/graphql';
 
 import {Edge, isHighlighted, position} from './common';
 import {OpLayoutIO} from './layout';
-import {OpNodeDefinitionFragment} from './types/OpNodeDefinitionFragment';
-import {OpNodeInvocationFragment} from './types/OpNodeInvocationFragment';
 
 export const PARENT_IN = 'PARENT_IN';
 export const PARENT_OUT = 'PARENT_OUT';
@@ -125,7 +128,7 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
 `;
 
 export function metadataForCompositeParentIO(
-  parentDefinition: OpNodeDefinitionFragment,
+  parentDefinition: OpNodeDefinitionFragmentFragment,
   item: OpNodeInputDefinitionFragment | OpNodeOutputDefinitionFragment,
 ): OpIORenderMetadata {
   const edges: Edge[] = [];
@@ -171,7 +174,7 @@ export function metadataForCompositeParentIO(
 
 export function metadataForIO(
   item: OpNodeInputDefinitionFragment | OpNodeOutputDefinitionFragment,
-  invocation?: OpNodeInvocationFragment,
+  invocation?: OpNodeInvocationFragmentFragment,
 ): OpIORenderMetadata {
   const edges: Edge[] = [];
 

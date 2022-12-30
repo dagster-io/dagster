@@ -1,6 +1,6 @@
 import {Colors} from '@dagster-io/ui';
 
-import {RunStatus} from '../types/globalTypes';
+import {RunStatus} from '../graphql/graphql';
 
 import {TimelineRun} from './RunTimeline';
 import {mergeStatusToBackground} from './mergeStatusToBackground';

@@ -2,11 +2,10 @@ import {Box, Button, Dialog, DialogFooter, Subheading, Table} from '@dagster-io/
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {ScheduleSwitchFragmentFragment, SensorSwitchFragmentFragment} from '../graphql/graphql';
 import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
 import {humanCronString} from '../schedules/humanCronString';
-import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitchFragment';
 import {SensorSwitch} from '../sensors/SensorSwitch';
-import {SensorSwitchFragment} from '../sensors/types/SensorSwitchFragment';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -14,8 +13,8 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   repoAddress: RepoAddress;
-  schedules: ScheduleSwitchFragment[];
-  sensors: SensorSwitchFragment[];
+  schedules: ScheduleSwitchFragmentFragment[];
+  sensors: SensorSwitchFragmentFragment[];
   showSwitch?: boolean;
 }
 

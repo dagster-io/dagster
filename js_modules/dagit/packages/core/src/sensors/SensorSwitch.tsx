@@ -1,9 +1,10 @@
-import {gql, useMutation} from '@apollo/client';
+import {useMutation} from '@apollo/client';
 import {Checkbox, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {usePermissions} from '../app/Permissions';
-import {InstigationStatus} from '../types/globalTypes';
+import {graphql} from '../graphql';
+import {InstigationStatus, SensorSwitchFragmentFragment} from '../graphql/graphql';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -12,11 +13,10 @@ import {
   START_SENSOR_MUTATION,
   STOP_SENSOR_MUTATION,
 } from './SensorMutations';
-import {SensorSwitchFragment} from './types/SensorSwitchFragment';
 
 interface Props {
   repoAddress: RepoAddress;
-  sensor: SensorSwitchFragment;
+  sensor: SensorSwitchFragmentFragment;
   size?: 'small' | 'large';
 }
 
@@ -86,7 +86,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
   );
 };
 
-export const SENSOR_SWITCH_FRAGMENT = gql`
+export const SENSOR_SWITCH_FRAGMENT = graphql(`
   fragment SensorSwitchFragment on Sensor {
     id
     jobOriginId
@@ -97,4 +97,4 @@ export const SENSOR_SWITCH_FRAGMENT = gql`
       status
     }
   }
-`;
+`);

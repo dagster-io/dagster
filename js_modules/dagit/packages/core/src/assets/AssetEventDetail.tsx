@@ -4,6 +4,10 @@ import {Link} from 'react-router-dom';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {
+  AssetMaterializationFragmentFragment,
+  AssetObservationFragmentFragment,
+} from '../graphql/graphql';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
@@ -12,11 +16,9 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetLineageElements} from './AssetLineageElements';
-import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
-import {AssetObservationFragment} from './types/AssetObservationFragment';
 
 export const AssetEventDetail: React.FC<{
-  event: AssetMaterializationFragment | AssetObservationFragment;
+  event: AssetMaterializationFragmentFragment | AssetObservationFragmentFragment;
 }> = ({event}) => {
   const run = event.runOrError?.__typename === 'Run' ? event.runOrError : null;
   const repositoryOrigin = run?.repositoryOrigin;

@@ -3,10 +3,10 @@ import styled from 'styled-components/macro';
 
 import {weakmapMemoize} from '../app/Util';
 import {buildSVGPath} from '../asset-graph/Utils';
+import {OpGraphOpFragmentFragment} from '../graphql/graphql';
 
 import {OpGraphLayout, OpLayout, OpLayoutEdge} from './asyncGraphLayout';
 import {OpLayoutEdgeSide, OpLayoutIO} from './layout';
-import {OpGraphOpFragment} from './types/OpGraphOpFragment';
 
 export type Edge = {a: string; b: string};
 
@@ -47,14 +47,17 @@ const buildSVGPaths = weakmapMemoize((edges: OpLayoutEdge[], nodes: {[name: stri
     .filter((path): path is Path => !!path),
 );
 
-const outputIsDynamic = (ops: OpGraphOpFragment[], from: {opName: string; edgeName: string}) => {
+const outputIsDynamic = (
+  ops: OpGraphOpFragmentFragment[],
+  from: {opName: string; edgeName: string},
+) => {
   const op = ops.find((s) => s.name === from.opName);
   const outDef = op?.definition.outputDefinitions.find((o) => o.name === from.edgeName);
   return outDef?.isDynamic || false;
 };
 
 const inputIsDynamicCollect = (
-  ops: OpGraphOpFragment[],
+  ops: OpGraphOpFragmentFragment[],
   to: {opName: string; edgeName: string},
 ) => {
   const op = ops.find((s) => s.name === to.opName);
@@ -65,7 +68,7 @@ const inputIsDynamicCollect = (
 export const OpEdges = React.memo(
   (props: {
     color: string;
-    ops: OpGraphOpFragment[];
+    ops: OpGraphOpFragmentFragment[];
     layout: OpGraphLayout;
     edges: OpLayoutEdge[];
     onHighlight: (arr: Edge[]) => void;

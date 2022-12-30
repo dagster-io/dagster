@@ -4,15 +4,15 @@ import * as React from 'react';
 
 import {usePermissions} from '../app/Permissions';
 import {graphql} from '../graphql';
+import {RunTimeFragmentFragment} from '../graphql/graphql';
 import {canRunAllSteps, canRunFromFailure} from '../runs/RunActionButtons';
-import {RunTimeFragment} from '../runs/types/RunTimeFragment';
 import {useJobReExecution} from '../runs/useJobReExecution';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
 interface Props {
-  job: {isJob: boolean; name: string; runs: RunTimeFragment[]};
+  job: {isJob: boolean; name: string; runs: RunTimeFragmentFragment[]};
   repoAddress: RepoAddress;
 }
 

@@ -1,14 +1,16 @@
-import {gql} from '@apollo/client';
 import {Colors} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {colorHash} from '../app/Util';
+import {graphql} from '../graphql';
+import {
+  PartitionGraphFragmentFragment,
+  PartitionGraphSetRunFragmentFragment,
+} from '../graphql/graphql';
 
-import {PartitionGraphFragment} from './types/PartitionGraphFragment';
-export const PARTITION_GRAPH_FRAGMENT = gql`
+export const PARTITION_GRAPH_FRAGMENT = graphql(`
   fragment PartitionGraphFragment on PipelineRun {
     id
     runId
@@ -35,11 +37,9 @@ export const PARTITION_GRAPH_FRAGMENT = gql`
       }
     }
   }
+`);
 
-  ${PYTHON_ERROR_FRAGMENT}
-`;
-
-export const getPipelineDurationForRun = (run: PartitionGraphFragment) => {
+export const getPipelineDurationForRun = (run: PartitionGraphSetRunFragmentFragment) => {
   const {stats} = run;
   if (stats && stats.__typename === 'RunStatsSnapshot' && stats.endTime && stats.startTime) {
     return stats.endTime - stats.startTime;
@@ -48,7 +48,7 @@ export const getPipelineDurationForRun = (run: PartitionGraphFragment) => {
   return undefined;
 };
 
-export const getStepDurationsForRun = (run: PartitionGraphFragment) => {
+export const getStepDurationsForRun = (run: PartitionGraphSetRunFragmentFragment) => {
   const {stepStats} = run;
 
   const perStepDuration = {};
@@ -61,7 +61,7 @@ export const getStepDurationsForRun = (run: PartitionGraphFragment) => {
   return perStepDuration;
 };
 
-export const getPipelineMaterializationCountForRun = (run: PartitionGraphFragment) => {
+export const getPipelineMaterializationCountForRun = (run: PartitionGraphFragmentFragment) => {
   const {stats} = run;
   if (stats && stats.__typename === 'RunStatsSnapshot') {
     return stats.materializations;
@@ -69,7 +69,7 @@ export const getPipelineMaterializationCountForRun = (run: PartitionGraphFragmen
   return undefined;
 };
 
-export const getStepMaterializationCountForRun = (run: PartitionGraphFragment) => {
+export const getStepMaterializationCountForRun = (run: PartitionGraphFragmentFragment) => {
   const {stepStats} = run;
   const perStepCounts = {};
   stepStats.forEach((stepStat) => {
@@ -78,12 +78,12 @@ export const getStepMaterializationCountForRun = (run: PartitionGraphFragment) =
   return perStepCounts;
 };
 
-export const getPipelineExpectationSuccessForRun = (run: PartitionGraphFragment) => {
+export const getPipelineExpectationSuccessForRun = (run: PartitionGraphFragmentFragment) => {
   const stepCounts: {[key: string]: number} = getStepExpectationSuccessForRun(run);
   return _arraySum(Object.values(stepCounts));
 };
 
-export const getStepExpectationSuccessForRun = (run: PartitionGraphFragment) => {
+export const getStepExpectationSuccessForRun = (run: PartitionGraphFragmentFragment) => {
   const {stepStats} = run;
   const perStepCounts = {};
   stepStats.forEach((stepStat) => {
@@ -93,12 +93,12 @@ export const getStepExpectationSuccessForRun = (run: PartitionGraphFragment) => 
   return perStepCounts;
 };
 
-export const getPipelineExpectationFailureForRun = (run: PartitionGraphFragment) => {
+export const getPipelineExpectationFailureForRun = (run: PartitionGraphFragmentFragment) => {
   const stepCounts: {[key: string]: number} = getStepExpectationFailureForRun(run);
   return _arraySum(Object.values(stepCounts));
 };
 
-export const getStepExpectationFailureForRun = (run: PartitionGraphFragment) => {
+export const getStepExpectationFailureForRun = (run: PartitionGraphFragmentFragment) => {
   const {stepStats} = run;
   const perStepCounts = {};
   stepStats.forEach((stepStat) => {
@@ -108,7 +108,7 @@ export const getStepExpectationFailureForRun = (run: PartitionGraphFragment) => 
   return perStepCounts;
 };
 
-export const getPipelineExpectationRateForRun = (run: PartitionGraphFragment) => {
+export const getPipelineExpectationRateForRun = (run: PartitionGraphFragmentFragment) => {
   const stepSuccesses: {
     [key: string]: number;
   } = getStepExpectationSuccessForRun(run);
@@ -123,7 +123,7 @@ export const getPipelineExpectationRateForRun = (run: PartitionGraphFragment) =>
   return pipelineTotal ? pipelineSuccesses / pipelineTotal : 0;
 };
 
-export const getStepExpectationRateForRun = (run: PartitionGraphFragment) => {
+export const getStepExpectationRateForRun = (run: PartitionGraphFragmentFragment) => {
   const {stepStats} = run;
   const perStepCounts = {};
   stepStats.forEach((stepStat) => {

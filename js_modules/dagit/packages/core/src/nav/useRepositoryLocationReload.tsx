@@ -5,7 +5,6 @@ import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
 import {useInvalidateConfigsForRepo} from '../app/ExecutionSessionStorage';
-import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {graphql} from '../graphql';
 import {
   ReloadWorkspaceMutationMutation,
@@ -13,13 +12,14 @@ import {
   ReloadRepositoryLocationMutationMutationVariables,
   RepositoryLocationStatusQueryQuery,
   RepositoryLocationLoadStatus,
+  PythonErrorFragmentFragment,
 } from '../graphql/graphql';
 
 type State = {
   mutating: boolean;
   pollStartTime: number | null;
   pollLocationIds: string[] | null;
-  error: PythonErrorFragment | {message: string} | null;
+  error: PythonErrorFragmentFragment | {message: string} | null;
   errorLocationId: string | null;
 };
 
@@ -29,7 +29,7 @@ type Action =
   | {type: 'finish-polling'}
   | {
       type: 'error';
-      error: PythonErrorFragment | {message: string} | null;
+      error: PythonErrorFragmentFragment | {message: string} | null;
       errorLocationId: string | null;
     }
   | {type: 'success'};

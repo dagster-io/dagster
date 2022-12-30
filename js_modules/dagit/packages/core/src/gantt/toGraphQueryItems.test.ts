@@ -1,5 +1,5 @@
+import {StepKind} from '../graphql/graphql';
 import {IStepMetadata, IStepState} from '../runs/RunMetadataProvider';
-import {StepKind} from '../types/globalTypes';
 
 import {toGraphQueryItems} from './toGraphQueryItems';
 
