@@ -1,6 +1,7 @@
 from dagster_airflow.dagster_pipeline_factory import (
     make_dagster_pipeline_from_airflow_dag,
     make_dagster_repo_from_airflow_dag_bag,
+    make_dagster_repo_from_airflow_dags_path,
 )
 
 from dagster import Definitions
@@ -85,7 +86,7 @@ def make_dagster_job_from_airflow_dag(
         else {},
     )
 
-def make_dagster_definition_from_airflow_dag_bag(
+def make_dagster_definitions_from_airflow_dag_bag(
     dag_bag,
     refresh_from_airflow_db=False,
     use_airflow_template_context=False,
@@ -93,7 +94,7 @@ def make_dagster_definition_from_airflow_dag_bag(
     use_ephemeral_airflow_db=False,
     connections=None,
 ):
-    """Construct a Dagster definition corresponding to Airflow DAGs in DagBag.
+    """Construct Dagster definitions corresponding to Airflow DAGs in DagBag.
 
     Usage:
         Create `make_dagster_definition.py`:
@@ -103,7 +104,6 @@ def make_dagster_definition_from_airflow_dag_bag(
             def make_definition_from_dag_bag():
                 return make_dagster_definition_from_airflow_dag_bag(my_dag_bag)
 
-        Use RepositoryDefinition as usual, for example:
             `dagit -f path/to/make_dagster_definition.py`
 
     Args:
@@ -138,7 +138,73 @@ def make_dagster_definition_from_airflow_dag_bag(
 
     return Definitions(
         assets=repo._assets_defs_by_key.values(),
-        schedules=repo.get_all_schedules(),
-        sensors=repo.get_all_sensors(),
+        schedules=repo.schedule_defs,
+        sensors=repo.sensor_defs,
+        jobs=repo.get_all_jobs(),
+    )
+
+def make_dagster_definitions_from_airflow_dags_path(
+    dag_path,
+    safe_mode=True,
+    store_serialized_dags=False,
+    use_airflow_template_context=False,
+    mock_xcom=False,
+    use_ephemeral_airflow_db=True,
+    connections=None,
+):
+    """Construct Dagster definitions corresponding to Airflow DAGs in dag_path.
+
+    ``DagBag.get_dag()`` dependency requires Airflow DB to be initialized.
+
+    Usage:
+        Create ``make_dagster_definitions.py``:
+
+        .. code-block:: python
+
+            from dagster_airflow.dagster_pipeline_factory import make_dagster_definitions_from_airflow_dags_path
+
+            def make_definitions_from_dir():
+                return make_dagster_definitions_from_airflow_dags_path(
+                    '/path/to/dags/'
+                )
+
+        ``dagit -f path/to/make_dagster_definitions.py``
+
+    Args:
+        dag_path (str): Path to directory or file that contains Airflow Dags
+        safe_mode (bool): True to use Airflow's default heuristic to find files that contain DAGs
+            (ie find files that contain both b'DAG' and b'airflow') (default: True)
+        store_serialized_dags (bool): True to read Airflow DAGS from Airflow DB. False to read DAGS
+            from Python files. (default: False)
+        use_airflow_template_context (bool): If True, will call get_template_context() on the
+            Airflow TaskInstance model which requires and modifies the DagRun table. The use_airflow_template_context
+            setting is ignored if use_ephemeral_airflow_db is True.
+            (default: False)
+        mock_xcom (bool): If True, dagster will mock out all calls made to xcom, features that
+            depend on xcom may not work as expected. (default: False)
+        use_ephemeral_airflow_db (bool): If True, dagster will create an ephemeral sqlite airflow
+            database for each run. (default: False)
+        connections (List[Connection]): List of Airflow Connections to be created in the Ephemeral
+            Airflow DB, if use_emphemeral_airflow_db is False this will be ignored.
+
+    Returns:
+        Definitions
+    """
+
+    repo = make_dagster_repo_from_airflow_dags_path(
+        dag_path,
+        "dagster_airflow_repo",
+        safe_mode,
+        store_serialized_dags,
+        use_airflow_template_context,
+        mock_xcom,
+        use_ephemeral_airflow_db,
+        connections,
+    )
+
+    return Definitions(
+        assets=repo._assets_defs_by_key.values(),
+        schedules=repo.schedule_defs,
+        sensors=repo.sensor_defs,
         jobs=repo.get_all_jobs(),
     )

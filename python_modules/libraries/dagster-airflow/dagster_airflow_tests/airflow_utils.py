@@ -694,7 +694,7 @@ test_make_from_dagbag_inputs_airflow_2 = [
         ["airflow_example_bash_operator"],
     ),
     (
-        [("combined.py", BASH_DAG_FILE_CONTENTS_AIRFLOW_2)],
+        [("combined.py", COMBINED_FILE_CONTENTS)],
         None,
         ["airflow_example_complex", "airflow_example_bash_operator"],
     ),

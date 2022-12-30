@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 from airflow import __version__ as airflow_version
-from dagster_airflow import make_dagster_definition_from_airflow_dag_bag
+from dagster_airflow import make_dagster_definitions_from_airflow_dags_path
 
 from ..airflow_utils import test_make_from_dagbag_inputs
 
@@ -24,11 +24,11 @@ def test_make_definition(
                 f.write(bytes(content.encode("utf-8")))
 
         definition = (
-            make_dagster_definition_from_airflow_dag_bag(
+            make_dagster_definitions_from_airflow_dags_path(
                 tmpdir_path
             )
             if fn_arg_path is None
-            else make_dagster_definition_from_airflow_dag_bag(
+            else make_dagster_definitions_from_airflow_dags_path(
                 os.path.join(tmpdir_path, fn_arg_path)
             )
         )
