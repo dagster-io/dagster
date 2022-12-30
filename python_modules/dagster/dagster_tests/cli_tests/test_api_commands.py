@@ -332,6 +332,66 @@ def test_execute_step():
         assert "STEP_SUCCESS" in result.stdout
 
 
+def test_execute_step_with_secrets_loader():
+    recon_job = reconstructable(needs_env_var_job)
+    runner = CliRunner()
+
+    # Restore original env after test
+    with environ({"FOO": None}):
+        with instance_for_test(
+            overrides={
+                "compute_logs": {
+                    "module": "dagster._core.storage.noop_compute_log_manager",
+                    "class": "NoOpComputeLogManager",
+                },
+                "python_logs": {
+                    "dagster_handler_config": {
+                        "handlers": {
+                            # Importing this handler fails if REQUIRED_LOGGER_ENV_VAR not set
+                            "testHandler": {
+                                "class": "dagster_tests.cli_tests.fake_python_logger_module.FakeHandler",
+                                "level": "INFO",
+                            },
+                        }
+                    }
+                },
+                "secrets": {
+                    "custom": {
+                        "module": "dagster._core.test_utils",
+                        "class": "TestSecretsLoader",
+                        "config": {
+                            "env_vars": {
+                                "FOO": "BAR",
+                                "REQUIRED_LOGGER_ENV_VAR": "LOGGER_ENV_VAR_VALUE",
+                            }
+                        },
+                    }
+                },
+            }
+        ) as instance:
+
+            run = create_run_for_test(
+                instance,
+                pipeline_name="needs_env_var_job",
+                run_id="new_run",
+                pipeline_code_origin=recon_job.get_python_origin(),
+            )
+
+            args = ExecuteStepArgs(
+                pipeline_origin=recon_job.get_python_origin(),
+                pipeline_run_id=run.run_id,
+                step_keys_to_execute=None,
+                instance_ref=instance.get_ref(),
+            )
+
+            result = runner_execute_step(
+                runner,
+                args.get_command_args()[3:],
+            )
+
+            assert "STEP_SUCCESS" in result.stdout
+
+
 def test_execute_step_with_env():
     with instance_for_test(
         overrides={

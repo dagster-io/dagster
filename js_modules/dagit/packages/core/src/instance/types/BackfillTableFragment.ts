@@ -30,24 +30,30 @@ export interface BackfillTableFragment_assetSelection {
   path: string[];
 }
 
-export interface BackfillTableFragment_error_causes {
+export interface BackfillTableFragment_error_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface BackfillTableFragment_error_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: BackfillTableFragment_error_errorChain_error;
 }
 
 export interface BackfillTableFragment_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: BackfillTableFragment_error_causes[];
+  errorChain: BackfillTableFragment_error_errorChain[];
 }
 
 export interface BackfillTableFragment {
   __typename: "PartitionBackfill";
   backfillId: string;
   status: BulkActionStatus;
-  numRequested: number;
+  numCancelable: number;
   partitionNames: string[];
   numPartitions: number;
   timestamp: number;

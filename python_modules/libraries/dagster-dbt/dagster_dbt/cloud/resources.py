@@ -126,7 +126,7 @@ class DbtCloudResourceV2:
                 num_retries += 1
                 time.sleep(self._request_retry_delay)
 
-        raise Failure("Exceeded max number of retries.")
+        raise Failure(f"Max retries ({self._request_max_retries}) exceeded with url: {url}.")
 
     def get_job(self, job_id: int) -> Mapping[str, Any]:
         """

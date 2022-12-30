@@ -6,7 +6,6 @@ from dagster_graphql.implementation.loader import (
     CrossRepoAssetDependedByLoader,
     ProjectedLogicalVersionLoader,
 )
-from dagster_graphql.schema.util import HasContext
 
 import dagster._seven as seven
 from dagster import AssetKey, DagsterEventType, EventRecordsFilter
@@ -28,6 +27,7 @@ from .utils import capture_error
 if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetNode
     from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
+    from ..schema.util import HasContext
 
 
 def _normalize_asset_cursor_str(cursor_string):
@@ -86,7 +86,9 @@ def asset_node_iter(
                 yield location, repository, external_asset_node
 
 
-def get_asset_node_definition_collisions(graphene_info: HasContext, asset_keys: Sequence[AssetKey]):
+def get_asset_node_definition_collisions(
+    graphene_info: "HasContext", asset_keys: Sequence[AssetKey]
+):
     from ..schema.asset_graph import GrapheneAssetNodeDefinitionCollision
     from ..schema.external import GrapheneRepository
 

@@ -28,17 +28,23 @@ export interface OverviewJobsQuery_workspaceOrError_Workspace_locationEntries_lo
   repositories: OverviewJobsQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories[];
 }
 
-export interface OverviewJobsQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_causes {
+export interface OverviewJobsQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface OverviewJobsQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: OverviewJobsQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_errorChain_error;
 }
 
 export interface OverviewJobsQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: OverviewJobsQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_causes[];
+  errorChain: OverviewJobsQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_errorChain[];
 }
 
 export type OverviewJobsQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError = OverviewJobsQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation | OverviewJobsQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError;
@@ -54,17 +60,23 @@ export interface OverviewJobsQuery_workspaceOrError_Workspace {
   locationEntries: OverviewJobsQuery_workspaceOrError_Workspace_locationEntries[];
 }
 
-export interface OverviewJobsQuery_workspaceOrError_PythonError_causes {
+export interface OverviewJobsQuery_workspaceOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface OverviewJobsQuery_workspaceOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: OverviewJobsQuery_workspaceOrError_PythonError_errorChain_error;
 }
 
 export interface OverviewJobsQuery_workspaceOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: OverviewJobsQuery_workspaceOrError_PythonError_causes[];
+  errorChain: OverviewJobsQuery_workspaceOrError_PythonError_errorChain[];
 }
 
 export type OverviewJobsQuery_workspaceOrError = OverviewJobsQuery_workspaceOrError_Workspace | OverviewJobsQuery_workspaceOrError_PythonError;

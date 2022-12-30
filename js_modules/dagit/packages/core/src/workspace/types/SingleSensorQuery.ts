@@ -28,17 +28,23 @@ export interface SingleSensorQuery_sensorOrError_Sensor_metadata {
   assetKeys: SingleSensorQuery_sensorOrError_Sensor_metadata_assetKeys[] | null;
 }
 
-export interface SingleSensorQuery_sensorOrError_Sensor_sensorState_ticks_error_causes {
+export interface SingleSensorQuery_sensorOrError_Sensor_sensorState_ticks_error_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface SingleSensorQuery_sensorOrError_Sensor_sensorState_ticks_error_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: SingleSensorQuery_sensorOrError_Sensor_sensorState_ticks_error_errorChain_error;
 }
 
 export interface SingleSensorQuery_sensorOrError_Sensor_sensorState_ticks_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: SingleSensorQuery_sensorOrError_Sensor_sensorState_ticks_error_causes[];
+  errorChain: SingleSensorQuery_sensorOrError_Sensor_sensorState_ticks_error_errorChain[];
 }
 
 export interface SingleSensorQuery_sensorOrError_Sensor_sensorState_ticks {

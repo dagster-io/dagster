@@ -59,17 +59,23 @@ export interface PartitionRunListQuery_pipelineRunsOrError_InvalidPipelineRunsFi
   message: string;
 }
 
-export interface PartitionRunListQuery_pipelineRunsOrError_PythonError_causes {
+export interface PartitionRunListQuery_pipelineRunsOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface PartitionRunListQuery_pipelineRunsOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: PartitionRunListQuery_pipelineRunsOrError_PythonError_errorChain_error;
 }
 
 export interface PartitionRunListQuery_pipelineRunsOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: PartitionRunListQuery_pipelineRunsOrError_PythonError_causes[];
+  errorChain: PartitionRunListQuery_pipelineRunsOrError_PythonError_errorChain[];
 }
 
 export type PartitionRunListQuery_pipelineRunsOrError = PartitionRunListQuery_pipelineRunsOrError_Runs | PartitionRunListQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | PartitionRunListQuery_pipelineRunsOrError_PythonError;

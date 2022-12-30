@@ -1986,6 +1986,13 @@ type PythonError implements Error {
   stack: [String!]!
   cause: PythonError
   causes: [PythonError!]!
+  errorChain: [ErrorChainLink!]!
+}
+
+type ErrorChainLink implements Error {
+  message: String!
+  error: PythonError!
+  isExplicitLink: Boolean!
 }
 
 type UnauthorizedError implements Error {
@@ -2618,7 +2625,7 @@ type PartitionBackfill {
   status: BulkActionStatus!
   partitionNames: [String!]!
   numPartitions: Int!
-  numRequested: Int!
+  numCancelable: Int!
   fromFailure: Boolean!
   reexecutionSteps: [String!]!
   assetSelection: [AssetKey!]

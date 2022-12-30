@@ -4,7 +4,6 @@ import {loader} from 'graphql.macro';
 import React from 'react';
 
 import {INSTANCE_CONFIG_QUERY} from '../instance/InstanceConfig';
-import {InstanceConfigQuery} from '../instance/types/InstanceConfigQuery';
 
 import {ApolloTestProvider} from './ApolloTestProvider';
 
@@ -12,7 +11,7 @@ const typeDefs = loader('../graphql/schema.graphql');
 
 describe('ApolloTestProvider', () => {
   const Thing = () => {
-    const {data} = useQuery<InstanceConfigQuery>(INSTANCE_CONFIG_QUERY, {
+    const {data} = useQuery(INSTANCE_CONFIG_QUERY, {
       fetchPolicy: 'cache-and-network',
     });
     return (

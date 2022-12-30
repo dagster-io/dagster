@@ -1,16 +1,12 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Colors, Caption} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {graphql} from '../graphql';
 import {failedStatuses, inProgressStatuses} from '../runs/RunStatuses';
 import {StepEventStatus} from '../types/globalTypes';
-
-import {
-  StepSummaryForRunQuery,
-  StepSummaryForRunQueryVariables,
-} from './types/StepSummaryForRunQuery';
 
 interface Props {
   runId: string;
@@ -18,10 +14,7 @@ interface Props {
 
 export const StepSummaryForRun = (props: Props) => {
   const {runId} = props;
-  const {data} = useQuery<StepSummaryForRunQuery, StepSummaryForRunQueryVariables>(
-    STEP_SUMMARY_FOR_RUN_QUERY,
-    {variables: {runId}},
-  );
+  const {data} = useQuery(STEP_SUMMARY_FOR_RUN_QUERY, {variables: {runId}});
 
   const run = data?.pipelineRunOrError;
   const status = run?.__typename === 'Run' ? run.status : null;
@@ -90,7 +83,7 @@ export const StepSummaryForRun = (props: Props) => {
   return null;
 };
 
-const STEP_SUMMARY_FOR_RUN_QUERY = gql`
+const STEP_SUMMARY_FOR_RUN_QUERY = graphql(`
   query StepSummaryForRunQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       ... on Run {
@@ -104,4 +97,4 @@ const STEP_SUMMARY_FOR_RUN_QUERY = gql`
       }
     }
   }
-`;
+`);

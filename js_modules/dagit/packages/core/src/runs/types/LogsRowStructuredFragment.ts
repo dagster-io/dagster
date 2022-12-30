@@ -535,17 +535,23 @@ export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntr
 
 export type LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries = LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_PathMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_NotebookMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_JsonMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_UrlMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TextMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_MarkdownMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_PythonArtifactMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_FloatMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_IntMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_BoolMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_PipelineRunMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_AssetMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry;
 
-export interface LogsRowStructuredFragment_ResourceInitFailureEvent_error_causes {
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_error_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_error_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: LogsRowStructuredFragment_ResourceInitFailureEvent_error_errorChain_error;
 }
 
 export interface LogsRowStructuredFragment_ResourceInitFailureEvent_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: LogsRowStructuredFragment_ResourceInitFailureEvent_error_causes[];
+  errorChain: LogsRowStructuredFragment_ResourceInitFailureEvent_error_errorChain[];
 }
 
 export interface LogsRowStructuredFragment_ResourceInitFailureEvent {
@@ -1468,17 +1474,23 @@ export interface LogsRowStructuredFragment_ObservationEvent {
   assetKey: LogsRowStructuredFragment_ObservationEvent_assetKey | null;
 }
 
-export interface LogsRowStructuredFragment_ExecutionStepFailureEvent_error_causes {
+export interface LogsRowStructuredFragment_ExecutionStepFailureEvent_error_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface LogsRowStructuredFragment_ExecutionStepFailureEvent_error_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: LogsRowStructuredFragment_ExecutionStepFailureEvent_error_errorChain_error;
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepFailureEvent_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: LogsRowStructuredFragment_ExecutionStepFailureEvent_error_causes[];
+  errorChain: LogsRowStructuredFragment_ExecutionStepFailureEvent_error_errorChain[];
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_PathMetadataEntry {
@@ -1663,17 +1675,23 @@ export interface LogsRowStructuredFragment_ExecutionStepFailureEvent {
   failureMetadata: LogsRowStructuredFragment_ExecutionStepFailureEvent_failureMetadata | null;
 }
 
-export interface LogsRowStructuredFragment_ExecutionStepUpForRetryEvent_error_causes {
+export interface LogsRowStructuredFragment_ExecutionStepUpForRetryEvent_error_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface LogsRowStructuredFragment_ExecutionStepUpForRetryEvent_error_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: LogsRowStructuredFragment_ExecutionStepUpForRetryEvent_error_errorChain_error;
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepUpForRetryEvent_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: LogsRowStructuredFragment_ExecutionStepUpForRetryEvent_error_causes[];
+  errorChain: LogsRowStructuredFragment_ExecutionStepUpForRetryEvent_error_errorChain[];
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepUpForRetryEvent {

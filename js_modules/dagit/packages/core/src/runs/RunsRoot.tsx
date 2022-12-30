@@ -16,6 +16,7 @@ import {Link} from 'react-router-dom';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {graphql} from '../graphql';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {InstancePageContext} from '../instance/InstancePageContext';
 import {useCanSeeConfig} from '../instance/useCanSeeConfig';
@@ -33,7 +34,6 @@ import {
   RunFilterToken,
 } from './RunsFilterInput';
 import {RunsPageHeader} from './RunsPageHeader';
-import {QueueDaemonStatusQuery} from './types/QueueDaemonStatusQuery';
 import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRootQuery';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 
@@ -249,7 +249,7 @@ const RUNS_ROOT_QUERY = gql`
 `;
 
 const QueueDaemonAlert = () => {
-  const {data} = useQuery<QueueDaemonStatusQuery>(QUEUE_DAEMON_STATUS_QUERY);
+  const {data} = useQuery(QUEUE_DAEMON_STATUS_QUERY);
   const {pageTitle} = React.useContext(InstancePageContext);
   const status = data?.instance.daemonHealth.daemonStatus;
   if (status?.required && !status?.healthy) {
@@ -268,7 +268,7 @@ const QueueDaemonAlert = () => {
   return null;
 };
 
-const QUEUE_DAEMON_STATUS_QUERY = gql`
+const QUEUE_DAEMON_STATUS_QUERY = graphql(`
   query QueueDaemonStatusQuery {
     instance {
       daemonHealth {
@@ -282,4 +282,4 @@ const QUEUE_DAEMON_STATUS_QUERY = gql`
       }
     }
   }
-`;
+`);

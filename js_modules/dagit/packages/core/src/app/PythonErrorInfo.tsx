@@ -9,13 +9,13 @@ import {ErrorSource} from '../types/globalTypes';
 
 import {
   PythonErrorFragment,
-  PythonErrorFragment_causes as Cause,
+  PythonErrorFragment_errorChain as ErrorChainLink,
 } from './types/PythonErrorFragment';
 
 export type GenericError = {
   message: string;
   stack?: string[];
-  causes?: Cause[];
+  errorChain?: ErrorChainLink[];
 };
 
 interface IPythonErrorInfoProps {
@@ -27,7 +27,7 @@ interface IPythonErrorInfoProps {
 }
 
 export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
-  const {message, stack = [], causes = []} = props.error;
+  const {message, stack = [], errorChain = []} = props.error;
 
   const Wrapper = props.centered ? ErrorWrapperCentered : ErrorWrapper;
   const context = props.errorSource ? <ErrorContext errorSource={props.errorSource} /> : null;
@@ -44,11 +44,15 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
           </div>
         ) : null}
         {stack ? <Trace>{stack.join('')}</Trace> : null}
-        {causes.map((cause, ii) => (
+        {errorChain.map((chainLink, ii) => (
           <React.Fragment key={ii}>
-            <CauseHeader>The above exception was caused by the following exception:</CauseHeader>
-            <ErrorHeader>{cause.message}</ErrorHeader>
-            {stack ? <Trace>{cause.stack.join('')}</Trace> : null}
+            <CauseHeader>
+              {chainLink.isExplicitLink
+                ? 'The above exception was caused by the following exception:'
+                : 'The above exception occurred during handling of the following exception:'}
+            </CauseHeader>
+            <ErrorHeader>{chainLink.error.message}</ErrorHeader>
+            {stack ? <Trace>{chainLink.error.stack.join('')}</Trace> : null}
           </React.Fragment>
         ))}
         {props.showReload && (
@@ -83,9 +87,12 @@ export const PYTHON_ERROR_FRAGMENT = gql`
     __typename
     message
     stack
-    causes {
-      message
-      stack
+    errorChain {
+      isExplicitLink
+      error {
+        message
+        stack
+      }
     }
   }
 `;

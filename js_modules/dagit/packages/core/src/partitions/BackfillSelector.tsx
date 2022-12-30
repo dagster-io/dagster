@@ -26,11 +26,8 @@ import {filterByQuery} from '../app/GraphQueryImpl';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
+import {LaunchPartitionBackfillMutation} from '../graphql/graphql';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
-import {
-  LaunchPartitionBackfill,
-  LaunchPartitionBackfillVariables,
-} from '../instance/types/LaunchPartitionBackfill';
 import {LaunchButton} from '../launchpad/LaunchButton';
 import {TagEditor, TagContainer} from '../launchpad/TagEditor';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
@@ -120,7 +117,7 @@ export const BackfillPartitionSelector: React.FC<{
     onLaunch?.(backfillId, query);
   };
 
-  const onError = (data: LaunchPartitionBackfill | null | undefined) => {
+  const onError = (data: LaunchPartitionBackfillMutation | null | undefined) => {
     showBackfillErrorToast(data);
   };
 
@@ -323,7 +320,7 @@ const LaunchBackfillButton: React.FC<{
   fromFailure?: boolean;
   tags?: PipelineRunTag[];
   onSuccess?: (backfillId: string) => void;
-  onError: (data: LaunchPartitionBackfill | null | undefined) => void;
+  onError: (data: LaunchPartitionBackfillMutation | null | undefined) => void;
   onSubmit: () => void;
   repoAddress: RepoAddress;
 }> = ({
@@ -339,10 +336,7 @@ const LaunchBackfillButton: React.FC<{
 }) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const mounted = React.useRef(true);
-  const [launchBackfill, {loading}] = useMutation<
-    LaunchPartitionBackfill,
-    LaunchPartitionBackfillVariables
-  >(LAUNCH_PARTITION_BACKFILL_MUTATION);
+  const [launchBackfill, {loading}] = useMutation(LAUNCH_PARTITION_BACKFILL_MUTATION);
 
   React.useEffect(() => {
     mounted.current = true;
@@ -464,7 +458,7 @@ const BACKFILL_SELECTOR_QUERY = gql`
   ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
 `;
 
-function messageForLaunchBackfillError(data: LaunchPartitionBackfill | null | undefined) {
+function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | null | undefined) {
   const result = data?.launchPartitionBackfill;
 
   let errors = <></>;
@@ -504,7 +498,7 @@ function messageForLaunchBackfillError(data: LaunchPartitionBackfill | null | un
   );
 }
 
-export function showBackfillErrorToast(data: LaunchPartitionBackfill | null | undefined) {
+export function showBackfillErrorToast(data: LaunchPartitionBackfillMutation | null | undefined) {
   SharedToaster.show({
     message: messageForLaunchBackfillError(data),
     icon: 'error',

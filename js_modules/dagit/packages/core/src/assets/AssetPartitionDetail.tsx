@@ -1,10 +1,11 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, Colors, Group, Heading, Icon, Mono, Spinner, Subheading, Tag} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {graphql} from '../graphql';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
@@ -15,24 +16,16 @@ import {AllIndividualEventsLink} from './AllIndividualEventsLink';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventGroup} from './groupByPartition';
 import {AssetKey} from './types';
-import {
-  AssetPartitionDetailQuery,
-  AssetPartitionDetailQueryVariables,
-} from './types/AssetPartitionDetailQuery';
-import {ASSET_MATERIALIZATION_FRAGMENT} from './useRecentAssetEvents';
 
 export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partitionKey: string}> = (
   props,
 ) => {
-  const result = useQuery<AssetPartitionDetailQuery, AssetPartitionDetailQueryVariables>(
-    ASSET_PARTITION_DETAIL_QUERY,
-    {
-      variables: {
-        assetKey: props.assetKey,
-        partitionKey: props.partitionKey,
-      },
+  const result = useQuery(ASSET_PARTITION_DETAIL_QUERY, {
+    variables: {
+      assetKey: props.assetKey,
+      partitionKey: props.partitionKey,
     },
-  );
+  });
 
   if (result.loading || !result.data) {
     return <AssetPartitionDetailEmpty partitionKey={props.partitionKey} />;
@@ -58,7 +51,7 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
   );
 };
 
-const ASSET_PARTITION_DETAIL_QUERY = gql`
+const ASSET_PARTITION_DETAIL_QUERY = graphql(`
   query AssetPartitionDetailQuery($assetKey: AssetKeyInput!, $partitionKey: String!) {
     assetNodeOrError(assetKey: $assetKey) {
       __typename
@@ -73,8 +66,7 @@ const ASSET_PARTITION_DETAIL_QUERY = gql`
       }
     }
   }
-  ${ASSET_MATERIALIZATION_FRAGMENT}
-`;
+`);
 
 export const AssetPartitionDetail: React.FC<{
   group: AssetEventGroup;
