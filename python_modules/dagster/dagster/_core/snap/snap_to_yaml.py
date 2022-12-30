@@ -1,7 +1,6 @@
 import json
 from typing import Optional
-
-import yaml
+from dagster._utils.yaml_utils import dump_run_config_yaml
 
 from dagster._config.snap import ConfigTypeSnap
 
@@ -21,4 +20,4 @@ def default_values_yaml_from_type_snap(type_snap: ConfigTypeSnap) -> str:
         default_value = _safe_json_loads(default_value_as_json)
         defaults_by_field[field_name] = default_value
 
-    return yaml.dump(defaults_by_field, default_flow_style=False)
+    return dump_run_config_yaml(defaults_by_field)
