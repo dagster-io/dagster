@@ -8,7 +8,7 @@ from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.metadata import TextMetadataValue
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
-from dagster._experimental.branching_io_manager import BranchingIOManager
+from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
 
 from .utils import AssetBasedInMemoryIOManager, DefinitionsRunner
 
