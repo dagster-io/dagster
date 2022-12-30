@@ -229,7 +229,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         return GrapheneExecutionStepSkippedEvent(**basic_params)
     elif dagster_event.event_type == DagsterEventType.STEP_UP_FOR_RETRY:
         return GrapheneExecutionStepUpForRetryEvent(
-            error=dagster_event.step_retry_data.error,
+            error=GraphenePythonError(dagster_event.step_retry_data.error),
             secondsToWait=dagster_event.step_retry_data.seconds_to_wait,
             **basic_params,
         )

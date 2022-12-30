@@ -542,7 +542,10 @@ def naughty_programmer_pipeline():
     def throw_a_thing():
         try:
             try:
-                raise Exception("bad programmer, bad")
+                try:
+                    raise Exception("The inner sanctum")
+                except:
+                    raise Exception("bad programmer, bad")
             except Exception as e:
                 raise Exception("Outer exception") from e
         except Exception as e:
@@ -1298,6 +1301,10 @@ def define_sensors():
         )
 
     @sensor(job_name="no_config_pipeline")
+    def always_error_sensor(_):
+        raise Exception("OOPS")
+
+    @sensor(job_name="no_config_pipeline")
     def once_no_config_sensor(_):
         return RunRequest(
             run_key="once",
@@ -1334,6 +1341,7 @@ def define_sensors():
 
     return [
         always_no_config_sensor,
+        always_error_sensor,
         once_no_config_sensor,
         never_no_config_sensor,
         multi_no_config_sensor,
