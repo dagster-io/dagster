@@ -1,4 +1,4 @@
-## 1.0.8 (December 21, 2022)
+## 1.0.8 (TBD)
 
 - Added ProductTour component
 
