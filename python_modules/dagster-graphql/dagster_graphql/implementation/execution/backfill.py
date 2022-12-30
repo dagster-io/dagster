@@ -121,7 +121,7 @@ def create_and_launch_partition_backfill(
             raise DagsterError("allPartitions is not supported for pure asset backfills")
 
         backfill = PartitionBackfill.from_asset_partitions(
-            asset_graph=ExternalAssetGraph.from_workspace_request_context(graphene_info.context),
+            asset_graph=ExternalAssetGraph.from_workspace(graphene_info.context),
             backfill_id=backfill_id,
             tags=tags,
             backfill_timestamp=backfill_timestamp,

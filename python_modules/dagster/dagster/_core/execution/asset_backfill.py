@@ -158,7 +158,7 @@ def execute_asset_backfill_iteration(
     """
     from dagster._core.execution.backfill import BulkActionStatus
 
-    asset_graph = ExternalAssetGraph.from_workspace_request_context(workspace)
+    asset_graph = ExternalAssetGraph.from_workspace(workspace)
     if backfill.serialized_asset_backfill_data is None:
         check.failed("Asset backfill missing serialized_asset_backfill_data")
 
