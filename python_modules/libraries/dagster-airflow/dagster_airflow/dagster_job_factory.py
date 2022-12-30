@@ -86,6 +86,7 @@ def make_dagster_job_from_airflow_dag(
         else {},
     )
 
+
 def make_dagster_definitions_from_airflow_dag_bag(
     dag_bag,
     refresh_from_airflow_db=False,
@@ -142,6 +143,7 @@ def make_dagster_definitions_from_airflow_dag_bag(
         sensors=repo.sensor_defs,
         jobs=repo.get_all_jobs(),
     )
+
 
 def make_dagster_definitions_from_airflow_dags_path(
     dag_path,

@@ -24,9 +24,7 @@ def test_make_definition(
                 f.write(bytes(content.encode("utf-8")))
 
         definition = (
-            make_dagster_definitions_from_airflow_dags_path(
-                tmpdir_path
-            )
+            make_dagster_definitions_from_airflow_dags_path(tmpdir_path)
             if fn_arg_path is None
             else make_dagster_definitions_from_airflow_dags_path(
                 os.path.join(tmpdir_path, fn_arg_path)
