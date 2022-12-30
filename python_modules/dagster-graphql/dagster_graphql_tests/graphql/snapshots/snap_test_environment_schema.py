@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[non_launchable_in_memory_instance_lazy_repository] 1'] = {
@@ -297,5 +298,61 @@ snapshots['TestEnvironmentSchema.test_basic_valid_config_on_run_config_schema[no
             '__typename': 'PipelineConfigValidationValid',
             'pipelineName': 'csv_hello_world'
         }
+    }
+}
+
+snapshots['TestEnvironmentSchema.test_full_yaml[non_launchable_sqlite_instance_deployed_grpc_env] 1'] = {
+    'runConfigSchemaOrError': {
+        '__typename': 'RunConfigSchema',
+        'rootDefaultYaml': '''execution:
+  in_process: {}
+loggers: {}
+resources:
+  io_manager:
+    config: {}
+solids: null
+'''
+    }
+}
+
+snapshots['TestEnvironmentSchema.test_full_yaml[non_launchable_sqlite_instance_lazy_repository] 1'] = {
+    'runConfigSchemaOrError': {
+        '__typename': 'RunConfigSchema',
+        'rootDefaultYaml': '''execution:
+  in_process: {}
+loggers: {}
+resources:
+  io_manager:
+    config: {}
+solids: null
+'''
+    }
+}
+
+snapshots['TestEnvironmentSchema.test_full_yaml[non_launchable_sqlite_instance_managed_grpc_env] 1'] = {
+    'runConfigSchemaOrError': {
+        '__typename': 'RunConfigSchema',
+        'rootDefaultYaml': '''execution:
+  in_process: {}
+loggers: {}
+resources:
+  io_manager:
+    config: {}
+solids: null
+'''
+    }
+}
+
+snapshots['TestEnvironmentSchema.test_full_yaml[non_launchable_sqlite_instance_multi_location] 1'] = {
+    'runConfigSchemaOrError': {
+        '__typename': 'RunConfigSchema',
+        'rootDefaultYaml': '''execution:
+  in_process: {}
+loggers: {}
+resources:
+  io_manager:
+    config: {}
+solids: null
+'''
     }
 }

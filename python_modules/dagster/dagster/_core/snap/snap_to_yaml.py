@@ -1,8 +1,9 @@
-from dagster._config.snap import ConfigTypeSnap
-
-import yaml
 import json
 from typing import Optional
+
+import yaml
+
+from dagster._config.snap import ConfigTypeSnap
 
 
 def _safe_json_loads(json_str: Optional[str]) -> object:
