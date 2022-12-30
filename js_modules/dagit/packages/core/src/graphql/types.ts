@@ -3054,6 +3054,7 @@ export type RunConfigSchema = {
   allConfigTypes: Array<ConfigType>;
   isRunConfigValid: PipelineConfigValidationResult;
   rootConfigType: ConfigType;
+  rootDefaultYaml: Scalars['String'];
 };
 
 export type RunConfigSchemaIsRunConfigValidArgs = {
@@ -10761,6 +10762,8 @@ export const buildRunConfigSchema = (
         : relationshipsToOmit.has('ConfigType')
         ? ({} as ConfigType)
         : buildConfigType({}, relationshipsToOmit),
+    rootDefaultYaml:
+      overrides && overrides.hasOwnProperty('rootDefaultYaml') ? overrides.rootDefaultYaml! : 'cum',
   };
 };
 
