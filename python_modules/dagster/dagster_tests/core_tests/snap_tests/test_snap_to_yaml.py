@@ -1,7 +1,7 @@
 import os
 import sys
 
-from dagster import Field, asset, job, op
+from dagster import Field, job, op
 from dagster._config.field import resolve_to_config_type
 from dagster._config.snap import snap_from_config_type
 from dagster._core.definitions.definitions_class import Definitions
