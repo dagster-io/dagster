@@ -98,14 +98,13 @@ class AnonymousConfigurableDefinition(ConfigurableDefinition):
             self, convert_user_facing_definition_config_schema(config_schema), config_or_config_fn
         )
 
-        return self.copy_for_configured(description, new_config_schema, config_or_config_fn)
+        return self.copy_for_configured(description, new_config_schema)
 
     @abstractmethod
     def copy_for_configured(
         self,
         description: Optional[str],
         config_schema: IDefinitionConfigSchema,
-        config_or_config_fn: Union[Any, Callable[[Any], Any]],
     ) -> Self:  # type: ignore [valid-type] # (until mypy supports Self)
         raise NotImplementedError()
 
@@ -150,7 +149,7 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
             self, convert_user_facing_definition_config_schema(config_schema), config_or_config_fn
         )
 
-        return self.copy_for_configured(name, description, new_config_schema, config_or_config_fn)
+        return self.copy_for_configured(name, description, new_config_schema)
 
     @abstractmethod
     def copy_for_configured(
@@ -158,7 +157,6 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         name: str,
         description: Optional[str],
         config_schema: IDefinitionConfigSchema,
-        config_or_config_fn: Union[Any, Callable[[Any], Any]],
     ) -> Self:  # type: ignore [valid-type] # (until mypy supports Self)
         ...
 

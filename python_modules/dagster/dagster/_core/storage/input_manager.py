@@ -85,7 +85,9 @@ class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
         return self._input_config_schema
 
     def copy_for_configured(
-        self, description: Optional[str], config_schema: CoercableToConfigSchema, _
+        self,
+        description: Optional[str],
+        config_schema: CoercableToConfigSchema,
     ) -> "InputManagerDefinition":
         return InputManagerDefinition(
             config_schema=config_schema,

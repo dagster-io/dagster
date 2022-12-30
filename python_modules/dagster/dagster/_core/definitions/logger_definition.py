@@ -101,7 +101,9 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
         return self._description
 
     def copy_for_configured(
-        self, description: Optional[str], config_schema: Any, _
+        self,
+        description: Optional[str],
+        config_schema: Any,
     ) -> "LoggerDefinition":
         return LoggerDefinition(
             config_schema=config_schema,

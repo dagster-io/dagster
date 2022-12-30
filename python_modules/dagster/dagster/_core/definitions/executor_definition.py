@@ -127,7 +127,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     def executor_creation_fn(self) -> Optional[ExecutorCreationFunction]:
         return self._executor_creation_fn
 
-    def copy_for_configured(self, name, description, config_schema, _) -> "ExecutorDefinition":
+    def copy_for_configured(self, name, description, config_schema) -> "ExecutorDefinition":
         return ExecutorDefinition(
             name=name,
             config_schema=config_schema,
@@ -178,9 +178,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
             self, convert_user_facing_definition_config_schema(config_schema), config_or_config_fn
         )
 
-        return self.copy_for_configured(
-            name or self.name, description, new_config_schema, config_or_config_fn
-        )
+        return self.copy_for_configured(name or self.name, description, new_config_schema)
 
 
 @overload

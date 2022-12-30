@@ -312,7 +312,6 @@ class OpDefinition(NodeDefinition):
         name: str,
         description: Optional[str],
         config_schema: IDefinitionConfigSchema,
-        config_or_config_fn: Any,
     ) -> "OpDefinition":
         return OpDefinition(
             name=name,
