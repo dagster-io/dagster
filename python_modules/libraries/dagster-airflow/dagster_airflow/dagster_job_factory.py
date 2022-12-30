@@ -138,9 +138,7 @@ def make_dagster_definitions_from_airflow_dag_bag(
     )
 
     return Definitions(
-        assets=repo._assets_defs_by_key.values(),
         schedules=repo.schedule_defs,
-        sensors=repo.sensor_defs,
         jobs=repo.get_all_jobs(),
     )
 
@@ -205,8 +203,6 @@ def make_dagster_definitions_from_airflow_dags_path(
     )
 
     return Definitions(
-        assets=repo._assets_defs_by_key.values(),
         schedules=repo.schedule_defs,
-        sensors=repo.sensor_defs,
         jobs=repo.get_all_jobs(),
     )
