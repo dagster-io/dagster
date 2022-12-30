@@ -2,7 +2,7 @@ import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
 import {ButtonGroup} from './ButtonGroup';
-import {ProductTour, Position} from './ProductTour';
+import {ProductTour, ProductTourPosition as Position} from './ProductTour';
 
 // eslint-disable-next-line import/no-default-export
 export default {

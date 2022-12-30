@@ -27,6 +27,7 @@ export * from './components/NonIdealState';
 export * from './components/Page';
 export * from './components/PageHeader';
 export * from './components/Popover';
+export * from './components/ProductTour';
 export * from './components/RefreshableCountdown';
 export * from './components/Select';
 export * from './components/Slider';

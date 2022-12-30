@@ -1,3 +1,7 @@
+## 1.0.8 (TBD)
+
+- Added ProductTour component
+
 ## 1.0.7 (October 31, 2022)
 
 - Added partition icon
