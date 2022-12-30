@@ -16,6 +16,19 @@ query($selector: PipelineSelector! $mode: String!)
       allConfigTypes {
         key
       }
+      rootDefaultYaml
+    }
+  }
+}
+"""
+
+RUN_CONFIG_SCHEMA_ROOT_DEFAULT_YAML_QUERY = """
+query($selector: PipelineSelector! $mode: String!)
+{
+  runConfigSchemaOrError(selector: $selector, mode: $mode){
+    __typename
+    ... on RunConfigSchema {
+      rootDefaultYaml
     }
   }
 }
@@ -174,6 +187,23 @@ class TestEnvironmentSchema(NonLaunchableGraphQLContextTestMatrix):
             result.data["runConfigSchemaOrError"]["isRunConfigValid"]["__typename"]
             == "PipelineConfigValidationValid"
         )
+        snapshot.assert_match(result.data)
+
+    def test_full_yaml(self, graphql_context, snapshot):
+        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
+        result = execute_dagster_graphql(
+            graphql_context,
+            RUN_CONFIG_SCHEMA_ROOT_DEFAULT_YAML_QUERY,
+            variables={
+                "selector": selector,
+                "mode": "default",
+                "runConfigData": csv_hello_world_ops_config(),
+            },
+        )
+
+        assert result
+        assert not result.errors
+        assert result.data
         snapshot.assert_match(result.data)
 
     def test_basic_invalid_config_on_run_config_schema(

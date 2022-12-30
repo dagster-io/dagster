@@ -2517,6 +2517,7 @@ type RunConfigSchema {
   rootConfigType: ConfigType!
   allConfigTypes: [ConfigType!]!
   isRunConfigValid(runConfigData: RunConfigData): PipelineConfigValidationResult!
+  rootDefaultYaml: String!
 }
 
 union RunConfigSchemaOrError =
