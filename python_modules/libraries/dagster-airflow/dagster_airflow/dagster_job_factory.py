@@ -1,10 +1,14 @@
+from airflow.models.connection import Connection
+from airflow.models.dagbag import DagBag
 from dagster_airflow.dagster_pipeline_factory import (
+    DagsterAirflowError,
+    contains_duplicate_task_names,
+    create_airflow_connections,
     make_dagster_pipeline_from_airflow_dag,
-    make_dagster_repo_from_airflow_dag_bag,
-    make_dagster_repo_from_airflow_dags_path,
+    make_dagster_schedule_from_airflow_dag,
 )
 
-from dagster import Definitions
+from dagster import _check as check
 
 
 def make_dagster_job_from_airflow_dag(
@@ -87,63 +91,7 @@ def make_dagster_job_from_airflow_dag(
     )
 
 
-def make_dagster_definitions_from_airflow_dag_bag(
-    dag_bag,
-    refresh_from_airflow_db=False,
-    use_airflow_template_context=False,
-    mock_xcom=False,
-    use_ephemeral_airflow_db=False,
-    connections=None,
-):
-    """Construct Dagster definitions corresponding to Airflow DAGs in DagBag.
-
-    Usage:
-        Create `make_dagster_definition.py`:
-            from dagster_airflow import make_dagster_definition_from_airflow_dag_bag
-            from airflow_home import my_dag_bag
-
-            def make_definition_from_dag_bag():
-                return make_dagster_definition_from_airflow_dag_bag(my_dag_bag)
-
-            `dagit -f path/to/make_dagster_definition.py`
-
-    Args:
-        dag_path (str): Path to directory or file that contains Airflow Dags
-        refresh_from_airflow_db (bool): If True, will refresh DAG if expired via DagBag.get_dag(),
-            which requires access to initialized Airflow DB. If False (recommended), gets dag from
-            DagBag's dags dict without depending on Airflow DB. (default: False)
-        use_airflow_template_context (bool): If True, will call get_template_context() on the
-            Airflow TaskInstance model which requires and modifies the DagRun table. The use_airflow_template_context
-            setting is ignored if use_ephemeral_airflow_db is True.
-            (default: False)
-        mock_xcom (bool): If True, dagster will mock out all calls made to xcom, features that
-            depend on xcom may not work as expected. (default: False)
-        use_ephemeral_airflow_db (bool): If True, dagster will create an ephemeral sqlite airflow
-            database for each run. (default: False)
-        connections (List[Connection]): List of Airflow Connections to be created in the Ephemeral
-            Airflow DB, if use_emphemeral_airflow_db is False this will be ignored.
-
-    Returns:
-        Definitions
-    """
-
-    repo = make_dagster_repo_from_airflow_dag_bag(
-        dag_bag,
-        "dagster_airflow_repo",
-        refresh_from_airflow_db,
-        use_airflow_template_context,
-        mock_xcom,
-        use_ephemeral_airflow_db,
-        connections,
-    )
-
-    return Definitions(
-        schedules=repo.schedule_defs,
-        jobs=repo.get_all_jobs(),
-    )
-
-
-def make_dagster_definitions_from_airflow_dags_path(
+def make_schedules_and_jobs_from_airflow_dags_path(
     dag_path,
     safe_mode=True,
     store_serialized_dags=False,
@@ -152,21 +100,24 @@ def make_dagster_definitions_from_airflow_dags_path(
     use_ephemeral_airflow_db=True,
     connections=None,
 ):
-    """Construct Dagster definitions corresponding to Airflow DAGs in dag_path.
-
-    ``DagBag.get_dag()`` dependency requires Airflow DB to be initialized.
+    """Construct Dagster Schedules and Jobs corresponding to Airflow DAGs in dag_path.
 
     Usage:
         Create ``make_dagster_definitions.py``:
 
         .. code-block:: python
 
-            from dagster_airflow.dagster_pipeline_factory import make_dagster_definitions_from_airflow_dags_path
+            from dagster_airflow.dagster_pipeline_factory import make_schedules_and_jobs_from_airflow_dags_path
+            from dagster import Definitions
 
-            def make_definitions_from_dir():
-                return make_dagster_definitions_from_airflow_dags_path(
-                    '/path/to/dags/'
-                )
+            schedules, jobs = make_schedules_and_jobs_from_airflow_dags_path(
+                '/path/to/dags/'
+            )
+
+            Definitions(
+                schedules=schedules,
+                jobs=jobs,
+            )
 
         ``dagit -f path/to/make_dagster_definitions.py``
 
@@ -188,21 +139,65 @@ def make_dagster_definitions_from_airflow_dags_path(
             Airflow DB, if use_emphemeral_airflow_db is False this will be ignored.
 
     Returns:
-        Definitions
+        - List[ScheduleDefinition]: The generated Dagster Schedules
+        - List[JobDefinition]: The generated Dagster Jobs
     """
-
-    repo = make_dagster_repo_from_airflow_dags_path(
-        dag_path,
-        "dagster_airflow_repo",
-        safe_mode,
-        store_serialized_dags,
-        use_airflow_template_context,
-        mock_xcom,
-        use_ephemeral_airflow_db,
-        connections,
+    check.str_param(dag_path, "dag_path")
+    check.bool_param(safe_mode, "safe_mode")
+    check.bool_param(store_serialized_dags, "store_serialized_dags")
+    check.bool_param(use_airflow_template_context, "use_airflow_template_context")
+    mock_xcom = check.opt_bool_param(mock_xcom, "mock_xcom")
+    use_ephemeral_airflow_db = check.opt_bool_param(
+        use_ephemeral_airflow_db, "use_ephemeral_airflow_db"
     )
+    connections = check.opt_list_param(connections, "connections", of_type=Connection)
+    # add connections as environment variables so that dag evaluation works
+    create_airflow_connections(connections)
+    try:
+        dag_bag = DagBag(
+            dag_folder=dag_path,
+            include_examples=False,  # Exclude Airflow example dags
+            safe_mode=safe_mode,
+        )
+    except Exception:
+        raise DagsterAirflowError("Error initializing airflow.models.dagbag object with arguments")
 
-    return Definitions(
-        schedules=repo.schedule_defs,
-        jobs=repo.get_all_jobs(),
-    )
+    use_unique_id = contains_duplicate_task_names(dag_bag, refresh_from_airflow_db=False)
+
+    job_defs = []
+    schedule_defs = []
+    count = 0
+    # To enforce predictable iteration order
+    sorted_dag_ids = sorted(dag_bag.dag_ids)
+    for dag_id in sorted_dag_ids:
+        dag = dag_bag.dags.get(dag_id)
+        if not use_unique_id:
+            job_def = make_dagster_job_from_airflow_dag(
+                dag=dag,
+                tags=None,
+                use_airflow_template_context=use_airflow_template_context,
+                mock_xcom=mock_xcom,
+                use_ephemeral_airflow_db=use_ephemeral_airflow_db,
+                connections=connections,
+            )
+        else:
+            job_def = make_dagster_job_from_airflow_dag(
+                dag=dag,
+                tags=None,
+                use_airflow_template_context=use_airflow_template_context,
+                unique_id=count,
+                mock_xcom=mock_xcom,
+                use_ephemeral_airflow_db=use_ephemeral_airflow_db,
+                connections=connections,
+            )
+            count += 1
+        schedule_def = make_dagster_schedule_from_airflow_dag(
+            dag=dag,
+            job_def=job_def,
+        )
+        if schedule_def:
+            schedule_defs.append(schedule_def)
+        else:
+            job_defs.append(job_def)
+
+    return schedule_defs, job_defs

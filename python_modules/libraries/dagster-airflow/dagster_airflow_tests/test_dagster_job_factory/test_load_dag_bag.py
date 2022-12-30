@@ -3,7 +3,9 @@ import tempfile
 
 import pytest
 from airflow import __version__ as airflow_version
-from dagster_airflow import make_dagster_definitions_from_airflow_dags_path
+from dagster_airflow import make_schedules_and_jobs_from_airflow_dags_path
+
+from dagster import Definitions
 
 from ..airflow_utils import test_make_from_dagbag_inputs
 
@@ -23,14 +25,17 @@ def test_make_definition(
             with open(os.path.join(tmpdir_path, path), "wb") as f:
                 f.write(bytes(content.encode("utf-8")))
 
-        definition = (
-            make_dagster_definitions_from_airflow_dags_path(tmpdir_path)
+        schedules, jobs = (
+            make_schedules_and_jobs_from_airflow_dags_path(tmpdir_path)
             if fn_arg_path is None
-            else make_dagster_definitions_from_airflow_dags_path(
+            else make_schedules_and_jobs_from_airflow_dags_path(
                 os.path.join(tmpdir_path, fn_arg_path)
             )
         )
-
+        definition = Definitions(
+            schedules=schedules,
+            jobs=jobs,
+        )
         repo = definition.get_repository_def()
 
         for job_name in expected_job_names:
