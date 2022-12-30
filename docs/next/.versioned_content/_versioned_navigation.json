@@ -66551,20 +66551,6 @@
         {
           "children": [
             {
-              "children": [
-                {
-                  "path": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment",
-                  "title": "Serverless Deployment"
-                },
-                {
-                  "path": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment",
-                  "title": "Hybrid Deployment"
-                },
-                {
-                  "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets",
-                  "title": "Environment variables and secrets"
-                }
-              ],
               "path": "/dagster-cloud/getting-started",
               "title": "Getting started"
             },
@@ -66786,6 +66772,14 @@
             {
               "path": "/integrations/airflow/from-airflow-to-dagster",
               "title": "Learning Dagster from Airflow"
+            },
+            {
+              "path": "/integrations/airflow/migrating-to-dagster",
+              "title": "Airflow Migration Guide"
+            },
+            {
+              "path": "/integrations/airflow/reference",
+              "title": "Reference"
             }
           ],
           "path": "/integrations/airflow",
@@ -66866,6 +66860,10 @@
             {
               "path": "/integrations/snowflake/using-snowflake-with-dagster",
               "title": "Snowflake+ Dagster tutorial"
+            },
+            {
+              "path": "/integrations/snowflake/reference",
+              "title": "Reference"
             }
           ],
           "path": "/integrations/snowflake",

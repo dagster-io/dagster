@@ -44,17 +44,23 @@ export interface PartitionStepLoaderQuery_pipelineRunsOrError_InvalidPipelineRun
   message: string;
 }
 
-export interface PartitionStepLoaderQuery_pipelineRunsOrError_PythonError_causes {
+export interface PartitionStepLoaderQuery_pipelineRunsOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface PartitionStepLoaderQuery_pipelineRunsOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: PartitionStepLoaderQuery_pipelineRunsOrError_PythonError_errorChain_error;
 }
 
 export interface PartitionStepLoaderQuery_pipelineRunsOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: PartitionStepLoaderQuery_pipelineRunsOrError_PythonError_causes[];
+  errorChain: PartitionStepLoaderQuery_pipelineRunsOrError_PythonError_errorChain[];
 }
 
 export type PartitionStepLoaderQuery_pipelineRunsOrError = PartitionStepLoaderQuery_pipelineRunsOrError_Runs | PartitionStepLoaderQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | PartitionStepLoaderQuery_pipelineRunsOrError_PythonError;

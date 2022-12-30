@@ -15,8 +15,8 @@ import * as React from 'react';
 
 import {usePermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
+import {AssetGroupSelector} from '../graphql/graphql';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
-import {AssetGroupSelector} from '../types/globalTypes';
 import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
 
 import {AssetWipeDialog} from './AssetWipeDialog';

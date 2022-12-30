@@ -6,15 +6,16 @@ import * as React from 'react';
 import {Mono} from '../../../ui/src';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetKey} from '../assets/types';
-import {ExecutionParams, RunStatus} from '../types/globalTypes';
+import {graphql} from '../graphql';
+import {ExecutionParams, LaunchPipelineExecutionMutation} from '../graphql/graphql';
+import {RunStatus} from '../types/globalTypes';
 
 import {DagsterTag} from './RunTag';
 import {StepSelection} from './StepSelection';
 import {TimeElapsed} from './TimeElapsed';
-import {LaunchPipelineExecution_launchPipelineExecution} from './types/LaunchPipelineExecution';
 import {RunFragment} from './types/RunFragment';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
 import {RunTimeFragment} from './types/RunTimeFragment';
@@ -64,7 +65,7 @@ export type LaunchBehavior = 'open' | 'open-in-new-tab' | 'toast';
 
 export function handleLaunchResult(
   pipelineName: string,
-  result: void | null | LaunchPipelineExecution_launchPipelineExecution,
+  result: void | null | LaunchPipelineExecutionMutation['launchPipelineExecution'],
   history: History<unknown>,
   options: {behavior: LaunchBehavior; preserveQuerystring?: boolean},
 ) {
@@ -197,7 +198,7 @@ export function getReexecutionVariables(input: {
   return {executionParams};
 }
 
-export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
+export const LAUNCH_PIPELINE_EXECUTION_MUTATION = graphql(`
   mutation LaunchPipelineExecution($executionParams: ExecutionParams!) {
     launchPipelineExecution(executionParams: $executionParams) {
       __typename
@@ -222,11 +223,9 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
       ...PythonErrorFragment
     }
   }
+`);
 
-  ${PYTHON_ERROR_FRAGMENT}
-`;
-
-export const DELETE_MUTATION = gql`
+export const DELETE_MUTATION = graphql(`
   mutation Delete($runId: String!) {
     deletePipelineRun(runId: $runId) {
       __typename
@@ -239,11 +238,9 @@ export const DELETE_MUTATION = gql`
       }
     }
   }
+`);
 
-  ${PYTHON_ERROR_FRAGMENT}
-`;
-
-export const TERMINATE_MUTATION = gql`
+export const TERMINATE_MUTATION = graphql(`
   mutation Terminate($runId: String!, $terminatePolicy: TerminateRunPolicy) {
     terminatePipelineExecution(runId: $runId, terminatePolicy: $terminatePolicy) {
       __typename
@@ -266,11 +263,9 @@ export const TERMINATE_MUTATION = gql`
       ...PythonErrorFragment
     }
   }
+`);
 
-  ${PYTHON_ERROR_FRAGMENT}
-`;
-
-export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
+export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = graphql(`
   mutation LaunchPipelineReexecution(
     $executionParams: ExecutionParams
     $reexecutionParams: ReexecutionParams
@@ -303,9 +298,7 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
       ...PythonErrorFragment
     }
   }
-
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);
 
 interface RunTimeProps {
   run: RunTimeFragment;

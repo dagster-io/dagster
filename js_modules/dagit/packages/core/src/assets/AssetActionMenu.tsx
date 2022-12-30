@@ -29,7 +29,12 @@ export const AssetActionMenu: React.FC<Props> = (props) => {
         position="bottom-right"
         content={
           <Menu>
-            <Tooltip content="Shift+click to add configuration" placement="left" display="block">
+            <Tooltip
+              content="Shift+click to add configuration"
+              placement="left"
+              display="block"
+              useDisabledButtonTooltipFix
+            >
               <MenuItem
                 text="Materialize"
                 icon={loading ? <Spinner purpose="body-text" /> : 'materialization'}

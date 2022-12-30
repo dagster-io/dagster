@@ -1,17 +1,16 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {graphql} from '../graphql';
 
 import {VirtualizedSensorTable} from './VirtualizedSensorTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
-import {WorkspaceSensorsQuery, WorkspaceSensorsQueryVariables} from './types/WorkspaceSensorsQuery';
 
 export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
@@ -19,14 +18,11 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
   const [searchValue, setSearchValue] = React.useState('');
   const selector = repoAddressToSelector(repoAddress);
 
-  const queryResultOverview = useQuery<WorkspaceSensorsQuery, WorkspaceSensorsQueryVariables>(
-    WORKSPACE_SENSORS_QUERY,
-    {
-      fetchPolicy: 'network-only',
-      notifyOnNetworkStatusChange: true,
-      variables: {selector},
-    },
-  );
+  const queryResultOverview = useQuery(WORKSPACE_SENSORS_QUERY, {
+    fetchPolicy: 'network-only',
+    notifyOnNetworkStatusChange: true,
+    variables: {selector},
+  });
   const {data, loading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
@@ -118,7 +114,7 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
   );
 };
 
-const WORKSPACE_SENSORS_QUERY = gql`
+const WORKSPACE_SENSORS_QUERY = graphql(`
   query WorkspaceSensorsQuery($selector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $selector) {
       ... on Repository {
@@ -133,6 +129,4 @@ const WORKSPACE_SENSORS_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);

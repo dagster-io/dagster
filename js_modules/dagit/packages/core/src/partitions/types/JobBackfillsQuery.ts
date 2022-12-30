@@ -34,24 +34,30 @@ export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_as
   path: string[];
 }
 
-export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_error_causes {
+export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_error_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_error_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_error_errorChain_error;
 }
 
 export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_error_causes[];
+  errorChain: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_error_errorChain[];
 }
 
 export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills {
   __typename: "PartitionBackfill";
   backfillId: string;
   status: BulkActionStatus;
-  numRequested: number;
+  numCancelable: number;
   partitionNames: string[];
   numPartitions: number;
   timestamp: number;

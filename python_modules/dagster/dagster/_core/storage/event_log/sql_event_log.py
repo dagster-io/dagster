@@ -2,7 +2,19 @@ import logging
 from abc import abstractmethod
 from collections import OrderedDict, defaultdict
 from datetime import datetime
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    cast,
+)
 
 import pendulum
 import sqlalchemy as db
@@ -45,6 +57,9 @@ from .schema import (
     SecondaryIndexMigrationTable,
     SqlEventLogStorageTable,
 )
+
+if TYPE_CHECKING:
+    from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 MIN_ASSET_ROWS = 25
 
@@ -117,10 +132,13 @@ class SqlEventLogStorage(EventLogStorage):
             partition=partition,
         )
 
-    def has_asset_key_index_cols(self):
+    def has_asset_key_col(self, column_name: str):
         with self.index_connection() as conn:
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(AssetKeyTable.name)]
-            return "last_materialization_timestamp" in column_names
+            return column_name in column_names
+
+    def has_asset_key_index_cols(self):
+        return self.has_asset_key_col("last_materialization_timestamp")
 
     def store_asset_event(self, event: EventLogEntry):
         check.inst_param(event, "event", EventLogEntry)
@@ -157,7 +175,7 @@ class SqlEventLogStorage(EventLogStorage):
             except db.exc.IntegrityError:
                 conn.execute(update_statement)
 
-    def _get_asset_entry_values(self, event: EventLogEntry, has_asset_key_index_cols):
+    def _get_asset_entry_values(self, event: EventLogEntry, has_asset_key_index_cols: bool):
         # The AssetKeyTable contains a `last_materialization_timestamp` column that is exclusively
         # used to determine if an asset exists (last materialization timestamp > wipe timestamp).
         # This column is used nowhere else, and as of AssetObservation/AssetMaterializationPlanned
@@ -959,6 +977,8 @@ class SqlEventLogStorage(EventLogStorage):
             return result[0]
 
     def _construct_asset_record_from_row(self, row, last_materialization: Optional[EventLogEntry]):
+        from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+
         asset_key = AssetKey.from_db_string(row[1])
         if asset_key:
             return AssetRecord(
@@ -968,6 +988,9 @@ class SqlEventLogStorage(EventLogStorage):
                     last_materialization=last_materialization,
                     last_run_id=row[3],
                     asset_details=AssetDetails.from_db_string(row[4]),
+                    cached_status=AssetStatusCacheValue.from_db_string(row[5])
+                    if self.has_asset_key_col("cached_status_data")
+                    else None,
                 ),
             )
 
@@ -1031,6 +1054,9 @@ class SqlEventLogStorage(EventLogStorage):
                     EventLogEntry, deserialize_json_to_dagster_namedtuple(row[1])
                 )
         return results
+
+    def can_cache_asset_status_data(self) -> bool:
+        return self.has_asset_key_col("cached_status_data")
 
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
@@ -1126,14 +1152,8 @@ class SqlEventLogStorage(EventLogStorage):
             AssetKeyTable.c.last_run_id,
             AssetKeyTable.c.asset_details,
         ]
-        if self.has_asset_key_index_cols():
-            columns.extend(
-                [
-                    AssetKeyTable.c.wipe_timestamp,
-                    AssetKeyTable.c.last_materialization_timestamp,
-                    AssetKeyTable.c.tags,
-                ]
-            )
+        if self.can_cache_asset_status_data():
+            columns.extend([AssetKeyTable.c.cached_status_data])
 
         is_partial_query = asset_keys is not None or bool(prefix) or bool(limit) or bool(cursor)
         if self.has_asset_key_index_cols() and not is_partial_query:
@@ -1201,6 +1221,22 @@ class SqlEventLogStorage(EventLogStorage):
         new_cursor = rows[-1][0] if rows else None
 
         return row_by_asset_key.values(), has_more, new_cursor
+
+    def update_asset_cached_status_data(
+        self, asset_key: AssetKey, cache_values: "AssetStatusCacheValue"
+    ) -> None:
+        if self.has_asset_key_col("cached_status_data"):
+            with self.index_connection() as conn:
+                conn.execute(
+                    AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
+                    .where(
+                        db.or_(
+                            AssetKeyTable.c.asset_key == asset_key.to_string(),
+                            AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
+                        )
+                    )
+                    .values(cached_status_data=serialize_dagster_namedtuple(cache_values))
+                )
 
     def _fetch_backcompat_materialization_times(self, asset_keys):
         # fetches the latest materialization timestamp for the given asset_keys.  Uses the (slower)
@@ -1485,47 +1521,39 @@ class SqlEventLogStorage(EventLogStorage):
 
         return event_or_materialization.dagster_event.step_materialization_data.materialization
 
+    def _get_asset_key_values_on_wipe(self):
+        wipe_timestamp = pendulum.now("UTC").timestamp()
+        values = {
+            "asset_details": serialize_dagster_namedtuple(
+                AssetDetails(last_wipe_timestamp=wipe_timestamp)
+            ),
+            "last_run_id": None,
+        }
+        if self.has_asset_key_index_cols():
+            values.update(
+                dict(
+                    wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp),
+                )
+            )
+        if self.has_asset_key_col("cached_status_data"):
+            values.update(dict(cached_status_data=None))
+        return values
+
     def wipe_asset(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
+        wiped_values = self._get_asset_key_values_on_wipe()
 
-        wipe_timestamp = pendulum.now("UTC").timestamp()
-
-        if self.has_asset_key_index_cols():
-            with self.index_connection() as conn:
-                conn.execute(
-                    AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
-                    .where(
-                        db.or_(
-                            AssetKeyTable.c.asset_key == asset_key.to_string(),
-                            AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
-                        )
-                    )
-                    .values(
-                        asset_details=serialize_dagster_namedtuple(
-                            AssetDetails(last_wipe_timestamp=wipe_timestamp)
-                        ),
-                        wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp),
-                        last_run_id=None,
+        with self.index_connection() as conn:
+            conn.execute(
+                AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
+                .values(**wiped_values)
+                .where(
+                    db.or_(
+                        AssetKeyTable.c.asset_key == asset_key.to_string(),
+                        AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
                     )
                 )
-
-        else:
-            with self.index_connection() as conn:
-                conn.execute(
-                    AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
-                    .where(
-                        db.or_(
-                            AssetKeyTable.c.asset_key == asset_key.to_string(),
-                            AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
-                        )
-                    )
-                    .values(
-                        asset_details=serialize_dagster_namedtuple(
-                            AssetDetails(last_wipe_timestamp=wipe_timestamp)
-                        ),
-                        last_run_id=None,
-                    )
-                )
+            )
 
     def get_materialization_count_by_partition(
         self, asset_keys: Sequence[AssetKey]

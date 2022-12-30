@@ -32,17 +32,23 @@ export interface UnloadableSensorsQuery_unloadableInstigationStatesOrError_Insti
   updateTime: number | null;
 }
 
-export interface UnloadableSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_causes {
+export interface UnloadableSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface UnloadableSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: UnloadableSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_errorChain_error;
 }
 
 export interface UnloadableSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: UnloadableSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_causes[];
+  errorChain: UnloadableSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_errorChain[];
 }
 
 export interface UnloadableSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks {
@@ -77,17 +83,23 @@ export interface UnloadableSensorsQuery_unloadableInstigationStatesOrError_Insti
   results: UnloadableSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results[];
 }
 
-export interface UnloadableSensorsQuery_unloadableInstigationStatesOrError_PythonError_causes {
+export interface UnloadableSensorsQuery_unloadableInstigationStatesOrError_PythonError_errorChain_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+}
+
+export interface UnloadableSensorsQuery_unloadableInstigationStatesOrError_PythonError_errorChain {
+  __typename: "ErrorChainLink";
+  isExplicitLink: boolean;
+  error: UnloadableSensorsQuery_unloadableInstigationStatesOrError_PythonError_errorChain_error;
 }
 
 export interface UnloadableSensorsQuery_unloadableInstigationStatesOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  causes: UnloadableSensorsQuery_unloadableInstigationStatesOrError_PythonError_causes[];
+  errorChain: UnloadableSensorsQuery_unloadableInstigationStatesOrError_PythonError_errorChain[];
 }
 
 export type UnloadableSensorsQuery_unloadableInstigationStatesOrError = UnloadableSensorsQuery_unloadableInstigationStatesOrError_InstigationStates | UnloadableSensorsQuery_unloadableInstigationStatesOrError_PythonError;

@@ -16,8 +16,8 @@ export interface AssetLatestInfoFragment_assetKey {
 
 export interface AssetLatestInfoFragment_latestRun {
   __typename: "Run";
-  status: RunStatus;
   id: string;
+  status: RunStatus;
 }
 
 export interface AssetLatestInfoFragment {

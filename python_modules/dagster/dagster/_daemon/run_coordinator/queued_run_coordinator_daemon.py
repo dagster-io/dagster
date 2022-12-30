@@ -4,7 +4,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack
 from typing import Dict, List, Optional, Tuple
 
-from dagster import DagsterEvent, DagsterEventType
 from dagster import _check as check
 from dagster._core.instance import DagsterInstance
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
@@ -315,9 +314,4 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             )
             return
 
-        dequeued_event = DagsterEvent(
-            event_type_value=DagsterEventType.PIPELINE_DEQUEUED.value,
-            pipeline_name=run.pipeline_name,
-        )
-        instance.report_dagster_event(dequeued_event, run_id=run.run_id)
         instance.launch_run(run.run_id, workspace_process_context.create_request_context())

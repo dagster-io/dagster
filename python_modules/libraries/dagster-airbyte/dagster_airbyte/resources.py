@@ -121,6 +121,7 @@ class AirbyteResource:
             Optional[Dict[str, Any]]: Parsed json data from the response to this request
         """
 
+        url = self.api_base_url + endpoint
         headers = {"accept": "application/json"}
 
         num_retries = 0
@@ -130,7 +131,7 @@ class AirbyteResource:
                     **deep_merge_dicts(  # type: ignore
                         dict(
                             method="POST",
-                            url=self.api_base_url + endpoint,
+                            url=url,
                             headers=headers,
                             json=data,
                             timeout=self._request_timeout,
@@ -152,7 +153,7 @@ class AirbyteResource:
                 num_retries += 1
                 time.sleep(self._request_retry_delay)
 
-        raise Failure("Exceeded max number of retries.")
+        raise Failure(f"Max retries ({self._request_max_retries}) exceeded with url: {url}.")
 
     def cancel_job(self, job_id: int):
         self.make_request(endpoint="/jobs/cancel", data={"id": job_id})

@@ -1,25 +1,23 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 
+import {
+  AssetGraphLiveQueryQuery,
+  AssetLatestInfoFragmentFragment,
+  AssetLatestInfoRunFragment,
+  AssetNodeForGraphQueryFragment,
+  AssetNodeKeyFragment,
+  AssetNodeLiveFragmentFragment,
+  AssetNodeLiveFreshnessInfoFragment,
+  AssetNodeLiveFreshnessPolicyFragment,
+  AssetNodeLiveMaterializationFragment,
+  AssetNodeLiveObservationFragment,
+} from '../graphql/graphql';
 import {RunStatus} from '../types/globalTypes';
 
-import {
-  AssetGraphLiveQuery_assetsLatestInfo_latestRun,
-  AssetGraphLiveQuery_assetNodes_assetMaterializations,
-  AssetGraphLiveQuery_assetNodes_assetObservations,
-  AssetGraphLiveQuery,
-  AssetGraphLiveQuery_assetsLatestInfo,
-  AssetGraphLiveQuery_assetNodes,
-  AssetGraphLiveQuery_assetNodes_freshnessPolicy,
-  AssetGraphLiveQuery_assetNodes_freshnessInfo,
-} from './types/AssetGraphLiveQuery';
-import {
-  AssetGraphQuery_assetNodes,
-  AssetGraphQuery_assetNodes_assetKey,
-} from './types/AssetGraphQuery';
-type AssetNode = AssetGraphQuery_assetNodes;
-type AssetKey = AssetGraphQuery_assetNodes_assetKey;
-type AssetLiveNode = AssetGraphLiveQuery_assetNodes;
-type AssetLatestInfo = AssetGraphLiveQuery_assetsLatestInfo;
+type AssetNode = AssetNodeForGraphQueryFragment;
+type AssetKey = AssetNodeKeyFragment;
+type AssetLiveNode = AssetNodeLiveFragmentFragment;
+type AssetLatestInfo = AssetLatestInfoFragmentFragment;
 
 export const __ASSET_JOB_PREFIX = '__ASSET_JOB';
 
@@ -127,12 +125,12 @@ export interface LiveDataForNode {
   stepKey: string;
   unstartedRunIds: string[]; // run in progress and step not started
   inProgressRunIds: string[]; // run in progress and step in progress
-  runWhichFailedToMaterialize: AssetGraphLiveQuery_assetsLatestInfo_latestRun | null;
-  lastMaterialization: AssetGraphLiveQuery_assetNodes_assetMaterializations | null;
+  runWhichFailedToMaterialize: AssetLatestInfoRunFragment | null;
+  lastMaterialization: AssetNodeLiveMaterializationFragment | null;
   lastMaterializationRunStatus: RunStatus | null; // only available if runWhichFailedToMaterialize is null
-  freshnessPolicy: AssetGraphLiveQuery_assetNodes_freshnessPolicy | null;
-  freshnessInfo: AssetGraphLiveQuery_assetNodes_freshnessInfo | null;
-  lastObservation: AssetGraphLiveQuery_assetNodes_assetObservations | null;
+  freshnessPolicy: AssetNodeLiveFreshnessPolicyFragment | null;
+  freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
+  lastObservation: AssetNodeLiveObservationFragment | null;
   currentLogicalVersion: string | null;
   projectedLogicalVersion: string | null;
 }
@@ -165,7 +163,7 @@ export interface AssetDefinitionsForLiveData {
   };
 }
 
-export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQuery) => {
+export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQueryQuery) => {
   const data: LiveData = {};
 
   for (const liveNode of assetNodes) {

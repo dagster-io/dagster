@@ -124,11 +124,30 @@ config:
   {{- end }}
 
   {{- if $k8sRunLauncherConfig.schedulerName }}
-  schedulerName: {{ $k8sRunLauncherConfig.schedulerName | quote }}
+  scheduler_name: {{ $k8sRunLauncherConfig.schedulerName | quote }}
   {{- end }}
 
   {{- if $k8sRunLauncherConfig.securityContext }}
-  securityContext: {{- $k8sRunLauncherConfig.securityContext | toYaml | nindent 4 }}
+  security_context: {{- $k8sRunLauncherConfig.securityContext | toYaml | nindent 4 }}
+  {{- end }}
+
+  {{- if $k8sRunLauncherConfig.runK8sConfig }}
+  run_k8s_config:
+    {{- if $k8sRunLauncherConfig.runK8sConfig.containerConfig }}
+    container_config: {{- $k8sRunLauncherConfig.runK8sConfig.containerConfig | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if $k8sRunLauncherConfig.runK8sConfig.podSpecConfig }}
+    pod_spec_config: {{- $k8sRunLauncherConfig.runK8sConfig.podSpecConfig | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if $k8sRunLauncherConfig.runK8sConfig.podTemplateSpecMetadata }}
+    pod_template_spec_metadata: {{- $k8sRunLauncherConfig.runK8sConfig.podTemplateSpecMetadata | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if $k8sRunLauncherConfig.runK8sConfig.jobSpecConfig }}
+    job_spec_config: {{- $k8sRunLauncherConfig.runK8sConfig.jobSpecConfig | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if $k8sRunLauncherConfig.runK8sConfig.jobMetadata }}
+    job_metadata: {{- $k8sRunLauncherConfig.runK8sConfig.jobMetadata | toYaml | nindent 6 }}
+    {{- end }}
   {{- end }}
 
 {{- end }}

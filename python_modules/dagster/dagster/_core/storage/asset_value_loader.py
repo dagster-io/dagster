@@ -114,6 +114,7 @@ class AssetValueLoader:
             if partition_key is not None
             else None,
             asset_partitions_def=assets_def.partitions_def,
+            instance=self._instance,
         )
 
         return io_manager.load_input(input_context)

@@ -15,9 +15,13 @@ from dagster import (
     root_input_manager,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetLineageInfo
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.event_api import EventRecordsFilter
+from dagster._core.events import DagsterEventType
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.io_manager import IOManager
 from dagster._legacy import InputDefinition, OutputDefinition, build_assets_job
 
@@ -335,3 +339,28 @@ def test_def_only_asset_partitions_fails():
     with pytest.raises(CheckError):
 
         InputDefinition("name", asset_partitions=set(["1"]))
+
+
+def test_asset_materialization_accessors():
+    @asset
+    def return_one():
+        return 1
+
+    with DagsterInstance.ephemeral() as instance:
+
+        defs = Definitions(assets=[return_one])
+        defs.get_job_def("__ASSET_JOB").execute_in_process(instance=instance)
+
+        log_entry = instance.get_latest_materialization_event(AssetKey("return_one"))
+        assert log_entry
+        assert log_entry.asset_materialization
+        assert log_entry.asset_materialization.asset_key == AssetKey("return_one")
+
+        # test when it is not a materilization event
+        records = [
+            *instance.get_event_records(EventRecordsFilter(event_type=DagsterEventType.STEP_OUTPUT))
+        ]
+
+        assert len(records) == 1
+        assert records[0].event_log_entry
+        assert records[0].event_log_entry.asset_materialization is None

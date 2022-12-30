@@ -1,5 +1,3 @@
-import {LaunchpadSessionRunConfigSchemaFragment_ModeNotFoundError} from './types/LaunchpadSessionRunConfigSchemaFragment';
+import {LaunchpadSessionModeNotFoundFragment} from '../graphql/graphql';
 
-export type ModeNotFoundError =
-  | LaunchpadSessionRunConfigSchemaFragment_ModeNotFoundError
-  | undefined;
+export type ModeNotFoundError = LaunchpadSessionModeNotFoundFragment | undefined;

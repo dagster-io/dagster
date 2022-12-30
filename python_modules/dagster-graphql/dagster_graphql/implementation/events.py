@@ -1,8 +1,6 @@
 from math import isnan
 from typing import Any, Iterator, Sequence, no_type_check
 
-from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
-
 import dagster._check as check
 import dagster._seven as seven
 from dagster import (
@@ -31,6 +29,8 @@ MIN_INT = -2147483648
 
 
 def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Iterator[Any]:
+    from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
+
     from ..schema.metadata import (
         GrapheneAssetMetadataEntry,
         GrapheneBoolMetadataEntry,
@@ -229,7 +229,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         return GrapheneExecutionStepSkippedEvent(**basic_params)
     elif dagster_event.event_type == DagsterEventType.STEP_UP_FOR_RETRY:
         return GrapheneExecutionStepUpForRetryEvent(
-            error=dagster_event.step_retry_data.error,
+            error=GraphenePythonError(dagster_event.step_retry_data.error),
             secondsToWait=dagster_event.step_retry_data.seconds_to_wait,
             **basic_params,
         )

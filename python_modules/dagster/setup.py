@@ -99,6 +99,7 @@ setup(
         'pywin32 != 226; platform_system=="Windows"',
         "docstring-parser",
         "universal_pathlib",
+        "pydantic",
     ],
     extras_require={
         "docker": ["docker"],

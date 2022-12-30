@@ -28,11 +28,8 @@ import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
+import {LaunchPartitionBackfillMutation} from '../graphql/graphql';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
-import {
-  LaunchPartitionBackfill,
-  LaunchPartitionBackfillVariables,
-} from '../instance/types/LaunchPartitionBackfill';
 import {LaunchButton} from '../launchpad/LaunchButton';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
 import {RunStatus} from '../types/globalTypes';
@@ -211,7 +208,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     onLaunch?.(backfillId, query);
   };
 
-  const onError = (data: LaunchPartitionBackfill | null | undefined) => {
+  const onError = (data: LaunchPartitionBackfillMutation | null | undefined) => {
     showBackfillErrorToast(data);
   };
 
@@ -539,7 +536,7 @@ const LaunchBackfillButton: React.FC<{
   fromFailure?: boolean;
   tags?: PipelineRunTag[];
   onSuccess?: (backfillId: string) => void;
-  onError: (data: LaunchPartitionBackfill | null | undefined) => void;
+  onError: (data: LaunchPartitionBackfillMutation | null | undefined) => void;
   onSubmit: () => void;
   repoAddress: RepoAddress;
 }> = ({
@@ -555,10 +552,7 @@ const LaunchBackfillButton: React.FC<{
 }) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const mounted = React.useRef(true);
-  const [launchBackfill, {loading}] = useMutation<
-    LaunchPartitionBackfill,
-    LaunchPartitionBackfillVariables
-  >(LAUNCH_PARTITION_BACKFILL_MUTATION);
+  const [launchBackfill, {loading}] = useMutation(LAUNCH_PARTITION_BACKFILL_MUTATION);
 
   React.useEffect(() => {
     mounted.current = true;
@@ -740,7 +734,7 @@ const PARTITION_STATUS_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-function messageForLaunchBackfillError(data: LaunchPartitionBackfill | null | undefined) {
+function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | null | undefined) {
   const result = data?.launchPartitionBackfill;
 
   let errors = <></>;
@@ -780,7 +774,7 @@ function messageForLaunchBackfillError(data: LaunchPartitionBackfill | null | un
   );
 }
 
-export function showBackfillErrorToast(data: LaunchPartitionBackfill | null | undefined) {
+export function showBackfillErrorToast(data: LaunchPartitionBackfillMutation | null | undefined) {
   SharedToaster.show({
     message: messageForLaunchBackfillError(data),
     icon: 'error',

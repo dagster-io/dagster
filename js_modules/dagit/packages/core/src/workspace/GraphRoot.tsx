@@ -1,28 +1,20 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, PageHeader, Tag, Heading} from '@dagster-io/ui';
 import React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useTrackPageView} from '../app/analytics';
+import {graphql} from '../graphql';
+import {GraphExplorerRootQueryQuery} from '../graphql/graphql';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
-import {
-  GraphExplorer,
-  GraphExplorerOptions,
-  GRAPH_EXPLORER_FRAGMENT,
-  GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT,
-} from '../pipelines/GraphExplorer';
+import {GraphExplorer, GraphExplorerOptions} from '../pipelines/GraphExplorer';
 import {explorerPathFromString, explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {Loading} from '../ui/Loading';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {RepoAddress} from './types';
-import {
-  GraphExplorerRootQuery,
-  GraphExplorerRootQueryVariables,
-} from './types/GraphExplorerRootQuery';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -73,23 +65,20 @@ const GraphExplorerRoot: React.FC<Props> = (props) => {
   });
 
   const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
-  const graphResult = useQuery<GraphExplorerRootQuery, GraphExplorerRootQueryVariables>(
-    GRAPH_EXPLORER_ROOT_QUERY,
-    {
-      variables: {
-        graphSelector: {
-          repositoryName: repoAddress?.name || '',
-          repositoryLocationName: repoAddress?.location || '',
-          graphName: explorerPath.pipelineName,
-        },
-        rootHandleID: parentNames.join('.'),
-        requestScopeHandleID: options.explodeComposites ? undefined : parentNames.join('.'),
+  const graphResult = useQuery(GRAPH_EXPLORER_ROOT_QUERY, {
+    variables: {
+      graphSelector: {
+        repositoryName: repoAddress?.name || '',
+        repositoryLocationName: repoAddress?.location || '',
+        graphName: explorerPath.pipelineName,
       },
+      rootHandleID: parentNames.join('.'),
+      requestScopeHandleID: options.explodeComposites ? undefined : parentNames.join('.'),
     },
-  );
+  });
 
   return (
-    <Loading<GraphExplorerRootQuery> queryResult={graphResult}>
+    <Loading<GraphExplorerRootQueryQuery> queryResult={graphResult}>
       {({graphOrError: result}) => {
         if (result.__typename === 'GraphNotFoundError') {
           return (
@@ -137,7 +126,7 @@ const GraphExplorerRoot: React.FC<Props> = (props) => {
   );
 };
 
-const GRAPH_EXPLORER_ROOT_QUERY = gql`
+const GRAPH_EXPLORER_ROOT_QUERY = graphql(`
   query GraphExplorerRootQuery(
     $graphSelector: GraphSelector
     $rootHandleID: String!
@@ -166,7 +155,4 @@ const GRAPH_EXPLORER_ROOT_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-  ${GRAPH_EXPLORER_FRAGMENT}
-  ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);

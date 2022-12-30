@@ -1,8 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, cast
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import experimental, public
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+)
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._serdes import whitelist_for_serdes
@@ -213,6 +217,107 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionKeyRange:
         raise NotImplementedError()
+
+
+@experimental
+class SingleDimensionDependencyMapping(PartitionMapping):
+    """
+    Defines a correspondence between an upstream single-dimensional partitions definition
+    and a downstream MultiPartitionsDefinition. The upstream partitions definition must be
+    a dimension of the downstream MultiPartitionsDefinition.
+
+    For an upstream partition key X, this partition mapping assumes that any downstream
+    multi-partition key with X in the selected dimension is a downstream dependency.
+
+    Args:
+        partition_dimension_name (str): The name of the partition dimension in the downstream
+            MultiPartitionsDefinition that matches the upstream partitions definition.
+    """
+
+    def __init__(self, partition_dimension_name: str):
+        self.partition_dimension_name = partition_dimension_name
+
+    def _check_upstream_partitions_def_equals_selected_dimension(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: MultiPartitionsDefinition,
+    ) -> None:
+        matching_dimensions = [
+            partitions_def
+            for partitions_def in downstream_partitions_def.partitions_defs
+            if partitions_def.name == self.partition_dimension_name
+        ]
+        if len(matching_dimensions) != 1:
+            check.failed(f"Partition dimension '{self.partition_dimension_name}' not found")
+        matching_dimension_def = next(iter(matching_dimensions))
+
+        if upstream_partitions_def != matching_dimension_def.partitions_def:
+            check.failed(
+                "The upstream partitions definition does not have the same partitions definition "
+                f"as dimension {matching_dimension_def.name}"
+            )
+
+    def get_upstream_partitions_for_partition_range(
+        self,
+        downstream_partition_key_range: Optional[PartitionKeyRange],
+        downstream_partitions_def: Optional[PartitionsDefinition],
+        upstream_partitions_def: PartitionsDefinition,
+    ) -> PartitionKeyRange:
+        raise NotImplementedError()
+
+    def get_downstream_partitions_for_partition_range(
+        self,
+        upstream_partition_key_range: PartitionKeyRange,
+        downstream_partitions_def: Optional[PartitionsDefinition],
+        upstream_partitions_def: PartitionsDefinition,
+    ) -> PartitionKeyRange:
+        raise NotImplementedError()
+
+    def get_upstream_partitions_for_partitions(
+        self,
+        downstream_partitions_subset: Optional[PartitionsSubset],
+        upstream_partitions_def: PartitionsDefinition,
+    ) -> PartitionsSubset:
+        if downstream_partitions_subset is None or not isinstance(
+            downstream_partitions_subset.partitions_def, MultiPartitionsDefinition
+        ):
+            check.failed("downstream asset is not partitioned")
+
+        self._check_upstream_partitions_def_equals_selected_dimension(
+            upstream_partitions_def, downstream_partitions_subset.partitions_def
+        )
+        upstream_partitions = set()
+        for partition_key in downstream_partitions_subset.get_partition_keys():
+            if not isinstance(partition_key, MultiPartitionKey):
+                check.failed(
+                    "Partition keys in downstream partition key subset must be MultiPartitionKeys"
+                )
+            upstream_partitions.add(partition_key.keys_by_dimension[self.partition_dimension_name])
+        return upstream_partitions_def.empty_subset().with_partition_keys(upstream_partitions)
+
+    def get_downstream_partitions_for_partitions(
+        self,
+        upstream_partitions_subset: PartitionsSubset,
+        downstream_partitions_def: PartitionsDefinition,
+    ) -> PartitionsSubset:
+        if downstream_partitions_def is None or not isinstance(
+            downstream_partitions_def, MultiPartitionsDefinition
+        ):
+            check.failed("downstream asset is not multi-partitioned")
+
+        self._check_upstream_partitions_def_equals_selected_dimension(
+            upstream_partitions_subset.partitions_def, downstream_partitions_def
+        )
+
+        upstream_keys = list(upstream_partitions_subset.get_partition_keys())
+
+        matching_keys = []
+        for key in downstream_partitions_def.get_partition_keys():
+            key = cast(MultiPartitionKey, key)
+            if key.keys_by_dimension[self.partition_dimension_name] in upstream_keys:
+                matching_keys.append(key)
+
+        return downstream_partitions_def.empty_subset().with_partition_keys(set(matching_keys))
 
 
 def infer_partition_mapping(
