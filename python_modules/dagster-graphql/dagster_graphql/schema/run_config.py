@@ -1,5 +1,6 @@
+from dagster._config.snap import ConfigSchemaSnapshot
+from dagster._core.snap.snap_to_yaml import default_values_yaml_from_type_snap
 import graphene
-
 import dagster._check as check
 from dagster._core.host_representation import RepresentedPipeline
 
@@ -39,6 +40,13 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
         `PipelineConfigValidationValid` or that there are configuration errors
         by returning `RunConfigValidationInvalid' which containers a list errors
         so that can be rendered for the user""",
+    )
+
+    rootDefaultYaml = graphene.Field(
+        graphene.NonNull(graphene.String),
+        description="""The default configuration for this run in yaml. This is
+        so that the client does not have to parse JSON client side and assemble
+        it into a single yaml document.""",
     )
 
     class Meta:
@@ -82,6 +90,17 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
             self._mode,
             parse_run_config_input(kwargs.get("runConfigData", {}), raise_on_error=False),
         )
+
+    def resolve_rootDefaultYaml(self, _graphene_info):
+        config_schema_snapshot: ConfigSchemaSnapshot = (
+            self._represented_pipeline.config_schema_snapshot
+        )
+
+        root_key = self._represented_pipeline.get_mode_def_snap(self._mode).root_config_key
+
+        root_type = config_schema_snapshot.get_config_snap(root_key)
+
+        return default_values_yaml_from_type_snap(root_type)
 
 
 class GrapheneRunConfigSchemaOrError(graphene.Union):
