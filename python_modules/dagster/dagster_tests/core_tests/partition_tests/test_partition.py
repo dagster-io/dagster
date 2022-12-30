@@ -799,17 +799,6 @@ def test_static_partition_keys_in_range():
         )
 
 
-def test_unique_identifier():
-    assert (
-        StaticPartitionsDefinition(["a", "b", "c"]).serializable_unique_identifier
-        != StaticPartitionsDefinition(["a", "b"]).serializable_unique_identifier
-    )
-    assert (
-        StaticPartitionsDefinition(["a", "b", "c"]).serializable_unique_identifier
-        == StaticPartitionsDefinition(["a", "b", "c"]).serializable_unique_identifier
-    )
-
-
 def test_static_partitions_subset():
     partitions = StaticPartitionsDefinition(["foo", "bar", "baz", "qux"])
     subset = partitions.empty_subset()

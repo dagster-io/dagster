@@ -1,9 +1,11 @@
-import {RefetchQueriesFunction, useMutation} from '@apollo/client';
+import {gql, RefetchQueriesFunction, useMutation} from '@apollo/client';
 import {Button, DialogBody, DialogFooter, Dialog, Group} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {graphql} from '../graphql';
+
+import {AssetWipeMutation, AssetWipeMutationVariables} from './types/AssetWipeMutation';
 
 interface AssetKey {
   path: string[];
@@ -16,10 +18,13 @@ export const AssetWipeDialog: React.FC<{
   onComplete: (assetKeys: AssetKey[]) => void;
   requery?: RefetchQueriesFunction;
 }> = ({assetKeys, isOpen, onClose, onComplete, requery}) => {
-  const [requestWipe] = useMutation(ASSET_WIPE_MUTATION, {
-    variables: {assetKeys: assetKeys.map((key) => ({path: key.path || []}))},
-    refetchQueries: requery,
-  });
+  const [requestWipe] = useMutation<AssetWipeMutation, AssetWipeMutationVariables>(
+    ASSET_WIPE_MUTATION,
+    {
+      variables: {assetKeys: assetKeys.map((key) => ({path: key.path || []}))},
+      refetchQueries: requery,
+    },
+  );
 
   const wipe = async () => {
     if (!assetKeys.length) {
@@ -63,7 +68,7 @@ export const AssetWipeDialog: React.FC<{
   );
 };
 
-const ASSET_WIPE_MUTATION = graphql(`
+const ASSET_WIPE_MUTATION = gql`
   mutation AssetWipeMutation($assetKeys: [AssetKeyInput!]!) {
     wipeAssets(assetKeys: $assetKeys) {
       ... on AssetWipeSuccess {
@@ -74,4 +79,6 @@ const ASSET_WIPE_MUTATION = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
+
+  ${PYTHON_ERROR_FRAGMENT}
+`;

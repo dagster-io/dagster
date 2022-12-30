@@ -19,7 +19,7 @@ import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
-import {ReexecutionStrategy} from '../graphql/graphql';
+import {ReexecutionStrategy} from '../types/globalTypes';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
@@ -36,6 +36,10 @@ import {
   handleLaunchResult,
 } from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
+import {
+  LaunchPipelineReexecution,
+  LaunchPipelineReexecutionVariables,
+} from './types/LaunchPipelineReexecution';
 import {
   PipelineEnvironmentYamlQuery,
   PipelineEnvironmentYamlQueryVariables,
@@ -60,9 +64,12 @@ export const RunActionsMenu: React.FC<{
 
   const copyConfig = useCopyToClipboard();
 
-  const [reexecute] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {
-    onCompleted: refetch,
-  });
+  const [reexecute] = useMutation<LaunchPipelineReexecution, LaunchPipelineReexecutionVariables>(
+    LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+    {
+      onCompleted: refetch,
+    },
+  );
 
   const [loadEnv, {called, loading, data}] = useLazyQuery<
     PipelineEnvironmentYamlQuery,

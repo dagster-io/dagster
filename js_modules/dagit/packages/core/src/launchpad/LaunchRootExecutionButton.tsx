@@ -2,8 +2,8 @@ import * as React from 'react';
 
 import {IconName} from '../../../ui/src';
 import {usePermissions} from '../app/Permissions';
-import {LaunchPipelineExecutionMutationVariables} from '../graphql/graphql';
 import {LaunchBehavior} from '../runs/RunUtils';
+import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
 
 import {LaunchButton} from './LaunchButton';
 import {useLaunchPadHooks} from './LaunchpadHooksContext';
@@ -11,7 +11,7 @@ import {useLaunchPadHooks} from './LaunchpadHooksContext';
 interface LaunchRootExecutionButtonProps {
   disabled: boolean;
   warning?: React.ReactNode;
-  getVariables: () => undefined | LaunchPipelineExecutionMutationVariables;
+  getVariables: () => undefined | LaunchPipelineExecutionVariables;
   behavior: LaunchBehavior;
   pipelineName: string;
   title?: string;

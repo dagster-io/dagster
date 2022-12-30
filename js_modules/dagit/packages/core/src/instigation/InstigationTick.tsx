@@ -20,10 +20,10 @@ import styled from 'styled-components/macro';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
-import {graphql} from '../graphql';
-import {RunTable} from '../runs/RunTable';
+import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
 
+import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/LaunchedRunListQuery';
 import {TickTagFragment} from './types/TickTagFragment';
 
 export const TickTag: React.FC<{
@@ -122,13 +122,16 @@ export const TickTag: React.FC<{
 };
 
 export const RunList: React.FC<{runIds: string[]}> = ({runIds}) => {
-  const {data, loading} = useQuery(LAUNCHED_RUN_LIST_QUERY, {
-    variables: {
-      filter: {
-        runIds,
+  const {data, loading} = useQuery<LaunchedRunListQuery, LaunchedRunListQueryVariables>(
+    LAUNCHED_RUN_LIST_QUERY,
+    {
+      variables: {
+        filter: {
+          runIds,
+        },
       },
     },
-  });
+  );
 
   if (loading || !data) {
     return (
@@ -216,7 +219,7 @@ export const TICK_TAG_FRAGMENT = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-const LAUNCHED_RUN_LIST_QUERY = graphql(`
+const LAUNCHED_RUN_LIST_QUERY = gql`
   query LaunchedRunListQuery($filter: RunsFilter!) {
     pipelineRunsOrError(filter: $filter, limit: 500) {
       ... on PipelineRuns {
@@ -232,4 +235,6 @@ const LAUNCHED_RUN_LIST_QUERY = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
+  ${RUN_TABLE_RUN_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+`;

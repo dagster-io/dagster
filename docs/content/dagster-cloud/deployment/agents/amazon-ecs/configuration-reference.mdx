@@ -38,12 +38,6 @@ locations:
             valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::"
         secrets_tags:
           - "my_tag_name"
-        server_resources: # Resources for code servers launched by the agent for this location
-          cpu: 256
-          memory: 512
-        run_resources: # Resources for runs launched by the agent for this location
-          cpu: 4096
-          memory: 16384
 ```
 
 ### Environment variables and secrets
@@ -80,8 +74,6 @@ def my_job():
 
 [Fargate tasks only support certain combinations of CPU and memory.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)
 
-If the `ecs/cpu` or `ecs/memory` tags are set, they will override any defaults set on the code location or the deployment.
-
 ---
 
 ## Per-deployment configuration
@@ -116,12 +108,6 @@ user_code_launcher:
     log_group: <Log Group Name>
     launch_type: <"FARGATE"|"EC2">
     server_process_startup_timeout: <Timeout in seconds>
-    server_resources:
-      cpu: <CPU value>
-      memory: <Memory value>
-    run_resources:
-      cpu: <CPU value>
-      memory: <Memory value>
 ```
 
 ### dagster_cloud_api properties
@@ -202,13 +188,5 @@ user_code_launcher:
   <ul>
   <li><strong>Default</strong> - 180 (seconds)</li>
   </ul>
-  </ReferenceTableItem>
-  <ReferenceTableItem
-  propertyName="config.server_resources">
-  The resources that the agent should allocate to the ECS service for each code location that it creates. If set, must be a dictionary with a <code>cpu</code> and/or <code>memory</code> key. <strong>Note</strong>: <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html">Fargate tasks only support certain combinations of CPU and memory</a>.
-  </ReferenceTableItem>
-  <ReferenceTableItem
-  propertyName="config.run_resources">
-  The resources that the agent should allocate to the ECS task that it creates for each run. If set, must be a dictionary with a <code>cpu</code> and/or <code>memory</code> key. <strong>Note</strong>: <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html">Fargate tasks only support certain combinations of CPU and memory</a>.
   </ReferenceTableItem>
 </ReferenceTable>

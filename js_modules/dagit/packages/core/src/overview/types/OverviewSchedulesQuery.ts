@@ -28,23 +28,17 @@ export interface OverviewSchedulesQuery_workspaceOrError_Workspace_locationEntri
   repositories: OverviewSchedulesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories[];
 }
 
-export interface OverviewSchedulesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_errorChain_error {
+export interface OverviewSchedulesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface OverviewSchedulesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: OverviewSchedulesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_errorChain_error;
 }
 
 export interface OverviewSchedulesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: OverviewSchedulesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_errorChain[];
+  causes: OverviewSchedulesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_causes[];
 }
 
 export type OverviewSchedulesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError = OverviewSchedulesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation | OverviewSchedulesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError;
@@ -60,23 +54,17 @@ export interface OverviewSchedulesQuery_workspaceOrError_Workspace {
   locationEntries: OverviewSchedulesQuery_workspaceOrError_Workspace_locationEntries[];
 }
 
-export interface OverviewSchedulesQuery_workspaceOrError_PythonError_errorChain_error {
+export interface OverviewSchedulesQuery_workspaceOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface OverviewSchedulesQuery_workspaceOrError_PythonError_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: OverviewSchedulesQuery_workspaceOrError_PythonError_errorChain_error;
 }
 
 export interface OverviewSchedulesQuery_workspaceOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: OverviewSchedulesQuery_workspaceOrError_PythonError_errorChain[];
+  causes: OverviewSchedulesQuery_workspaceOrError_PythonError_causes[];
 }
 
 export type OverviewSchedulesQuery_workspaceOrError = OverviewSchedulesQuery_workspaceOrError_Workspace | OverviewSchedulesQuery_workspaceOrError_PythonError;
@@ -97,23 +85,17 @@ export interface OverviewSchedulesQuery_unloadableInstigationStatesOrError_Insti
 
 export type OverviewSchedulesQuery_unloadableInstigationStatesOrError = OverviewSchedulesQuery_unloadableInstigationStatesOrError_PythonError | OverviewSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates;
 
-export interface OverviewSchedulesQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_errorChain_error {
+export interface OverviewSchedulesQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface OverviewSchedulesQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: OverviewSchedulesQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_errorChain_error;
 }
 
 export interface OverviewSchedulesQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: OverviewSchedulesQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_errorChain[];
+  causes: OverviewSchedulesQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes[];
 }
 
 export interface OverviewSchedulesQuery_instance_daemonHealth_allDaemonStatuses {

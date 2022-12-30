@@ -188,6 +188,9 @@ def test_put_account_setting(ecs):
     assert task_arn_format_setting["value"] == "disabled"
 
 
+@pytest.mark.skip(
+    "https://buildkite.com/dagster/dagster/builds/42823#0185311c-dba8-4b27-88e5-2e6d3348c0ab"
+)
 def test_register_task_definition(ecs):
     # Without memory
     with pytest.raises(ClientError):

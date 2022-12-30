@@ -462,23 +462,3 @@ def _convert_potential_field(
         return potential_field
 
     return Field(_convert_potential_type(original_root, potential_field, stack))
-
-
-def config_dictionary_from_values(
-    values: Mapping[str, Any], config_field: "Field"
-) -> Dict[str, Any]:
-    assert ConfigTypeKind.is_shape(config_field.config_type.kind)
-    new_values = {}
-    for key, value in values.items():
-        if value is None:
-            continue
-
-        if isinstance(value, EnvVar):
-            new_values[key] = {"env": str(value)}
-        else:
-            new_values[key] = value
-    return new_values
-
-
-class EnvVar(str):
-    pass

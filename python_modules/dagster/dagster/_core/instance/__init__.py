@@ -118,7 +118,6 @@ if TYPE_CHECKING:
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.event_log.base import AssetRecord, EventLogRecord, EventRecordsFilter
-    from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs import RunStorage
     from dagster._core.storage.schedules import ScheduleStorage
@@ -1445,16 +1444,6 @@ class DagsterInstance:
         return self._event_storage.end_watch(run_id, cb)
 
     # asset storage
-
-    @traced
-    def can_cache_asset_status_data(self) -> bool:
-        return self._event_storage.can_cache_asset_status_data()
-
-    @traced
-    def update_asset_cached_status_data(
-        self, asset_key: AssetKey, cache_values: "AssetStatusCacheValue"
-    ) -> None:
-        self._event_storage.update_asset_cached_status_data(asset_key, cache_values)
 
     @traced
     def all_asset_keys(self):

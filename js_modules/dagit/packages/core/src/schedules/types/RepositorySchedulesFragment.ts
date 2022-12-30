@@ -44,23 +44,17 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_runs {
   updateTime: number | null;
 }
 
-export interface RepositorySchedulesFragment_schedules_scheduleState_ticks_error_errorChain_error {
+export interface RepositorySchedulesFragment_schedules_scheduleState_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface RepositorySchedulesFragment_schedules_scheduleState_ticks_error_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: RepositorySchedulesFragment_schedules_scheduleState_ticks_error_errorChain_error;
 }
 
 export interface RepositorySchedulesFragment_schedules_scheduleState_ticks_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: RepositorySchedulesFragment_schedules_scheduleState_ticks_error_errorChain[];
+  causes: RepositorySchedulesFragment_schedules_scheduleState_ticks_error_causes[];
 }
 
 export interface RepositorySchedulesFragment_schedules_scheduleState_ticks {

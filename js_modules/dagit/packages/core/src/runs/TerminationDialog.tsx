@@ -15,10 +15,18 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
-import {TerminateMutation, TerminateRunPolicy} from '../graphql/graphql';
+import {TerminateRunPolicy} from '../types/globalTypes';
 
 import {NavigationBlock} from './NavitationBlock';
 import {TERMINATE_MUTATION} from './RunUtils';
+import {
+  Terminate,
+  Terminate_terminatePipelineExecution_RunNotFoundError,
+  Terminate_terminatePipelineExecution_PythonError,
+  Terminate_terminatePipelineExecution_UnauthorizedError,
+  Terminate_terminatePipelineExecution_TerminateRunFailure,
+  TerminateVariables,
+} from './types/Terminate';
 
 export interface Props {
   isOpen: boolean;
@@ -28,14 +36,12 @@ export interface Props {
   selectedRuns: {[id: string]: boolean};
 }
 
-const refineToError = (data: TerminateMutation | null | undefined) => {
-  if (data?.terminatePipelineExecution.__typename === 'TerminateRunSuccess') {
-    throw new ErrorEvent('Not an error!');
-  }
-  return data?.terminatePipelineExecution;
-};
-
-type Error = ReturnType<typeof refineToError> | undefined;
+type Error =
+  | Terminate_terminatePipelineExecution_TerminateRunFailure
+  | Terminate_terminatePipelineExecution_RunNotFoundError
+  | Terminate_terminatePipelineExecution_UnauthorizedError
+  | Terminate_terminatePipelineExecution_PythonError
+  | undefined;
 
 export type TerminationState = {completed: number; errors: {[id: string]: Error}};
 
@@ -132,7 +138,7 @@ export const TerminationDialog = (props: Props) => {
     }
   }, [isOpen, selectedRuns]);
 
-  const [terminate] = useMutation(TERMINATE_MUTATION);
+  const [terminate] = useMutation<Terminate, TerminateVariables>(TERMINATE_MUTATION);
   const policy = state.mustForce
     ? TerminateRunPolicy.MARK_AS_CANCELED_IMMEDIATELY
     : TerminateRunPolicy.SAFE_TERMINATE;
@@ -148,7 +154,7 @@ export const TerminationDialog = (props: Props) => {
       if (data?.terminatePipelineExecution.__typename === 'TerminateRunSuccess') {
         dispatch({type: 'termination-success'});
       } else {
-        dispatch({type: 'termination-error', id: runId, error: refineToError(data)});
+        dispatch({type: 'termination-error', id: runId, error: data?.terminatePipelineExecution});
       }
     }
 

@@ -377,8 +377,6 @@ def test_basic_multi_asset():
 
     external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
 
-    atomic_execution_unit_id = assets.unique_id
-
     assert external_asset_nodes == [
         ExternalAssetNode(
             asset_key=AssetKey(f"asset{i}"),
@@ -392,7 +390,6 @@ def test_basic_multi_asset():
             job_names=["assets_job"],
             output_name=f"out{i}",
             group_name=DEFAULT_GROUP_NAME,
-            atomic_execution_unit_id=atomic_execution_unit_id,
         )
         for i in range(10)
     ]
@@ -418,7 +415,6 @@ def test_inter_op_dependency():
             "mixed": {AssetKey("in1"), AssetKey("only_in")},
             "only_out": {AssetKey("only_in"), AssetKey("mixed")},
         },
-        can_subset=True,
     )
     def assets(in1, in2):  # pylint: disable=unused-argument
         pass
@@ -824,7 +820,6 @@ def test_nasty_nested_graph_asset():
         keys_by_input_name={"zero": AssetKey("zero")},
         keys_by_output_name={"eight": AssetKey("eight"), "five": AssetKey("five")},
         node_def=create_eight_and_five,
-        can_subset=True,
     )
 
     thirteen_and_six = AssetsDefinition(
@@ -835,14 +830,12 @@ def test_nasty_nested_graph_asset():
         },
         keys_by_output_name={"thirteen": AssetKey("thirteen"), "six": AssetKey("six")},
         node_def=create_thirteen_and_six,
-        can_subset=True,
     )
 
     twenty = AssetsDefinition(
         keys_by_input_name={"thirteen": AssetKey("thirteen"), "six": AssetKey("six")},
         keys_by_output_name={"result": AssetKey("twenty")},
         node_def=create_twenty,
-        can_subset=True,
     )
 
     assets_job = build_assets_job("assets_job", [zero, eight_and_five, thirteen_and_six, twenty])

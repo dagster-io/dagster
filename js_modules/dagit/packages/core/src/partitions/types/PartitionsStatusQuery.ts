@@ -42,23 +42,17 @@ export interface PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitio
   results: PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses_results[];
 }
 
-export interface PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PythonError_errorChain_error {
+export interface PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PythonError_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PythonError_errorChain_error;
 }
 
 export interface PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PythonError_errorChain[];
+  causes: PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PythonError_causes[];
 }
 
 export type PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError = PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses | PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PythonError;

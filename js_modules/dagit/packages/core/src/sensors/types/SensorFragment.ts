@@ -37,23 +37,17 @@ export interface SensorFragment_sensorState_runs {
   updateTime: number | null;
 }
 
-export interface SensorFragment_sensorState_ticks_error_errorChain_error {
+export interface SensorFragment_sensorState_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface SensorFragment_sensorState_ticks_error_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: SensorFragment_sensorState_ticks_error_errorChain_error;
 }
 
 export interface SensorFragment_sensorState_ticks_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: SensorFragment_sensorState_ticks_error_errorChain[];
+  causes: SensorFragment_sensorState_ticks_error_causes[];
 }
 
 export interface SensorFragment_sensorState_ticks {

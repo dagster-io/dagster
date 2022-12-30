@@ -9,13 +9,13 @@ import {ErrorSource} from '../types/globalTypes';
 
 import {
   PythonErrorFragment,
-  PythonErrorFragment_errorChain as ErrorChainLink,
+  PythonErrorFragment_causes as Cause,
 } from './types/PythonErrorFragment';
 
 export type GenericError = {
   message: string;
   stack?: string[];
-  errorChain?: ErrorChainLink[];
+  causes?: Cause[];
 };
 
 interface IPythonErrorInfoProps {
@@ -27,7 +27,7 @@ interface IPythonErrorInfoProps {
 }
 
 export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
-  const {message, stack = [], errorChain = []} = props.error;
+  const {message, stack = [], causes = []} = props.error;
 
   const Wrapper = props.centered ? ErrorWrapperCentered : ErrorWrapper;
   const context = props.errorSource ? <ErrorContext errorSource={props.errorSource} /> : null;
@@ -44,15 +44,11 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
           </div>
         ) : null}
         {stack ? <Trace>{stack.join('')}</Trace> : null}
-        {errorChain.map((chainLink, ii) => (
+        {causes.map((cause, ii) => (
           <React.Fragment key={ii}>
-            <CauseHeader>
-              {chainLink.isExplicitLink
-                ? 'The above exception was caused by the following exception:'
-                : 'The above exception occurred during handling of the following exception:'}
-            </CauseHeader>
-            <ErrorHeader>{chainLink.error.message}</ErrorHeader>
-            {stack ? <Trace>{chainLink.error.stack.join('')}</Trace> : null}
+            <CauseHeader>The above exception was caused by the following exception:</CauseHeader>
+            <ErrorHeader>{cause.message}</ErrorHeader>
+            {stack ? <Trace>{cause.stack.join('')}</Trace> : null}
           </React.Fragment>
         ))}
         {props.showReload && (
@@ -87,12 +83,9 @@ export const PYTHON_ERROR_FRAGMENT = gql`
     __typename
     message
     stack
-    errorChain {
-      isExplicitLink
-      error {
-        message
-        stack
-      }
+    causes {
+      message
+      stack
     }
   }
 `;

@@ -120,7 +120,7 @@ class InputDefinition:
         input_manager_key: Optional[str] = None
         # when adding new params, make sure to update combine_with_inferred and with_dagster_type below
     ):
-        self._name = check_valid_name(name, allow_list=["config"])
+        self._name = check_valid_name(name)
 
         self._type_not_set = dagster_type is None
         self._dagster_type = check.inst(resolve_dagster_type(dagster_type), DagsterType)

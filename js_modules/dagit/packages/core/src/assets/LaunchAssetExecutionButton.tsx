@@ -14,10 +14,10 @@ import {
   LiveData,
   toGraphId,
 } from '../asset-graph/Utils';
-import {LaunchPipelineExecutionMutationVariables} from '../graphql/graphql';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {DagsterTag} from '../runs/RunTag';
+import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -61,7 +61,7 @@ type LaunchAssetsState =
     }
   | {
       type: 'single-run';
-      executionParams: LaunchPipelineExecutionMutationVariables['executionParams'];
+      executionParams: LaunchPipelineExecutionVariables['executionParams'];
     };
 
 const countOrBlank = (k: unknown[]) => (k.length > 1 ? ` (${k.length})` : '');
@@ -133,9 +133,6 @@ export const LaunchAssetExecutionButton: React.FC<{
 
   const options = optionsForButton(scope, liveDataForStale);
   const firstOption = options[0];
-
-  const {MaterializeButton} = useLaunchPadHooks();
-
   if (!firstOption) {
     return <span />;
   }
@@ -153,12 +150,8 @@ export const LaunchAssetExecutionButton: React.FC<{
   return (
     <>
       <Box flex={{alignItems: 'center'}}>
-        <Tooltip
-          content="Shift+click to add configuration"
-          position="bottom-right"
-          useDisabledButtonTooltipFix
-        >
-          <MaterializeButton
+        <Tooltip content="Shift+click to add configuration" position="bottom-right">
+          <Button
             intent={intent}
             onClick={(e) => onClick(firstOption.assetKeys, e)}
             style={
@@ -174,7 +167,7 @@ export const LaunchAssetExecutionButton: React.FC<{
             icon={loading ? <Spinner purpose="body-text" /> : <Icon name="materialization" />}
           >
             {firstOption.label}
-          </MaterializeButton>
+          </Button>
         </Tooltip>
         {options.length > 1 && (
           <Popover
@@ -484,7 +477,7 @@ export function executionParamsForAssetJob(
   jobName: string,
   assets: {assetKey: AssetKey; opNames: string[]}[],
   tags: {key: string; value: string}[],
-): LaunchPipelineExecutionMutationVariables['executionParams'] {
+): LaunchPipelineExecutionVariables['executionParams'] {
   return {
     mode: 'default',
     executionMetadata: {

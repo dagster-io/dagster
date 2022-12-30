@@ -207,14 +207,12 @@ computeLogManager:
   #     secretKey: ~
   #     localDir: ~
   #     prefix: ~
-  #     uploadInterval: ~
   ##  Uncomment this configuration if the GCSComputeLogManager is selected
   #   gcsComputeLogManager:
   #     bucket: ~
   #     localDir: ~
   #     prefix: ~
   #     jsonCredentialsEnvvar: ~
-  #     uploadInterval: ~
   ##  Uncomment this configuration if the S3ComputeLogManager is selected
   #   s3ComputeLogManager:
   #     bucket: ~
@@ -225,8 +223,6 @@ computeLogManager:
   #     verifyCertPath: ~
   #     endpointUrl: ~
   #     skipEmptyFiles: ~
-  #     uploadInterval: ~
-  #     uploadExtraArgs: {}
   ##  Uncomment this configuration if the CustomComputeLogManager is selected.
   ##  Using this setting requires a custom Dagit image that defines the user specified
   ##  compute log manager in an installed python module.
@@ -549,28 +545,6 @@ runLauncher:
       # Security settings for the container. See
       # https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container
       securityContext: ~
-
-      # Raw k8s configuration for the Kubernetes Job and Pod created for the run.
-      # See: https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
-      #
-      # Example:
-      # runK8sConfig:
-      #   containerConfig: # raw config for the pod's main container
-      #     resources:
-      #       cpu: 100m
-      #       memory: 128Mi
-      #   podTemplateSpecMetadata: # raw config for the pod's metadata
-      #     annotations:
-      #       mykey: myvalue
-      #   podSpecConfig: # raw config for the spec of the launched's pod
-      #     nodeSelector:
-      #       disktype: ssd
-      #   jobSpecConfig: # raw config for the kubernetes job's spec
-      #     ttlSecondsAfterFinished: 7200
-      #   jobMetadata: # raw config for the kubernetes job's metadata
-      #     annotations:
-      #       mykey: myvalue
-      runK8sConfig: {}
 
     # This configuration will only be used if the CeleryK8sRunLauncher is selected
     celeryK8sRunLauncher:
@@ -1052,6 +1026,7 @@ dagsterDaemon:
         dequeueIntervalSeconds: ~
         dequeueUseThreads: ~
         dequeueNumWorkers: ~
+
 
     ##  Uncomment this configuration if the CustomRunCoordinator is selected.
     ##  Using this setting requires a custom Daemon image that defines the user specified

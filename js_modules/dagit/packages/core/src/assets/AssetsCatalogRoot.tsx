@@ -1,4 +1,4 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Page, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router';
@@ -6,7 +6,6 @@ import {useParams} from 'react-router-dom';
 
 import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {graphql} from '../graphql';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
@@ -14,6 +13,10 @@ import {AssetGlobalLineageLink, AssetPageHeader} from './AssetPageHeader';
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {
+  AssetsCatalogRootQuery,
+  AssetsCatalogRootQueryVariables,
+} from './types/AssetsCatalogRootQuery';
 
 export const AssetsCatalogRoot = () => {
   useTrackPageView();
@@ -25,10 +28,13 @@ export const AssetsCatalogRoot = () => {
     .filter((x: string) => x)
     .map(decodeURIComponent);
 
-  const queryResult = useQuery(ASSETS_CATALOG_ROOT_QUERY, {
-    skip: currentPath.length === 0,
-    variables: {assetKey: {path: currentPath}},
-  });
+  const queryResult = useQuery<AssetsCatalogRootQuery, AssetsCatalogRootQueryVariables>(
+    ASSETS_CATALOG_ROOT_QUERY,
+    {
+      skip: currentPath.length === 0,
+      variables: {assetKey: {path: currentPath}},
+    },
+  );
 
   useDocumentTitle(
     currentPath && currentPath.length
@@ -80,7 +86,7 @@ export const AssetsCatalogRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default AssetsCatalogRoot;
 
-const ASSETS_CATALOG_ROOT_QUERY = graphql(`
+const ASSETS_CATALOG_ROOT_QUERY = gql`
   query AssetsCatalogRootQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       __typename
@@ -92,4 +98,4 @@ const ASSETS_CATALOG_ROOT_QUERY = graphql(`
       }
     }
   }
-`);
+`;

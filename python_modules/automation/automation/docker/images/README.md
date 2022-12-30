@@ -23,7 +23,7 @@ which they are served to Buildkite etc. The command for building an image is:
 This will build images for all Python versions specified in the corresponding
 `versions.yaml`. Note that when building images for use in Buildkite (i.e.
 `buildkite-test`, used for testing the tips of branches), you should specify
-the version for the editable install of dagster, `1!0+dev`. Note also that the
+the version for the editable install of dagster, `0+dev`. Note also that the
 `--platform=linux/amd64` might not always be necessary, but in the past it has
 solved issues when building on an M1 mac.
 

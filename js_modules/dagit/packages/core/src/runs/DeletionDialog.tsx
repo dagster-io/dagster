@@ -4,10 +4,15 @@ import {ProgressBar} from '@blueprintjs/core';
 import {Button, Colors, DialogBody, DialogFooter, Dialog, Group, Icon, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {DeleteMutation} from '../graphql/graphql';
-
 import {NavigationBlock} from './NavitationBlock';
 import {DELETE_MUTATION} from './RunUtils';
+import {
+  Delete,
+  Delete_deletePipelineRun_RunNotFoundError,
+  Delete_deletePipelineRun_PythonError,
+  Delete_deletePipelineRun_UnauthorizedError,
+  DeleteVariables,
+} from './types/Delete';
 
 export interface Props {
   isOpen: boolean;
@@ -19,14 +24,11 @@ export interface Props {
 
 type SelectedRuns = {[id: string]: boolean};
 
-const refineToError = (data: DeleteMutation | null | undefined) => {
-  if (data?.deletePipelineRun.__typename === 'DeletePipelineRunSuccess') {
-    throw new Error('Not an error!');
-  }
-  return data?.deletePipelineRun;
-};
-
-type Error = ReturnType<typeof refineToError>;
+type Error =
+  | Delete_deletePipelineRun_PythonError
+  | Delete_deletePipelineRun_UnauthorizedError
+  | Delete_deletePipelineRun_RunNotFoundError
+  | undefined;
 
 type DeletionDialogState = {
   step: 'initial' | 'deleting' | 'completed';
@@ -112,7 +114,7 @@ export const DeletionDialog = (props: Props) => {
     }
   }, [isOpen, selectedRuns]);
 
-  const [destroy] = useMutation(DELETE_MUTATION);
+  const [destroy] = useMutation<Delete, DeleteVariables>(DELETE_MUTATION);
 
   const mutate = async () => {
     dispatch({type: 'start'});
@@ -125,7 +127,7 @@ export const DeletionDialog = (props: Props) => {
       if (data?.deletePipelineRun.__typename === 'DeletePipelineRunSuccess') {
         dispatch({type: 'deletion-success'});
       } else {
-        dispatch({type: 'deletion-error', id: runId, error: refineToError(data)});
+        dispatch({type: 'deletion-error', id: runId, error: data?.deletePipelineRun});
       }
     }
 

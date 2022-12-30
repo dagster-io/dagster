@@ -3,18 +3,7 @@ title: Run Launchers | Dagster
 description: The run launcher is the interface to the computational resources that will be used to actually execute Dagster runs.
 ---
 
-# Run launchers
-
-<Note>
-  This guide is applicable to Dagster Open Source (OSS) deployments. For Dagster
-  Cloud, refer to the <a href="/dagster-cloud">Dagster Cloud</a> documentation.
-</Note>
-
-Runs instigated from the Dagit UI, the scheduler, or the `dagster job launch` CLI command are launched in Dagster. This is a distinct operation from executing a job using the `execute_job` Python API or the CLI `execute` command. A launch operation allocates computational resources (e.g. a process, a container, a Kubernetes pod, etc) to carry out a run execution and then instigates the execution.
-
-The core abstraction in the launch process is the run launcher, which is configured as part of the [Dagster instance](/deployment/dagster-instance) The run launcher is the interface to the computational resources that will be used to actually execute Dagster runs. It receives the ID of a created run and a representation of the pipeline that is about to undergo execution.
-
----
+# Run Launchers
 
 ## Relevant APIs
 
@@ -22,112 +11,46 @@ The core abstraction in the launch process is the run launcher, which is configu
 | ----------------------------------------------------------------- | ----------------------------- |
 | <PyObject module="dagster._core.launcher" object="RunLauncher" /> | Base class for run launchers. |
 
----
+## Overview
 
-## Built-in run launchers
+Runs instigated from the Dagit UI, the scheduler, or `dagster job launch` are "launched" in Dagster. This is a distinct operation from "executing" a pipeline using the `execute_pipeline` python API or the CLI `execute` command. A 'launch' operation allocates computational resources (e.g. a process, a container, a kubernetes pod, etc) to carry out a run execution and then instigates the execution.
 
-The simplest run launcher is the built-in run launcher, <PyObject object="DefaultRunLauncher" />. This run launcher spawns a new process per run on the same node as the job's code location.
+The core abstraction in the launch process is the run launcher, which is configured as part of the Dagster Instance. The run launcher is the interface to the computational resources that will be used to actually execute Dagster runs. It receives the ID of a created run and a representation of the pipeline that is about to undergo execution.
+
+## Default Run Launcher
+
+The simplest run launcher is the built-in run launcher, <PyObject object="DefaultRunLauncher" />. This run launcher spawns a new process per run on the same node as the pipeline's repository location.
+
+## Other Run Launchers
 
 Other run launchers include:
 
-<table
-  className="table"
-  style={{
-    width: "100%",
-  }}
->
-  <thead>
-    <tr>
-      <th
-        style={{
-          width: "25%",
-        }}
-      >
-        Name
-      </th>
-      <th>Description</th>
-      <th
-        style={{
-          width: "25%",
-        }}
-      >
-        Documentation
-      </th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <PyObject module="dagster_k8s" object="K8sRunLauncher" />
-      </td>
-      <td>A run launcher that allocates a Kubernetes job per run.</td>
-      <td>
-        <a href="/deployment/guides/kubernetes/deploying-with-helm">
-          Deploying with Helm
-        </a>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <PyObject module="dagster_aws.ecs" object="EcsRunLauncher" />
-      </td>
-      <td>A run launcher that launches an Amazon ECS task per run.</td>
-      <td>
-        <a href="/deployment/guides/aws#launching-runs-in-ecs">
-          Deploying with ECS
-        </a>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <PyObject module="dagster_docker" object="DockerRunLauncher" />
-      </td>
-      <td>A run launcher that launches runs in a Docker container.</td>
-      <td>
-        <ul
-          style={{
-            marginTop: "0px",
-          }}
-        >
-          <li
-            style={{
-              marginTop: "0px",
-            }}
-          >
-            <a href="/deployment/guides/docker">Deploying to Docker</a>
-          </li>
-          <li>
-            <a href="/deployment/guides/docker#example">
-              Docker deployment example
-            </a>
-          </li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />
-      </td>
-      <td>
-        A run launcher that launches runs as single Kubernetes jobs with extra
-        configuration to support the <code>celery_k8s_job_executor</code>.
-      </td>
-      <td>
-        <a href="/deployment/guides/kubernetes/deploying-with-helm-advanced">
-          Per-op limits in Kubernetes
-        </a>
-      </td>
-    </tr>
-  </tbody>
-</table>
+- <PyObject module="dagster_k8s" object="K8sRunLauncher" />, which allocates a
+  Kubernetes Job per run.
 
----
+  For more information, check out [Kubernetes Deployment Guides](/deployment/guides/kubernetes/deploying-with-helm).
 
-## Custom run launchers
+- <PyObject module="dagster_aws.ecs" object="EcsRunLauncher" />, which launches
+  an ECS task per run.
+
+  For more information, check out the [ECS Deployment Guide](/deployment/guides/aws#launching-runs-in-ecs).
+
+- <PyObject module="dagster_docker" object="DockerRunLauncher" />, which
+  launches runs in a Docker container.
+
+  For more information, check out [Deploying Dagster to Docker Guide](/deployment/guides/docker) and [Docker deployment example](/deployment/guides/docker#example).
+
+- <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />, which
+  launches runs as single Kubernetes Jobs with extra configuration to support
+  the `celery_k8s_job_executor`.
+
+  For more information, check out [Per-Op Limits in Kubernetes](/deployment/guides/kubernetes/deploying-with-helm-advanced).
+
+## Custom Run Launchers
 
 A few examples of when a custom run launcher is needed:
 
 - You have custom infrastructure or custom APIs for allocating nodes for execution.
 - You have custom logic for launching runs on different clusters, platforms, etc.
 
-We refer to the process or computational resource created by the run launcher as the [run worker](/deployment/overview#job-execution-flow). The run launcher only determines the behavior of the run worker. Once execution starts within the run worker, it is the executor - an in-memory abstraction in the run worker process - that takes over management of computational resources.
+We refer to the process or computational resource created by the run launcher as the [run worker](/deployment/overview#job-execution-flow). The run launcher only determines the behavior of the run worker. Once execution starts within the run worker, it is the _executor_ -- an in-memory abstraction in the run worker process -- that takes over management of computational resources.

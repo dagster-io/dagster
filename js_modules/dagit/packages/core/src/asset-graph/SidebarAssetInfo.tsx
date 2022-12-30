@@ -19,7 +19,6 @@ import {AssetKey} from '../assets/types';
 import {usePartitionHealthData} from '../assets/usePartitionHealthData';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterTypeFragment';
-import {graphql} from '../graphql';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
@@ -28,6 +27,7 @@ import {Version} from '../versions/Version';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {LiveDataForNode, displayNameForAssetKey, GraphNode, nodeDependsOnSelf} from './Utils';
+import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetQuery';
 
 export const SidebarAssetInfo: React.FC<{
   assetNode: GraphNode;
@@ -35,7 +35,7 @@ export const SidebarAssetInfo: React.FC<{
 }> = ({assetNode, liveData}) => {
   const assetKey = assetNode.assetKey;
   const partitionHealthData = usePartitionHealthData([assetKey]);
-  const {data} = useQuery(SIDEBAR_ASSET_QUERY, {
+  const {data} = useQuery<SidebarAssetQuery, SidebarAssetQueryVariables>(SIDEBAR_ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
     fetchPolicy: 'cache-and-network',
   });
@@ -219,7 +219,7 @@ export const SIDEBAR_ASSET_FRAGMENT = gql`
   ${METADATA_ENTRY_FRAGMENT}
 `;
 
-const SIDEBAR_ASSET_QUERY = graphql(`
+const SIDEBAR_ASSET_QUERY = gql`
   query SidebarAssetQuery($assetKey: AssetKeyInput!) {
     assetNodeOrError(assetKey: $assetKey) {
       __typename
@@ -229,4 +229,5 @@ const SIDEBAR_ASSET_QUERY = graphql(`
       }
     }
   }
-`);
+  ${SIDEBAR_ASSET_FRAGMENT}
+`;

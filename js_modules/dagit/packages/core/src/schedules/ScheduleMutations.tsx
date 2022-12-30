@@ -1,12 +1,14 @@
+import {gql} from '@apollo/client';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {graphql} from '../graphql';
-import {StartThisScheduleMutation, StopScheduleMutation} from '../graphql/graphql';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 
-export const START_SCHEDULE_MUTATION = graphql(`
-  mutation StartThisSchedule($scheduleSelector: ScheduleSelector!) {
+import {StartSchedule, StartSchedule_startSchedule_PythonError} from './types/StartSchedule';
+import {StopSchedule, StopSchedule_stopRunningSchedule_PythonError} from './types/StopSchedule';
+
+export const START_SCHEDULE_MUTATION = gql`
+  mutation StartSchedule($scheduleSelector: ScheduleSelector!) {
     startSchedule(scheduleSelector: $scheduleSelector) {
       __typename
       ... on ScheduleStateResult {
@@ -20,9 +22,11 @@ export const START_SCHEDULE_MUTATION = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
 
-export const STOP_SCHEDULE_MUTATION = graphql(`
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const STOP_SCHEDULE_MUTATION = gql`
   mutation StopSchedule($scheduleOriginId: String!, $scheduleSelectorId: String!) {
     stopRunningSchedule(
       scheduleOriginId: $scheduleOriginId
@@ -40,12 +44,16 @@ export const STOP_SCHEDULE_MUTATION = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
 
-export const displayScheduleMutationErrors = (
-  data: StartThisScheduleMutation | StopScheduleMutation,
-) => {
-  let error;
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const displayScheduleMutationErrors = (data: StartSchedule | StopSchedule) => {
+  let error:
+    | StartSchedule_startSchedule_PythonError
+    | StopSchedule_stopRunningSchedule_PythonError
+    | null = null;
+
   if ('startSchedule' in data && data.startSchedule.__typename === 'PythonError') {
     error = data.startSchedule;
   } else if (

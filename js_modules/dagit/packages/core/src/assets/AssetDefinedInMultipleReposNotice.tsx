@@ -1,15 +1,18 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Alert, Box, ButtonLink, Colors} from '@dagster-io/ui';
 import React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {graphql} from '../graphql';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {AssetKey} from './types';
+import {
+  AssetDefinitionCollisionQuery,
+  AssetDefinitionCollisionQueryVariables,
+} from './types/AssetDefinitionCollisionQuery';
 
 export const MULTIPLE_DEFINITIONS_WARNING = 'Multiple asset definitions found';
 
@@ -18,9 +21,10 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
   loadedFromRepo: RepoAddress;
   padded?: boolean;
 }> = ({assetKey, loadedFromRepo, padded}) => {
-  const {data} = useQuery(ASSET_DEFINITION_COLLISION_QUERY, {
-    variables: {assetKeys: [{path: assetKey.path}]},
-  });
+  const {data} = useQuery<AssetDefinitionCollisionQuery, AssetDefinitionCollisionQueryVariables>(
+    ASSET_DEFINITION_COLLISION_QUERY,
+    {variables: {assetKeys: [{path: assetKey.path}]}},
+  );
 
   const collision = data?.assetNodeDefinitionCollisions[0];
   if (!collision) {
@@ -74,7 +78,7 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
   );
 };
 
-const ASSET_DEFINITION_COLLISION_QUERY = graphql(`
+const ASSET_DEFINITION_COLLISION_QUERY = gql`
   query AssetDefinitionCollisionQuery($assetKeys: [AssetKeyInput!]!) {
     assetNodeDefinitionCollisions(assetKeys: $assetKeys) {
       assetKey {
@@ -90,4 +94,4 @@ const ASSET_DEFINITION_COLLISION_QUERY = graphql(`
       }
     }
   }
-`);
+`;

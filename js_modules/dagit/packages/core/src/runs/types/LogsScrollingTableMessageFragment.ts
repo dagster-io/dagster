@@ -535,23 +535,17 @@ export interface LogsScrollingTableMessageFragment_ResourceInitFailureEvent_meta
 
 export type LogsScrollingTableMessageFragment_ResourceInitFailureEvent_metadataEntries = LogsScrollingTableMessageFragment_ResourceInitFailureEvent_metadataEntries_PathMetadataEntry | LogsScrollingTableMessageFragment_ResourceInitFailureEvent_metadataEntries_NotebookMetadataEntry | LogsScrollingTableMessageFragment_ResourceInitFailureEvent_metadataEntries_JsonMetadataEntry | LogsScrollingTableMessageFragment_ResourceInitFailureEvent_metadataEntries_UrlMetadataEntry | LogsScrollingTableMessageFragment_ResourceInitFailureEvent_metadataEntries_TextMetadataEntry | LogsScrollingTableMessageFragment_ResourceInitFailureEvent_metadataEntries_MarkdownMetadataEntry | LogsScrollingTableMessageFragment_ResourceInitFailureEvent_metadataEntries_PythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_ResourceInitFailureEvent_metadataEntries_FloatMetadataEntry | LogsScrollingTableMessageFragment_ResourceInitFailureEvent_metadataEntries_IntMetadataEntry | LogsScrollingTableMessageFragment_ResourceInitFailureEvent_metadataEntries_BoolMetadataEntry | LogsScrollingTableMessageFragment_ResourceInitFailureEvent_metadataEntries_PipelineRunMetadataEntry | LogsScrollingTableMessageFragment_ResourceInitFailureEvent_metadataEntries_AssetMetadataEntry | LogsScrollingTableMessageFragment_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry | LogsScrollingTableMessageFragment_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry;
 
-export interface LogsScrollingTableMessageFragment_ResourceInitFailureEvent_error_errorChain_error {
+export interface LogsScrollingTableMessageFragment_ResourceInitFailureEvent_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface LogsScrollingTableMessageFragment_ResourceInitFailureEvent_error_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: LogsScrollingTableMessageFragment_ResourceInitFailureEvent_error_errorChain_error;
 }
 
 export interface LogsScrollingTableMessageFragment_ResourceInitFailureEvent_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: LogsScrollingTableMessageFragment_ResourceInitFailureEvent_error_errorChain[];
+  causes: LogsScrollingTableMessageFragment_ResourceInitFailureEvent_error_causes[];
 }
 
 export interface LogsScrollingTableMessageFragment_ResourceInitFailureEvent {
@@ -1474,23 +1468,17 @@ export interface LogsScrollingTableMessageFragment_ObservationEvent {
   assetKey: LogsScrollingTableMessageFragment_ObservationEvent_assetKey | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error_errorChain_error {
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error_errorChain_error;
 }
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error_errorChain[];
+  causes: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error_causes[];
 }
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_PathMetadataEntry {
@@ -1675,23 +1663,17 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent {
   failureMetadata: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepUpForRetryEvent_error_errorChain_error {
+export interface LogsScrollingTableMessageFragment_ExecutionStepUpForRetryEvent_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface LogsScrollingTableMessageFragment_ExecutionStepUpForRetryEvent_error_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: LogsScrollingTableMessageFragment_ExecutionStepUpForRetryEvent_error_errorChain_error;
 }
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepUpForRetryEvent_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: LogsScrollingTableMessageFragment_ExecutionStepUpForRetryEvent_error_errorChain[];
+  causes: LogsScrollingTableMessageFragment_ExecutionStepUpForRetryEvent_error_causes[];
 }
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepUpForRetryEvent {

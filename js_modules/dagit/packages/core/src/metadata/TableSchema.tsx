@@ -6,12 +6,12 @@ import styled from 'styled-components/macro';
 
 import {
   MetadataEntryFragment_TableSchemaMetadataEntry,
+  MetadataEntryFragment_TableSchemaMetadataEntry_schema,
   MetadataEntryFragment_TableSchemaMetadataEntry_schema_columns_constraints,
 } from './types/MetadataEntryFragment';
-import {TableSchemaFragment} from './types/TableSchemaFragment';
 
 export type ITableSchemaMetadataEntry = MetadataEntryFragment_TableSchemaMetadataEntry;
-export type ITableSchema = TableSchemaFragment;
+export type ITableSchema = MetadataEntryFragment_TableSchemaMetadataEntry_schema;
 type ColumnConstraints = MetadataEntryFragment_TableSchemaMetadataEntry_schema_columns_constraints;
 
 const MAX_CONSTRAINT_TAG_CHARS = 30;

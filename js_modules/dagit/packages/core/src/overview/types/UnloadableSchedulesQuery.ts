@@ -32,23 +32,17 @@ export interface UnloadableSchedulesQuery_unloadableInstigationStatesOrError_Ins
   updateTime: number | null;
 }
 
-export interface UnloadableSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_errorChain_error {
+export interface UnloadableSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface UnloadableSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: UnloadableSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_errorChain_error;
 }
 
 export interface UnloadableSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: UnloadableSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_errorChain[];
+  causes: UnloadableSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_causes[];
 }
 
 export interface UnloadableSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks {
@@ -83,23 +77,17 @@ export interface UnloadableSchedulesQuery_unloadableInstigationStatesOrError_Ins
   results: UnloadableSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results[];
 }
 
-export interface UnloadableSchedulesQuery_unloadableInstigationStatesOrError_PythonError_errorChain_error {
+export interface UnloadableSchedulesQuery_unloadableInstigationStatesOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface UnloadableSchedulesQuery_unloadableInstigationStatesOrError_PythonError_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: UnloadableSchedulesQuery_unloadableInstigationStatesOrError_PythonError_errorChain_error;
 }
 
 export interface UnloadableSchedulesQuery_unloadableInstigationStatesOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: UnloadableSchedulesQuery_unloadableInstigationStatesOrError_PythonError_errorChain[];
+  causes: UnloadableSchedulesQuery_unloadableInstigationStatesOrError_PythonError_causes[];
 }
 
 export type UnloadableSchedulesQuery_unloadableInstigationStatesOrError = UnloadableSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates | UnloadableSchedulesQuery_unloadableInstigationStatesOrError_PythonError;

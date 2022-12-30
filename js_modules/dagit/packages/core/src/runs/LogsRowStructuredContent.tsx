@@ -319,20 +319,18 @@ const FailureContent: React.FC<{
     // as the outer stack is just framework code
     if (
       error.stack.length &&
-      !(errorSource === ErrorSource.USER_CODE_ERROR && error.errorChain.length)
+      !(errorSource === ErrorSource.USER_CODE_ERROR && error.causes.length)
     ) {
       errorStack = <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>;
     }
 
-    if (error.errorChain.length) {
-      errorCause = error.errorChain.map((chainLink) => (
+    if (error.causes.length) {
+      errorCause = error.causes.map((cause) => (
         <>
-          {chainLink.isExplicitLink
-            ? `The above exception was caused by the following exception:\n`
-            : `The above exception occurred during handling of the following exception:\n`}
-          <span style={{color: Colors.Red500}}>{`${chainLink.error.message}`}</span>
-          {chainLink.error.stack.length ? (
-            <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${chainLink.error.stack}`}</span>
+          {`The above exception was caused by the following exception:\n`}
+          <span style={{color: Colors.Red500}}>{`${cause.message}`}</span>
+          {cause?.stack.length ? (
+            <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${cause.stack}`}</span>
           ) : null}
         </>
       ));
@@ -377,22 +375,20 @@ const StepUpForRetryContent: React.FC<{
 
   if (error) {
     // If no cause, this was a `raise RetryRequest` inside the op. Show the trace for the main error.
-    if (!error.errorChain.length) {
+    if (!error.causes.length) {
       errorMessage = <span style={{color: Colors.Red500}}>{`${error.message}`}</span>;
       errorStack = <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>;
     } else {
       // If there is a cause, this was a different exception. Show that instead.
       errorCause = (
         <>
-          {error.errorChain.map((chainLink, index) => (
+          {error.causes.map((cause, index) => (
             <>
               {index === 0
                 ? `The retry request was caused by the following exception:\n`
                 : `The above exception was caused by the following exception:\n`}
-              <span style={{color: Colors.Red500}}>{`${chainLink.error.message}`}</span>
-              <span
-                style={{color: Colors.Red500}}
-              >{`\nStack Trace:\n${chainLink.error.stack}`}</span>
+              <span style={{color: Colors.Red500}}>{`${cause.message}`}</span>
+              <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${cause.stack}`}</span>
             </>
           ))}
         </>

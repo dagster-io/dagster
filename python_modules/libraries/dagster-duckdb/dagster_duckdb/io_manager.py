@@ -83,7 +83,7 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
             ),
         }
     )
-    def duckdb_io_manager(init_context):
+    def duckdb_io_manager(_):
         """IO Manager for storing outputs in a DuckDB database
 
         Assets will be stored in the schema and table name specified by their AssetKey.
@@ -92,11 +92,7 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
         table of the name of the output.
         """
         return DbIOManager(
-            type_handlers=type_handlers,
-            db_client=DuckDbClient(),
-            io_manager_name="DuckDBIOManager",
-            database=init_context.resource_config["database"],
-            schema=init_context.resource_config.get("schema"),
+            type_handlers=type_handlers, db_client=DuckDbClient(), io_manager_name="DuckDBIOManager"
         )
 
     return duckdb_io_manager

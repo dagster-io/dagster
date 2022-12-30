@@ -707,15 +707,6 @@ class AssetLayer:
     def assets_def_for_asset(self, asset_key: AssetKey) -> "AssetsDefinition":
         return self._assets_defs_by_key[asset_key]
 
-    def node_output_handle_for_asset(self, asset_key: AssetKey) -> NodeOutputHandle:
-        matching_handles = [
-            handle
-            for handle, asset_info in self._asset_info_by_node_output_handle.items()
-            if asset_info.key == asset_key
-        ]
-        check.invariant(len(matching_handles) == 1)
-        return matching_handles[0]
-
     def assets_def_for_node(self, node_handle: NodeHandle) -> Optional["AssetsDefinition"]:
         return self._assets_defs_by_node_handle.get(node_handle)
 

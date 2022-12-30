@@ -7,50 +7,9 @@ description: This section covers common ways to customize your Dagster Helm depl
 
 This section covers common ways to customize your Dagster Helm deployment.
 
-## Specifying custom Kubernetes configuration
+## Job or Op Kubernetes Configuration
 
-Dagster allows you to pass custom configuration to the Kubernetes Jobs and Pods created by Dagster during execution.
-
-### Instance-level Kubernetes Configuration
-
-If your instance is using the <PyObject module="dagster_k8s" object="K8sRunLauncher" />, you can configure custom configuration for every run launched by Dagster by setting the `k8sRunLauncher.runK8sConfig` dictionary in the Helm chart.
-
-`k8sRunLauncher.runK8sConfig` is a dictionary with the following keys:
-
-- `containerConfig`: The Pod's [Container](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#container-v1-core).
-- `podSpecConfig`: The Pod's [PodSpec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#podspec-v1-core).
-- `podTemplateSpecMetadata`: The Pod's [Metadata](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta).
-- `jobSpecConfig`: The Job's [JobSpec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#jobspec-v1-batch).
-- `jobMetadata`: The Job's [Metadata](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta).
-
-The values for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
-
-```yaml file=/deploying/kubernetes/run_k8s_config.yaml
-runLauncher:
-  type: K8sRunLauncher
-  config:
-    k8sRunLauncher:
-      runK8sConfig:
-        containerConfig: # raw config for the pod's main container
-          resources:
-            cpu: 100m
-            memory: 128Mi
-        podTemplateSpecMetadata: # raw config for the pod's metadata
-          annotations:
-            mykey: myvalue
-        podSpecConfig: # raw config for the spec of the launched's pod
-          nodeSelector:
-            disktype: ssd
-        jobSpecConfig: # raw config for the kubernetes job's spec
-          ttlSecondsAfterFinished: 7200
-        jobMetadata: # raw config for the kubernetes job's metadata
-          annotations:
-            mykey: myvalue
-```
-
-### Per-job or per-op Kubernetes configuration
-
-The `dagster-k8s/config` tag allows you to pass custom configuration to the Kubernetes Jobs and Pods created by Dagster for specific jobs or ops.
+The `dagster-k8s/config` tag allows users to pass custom configuration through to the Kubernetes Jobs and Pods created by Dagster during execution.
 
 `dagster-k8s/config` is a dictionary with the following keys:
 
@@ -130,10 +89,6 @@ def my_job():
 ```
 
 Non-k8s run launchers and executors will ignore the `dagster-k8s/config` tag.
-
-If a Kubernetes configuration dictionary (like `container_config`) is specified at both the instance level in the Helm chart and in a specific Dagster job or op, the two dictionaries will be shallowly merged. The more specific configuration takes precedence if the same key is set in both dictionaries.
-
-For example, if `k8sRunLauncher.runK8sConfig.podSpecConfig` is set to `{"nodeSelector": {"disktype": "ssd"}, "dns_policy": "ClusterFirst"}` in the Helm chart, but a specific job has the `pod_spec_config` key in the `dagster-k8s/config` tag set to `{"nodeSelector": {"region": "east"}}`, the node selector from the job and the DNS policy from the Helm chart will be applied, since only the node selector is overridden in the job.
 
 ## Configuring an External Database
 

@@ -1348,24 +1348,6 @@ class RepositoryDefinition:
     def _assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._repository_data.get_assets_defs_by_key()
 
-    def has_implicit_global_asset_job_def(self) -> bool:
-        """Returns true is there is a single implicit asset job for all asset keys in a repository."""
-        return self.has_job(ASSET_BASE_JOB_PREFIX)
-
-    def get_implicit_global_asset_job_def(self) -> JobDefinition:
-        """A useful conveninence method for repositories where there are a set of assets with
-        the same partitioning schema and one wants to access their corresponding implicit job
-        easily."""
-
-        if not self.has_job(ASSET_BASE_JOB_PREFIX):
-            raise DagsterInvariantViolationError(
-                "There is no single global asset job, likely due to assets using "
-                "different partitioning schemes via their partitions_def parameter. You must "
-                "use get_implicit_job_def_for_assets in order to access the correct implicit job."
-            )
-
-        return self.get_job(ASSET_BASE_JOB_PREFIX)
-
     def get_base_asset_job_names(self) -> Sequence[str]:
         return [
             job_name for job_name in self.job_names if job_name.startswith(ASSET_BASE_JOB_PREFIX)

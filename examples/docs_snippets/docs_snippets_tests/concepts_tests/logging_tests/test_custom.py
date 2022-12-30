@@ -2,11 +2,11 @@ import yaml
 
 from dagster._utils import file_relative_path
 from docs_snippets.concepts.logging.custom_logger import (
-    defs,
     demo_job,
     json_console_logger,
     test_init_json_console_logger,
     test_init_json_console_logger_with_context,
+    the_repo,
 )
 
 
@@ -29,4 +29,4 @@ def test_testing_examples():
 
 
 def test_default_logger_repo_example():
-    assert defs.get_job_def("the_job").loggers == {"json_logger": json_console_logger}
+    assert the_repo.get_job("the_job").loggers == {"json_logger": json_console_logger}

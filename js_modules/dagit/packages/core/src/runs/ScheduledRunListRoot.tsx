@@ -1,23 +1,26 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Page, Alert, ButtonLink, Colors, Group} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {graphql} from '../graphql';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
+import {REPOSITORY_SCHEDULES_FRAGMENT} from '../schedules/ScheduleUtils';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {SchedulesNextTicks} from '../schedules/SchedulesNextTicks';
 import {Loading} from '../ui/Loading';
 
 import {RunsPageHeader} from './RunsPageHeader';
+import {SchedulerInfoQuery} from './types/SchedulerInfoQuery';
 
 export const ScheduledRunListRoot = () => {
   useTrackPageView();
   useDocumentTitle('Scheduled runs');
 
-  const queryResult = useQuery(SCHEDULER_INFO_QUERY, {
+  const queryResult = useQuery<SchedulerInfoQuery>(SCHEDULER_INFO_QUERY, {
     fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
@@ -75,7 +78,7 @@ export const ScheduledRunListRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default ScheduledRunListRoot;
 
-const SCHEDULER_INFO_QUERY = graphql(`
+const SCHEDULER_INFO_QUERY = gql`
   query SchedulerInfoQuery {
     instance {
       ...InstanceHealthFragment
@@ -93,4 +96,7 @@ const SCHEDULER_INFO_QUERY = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
+  ${INSTANCE_HEALTH_FRAGMENT}
+  ${REPOSITORY_SCHEDULES_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+`;

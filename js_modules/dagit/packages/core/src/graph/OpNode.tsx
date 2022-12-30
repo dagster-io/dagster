@@ -259,10 +259,17 @@ export const OP_NODE_DEFINITION_FRAGMENT = gql`
       }
     }
     inputDefinitions {
-      ...OpNodeInputDefinition
+      name
+      type {
+        displayName
+      }
     }
     outputDefinitions {
-      ...OpNodeOutputDefinition
+      name
+      isDynamic
+      type {
+        displayName
+      }
     }
     ... on SolidDefinition {
       configField {
@@ -300,21 +307,6 @@ export const OP_NODE_DEFINITION_FRAGMENT = gql`
           }
         }
       }
-    }
-  }
-
-  fragment OpNodeInputDefinition on InputDefinition {
-    name
-    type {
-      displayName
-    }
-  }
-
-  fragment OpNodeOutputDefinition on OutputDefinition {
-    name
-    isDynamic
-    type {
-      displayName
     }
   }
 `;

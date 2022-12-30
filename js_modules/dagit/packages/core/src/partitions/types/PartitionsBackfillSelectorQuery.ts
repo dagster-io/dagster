@@ -19,23 +19,17 @@ export interface PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSe
   results: PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results[];
 }
 
-export interface PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError_errorChain_error {
+export interface PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError_errorChain_error;
 }
 
 export interface PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError_errorChain[];
+  causes: PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError_causes[];
 }
 
 export type PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet_partitionsOrError = PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions | PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError;
@@ -52,23 +46,17 @@ export interface PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSe
   message: string;
 }
 
-export interface PartitionsBackfillSelectorQuery_partitionSetOrError_PythonError_errorChain_error {
+export interface PartitionsBackfillSelectorQuery_partitionSetOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface PartitionsBackfillSelectorQuery_partitionSetOrError_PythonError_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: PartitionsBackfillSelectorQuery_partitionSetOrError_PythonError_errorChain_error;
 }
 
 export interface PartitionsBackfillSelectorQuery_partitionSetOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: PartitionsBackfillSelectorQuery_partitionSetOrError_PythonError_errorChain[];
+  causes: PartitionsBackfillSelectorQuery_partitionSetOrError_PythonError_causes[];
 }
 
 export type PartitionsBackfillSelectorQuery_partitionSetOrError = PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet | PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSetNotFoundError | PartitionsBackfillSelectorQuery_partitionSetOrError_PythonError;
@@ -139,23 +127,17 @@ export interface PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_Pipelin
   message: string;
 }
 
-export interface PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PythonError_errorChain_error {
+export interface PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PythonError_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PythonError_errorChain_error;
 }
 
 export interface PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PythonError_errorChain[];
+  causes: PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PythonError_causes[];
 }
 
 export type PartitionsBackfillSelectorQuery_pipelineSnapshotOrError = PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot | PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PipelineNotFoundError | PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundError | PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PythonError;

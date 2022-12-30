@@ -4,10 +4,19 @@ import {ProgressBar} from '@blueprintjs/core';
 import {Button, Colors, DialogBody, DialogFooter, Dialog, Group, Icon, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {LaunchPipelineReexecutionMutation, ReexecutionStrategy} from '../graphql/graphql';
+import {ReexecutionStrategy} from '../types/globalTypes';
 
 import {NavigationBlock} from './NavitationBlock';
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION} from './RunUtils';
+import {
+  LaunchPipelineReexecution,
+  LaunchPipelineReexecutionVariables,
+  LaunchPipelineReexecution_launchPipelineReexecution_InvalidStepError,
+  LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError,
+  LaunchPipelineReexecution_launchPipelineReexecution_PythonError,
+  LaunchPipelineReexecution_launchPipelineReexecution_RunConfigValidationInvalid,
+  LaunchPipelineReexecution_launchPipelineReexecution_InvalidSubsetError,
+} from './types/LaunchPipelineReexecution';
 
 export interface Props {
   isOpen: boolean;
@@ -17,14 +26,13 @@ export interface Props {
   reexecutionStrategy: ReexecutionStrategy;
 }
 
-const refineToError = (data: LaunchPipelineReexecutionMutation | null | undefined) => {
-  if (data?.launchPipelineReexecution.__typename === 'LaunchRunSuccess') {
-    throw new Error('Not an error!');
-  }
-  return data?.launchPipelineReexecution;
-};
-
-type Error = ReturnType<typeof refineToError>;
+type Error =
+  | LaunchPipelineReexecution_launchPipelineReexecution_InvalidStepError
+  | LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError
+  | LaunchPipelineReexecution_launchPipelineReexecution_RunConfigValidationInvalid
+  | LaunchPipelineReexecution_launchPipelineReexecution_InvalidSubsetError
+  | LaunchPipelineReexecution_launchPipelineReexecution_PythonError
+  | undefined;
 
 const errorText = (error: Error) => {
   if (!error) {
@@ -147,7 +155,9 @@ export const ReexecutionDialog = (props: Props) => {
     }
   }, [isOpen, selectedRuns]);
 
-  const [reexecute] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
+  const [reexecute] = useMutation<LaunchPipelineReexecution, LaunchPipelineReexecutionVariables>(
+    LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+  );
 
   const mutate = async () => {
     dispatch({type: 'start'});
@@ -167,7 +177,7 @@ export const ReexecutionDialog = (props: Props) => {
       if (data?.launchPipelineReexecution.__typename === 'LaunchRunSuccess') {
         dispatch({type: 'reexecution-success'});
       } else {
-        dispatch({type: 'reexecution-error', id: runId, error: refineToError(data)});
+        dispatch({type: 'reexecution-error', id: runId, error: data?.launchPipelineReexecution});
       }
     }
 

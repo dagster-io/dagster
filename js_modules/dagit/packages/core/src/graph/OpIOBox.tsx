@@ -3,11 +3,14 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {DEFAULT_RESULT_NAME, titleOfIO} from '../app/titleOfIO';
-import {OpNodeInputDefinitionFragment, OpNodeOutputDefinitionFragment} from '../graphql/graphql';
 
 import {Edge, isHighlighted, position} from './common';
 import {OpLayoutIO} from './layout';
-import {OpNodeDefinitionFragment} from './types/OpNodeDefinitionFragment';
+import {
+  OpNodeDefinitionFragment,
+  OpNodeDefinitionFragment_SolidDefinition_inputDefinitions,
+  OpNodeDefinitionFragment_SolidDefinition_outputDefinitions,
+} from './types/OpNodeDefinitionFragment';
 import {OpNodeInvocationFragment} from './types/OpNodeInvocationFragment';
 
 export const PARENT_IN = 'PARENT_IN';
@@ -21,7 +24,9 @@ interface OpIORenderMetadata {
 
 interface OpIOBoxProps extends OpIORenderMetadata {
   colorKey: 'input' | 'output';
-  item: OpNodeInputDefinitionFragment | OpNodeOutputDefinitionFragment;
+  item:
+    | OpNodeDefinitionFragment_SolidDefinition_inputDefinitions
+    | OpNodeDefinitionFragment_SolidDefinition_outputDefinitions;
   layoutInfo: OpLayoutIO | undefined;
 
   // Passed through from Solid props
@@ -126,7 +131,9 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
 
 export function metadataForCompositeParentIO(
   parentDefinition: OpNodeDefinitionFragment,
-  item: OpNodeInputDefinitionFragment | OpNodeOutputDefinitionFragment,
+  item:
+    | OpNodeDefinitionFragment_SolidDefinition_inputDefinitions
+    | OpNodeDefinitionFragment_SolidDefinition_outputDefinitions,
 ): OpIORenderMetadata {
   const edges: Edge[] = [];
   let title = `${item.name}: ${item.type.displayName}`;
@@ -170,7 +177,9 @@ export function metadataForCompositeParentIO(
 }
 
 export function metadataForIO(
-  item: OpNodeInputDefinitionFragment | OpNodeOutputDefinitionFragment,
+  item:
+    | OpNodeDefinitionFragment_SolidDefinition_inputDefinitions
+    | OpNodeDefinitionFragment_SolidDefinition_outputDefinitions,
   invocation?: OpNodeInvocationFragment,
 ): OpIORenderMetadata {
   const edges: Edge[] = [];

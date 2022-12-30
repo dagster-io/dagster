@@ -20,7 +20,7 @@ from dagster_graphql.schema.solids import (
 
 from dagster import AssetKey
 from dagster import _check as check
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.logical_version import (
     DEFAULT_LOGICAL_VERSION,
     extract_logical_version_from_entry,
@@ -517,7 +517,9 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_freshnessInfo(self, graphene_info) -> Optional[GrapheneAssetFreshnessInfo]:
         if self._external_asset_node.freshness_policy:
-            asset_graph = ExternalAssetGraph.from_external_repository(self._external_repository)
+            asset_graph = AssetGraph.from_external_assets(
+                self._external_repository.get_external_asset_nodes()
+            )
             return get_freshness_info(
                 asset_key=self._external_asset_node.asset_key,
                 freshness_policy=self._external_asset_node.freshness_policy,

@@ -134,10 +134,7 @@ def test_construct_log_string_with_error_raise_from():
     error = None
     try:
         try:
-            try:
-                raise ValueError("inner error")
-            except ValueError:
-                raise ValueError("middle error")
+            raise ValueError("inner error")
         except ValueError as e:
             raise ValueError("outer error") from e
     except ValueError:
@@ -157,21 +154,9 @@ def test_construct_log_string_with_error_raise_from():
 
     assert log_string.startswith(expected_start)
 
-    expected_cause_substr = textwrap.dedent(
+    expected_substr = textwrap.dedent(
         """
         The above exception was caused by the following exception:
-        ValueError: middle error
-
-        Stack Trace:
-          File "
-        """
-    ).strip()
-
-    assert expected_cause_substr in log_string
-
-    expected_context_substr = textwrap.dedent(
-        """
-        The above exception occurred during handling of the following exception:
         ValueError: inner error
 
         Stack Trace:
@@ -179,7 +164,7 @@ def test_construct_log_string_with_error_raise_from():
         """
     ).strip()
 
-    assert expected_context_substr in log_string
+    assert expected_substr in log_string
 
 
 @pytest.mark.parametrize("use_handler", [True, False])

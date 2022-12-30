@@ -591,15 +591,5 @@
     "source": "/dagster-cloud/developing-testing/environment-variables",
     "destination": "/dagster-cloud/developing-testing/environment-variables-and-secrets",
     "statusCode": 302
-  },
-  {
-    "source": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment",
-    "destination": "/dagster-cloud/getting-started",
-    "statusCode": 302
-  },
-  {
-    "source": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment",
-    "destination": "/dagster-cloud/getting-started",
-    "statusCode": 302
   }
 ]

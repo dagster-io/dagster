@@ -1,14 +1,14 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Icon} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
-import {graphql} from '../graphql';
+import {RunningBackfillsNoticeQuery} from './types/RunningBackfillsNoticeQuery';
 
 export const RunningBackfillsNotice: React.FC<{partitionSetName: string}> = ({
   partitionSetName,
 }) => {
-  const {data} = useQuery(RUNNING_BACKFILLS_NOTICE_QUERY, {
+  const {data} = useQuery<RunningBackfillsNoticeQuery>(RUNNING_BACKFILLS_NOTICE_QUERY, {
     fetchPolicy: 'cache-and-network',
   });
 
@@ -38,7 +38,7 @@ export const RunningBackfillsNotice: React.FC<{partitionSetName: string}> = ({
   );
 };
 
-const RUNNING_BACKFILLS_NOTICE_QUERY = graphql(`
+const RUNNING_BACKFILLS_NOTICE_QUERY = gql`
   query RunningBackfillsNoticeQuery {
     partitionBackfillsOrError(status: REQUESTED) {
       __typename
@@ -50,4 +50,4 @@ const RUNNING_BACKFILLS_NOTICE_QUERY = graphql(`
       }
     }
   }
-`);
+`;

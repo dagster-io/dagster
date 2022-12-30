@@ -38,23 +38,17 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_runs {
   updateTime: number | null;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error_errorChain_error {
+export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error_errorChain_error;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error_errorChain[];
+  causes: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error_causes[];
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks {
@@ -114,44 +108,32 @@ export interface ScheduleRootQuery_scheduleOrError_ScheduleNotFoundError {
   message: string;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_PythonError_errorChain_error {
+export interface ScheduleRootQuery_scheduleOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface ScheduleRootQuery_scheduleOrError_PythonError_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: ScheduleRootQuery_scheduleOrError_PythonError_errorChain_error;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: ScheduleRootQuery_scheduleOrError_PythonError_errorChain[];
+  causes: ScheduleRootQuery_scheduleOrError_PythonError_causes[];
 }
 
 export type ScheduleRootQuery_scheduleOrError = ScheduleRootQuery_scheduleOrError_Schedule | ScheduleRootQuery_scheduleOrError_ScheduleNotFoundError | ScheduleRootQuery_scheduleOrError_PythonError;
 
-export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_errorChain_error {
+export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_errorChain_error;
 }
 
 export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_errorChain[];
+  causes: ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes[];
 }
 
 export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses {

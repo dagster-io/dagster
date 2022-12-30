@@ -32,23 +32,17 @@ export interface InstigationStateFragment_runs {
   updateTime: number | null;
 }
 
-export interface InstigationStateFragment_ticks_error_errorChain_error {
+export interface InstigationStateFragment_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface InstigationStateFragment_ticks_error_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: InstigationStateFragment_ticks_error_errorChain_error;
 }
 
 export interface InstigationStateFragment_ticks_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: InstigationStateFragment_ticks_error_errorChain[];
+  causes: InstigationStateFragment_ticks_error_causes[];
 }
 
 export interface InstigationStateFragment_ticks {

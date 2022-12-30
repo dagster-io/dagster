@@ -78,7 +78,7 @@ def _check_invocation_requirements(
             "Use the `build_init_resource_context` function to create a context with config."
         )
 
-    resource_config = resolve_bound_config(
+    resource_config = _resolve_bound_config(
         init_context.resource_config if init_context else None, resource_def
     )
 
@@ -110,7 +110,7 @@ def _get_friendly_string(configurable_def: ConfigurableDefinition) -> str:
     check.failed(f"Invalid definition type {configurable_def}")
 
 
-def resolve_bound_config(config: Any, configurable_def: ConfigurableDefinition) -> Any:
+def _resolve_bound_config(config: Any, configurable_def: ConfigurableDefinition) -> Any:
     from dagster._config import process_config
 
     outer_config_shape = Shape({"config": configurable_def.get_config_field()})

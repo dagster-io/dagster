@@ -191,17 +191,17 @@ def define_asset_job(
     executor_def: Optional["ExecutorDefinition"] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will materialize a selection of assets. This will only be
-    resolved to a JobDefinition once placed in a code location.
+    resolved to a JobDefinition once placed in a repository.
 
     Args:
         name (str):
             The name for the job.
         selection (Union[str, Sequence[str], AssetSelection]):
-            A selection over the set of Assets available in your code location. This can be a string
+            A selection over the set of Assets available on your repository. This can be a string
             such as "my_asset*", a list of such strings (representing a union of these selections),
             or an AssetSelection object.
 
-            This selection will be resolved to a set of Assets once the code location is loaded with a
+            This selection will be resolved to a set of Assets once the repository is loaded with a
             set of AssetsDefinitions.
         config:
             Describes how the Job is parameterized at runtime.
@@ -234,38 +234,40 @@ def define_asset_job(
 
 
     Returns:
-        UnresolvedAssetJobDefinition: The job, which can be placed inside a code location.
+        UnresolvedAssetJobDefinition: The job, which can be placed inside a repository.
 
     Examples:
 
         .. code-block:: python
 
-            # A job that targets all assets in the code location:
+            # A job that targets all assets in the repository:
             @asset
             def asset1():
                 ...
 
-            defs = Definitions(
-                assets=[asset1],
-                jobs=[define_asset_job("all_assets")],
-            )
+            @repository
+            def repo():
+                return [asset1, define_asset_job("all_assets")]
 
             # A job that targets all the assets in a group:
-            defs = Definitions(
-                assets=assets,
-                jobs=[define_asset_job("marketing_job", selection=AssetSelection.groups("marketing"))],
-            )
+            @repository
+            def repo():
+                return [
+                    assets,
+                    define_asset_job("marketing_job", selection=AssetSelection.groups("marketing")),
+                ]
 
             # Resources are supplied to the assets, not the job:
             @asset(required_resource_keys={"slack_client"})
             def asset1():
                 ...
 
-            defs = Definitions(
-                assets=[asset1],
-                jobs=[define_asset_job("all_assets")],
-                resources={"slack_client": prod_slack_client},
-            )
+            @repository
+            def prod_repo():
+                return [
+                    *with_resources([asset1], resource_defs={"slack_client": prod_slack_client}),
+                    define_asset_job("all_assets"),
+                ]
     """
     from dagster._core.definitions import AssetSelection
 

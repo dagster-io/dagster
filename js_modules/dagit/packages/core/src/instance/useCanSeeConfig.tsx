@@ -1,16 +1,16 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 
-import {graphql} from '../graphql';
+import {InstanceConfigHasInfo} from './types/InstanceConfigHasInfo';
 
 export const useCanSeeConfig = () => {
-  const {data} = useQuery(INSTANCE_CONFIG_HAS_INFO);
+  const {data} = useQuery<InstanceConfigHasInfo>(INSTANCE_CONFIG_HAS_INFO);
   return !!data?.instance.hasInfo;
 };
 
-const INSTANCE_CONFIG_HAS_INFO = graphql(`
+const INSTANCE_CONFIG_HAS_INFO = gql`
   query InstanceConfigHasInfo {
     instance {
       hasInfo
     }
   }
-`);
+`;

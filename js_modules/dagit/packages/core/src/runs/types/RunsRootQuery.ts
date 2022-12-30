@@ -59,23 +59,17 @@ export interface RunsRootQuery_pipelineRunsOrError_InvalidPipelineRunsFilterErro
   message: string;
 }
 
-export interface RunsRootQuery_pipelineRunsOrError_PythonError_errorChain_error {
+export interface RunsRootQuery_pipelineRunsOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface RunsRootQuery_pipelineRunsOrError_PythonError_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: RunsRootQuery_pipelineRunsOrError_PythonError_errorChain_error;
 }
 
 export interface RunsRootQuery_pipelineRunsOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: RunsRootQuery_pipelineRunsOrError_PythonError_errorChain[];
+  causes: RunsRootQuery_pipelineRunsOrError_PythonError_causes[];
 }
 
 export type RunsRootQuery_pipelineRunsOrError = RunsRootQuery_pipelineRunsOrError_Runs | RunsRootQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | RunsRootQuery_pipelineRunsOrError_PythonError;

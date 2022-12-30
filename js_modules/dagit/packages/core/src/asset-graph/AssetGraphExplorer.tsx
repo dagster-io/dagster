@@ -13,7 +13,6 @@ import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection} from '../graph/common';
-import {AssetNodeForGraphQueryFragment} from '../graphql/graphql';
 import {
   GraphExplorerOptions,
   OptionsOverlay,
@@ -39,11 +38,12 @@ import {AssetNodeLink} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {GraphData, graphHasCycles, LiveData, GraphNode, tokenForAssetKey} from './Utils';
 import {AssetGraphLayout} from './layout';
+import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
 import {AssetGraphFetchScope, useAssetGraphData} from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {useLiveDataForAssetKeys} from './useLiveDataForAssetKeys';
 
-type AssetNode = AssetNodeForGraphQueryFragment;
+type AssetNode = AssetGraphQuery_assetNodes;
 
 interface Props {
   options: GraphExplorerOptions;

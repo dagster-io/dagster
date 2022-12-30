@@ -1,12 +1,8 @@
-import os
-import tempfile
-
 import pytest
 import yaml
 from dagster_aws.s3.compute_log_manager import S3ComputeLogManager
 from dagster_azure.blob.compute_log_manager import AzureBlobComputeLogManager
 from dagster_gcp.gcs.compute_log_manager import GCSComputeLogManager
-from dagster_k8s import K8sRunLauncher
 from kubernetes.client import models
 from schema.charts.dagster.subschema.compute_log_manager import (
     AzureBlobComputeLogManager as AzureBlobComputeLogManagerModel,
@@ -37,7 +33,6 @@ from schema.charts.dagster.subschema.retention import Retention, TickRetention, 
 from schema.charts.dagster.subschema.run_launcher import (
     CeleryK8sRunLauncherConfig,
     K8sRunLauncherConfig,
-    RunK8sConfig,
     RunLauncher,
     RunLauncherConfig,
     RunLauncherType,
@@ -46,11 +41,8 @@ from schema.charts.dagster.subschema.telemetry import Telemetry
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.utils.helm_template import HelmTemplate
 
-from dagster._config import process_config, resolve_to_config_type
 from dagster._core.instance.config import retention_config_schema
-from dagster._core.instance.ref import InstanceRef
 from dagster._core.run_coordinator import QueuedRunCoordinator
-from dagster._core.test_utils import environ
 
 
 def to_camel_case(s: str) -> str:
@@ -237,23 +229,6 @@ def test_k8s_run_launcher_resources(template: HelmTemplate):
     assert run_launcher_config["config"]["resources"] == resources
 
 
-def _check_valid_run_launcher_yaml(dagster_config):
-    with environ(
-        {
-            "DAGSTER_PG_PASSWORD": "hunter12",
-        }
-    ):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            with open(os.path.join(temp_dir, "dagster.yaml"), "w", encoding="utf8") as fd:
-                yaml.dump(dagster_config, fd, default_flow_style=False)
-                run_launcher_data = InstanceRef.from_dir(temp_dir).run_launcher_data
-                process_result = process_config(
-                    resolve_to_config_type(K8sRunLauncher.config_type()),
-                    run_launcher_data.config_dict,
-                )
-                assert process_result.success, str(process_result.errors)
-
-
 def test_k8s_run_launcher_scheduler_name(template: HelmTemplate):
 
     helm_values = DagsterHelmValues.construct(
@@ -275,12 +250,9 @@ def test_k8s_run_launcher_scheduler_name(template: HelmTemplate):
     )
     configmaps = template.render(helm_values)
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
-
-    _check_valid_run_launcher_yaml(instance)
-
     run_launcher_config = instance["run_launcher"]
 
-    assert run_launcher_config["config"]["scheduler_name"] == "my-scheduler"
+    assert run_launcher_config["config"]["schedulerName"] == "my-scheduler"
 
 
 def test_k8s_run_launcher_security_context(template: HelmTemplate):
@@ -304,68 +276,9 @@ def test_k8s_run_launcher_security_context(template: HelmTemplate):
     )
     configmaps = template.render(helm_values)
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
-
-    _check_valid_run_launcher_yaml(instance)
-
     run_launcher_config = instance["run_launcher"]
 
-    assert run_launcher_config["config"]["security_context"] == sacred_rites_of_debugging
-
-
-def test_k8s_run_launcher_raw_k8s_config(template: HelmTemplate):
-
-    container_config = {
-        "resources": {
-            "requests": {"cpu": "250m", "memory": "64Mi"},
-            "limits": {"cpu": "500m", "memory": "2560Mi"},
-        }
-    }
-
-    pod_template_spec_metadata = {"namespace": "my_pod_namespace"}
-
-    pod_spec_config = {"dns_policy": "value"}
-
-    job_metadata = {"namespace": "my_job_value"}
-
-    job_spec_config = {"backoff_limit": 120}
-
-    helm_values = DagsterHelmValues.construct(
-        runLauncher=RunLauncher.construct(
-            type=RunLauncherType.K8S,
-            config=RunLauncherConfig.construct(
-                k8sRunLauncher=K8sRunLauncherConfig.construct(
-                    imagePullPolicy="Always",
-                    loadInclusterConfig=True,
-                    envConfigMaps=[],
-                    envSecrets=[],
-                    envVars=[],
-                    volumeMounts=[],
-                    volumes=[],
-                    runK8sConfig=RunK8sConfig(
-                        containerConfig=container_config,
-                        podSpecConfig=pod_spec_config,
-                        podTemplateSpecMetadata=pod_template_spec_metadata,
-                        jobMetadata=job_metadata,
-                        jobSpecConfig=job_spec_config,
-                    ),
-                )
-            ),
-        )
-    )
-    configmaps = template.render(helm_values)
-    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
-
-    _check_valid_run_launcher_yaml(instance)
-
-    run_launcher_config = instance["run_launcher"]
-
-    assert run_launcher_config["config"]["run_k8s_config"] == {
-        "container_config": container_config,
-        "pod_spec_config": pod_spec_config,
-        "pod_template_spec_metadata": pod_template_spec_metadata,
-        "job_metadata": job_metadata,
-        "job_spec_config": job_spec_config,
-    }
+    assert run_launcher_config["config"]["securityContext"] == sacred_rites_of_debugging
 
 
 def test_celery_k8s_run_launcher_config(template: HelmTemplate):
@@ -671,8 +584,6 @@ def test_s3_compute_log_manager(template: HelmTemplate):
     endpoint_url = "endpoint.com"
     skip_empty_files = True
     upload_interval = 30
-    upload_extra_args = {"ACL": "public-read"}
-
     helm_values = DagsterHelmValues.construct(
         computeLogManager=ComputeLogManager.construct(
             type=ComputeLogManagerType.S3,
@@ -687,7 +598,6 @@ def test_s3_compute_log_manager(template: HelmTemplate):
                     endpointUrl=endpoint_url,
                     skipEmptyFiles=skip_empty_files,
                     uploadInterval=upload_interval,
-                    uploadExtraArgs=upload_extra_args,
                 )
             ),
         )
@@ -709,7 +619,6 @@ def test_s3_compute_log_manager(template: HelmTemplate):
         "endpoint_url": endpoint_url,
         "skip_empty_files": skip_empty_files,
         "upload_interval": upload_interval,
-        "upload_extra_args": upload_extra_args,
     }
 
     # Test all config fields in configurable class

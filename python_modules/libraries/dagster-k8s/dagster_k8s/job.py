@@ -362,11 +362,6 @@ class DagsterK8sJobConfig(
                     is_required=False,
                     description="Whether the launched Kubernetes Jobs and Pods should fail if the Dagster run fails",
                 ),
-                "run_k8s_config": Field(
-                    USER_DEFINED_K8S_CONFIG_SCHEMA,
-                    is_required=False,
-                    description="Raw Kubernetes configuration for launched runs.",
-                ),
             },
         )
 
@@ -507,22 +502,6 @@ class DagsterK8sJobConfig(
                     description="The namespace into which to launch Kubernetes resources. Note that any "
                     "other required resources (such as the service account) must be "
                     "present in this namespace.",
-                ),
-                "run_k8s_config": Field(
-                    USER_DEFINED_K8S_CONFIG_SCHEMA,
-                    is_required=False,
-                    description="Raw Kubernetes configuration for launched runs.",
-                ),
-                "server_k8s_config": Field(
-                    Shape(
-                        {
-                            "container_config": Permissive(),
-                            "pod_spec_config": Permissive(),
-                            "pod_template_spec_metadata": Permissive(),
-                        }
-                    ),
-                    is_required=False,
-                    description="Raw Kubernetes configuration for launched code servers.",
                 ),
             },
         )

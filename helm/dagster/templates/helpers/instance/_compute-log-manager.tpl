@@ -97,10 +97,6 @@ config:
   {{- if $s3ComputeLogManagerConfig.uploadInterval }}
   upload_interval: {{ $s3ComputeLogManagerConfig.uploadInterval }}
   {{- end }}
-
-  {{- if $s3ComputeLogManagerConfig.uploadExtraArgs }}
-  upload_extra_args: {{ $s3ComputeLogManagerConfig.uploadExtraArgs | toYaml | nindent 4 }}
-  {{- end }}
 {{- end }}
 
 {{- define "dagsterYaml.computeLogManager.custom" }}

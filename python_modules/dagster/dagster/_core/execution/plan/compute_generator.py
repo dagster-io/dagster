@@ -1,23 +1,10 @@
 import inspect
 import warnings
 from functools import wraps
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Generator,
-    Iterator,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
+from typing import Any, Generator, Iterator, Sequence, Tuple, Union, cast
 
 from typing_extensions import get_args
 
-from dagster._config.structured_config import Config
 from dagster._core.definitions import (
     AssetMaterialization,
     DynamicOutput,
@@ -44,8 +31,6 @@ def create_solid_compute_wrapper(solid_def: OpDefinition):
     input_defs = solid_def.input_defs
     output_defs = solid_def.output_defs
     context_arg_provided = compute_fn.has_context_arg()
-    config_arg_cls = compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None
-    resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
 
     input_names = [
         input_def.name
@@ -54,7 +39,7 @@ def create_solid_compute_wrapper(solid_def: OpDefinition):
     ]
 
     @wraps(fn)
-    def compute(context: OpExecutionContext, input_defs) -> Generator[Output, None, None]:
+    def compute(context, input_defs) -> Generator[Output, None, None]:
         kwargs = {}
         for input_name in input_names:
             kwargs[input_name] = input_defs[input_name]
@@ -65,9 +50,7 @@ def create_solid_compute_wrapper(solid_def: OpDefinition):
             or inspect.iscoroutinefunction(fn)
         ):
             # safe to execute the function, as doing so will not immediately execute user code
-            result = invoke_compute_fn(
-                fn, context, kwargs, context_arg_provided, config_arg_cls, resource_arg_mapping
-            )
+            result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
             if inspect.iscoroutine(result):
                 return _coerce_async_solid_to_async_gen(result, context, output_defs)
             # already a generator
@@ -76,13 +59,7 @@ def create_solid_compute_wrapper(solid_def: OpDefinition):
             # we have a regular function, do not execute it before we are in an iterator
             # (as we want all potential failures to happen inside iterators)
             return _coerce_solid_compute_fn_to_iterator(
-                fn,
-                output_defs,
-                context,
-                context_arg_provided,
-                kwargs,
-                config_arg_cls,
-                resource_arg_mapping,
+                fn, output_defs, context, context_arg_provided, kwargs
             )
 
     return compute
@@ -94,33 +71,8 @@ async def _coerce_async_solid_to_async_gen(awaitable, context, output_defs):
         yield event
 
 
-def invoke_compute_fn(
-    fn: Callable,
-    context: OpExecutionContext,
-    kwargs: Dict[str, Any],
-    context_arg_provided: bool,
-    config_arg_cls: Optional[Type[Config]],
-    resource_args: Optional[Dict[str, str]] = None,
-) -> Any:
-    args_to_pass = kwargs
-    if config_arg_cls:
-        # config_arg_cls is either a Config class or a primitive type
-        if issubclass(config_arg_cls, Config):
-            args_to_pass["config"] = config_arg_cls(**context.op_config)
-        else:
-            args_to_pass["config"] = context.op_config
-    if resource_args:
-        for resource_name, arg_name in resource_args.items():
-            args_to_pass[arg_name] = getattr(context.resources, resource_name)
-    return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
-
-
-def _coerce_solid_compute_fn_to_iterator(
-    fn, output_defs, context, context_arg_provided, kwargs, config_arg_class, resource_arg_mapping
-):
-    result = invoke_compute_fn(
-        fn, context, kwargs, context_arg_provided, config_arg_class, resource_arg_mapping
-    )
+def _coerce_solid_compute_fn_to_iterator(fn, output_defs, context, context_arg_provided, kwargs):
+    result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
     for event in validate_and_coerce_op_result_to_iterator(result, context, output_defs):
         yield event
 

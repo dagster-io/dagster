@@ -27,23 +27,17 @@ export interface WorkspaceSchedulesQuery_repositoryOrError_Repository {
   schedules: WorkspaceSchedulesQuery_repositoryOrError_Repository_schedules[];
 }
 
-export interface WorkspaceSchedulesQuery_repositoryOrError_PythonError_errorChain_error {
+export interface WorkspaceSchedulesQuery_repositoryOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface WorkspaceSchedulesQuery_repositoryOrError_PythonError_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: WorkspaceSchedulesQuery_repositoryOrError_PythonError_errorChain_error;
 }
 
 export interface WorkspaceSchedulesQuery_repositoryOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: WorkspaceSchedulesQuery_repositoryOrError_PythonError_errorChain[];
+  causes: WorkspaceSchedulesQuery_repositoryOrError_PythonError_causes[];
 }
 
 export type WorkspaceSchedulesQuery_repositoryOrError = WorkspaceSchedulesQuery_repositoryOrError_RepositoryNotFoundError | WorkspaceSchedulesQuery_repositoryOrError_Repository | WorkspaceSchedulesQuery_repositoryOrError_PythonError;

@@ -79,7 +79,6 @@
     "children": [
       {
         "title": "Assets",
-        "path": "/concepts/assets/software-defined-assets",
         "children": [
           {
             "title": "Software-Defined Assets",
@@ -105,7 +104,6 @@
       },
       {
         "title": "Ops",
-        "path": "/concepts/ops-jobs-graphs/ops",
         "children": [
           {
             "title": "Ops",
@@ -127,7 +125,6 @@
       },
       {
         "title": "Graphs",
-        "path": "/concepts/ops-jobs-graphs/graphs",
         "children": [
           {
             "title": "Graphs",
@@ -145,7 +142,6 @@
       },
       {
         "title": "Jobs",
-        "path": "/concepts/ops-jobs-graphs/jobs",
         "children": [
           {
             "title": "Jobs",
@@ -188,7 +184,6 @@
       },
       {
         "title": "IO Management",
-        "path": "/concepts/io-management/io-managers",
         "children": [
           {
             "title": "IO Managers",
@@ -202,7 +197,6 @@
       },
       {
         "title": "Configuration",
-        "path": "/concepts/configuration/config-schema",
         "children": [
           {
             "title": "Run Configuration",
@@ -216,11 +210,15 @@
       },
       {
         "title": "Resources",
-        "path": "/concepts/resources"
+        "children": [
+          {
+            "title": "Resources",
+            "path": "/concepts/resources"
+          }
+        ]
       },
       {
         "title": "Code locations",
-        "path": "/concepts/code-locations",
         "children": [
           {
             "title": "Code locations",
@@ -251,7 +249,12 @@
       },
       {
         "title": "Dagster Types",
-        "path": "/concepts/types"
+        "children": [
+          {
+            "title": "Dagster Types",
+            "path": "/concepts/types"
+          }
+        ]
       },
       {
         "title": "Logging",
@@ -268,7 +271,12 @@
       },
       {
         "title": "Testing",
-        "path": "/concepts/testing"
+        "children": [
+          {
+            "title": "Testing",
+            "path": "/concepts/testing"
+          }
+        ]
       }
     ]
   },
@@ -331,7 +339,21 @@
         "children": [
           {
             "title": "Getting started",
-            "path": "/dagster-cloud/getting-started"
+            "path": "/dagster-cloud/getting-started",
+            "children": [
+              {
+                "title": "Serverless Deployment",
+                "path": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment"
+              },
+              {
+                "title": "Hybrid Deployment",
+                "path": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment"
+              },
+              {
+                "title": "Environment variables and secrets",
+                "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets"
+              }
+            ]
           },
           {
             "title": "Deployment types",

@@ -529,26 +529,3 @@ def test_time_window_partiitons_deserialize_backwards_compatible():
     deserialized = partitions_def.deserialize_subset(serialized)
     assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
     assert "2015-01-02" in deserialized
-
-
-def test_time_window_partitions_contains():
-    partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
-    keys = ["2015-01-06", "2015-01-07", "2015-01-08", "2015-01-10"]
-    subset = partitions_def.empty_subset().with_partition_keys(keys)
-    for key in keys:
-        assert key in subset
-
-    assert "2015-01-05" not in subset
-    assert "2015-01-09" not in subset
-    assert "2015-01-11" not in subset
-
-
-def test_unique_identifier():
-    assert (
-        DailyPartitionsDefinition(start_date="2015-01-01").serializable_unique_identifier
-        != DailyPartitionsDefinition(start_date="2015-01-02").serializable_unique_identifier
-    )
-    assert (
-        DailyPartitionsDefinition(start_date="2015-01-01").serializable_unique_identifier
-        == DailyPartitionsDefinition(start_date="2015-01-01").serializable_unique_identifier
-    )

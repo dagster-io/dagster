@@ -62,5 +62,5 @@ def test_execute_queued_run_on_celery_k8s(  # pylint: disable=redefined-outer-na
     logs = dagster_instance_for_daemon.all_logs(run_id)
     assert_events_in_order(
         logs,
-        ["PIPELINE_ENQUEUED", "PIPELINE_STARTING", "PIPELINE_SUCCESS"],
+        ["PIPELINE_ENQUEUED", "PIPELINE_DEQUEUED", "PIPELINE_STARTING", "PIPELINE_SUCCESS"],
     )

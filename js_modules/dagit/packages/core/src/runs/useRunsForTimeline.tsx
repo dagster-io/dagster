@@ -1,8 +1,8 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {graphql} from '../graphql';
+import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
 import {InstigationStatus, RunsFilter, RunStatus} from '../types/globalTypes';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -11,7 +11,9 @@ import {workspacePipelinePath} from '../workspace/workspacePath';
 
 import {doneStatuses} from './RunStatuses';
 import {TimelineJob, TimelineRun} from './RunTimeline';
+import {RUN_TIME_FRAGMENT} from './RunUtils';
 import {overlap} from './batchRunsForTimeline';
+import {RunTimelineQuery, RunTimelineQueryVariables} from './types/RunTimelineQuery';
 
 export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilter = {}) => {
   const [start, end] = range;
@@ -19,7 +21,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
   const startSec = start / 1000.0;
   const endSec = end / 1000.0;
 
-  const queryData = useQuery(RUN_TIMELINE_QUERY, {
+  const queryData = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(RUN_TIMELINE_QUERY, {
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
     variables: {
@@ -182,7 +184,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
 export const makeJobKey = (repoAddress: RepoAddress, jobName: string) =>
   `${jobName}-${repoAddressAsHumanString(repoAddress)}`;
 
-const RUN_TIMELINE_QUERY = graphql(`
+const RUN_TIMELINE_QUERY = gql`
   query RunTimelineQuery(
     $inProgressFilter: RunsFilter!
     $terminatedFilter: RunsFilter!
@@ -256,4 +258,6 @@ const RUN_TIMELINE_QUERY = graphql(`
       }
     }
   }
-`);
+  ${RUN_TIME_FRAGMENT}
+  ${SCHEDULE_FUTURE_TICKS_FRAGMENT}
+`;

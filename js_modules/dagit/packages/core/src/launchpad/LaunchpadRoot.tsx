@@ -1,20 +1,25 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {CodeMirrorInDialogStyle, Dialog, DialogHeader} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {usePermissions} from '../app/Permissions';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useTrackPageView} from '../app/analytics';
-import {graphql} from '../graphql';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
+import {
+  CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
+  CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT,
+} from './ConfigEditorConfigPicker';
 import {LaunchpadSessionError} from './LaunchpadSessionError';
 import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
 import {LaunchpadTransientSessionContainer} from './LaunchpadTransientSessionContainer';
+import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadRootQuery';
 
 const LaunchpadStoredSessionsContainer = React.lazy(
   () => import('./LaunchpadStoredSessionsContainer'),
@@ -99,11 +104,14 @@ const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
 
   const {name: repositoryName, location: repositoryLocationName} = repoAddress;
 
-  const result = useQuery(PIPELINE_EXECUTION_ROOT_QUERY, {
-    variables: {repositoryName, repositoryLocationName, pipelineName},
-    fetchPolicy: 'cache-and-network',
-    partialRefetch: true,
-  });
+  const result = useQuery<LaunchpadRootQuery, LaunchpadRootQueryVariables>(
+    PIPELINE_EXECUTION_ROOT_QUERY,
+    {
+      variables: {repositoryName, repositoryLocationName, pipelineName},
+      fetchPolicy: 'cache-and-network',
+      partialRefetch: true,
+    },
+  );
 
   const pipelineOrError = result?.data?.pipelineOrError;
   const partitionSetsOrError = result?.data?.partitionSetsOrError;
@@ -184,7 +192,29 @@ const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
   }
 };
 
-const PIPELINE_EXECUTION_ROOT_QUERY = graphql(`
+const EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT = gql`
+  fragment LaunchpadSessionPipelineFragment on Pipeline {
+    id
+    isJob
+    isAssetJob
+    ...ConfigEditorGeneratorPipelineFragment
+    modes {
+      id
+      name
+      description
+    }
+  }
+  ${CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT}
+`;
+
+const EXECUTION_SESSION_CONTAINER_PARTITION_SETS_FRAGMENT = gql`
+  fragment LaunchpadSessionPartitionSetsFragment on PartitionSets {
+    ...ConfigEditorGeneratorPartitionSetsFragment
+  }
+  ${CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT}
+`;
+
+const PIPELINE_EXECUTION_ROOT_QUERY = gql`
   query LaunchpadRootQuery(
     $pipelineName: String!
     $repositoryName: String!
@@ -222,19 +252,7 @@ const PIPELINE_EXECUTION_ROOT_QUERY = graphql(`
     }
   }
 
-  fragment LaunchpadSessionPartitionSetsFragment on PartitionSets {
-    ...ConfigEditorGeneratorPartitionSetsFragment
-  }
-
-  fragment LaunchpadSessionPipelineFragment on Pipeline {
-    id
-    isJob
-    isAssetJob
-    ...ConfigEditorGeneratorPipelineFragment
-    modes {
-      id
-      name
-      description
-    }
-  }
-`);
+  ${EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT}
+  ${EXECUTION_SESSION_CONTAINER_PARTITION_SETS_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+`;

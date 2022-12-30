@@ -1,20 +1,21 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, PageHeader, Heading, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {graphql} from '../graphql';
 
 import {DaemonList} from './DaemonList';
+import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
+import {InstanceHealthQuery} from './types/InstanceHealthQuery';
 
 export const InstanceHealthPage = () => {
   useTrackPageView();
 
   const {pageTitle} = React.useContext(InstancePageContext);
-  const queryData = useQuery(INSTANCE_HEALTH_QUERY, {
+  const queryData = useQuery<InstanceHealthQuery>(INSTANCE_HEALTH_QUERY, {
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
   });
@@ -52,10 +53,12 @@ export const InstanceHealthPage = () => {
 // eslint-disable-next-line import/no-default-export
 export default InstanceHealthPage;
 
-const INSTANCE_HEALTH_QUERY = graphql(`
+const INSTANCE_HEALTH_QUERY = gql`
   query InstanceHealthQuery {
     instance {
       ...InstanceHealthFragment
     }
   }
-`);
+
+  ${INSTANCE_HEALTH_FRAGMENT}
+`;

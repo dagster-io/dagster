@@ -3,11 +3,15 @@ import {ActiveElement, TimeUnit, TooltipItem} from 'chart.js';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 
-import {HistoryTickFragment, NextTickForHistoyFragment} from '../graphql/graphql';
 import {InstigationTickStatus} from '../types/globalTypes';
 
-type FutureTick = NextTickForHistoyFragment;
-type InstigationTick = HistoryTickFragment;
+import {
+  TickHistoryQuery_instigationStateOrError_InstigationState_nextTick,
+  TickHistoryQuery_instigationStateOrError_InstigationState_ticks,
+} from './types/TickHistoryQuery';
+
+type FutureTick = TickHistoryQuery_instigationStateOrError_InstigationState_nextTick;
+type InstigationTick = TickHistoryQuery_instigationStateOrError_InstigationState_ticks;
 
 const COLOR_MAP = {
   [InstigationTickStatus.SUCCESS]: Colors.Blue500,

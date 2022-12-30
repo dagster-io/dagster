@@ -5,7 +5,7 @@ import boto3
 from botocore.errorfactory import ClientError
 
 import dagster._seven as seven
-from dagster import Field, Permissive, StringSource
+from dagster import Field, StringSource
 from dagster import _check as check
 from dagster._config.config_type import Noneable
 from dagster._core.storage.cloud_storage_compute_log_manager import (
@@ -73,7 +73,6 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         endpoint_url=None,
         skip_empty_files=False,
         upload_interval=None,
-        upload_extra_args=None,
     ):
         _verify = False if not verify else verify_cert_path
         self._s3_session = boto3.resource(
@@ -91,8 +90,6 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self._skip_empty_files = check.bool_param(skip_empty_files, "skip_empty_files")
         self._upload_interval = check.opt_int_param(upload_interval, "upload_interval")
-        check.opt_dict_param(upload_extra_args, "upload_extra_args")
-        self._upload_extra_args = upload_extra_args
 
     @property
     def inst_data(self):
@@ -110,9 +107,6 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             "endpoint_url": Field(StringSource, is_required=False),
             "skip_empty_files": Field(bool, is_required=False, default_value=False),
             "upload_interval": Field(Noneable(int), is_required=False, default_value=None),
-            "upload_extra_args": Field(
-                Permissive(), is_required=False, description="Extra args for S3 file upload"
-            ),
         }
 
     @staticmethod
@@ -202,9 +196,7 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
 
         s3_key = self._s3_key(log_key, io_type, partial=partial)
         with open(path, "rb") as data:
-            self._s3_session.upload_fileobj(
-                data, self._s3_bucket, s3_key, ExtraArgs=self._upload_extra_args
-            )
+            self._s3_session.upload_fileobj(data, self._s3_bucket, s3_key)
 
     def download_from_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial=False

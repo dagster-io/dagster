@@ -1,16 +1,19 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Popover} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {graphql} from '../graphql';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
+import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
+
+import {OpSelectorQuery, OpSelectorQueryVariables} from './types/OpSelectorQuery';
 
 interface IOpSelectorProps {
   pipelineName: string;
@@ -23,7 +26,7 @@ interface IOpSelectorProps {
   repoAddress: RepoAddress;
 }
 
-const SOLID_SELECTOR_QUERY = graphql(`
+const SOLID_SELECTOR_QUERY = gql`
   query OpSelectorQuery($selector: PipelineSelector!, $requestScopeHandleID: String) {
     pipelineOrError(params: $selector) {
       __typename
@@ -47,7 +50,9 @@ const SOLID_SELECTOR_QUERY = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
+  ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+`;
 
 export const OpSelector = (props: IOpSelectorProps) => {
   const {
@@ -64,10 +69,13 @@ export const OpSelector = (props: IOpSelectorProps) => {
   const selector = {...repoAddressToSelector(repoAddress), pipelineName};
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
-  const {data, loading} = useQuery(SOLID_SELECTOR_QUERY, {
-    variables: {selector, requestScopeHandleID: flattenGraphs ? undefined : ''},
-    fetchPolicy: 'cache-and-network',
-  });
+  const {data, loading} = useQuery<OpSelectorQuery, OpSelectorQueryVariables>(
+    SOLID_SELECTOR_QUERY,
+    {
+      variables: {selector, requestScopeHandleID: flattenGraphs ? undefined : ''},
+      fetchPolicy: 'cache-and-network',
+    },
+  );
 
   const query = props.query || '*';
 

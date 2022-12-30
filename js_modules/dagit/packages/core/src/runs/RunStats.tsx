@@ -1,14 +1,15 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {graphql} from '../graphql';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+
+import {RunStatsQuery, RunStatsQueryVariables} from './types/RunStatsQuery';
 
 export const RunStats = ({runId}: {runId: string}) => {
-  const stats = useQuery(RUN_STATS_QUERY, {
+  const stats = useQuery<RunStatsQuery, RunStatsQueryVariables>(RUN_STATS_QUERY, {
     variables: {runId},
   });
 
@@ -50,7 +51,7 @@ export const RunStats = ({runId}: {runId: string}) => {
   );
 };
 
-const RUN_STATS_QUERY = graphql(`
+const RUN_STATS_QUERY = gql`
   query RunStatsQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       __typename
@@ -75,7 +76,8 @@ const RUN_STATS_QUERY = graphql(`
       }
     }
   }
-`);
+  ${PYTHON_ERROR_FRAGMENT}
+`;
 
 const RunStatsDetailsContainer = styled.div`
   min-width: 200px;

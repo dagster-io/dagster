@@ -1,18 +1,18 @@
+import {gql} from '@apollo/client';
 import {print} from 'graphql';
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 import {v4 as uuidv4} from 'uuid';
 
-import {graphql} from '../graphql';
-
 import {AppContext} from './AppContext';
+import {PYTHON_ERROR_FRAGMENT} from './PythonErrorInfo';
 
 export enum TelemetryAction {
   LAUNCH_RUN = 'LAUNCH_RUN',
   GRAPHQL_QUERY_COMPLETED = 'GRAPHQL_QUERY_COMPLETED',
 }
 
-const LOG_TELEMETRY_MUTATION = graphql(`
+const LOG_TELEMETRY_MUTATION = gql`
   mutation LogTelemetryMutation(
     $action: String!
     $metadata: String!
@@ -31,7 +31,9 @@ const LOG_TELEMETRY_MUTATION = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
+
+  ${PYTHON_ERROR_FRAGMENT}
+`;
 
 export async function logTelemetry(
   pathPrefix: string,

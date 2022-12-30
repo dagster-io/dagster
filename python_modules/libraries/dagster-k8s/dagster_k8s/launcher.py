@@ -13,12 +13,17 @@ from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._grpc.types import ResumeRunArgs
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import merge_dicts
+from dagster._utils import frozentags, merge_dicts
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .client import DagsterKubernetesClient
 from .container_context import K8sContainerContext
-from .job import DagsterK8sJobConfig, construct_dagster_k8s_job, get_job_name_from_run_id
+from .job import (
+    DagsterK8sJobConfig,
+    construct_dagster_k8s_job,
+    get_job_name_from_run_id,
+    get_user_defined_k8s_config,
+)
 
 
 class K8sRunLauncher(RunLauncher, ConfigurableClass):
@@ -66,7 +71,6 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         resources=None,
         scheduler_name=None,
         security_context=None,
-        run_k8s_config=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
@@ -117,7 +121,6 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._resources: Mapping[str, Any] = check.opt_mapping_param(resources, "resources")
         self._scheduler_name = check.opt_str_param(scheduler_name, "scheduler_name")
         self._security_context = check.opt_dict_param(security_context, "security_context")
-        self._run_k8s_config = check.opt_dict_param(run_k8s_config, "run_k8s_config")
         super().__init__()
 
     @property
@@ -173,10 +176,6 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return self._labels
 
     @property
-    def run_k8s_config(self) -> Mapping[str, str]:
-        return self._run_k8s_config
-
-    @property
     def fail_pod_on_run_failure(self) -> Optional[bool]:
         return self._fail_pod_on_run_failure
 
@@ -209,7 +208,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         pod_name = job_name
 
         pipeline_origin = run.pipeline_code_origin
-        user_defined_k8s_config = container_context.get_run_user_defined_k8s_config()
+        user_defined_k8s_config = get_user_defined_k8s_config(frozentags(run.tags))
         repository_origin = pipeline_origin.repository_origin
 
         job_config = container_context.get_k8s_job_config(

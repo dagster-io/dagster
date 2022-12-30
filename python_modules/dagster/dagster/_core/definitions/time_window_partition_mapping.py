@@ -122,19 +122,17 @@ class TimeWindowPartitionMapping(
         start_offset: int,
         end_offset: int,
     ) -> PartitionsSubset:
+        if start_offset != 0 or end_offset != 0:
+            check.invariant(from_partitions_def == to_partitions_def)
+
         if not isinstance(from_partitions_def, TimeWindowPartitionsDefinition) or not isinstance(
-            to_partitions_def, TimeWindowPartitionsDefinition
+            from_partitions_def, TimeWindowPartitionsDefinition
         ):
             raise DagsterInvalidDefinitionError(
                 "TimeWindowPartitionMappings can only operate on TimeWindowPartitionsDefinitions"
             )
-
-        # mypy requires this for some reason
         from_partitions_def = cast(TimeWindowPartitionsDefinition, from_partitions_def)
         to_partitions_def = cast(TimeWindowPartitionsDefinition, to_partitions_def)
-
-        if start_offset != 0 or end_offset != 0:
-            check.invariant(from_partitions_def.cron_schedule == to_partitions_def.cron_schedule)
 
         if to_partitions_def.timezone != from_partitions_def.timezone:
             raise DagsterInvalidDefinitionError("Timezones don't match")

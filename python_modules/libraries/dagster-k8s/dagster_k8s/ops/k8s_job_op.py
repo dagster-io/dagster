@@ -9,7 +9,12 @@ from dagster._utils import merge_dicts
 
 from ..client import DagsterKubernetesClient
 from ..container_context import K8sContainerContext
-from ..job import DagsterK8sJobConfig, construct_dagster_k8s_job, get_k8s_job_name
+from ..job import (
+    DagsterK8sJobConfig,
+    UserDefinedDagsterK8sConfig,
+    construct_dagster_k8s_job,
+    get_k8s_job_name,
+)
 from ..launcher import K8sRunLauncher
 
 K8S_JOB_OP_CONFIG = merge_dicts(
@@ -181,10 +186,6 @@ def execute_k8s_job(
         else None,
     )
 
-    container_config = container_config or {}
-    if command:
-        container_config["command"] = command
-
     op_container_context = K8sContainerContext(
         image_pull_policy=image_pull_policy,
         image_pull_secrets=image_pull_secrets,
@@ -198,20 +199,23 @@ def execute_k8s_job(
         namespace=namespace,
         resources=resources,
         scheduler_name=scheduler_name,
-        run_k8s_config={
-            "container_config": container_config,
-            "pod_template_spec_metadata": pod_template_spec_metadata,
-            "pod_spec_config": pod_spec_config,
-            "job_metadata": job_metadata,
-            "job_spec_config": job_spec_config,
-        },
     )
 
     container_context = run_container_context.merge(op_container_context)
 
     namespace = container_context.namespace
 
-    user_defined_k8s_config = container_context.get_run_user_defined_k8s_config()
+    container_config = container_config or {}
+    if command:
+        container_config["command"] = command
+
+    user_defined_k8s_config = UserDefinedDagsterK8sConfig(
+        container_config=container_config,
+        pod_template_spec_metadata=pod_template_spec_metadata,
+        pod_spec_config=pod_spec_config,
+        job_metadata=job_metadata,
+        job_spec_config=job_spec_config,
+    )
 
     k8s_job_config = DagsterK8sJobConfig(
         job_image=image,

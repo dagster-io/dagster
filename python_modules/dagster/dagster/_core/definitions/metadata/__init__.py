@@ -14,7 +14,6 @@ from typing import (
     Sequence,
     Union,
     cast,
-    overload,
 )
 
 import dagster._check as check
@@ -53,24 +52,6 @@ def last_file_comp(path: str) -> str:
 # ########################
 # ##### NORMALIZATION
 # ########################
-
-
-@overload
-def normalize_metadata(
-    metadata: Mapping[str, RawMetadataValue],
-    metadata_entries: Sequence["MetadataEntry"],
-    allow_invalid: bool = False,
-) -> Sequence["MetadataEntry"]:
-    ...
-
-
-@overload
-def normalize_metadata(
-    metadata: Mapping[str, RawMetadataValue],
-    metadata_entries: Sequence[Union["MetadataEntry", "PartitionMetadataEntry"]],
-    allow_invalid: bool = False,
-) -> Sequence[Union["MetadataEntry", "PartitionMetadataEntry"]]:
-    ...
 
 
 def normalize_metadata(

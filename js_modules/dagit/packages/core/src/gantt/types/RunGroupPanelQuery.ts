@@ -13,23 +13,17 @@ export interface RunGroupPanelQuery_runGroupOrError_RunGroupNotFoundError {
   __typename: "RunGroupNotFoundError";
 }
 
-export interface RunGroupPanelQuery_runGroupOrError_PythonError_errorChain_error {
+export interface RunGroupPanelQuery_runGroupOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface RunGroupPanelQuery_runGroupOrError_PythonError_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: RunGroupPanelQuery_runGroupOrError_PythonError_errorChain_error;
 }
 
 export interface RunGroupPanelQuery_runGroupOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: RunGroupPanelQuery_runGroupOrError_PythonError_errorChain[];
+  causes: RunGroupPanelQuery_runGroupOrError_PythonError_causes[];
 }
 
 export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_tags {

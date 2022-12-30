@@ -1,22 +1,22 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import 'chartjs-adapter-date-fns';
 import {Button, DialogBody, DialogFooter, Dialog, Group, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {copyValue} from '../app/DomUtils';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {graphql} from '../graphql';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {InstigationSelector, InstigationTickStatus} from '../types/globalTypes';
 
-import {FailedRunList, RunList, TickTag} from './InstigationTick';
+import {FailedRunList, RunList, TickTag, TICK_TAG_FRAGMENT} from './InstigationTick';
+import {SelectedTickQuery, SelectedTickQueryVariables} from './types/SelectedTickQuery';
 
 export const TickDetailsDialog: React.FC<{
   timestamp: number | undefined;
   instigationSelector: InstigationSelector;
   onClose: () => void;
 }> = ({timestamp, instigationSelector, onClose}) => {
-  const {data} = useQuery(JOB_SELECTED_TICK_QUERY, {
+  const {data} = useQuery<SelectedTickQuery, SelectedTickQueryVariables>(JOB_SELECTED_TICK_QUERY, {
     variables: {instigationSelector, timestamp: timestamp || 0},
     fetchPolicy: 'cache-and-network',
     skip: !timestamp,
@@ -71,7 +71,7 @@ export const TickDetailsDialog: React.FC<{
   );
 };
 
-const JOB_SELECTED_TICK_QUERY = graphql(`
+const JOB_SELECTED_TICK_QUERY = gql`
   query SelectedTickQuery($instigationSelector: InstigationSelector!, $timestamp: Float!) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
       __typename
@@ -92,4 +92,6 @@ const JOB_SELECTED_TICK_QUERY = graphql(`
       }
     }
   }
-`);
+  ${PYTHON_ERROR_FRAGMENT}
+  ${TICK_TAG_FRAGMENT}
+`;

@@ -262,38 +262,22 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
       path
     }
     assetMaterializations(limit: 1) {
-      ...AssetNodeLiveMaterialization
+      timestamp
+      runId
     }
     freshnessPolicy {
-      ...AssetNodeLiveFreshnessPolicy
+      maximumLagMinutes
+      cronSchedule
     }
     freshnessInfo {
-      ...AssetNodeLiveFreshnessInfo
+      currentMinutesLate
     }
     assetObservations(limit: 1) {
-      ...AssetNodeLiveObservation
+      timestamp
+      runId
     }
     currentLogicalVersion
     projectedLogicalVersion
-  }
-
-  fragment AssetNodeLiveFreshnessPolicy on FreshnessPolicy {
-    maximumLagMinutes
-    cronSchedule
-  }
-
-  fragment AssetNodeLiveFreshnessInfo on AssetFreshnessInfo {
-    currentMinutesLate
-  }
-
-  fragment AssetNodeLiveMaterialization on MaterializationEvent {
-    timestamp
-    runId
-  }
-
-  fragment AssetNodeLiveObservation on ObservationEvent {
-    timestamp
-    runId
   }
 `;
 
@@ -314,12 +298,8 @@ export const ASSET_NODE_FRAGMENT = gql`
     isObservable
     isSource
     assetKey {
-      ...AssetNodeKey
+      path
     }
-  }
-
-  fragment AssetNodeKey on AssetKey {
-    path
   }
 `;
 

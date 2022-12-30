@@ -1,4 +1,4 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, NonIdealState, PageHeader, Popover, Tag, Heading, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
@@ -6,8 +6,6 @@ import {useParams} from 'react-router-dom';
 import {formatElapsedTime} from '../app/Util';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {graphql} from '../graphql';
-import {RunRootQueryQuery} from '../graphql/graphql';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
@@ -17,15 +15,17 @@ import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 import {Run} from './Run';
 import {RunConfigDialog, RunDetails} from './RunDetails';
+import {RunFragments} from './RunFragments';
 import {RunStatusTag} from './RunStatusTag';
 import {assetKeysForRun} from './RunUtils';
+import {RunRootQuery, RunRootQueryVariables} from './types/RunRootQuery';
 
 export const RunRoot = () => {
   useTrackPageView();
 
   const {runId} = useParams<{runId: string}>();
 
-  const {data, loading} = useQuery(RUN_ROOT_QUERY, {
+  const {data, loading} = useQuery<RunRootQuery, RunRootQueryVariables>(RUN_ROOT_QUERY, {
     fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     variables: {runId},
@@ -152,7 +152,7 @@ export const RunRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default RunRoot;
 
-const RunById: React.FC<{data: RunRootQueryQuery | undefined; runId: string}> = (props) => {
+const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (props) => {
   const {data, runId} = props;
 
   if (!data || !data.pipelineRunOrError) {
@@ -174,7 +174,7 @@ const RunById: React.FC<{data: RunRootQueryQuery | undefined; runId: string}> = 
   return <Run run={data.pipelineRunOrError} runId={runId} />;
 };
 
-const RUN_ROOT_QUERY = graphql(`
+const RUN_ROOT_QUERY = gql`
   query RunRootQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       __typename
@@ -184,4 +184,6 @@ const RUN_ROOT_QUERY = graphql(`
       }
     }
   }
-`);
+
+  ${RunFragments.RunFragment}
+`;

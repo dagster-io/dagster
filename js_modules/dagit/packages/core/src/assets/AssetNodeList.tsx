@@ -5,12 +5,12 @@ import styled from 'styled-components/macro';
 
 import {AssetNode} from '../asset-graph/AssetNode';
 import {LiveData, toGraphId} from '../asset-graph/Utils';
-import {AssetNodeForGraphQueryFragment} from '../graphql/graphql';
+import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
 export const AssetNodeList: React.FC<{
-  items: AssetNodeForGraphQueryFragment[] | null;
+  items: AssetGraphQuery_assetNodes[] | null;
   liveDataByNode: LiveData;
 }> = ({items, liveDataByNode}) => {
   const history = useHistory();

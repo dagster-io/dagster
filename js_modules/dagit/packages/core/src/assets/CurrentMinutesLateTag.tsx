@@ -5,7 +5,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
-import {AssetNodeLiveFreshnessPolicyFragment} from '../graphql/graphql';
+import {AssetGraphLiveQuery_assetNodes_freshnessPolicy} from '../asset-graph/types/AssetGraphLiveQuery';
 import {humanCronString} from '../schedules/humanCronString';
 
 const STALE_OVERDUE_MSG = `A materialization incorporating more recent upstream data is overdue.`;
@@ -70,7 +70,7 @@ export const CurrentMinutesLateTag: React.FC<{
 };
 
 export const freshnessPolicyDescription = (
-  freshnessPolicy: AssetNodeLiveFreshnessPolicyFragment | null,
+  freshnessPolicy: AssetGraphLiveQuery_assetNodes_freshnessPolicy | null,
 ) => {
   if (!freshnessPolicy) {
     return '';

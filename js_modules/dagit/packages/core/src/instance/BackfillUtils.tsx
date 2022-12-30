@@ -1,6 +1,8 @@
-import {graphql} from '../graphql';
+import {gql} from '@apollo/client';
 
-export const RESUME_BACKFILL_MUTATION = graphql(`
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+
+export const RESUME_BACKFILL_MUTATION = gql`
   mutation resumeBackfill($backfillId: String!) {
     resumePartitionBackfill(backfillId: $backfillId) {
       __typename
@@ -13,9 +15,11 @@ export const RESUME_BACKFILL_MUTATION = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
 
-export const LAUNCH_PARTITION_BACKFILL_MUTATION = graphql(`
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
   mutation LaunchPartitionBackfill($backfillParams: LaunchBackfillParams!) {
     launchPartitionBackfill(backfillParams: $backfillParams) {
       __typename
@@ -59,4 +63,5 @@ export const LAUNCH_PARTITION_BACKFILL_MUTATION = graphql(`
       }
     }
   }
-`);
+  ${PYTHON_ERROR_FRAGMENT}
+`;

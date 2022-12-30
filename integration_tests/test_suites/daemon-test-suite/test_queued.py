@@ -52,6 +52,7 @@ def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_exa
                 logs,
                 [
                     "PIPELINE_ENQUEUED",
+                    "PIPELINE_DEQUEUED",
                     "PIPELINE_STARTING",
                     "PIPELINE_START",
                     "PIPELINE_SUCCESS",
@@ -74,6 +75,7 @@ def test_queued_runs(instance, foo_example_workspace, foo_example_repo):
             logs,
             [
                 "PIPELINE_ENQUEUED",
+                "PIPELINE_DEQUEUED",
                 "PIPELINE_STARTING",
                 "PIPELINE_START",
                 "PIPELINE_SUCCESS",

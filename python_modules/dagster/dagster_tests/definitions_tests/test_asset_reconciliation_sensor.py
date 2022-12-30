@@ -78,16 +78,16 @@ class AssetReconciliationScenario(NamedTuple):
             else:
                 cursor = AssetReconciliationCursor.empty()
 
-        start = datetime.datetime.now()
+        start = pendulum.now()
 
         def test_time_fn():
-            return (test_time + (datetime.datetime.now() - start)).timestamp()
+            return (test_time + (pendulum.now() - start)).timestamp()
 
         for run in self.unevaluated_runs:
-            if self.between_runs_delta is not None:
-                test_time += self.between_runs_delta
 
-            with pendulum.test(test_time), mock.patch("time.time", new=test_time_fn):
+            with mock.patch("time.time", new=test_time_fn):
+                if self.between_runs_delta is not None:
+                    test_time += self.between_runs_delta
                 assets_in_run = []
                 run_keys = set(run.asset_keys)
                 for asset in self.assets:
@@ -105,12 +105,17 @@ class AssetReconciliationScenario(NamedTuple):
                                 asset.subset_for(asset.keys - selected_keys).to_source_assets()
                             )
 
-                do_run(
-                    asset_keys=run.asset_keys,
-                    partition_key=run.partition_key,
-                    all_assets=self.assets,
+                materialize_to_memory(
                     instance=instance,
-                    failed_asset_keys=run.failed_asset_keys,
+                    partition_key=run.partition_key,
+                    assets=assets_in_run,
+                    run_config={
+                        "ops": {
+                            failed_asset_key.path[-1]: {"config": {"fail": True}}
+                            for failed_asset_key in (run.failed_asset_keys or [])
+                        }
+                    },
+                    raise_on_error=False,
                 )
 
         if self.evaluation_delta is not None:
@@ -130,45 +135,6 @@ class AssetReconciliationScenario(NamedTuple):
             assert base_job is not None
 
         return run_requests, cursor
-
-
-def do_run(
-    asset_keys: Sequence[AssetKey],
-    partition_key: Optional[str],
-    all_assets: Sequence[Union[SourceAsset, AssetsDefinition]],
-    instance: DagsterInstance,
-    failed_asset_keys: Optional[Sequence[AssetKey]] = None,
-    tags: Optional[Mapping[str, str]] = None,
-) -> None:
-    assets_in_run: List[Union[SourceAsset, AssetsDefinition]] = []
-    asset_keys_set = set(asset_keys)
-    for asset in all_assets:
-        if isinstance(asset, SourceAsset):
-            assets_in_run.append(asset)
-        else:
-            selected_keys = asset_keys_set.intersection(asset.keys)
-            if selected_keys == asset.keys:
-                assets_in_run.append(asset)
-            elif not selected_keys:
-                assets_in_run.extend(asset.to_source_assets())
-            else:
-                assets_in_run.append(asset.subset_for(asset_keys_set))
-                assets_in_run.extend(
-                    asset.subset_for(asset.keys - selected_keys).to_source_assets()
-                )
-    materialize_to_memory(
-        instance=instance,
-        partition_key=partition_key,
-        assets=assets_in_run,
-        run_config={
-            "ops": {
-                failed_asset_key.path[-1]: {"config": {"fail": True}}
-                for failed_asset_key in (failed_asset_keys or [])
-            }
-        },
-        raise_on_error=False,
-        tags=tags,
-    )
 
 
 def single_asset_run(asset_key: str, partition_key: Optional[str] = None) -> RunSpec:
@@ -462,10 +428,6 @@ two_assets_in_sequence_one_partition = [
     asset_def("asset1", partitions_def=one_partition_partitions_def),
     asset_def("asset2", ["asset1"], partitions_def=one_partition_partitions_def),
 ]
-two_assets_in_sequence_two_partitions = [
-    asset_def("asset1", partitions_def=two_partitions_partitions_def),
-    asset_def("asset2", ["asset1"], partitions_def=two_partitions_partitions_def),
-]
 
 two_assets_in_sequence_fan_in_partitions = [
     asset_def("asset1", partitions_def=fanned_out_partitions_def),
@@ -670,14 +632,6 @@ scenarios = {
         assets=two_assets_in_sequence_one_partition,
         unevaluated_runs=[run(["asset1", "asset2"], partition_key="a")],
         expected_run_requests=[],
-    ),
-    "two_assets_both_upstream_partitions_materialized": AssetReconciliationScenario(
-        assets=two_assets_in_sequence_two_partitions,
-        unevaluated_runs=[run(["asset1"], partition_key="a"), run(["asset1"], partition_key="b")],
-        expected_run_requests=[
-            run_request(asset_keys=["asset2"], partition_key="a"),
-            run_request(asset_keys=["asset2"], partition_key="b"),
-        ],
     ),
     "parent_one_partition_one_run": AssetReconciliationScenario(
         assets=two_assets_in_sequence_one_partition,
@@ -924,62 +878,20 @@ scenarios = {
             run(["asset1", "asset2", "asset3", "asset4"]),
             run(["asset3"], failed_asset_keys=["asset3"]),
         ],
-        expected_run_requests=[],
-    ),
-    "freshness_half_run_after_delay": AssetReconciliationScenario(
-        assets=diamond_freshness,
-        unevaluated_runs=[
-            run(["asset1", "asset2", "asset3", "asset4"]),
-            run(["asset1", "asset3"]),
-        ],
-        between_runs_delta=datetime.timedelta(minutes=35),
-        evaluation_delta=datetime.timedelta(minutes=5),
-        expected_run_requests=[run_request(asset_keys=["asset2", "asset4"])],
-    ),
-    "freshness_half_run_with_failure_after_delay": AssetReconciliationScenario(
-        assets=diamond_freshness,
-        unevaluated_runs=[
-            run(["asset1", "asset2", "asset3", "asset4"]),
-            run(["asset1", "asset2", "asset3"], failed_asset_keys=["asset3"]),
-        ],
-        between_runs_delta=datetime.timedelta(minutes=35),
-        evaluation_delta=datetime.timedelta(minutes=5),
-        # even though 4 doesn't have the most up to date data yet, we just tried to materialize
-        # asset 3 and it failed, so it doesn't make sense to try to run it again to get 4 up to date
-        expected_run_requests=[],
-    ),
-    "freshness_half_run_with_failure_after_delay2": AssetReconciliationScenario(
-        assets=diamond_freshness,
-        unevaluated_runs=[
-            run(["asset1", "asset2", "asset3", "asset4"]),
-            run(["asset1", "asset2", "asset3"], failed_asset_keys=["asset3"]),
-        ],
-        between_runs_delta=datetime.timedelta(minutes=35),
         evaluation_delta=datetime.timedelta(minutes=35),
-        # now that it's been awhile since that run failed, give it another attempt
-        expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
+        # only request 1 and 2 because 3 failed (and 4 is downstream of 3)
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset2"])],
     ),
-    "freshness_root_failure": AssetReconciliationScenario(
+    "freshness_half_run_with_failure2": AssetReconciliationScenario(
         assets=diamond_freshness,
         unevaluated_runs=[
             run(["asset1", "asset2", "asset3", "asset4"]),
-            run(["asset1"], failed_asset_keys=["asset1"]),
+            run(["asset1", "asset3"], failed_asset_keys=["asset3"]),
         ],
-        between_runs_delta=datetime.timedelta(minutes=35),
-        evaluation_delta=datetime.timedelta(minutes=5),
-        # need to rematerialize all, but asset1 just failed so we don't want to retry immediately
-        expected_run_requests=[],
-    ),
-    "freshness_root_failure_after_delay": AssetReconciliationScenario(
-        assets=diamond_freshness,
-        unevaluated_runs=[
-            run(["asset1", "asset2", "asset3", "asset4"]),
-            run(["asset1"], failed_asset_keys=["asset1"]),
-        ],
-        between_runs_delta=datetime.timedelta(minutes=35),
         evaluation_delta=datetime.timedelta(minutes=35),
-        # asset1 failed last time, but it's been awhile so we'll give it another shot
-        expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
+        # same reasoning as above, but make sure asset1 can still execute even though it was part
+        # of a failed run
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset2"])],
     ),
     "freshness_half_run_stale": AssetReconciliationScenario(
         assets=diamond_freshness,
@@ -996,29 +908,6 @@ scenarios = {
         assets=overlapping_freshness_with_source,  # type: ignore
         unevaluated_runs=[run(["asset1", "asset3", "asset5"]), run(["asset2", "asset4", "asset6"])],
         expected_run_requests=[],
-    ),
-    "freshness_overlapping_failure": AssetReconciliationScenario(
-        assets=overlapping_freshness,
-        unevaluated_runs=[
-            run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"]),
-            run(["asset1"], failed_asset_keys=["asset1"]),
-        ],
-        between_runs_delta=datetime.timedelta(minutes=35),
-        # need new data, but don't want to re-run immediately
-        expected_run_requests=[],
-    ),
-    "freshness_overlapping_failure_after_delay": AssetReconciliationScenario(
-        assets=overlapping_freshness,
-        unevaluated_runs=[
-            run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"]),
-            run(["asset1"], failed_asset_keys=["asset1"]),
-        ],
-        between_runs_delta=datetime.timedelta(minutes=35),
-        evaluation_delta=datetime.timedelta(minutes=35),
-        # after 30 minutes, we can try to kick off a run again
-        expected_run_requests=[
-            run_request(asset_keys=["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])
-        ],
     ),
     "freshness_overlapping_runs_half_stale": AssetReconciliationScenario(
         assets=overlapping_freshness_inf,

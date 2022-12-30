@@ -13,6 +13,7 @@ import {BackfillStepStatusDialog} from './BackfillStepStatusDialog';
 import {BackfillTerminationDialog} from './BackfillTerminationDialog';
 import {RESUME_BACKFILL_MUTATION} from './BackfillUtils';
 import {BackfillTableFragment} from './types/BackfillTableFragment';
+import {resumeBackfill, resumeBackfillVariables} from './types/resumeBackfill';
 
 export const BackfillTable = ({
   showBackfillTarget = true,
@@ -31,7 +32,9 @@ export const BackfillTable = ({
     partitionsRequestedBackfill,
     setPartitionsRequestedBackfill,
   ] = React.useState<BackfillTableFragment>();
-  const [resumeBackfill] = useMutation(RESUME_BACKFILL_MUTATION);
+  const [resumeBackfill] = useMutation<resumeBackfill, resumeBackfillVariables>(
+    RESUME_BACKFILL_MUTATION,
+  );
   const {canCancelPartitionBackfill} = usePermissions();
 
   const candidateId = terminationBackfill?.backfillId;
@@ -126,7 +129,7 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
   fragment BackfillTableFragment on PartitionBackfill {
     backfillId
     status
-    numCancelable
+    numRequested
     partitionNames
     numPartitions
     timestamp

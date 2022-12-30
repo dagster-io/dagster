@@ -112,12 +112,6 @@ query SensorQuery($sensorSelector: SensorSelector!) {
             error {
                 message
                 stack
-                errorChain {
-                    error {
-                        message
-                        stack
-                    }
-                }
             }
         }
       }
@@ -500,24 +494,12 @@ def test_sensor_next_ticks(graphql_context):
     next_tick = result.data["sensorOrError"]["nextTick"]
     assert not next_tick
 
-    error_sensor_name = "always_error_sensor"
-    external_error_sensor = external_repository.get_external_sensor(error_sensor_name)
-    error_sensor_selector = infer_sensor_selector(graphql_context, error_sensor_name)
-
     # test default sensor with no tick
     graphql_context.instance.add_instigator_state(
         InstigatorState(
             external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
         )
     )
-    graphql_context.instance.add_instigator_state(
-        InstigatorState(
-            external_error_sensor.get_external_origin(),
-            InstigatorType.SENSOR,
-            InstigatorStatus.RUNNING,
-        )
-    )
-
     result = execute_dagster_graphql(
         graphql_context, GET_SENSOR_QUERY, variables={"sensorSelector": sensor_selector}
     )
@@ -533,22 +515,11 @@ def test_sensor_next_ticks(graphql_context):
     result = execute_dagster_graphql(
         graphql_context, GET_SENSOR_QUERY, variables={"sensorSelector": sensor_selector}
     )
+    assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
     assert result.data
     assert result.data["sensorOrError"]["__typename"] == "Sensor"
-
-    assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
-    assert not result.data["sensorOrError"]["sensorState"]["ticks"][0].get("error")
-
     next_tick = result.data["sensorOrError"]["nextTick"]
     assert next_tick
-
-    error_result = execute_dagster_graphql(
-        graphql_context, GET_SENSOR_QUERY, variables={"sensorSelector": error_sensor_selector}
-    )
-    assert error_result.data
-    assert error_result.data["sensorOrError"]["__typename"] == "Sensor"
-    assert len(error_result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
-    assert error_result.data["sensorOrError"]["sensorState"]["ticks"][0]["error"]
 
 
 def _create_tick(graphql_context):

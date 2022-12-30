@@ -1,4 +1,4 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import groupBy from 'lodash/groupBy';
 import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
@@ -6,15 +6,19 @@ import React from 'react';
 
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
-import {graphql} from '../graphql';
-import {AssetGroupSelector, AssetNodeForGraphQueryFragment} from '../graphql/graphql';
-import {PipelineSelector} from '../types/globalTypes';
+import {AssetGroupSelector, PipelineSelector} from '../types/globalTypes';
 
+import {ASSET_NODE_FRAGMENT} from './AssetNode';
 import {buildGraphData, GraphData, toGraphId, tokenForAssetKey} from './Utils';
+import {
+  AssetGraphQuery,
+  AssetGraphQueryVariables,
+  AssetGraphQuery_assetNodes,
+} from './types/AssetGraphQuery';
 
 export interface AssetGraphFetchScope {
   hideEdgesToNodesOutsideQuery?: boolean;
-  hideNodesMatching?: (node: AssetNodeForGraphQueryFragment) => boolean;
+  hideNodesMatching?: (node: AssetGraphQuery_assetNodes) => boolean;
   pipelineSelector?: PipelineSelector;
   groupSelector?: AssetGroupSelector;
 }
@@ -33,7 +37,7 @@ export type AssetGraphQueryItem = GraphQueryItem & {
  * uses this option to implement the "3 of 4 repositories" picker.
  */
 export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScope) {
-  const fetchResult = useQuery(ASSET_GRAPH_QUERY, {
+  const fetchResult = useQuery<AssetGraphQuery, AssetGraphQueryVariables>(ASSET_GRAPH_QUERY, {
     notifyOnNetworkStatusChange: true,
     variables: {
       pipelineSelector: options.pipelineSelector,
@@ -97,7 +101,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   };
 }
 
-type AssetNode = AssetNodeForGraphQueryFragment;
+type AssetNode = AssetGraphQuery_assetNodes;
 
 const buildGraphQueryItems = (nodes: AssetNode[]) => {
   const items: {[name: string]: AssetGraphQueryItem} = {};
@@ -169,31 +173,27 @@ export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: Asset
   };
 };
 
-const ASSET_GRAPH_QUERY = graphql(`
+const ASSET_GRAPH_QUERY = gql`
   query AssetGraphQuery($pipelineSelector: PipelineSelector, $groupSelector: AssetGroupSelector) {
     assetNodes(pipeline: $pipelineSelector, group: $groupSelector) {
       id
-      ...AssetNodeForGraphQuery
-    }
-  }
-
-  fragment AssetNodeForGraphQuery on AssetNode {
-    id
-    groupName
-    repository {
-      id
-      name
-      location {
+      groupName
+      repository {
         id
         name
+        location {
+          id
+          name
+        }
       }
+      dependencyKeys {
+        path
+      }
+      dependedByKeys {
+        path
+      }
+      ...AssetNodeFragment
     }
-    dependencyKeys {
-      path
-    }
-    dependedByKeys {
-      path
-    }
-    ...AssetNodeFragment
   }
-`);
+  ${ASSET_NODE_FRAGMENT}
+`;

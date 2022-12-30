@@ -1,5 +1,3 @@
-import hashlib
-import json
 import warnings
 from typing import (
     TYPE_CHECKING,
@@ -857,11 +855,6 @@ class AssetsDefinition(ResourceAddable):
                 sorted(list([asset_key.to_string() for asset_key in self.asset_keys]))
             )
             return f"AssetsDefinition with keys {asset_keys}"
-
-    @property
-    def unique_id(self) -> str:
-        """A unique identifier for the AssetsDefinition that's stable across processes."""
-        return hashlib.md5((json.dumps(sorted(self.keys))).encode("utf-8")).hexdigest()
 
     def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
         from dagster._core.execution.resources_init import get_transitive_required_resource_keys

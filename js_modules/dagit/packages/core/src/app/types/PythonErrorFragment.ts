@@ -7,21 +7,15 @@
 // GraphQL fragment: PythonErrorFragment
 // ====================================================
 
-export interface PythonErrorFragment_errorChain_error {
+export interface PythonErrorFragment_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
-}
-
-export interface PythonErrorFragment_errorChain {
-  __typename: "ErrorChainLink";
-  isExplicitLink: boolean;
-  error: PythonErrorFragment_errorChain_error;
 }
 
 export interface PythonErrorFragment {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  errorChain: PythonErrorFragment_errorChain[];
+  causes: PythonErrorFragment_causes[];
 }

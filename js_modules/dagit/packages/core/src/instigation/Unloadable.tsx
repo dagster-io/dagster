@@ -9,7 +9,9 @@ import {
   STOP_SCHEDULE_MUTATION,
 } from '../schedules/ScheduleMutations';
 import {humanCronString} from '../schedules/humanCronString';
+import {StopSchedule, StopScheduleVariables} from '../schedules/types/StopSchedule';
 import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from '../sensors/SensorMutations';
+import {StopSensor, StopSensorVariables} from '../sensors/types/StopSensor';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {InstigatorSelectorInformation} from '../workspace/RepositoryInformation';
 
@@ -123,9 +125,12 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
   const {id, selectorId, name, status, ticks} = sensorState;
   const {canStopSensor} = usePermissions();
 
-  const [stopSensor, {loading: toggleOffInFlight}] = useMutation(STOP_SENSOR_MUTATION, {
-    onCompleted: displaySensorMutationErrors,
-  });
+  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor, StopSensorVariables>(
+    STOP_SENSOR_MUTATION,
+    {
+      onCompleted: displaySensorMutationErrors,
+    },
+  );
   const confirm = useConfirmation();
 
   const onChangeSwitch = async () => {
@@ -189,7 +194,10 @@ const ScheduleStateRow: React.FC<{
   scheduleState: InstigationStateFragment;
 }> = ({scheduleState}) => {
   const {canStopRunningSchedule} = usePermissions();
-  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation(STOP_SCHEDULE_MUTATION, {
+  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<
+    StopSchedule,
+    StopScheduleVariables
+  >(STOP_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,
   });
   const confirm = useConfirmation();

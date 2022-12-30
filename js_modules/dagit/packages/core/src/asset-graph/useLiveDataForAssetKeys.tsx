@@ -3,11 +3,13 @@ import uniq from 'lodash/uniq';
 import React from 'react';
 
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {graphql} from '../graphql';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 import {AssetKeyInput} from '../types/globalTypes';
 
+import {ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
 import {buildLiveData, tokenForAssetKey} from './Utils';
+import {AssetGraphLiveQuery, AssetGraphLiveQueryVariables} from './types/AssetGraphLiveQuery';
+import {AssetLiveRunLogsSubscription} from './types/AssetLiveRunLogsSubscription';
 
 const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
 const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
@@ -19,11 +21,14 @@ const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
  * node that has changed is not in scope.
  */
 export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[]) {
-  const liveResult = useQuery(ASSETS_GRAPH_LIVE_QUERY, {
-    skip: assetKeys.length === 0,
-    variables: {assetKeys},
-    notifyOnNetworkStatusChange: true,
-  });
+  const liveResult = useQuery<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>(
+    ASSETS_GRAPH_LIVE_QUERY,
+    {
+      skip: assetKeys.length === 0,
+      variables: {assetKeys},
+      notifyOnNetworkStatusChange: true,
+    },
+  );
 
   const liveDataByNode = React.useMemo(() => {
     return liveResult.data ? buildLiveData(liveResult.data) : {};
@@ -114,7 +119,7 @@ const RunLogObserver: React.FC<{
     return () => console.log(`Unsubscribed from ${runId} after ${counter.current} messages`);
   }, [runId]);
 
-  useSubscription(ASSET_LIVE_RUN_LOGS_SUBSCRIPTION, {
+  useSubscription<AssetLiveRunLogsSubscription>(ASSET_LIVE_RUN_LOGS_SUBSCRIPTION, {
     fetchPolicy: 'no-cache',
     variables: {runId},
     onSubscriptionData: (data) => {
@@ -159,18 +164,13 @@ export const ASSET_LATEST_INFO_FRAGMENT = gql`
     unstartedRunIds
     inProgressRunIds
     latestRun {
+      status
       id
-      ...AssetLatestInfoRun
     }
-  }
-
-  fragment AssetLatestInfoRun on Run {
-    status
-    id
   }
 `;
 
-const ASSETS_GRAPH_LIVE_QUERY = graphql(`
+const ASSETS_GRAPH_LIVE_QUERY = gql`
   query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]!) {
     assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
       id
@@ -180,9 +180,12 @@ const ASSETS_GRAPH_LIVE_QUERY = graphql(`
       ...AssetLatestInfoFragment
     }
   }
-`);
 
-const ASSET_LIVE_RUN_LOGS_SUBSCRIPTION = graphql(`
+  ${ASSET_NODE_LIVE_FRAGMENT}
+  ${ASSET_LATEST_INFO_FRAGMENT}
+`;
+
+const ASSET_LIVE_RUN_LOGS_SUBSCRIPTION = gql`
   subscription AssetLiveRunLogsSubscription($runId: ID!) {
     pipelineRunLogs(runId: $runId, cursor: "HEAD") {
       __typename
@@ -214,4 +217,4 @@ const ASSET_LIVE_RUN_LOGS_SUBSCRIPTION = graphql(`
       }
     }
   }
-`);
+`;

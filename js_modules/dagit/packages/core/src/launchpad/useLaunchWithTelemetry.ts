@@ -4,23 +4,29 @@ import {useHistory} from 'react-router';
 
 import {usePermissions} from '../app/Permissions';
 import {TelemetryAction, useTelemetryAction} from '../app/Telemetry';
-import {LaunchPipelineExecutionMutationVariables} from '../graphql/graphql';
 import {
   LAUNCH_PIPELINE_EXECUTION_MUTATION,
   handleLaunchResult,
   LaunchBehavior,
 } from '../runs/RunUtils';
+import {
+  LaunchPipelineExecution,
+  LaunchPipelineExecutionVariables,
+} from '../runs/types/LaunchPipelineExecution';
 
 import {showLaunchError} from './showLaunchError';
 
 export function useLaunchWithTelemetry() {
   const {canLaunchPipelineExecution} = usePermissions();
-  const [launchPipelineExecution] = useMutation(LAUNCH_PIPELINE_EXECUTION_MUTATION);
+  const [launchPipelineExecution] = useMutation<
+    LaunchPipelineExecution,
+    LaunchPipelineExecutionVariables
+  >(LAUNCH_PIPELINE_EXECUTION_MUTATION);
   const logTelemetry = useTelemetryAction();
   const history = useHistory();
 
   return React.useCallback(
-    async (variables: LaunchPipelineExecutionMutationVariables, behavior: LaunchBehavior) => {
+    async (variables: LaunchPipelineExecutionVariables, behavior: LaunchBehavior) => {
       const jobName =
         variables.executionParams.selector.jobName ||
         variables.executionParams.selector.pipelineName;
