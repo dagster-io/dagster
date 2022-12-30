@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -14,12 +14,12 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
+import {graphql} from '../graphql';
+import {OverviewSensorsQueryQuery} from '../graphql/graphql';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
-import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSensors} from '../instigation/Unloadable';
 import {SensorInfo} from '../sensors/SensorInfo';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
@@ -30,8 +30,6 @@ import {RepoAddress} from '../workspace/types';
 import {OverviewSensorTable} from './OverviewSensorsTable';
 import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
-import {OverviewSensorsQuery} from './types/OverviewSensorsQuery';
-import {UnloadableSensorsQuery} from './types/UnloadableSensorsQuery';
 import {visibleRepoKeys} from './visibleRepoKeys';
 
 export const OverviewSensorsRoot = () => {
@@ -41,7 +39,7 @@ export const OverviewSensorsRoot = () => {
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
 
-  const queryResultOverview = useQuery<OverviewSensorsQuery>(OVERVIEW_SENSORS_QUERY, {
+  const queryResultOverview = useQuery(OVERVIEW_SENSORS_QUERY, {
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true,
   });
@@ -221,7 +219,7 @@ const UnloadableSensorsAlert: React.FC<{
 };
 
 const UnloadableSensorDialog: React.FC = () => {
-  const {data} = useQuery<UnloadableSensorsQuery>(UNLOADABLE_SENSORS_QUERY);
+  const {data} = useQuery(UNLOADABLE_SENSORS_QUERY);
   if (!data) {
     return <Spinner purpose="section" />;
   }
@@ -243,7 +241,7 @@ type RepoBucket = {
   sensors: string[];
 };
 
-const buildBuckets = (data?: OverviewSensorsQuery): RepoBucket[] => {
+const buildBuckets = (data?: OverviewSensorsQueryQuery): RepoBucket[] => {
   if (data?.workspaceOrError.__typename !== 'Workspace') {
     return [];
   }
@@ -274,7 +272,7 @@ const buildBuckets = (data?: OverviewSensorsQuery): RepoBucket[] => {
   return sortRepoBuckets(buckets);
 };
 
-const OVERVIEW_SENSORS_QUERY = gql`
+const OVERVIEW_SENSORS_QUERY = graphql(`
   query OverviewSensorsQuery {
     workspaceOrError {
       ... on Workspace {
@@ -311,12 +309,9 @@ const OVERVIEW_SENSORS_QUERY = gql`
       ...InstanceHealthFragment
     }
   }
+`);
 
-  ${PYTHON_ERROR_FRAGMENT}
-  ${INSTANCE_HEALTH_FRAGMENT}
-`;
-
-const UNLOADABLE_SENSORS_QUERY = gql`
+const UNLOADABLE_SENSORS_QUERY = graphql(`
   query UnloadableSensorsQuery {
     unloadableInstigationStatesOrError(instigationType: SENSOR) {
       ... on InstigationStates {
@@ -328,7 +323,4 @@ const UNLOADABLE_SENSORS_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-
-  ${INSTIGATION_STATE_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);

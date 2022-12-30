@@ -1,7 +1,7 @@
 import path from 'path';
 
+import {PipelineExplorerRootQueryQueryVariables} from '../graphql/graphql';
 import {PIPELINE_EXPLORER_ROOT_QUERY} from '../pipelines/PipelineExplorerRoot';
-import {PipelineExplorerRootQueryVariables} from '../pipelines/types/PipelineExplorerRootQuery';
 
 import {CachedGraphQLRequest} from './MockedApolloLinks';
 
@@ -22,7 +22,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
     },
     rootHandleID: '',
     requestScopeHandleID: '',
-  } as PipelineExplorerRootQueryVariables,
+  } as PipelineExplorerRootQueryQueryVariables,
   filepath: path.join(dataDir, `${name}.json`),
 }));
 
@@ -38,7 +38,7 @@ MOCKS.push({
     },
     rootHandleID: 'master_cord_s3_to_df',
     requestScopeHandleID: 'master_cord_s3_to_df',
-  } as PipelineExplorerRootQueryVariables,
+  } as PipelineExplorerRootQueryQueryVariables,
   filepath: path.join(dataDir, `airline_demo_ingest_pipeline_composite.json`),
 });
 
@@ -54,7 +54,7 @@ MOCKS.push(
       },
       rootHandleID: '',
       requestScopeHandleID: '',
-    } as PipelineExplorerRootQueryVariables,
+    } as PipelineExplorerRootQueryQueryVariables,
     filepath: path.join(dataDir, `${name}.json`),
     repo: 'python_modules/dagster-test/dagster_test/toys',
     workspace: true,

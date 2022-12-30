@@ -14,11 +14,6 @@ export enum BulkActionStatus {
   REQUESTED = "REQUESTED",
 }
 
-export enum ComputeIOType {
-  STDERR = "STDERR",
-  STDOUT = "STDOUT",
-}
-
 export enum DagsterEventType {
   ALERT_FAILURE = "ALERT_FAILURE",
   ALERT_START = "ALERT_START",
@@ -100,13 +95,6 @@ export enum InstigationType {
   SENSOR = "SENSOR",
 }
 
-export enum LocationStateChangeEventType {
-  LOCATION_DISCONNECTED = "LOCATION_DISCONNECTED",
-  LOCATION_ERROR = "LOCATION_ERROR",
-  LOCATION_RECONNECTED = "LOCATION_RECONNECTED",
-  LOCATION_UPDATED = "LOCATION_UPDATED",
-}
-
 export enum LogLevel {
   CRITICAL = "CRITICAL",
   DEBUG = "DEBUG",
@@ -120,11 +108,6 @@ export enum ObjectStoreOperationType {
   GET_OBJECT = "GET_OBJECT",
   RM_OBJECT = "RM_OBJECT",
   SET_OBJECT = "SET_OBJECT",
-}
-
-export enum RepositoryLocationLoadStatus {
-  LOADED = "LOADED",
-  LOADING = "LOADING",
 }
 
 export enum RunStatus {
@@ -154,59 +137,6 @@ export enum StepKind {
 
 export interface AssetKeyInput {
   path: string[];
-}
-
-export interface ExecutionTag {
-  key: string;
-  value: string;
-}
-
-export interface GraphSelector {
-  graphName: string;
-  repositoryName: string;
-  repositoryLocationName: string;
-}
-
-export interface InstigationSelector {
-  repositoryName: string;
-  repositoryLocationName: string;
-  name: string;
-}
-
-export interface PipelineSelector {
-  pipelineName: string;
-  repositoryName: string;
-  repositoryLocationName: string;
-  solidSelection?: string[] | null;
-  assetSelection?: AssetKeyInput[] | null;
-}
-
-export interface RepositorySelector {
-  repositoryName: string;
-  repositoryLocationName: string;
-}
-
-export interface RunsFilter {
-  runIds?: (string | null)[] | null;
-  pipelineName?: string | null;
-  tags?: ExecutionTag[] | null;
-  statuses?: RunStatus[] | null;
-  snapshotId?: string | null;
-  updatedAfter?: number | null;
-  createdBefore?: number | null;
-  mode?: string | null;
-}
-
-export interface ScheduleSelector {
-  repositoryName: string;
-  repositoryLocationName: string;
-  scheduleName: string;
-}
-
-export interface SensorSelector {
-  repositoryName: string;
-  repositoryLocationName: string;
-  sensorName: string;
 }
 
 //==============================================================

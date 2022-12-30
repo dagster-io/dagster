@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {
   Box,
   CursorHistoryControls,
@@ -11,14 +10,15 @@ import {
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
+import {graphql} from '../graphql';
+import {PipelineRunsRootQueryQuery, PipelineRunsRootQueryQueryVariables} from '../graphql/graphql';
+import {RunTable} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {
@@ -36,7 +36,6 @@ import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {explorerPathFromString} from './PipelinePathUtils';
-import {PipelineRunsRootQuery, PipelineRunsRootQueryVariables} from './types/PipelineRunsRootQuery';
 import {useJobTitle} from './useJobTitle';
 
 const PAGE_SIZE = 25;
@@ -77,8 +76,8 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
   }
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
-    PipelineRunsRootQuery,
-    PipelineRunsRootQueryVariables
+    PipelineRunsRootQueryQuery,
+    PipelineRunsRootQueryQueryVariables
   >({
     query: PIPELINE_RUNS_ROOT_QUERY,
     pageSize: PAGE_SIZE,
@@ -171,7 +170,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
   );
 };
 
-const PIPELINE_RUNS_ROOT_QUERY = gql`
+const PIPELINE_RUNS_ROOT_QUERY = graphql(`
   query PipelineRunsRootQuery($limit: Int, $cursor: String, $filter: RunsFilter!) {
     pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
       ... on Runs {
@@ -186,7 +185,4 @@ const PIPELINE_RUNS_ROOT_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-
-  ${RUN_TABLE_RUN_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);

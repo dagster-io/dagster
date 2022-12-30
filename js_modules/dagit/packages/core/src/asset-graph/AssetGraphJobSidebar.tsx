@@ -2,9 +2,9 @@ import {useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {graphql} from '../graphql';
+import {PipelineSelector} from '../graphql/graphql';
 import {NonIdealPipelineQueryResult} from '../pipelines/NonIdealPipelineQueryResult';
 import {SidebarContainerOverview} from '../pipelines/SidebarContainerOverview';
-import {PipelineSelector} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 

@@ -7,8 +7,11 @@ import React from 'react';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
 import {graphql} from '../graphql';
-import {AssetGroupSelector, AssetNodeForGraphQueryFragment} from '../graphql/graphql';
-import {PipelineSelector} from '../types/globalTypes';
+import {
+  AssetGroupSelector,
+  AssetNodeForGraphQueryFragment,
+  PipelineSelector,
+} from '../graphql/graphql';
 
 import {buildGraphData, GraphData, toGraphId, tokenForAssetKey} from './Utils';
 

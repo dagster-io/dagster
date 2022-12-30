@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {graphql} from '../graphql';
-import {InstigationStatus, RunsFilter, RunStatus} from '../types/globalTypes';
+import {InstigationStatus, RunsFilter, RunStatus} from '../graphql/graphql';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';

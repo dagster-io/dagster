@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, ButtonLink, Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
@@ -6,11 +6,10 @@ import styled from 'styled-components/macro';
 
 import {SharedToaster} from '../app/DomUtils';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {graphql} from '../graphql';
+import {CodeLocationStatusQueryQuery, RepositoryLocationLoadStatus} from '../graphql/graphql';
 import {StatusAndMessage} from '../instance/DeploymentStatusType';
-import {RepositoryLocationLoadStatus} from '../types/globalTypes';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
-
-import {CodeLocationStatusQuery} from './types/CodeLocationStatusQuery';
 
 type LocationStatusEntry = {
   loadStatus: RepositoryLocationLoadStatus;
@@ -81,7 +80,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     }
   }, [onClickViewButton, refetch]);
 
-  const onLocationUpdate = (data: CodeLocationStatusQuery) => {
+  const onLocationUpdate = (data: CodeLocationStatusQueryQuery) => {
     // Given the previous and current code locations, determine whether to show a) a loading spinner
     // and/or b) a toast indicating that a code location is being reloaded.
     const entries =
@@ -214,7 +213,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     }
   };
 
-  const queryData = useQuery<CodeLocationStatusQuery>(CODE_LOCATION_STATUS_QUERY, {
+  const queryData = useQuery(CODE_LOCATION_STATUS_QUERY, {
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true,
     skip,
@@ -262,7 +261,7 @@ const ViewButton = styled(ButtonLink)`
   white-space: nowrap;
 `;
 
-const CODE_LOCATION_STATUS_QUERY = gql`
+const CODE_LOCATION_STATUS_QUERY = graphql(`
   query CodeLocationStatusQuery {
     locationStatusesOrError {
       __typename
@@ -276,4 +275,4 @@ const CODE_LOCATION_STATUS_QUERY = gql`
       }
     }
   }
-`;
+`);

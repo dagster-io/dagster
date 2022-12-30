@@ -1,20 +1,12 @@
-import {gql, useQuery, useSubscription} from '@apollo/client';
+import {useQuery, useSubscription} from '@apollo/client';
 import {Box, Colors, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {RawLogContent} from './RawLogContent';
 import {AppContext} from './app/AppContext';
 import {WebSocketContext} from './app/WebSocketProvider';
-import {
-  CapturedLogsMetadataQuery,
-  CapturedLogsMetadataQueryVariables,
-} from './types/CapturedLogsMetadataQuery';
-import {CapturedLogsQuery, CapturedLogsQueryVariables} from './types/CapturedLogsQuery';
-import {
-  CapturedLogsSubscription,
-  CapturedLogsSubscriptionVariables,
-  CapturedLogsSubscription_capturedLogs,
-} from './types/CapturedLogsSubscription';
+import {graphql} from './graphql';
+import {CapturedLogFragment, CapturedLogsQueryQuery} from './graphql/graphql';
 
 interface CapturedLogProps {
   logKey: string[];
@@ -84,7 +76,7 @@ interface State {
 }
 
 type Action =
-  | {type: 'update'; logData: CapturedLogsSubscription_capturedLogs}
+  | {type: 'update'; logData: CapturedLogFragment}
   | {type: 'metadata'; metadata: any}
   | {type: 'reset'};
 
@@ -121,34 +113,35 @@ const initialState: State = {
 
 const CapturedLogSubscription: React.FC<{
   logKey: string[];
-  onLogData: (logData: CapturedLogsSubscription_capturedLogs) => void;
+  onLogData: (logData: CapturedLogFragment) => void;
 }> = React.memo(({logKey, onLogData}) => {
-  useSubscription<CapturedLogsSubscription, CapturedLogsSubscriptionVariables>(
-    CAPTURED_LOGS_SUBSCRIPTION,
-    {
-      fetchPolicy: 'no-cache',
-      variables: {logKey},
-      onSubscriptionData: ({subscriptionData}) => {
-        if (subscriptionData.data?.capturedLogs) {
-          onLogData(subscriptionData.data.capturedLogs);
-        }
-      },
+  useSubscription(CAPTURED_LOGS_SUBSCRIPTION, {
+    fetchPolicy: 'no-cache',
+    variables: {logKey},
+    onSubscriptionData: ({subscriptionData}) => {
+      if (subscriptionData.data?.capturedLogs) {
+        onLogData(subscriptionData.data.capturedLogs);
+      }
     },
-  );
+  });
   return null;
 });
 
-const CAPTURED_LOGS_SUBSCRIPTION = gql`
+const CAPTURED_LOGS_SUBSCRIPTION = graphql(`
   subscription CapturedLogsSubscription($logKey: [String!]!, $cursor: String) {
     capturedLogs(logKey: $logKey, cursor: $cursor) {
-      stdout
-      stderr
-      cursor
+      ...CapturedLog
     }
   }
-`;
 
-const CAPTURED_LOGS_METADATA_QUERY = gql`
+  fragment CapturedLog on CapturedLogs {
+    stdout
+    stderr
+    cursor
+  }
+`);
+
+const CAPTURED_LOGS_METADATA_QUERY = graphql(`
   query CapturedLogsMetadataQuery($logKey: [String!]!) {
     capturedLogsMetadata(logKey: $logKey) {
       stdoutDownloadUrl
@@ -157,7 +150,7 @@ const CAPTURED_LOGS_METADATA_QUERY = gql`
       stderrLocation
     }
   }
-`;
+`);
 
 const QUERY_LOG_LIMIT = 100000;
 const POLL_INTERVAL = 5000;
@@ -175,7 +168,7 @@ const CapturedLogsSubscriptionProvider = ({
     dispatch({type: 'reset'});
   }, [logKeyString]);
 
-  const onLogData = React.useCallback((logData: CapturedLogsSubscription_capturedLogs) => {
+  const onLogData = React.useCallback((logData: CapturedLogFragment) => {
     dispatch({type: 'update', logData});
   }, []);
   return (
@@ -200,25 +193,22 @@ const CapturedLogsQueryProvider = ({
   }, [logKeyString]);
   const {cursor} = state;
 
-  const {stopPolling, startPolling} = useQuery<CapturedLogsQuery, CapturedLogsQueryVariables>(
-    CAPTURED_LOGS_QUERY,
-    {
-      notifyOnNetworkStatusChange: true,
-      variables: {logKey, cursor, limit: QUERY_LOG_LIMIT},
-      pollInterval: POLL_INTERVAL,
-      onCompleted: (data: CapturedLogsQuery) => {
-        // We have to stop polling in order to update the `after` value.
-        stopPolling();
-        dispatch({type: 'update', logData: data.capturedLogs});
-        startPolling(POLL_INTERVAL);
-      },
+  const {stopPolling, startPolling} = useQuery(CAPTURED_LOGS_QUERY, {
+    notifyOnNetworkStatusChange: true,
+    variables: {logKey, cursor, limit: QUERY_LOG_LIMIT},
+    pollInterval: POLL_INTERVAL,
+    onCompleted: (data: CapturedLogsQueryQuery) => {
+      // We have to stop polling in order to update the `after` value.
+      stopPolling();
+      dispatch({type: 'update', logData: data.capturedLogs});
+      startPolling(POLL_INTERVAL);
     },
-  );
+  });
 
   return <>{children(state)}</>;
 };
 
-const CAPTURED_LOGS_QUERY = gql`
+const CAPTURED_LOGS_QUERY = graphql(`
   query CapturedLogsQuery($logKey: [String!]!, $cursor: String, $limit: Int) {
     capturedLogs(logKey: $logKey, cursor: $cursor, limit: $limit) {
       stdout
@@ -226,19 +216,16 @@ const CAPTURED_LOGS_QUERY = gql`
       cursor
     }
   }
-`;
+`);
 
 export const CapturedLogPanel: React.FC<CapturedLogProps> = React.memo(
   ({logKey, visibleIOType, onSetDownloadUrl}) => {
     const {rootServerURI} = React.useContext(AppContext);
     const {availability, disabled} = React.useContext(WebSocketContext);
-    const queryResult = useQuery<CapturedLogsMetadataQuery, CapturedLogsMetadataQueryVariables>(
-      CAPTURED_LOGS_METADATA_QUERY,
-      {
-        variables: {logKey},
-        fetchPolicy: 'cache-and-network',
-      },
-    );
+    const queryResult = useQuery(CAPTURED_LOGS_METADATA_QUERY, {
+      variables: {logKey},
+      fetchPolicy: 'cache-and-network',
+    });
 
     React.useEffect(() => {
       if (!onSetDownloadUrl || !queryResult.data) {

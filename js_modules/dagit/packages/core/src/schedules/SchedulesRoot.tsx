@@ -17,7 +17,6 @@ import {SCHEDULES_ROOT_QUERY} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
 import {SchedulesNextTicks} from './SchedulesNextTicks';
 import {SchedulesTable} from './SchedulesTable';
-import {SchedulesRootQuery, SchedulesRootQueryVariables} from './types/SchedulesRootQuery';
 
 export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
@@ -25,18 +24,15 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
 
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const queryResult = useQuery<SchedulesRootQuery, SchedulesRootQueryVariables>(
-    SCHEDULES_ROOT_QUERY,
-    {
-      variables: {
-        repositorySelector,
-        instigationType: InstigationType.SCHEDULE,
-      },
-      fetchPolicy: 'cache-and-network',
-      partialRefetch: true,
-      notifyOnNetworkStatusChange: true,
+  const queryResult = useQuery(SCHEDULES_ROOT_QUERY, {
+    variables: {
+      repositorySelector,
+      instigationType: InstigationType.SCHEDULE,
     },
-  );
+    fetchPolicy: 'cache-and-network',
+    partialRefetch: true,
+    notifyOnNetworkStatusChange: true,
+  });
 
   useQueryRefreshAtInterval(queryResult, 50 * 1000);
 

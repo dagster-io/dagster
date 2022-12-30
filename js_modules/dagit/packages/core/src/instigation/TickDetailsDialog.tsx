@@ -6,8 +6,9 @@ import * as React from 'react';
 import {copyValue} from '../app/DomUtils';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {graphql} from '../graphql';
+import {InstigationSelector} from '../graphql/graphql';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {InstigationSelector, InstigationTickStatus} from '../types/globalTypes';
+import {InstigationTickStatus} from '../types/globalTypes';
 
 import {FailedRunList, RunList, TickTag} from './InstigationTick';
 

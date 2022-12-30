@@ -1,16 +1,13 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import * as React from 'react';
 
+import {graphql} from '../graphql';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Loading} from '../ui/Loading';
 import {buildPipelineSelector} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
-import {TypeExplorer, TYPE_EXPLORER_FRAGMENT} from './TypeExplorer';
-import {
-  TypeExplorerContainerQuery,
-  TypeExplorerContainerQueryVariables,
-} from './types/TypeExplorerContainerQuery';
+import {TypeExplorer} from './TypeExplorer';
 
 interface ITypeExplorerContainerProps {
   explorerPath: ExplorerPath;
@@ -24,16 +21,13 @@ export const TypeExplorerContainer: React.FC<ITypeExplorerContainerProps> = ({
   repoAddress,
 }) => {
   const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
-  const queryResult = useQuery<TypeExplorerContainerQuery, TypeExplorerContainerQueryVariables>(
-    TYPE_EXPLORER_CONTAINER_QUERY,
-    {
-      fetchPolicy: 'cache-and-network',
-      variables: {
-        pipelineSelector,
-        dagsterTypeName: typeName,
-      },
+  const queryResult = useQuery(TYPE_EXPLORER_CONTAINER_QUERY, {
+    fetchPolicy: 'cache-and-network',
+    variables: {
+      pipelineSelector,
+      dagsterTypeName: typeName,
     },
-  );
+  });
   return (
     <Loading queryResult={queryResult}>
       {(data) => {
@@ -57,7 +51,7 @@ export const TypeExplorerContainer: React.FC<ITypeExplorerContainerProps> = ({
   );
 };
 
-const TYPE_EXPLORER_CONTAINER_QUERY = gql`
+const TYPE_EXPLORER_CONTAINER_QUERY = graphql(`
   query TypeExplorerContainerQuery(
     $pipelineSelector: PipelineSelector!
     $dagsterTypeName: String!
@@ -76,5 +70,4 @@ const TYPE_EXPLORER_CONTAINER_QUERY = gql`
       }
     }
   }
-  ${TYPE_EXPLORER_FRAGMENT}
-`;
+`);

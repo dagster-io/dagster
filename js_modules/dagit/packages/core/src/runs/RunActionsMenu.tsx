@@ -1,4 +1,4 @@
-import {gql, useLazyQuery, useMutation} from '@apollo/client';
+import {useLazyQuery, useMutation} from '@apollo/client';
 import {
   Button,
   Icon,
@@ -19,6 +19,7 @@ import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
+import {graphql} from '../graphql';
 import {ReexecutionStrategy} from '../graphql/graphql';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
@@ -27,7 +28,6 @@ import {workspacePathFromRunDetails} from '../workspace/workspacePath';
 
 import {DeletionDialog} from './DeletionDialog';
 import {ReexecutionDialog} from './ReexecutionDialog';
-import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from './RunFragments';
 import {doneStatuses, failedStatuses} from './RunStatuses';
 import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -36,10 +36,6 @@ import {
   handleLaunchResult,
 } from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
-import {
-  PipelineEnvironmentYamlQuery,
-  PipelineEnvironmentYamlQueryVariables,
-} from './types/PipelineEnvironmentYamlQuery';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 export const RunActionsMenu: React.FC<{
@@ -64,10 +60,7 @@ export const RunActionsMenu: React.FC<{
     onCompleted: refetch,
   });
 
-  const [loadEnv, {called, loading, data}] = useLazyQuery<
-    PipelineEnvironmentYamlQuery,
-    PipelineEnvironmentYamlQueryVariables
-  >(PIPELINE_ENVIRONMENT_YAML_QUERY, {
+  const [loadEnv, {called, loading, data}] = useLazyQuery(PIPELINE_ENVIRONMENT_YAML_QUERY, {
     variables: {runId: run.runId},
   });
 
@@ -386,7 +379,7 @@ const OPEN_LAUNCHPAD_UNKNOWN =
   'Launchpad is unavailable because the pipeline is not present in the current repository.';
 
 // Avoid fetching envYaml on load in Runs page. It is slow.
-const PIPELINE_ENVIRONMENT_YAML_QUERY = gql`
+const PIPELINE_ENVIRONMENT_YAML_QUERY = graphql(`
   query PipelineEnvironmentYamlQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       ... on Run {
@@ -398,5 +391,4 @@ const PIPELINE_ENVIRONMENT_YAML_QUERY = gql`
       }
     }
   }
-  ${RUN_FRAGMENT_FOR_REPOSITORY_MATCH}
-`;
+`);
