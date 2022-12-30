@@ -2717,6 +2717,13 @@ type RunConfigSchema {
           so that can be rendered for the user
   """
   isRunConfigValid(runConfigData: RunConfigData): PipelineConfigValidationResult!
+
+  """
+  The default configuration for this run in yaml. This is
+          so that the client does not have to parse JSON client side and assemble
+          it into a single yaml document.
+  """
+  rootDefaultYaml: String!
 }
 
 union RunConfigSchemaOrError =
