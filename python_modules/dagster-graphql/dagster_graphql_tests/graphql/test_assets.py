@@ -12,6 +12,7 @@ from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
 )
 from dagster_graphql.test.utils import (
+    define_out_of_process_context,
     execute_dagster_graphql,
     infer_job_or_pipeline_selector,
     infer_pipeline_selector,
@@ -19,10 +20,26 @@ from dagster_graphql.test.utils import (
 )
 
 # from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
-from .graphql_context_test_suite import (
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     AllRepositoryGraphQLContextTestMatrix,
     ExecutingGraphQLContextTestMatrix,
 )
+
+from dagster import (
+    AssetKey,
+    AssetSelection,
+    DagsterEventType,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+    asset,
+    define_asset_job,
+    repository,
+)
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+from dagster._core.test_utils import instance_for_test, poll_for_finished_run
+from dagster._legacy import DagsterRunStatus
+from dagster._utils import Counter, safe_tempfile_path, traced_counter
 
 GET_ASSET_KEY_QUERY = """
     query AssetKeyQuery {
@@ -266,11 +283,9 @@ GET_1D_MATERIALIZED_PARTITIONS = """
 """
 
 GET_2D_MATERIALIZED_PARTITIONS = """
-    query MaterializationStatusByDimension($assetKeys: [AssetKeyInput!]) {
-        assetNodes(assetKeys: $assetKeys) {
-            assetKey {
-                path
-            }
+    query MaterializationStatusByDimension($pipelineSelector: PipelineSelector!) {
+        assetNodes(pipeline: $pipelineSelector) {
+            id
             materializedPartitions {
                 ... on MaterializedPartitions2D {
                     ranges {
@@ -1267,12 +1282,11 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
     def test_multipartitions_get_materialization_status(self, graphql_context):
         # Test that when unmaterialized, no materialized partitions are returned
+        selector = infer_pipeline_selector(graphql_context, "multipartitions_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_2D_MATERIALIZED_PARTITIONS,
-            variables={
-                "assetKeys": [{"path": ["multipartitions_1"]}, {"path": ["multipartitions_2"]}]
-            },
+            variables={"pipelineSelector": selector},
         )
         assert result.data
         assert result.data["assetNodes"]
@@ -1299,9 +1313,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_2D_MATERIALIZED_PARTITIONS,
-            variables={
-                "assetKeys": [{"path": ["multipartitions_1"]}, {"path": ["multipartitions_2"]}]
-            },
+            variables={"pipelineSelector": selector},
         )
 
         assert result.data
@@ -1346,11 +1358,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_2D_MATERIALIZED_PARTITIONS,
-            variables={
-                "assetKeys": [{"path": ["multipartitions_1"]}, {"path": ["multipartitions_2"]}]
-            },
+            variables={"pipelineSelector": selector},
         )
-
         assert result.data
         assert result.data["assetNodes"]
         ranges = result.data["assetNodes"][0]["materializedPartitions"]["ranges"]
@@ -1584,3 +1593,131 @@ class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
             upstream_asset["dependedByKeys"], key=lambda node: node.get("path")[0]
         )
         assert result_dependent_keys == dependent_asset_keys
+
+
+def get_partitioned_asset_repo():
+    static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+    @asset(partitions_def=static_partitions_def)
+    def abc_asset(_):
+        return 1
+
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "abcd": static_partitions_def,
+            "date": DailyPartitionsDefinition(start_date="2022-01-01"),
+        }
+    )
+
+    @asset(partitions_def=multipartitions_def)
+    def multipartitions_asset(_):
+        return 1
+
+    @repository
+    def partitioned_asset_repo():
+        return [
+            abc_asset,
+            define_asset_job("abc_asset_job", AssetSelection.keys("abc_asset")),
+            multipartitions_asset,
+            define_asset_job(
+                "multipartitions_job",
+                AssetSelection.keys("multipartitions_asset"),
+                partitions_def=multipartitions_def,
+            ),
+        ]
+
+    return partitioned_asset_repo
+
+
+def test_1d_materialized_subset_backcompat():
+    with instance_for_test() as instance:
+        instance.can_cache_asset_status_data = lambda: False
+        assert instance.can_cache_asset_status_data() is False
+
+        with define_out_of_process_context(
+            __file__, "get_partitioned_asset_repo", instance
+        ) as graphql_context:
+            abc_selector = infer_pipeline_selector(graphql_context, "abc_asset_job")
+            result = execute_dagster_graphql(
+                graphql_context,
+                GET_1D_MATERIALIZED_PARTITIONS,
+                variables={"pipelineSelector": abc_selector},
+            )
+            assert result.data
+            assert len(result.data["assetNodes"]) == 1
+            assert result.data["assetNodes"][0]["materializedPartitions"]["ranges"] == []
+
+            for partition in ["a", "c", "d"]:
+                _create_partitioned_run(graphql_context, "abc_asset_job", partition)
+
+            result = execute_dagster_graphql(
+                graphql_context,
+                GET_1D_MATERIALIZED_PARTITIONS,
+                variables={"pipelineSelector": abc_selector},
+            )
+            assert result.data
+            ranges = result.data["assetNodes"][0]["materializedPartitions"]["ranges"]
+            assert len(ranges) == 2
+            assert ranges[0]["start"] == "a"
+            assert ranges[0]["end"] == "a"
+            assert ranges[1]["start"] == "c"
+            assert ranges[1]["end"] == "d"
+
+
+def test_2d_materialized_subset_backcompat():
+    with instance_for_test() as instance:
+        instance.can_cache_asset_status_data = lambda: False
+        assert instance.can_cache_asset_status_data() is False
+
+        with define_out_of_process_context(
+            __file__, "get_partitioned_asset_repo", instance
+        ) as graphql_context:
+            multipartitions_selector = infer_pipeline_selector(
+                graphql_context, "multipartitions_job"
+            )
+            result = execute_dagster_graphql(
+                graphql_context,
+                GET_2D_MATERIALIZED_PARTITIONS,
+                variables={"pipelineSelector": multipartitions_selector},
+            )
+            assert result.data
+            assert len(result.data["assetNodes"]) == 1
+            assert result.data["assetNodes"][0]["materializedPartitions"]["ranges"] == []
+
+            for partition_fields in [
+                ("2022-03-03", "a"),
+                ("2022-03-03", "c"),
+                ("2022-03-04", "a"),
+                ("2022-03-04", "c"),
+                ("2022-03-06", "a"),
+                ("2022-03-06", "c"),
+            ]:
+                partition_key = MultiPartitionKey(
+                    {"date": partition_fields[0], "abcd": partition_fields[1]}
+                )
+                _create_partitioned_run(graphql_context, "multipartitions_job", partition_key)
+
+            result = execute_dagster_graphql(
+                graphql_context,
+                GET_2D_MATERIALIZED_PARTITIONS,
+                variables={"pipelineSelector": multipartitions_selector},
+            )
+
+            ranges = result.data["assetNodes"][0]["materializedPartitions"]["ranges"]
+            assert len(ranges) == 2
+
+            assert ranges[0]["primaryDimStart"] == "2022-03-03"
+            assert ranges[0]["primaryDimEnd"] == "2022-03-04"
+            assert len(ranges[0]["secondaryDimRanges"]) == 2
+            assert ranges[0]["secondaryDimRanges"][0]["start"] == "a"
+            assert ranges[0]["secondaryDimRanges"][0]["end"] == "a"
+            assert ranges[0]["secondaryDimRanges"][1]["start"] == "c"
+            assert ranges[0]["secondaryDimRanges"][1]["end"] == "c"
+
+            assert ranges[1]["primaryDimStart"] == "2022-03-06"
+            assert ranges[1]["primaryDimEnd"] == "2022-03-06"
+            assert len(ranges[1]["secondaryDimRanges"]) == 2
+            assert ranges[1]["secondaryDimRanges"][0]["start"] == "a"
+            assert ranges[1]["secondaryDimRanges"][0]["end"] == "a"
+            assert ranges[1]["secondaryDimRanges"][1]["start"] == "c"
+            assert ranges[1]["secondaryDimRanges"][1]["end"] == "c"
