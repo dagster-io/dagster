@@ -49,6 +49,7 @@ from dagster._core.errors import (
     DagsterRunConflict,
     DagsterUndefinedLogicalVersionError,
 )
+from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
@@ -1128,9 +1129,21 @@ class DagsterInstance:
         parent_pipeline_snapshot,
         asset_selection,
         solid_selection,
-        external_pipeline_origin,
-        pipeline_code_origin,
+        external_pipeline_origin: Optional[ExternalPipelineOrigin],
+        pipeline_code_origin: Optional[PipelinePythonOrigin],
     ) -> DagsterRun:
+
+        check.opt_inst_param(
+            external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
+        )
+
+        check.opt_inst_param(pipeline_code_origin, "pipeline_code_origin", PipelinePythonOrigin)
+
+        check.invariant(
+            (external_pipeline_origin is None and pipeline_code_origin is None)
+            or (external_pipeline_origin and pipeline_code_origin),
+            "external_pipeline_origin and pipeline_code_origin are either both set or neither are set.",
+        )
 
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
