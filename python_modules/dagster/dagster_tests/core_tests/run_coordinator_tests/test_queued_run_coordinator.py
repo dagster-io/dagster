@@ -52,7 +52,7 @@ class TestQueuedRunCoordinator:
         location = workspace.get_repository_location("bar_repo_location")
         return location.get_repository("bar_repo").get_full_external_job("foo")
 
-    def create_run(
+    def create_run_for_test(
         self, instance, external_pipeline, **kwargs
     ):  # pylint: disable=redefined-outer-name
         pipeline_args = merge_dicts(
@@ -136,7 +136,7 @@ class TestQueuedRunCoordinator:
     def test_submit_run(
         self, instance, coordinator, workspace, external_pipeline
     ):  # pylint: disable=redefined-outer-name
-        run = self.create_run(
+        run = self.create_run_for_test(
             instance, external_pipeline, run_id="foo-1", status=DagsterRunStatus.NOT_STARTED
         )
         returned_run = coordinator.submit_run(SubmitRunContext(run, workspace))
@@ -150,7 +150,7 @@ class TestQueuedRunCoordinator:
     def test_submit_run_checks_status(
         self, instance, coordinator, workspace, external_pipeline
     ):  # pylint: disable=redefined-outer-name
-        run = self.create_run(
+        run = self.create_run_for_test(
             instance, external_pipeline, run_id="foo-1", status=DagsterRunStatus.QUEUED
         )
         coordinator.submit_run(SubmitRunContext(run, workspace))
@@ -168,7 +168,7 @@ class TestQueuedRunCoordinator:
     def test_cancel_run(
         self, instance, coordinator, workspace, external_pipeline
     ):  # pylint: disable=redefined-outer-name
-        run = self.create_run(
+        run = self.create_run_for_test(
             instance, external_pipeline, run_id="foo-1", status=DagsterRunStatus.NOT_STARTED
         )
 
