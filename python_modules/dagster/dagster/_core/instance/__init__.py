@@ -1126,7 +1126,7 @@ class DagsterInstance:
         pipeline_snapshot,
         execution_plan_snapshot,
         parent_pipeline_snapshot,
-        asset_selection=None,
+        asset_selection,
         solid_selection=None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
