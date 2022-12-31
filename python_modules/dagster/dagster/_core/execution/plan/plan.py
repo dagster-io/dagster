@@ -251,6 +251,7 @@ class _PlanBuilder:
             ),
             executor_name=executor_name,
             repository_load_data=self.repository_load_data,
+            fully_resolved_config=self.resolved_run_config.resolved_config_payload,
         )
 
         if self.step_keys_to_execute is not None:
@@ -634,6 +635,7 @@ class ExecutionPlan(
             ("step_dict_by_key", Dict[str, IExecutionStep]),
             ("executor_name", Optional[str]),
             ("repository_load_data", Optional[RepositoryLoadData]),
+            ("fully_resolved_config", Optional[dict]),
         ],
     )
 ):
@@ -648,6 +650,7 @@ class ExecutionPlan(
         step_dict_by_key: Optional[Dict[str, IExecutionStep]] = None,
         executor_name: Optional[str] = None,
         repository_load_data: Optional[RepositoryLoadData] = None,
+        fully_resolved_config: Optional[dict] = None,
     ):
         return super(ExecutionPlan, cls).__new__(
             cls,
@@ -686,6 +689,7 @@ class ExecutionPlan(
             repository_load_data=check.opt_inst_param(
                 repository_load_data, "repository_load_data", RepositoryLoadData
             ),
+            fully_resolved_config=fully_resolved_config,
         )
 
     @property
@@ -872,6 +876,7 @@ class ExecutionPlan(
             ),
             executor_name=self.executor_name,
             repository_load_data=self.repository_load_data,
+            fully_resolved_config=resolved_run_config.resolved_config_payload,
         )
 
     def get_version_for_step_output_handle(
@@ -1178,6 +1183,7 @@ class ExecutionPlan(
             execution_plan_snapshot.artifacts_persisted,
             executor_name=execution_plan_snapshot.executor_name,
             repository_load_data=execution_plan_snapshot.repository_load_data,
+            fully_resolved_config=execution_plan_snapshot.fully_resolved_config,
         )
 
 

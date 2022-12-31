@@ -1130,7 +1130,6 @@ class DagsterInstance:
         external_pipeline_origin=None,
         pipeline_code_origin=None,
     ) -> DagsterRun:
-
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
             run_id=run_id,
@@ -1228,6 +1227,7 @@ class DagsterInstance:
             instance=self,
         )
 
+        # TODO update run_config from external_execution_plan snapshow
         return self.create_run(
             pipeline_name=parent_run.pipeline_name,
             run_id=None,

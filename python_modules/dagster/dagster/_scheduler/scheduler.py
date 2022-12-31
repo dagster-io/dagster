@@ -738,7 +738,11 @@ def _create_scheduler_run(
     return instance.create_run(
         pipeline_name=external_schedule.pipeline_name,
         run_id=None,
-        run_config=run_config,
+        # grpc servers were updated to return fully_resolved_config with defaults filled out
+        # if that exists use that config, else fall back to the user-specified config only
+        run_config=execution_plan_snapshot.fully_resolved_config
+        if execution_plan_snapshot.fully_resolved_config
+        else run_config,
         mode=external_schedule.mode,
         solids_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=None,

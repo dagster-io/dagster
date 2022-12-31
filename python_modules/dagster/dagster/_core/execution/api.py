@@ -1055,6 +1055,10 @@ def create_execution_plan(
 
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode)
 
+    print(
+        f"fully_resolved_config in resolved_run_config: {resolved_run_config.resolved_config_payload}"
+    )
+
     return ExecutionPlan.build(
         pipeline,
         resolved_run_config,

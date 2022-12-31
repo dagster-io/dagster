@@ -539,6 +539,7 @@ def _create_external_pipeline_run(
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
+    # TODO: update config from execution_plan_snapshot
     return instance.create_run(
         pipeline_name=pipeline_name,
         run_id=run_id,

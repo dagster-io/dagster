@@ -828,6 +828,7 @@ def _create_sensor_run(
         },
     )
 
+    # TODO update run_config with external_execution_plan_snapshot fully resolved config
     return instance.create_run(
         pipeline_name=target_data.pipeline_name,
         run_id=None,

@@ -94,6 +94,14 @@ def create_valid_pipeline_run(
     )
     tags = merge_dicts(external_pipeline.tags, execution_params.execution_metadata.tags)
 
+    run_config = (
+        external_execution_plan.execution_plan_snapshot.fully_resolved_config
+        if external_execution_plan.execution_plan_snapshot.fully_resolved_config
+        else execution_params.run_config
+    )
+
+    print(f"Launching with run_config {run_config}")
+
     pipeline_run = graphene_info.context.instance.create_run(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
@@ -109,7 +117,8 @@ def create_valid_pipeline_run(
         solids_to_execute=frozenset(execution_params.selector.solid_selection)
         if execution_params.selector.solid_selection
         else None,
-        run_config=execution_params.run_config,
+        # TODO update this with external
+        run_config=run_config,
         mode=mode,
         step_keys_to_execute=step_keys_to_execute,
         tags=tags,

@@ -358,6 +358,9 @@ class DagsterApiServer(DagsterApiServicer):
         return api_pb2.GetServerIdReply(server_id=self._server_id)
 
     def ExecutionPlanSnapshot(self, request, _context):
+        print("***************")
+        print("in ExecutionPlanSnapshot")
+        print("***************")
         execution_plan_args = deserialize_as(
             request.serialized_execution_plan_snapshot_args,
             ExecutionPlanSnapshotArgs,

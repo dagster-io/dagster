@@ -52,6 +52,7 @@ class ExecutionPlanSnapshot(
             ("snapshot_version", Optional[int]),
             ("executor_name", Optional[str]),
             ("repository_load_data", Optional[RepositoryLoadData]),
+            ("fully_resolved_config", Optional[dict]),
         ],
     )
 ):
@@ -64,6 +65,7 @@ class ExecutionPlanSnapshot(
     # added step_output_versions
     # removed step_output_versions
     # added repository_load_data
+    # added fully_resolved_config
     def __new__(
         cls,
         steps: Sequence["ExecutionStepSnap"],
@@ -74,6 +76,7 @@ class ExecutionPlanSnapshot(
         snapshot_version: Optional[int] = None,
         executor_name: Optional[str] = None,
         repository_load_data: Optional[RepositoryLoadData] = None,
+        fully_resolved_config: Optional[dict] = None,
     ):
         return super(ExecutionPlanSnapshot, cls).__new__(
             cls,
@@ -92,6 +95,9 @@ class ExecutionPlanSnapshot(
             executor_name=check.opt_str_param(executor_name, "executor_name"),
             repository_load_data=check.opt_inst_param(
                 repository_load_data, "repository_load_data", RepositoryLoadData
+            ),
+            fully_resolved_config=check.opt_dict_param(
+                fully_resolved_config, "fully_resolved_config"
             ),
         )
 
@@ -314,4 +320,5 @@ def snapshot_from_execution_plan(
         snapshot_version=CURRENT_SNAPSHOT_VERSION,
         executor_name=execution_plan.executor_name,
         repository_load_data=execution_plan.repository_load_data,
+        fully_resolved_config=execution_plan.fully_resolved_config,
     )

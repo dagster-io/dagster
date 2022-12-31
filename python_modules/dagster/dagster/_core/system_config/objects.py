@@ -106,6 +106,7 @@ class ResolvedRunConfig(
             ("original_config_dict", Any),
             ("mode", Optional[str]),
             ("inputs", Mapping[str, Any]),
+            ("resolved_config_payload", Any),
         ],
     )
 ):
@@ -118,6 +119,7 @@ class ResolvedRunConfig(
         original_config_dict: Optional[Mapping[str, object]] = None,
         mode: Optional[str] = None,
         inputs: Optional[Mapping[str, object]] = None,
+        resolved_config_payload: Optional[Mapping[str, object]] = None,
     ):
         check.opt_inst_param(execution, "execution", ExecutionConfig)
         check.opt_mapping_param(original_config_dict, "original_config_dict")
@@ -137,6 +139,7 @@ class ResolvedRunConfig(
             original_config_dict=original_config_dict,
             mode=mode,
             inputs=inputs,
+            resolved_config_payload=resolved_config_payload,
         )
 
     @staticmethod
@@ -215,6 +218,14 @@ class ResolvedRunConfig(
         )
         input_configs = config_value.get("inputs", {})
 
+        fully_resolved_config = {
+            node_key: {k: v.config for (k, v) in solid_config_dict.items()},
+            "resources": {k: v.config for (k, v) in config_mapped_resource_configs.items()},
+            "loggers": config_mapped_logger_configs,
+            "execution": config_mapped_execution_configs,
+            "inputs": input_configs,
+        }
+
         return ResolvedRunConfig(
             solids=solid_config_dict,
             execution=ExecutionConfig.from_dict(config_mapped_execution_configs),
@@ -223,6 +234,7 @@ class ResolvedRunConfig(
             resources=config_mapped_resource_configs,
             mode=mode,
             inputs=input_configs,
+            resolved_config_payload=fully_resolved_config,
         )
 
     def to_dict(self) -> Mapping[str, Mapping[str, object]]:
