@@ -28,7 +28,7 @@ class TestCustomRunCoordinator(TestQueuedRunCoordinator):
             "docs_snippets.guides.dagster.run_attribution.custom_run_coordinator.warnings"
         ) as mock_warnings:
 
-            run = self.create_run(
+            run = self.create_run_for_test(
                 instance,
                 external_pipeline,
                 run_id=run_id,
@@ -59,7 +59,7 @@ class TestCustomRunCoordinator(TestQueuedRunCoordinator):
             }
         )
 
-        run = self.create_run(
+        run = self.create_run_for_test(
             instance,
             external_pipeline,
             run_id=run_id,
