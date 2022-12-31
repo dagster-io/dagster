@@ -238,6 +238,7 @@ def create_run_for_test(
         external_pipeline_origin=external_pipeline_origin,
         pipeline_code_origin=pipeline_code_origin,
         asset_selection=None,
+        solid_selection=None,
     )
 
 
