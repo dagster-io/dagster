@@ -16,6 +16,7 @@ from dagster import (
     repository,
 )
 from dagster._core.errors import DagsterLaunchFailedError
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._core.test_utils import (
@@ -180,7 +181,7 @@ def test_successful_run(instance, workspace, run_config):  # pylint: disable=red
 
 
 def test_successful_run_from_pending(
-    instance, pending_workspace
+    instance: DagsterInstance, pending_workspace
 ):  # pylint: disable=redefined-outer-name
 
     repo_location = pending_workspace.get_repository_location("test2")
@@ -224,6 +225,7 @@ def test_successful_run_from_pending(
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
+        asset_selection=None,
     )
 
     run_id = created_pipeline_run.run_id

@@ -556,6 +556,7 @@ def _create_external_pipeline_run(
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
+        asset_selection=None,
     )
 
 
