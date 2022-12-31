@@ -27,6 +27,9 @@ def create_dummy_test_run(instance: DagsterInstance, job_name: str) -> DagsterRu
         execution_plan_snapshot=None,
         parent_pipeline_snapshot=None,
         asset_selection=None,
+        solid_selection=None,
+        external_pipeline_origin=None,
+        pipeline_code_origin=None,
     )
 
 

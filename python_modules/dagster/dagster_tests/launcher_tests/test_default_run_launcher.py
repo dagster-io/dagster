@@ -221,6 +221,7 @@ def test_successful_run_from_pending(
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
         asset_selection=None,
+        solid_selection=None,
     )
 
     run_id = created_pipeline_run.run_id
