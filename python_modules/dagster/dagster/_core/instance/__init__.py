@@ -1110,27 +1110,65 @@ class DagsterInstance:
                         )
                         self.report_dagster_event(event, pipeline_run.run_id, logging.DEBUG)
 
+            # ("pipeline_name", str),
+            # ("run_id", str),
+            # ("run_config", Mapping[str, object]),
+            # ("mode", Optional[str]),
+            # ("asset_selection", Optional[FrozenSet[AssetKey]]),
+            # ("solid_selection", Optional[Sequence[str]]),
+            # ("solids_to_execute", Optional[FrozenSet[str]]),
+            # ("step_keys_to_execute", Optional[Sequence[str]]),
+            # ("status", DagsterRunStatus),
+            # ("tags", Mapping[str, str]),
+            # ("root_run_id", Optional[str]),
+            # ("parent_run_id", Optional[str]),
+            # ("pipeline_snapshot_id", Optional[str]),
+            # ("execution_plan_snapshot_id", Optional[str]),
+            # ("external_pipeline_origin", Optional["ExternalPipelineOrigin"]),
+            # ("pipeline_code_origin", Optional[PipelinePythonOrigin]),
+            # ("has_repository_load_data", bool),
+
     def create_run(
         self,
         *,
-        pipeline_name,
-        run_id,
-        run_config,
-        mode,
-        solids_to_execute,
-        step_keys_to_execute,
-        status,
-        tags,
-        root_run_id,
-        parent_run_id,
-        pipeline_snapshot,
-        execution_plan_snapshot,
-        parent_pipeline_snapshot,
+        pipeline_name: str,
+        run_id: Optional[str],  # assigned new run_id in DagsterRun if not provided
+        run_config: Optional[Mapping[str, Any]],
+        mode: Optional[str],
+        solids_to_execute: Optional[AbstractSet[str]],
+        step_keys_to_execute: Optional[Sequence[str]],
+        status: Optional[DagsterRunStatus],  # assigned status in DagsterRun if not provided
+        tags: Optional[Mapping[str, str]],
+        root_run_id: Optional[str],
+        parent_run_id: Optional[str],
+        pipeline_snapshot: Optional[PipelineSnapshot],
+        execution_plan_snapshot: Optional[
+            ExecutionPlanSnapshot
+        ],  # we persist runs that do not compile when scheduled
+        parent_pipeline_snapshot: Optional[PipelineSnapshot],
         asset_selection=None,
         solid_selection=None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
     ) -> DagsterRun:
+
+        from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
+
+        check.str_param(pipeline_name, "pipeline_name")
+        check.opt_str_param(run_id, "run_id")
+        check.opt_mapping_param(run_config, "run_config", key_type=str)
+        check.opt_str_param(mode, "mode")
+        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
+        check.opt_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.opt_inst_param(status, "status", DagsterRunStatus)
+        check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
+        check.opt_str_param(root_run_id, "root_run_id")
+        check.opt_str_param(parent_run_id, "parent_run_id")
+        check.opt_inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
+        check.opt_inst_param(
+            execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot
+        )
+        check.opt_inst_param(parent_pipeline_snapshot, "parent_pipeline_snapshot", PipelineSnapshot)
 
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
