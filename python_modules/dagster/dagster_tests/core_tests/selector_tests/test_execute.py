@@ -12,13 +12,13 @@ from .test_subset_selector import foo_job, get_asset_selection_job
 
 def test_subset_for_execution():
     recon_job = reconstructable(foo_job)
-    sub_job = recon_job.subset_for_execution(["*add_nums"])
 
+    sub_job = recon_job.subset_for_execution(["*add_nums"])
     assert sub_job.solid_selection == ["*add_nums"]
-    assert sub_job.solids_to_execute is None
+    assert sub_job.solids_to_execute == {"add_nums", "return_one", "return_two"}
 
     with instance_for_test() as instance:
-        result = execute_job(sub_job, instance)
+        result = execute_job(recon_job, instance, op_selection=["*add_nums"])
         assert result.success
         assert set([event.step_key for event in result.all_events if event.is_step_event]) == {
             "add_nums",

@@ -1118,7 +1118,7 @@ class DagsterInstance:
         run_id,
         run_config,
         mode,
-        solids_to_execute,
+        solids_to_execute: Optional[AbstractSet[str]],
         step_keys_to_execute,
         status,
         tags,
@@ -1128,13 +1128,21 @@ class DagsterInstance:
         execution_plan_snapshot,
         parent_pipeline_snapshot,
         asset_selection,
-        solid_selection,
+        solid_selection: Optional[Sequence[str]],
         external_pipeline_origin: Optional[ExternalPipelineOrigin],
         pipeline_code_origin: Optional[PipelinePythonOrigin],
     ) -> DagsterRun:
 
         from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
+        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
+        check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
+
+        check.invariant(
+            (solids_to_execute is None and solid_selection is None)
+            or (solids_to_execute is not None and solid_selection is not None),
+            f"solids_to_execute: {solids_to_execute} solid_selection: {solid_selection}",
+        )
         check.opt_inst_param(
             external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
         )
