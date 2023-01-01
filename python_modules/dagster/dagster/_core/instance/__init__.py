@@ -1118,12 +1118,12 @@ class DagsterInstance:
         run_id: Optional[str],
         run_config: Optional[Mapping[str, object]],
         mode: Optional[str],
-        step_keys_to_execute,
         status,
         tags,
-        root_run_id,
-        parent_run_id,
-        execution_plan_snapshot,
+        root_run_id: Optional[str],
+        parent_run_id: Optional[str],
+        step_keys_to_execute: Optional[Sequence[str]],
+        execution_plan_snapshot: Optional[ExecutionPlanSnapshot],
         pipeline_snapshot: Optional[PipelineSnapshot],
         parent_pipeline_snapshot: Optional[PipelineSnapshot],
         asset_selection: Optional[AbstractSet[AssetKey]],
@@ -1134,7 +1134,7 @@ class DagsterInstance:
     ) -> DagsterRun:
 
         from dagster._core.host_representation.origin import ExternalPipelineOrigin
-        from dagster._core.snap import PipelineSnapshot
+        from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 
         check.str_param(pipeline_name, "pipeline_name")
         check.opt_str_param(
@@ -1142,6 +1142,25 @@ class DagsterInstance:
         )  # will be assigned to make_new_run_id() lower in callstack
         check.opt_mapping_param(run_config, "run_config", key_type=str)
         check.opt_str_param(mode, "mode")
+
+        check.opt_str_param(root_run_id, "root_run_id")
+        check.opt_str_param(parent_run_id, "parent_run_id")
+
+        # If step_keys_to_execute is None, then everything is executed.  In some cases callers
+        # are still exploding and sending the full list of step keys even though that is
+        # unnecessary.
+
+        check.opt_sequence_param(step_keys_to_execute, "step_keys_to_execute")
+        check.opt_inst_param(
+            execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot
+        )
+
+        if root_run_id or parent_run_id:
+            check.invariant(
+                root_run_id and parent_run_id,
+                "If root_run_id or parent_run_id is passed, this is a re-execution scenario and "
+                "root_run_id and parent_run_id must both be passed.",
+            )
 
         # The pipeline_snapshot should always be set in production scenarios. In tests
         # we have sometimes omitted it out of convenience.
