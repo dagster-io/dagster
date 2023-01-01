@@ -1118,8 +1118,8 @@ class DagsterInstance:
         run_id: Optional[str],
         run_config: Optional[Mapping[str, object]],
         mode: Optional[str],
-        status,
-        tags,
+        status: Optional[DagsterRunStatus],
+        tags: Optional[Mapping[str, str]],
         root_run_id: Optional[str],
         parent_run_id: Optional[str],
         step_keys_to_execute: Optional[Sequence[str]],
@@ -1142,6 +1142,9 @@ class DagsterInstance:
         )  # will be assigned to make_new_run_id() lower in callstack
         check.opt_mapping_param(run_config, "run_config", key_type=str)
         check.opt_str_param(mode, "mode")
+
+        check.opt_inst_param(status, "status", DagsterRunStatus)
+        check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
 
         check.opt_str_param(root_run_id, "root_run_id")
         check.opt_str_param(parent_run_id, "parent_run_id")
