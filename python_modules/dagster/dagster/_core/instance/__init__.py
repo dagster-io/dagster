@@ -1141,11 +1141,14 @@ class DagsterInstance:
 
         check.opt_inst_param(pipeline_code_origin, "pipeline_code_origin", PipelinePythonOrigin)
 
-        check.invariant(
-            (external_pipeline_origin is None and pipeline_code_origin is None)
-            or (external_pipeline_origin and pipeline_code_origin),
-            "external_pipeline_origin and pipeline_code_origin are either both set or neither are set.",
-        )
+        if external_pipeline_origin:
+            check.invariant(
+                pipeline_code_origin is not None,
+                "Must get pipeline_code_origin if external_pipeline_origin is passed"
+            )
+
+        # In cases where we are doing ad hoc execution and the pipeline is "reconstructable"
+        # PipelinePythonOrigin has a value but ExternalPipelineOrigin does not
 
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
