@@ -66,7 +66,7 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.utils import str_format_list
 from dagster._serdes import ConfigurableClass
 from dagster._seven import get_current_datetime_in_utc
-from dagster._utils import merge_dicts, traced
+from dagster._utils import frozentags, merge_dicts, traced
 from dagster._utils.backcompat import deprecation_warning, experimental_functionality_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import get_dagster_logger
@@ -938,7 +938,7 @@ class DagsterInstance:
             asset_selection=asset_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
-            status=status,
+            status=DagsterRunStatus(status) if status else None,
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
@@ -1118,8 +1118,8 @@ class DagsterInstance:
         run_id: Optional[str],
         run_config: Optional[Mapping[str, object]],
         mode: Optional[str],
-        status,
-        tags,
+        status: Optional[DagsterRunStatus],
+        tags: Optional[Mapping[str, Any]],
         root_run_id: Optional[str],
         parent_run_id: Optional[str],
         step_keys_to_execute: Optional[Sequence[str]],
@@ -1133,6 +1133,7 @@ class DagsterInstance:
         pipeline_code_origin: Optional[PipelinePythonOrigin],
     ) -> DagsterRun:
 
+        from dagster._core.definitions.utils import validate_tags
         from dagster._core.host_representation.origin import ExternalPipelineOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 
@@ -1142,6 +1143,11 @@ class DagsterInstance:
         )  # will be assigned to make_new_run_id() lower in callstack
         check.opt_mapping_param(run_config, "run_config", key_type=str)
         check.opt_str_param(mode, "mode")
+
+        check.opt_inst_param(status, "status", DagsterRunStatus)
+        check.opt_mapping_param(tags, "tags", key_type=str)
+
+        validated_tags = validate_tags(tags)
 
         check.opt_str_param(root_run_id, "root_run_id")
         check.opt_str_param(parent_run_id, "parent_run_id")
@@ -1234,7 +1240,7 @@ class DagsterInstance:
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
-            tags=tags,
+            tags=dict(validated_tags),
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
             pipeline_snapshot=pipeline_snapshot,
