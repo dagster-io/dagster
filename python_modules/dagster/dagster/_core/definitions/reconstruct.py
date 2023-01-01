@@ -261,16 +261,11 @@ class ReconstructablePipeline(
                 # when the pre-resolution info is unavailable (e.g. subset from existing run),
                 # we need to fill the solid_selection in order to pass the value down to deeper stack.
                 solid_selection = list(solids_to_execute) if solids_to_execute else None
-
-            if solid_selection and solids_to_execute is None:
-                # when post-resolution query is unavailable, resolve the query
-                solids_to_execute = parse_solid_selection(pipeline_def, solid_selection)
-
             return ReconstructablePipeline(
                 repository=self.repository,
                 pipeline_name=self.pipeline_name,
                 solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
-                solids_to_execute=solids_to_execute,
+                solids_to_execute=None,
                 asset_selection=asset_selection,
             )
         elif isinstance(pipeline_def, PipelineDefinition):  # type: ignore

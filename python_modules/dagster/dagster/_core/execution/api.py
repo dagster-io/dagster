@@ -1296,10 +1296,7 @@ def _check_execute_pipeline_args(
 
     # generate pipeline subset from the given solid_selection
     if solid_selection:
-        # print(f"PASSED IF CHECK: solid_selection {solid_selection}")
-        # print(f"on pipeline {pipeline}")
         pipeline = pipeline.subset_for_execution(solid_selection)
-        # print(f"solids_to_execute: {pipeline.solids_to_execute}")
 
     return (
         pipeline,

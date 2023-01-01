@@ -1135,14 +1135,17 @@ class DagsterInstance:
 
         from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
+        # There is little rhyme or reason when one of these is set versus the other.
+        # solid_selection is a sequence of in queries into a job that gets expanded
+        # into a static list. Sometimes this happens prior to this function; sometimes
+        # after. If they are both set solids_to_execute takes precendence and solid_selection
+        # is persisted for bookkeeping purposes.
+
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
 
-        check.invariant(
-            (solids_to_execute is None and solid_selection is None)
-            or (solids_to_execute is not None and solid_selection is not None),
-            f"solids_to_execute: {solids_to_execute} solid_selection: {solid_selection}",
-        )
+        # In cases where we are doing ad hoc execution and the pipeline is "reconstructable"
+        # PipelinePythonOrigin has a value but ExternalPipelineOrigin does not
 
         check.opt_inst_param(
             external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin

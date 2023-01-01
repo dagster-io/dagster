@@ -38,7 +38,9 @@ def execute_pipeline_on_celery(
     pipeline_name, instance=None, run_config=None, tempdir=None, tags=None, subset=None
 ):
     with tempdir_wrapper(tempdir) as tempdir:
-        pipeline_def = ReconstructablePipeline.for_file(REPO_FILE, pipeline_name)
+        pipeline_def = ReconstructablePipeline.for_file(
+            REPO_FILE, pipeline_name
+        ).subset_for_execution(subset)
         with _instance_wrapper(instance) as wrapped_instance:
             run_config = run_config or {
                 "resources": {"io_manager": {"config": {"base_dir": tempdir}}},
@@ -49,7 +51,6 @@ def execute_pipeline_on_celery(
                 run_config=run_config,
                 instance=wrapped_instance,
                 tags=tags,
-                solid_selection=subset,
             )
             yield result
 

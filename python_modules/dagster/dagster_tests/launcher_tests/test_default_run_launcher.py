@@ -590,7 +590,6 @@ def test_single_solid_selection_execution(
         pipeline_def=math_diamond,
         run_config=run_config,
         solids_to_execute={"return_one"},
-        solid_selection=["return_one"],
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
     )
@@ -629,7 +628,6 @@ def test_multi_solid_selection_execution(
         pipeline_def=math_diamond,
         run_config=run_config,
         solids_to_execute={"return_one", "multiply_by_2"},
-        solid_selection=["return_one", "multiply_by_2"],
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
     )
