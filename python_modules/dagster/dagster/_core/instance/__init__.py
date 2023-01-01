@@ -1134,7 +1134,7 @@ class DagsterInstance:
     ) -> DagsterRun:
 
         from dagster._core.host_representation.origin import ExternalPipelineOrigin
-        from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
+        from dagster._core.snap import PipelineSnapshot
 
         check.str_param(pipeline_name, "pipeline_name")
         check.opt_str_param(
