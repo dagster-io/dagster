@@ -1133,6 +1133,8 @@ class DagsterInstance:
         pipeline_code_origin: Optional[PipelinePythonOrigin],
     ) -> DagsterRun:
 
+        from dagster._core.host_representation.origin import ExternalPipelineOrigin
+
         check.opt_inst_param(
             external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
         )
