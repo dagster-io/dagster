@@ -1144,7 +1144,7 @@ class DagsterInstance:
         if external_pipeline_origin:
             check.invariant(
                 pipeline_code_origin is not None,
-                "Must get pipeline_code_origin if external_pipeline_origin is passed"
+                "Must get pipeline_code_origin if external_pipeline_origin is passed",
             )
 
         # In cases where we are doing ad hoc execution and the pipeline is "reconstructable"
