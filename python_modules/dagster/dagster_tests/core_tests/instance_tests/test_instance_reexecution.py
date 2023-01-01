@@ -2,7 +2,9 @@ import os
 
 import pytest
 from dagster import DagsterInstance, job, op, reconstructable, repository
+from dagster._core.execution.api import execute_run
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
+from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.test_utils import (
@@ -14,7 +16,6 @@ from dagster._core.test_utils import (
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
-from dagster._legacy import execute_pipeline
 
 CONDITIONAL_FAIL_ENV = "DAGSTER_CONDIIONAL_FAIL"
 
@@ -78,14 +79,17 @@ def external_pipeline_fixture(repo_location):
 
 
 @pytest.fixture(name="failed_run", scope="module")
-def failed_run_fixture(instance):
+def failed_run_fixture(instance: DagsterInstance, external_pipeline: ExternalPipeline):
     # trigger failure in the conditionally_fail op
     with environ({CONDITIONAL_FAIL_ENV: "1"}):
-        result = execute_pipeline(
-            reconstructable(conditional_fail_job),
-            instance=instance,
+        pipeline = reconstructable(conditional_fail_job)
+        run = instance.create_run_for_pipeline(
+            pipeline_def=pipeline.get_definition(),
             tags={"fizz": "buzz", "foo": "not bar!"},
+            external_pipeline_origin=external_pipeline.get_external_origin(),
+            pipeline_code_origin=external_pipeline.get_python_origin(),
         )
+        result = execute_run(pipeline=pipeline, pipeline_run=run, instance=instance)
 
     assert not result.success
 
@@ -96,13 +100,11 @@ def test_create_reexecuted_run_from_failure(
     instance: DagsterInstance,
     workspace,
     repo_location,
-    external_pipeline,
     failed_run,
 ):
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
         repo_location=repo_location,
-        external_pipeline=external_pipeline,
         strategy=ReexecutionStrategy.FROM_FAILURE,
     )
 
@@ -121,13 +123,11 @@ def test_create_reexecuted_run_from_failure(
 def test_create_reexecuted_run_from_failure_tags(
     instance: DagsterInstance,
     repo_location,
-    external_pipeline,
     failed_run,
 ):
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
         repo_location=repo_location,
-        external_pipeline=external_pipeline,
         strategy=ReexecutionStrategy.FROM_FAILURE,
     )
 
@@ -137,7 +137,6 @@ def test_create_reexecuted_run_from_failure_tags(
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
         repo_location=repo_location,
-        external_pipeline=external_pipeline,
         strategy=ReexecutionStrategy.FROM_FAILURE,
         use_parent_run_tags=True,
     )
@@ -148,7 +147,6 @@ def test_create_reexecuted_run_from_failure_tags(
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
         repo_location=repo_location,
-        external_pipeline=external_pipeline,
         strategy=ReexecutionStrategy.FROM_FAILURE,
         use_parent_run_tags=True,
         extra_tags={"fizz": "not buzz!!"},
@@ -159,13 +157,10 @@ def test_create_reexecuted_run_from_failure_tags(
 
 
 def test_create_reexecuted_run_all_steps(
-    instance: DagsterInstance, workspace, repo_location, external_pipeline, failed_run
+    instance: DagsterInstance, workspace, repo_location, failed_run
 ):
     run = instance.create_reexecuted_run(
-        parent_run=failed_run,
-        repo_location=repo_location,
-        external_pipeline=external_pipeline,
-        strategy=ReexecutionStrategy.ALL_STEPS,
+        parent_run=failed_run, repo_location=repo_location, strategy=ReexecutionStrategy.ALL_STEPS
     )
 
     assert RESUME_RETRY_TAG not in run.tags

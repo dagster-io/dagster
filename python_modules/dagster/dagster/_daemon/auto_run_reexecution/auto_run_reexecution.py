@@ -125,14 +125,11 @@ def retry_run(
         )
         return
 
-    external_pipeline = external_repo.get_full_external_job(failed_run.pipeline_name)
-
     strategy = get_reexecution_strategy(failed_run, instance) or DEFAULT_REEXECUTION_POLICY
 
     new_run = instance.create_reexecuted_run(
         parent_run=failed_run,
         repo_location=repo_location,
-        external_pipeline=external_pipeline,
         strategy=strategy,
         extra_tags=tags,
         use_parent_run_tags=True,

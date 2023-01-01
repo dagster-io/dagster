@@ -39,7 +39,9 @@ from dagster._core.host_representation import (
 from dagster._core.host_representation.external_data import ExternalPartitionSetExecutionParamData
 from dagster._core.host_representation.selector import PipelineSelector
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance.persist_run_for_production import persist_run_for_production
 from dagster._core.snap import PipelineSnapshot, SolidInvocationSnap
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
@@ -507,7 +509,7 @@ def _create_external_pipeline_run(
     check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
     check.opt_str_param(run_id, "run_id")
 
-    run_config, mode, tags, solid_selection = _check_execute_external_pipeline_args(
+    run_config, mode, tags_to_pass, solid_selection = _check_execute_external_pipeline_args(
         external_pipeline,
         run_config,
         mode,
@@ -524,38 +526,17 @@ def _create_external_pipeline_run(
         solid_selection=solid_selection,
     )
 
-    external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
-
-    pipeline_mode = mode or external_pipeline.get_default_mode_name()
-
-    external_execution_plan = repo_location.get_external_execution_plan(
-        external_pipeline,
-        run_config,
-        pipeline_mode,
-        step_keys_to_execute=None,
-        known_state=None,
+    return persist_run_for_production(
         instance=instance,
-    )
-    execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
-
-    return instance.create_run(
-        pipeline_name=pipeline_name,
-        run_id=run_id,
+        repository_location=repo_location,
+        pipeline_selector=pipeline_selector,
         run_config=run_config,
-        mode=pipeline_mode,
-        solids_to_execute=external_pipeline.solids_to_execute,
-        step_keys_to_execute=execution_plan_snapshot.step_keys_to_execute,
-        solid_selection=solid_selection,
-        status=None,
-        root_run_id=None,
-        parent_run_id=None,
-        tags=tags,
-        pipeline_snapshot=external_pipeline.pipeline_snapshot,
-        execution_plan_snapshot=execution_plan_snapshot,
-        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
-        asset_selection=None,
+        context_specific_tags=tags_to_pass
+        or {},  # merging already happened in _check_execute_external_pipeline_args
+        reexecution_info=None,
+        run_status=DagsterRunStatus.NOT_STARTED,
+        explicit_mode=mode,
+        explicit_run_id=run_id,
     )
 
 

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._core.errors import DagsterRunNotFoundError
@@ -6,13 +6,20 @@ from dagster._core.execution.plan.resume_retry import get_retry_steps_from_paren
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance.persist_run_for_production import (
+    ReexecutionInfoForProduction,
+    persist_run_for_production,
+)
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
+<<<<<<< HEAD
 from dagster._core.utils import make_new_run_id
 from dagster._utils.merger import merge_dicts
 from graphene import ResolveInfo
+=======
+>>>>>>> aa2f799919 (graphql impl)
 
-from ..external import ensure_valid_config, get_external_execution_plan_or_raise
+from ..external import ensure_valid_config
 from ..utils import ExecutionParams, UserFacingGraphQLError
 
 if TYPE_CHECKING:
@@ -26,32 +33,48 @@ def _get_run(instance: DagsterInstance, run_id: str) -> DagsterRun:
     return cast(DagsterRun, run)
 
 
-def compute_step_keys_to_execute(
+# consolidate this logic with logic in create_reexecuted_run
+def compute_reexecution_info(
     graphene_info: "HasContext", execution_params: ExecutionParams
-) -> Tuple[Optional[Sequence[str]], Optional[KnownExecutionState]]:
+) -> Optional[ReexecutionInfoForProduction]:
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(execution_params, "execution_params", ExecutionParams)
 
     instance = graphene_info.context.instance
 
+    if not execution_params.execution_metadata.parent_run_id:
+        check.invariant(
+            not execution_params.execution_metadata.root_run_id, "parent and root are set together"
+        )
+        return None
+
+    root_run_id = check.not_none(execution_params.execution_metadata.root_run_id)
+    parent_run_id = check.not_none(execution_params.execution_metadata.parent_run_id)
+
+    step_keys_to_return: Optional[Sequence[str]] = None
+    known_state: Optional[KnownExecutionState] = None
+
     if not execution_params.step_keys and is_resume_retry(execution_params):
         # Get step keys from parent_run_id if it's a resume/retry
-        parent_run_id = check.not_none(execution_params.execution_metadata.parent_run_id)
         parent_run = _get_run(instance, parent_run_id)
-        return get_retry_steps_from_parent_run(
+        step_keys_to_return, known_state = get_retry_steps_from_parent_run(
             instance,
             parent_run,
         )
-    else:
-        known_state = None
-        if execution_params.execution_metadata.parent_run_id and execution_params.step_keys:
-            parent_run = _get_run(instance, execution_params.execution_metadata.parent_run_id)
-            known_state = KnownExecutionState.build_for_reexecution(
-                instance,
-                parent_run,
-            ).update_for_step_selection(execution_params.step_keys)
+    elif execution_params.step_keys:
+        step_keys_to_return = execution_params.step_keys
+        parent_run = _get_run(instance, parent_run_id)
+        known_state = KnownExecutionState.build_for_reexecution(
+            instance,
+            parent_run,
+        ).update_for_step_selection(execution_params.step_keys)
 
-        return execution_params.step_keys, known_state
+    return ReexecutionInfoForProduction(
+        parent_run_id=parent_run_id,
+        root_run_id=root_run_id,
+        known_state=known_state,
+        step_keys_to_execute=step_keys_to_return,
+    )
 
 
 def is_resume_retry(execution_params):
@@ -71,6 +94,7 @@ def create_valid_pipeline_run(
         raise UserFacingGraphQLError(
             GrapheneNoModeProvidedError(external_pipeline.name, external_pipeline.available_modes)
         )
+
     elif execution_params.mode is None and len(external_pipeline.available_modes) == 1:
         mode = external_pipeline.available_modes[0]
 
@@ -79,44 +103,18 @@ def create_valid_pipeline_run(
 
     ensure_valid_config(external_pipeline, mode, execution_params.run_config)
 
-    step_keys_to_execute, known_state = compute_step_keys_to_execute(
-        graphene_info, execution_params
-    )
+    reexecution_info = compute_reexecution_info(graphene_info, execution_params)
 
-    external_execution_plan = get_external_execution_plan_or_raise(
-        graphene_info=graphene_info,
-        external_pipeline=external_pipeline,
-        mode=mode,
+    return persist_run_for_production(
+        instance=graphene_info.context.instance,
+        repository_location=graphene_info.context.get_repository_location(
+            execution_params.selector.location_name
+        ),
+        pipeline_selector=execution_params.selector,
+        explicit_mode=execution_params.mode,
         run_config=execution_params.run_config,
-        step_keys_to_execute=step_keys_to_execute,
-        known_state=known_state,
+        reexecution_info=reexecution_info,
+        context_specific_tags=execution_params.execution_metadata.tags,
+        explicit_run_id=execution_params.execution_metadata.run_id,
+        run_status=DagsterRunStatus.NOT_STARTED,
     )
-    tags = merge_dicts(external_pipeline.tags, execution_params.execution_metadata.tags)
-
-    pipeline_run = graphene_info.context.instance.create_run(
-        pipeline_snapshot=external_pipeline.pipeline_snapshot,
-        execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
-        pipeline_name=execution_params.selector.pipeline_name,
-        run_id=execution_params.execution_metadata.run_id
-        if execution_params.execution_metadata.run_id
-        else make_new_run_id(),
-        asset_selection=frozenset(execution_params.selector.asset_selection)
-        if execution_params.selector.asset_selection
-        else None,
-        solid_selection=execution_params.selector.solid_selection,
-        solids_to_execute=frozenset(execution_params.selector.solid_selection)
-        if execution_params.selector.solid_selection
-        else None,
-        run_config=execution_params.run_config,
-        mode=mode,
-        step_keys_to_execute=step_keys_to_execute,
-        tags=tags,
-        root_run_id=execution_params.execution_metadata.root_run_id,
-        parent_run_id=execution_params.execution_metadata.parent_run_id,
-        status=DagsterRunStatus.NOT_STARTED,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
-    )
-
-    return pipeline_run

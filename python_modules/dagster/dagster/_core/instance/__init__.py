@@ -1265,7 +1265,6 @@ class DagsterInstance:
         *,
         parent_run: DagsterRun,
         repo_location: "RepositoryLocation",
-        external_pipeline: "ExternalPipeline",
         strategy: "ReexecutionStrategy",
         extra_tags: Optional[Mapping[str, Any]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
@@ -1276,31 +1275,35 @@ class DagsterInstance:
             ReexecutionStrategy,
             get_retry_steps_from_parent_run,
         )
-        from dagster._core.host_representation import ExternalPipeline, RepositoryLocation
+        from dagster._core.host_representation import RepositoryLocation
+        from dagster._core.host_representation.selector import PipelineSelector
+        from dagster._core.instance.persist_run_for_production import (
+            ReexecutionInfoForProduction,
+            persist_run_for_production,
+        )
 
         check.inst_param(parent_run, "parent_run", DagsterRun)
         check.inst_param(repo_location, "repo_location", RepositoryLocation)
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.inst_param(strategy, "strategy", ReexecutionStrategy)
         check.opt_mapping_param(extra_tags, "extra_tags", key_type=str)
         check.opt_mapping_param(run_config, "run_config", key_type=str)
         check.opt_str_param(mode, "mode")
 
+        def _pipeline_selector_from_run(run: DagsterRun) -> PipelineSelector:
+            external_pipeline_origin = check.not_none(run.external_pipeline_origin)
+
+            return PipelineSelector(
+                location_name=external_pipeline_origin.location_name,
+                repository_name=external_pipeline_origin.external_repository_origin.repository_name,
+                pipeline_name=run.pipeline_name,
+                solid_selection=run.solid_selection,
+                asset_selection=list(run.asset_selection) if run.asset_selection else None,
+            )
+
         check.bool_param(use_parent_run_tags, "use_parent_run_tags")
 
         root_run_id = parent_run.root_run_id or parent_run.run_id
         parent_run_id = parent_run.run_id
-
-        tags = merge_dicts(
-            external_pipeline.tags,
-            # these can differ from external_pipeline.tags if tags were added at launch time
-            parent_run.tags if use_parent_run_tags else {},
-            extra_tags or {},
-            {
-                PARENT_RUN_ID_TAG: parent_run_id,
-                ROOT_RUN_ID_TAG: root_run_id,
-            },
-        )
 
         mode = cast(str, mode if mode is not None else parent_run.mode)
         run_config = run_config if run_config is not None else parent_run.run_config
@@ -1315,40 +1318,40 @@ class DagsterInstance:
                 self,
                 parent_run=parent_run,
             )
-            tags[RESUME_RETRY_TAG] = "true"
         elif strategy == ReexecutionStrategy.ALL_STEPS:
             step_keys_to_execute = None
             known_state = None
         else:
             raise DagsterInvariantViolationError(f"Unknown reexecution strategy: {strategy}")
 
-        external_execution_plan = repo_location.get_external_execution_plan(
-            external_pipeline,
-            run_config,
-            mode=mode,
-            step_keys_to_execute=step_keys_to_execute,
+        reexecution_info = ReexecutionInfoForProduction(
+            parent_run_id=parent_run_id,
+            root_run_id=root_run_id,
             known_state=known_state,
-            instance=self,
+            step_keys_to_execute=step_keys_to_execute,
         )
 
-        return self.create_run(
-            pipeline_name=parent_run.pipeline_name,
-            run_id=None,
+        context_specific_tags = merge_dicts(
+            # these can differ from external_pipeline.tags if tags were added at launch time
+            parent_run.tags if use_parent_run_tags else {},
+            extra_tags or {},
+            {
+                PARENT_RUN_ID_TAG: parent_run_id,
+                ROOT_RUN_ID_TAG: root_run_id,
+            },
+            {RESUME_RETRY_TAG: "true"} if strategy == ReexecutionStrategy.FROM_FAILURE else {},
+        )
+
+        return persist_run_for_production(
+            instance=self,
+            repository_location=repo_location,
+            pipeline_selector=_pipeline_selector_from_run(parent_run),
             run_config=run_config,
-            mode=mode,
-            solids_to_execute=parent_run.solids_to_execute,
-            step_keys_to_execute=step_keys_to_execute,
-            status=DagsterRunStatus.NOT_STARTED,
-            tags=tags,
-            root_run_id=root_run_id,
-            parent_run_id=parent_run_id,
-            pipeline_snapshot=external_pipeline.pipeline_snapshot,
-            execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-            parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
-            solid_selection=parent_run.solid_selection,
-            asset_selection=parent_run.asset_selection,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+            context_specific_tags=context_specific_tags,
+            reexecution_info=reexecution_info,
+            run_status=DagsterRunStatus.NOT_STARTED,
+            explicit_mode=mode,
+            explicit_run_id=None,
         )
 
     def register_managed_run(

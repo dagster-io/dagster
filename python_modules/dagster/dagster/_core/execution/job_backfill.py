@@ -256,12 +256,15 @@ def create_backfill_run(
 
     solids_to_execute = None
     solid_selection = None
+    step_keys_to_execute: Optional[Sequence[str]] = None
+    known_state: Optional[KnownExecutionState] = None
     if not backfill_job.from_failure and not backfill_job.reexecution_steps:
         step_keys_to_execute = None
         parent_run_id = None
         root_run_id = None
         known_state = None
         if external_partition_set.solid_selection:
+            # Potential bug
             solids_to_execute = frozenset(external_partition_set.solid_selection)
             solid_selection = external_partition_set.solid_selection
 
@@ -272,7 +275,6 @@ def create_backfill_run(
         return instance.create_reexecuted_run(
             parent_run=last_run,
             repo_location=repo_location,
-            external_pipeline=external_pipeline,
             strategy=ReexecutionStrategy.FROM_FAILURE,
             extra_tags=tags,
             run_config=partition_data.run_config,
