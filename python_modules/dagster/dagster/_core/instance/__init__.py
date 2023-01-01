@@ -938,7 +938,7 @@ class DagsterInstance:
             asset_selection=asset_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
-            status=status,
+            status=DagsterRunStatus(status) if status else None,
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
@@ -1119,7 +1119,8 @@ class DagsterInstance:
         run_config: Optional[Mapping[str, object]],
         mode: Optional[str],
         status: Optional[DagsterRunStatus],
-        tags: Optional[Mapping[str, str]],
+        # TODO this is a problem. [str, str] in DagsterRun. [str, object] in External Pipeline?
+        tags: Optional[Mapping[str, object]],
         root_run_id: Optional[str],
         parent_run_id: Optional[str],
         step_keys_to_execute: Optional[Sequence[str]],
@@ -1144,7 +1145,7 @@ class DagsterInstance:
         check.opt_str_param(mode, "mode")
 
         check.opt_inst_param(status, "status", DagsterRunStatus)
-        check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
+        check.opt_mapping_param(tags, "tags", key_type=str)
 
         check.opt_str_param(root_run_id, "root_run_id")
         check.opt_str_param(parent_run_id, "parent_run_id")
