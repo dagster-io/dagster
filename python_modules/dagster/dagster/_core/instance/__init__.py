@@ -1114,10 +1114,10 @@ class DagsterInstance:
     def create_run(
         self,
         *,
-        pipeline_name,
-        run_id,
+        pipeline_name: str,
+        run_id: Optional[str],
         run_config,
-        mode,
+        mode: Optional[str],
         step_keys_to_execute,
         status,
         tags,
@@ -1134,6 +1134,10 @@ class DagsterInstance:
     ) -> DagsterRun:
 
         from dagster._core.host_representation.origin import ExternalPipelineOrigin
+
+        check.str_param(pipeline_name, "pipeline_name")
+        check.opt_str_param(run_id, "run_id") # will be assigned to make_new_run_id() lower in callstack
+        check.opt_str_param(mode, "mode")
 
         # There is little rhyme or reason when one of these is set versus the other.
         # solid_selection is a sequence of in queries into a job that gets expanded
