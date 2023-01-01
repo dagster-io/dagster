@@ -1116,7 +1116,7 @@ class DagsterInstance:
         *,
         pipeline_name: str,
         run_id: Optional[str],
-        run_config,
+        run_config: Optional[Mapping[str, object]],
         mode: Optional[str],
         step_keys_to_execute,
         status,
@@ -1136,7 +1136,10 @@ class DagsterInstance:
         from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
         check.str_param(pipeline_name, "pipeline_name")
-        check.opt_str_param(run_id, "run_id") # will be assigned to make_new_run_id() lower in callstack
+        check.opt_str_param(
+            run_id, "run_id"
+        )  # will be assigned to make_new_run_id() lower in callstack
+        check.opt_mapping_param(run_config, "run_config", key_type=str)
         check.opt_str_param(mode, "mode")
 
         # There is little rhyme or reason when one of these is set versus the other.
