@@ -1123,9 +1123,9 @@ class DagsterInstance:
         tags,
         root_run_id,
         parent_run_id,
-        pipeline_snapshot,
         execution_plan_snapshot,
-        parent_pipeline_snapshot,
+        pipeline_snapshot: Optional[PipelineSnapshot],
+        parent_pipeline_snapshot: Optional[PipelineSnapshot],
         asset_selection: Optional[AbstractSet[AssetKey]],
         solids_to_execute: Optional[AbstractSet[str]],
         solid_selection: Optional[Sequence[str]],
@@ -1134,6 +1134,7 @@ class DagsterInstance:
     ) -> DagsterRun:
 
         from dagster._core.host_representation.origin import ExternalPipelineOrigin
+        from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 
         check.str_param(pipeline_name, "pipeline_name")
         check.opt_str_param(
@@ -1141,6 +1142,12 @@ class DagsterInstance:
         )  # will be assigned to make_new_run_id() lower in callstack
         check.opt_mapping_param(run_config, "run_config", key_type=str)
         check.opt_str_param(mode, "mode")
+
+        # pipeline_snapshot should always be set in production scenarios. In some tests we omit it
+        # parent_pipeline_snapshot is set in cases where the pipeline has been subsetted
+
+        check.opt_inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
+        check.opt_inst_param(parent_pipeline_snapshot, "parent_pipeline_snapshot", PipelineSnapshot)
 
         # There is little rhyme or reason when one of these is set versus the other.
         # solid_selection is a sequence of in queries into a job that gets expanded
