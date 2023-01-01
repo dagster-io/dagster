@@ -1126,7 +1126,7 @@ class DagsterInstance:
         pipeline_snapshot,
         execution_plan_snapshot,
         parent_pipeline_snapshot,
-        asset_selection,
+        asset_selection: Optional[Sequence[AssetKey]],
         solids_to_execute: Optional[AbstractSet[str]],
         solid_selection: Optional[Sequence[str]],
         external_pipeline_origin: Optional[ExternalPipelineOrigin],
@@ -1146,6 +1146,13 @@ class DagsterInstance:
 
         # In cases where we are doing ad hoc execution and the pipeline is "reconstructable"
         # PipelinePythonOrigin has a value but ExternalPipelineOrigin does not
+
+        check.opt_sequence_param(asset_selection, "asset_selection", of_type=AssetKey)
+
+        check.invariant(
+            not (asset_selection is not None and solids_to_execute is not None),
+            "Cannot pass both asset_selection and solids_to_execute"
+        )
 
         check.opt_inst_param(
             external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
