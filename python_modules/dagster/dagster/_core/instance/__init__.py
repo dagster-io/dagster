@@ -1118,7 +1118,6 @@ class DagsterInstance:
         run_id,
         run_config,
         mode,
-        solids_to_execute: Optional[AbstractSet[str]],
         step_keys_to_execute,
         status,
         tags,
@@ -1128,6 +1127,7 @@ class DagsterInstance:
         execution_plan_snapshot,
         parent_pipeline_snapshot,
         asset_selection,
+        solids_to_execute: Optional[AbstractSet[str]],
         solid_selection: Optional[Sequence[str]],
         external_pipeline_origin: Optional[ExternalPipelineOrigin],
         pipeline_code_origin: Optional[PipelinePythonOrigin],
@@ -1143,10 +1143,10 @@ class DagsterInstance:
             or (solids_to_execute is not None and solid_selection is not None),
             f"solids_to_execute: {solids_to_execute} solid_selection: {solid_selection}",
         )
+
         check.opt_inst_param(
             external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
         )
-
         check.opt_inst_param(pipeline_code_origin, "pipeline_code_origin", PipelinePythonOrigin)
 
         # In cases where we are doing ad hoc execution and the pipeline is "reconstructable"
