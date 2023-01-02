@@ -468,7 +468,7 @@ def datetime_as_float(dt):
 
 
 # hashable frozen string to string dict
-class frozentags(frozendict):
+class frozentags(frozendict, Mapping[str, str]):
     def __init__(self, *args, **kwargs):
         super(frozentags, self).__init__(*args, **kwargs)
         check.dict_param(self, "self", key_type=str, value_type=str)
