@@ -3,6 +3,7 @@ import {Button, Icon, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {MetadataEntries} from '../metadata/MetadataEntry';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
 import {ErrorSource} from '../types/globalTypes';
@@ -33,11 +34,17 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
   const context = props.errorSource ? <ErrorContext errorSource={props.errorSource} /> : null;
   const metadataEntries = props.failureMetadata?.metadataEntries;
 
+  const MaybeMissingEnvVarError = useLaunchPadHooks().MaybeMissingEnvVarError;
+
   return (
     <>
       {context}
       <Wrapper>
-        <ErrorHeader>{message}</ErrorHeader>
+        {MaybeMissingEnvVarError ? (
+          <MaybeMissingEnvVarError errorChain={errorChain} message={message} />
+        ) : (
+          <ErrorHeader>{message}</ErrorHeader>
+        )}
         {metadataEntries ? (
           <div style={{marginTop: 10, marginBottom: 10}}>
             <MetadataEntries entries={metadataEntries} />
@@ -107,7 +114,7 @@ const CauseHeader = styled.h3`
   margin: 1em 0 1em;
 `;
 
-const ErrorHeader = styled.h3`
+export const ErrorHeader = styled.h3`
   color: #b05c47;
   font-weight: 400;
   margin: 0.5em 0 0.25em;
