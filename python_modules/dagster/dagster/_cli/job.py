@@ -25,6 +25,7 @@ from dagster._cli.workspace.cli_target import (
     python_job_target_argument,
 )
 from dagster._core.definitions.pipeline_base import IPipeline
+from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.backfill import (
@@ -567,7 +568,7 @@ def _check_execute_external_pipeline_args(
     preset: Optional[str],
     tags: Optional[Mapping[str, str]],
     solid_selection: Optional[Sequence[str]],
-) -> Tuple[Mapping[str, object], str, Mapping[str, object], Optional[Sequence[str]]]:
+) -> Tuple[Mapping[str, object], str, Mapping[str, str], Optional[Sequence[str]]]:
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
     run_config = check.opt_mapping_param(run_config, "run_config")
     check.opt_str_param(mode, "mode")
@@ -645,7 +646,7 @@ def _check_execute_external_pipeline_args(
     return (
         run_config,
         mode,
-        tags,
+        validate_tags(tags),
         solid_selection,
     )
 
