@@ -256,10 +256,10 @@ def create_backfill_run(
         if not last_run or last_run.status != DagsterRunStatus.FAILURE:
             return None
         return instance.create_reexecuted_run(
-            last_run,
-            repo_location,
-            external_pipeline,
-            ReexecutionStrategy.FROM_FAILURE,
+            parent_run=last_run,
+            repo_location=repo_location,
+            external_pipeline=external_pipeline,
+            strategy=ReexecutionStrategy.FROM_FAILURE,
             extra_tags=tags,
             run_config=partition_data.run_config,
             mode=external_partition_set.mode,

@@ -101,7 +101,10 @@ def test_create_reexecuted_run_from_failure(
     failed_run,
 ):
     run = instance.create_reexecuted_run(
-        failed_run, repo_location, external_pipeline, ReexecutionStrategy.FROM_FAILURE
+        parent_run=failed_run,
+        repo_location=repo_location,
+        external_pipeline=external_pipeline,
+        strategy=ReexecutionStrategy.FROM_FAILURE,
     )
 
     assert run.tags[RESUME_RETRY_TAG] == "true"
@@ -123,17 +126,20 @@ def test_create_reexecuted_run_from_failure_tags(
     failed_run,
 ):
     run = instance.create_reexecuted_run(
-        failed_run, repo_location, external_pipeline, ReexecutionStrategy.FROM_FAILURE
+        parent_run=failed_run,
+        repo_location=repo_location,
+        external_pipeline=external_pipeline,
+        strategy=ReexecutionStrategy.FROM_FAILURE,
     )
 
     assert run.tags["foo"] == "bar"
     assert "fizz" not in run.tags
 
     run = instance.create_reexecuted_run(
-        failed_run,
-        repo_location,
-        external_pipeline,
-        ReexecutionStrategy.FROM_FAILURE,
+        parent_run=failed_run,
+        repo_location=repo_location,
+        external_pipeline=external_pipeline,
+        strategy=ReexecutionStrategy.FROM_FAILURE,
         use_parent_run_tags=True,
     )
 
@@ -141,10 +147,10 @@ def test_create_reexecuted_run_from_failure_tags(
     assert run.tags["fizz"] == "buzz"
 
     run = instance.create_reexecuted_run(
-        failed_run,
-        repo_location,
-        external_pipeline,
-        ReexecutionStrategy.FROM_FAILURE,
+        parent_run=failed_run,
+        repo_location=repo_location,
+        external_pipeline=external_pipeline,
+        strategy=ReexecutionStrategy.FROM_FAILURE,
         use_parent_run_tags=True,
         extra_tags={"fizz": "not buzz!!"},
     )
@@ -157,7 +163,10 @@ def test_create_reexecuted_run_all_steps(
     instance: DagsterInstance, workspace, repo_location, external_pipeline, failed_run
 ):
     run = instance.create_reexecuted_run(
-        failed_run, repo_location, external_pipeline, ReexecutionStrategy.ALL_STEPS
+        parent_run=failed_run,
+        repo_location=repo_location,
+        external_pipeline=external_pipeline,
+        strategy=ReexecutionStrategy.ALL_STEPS,
     )
 
     assert RESUME_RETRY_TAG not in run.tags
