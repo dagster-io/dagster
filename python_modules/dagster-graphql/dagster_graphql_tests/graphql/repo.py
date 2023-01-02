@@ -9,6 +9,7 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from copy import deepcopy
 from typing import List, Tuple
+from dagster._core.definitions.input import In
 
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
@@ -1811,6 +1812,25 @@ def empty_repo():
     return []
 
 
+@job
+def chain_of_nothings():
+    @op
+    def op_one() -> None:
+        pass
+
+    @op(ins={"start": In(dagster_type=Nothing)})
+    def op_two() -> None:
+        pass
+
+    @op(ins={"start": In(dagster_type=Nothing)})
+    def op_three() -> None:
+        pass
+
+    # op_one_output = op_one()
+    # op_two_output = op_two(op_one_output)
+    op_three(op_two(op_one()))
+
+
 def define_pipelines():
     return [
         asset_tag_pipeline,
@@ -1872,6 +1892,7 @@ def define_pipelines():
         hanging_graph_asset_job,
         named_groups_job,
         memoization_job,
+        chain_of_nothings,
     ]
 
 

@@ -1,6 +1,7 @@
 import json
 import time
 import uuid
+from dagster._core.instance import DagsterInstance
 
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -881,6 +882,55 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         ]["messages"]
 
         assert step_did_not_run(logs, "my_op")
+
+    def test_subset_expansion(self, graphql_context):
+        instance: DagsterInstance = graphql_context.instance
+
+        selector = infer_pipeline_selector(graphql_context, "chain_of_nothings")
+        run_config = {}
+        first_result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "runConfigData": run_config,
+                    "mode": "default",
+                }
+            },
+        )
+
+        assert first_result.data
+        first_run = first_result.data["launchPipelineExecution"]["run"]
+        first_run_id = first_run["runId"]
+        assert first_run_id
+
+        first_run = instance.get_run_by_id(first_run_id)
+        assert first_run
+        # Full executions do not persist solids to execute at all
+        assert first_run.solids_to_execute is None
+
+        selector = infer_pipeline_selector(graphql_context, "chain_of_nothings", "op_two*")
+        second_result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "runConfigData": run_config,
+                    "mode": "default",
+                }
+            },
+        )
+
+        assert second_result.data
+        second_run = second_result.data["launchPipelineExecution"]["run"]
+        second_run_id = second_run["runId"]
+        assert second_run_id
+
+        second_run = instance.get_run_by_id(second_run_id)
+        assert second_run
+        assert second_run.solids_to_execute == {"op_two", "op_three"}
 
 
 def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):

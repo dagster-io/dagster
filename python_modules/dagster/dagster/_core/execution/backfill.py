@@ -183,6 +183,7 @@ def submit_backfill_runs(
     if backfill_job.asset_selection:
         # need to make another call to the user code location to properly subset
         # for an asset selection
+        # TODO looks like we need to do this unconditionally
         pipeline_selector = PipelineSelector(
             location_name=repo_location.name,
             repository_name=repo_name,
@@ -248,6 +249,14 @@ def create_backfill_run(
         root_run_id = None
         known_state = None
         if external_partition_set.solid_selection:
+            # repo_location.get_external_pipeline()
+            # pipeline_selector = PipelineSelector(
+            #     location_name=repo_location.name,
+            #     repository_name=external_pipeline.handle.repository_name,
+            #     pipeline_name=external_partition_set.pipeline_name,
+            #     solid_selection=external_partition_set.solid_selection,
+            #     asset_selection=backfill_job.asset_selection,
+            # )
             solids_to_execute = frozenset(external_partition_set.solid_selection)
             solid_selection = external_partition_set.solid_selection
 
@@ -302,7 +311,11 @@ def create_backfill_run(
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         pipeline_name=external_pipeline.name,
         run_id=make_new_run_id(),
-        solids_to_execute=solids_to_execute,
+        # this is the original code that is incorrect. Is it better to leave it blank?
+        # the external pipeline is also the full pipeline, not the one
+        # the
+        # solids_to_execute=solids_to_execute,
+        solids_to_execute=None,
         run_config=partition_data.run_config,
         mode=external_partition_set.mode,
         step_keys_to_execute=step_keys_to_execute,

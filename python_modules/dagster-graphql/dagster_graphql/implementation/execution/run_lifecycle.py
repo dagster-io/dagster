@@ -94,6 +94,10 @@ def create_valid_pipeline_run(
     )
     tags = merge_dicts(external_pipeline.tags, execution_params.execution_metadata.tags)
 
+    # print("**********************")
+    # print(f"Here: {external_pipeline.solids_to_execute}")
+    # print("**********************")
+
     pipeline_run = graphene_info.context.instance.create_run(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
@@ -106,9 +110,10 @@ def create_valid_pipeline_run(
         if execution_params.selector.asset_selection
         else None,
         solid_selection=execution_params.selector.solid_selection,
-        solids_to_execute=frozenset(execution_params.selector.solid_selection)
-        if execution_params.selector.solid_selection
-        else None,
+        # solids_to_execute=frozenset(execution_params.selector.solid_selection)
+        # if execution_params.selector.solid_selection
+        # else None,
+        solids_to_execute=external_pipeline.solids_to_execute,
         run_config=execution_params.run_config,
         mode=mode,
         step_keys_to_execute=step_keys_to_execute,
