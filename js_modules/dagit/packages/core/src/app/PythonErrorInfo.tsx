@@ -34,17 +34,17 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
   const context = props.errorSource ? <ErrorContext errorSource={props.errorSource} /> : null;
   const metadataEntries = props.failureMetadata?.metadataEntries;
 
-  const MaybeMissingEnvVarError = useLaunchPadHooks().MaybeMissingEnvVarError;
+  const MaybeMissingEnvVarErrorHeader = useLaunchPadHooks().MaybeMissingEnvVarErrorHeader;
 
   return (
     <>
-      {context}
+      {MaybeMissingEnvVarErrorHeader ? (
+        <MaybeMissingEnvVarErrorHeader error={props.error} fallback={context} />
+      ) : (
+        context
+      )}
       <Wrapper>
-        {MaybeMissingEnvVarError ? (
-          <MaybeMissingEnvVarError errorChain={errorChain} message={message} />
-        ) : (
-          <ErrorHeader>{message}</ErrorHeader>
-        )}
+        <ErrorHeader>{message}</ErrorHeader>
         {metadataEntries ? (
           <div style={{marginTop: 10, marginBottom: 10}}>
             <MetadataEntries entries={metadataEntries} />
