@@ -7,11 +7,14 @@ from dagster import (
     AssetKey,
     AssetOut,
     DagsterInvalidDefinitionError,
+    DailyPartitionsDefinition,
+    Nothing,
     OpExecutionContext,
     Out,
     Output,
     StaticPartitionsDefinition,
     String,
+    TimeWindowPartitionMapping,
 )
 from dagster import _check as check
 from dagster import build_op_context, io_manager, materialize_to_memory, resource
@@ -703,8 +706,6 @@ def test_multi_asset_retry_policy():
 
 
 def test_invalid_self_dep():
-    from dagster import DailyPartitionsDefinition, TimeWindowPartitionMapping
-
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @asset
@@ -732,3 +733,35 @@ def test_invalid_self_dep():
         )
         def c(c):
             del c
+
+
+def test_asset_in_nothing():
+    @asset(ins={"upstream": AssetIn(dagster_type=Nothing)})
+    def asset1():
+        ...
+
+    assert AssetKey("upstream") in asset1.keys_by_input_name.values()
+    assert materialize_to_memory([asset1]).success
+
+
+def test_asset_in_nothing_and_something():
+    @asset
+    def other_upstream():
+        ...
+
+    @asset(ins={"upstream": AssetIn(dagster_type=Nothing)})
+    def asset1(other_upstream):
+        del other_upstream
+
+    assert AssetKey("upstream") in asset1.keys_by_input_name.values()
+    assert AssetKey("other_upstream") in asset1.keys_by_input_name.values()
+    assert materialize_to_memory([other_upstream, asset1]).success
+
+
+def test_asset_in_nothing_context():
+    @asset(ins={"upstream": AssetIn(dagster_type=Nothing)})
+    def asset1(context):
+        del context
+
+    assert AssetKey("upstream") in asset1.keys_by_input_name.values()
+    assert materialize_to_memory([asset1]).success

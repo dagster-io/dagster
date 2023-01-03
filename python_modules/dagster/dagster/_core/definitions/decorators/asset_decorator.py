@@ -559,8 +559,11 @@ def build_asset_ins(
     all_input_names = set(non_var_input_param_names) | asset_ins.keys()
 
     if not has_kwargs:
-        for in_key in asset_ins.keys():
-            if in_key not in non_var_input_param_names:
+        for in_key, asset_in in asset_ins.items():
+            if in_key not in non_var_input_param_names and (
+                not isinstance(asset_in.dagster_type, DagsterType)
+                or not asset_in.dagster_type.is_nothing
+            ):
                 raise DagsterInvalidDefinitionError(
                     f"Key '{in_key}' in provided ins dict does not correspond to any of the names "
                     "of the arguments to the decorated function"
