@@ -205,7 +205,7 @@ TEST_PIPELINE_NAME = "_test_pipeline_"
 
 
 def create_run_for_test(
-    instance,
+    instance: DagsterInstance,
     pipeline_name=TEST_PIPELINE_NAME,
     run_id=None,
     run_config=None,
@@ -238,6 +238,7 @@ def create_run_for_test(
         parent_pipeline_snapshot=parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline_origin,
         pipeline_code_origin=pipeline_code_origin,
+        asset_selection=None,
     )
 
 

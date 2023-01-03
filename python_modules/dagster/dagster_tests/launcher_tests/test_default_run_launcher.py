@@ -7,15 +7,11 @@ import time
 
 import pytest
 
-from dagster import (
-    DagsterEventType,
-    DefaultRunLauncher,
-    _seven,
-    file_relative_path,
-    fs_io_manager,
-    repository,
-)
+from dagster import DagsterEventType, DefaultRunLauncher
+from dagster import _check as check
+from dagster import _seven, file_relative_path, fs_io_manager, repository
 from dagster._core.errors import DagsterLaunchFailedError
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._core.test_utils import (
@@ -180,7 +176,7 @@ def test_successful_run(instance, workspace, run_config):  # pylint: disable=red
 
 
 def test_successful_run_from_pending(
-    instance, pending_workspace
+    instance: DagsterInstance, pending_workspace
 ):  # pylint: disable=redefined-outer-name
 
     repo_location = pending_workspace.get_repository_location("test2")
@@ -224,15 +220,16 @@ def test_successful_run_from_pending(
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
+        asset_selection=None,
     )
 
     run_id = created_pipeline_run.run_id
 
-    assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
+    assert check.not_none(instance.get_run_by_id(run_id)).status == DagsterRunStatus.NOT_STARTED
 
     instance.launch_run(run_id=run_id, workspace=pending_workspace)
 
-    stored_pipeline_run = instance.get_run_by_id(run_id)
+    stored_pipeline_run = check.not_none(instance.get_run_by_id(run_id))
     assert created_pipeline_run.run_id == stored_pipeline_run.run_id
     assert (
         created_pipeline_run.execution_plan_snapshot_id
@@ -258,8 +255,8 @@ def test_successful_run_from_pending(
     assert call_counts.get("compute_cacheable_data_called_b") == "1"
     # once at initial load time, once inside the run launch process, once for each (3) subprocess
     # upper bound of 5 here because race conditions result in lower count sometimes
-    assert int(call_counts.get("get_definitions_called_a")) < 6
-    assert int(call_counts.get("get_definitions_called_b")) < 6
+    assert int(call_counts["get_definitions_called_a"]) < 6
+    assert int(call_counts["get_definitions_called_b"]) < 6
 
 
 def test_invalid_instance_run():
