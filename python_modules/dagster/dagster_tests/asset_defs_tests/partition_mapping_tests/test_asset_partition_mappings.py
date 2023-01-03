@@ -20,8 +20,10 @@ from dagster import (
     Output,
     PartitionsDefinition,
     StaticPartitionsDefinition,
+    TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
     graph,
+    materialize,
     op,
 )
 from dagster._core.definitions import asset, build_assets_job, multi_asset
@@ -530,6 +532,42 @@ def test_partition_keys_in_range():
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     downstream_job.execute_in_process(partition_key="2022-09-11")
+
+
+def test_dependency_resolution_partition_mapping():
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+        key_prefix=["staging"],
+    )
+    def upstream(context):
+        partition_date_str = context.asset_partition_key_for_output()
+        return partition_date_str
+
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+        key_prefix=["staging"],
+        ins={
+            "upstream": AssetIn(
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=0),
+            )
+        },
+    )
+    def downstream(context, upstream):
+        context.log.info(upstream)
+        return upstream
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            ...
+
+        def load_input(self, context):
+            assert context.asset_key.path == ["staging", "upstream"]
+            assert context.partition_key == "2020-01-02"
+            assert context.asset_partition_keys == ["2020-01-01", "2020-01-02"]
+
+    materialize(
+        [upstream, downstream], resources={"io_manager": MyIOManager()}, partition_key="2020-01-02"
+    )
 
 
 def test_exported_partition_mappings_whitelisted():

@@ -376,6 +376,13 @@ class NodeHandle(
         return self.to_string()
 
     @property
+    def root(self):
+        if self.parent:
+            return self.parent.root
+        else:
+            return self
+
+    @property
     def path(self) -> Sequence[str]:
         """Return a list representation of the handle.
 
