@@ -101,10 +101,14 @@ class Resource(
         return super().__setattr__(name, value)
 
     def create_object_to_pass_to_user_code(self, context) -> Any:  # pylint: disable=unused-argument
-        # This acts identically to the function decorator with @resource in the old style
-        #
-        # Default behavior, for "new-style" resources, is to return itself, passing
-        # the actual resource object to user code.
+        """
+        Returns the object that this resource hands to user code, accessible by ops or assets
+        through the context or resource parameters. This works like the function decorated
+        with @resource when using function-based resources.
+        
+        Default behavior for new class-based resources is to return itself, passing
+        the actual resource object to user code.
+        """
         return self
 
 
