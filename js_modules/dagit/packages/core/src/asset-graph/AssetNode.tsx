@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, FontFamily, Box, CaptionMono, Caption, Spinner} from '@dagster-io/ui';
+import {Colors, Icon, FontFamily, Box, Caption, Spinner} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import styled from 'styled-components/macro';
@@ -57,7 +57,7 @@ export const AssetNode: React.FC<{
               <StatsRow>
                 <span>Observed</span>
                 {liveData?.lastObservation ? (
-                  <CaptionMono style={{textAlign: 'right'}}>
+                  <Caption style={{textAlign: 'right'}}>
                     <AssetRunLink
                       runId={liveData.lastObservation.runId}
                       event={{stepKey, timestamp: liveData.lastObservation.timestamp}}
@@ -67,7 +67,7 @@ export const AssetNode: React.FC<{
                         timeFormat={{showSeconds: false, showTimezone: false}}
                       />
                     </AssetRunLink>
-                  </CaptionMono>
+                  </Caption>
                 ) : (
                   <span>–</span>
                 )}
@@ -105,7 +105,7 @@ export const AssetNodeStatusBox: React.FC<{background: string}> = ({background, 
       borderBottomLeftRadius: 6,
       borderBottomRightRadius: 6,
       whiteSpace: 'nowrap',
-      lineHeight: 12,
+      lineHeight: '12px',
       height: 24,
     }}
     flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
@@ -158,15 +158,17 @@ export const AssetNodeStatusRow: React.FC<{
   }
 
   const lastMaterializationLink = lastMaterialization ? (
-    <AssetRunLink
-      runId={lastMaterialization.runId}
-      event={{stepKey, timestamp: lastMaterialization.timestamp}}
-    >
-      <TimestampDisplay
-        timestamp={Number(lastMaterialization.timestamp) / 1000}
-        timeFormat={{showSeconds: false, showTimezone: false}}
-      />
-    </AssetRunLink>
+    <Caption>
+      <AssetRunLink
+        runId={lastMaterialization.runId}
+        event={{stepKey, timestamp: lastMaterialization.timestamp}}
+      >
+        <TimestampDisplay
+          timestamp={Number(lastMaterialization.timestamp) / 1000}
+          timeFormat={{showSeconds: false, showTimezone: false}}
+        />
+      </AssetRunLink>
+    </Caption>
   ) : undefined;
 
   if (runWhichFailedToMaterialize || late) {
