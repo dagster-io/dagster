@@ -45,7 +45,7 @@ def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSch
             schema_field,
         ),
     )
-    # this cast required to make mypy happy, with does not support Self
+    # this cast required to make mypy happy, which does not support Self
     configured_resource_def = cast(ResourceDefinition, configured_resource_def)
     return configured_resource_def.config_schema
 
