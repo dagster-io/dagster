@@ -1,33 +1,12 @@
 import time
 
 from dagster._core.host_representation.handle import JobHandle
-from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun
-from dagster._core.test_utils import instance_for_test, poll_for_event
+from dagster._core.test_utils import create_run_for_test, instance_for_test, poll_for_event
 from dagster._grpc.server import ExecuteExternalPipelineArgs
 from dagster._grpc.types import CancelExecutionRequest
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
 
 from .utils import get_bar_repo_repository_location
-
-
-def create_dummy_test_run(instance: DagsterInstance, job_name: str) -> DagsterRun:
-    return instance.create_run(
-        pipeline_name=job_name,
-        run_id=None,
-        run_config={},
-        mode="default",
-        solids_to_execute=None,
-        step_keys_to_execute=None,
-        status=None,
-        tags=None,
-        root_run_id=None,
-        parent_run_id=None,
-        pipeline_snapshot=None,
-        execution_plan_snapshot=None,
-        parent_pipeline_snapshot=None,
-        asset_selection=None,
-    )
 
 
 def test_launch_run_grpc():
@@ -37,7 +16,7 @@ def test_launch_run_grpc():
             job_handle = JobHandle("forever", repository_location.get_repository("bar_repo").handle)
             api_client = repository_location.client
 
-            run = create_dummy_test_run(instance, job_name="forever")
+            run = create_run_for_test(instance, pipeline_name="forever")
             run_id = run.run_id
 
             assert repository_location.get_current_runs() == []

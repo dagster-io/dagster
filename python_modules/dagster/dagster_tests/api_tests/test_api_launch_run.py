@@ -1,8 +1,11 @@
-from dagster_tests.api_tests.test_api_get_current_runs import create_dummy_test_run
-
 from dagster._core.host_representation.handle import JobHandle
 from dagster._core.storage.pipeline_run import DagsterRunStatus
-from dagster._core.test_utils import instance_for_test, poll_for_event, poll_for_finished_run
+from dagster._core.test_utils import (
+    create_run_for_test,
+    instance_for_test,
+    poll_for_event,
+    poll_for_finished_run,
+)
 from dagster._grpc.server import ExecuteExternalPipelineArgs
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
 
@@ -26,7 +29,7 @@ def test_launch_run_with_unloadable_pipeline_grpc():
             job_handle = JobHandle("foo", repository_location.get_repository("bar_repo").handle)
             api_client = repository_location.client
 
-            run = create_dummy_test_run(instance, "foo")
+            run = create_run_for_test(instance, "foo")
             run_id = run.run_id
 
             original_origin = job_handle.get_external_origin()
@@ -75,7 +78,7 @@ def test_launch_run_grpc():
             job_handle = JobHandle("foo", repository_location.get_repository("bar_repo").handle)
             api_client = repository_location.client
 
-            run = create_dummy_test_run(instance, "foo")
+            run = create_run_for_test(instance, "foo")
             run_id = run.run_id
 
             res = deserialize_json_to_dagster_namedtuple(
@@ -119,7 +122,7 @@ def test_launch_unloadable_run_grpc():
             job_handle = JobHandle("foo", repository_location.get_repository("bar_repo").handle)
             api_client = repository_location.client
 
-            run = create_dummy_test_run(instance, "foo")
+            run = create_run_for_test(instance, "foo")
             run_id = run.run_id
 
             with instance_for_test() as other_instance:
