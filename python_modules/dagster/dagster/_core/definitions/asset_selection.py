@@ -58,7 +58,24 @@ class AssetSelection(ABC):
     @public  # type: ignore
     @staticmethod
     def keys(*asset_keys: CoercibleToAssetKey) -> "KeysAssetSelection":
-        """Returns a selection that includes assets with any of the provided keys."""
+        """
+        Returns a selection that includes assets with any of the provided keys.
+
+        Examples:
+
+            .. code-block:: python
+
+                AssetSelection.keys(AssetKey(["a"]))
+
+                AssetSelection.keys("a")
+
+                AssetSelection.keys(AssetKey(["a"]), AssetKey(["b"]))
+
+                AssetSelection.keys("a", "b")
+
+                asset_key_list = [AssetKey(["a"]), AssetKey(["b"])]
+                AssetSelection.keys(*asset_key_list)
+        """
         _asset_keys = [
             AssetKey.from_user_string(key)
             if isinstance(key, str)
