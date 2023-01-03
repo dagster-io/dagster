@@ -114,7 +114,7 @@ class Resource(
         Returns the object that this resource hands to user code, accessible by ops or assets
         through the context or resource parameters. This works like the function decorated
         with @resource when using function-based resources.
-        
+
         Default behavior for new class-based resources is to return itself, passing
         the actual resource object to user code.
         """
