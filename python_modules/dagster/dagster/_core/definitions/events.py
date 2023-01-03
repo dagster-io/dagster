@@ -168,6 +168,9 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
             return AssetKey(asset_key["path"])
         return None
 
+    def to_graphql_input(self) -> Mapping[str, Sequence[str]]:
+        return {"path": self.path}
+
     @staticmethod
     def from_coerceable(arg: "CoercibleToAssetKey") -> "AssetKey":
         if isinstance(arg, AssetKey):

@@ -482,6 +482,17 @@ two_assets_in_sequence_fan_out_partitions = [
 ]
 one_asset_daily_partitions = [asset_def("asset1", partitions_def=daily_partitions_def)]
 
+partitioned_after_non_partitioned = [
+    asset_def("asset1"),
+    asset_def(
+        "asset2", ["asset1"], partitions_def=DailyPartitionsDefinition(start_date="2020-01-01")
+    ),
+]
+non_partitioned_after_partitioned = [
+    asset_def("asset1", partitions_def=DailyPartitionsDefinition(start_date="2020-01-01")),
+    asset_def("asset2", ["asset1"]),
+]
+
 one_asset_self_dependency = [
     asset_def(
         "asset1",
