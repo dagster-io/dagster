@@ -158,17 +158,17 @@ export const AssetNodeStatusRow: React.FC<{
   }
 
   const lastMaterializationLink = lastMaterialization ? (
-    <AssetRunLink
-      runId={lastMaterialization.runId}
-      event={{stepKey, timestamp: lastMaterialization.timestamp}}
-    >
-      <Caption>
+    <Caption>
+      <AssetRunLink
+        runId={lastMaterialization.runId}
+        event={{stepKey, timestamp: lastMaterialization.timestamp}}
+      >
         <TimestampDisplay
           timestamp={Number(lastMaterialization.timestamp) / 1000}
           timeFormat={{showSeconds: false, showTimezone: false}}
         />
-      </Caption>
-    </AssetRunLink>
+      </AssetRunLink>
+    </Caption>
   ) : undefined;
 
   if (runWhichFailedToMaterialize || late) {
