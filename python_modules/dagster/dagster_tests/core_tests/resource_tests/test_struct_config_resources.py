@@ -5,11 +5,20 @@ from typing import Callable
 import pytest
 from pydantic import ValidationError
 
-from dagster import asset, job, op, resource
-from dagster._config.structured_config import Resource, StructuredResourceAdapter
+from dagster import IOManager, asset, job, op, resource
+from dagster._config.structured_config import (
+    Resource,
+    StructuredConfigIOManagerBase,
+    StructuredIOManagerAdapter,
+    StructuredResourceAdapter,
+)
 from dagster._core.definitions.assets_job import build_assets_job
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_output import ResourceOutput
+from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.execution.context.init import InitResourceContext
+from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._utils.cached_method import cached_method
 
 
@@ -246,3 +255,67 @@ def test_wrapping_function_resource():
 
     assert prefix_job.execute_in_process().success
     assert out_txt == ["greeting: hello, world!"]
+
+
+class AnIOManagerImplementation(IOManager):
+    def __init__(self, a_config_value: str):
+        self.a_config_value = a_config_value
+
+    def load_input(self, _):
+        pass
+
+    def handle_output(self, _, obj):
+        pass
+
+
+def test_io_manager_adapter():
+    @io_manager(config_schema={"a_config_value": str})
+    def an_io_manager(context: InitResourceContext) -> AnIOManagerImplementation:
+        return AnIOManagerImplementation(context.resource_config["a_config_value"])
+
+    class AdapterForIOManager(StructuredIOManagerAdapter):
+        a_config_value: str
+
+        @property
+        def wrapped_io_manager(self) -> IOManagerDefinition:
+            return an_io_manager
+
+    executed = {}
+
+    @asset
+    def an_asset(context: OpExecutionContext):
+        assert context.resources.io_manager.a_config_value == "passed-in-configured"
+        executed["yes"] = True
+
+    defs = Definitions(
+        assets=[an_asset],
+        resources={"io_manager": AdapterForIOManager(a_config_value="passed-in-configured")},
+    )
+    defs.get_implicit_global_asset_job_def().execute_in_process()
+
+    assert executed["yes"]
+
+
+def test_io_manager_factory_class():
+    # now test without the adapter
+    class AnIOManagerFactory(StructuredConfigIOManagerBase):
+        a_config_value: str
+
+        def create_io_manager_to_pass_to_user_code(self, _) -> IOManager:
+            """Implement as one would implement a @io_manager decorator function"""
+            return AnIOManagerImplementation(self.a_config_value)
+
+    executed = {}
+
+    @asset
+    def another_asset(context: OpExecutionContext):
+        assert context.resources.io_manager.a_config_value == "passed-in-factory"
+        executed["yes"] = True
+
+    defs = Definitions(
+        assets=[another_asset],
+        resources={"io_manager": AnIOManagerFactory(a_config_value="passed-in-factory")},
+    )
+    defs.get_implicit_global_asset_job_def().execute_in_process()
+
+    assert executed["yes"]
