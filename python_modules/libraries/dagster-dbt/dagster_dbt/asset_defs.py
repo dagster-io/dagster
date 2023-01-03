@@ -170,7 +170,7 @@ def _get_node_description(node_info, display_raw_sql):
 
 def _get_node_metadata(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
     metadata: Dict[str, Any] = {}
-    columns = node_info.get("columns", [])
+    columns = node_info.get("columns", {})
     if len(columns) > 0:
         metadata["table_schema"] = MetadataValue.table_schema(
             TableSchema(
@@ -197,23 +197,21 @@ def _get_node_freshness_policy(node_info: Mapping[str, Any]) -> Optional[Freshne
     return None
 
 
+def _is_non_asset_node(node_info):
+    # some nodes exist inside the dbt graph but are not assets
+    resource_type = node_info["resource_type"]
+    if resource_type == "metric":
+        return True
+    if resource_type == "model" and node_info.get("config", {}).get("materialized") == "ephemeral":
+        return True
+    return False
+
+
 def _get_deps(
     dbt_nodes: Mapping[str, Any],
     selected_unique_ids: AbstractSet[str],
     asset_resource_types: List[str],
 ) -> Mapping[str, FrozenSet[str]]:
-    def _replaceable_node(node_info):
-        # some nodes exist inside the dbt graph but are not assets
-        resource_type = node_info["resource_type"]
-        if resource_type == "metric":
-            return True
-        if (
-            resource_type == "model"
-            and node_info.get("config", {}).get("materialized") == "ephemeral"
-        ):
-            return True
-        return False
-
     def _valid_parent_node(node_info):
         # sources are valid parents, but not assets
         return node_info["resource_type"] in asset_resource_types + ["source"]
@@ -224,14 +222,14 @@ def _get_deps(
         node_resource_type = node_info["resource_type"]
 
         # skip non-assets, such as metrics, tests, and ephemeral models
-        if _replaceable_node(node_info) or node_resource_type not in asset_resource_types:
+        if _is_non_asset_node(node_info) or node_resource_type not in asset_resource_types:
             continue
 
         asset_deps[unique_id] = set()
         for parent_unique_id in node_info["depends_on"]["nodes"]:
             parent_node_info = dbt_nodes[parent_unique_id]
             # for metrics or ephemeral dbt models, BFS to find valid parents
-            if _replaceable_node(parent_node_info):
+            if _is_non_asset_node(parent_node_info):
                 visited = set()
                 replaced_parent_ids = set()
                 queue = parent_node_info["depends_on"]["nodes"]
@@ -242,7 +240,7 @@ def _get_deps(
                     visited.add(candidate_parent_id)
 
                     candidate_parent_info = dbt_nodes[candidate_parent_id]
-                    if _replaceable_node(candidate_parent_info):
+                    if _is_non_asset_node(candidate_parent_info):
                         queue.extend(candidate_parent_info["depends_on"]["nodes"])
                     elif _valid_parent_node(candidate_parent_info):
                         replaced_parent_ids.add(candidate_parent_id)
