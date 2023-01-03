@@ -672,6 +672,7 @@ class TestRunStorage:
             filters=RunsFilter(run_ids=[two], updated_after=datetime(2020, 1, 1))
         )[0]
         run_two_update_timestamp = record_two.update_timestamp
+        record_three = storage.get_run_records(filters=RunsFilter(run_ids=[three]))[0]
 
         assert [
             record.pipeline_run.run_id
@@ -690,6 +691,13 @@ class TestRunStorage:
                 ),
             )
         ] == [one]
+
+        assert [
+            record.pipeline_run.run_id
+            for record in storage.get_run_records(
+                filters=RunsFilter(updated_before=record_three.update_timestamp)
+            )
+        ] == [two]
 
     def test_fetch_by_status_cursored(self, storage):
         assert storage
