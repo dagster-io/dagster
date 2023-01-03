@@ -1,6 +1,7 @@
 import sys
 from typing import Optional
 
+import pydantic
 import pytest
 from pydantic import BaseModel
 
@@ -516,3 +517,41 @@ def test_optional_int_source_default():
     assert print_config_type_to_string(
         {"an_int": dagster.Field(IntSource, is_required=False)}
     ) == print_config_type_to_string(infer_schema_from_config_class(OptionalInt).config_type)
+
+
+def test_schema_aliased_field():
+    # schema is a common config element and you cannot use it in pydantic without an alias
+    class ConfigWithSchema(Config):
+        schema_: str = pydantic.Field(alias="schema")
+
+    # use the alias in the constructor
+    obj = ConfigWithSchema(schema="foo")
+    # actual field name to access
+    assert obj.schema_ == "foo"
+
+    # show different pydantic methods
+    assert obj.dict() == {"schema_": "foo"}
+    assert obj.dict(by_alias=True) == {"schema": "foo"}
+
+    # we respect the alias in the config space
+    assert print_config_type_to_string(
+        {"schema": dagster.Field(StringSource)}
+    ) == print_config_type_to_string(infer_schema_from_config_class(ConfigWithSchema).config_type)
+
+    executed = {}
+
+    @op
+    def an_op(context, config: ConfigWithSchema):
+        # use the raw property in python space
+        assert config.schema_ == "bar"
+        # use the alias in config space
+        assert context.op_config == {"schema": "bar"}
+        executed["yes"] = True
+
+    @job
+    def a_job():
+        an_op()
+
+    # use the alias in config space
+    assert a_job.execute_in_process({"ops": {"an_op": {"config": {"schema": "bar"}}}}).success
+    assert executed["yes"]
