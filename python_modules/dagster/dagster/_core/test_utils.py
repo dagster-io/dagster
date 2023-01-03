@@ -18,6 +18,7 @@ from dagster import _check as check
 from dagster import fs_io_manager
 from dagster._config import Array, Field
 from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     InProcessRepositoryLocationOrigin,
@@ -390,11 +391,12 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
 
 
 class MockedRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data=None, bad_run_ids=None):
+    def __init__(self, inst_data=None, bad_run_ids=None, bad_user_code_run_ids=None):
         self._inst_data = inst_data
         self._queue = []
         self._launched_run_ids = set()
-        self._bad_run_ids = bad_run_ids
+        self.bad_run_ids = bad_run_ids or set()
+        self.bad_user_code_run_ids = bad_user_code_run_ids or set()
 
         super().__init__()
 
@@ -403,8 +405,11 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
         check.inst_param(run, "run", DagsterRun)
         check.invariant(run.status == DagsterRunStatus.STARTING)
 
-        if self._bad_run_ids and run.run_id in self._bad_run_ids:
+        if run.run_id in self.bad_run_ids:
             raise Exception(f"Bad run {run.run_id}")
+
+        if run.run_id in self.bad_user_code_run_ids:
+            raise DagsterUserCodeUnreachableError(f"User code error launching run {run.run_id}")
 
         self._queue.append(run)
         self._launched_run_ids.add(run.run_id)
@@ -418,7 +423,12 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return Shape({"bad_run_ids": Field(Array(str), is_required=False)})
+        return Shape(
+            {
+                "bad_run_ids": Field(Array(str), is_required=False),
+                "bad_user_code_run_ids": Field(Array(str), is_required=False),
+            }
+        )
 
     @classmethod
     def from_config_value(cls, inst_data, config_value):
