@@ -1,4 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
+import uniq from 'lodash/uniq';
 import * as React from 'react';
 
 import {graphql} from '../graphql';
@@ -62,7 +63,9 @@ export function useRecentAssetEvents(
     const loadedPartitionKeys =
       loadUsingPartitionKeys && allPartitionKeys
         ? allPartitionKeys.slice(allPartitionKeys.length - 120)
-        : undefined;
+        : uniq(
+            [...materializations, ...observations].map((p) => p.partition!).filter(Boolean),
+          ).sort();
 
     return {
       asset,
