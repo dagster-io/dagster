@@ -1,10 +1,9 @@
 import sys
 import threading
 import time
-from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from dagster import _check as check
 from dagster._core.errors import DagsterRepositoryLocationLoadError, DagsterUserCodeUnreachableError
@@ -26,85 +25,7 @@ from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import IntervalDaemon, TDaemonGenerator
 from dagster._utils.error import serializable_error_info_from_exc_info
-
-
-class _TagConcurrencyLimitsCounter:
-    """
-    Helper object that keeps track of when the tag concurrency limits are met
-    """
-
-    _key_limits: Dict[str, int]
-    _key_value_limits: Dict[Tuple[str, str], int]
-    _unique_value_limits: Dict[str, int]
-    _key_counts: Dict[str, int]
-    _key_value_counts: Dict[Tuple[str, str], int]
-    _unique_value_counts: Dict[Tuple[str, str], int]
-
-    def __init__(self, tag_concurrency_limits, in_progress_runs):
-        check.opt_list_param(tag_concurrency_limits, "tag_concurrency_limits", of_type=dict)
-        check.list_param(in_progress_runs, "in_progress_runs", of_type=DagsterRun)
-
-        self._key_limits = {}
-        self._key_value_limits = {}
-        self._unique_value_limits = {}
-
-        for tag_limit in tag_concurrency_limits:
-            key = tag_limit["key"]
-            value = tag_limit.get("value")
-            limit = tag_limit["limit"]
-
-            if isinstance(value, str):
-                self._key_value_limits[(key, value)] = limit
-            elif not value or not value["applyLimitPerUniqueValue"]:
-                self._key_limits[key] = limit
-            else:
-                self._unique_value_limits[key] = limit
-
-        self._key_counts = defaultdict(lambda: 0)
-        self._key_value_counts = defaultdict(lambda: 0)
-        self._unique_value_counts = defaultdict(lambda: 0)
-
-        # initialize counters based on current in progress runs
-        for run in in_progress_runs:
-            self.update_counters_with_launched_run(run)
-
-    def is_run_blocked(self, run):
-        """
-        True if there are in progress runs which are blocking this run based on tag limits
-        """
-        for key, value in run.tags.items():
-            if key in self._key_limits and self._key_counts[key] >= self._key_limits[key]:
-                return True
-
-            tag_tuple = (key, value)
-            if (
-                tag_tuple in self._key_value_limits
-                and self._key_value_counts[tag_tuple] >= self._key_value_limits[tag_tuple]
-            ):
-                return True
-
-            if (
-                key in self._unique_value_limits
-                and self._unique_value_counts[tag_tuple] >= self._unique_value_limits[key]
-            ):
-                return True
-
-        return False
-
-    def update_counters_with_launched_run(self, run):
-        """
-        Add a new in progress run to the counters
-        """
-        for key, value in run.tags.items():
-            if key in self._key_limits:
-                self._key_counts[key] += 1
-
-            tag_tuple = (key, value)
-            if tag_tuple in self._key_value_limits:
-                self._key_value_counts[tag_tuple] += 1
-
-            if key in self._unique_value_limits:
-                self._unique_value_counts[tag_tuple] += 1
+from dagster._utils.tags import TagConcurrencyLimitsCounter
 
 
 class QueuedRunCoordinatorDaemon(IntervalDaemon):
@@ -309,7 +230,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         # place in order
         sorted_runs = self._priority_sort(queued_runs)
-        tag_concurrency_limits_counter = _TagConcurrencyLimitsCounter(
+        tag_concurrency_limits_counter = TagConcurrencyLimitsCounter(
             tag_concurrency_limits, in_progress_runs
         )
 
@@ -318,7 +239,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             if max_concurrent_runs_enabled and len(batch) >= max_runs_to_launch:
                 break
 
-            if tag_concurrency_limits_counter.is_run_blocked(run):
+            if tag_concurrency_limits_counter.is_blocked(run):
                 continue
 
             location_name = (
@@ -327,7 +248,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             if location_name and location_name in paused_location_names:
                 continue
 
-            tag_concurrency_limits_counter.update_counters_with_launched_run(run)
+            tag_concurrency_limits_counter.update_counters_with_launched_item(run)
             batch.append(run)
 
         return batch

@@ -16,6 +16,7 @@ from dagster._core.definitions.pipeline_base import IPipeline
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.execution.retries import RetryMode, get_retries_config
+from dagster._core.execution.tags import get_tag_concurrency_limits_config
 
 from .definition_config_schema import (
     IDefinitionConfigSchema,
@@ -339,6 +340,7 @@ MULTI_PROC_CONFIG = Field(
                 "By default, this is set to be the return value of `multiprocessing.cpu_count()`."
             ),
         ),
+        "tag_concurrency_limits": get_tag_concurrency_limits_config(),
         "start_method": Field(
             Selector(
                 fields={

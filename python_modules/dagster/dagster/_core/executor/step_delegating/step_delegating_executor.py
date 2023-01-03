@@ -1,13 +1,14 @@
 import os
 import sys
 import time
-from typing import Dict, Optional, Sequence, cast
+from typing import Any, Dict, List, Optional, Sequence, cast
 
 import pendulum
 
 import dagster._check as check
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
 from dagster._core.execution.context.system import PlanOrchestrationContext
+from dagster._core.execution.plan.active import ActiveExecution
 from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.step import ExecutionStep
@@ -36,12 +37,17 @@ class StepDelegatingExecutor(Executor):
         sleep_seconds: Optional[float] = None,
         check_step_health_interval_seconds: Optional[int] = None,
         max_concurrent: Optional[int] = None,
+        tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
         should_verify_step: bool = False,
     ):
         self._step_handler = step_handler
         self._retries = retries
 
         self._max_concurrent = check.opt_int_param(max_concurrent, "max_concurrent")
+        self._tag_concurrency_limits = check.opt_list_param(
+            tag_concurrency_limits, "tag_concurrency_limits"
+        )
+
         if self._max_concurrent is not None:
             check.invariant(self._max_concurrent > 0, "max_concurrent must be > 0")
 
@@ -99,7 +105,12 @@ class StepDelegatingExecutor(Executor):
             EngineEventData(),
         )
 
-        with execution_plan.start(retry_mode=self.retries) as active_execution:
+        with ActiveExecution(
+            execution_plan,
+            retry_mode=self.retries,
+            max_concurrent=self._max_concurrent,
+            tag_concurrency_limits=self._tag_concurrency_limits,
+        ) as active_execution:
             running_steps: Dict[str, ExecutionStep] = {}
 
             if plan_context.resume_from_failure:
