@@ -6,8 +6,8 @@ from tqdm import tqdm
 import dagster._check as check
 from dagster._serdes import deserialize_as
 
-from ...execution.backfill import PartitionBackfill
 from ...execution.bulk_actions import BulkActionType
+from ...execution.job_backfill import PartitionBackfill
 from ..pipeline_run import DagsterRun, DagsterRunStatus
 from ..runs.base import RunStorage
 from ..runs.schema import BulkActionsTable, RunTagsTable, RunsTable
