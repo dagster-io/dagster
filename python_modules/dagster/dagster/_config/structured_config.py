@@ -1,5 +1,7 @@
 import inspect
 
+from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
+
 try:
     from functools import cached_property
 except ImportError:
@@ -9,7 +11,7 @@ except ImportError:
 
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, cast
 
 from pydantic import BaseModel
 from pydantic.fields import SHAPE_SINGLETON, ModelField
@@ -29,6 +31,23 @@ class Config(BaseModel):
     """
     Base class for Dagster configuration models.
     """
+
+
+def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSchema:
+    """Return a new config schema configured with the passed in data"""
+
+    # We don't do anything with this resource definition, other than
+    # use it to construct configured schema
+    inner_resource_def = ResourceDefinition(lambda _: None, schema_field)
+    configured_resource_def = inner_resource_def.configured(
+        config_dictionary_from_values(
+            data,
+            schema_field,
+        ),
+    )
+    # this cast required to make mypy happy, which does not support Self
+    configured_resource_def = cast(ResourceDefinition, configured_resource_def)
+    return configured_resource_def.config_schema
 
 
 class Resource(
@@ -62,22 +81,11 @@ class Resource(
 
     def __init__(self, **data: Any):
         schema = infer_schema_from_config_class(self.__class__)
-
-        inner_resource_def = ResourceDefinition(self.resource_function, schema)
-        configured_resource_def = inner_resource_def.configured(
-            config_dictionary_from_values(
-                data,
-                schema,
-            ),
-        )
-
         Config.__init__(self, **data)
         ResourceDefinition.__init__(
             self,
-            resource_fn=self.resource_function,
-            # mypy worries that configured_resource_def could be self, which
-            # has not had config_schema initialized yet, but we know that's not the case
-            config_schema=configured_resource_def.config_schema,  # type: ignore[attr-defined]
+            resource_fn=self.create_object_to_pass_to_user_code,
+            config_schema=_curry_config_schema(schema, data),
             description=self.__doc__,
         )
 
@@ -92,9 +100,15 @@ class Resource(
 
         return super().__setattr__(name, value)
 
-    def resource_function(self, context) -> Any:  # pylint: disable=unused-argument
-        # Default behavior, for "new-style" resources, is to return the resource itself, so that
-        # initialization is a no-op
+    def create_object_to_pass_to_user_code(self, context) -> Any:  # pylint: disable=unused-argument
+        """
+        Returns the object that this resource hands to user code, accessible by ops or assets
+        through the context or resource parameters. This works like the function decorated
+        with @resource when using function-based resources.
+        
+        Default behavior for new class-based resources is to return itself, passing
+        the actual resource object to user code.
+        """
         return self
 
 
@@ -153,22 +167,11 @@ class StructuredConfigIOManagerBase(IOManagerDefinition, Config, ABC):
 
     def __init__(self, **data: Any):
         schema = infer_schema_from_config_class(self.__class__)
-
-        inner_resource_def = ResourceDefinition(self.resource_function, schema)
-        configured_resource_def = inner_resource_def.configured(
-            config_dictionary_from_values(
-                data,
-                schema,
-            ),
-        )
-
         Config.__init__(self, **data)
         IOManagerDefinition.__init__(
             self,
-            resource_fn=self.resource_function,
-            # mypy worries that configured_resource_def could be self, which
-            # has not had config_schema initialized yet, but we know that's not the case
-            config_schema=configured_resource_def.config_schema,  # type: ignore[attr-defined]
+            resource_fn=self.create_io_manager_to_pass_to_user_code,
+            config_schema=_curry_config_schema(schema, data),
             description=self.__doc__,
         )
 
@@ -184,7 +187,8 @@ class StructuredConfigIOManagerBase(IOManagerDefinition, Config, ABC):
         return super().__setattr__(name, value)
 
     @abstractmethod
-    def resource_function(self, context) -> IOManager:
+    def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
+        """Implement as one would implement a @io_manager decorator function"""
         raise NotImplementedError()
 
 
@@ -197,7 +201,7 @@ class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
     :py:meth:`handle_output` and :py:meth:`load_input` methods.
     """
 
-    def resource_function(self, context) -> IOManager:
+    def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
         return self
 
 
