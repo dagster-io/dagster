@@ -15,6 +15,7 @@ from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.structured_config import Config, infer_schema_from_config_class
 from dagster._config.type_printer import print_config_type_to_string
 from dagster._core.definitions.assets_job import build_assets_job
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvalidConfigDefinitionError, DagsterInvalidConfigError
 from dagster._core.execution.context.invocation import build_op_context
 from dagster._legacy import pipeline
@@ -452,6 +453,16 @@ def test_string_source_default():
     assert print_config_type_to_string({"a_str": StringSource}) == print_config_type_to_string(
         infer_schema_from_config_class(RawStringConfigSchema).config_type
     )
+
+
+def test_string_source_default_directly_on_op():
+    @op
+    def op_with_raw_str_config(config: str):
+        raise Exception("not called")
+
+    assert isinstance(op_with_raw_str_config, OpDefinition)
+    assert op_with_raw_str_config.config_field
+    assert op_with_raw_str_config.config_field.config_type is StringSource
 
 
 def test_bool_source_default():

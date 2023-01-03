@@ -1,5 +1,6 @@
 import inspect
 
+from dagster._config.config_type import ConfigType
 from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 
@@ -227,9 +228,11 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     )
 
 
-def _config_type_for_pydantic_field(pydantic_field: ModelField):
-    potential_dagster_type = pydantic_field.type_
+def _config_type_for_pydantic_field(pydantic_field: ModelField) -> ConfigType:
+    return _config_type_for_type_on_pydantic_field(pydantic_field.type_)
 
+
+def _config_type_for_type_on_pydantic_field(potential_dagster_type: Any) -> ConfigType:
     # special case raw python literals to their source equivalents
     if potential_dagster_type is str:
         return StringSource
@@ -281,7 +284,9 @@ def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any)
         )
         return infer_schema_from_config_class(model_cls)
 
-    inner_config_type = convert_potential_field(model_cls).config_type
+    # If were are here config is annotated with a primitive type
+    # We do a conversion to a type as if it were a type on a pydantic field
+    inner_config_type = _config_type_for_type_on_pydantic_field(model_cls)
     return Field(
         config=inner_config_type,
         default_value=FIELD_NO_DEFAULT_PROVIDED
