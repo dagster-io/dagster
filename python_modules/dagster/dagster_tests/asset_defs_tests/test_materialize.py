@@ -35,6 +35,9 @@ from dagster._core.test_utils import instance_for_test
 @pytest.fixture(autouse=True)
 def check_experimental_warnings():
     with warnings.catch_warnings(record=True) as record:
+        # turn off any outer warnings filters
+        warnings.resetwarnings()
+
         yield
 
         for w in record:
@@ -42,7 +45,7 @@ def check_experimental_warnings():
             # resource_defs and io_manager_def arguments.
             if "resource_defs" in w.message.args[0] or "io_manager_def" in w.message.args[0]:
                 continue
-            assert False, f"Unexpected warning: {w.message.args[0]}"
+            assert False, f"Unexpected warning: {str(w)}"
 
 
 def test_basic_materialize():
