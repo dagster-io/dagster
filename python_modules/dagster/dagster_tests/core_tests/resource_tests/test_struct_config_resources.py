@@ -20,6 +20,7 @@ from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
+from dagster._core.test_utils import environ
 from dagster._utils.cached_method import cached_method
 
 
@@ -354,9 +355,12 @@ def test_structured_resource_runtime_config():
 
 
 def test_env_var():
-    os.environ["ENV_VARIABLE_FOR_TEST"] = "SOME_VALUE"
-    os.environ["ENV_VARIABLE_FOR_TEST_INT"] = "3"
-    try:
+    with environ(
+        {
+            "ENV_VARIABLE_FOR_TEST": "SOME_VALUE",
+            "ENV_VARIABLE_FOR_TEST_INT": "3",
+        }
+    ):
 
         class ResourceWithString(Resource):
             a_str: str
@@ -381,9 +385,6 @@ def test_env_var():
 
         assert defs.get_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
-    finally:
-        del os.environ["ENV_VARIABLE_FOR_TEST"]
-        del os.environ["ENV_VARIABLE_FOR_TEST_INT"]
 
 
 def test_env_var_err():
@@ -393,7 +394,9 @@ def test_env_var_err():
     class ResourceWithString(Resource):
         a_str: str
 
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(
+        DagsterInvalidConfigError, match="Error while processing ResourceWithString config"
+    ):
         ResourceWithString(a_str=EnvVar("UNSET_ENV_VAR"))
 
 
