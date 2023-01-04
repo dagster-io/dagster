@@ -5,8 +5,8 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {graphql} from '../graphql';
+import {StepEventStatus} from '../graphql/graphql';
 import {failedStatuses, inProgressStatuses} from '../runs/RunStatuses';
-import {StepEventStatus} from '../types/globalTypes';
 
 interface Props {
   runId: string;

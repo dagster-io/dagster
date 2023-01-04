@@ -10,9 +10,9 @@ import {AssetActionMenu} from '../assets/AssetActionMenu';
 import {AssetLink} from '../assets/AssetLink';
 import {StaleTag} from '../assets/StaleTag';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {AssetTableFragment} from '../assets/types/AssetTableFragment';
 import {AssetViewType} from '../assets/useAssetView';
 import {graphql} from '../graphql';
+import {AssetTableFragmentFragment} from '../graphql/graphql';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
@@ -35,7 +35,7 @@ interface AssetRowProps {
   repoAddress: RepoAddress | null;
   height: number;
   start: number;
-  onWipe: (assets: AssetTableFragment[]) => void;
+  onWipe: (assets: AssetTableFragmentFragment[]) => void;
 }
 
 export const VirtualizedAssetRow = (props: AssetRowProps) => {

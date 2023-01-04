@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {
   Box,
   Button,
@@ -20,13 +19,14 @@ import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {graphql} from '../graphql';
+import {MetadataEntryFragmentFragment} from '../graphql/graphql';
 import {NotebookButton} from '../ui/NotebookButton';
 
-import {TableSchema, TABLE_SCHEMA_FRAGMENT} from './TableSchema';
-import {MetadataEntryFragment} from './types/MetadataEntryFragment';
+import {TableSchema} from './TableSchema';
 
 export interface IMetadataEntries {
-  metadataEntries: MetadataEntryFragment[];
+  metadataEntries: MetadataEntryFragmentFragment[];
 }
 
 export const LogRowStructuredContentTable: React.FC<{
@@ -55,7 +55,7 @@ export const LogRowStructuredContentTable: React.FC<{
 );
 
 export const MetadataEntries: React.FC<{
-  entries?: MetadataEntryFragment[];
+  entries?: MetadataEntryFragmentFragment[];
 }> = ({entries}) => {
   if (!entries || !entries.length) {
     return null;
@@ -71,7 +71,7 @@ export const MetadataEntries: React.FC<{
 };
 
 export const MetadataEntry: React.FC<{
-  entry: MetadataEntryFragment;
+  entry: MetadataEntryFragmentFragment;
   expandSmallValues?: boolean;
   repoLocation?: string;
 }> = ({entry, expandSmallValues, repoLocation}) => {
@@ -190,9 +190,8 @@ export const MetadataEntry: React.FC<{
   }
 };
 
-export const METADATA_ENTRY_FRAGMENT = gql`
+export const METADATA_ENTRY_FRAGMENT = graphql(`
   fragment MetadataEntryFragment on MetadataEntry {
-    __typename
     label
     description
     ... on PathMetadataEntry {
@@ -244,13 +243,16 @@ export const METADATA_ENTRY_FRAGMENT = gql`
       }
     }
     ... on TableSchemaMetadataEntry {
-      schema {
-        ...TableSchemaFragment
-      }
+      ...TableSchemaForMetadataEntry
     }
   }
-  ${TABLE_SCHEMA_FRAGMENT}
-`;
+
+  fragment TableSchemaForMetadataEntry on TableSchemaMetadataEntry {
+    schema {
+      ...TableSchemaFragment
+    }
+  }
+`);
 
 const IconButton = styled.button`
   background: transparent;

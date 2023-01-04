@@ -1,17 +1,16 @@
-import {gql} from '@apollo/client';
 import {Box, Button, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {breakOnUnderscores} from '../app/Util';
+import {graphql} from '../graphql';
+import {SidebarOpInvocationFragmentFragment} from '../graphql/graphql';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
-import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT} from '../typeexplorer/TypeWithTooltip';
 
 import {SidebarSection, SidebarTitle} from './SidebarComponents';
 import {DependencyHeaderRow, DependencyRow, DependencyTable} from './SidebarOpHelpers';
-import {SidebarOpInvocationFragment} from './types/SidebarOpInvocationFragment';
 
 interface ISidebarOpInvocationProps {
-  solid: SidebarOpInvocationFragment;
+  solid: SidebarOpInvocationFragmentFragment;
   onEnterSubgraph?: (arg: OpNameOrPath) => void;
 }
 
@@ -77,7 +76,7 @@ export const SidebarOpInvocation: React.FC<ISidebarOpInvocationProps> = (props) 
   );
 };
 
-export const SIDEBAR_OP_INVOCATION_FRAGMENT = gql`
+export const SIDEBAR_OP_INVOCATION_FRAGMENT = graphql(`
   fragment SidebarOpInvocationFragment on Solid {
     name
     inputs {
@@ -117,6 +116,4 @@ export const SIDEBAR_OP_INVOCATION_FRAGMENT = gql`
       }
     }
   }
-
-  ${DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT}
-`;
+`);

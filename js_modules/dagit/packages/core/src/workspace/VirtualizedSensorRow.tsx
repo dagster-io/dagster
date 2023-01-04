@@ -7,12 +7,12 @@ import styled from 'styled-components/macro';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {AssetLink} from '../assets/AssetLink';
 import {graphql} from '../graphql';
+import {InstigationType} from '../graphql/graphql';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TickTag} from '../instigation/InstigationTick';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
 import {SensorSwitch} from '../sensors/SensorSwitch';
-import {InstigationType} from '../types/globalTypes';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';

@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Box, Colors, ConfigTypeSchema, FontFamily, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -7,10 +6,11 @@ import styled from 'styled-components/macro';
 import {breakOnUnderscores} from '../app/Util';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignature';
+import {graphql} from '../graphql';
+import {SidebarOpDefinitionFragmentFragment} from '../graphql/graphql';
+import {OpTypeSignature} from '../ops/OpTypeSignature';
 import {pluginForMetadata} from '../plugins';
-import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
-import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
+import {TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
 import {RepoAddress} from '../workspace/types';
 
 import {Description} from './Description';
@@ -31,10 +31,9 @@ import {
   OpMappingTable,
   TypeWrapper,
 } from './SidebarOpHelpers';
-import {SidebarOpDefinitionFragment} from './types/SidebarOpDefinitionFragment';
 
 interface SidebarOpDefinitionProps {
-  definition: SidebarOpDefinitionFragment;
+  definition: SidebarOpDefinitionFragmentFragment;
   getInvocations?: (definitionName: string) => {handleID: string}[];
   showingSubgraph: boolean;
   onClickInvocation: (arg: SidebarOpInvocationInfo) => void;
@@ -171,7 +170,7 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
   );
 };
 
-export const SIDEBAR_OP_DEFINITION_FRAGMENT = gql`
+export const SIDEBAR_OP_DEFINITION_FRAGMENT = graphql(`
   fragment SidebarOpDefinitionFragment on ISolidDefinition {
     ...OpTypeSignatureFragment
     __typename
@@ -245,11 +244,7 @@ export const SIDEBAR_OP_DEFINITION_FRAGMENT = gql`
       }
     }
   }
-
-  ${DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT}
-  ${OP_TYPE_SIGNATURE_FRAGMENT}
-  ${CONFIG_TYPE_SCHEMA_FRAGMENT}
-`;
+`);
 
 const InvocationList: React.FC<{
   invocations: SidebarOpInvocationInfo[];

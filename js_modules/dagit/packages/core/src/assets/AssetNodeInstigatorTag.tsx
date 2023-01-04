@@ -1,16 +1,13 @@
-import {gql} from '@apollo/client';
 import flatMap from 'lodash/flatMap';
 import React from 'react';
 
+import {graphql} from '../graphql';
+import {AssetNodeInstigatorsFragmentFragment} from '../graphql/graphql';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
-import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
-import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {RepoAddress} from '../workspace/types';
 
-import {AssetNodeInstigatorsFragment} from './types/AssetNodeInstigatorsFragment';
-
 export const AssetNodeInstigatorTag: React.FC<{
-  assetNode: AssetNodeInstigatorsFragment;
+  assetNode: AssetNodeInstigatorsFragmentFragment;
   repoAddress: RepoAddress;
 }> = ({assetNode, repoAddress}) => {
   const schedules = flatMap(assetNode.jobs, (j) => j.schedules);
@@ -26,7 +23,7 @@ export const AssetNodeInstigatorTag: React.FC<{
   );
 };
 
-export const ASSET_NODE_INSTIGATORS_FRAGMENT = gql`
+export const ASSET_NODE_INSTIGATORS_FRAGMENT = graphql(`
   fragment AssetNodeInstigatorsFragment on AssetNode {
     id
     jobs {
@@ -44,6 +41,4 @@ export const ASSET_NODE_INSTIGATORS_FRAGMENT = gql`
       }
     }
   }
-  ${SCHEDULE_SWITCH_FRAGMENT}
-  ${SENSOR_SWITCH_FRAGMENT}
-`;
+`);

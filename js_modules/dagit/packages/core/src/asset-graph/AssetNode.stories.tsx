@@ -1,13 +1,12 @@
 import {Box} from '@dagster-io/ui';
 import React from 'react';
 
-import {RunStatus} from '../types/globalTypes';
+import {AssetNodeFragmentFragment, RunStatus} from '../graphql/graphql';
 
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import {LiveDataForNode} from './Utils';
-import {AssetNodeFragment} from './types/AssetNodeFragment';
 
-const ASSET_NODE_DEFINITION: AssetNodeFragment = {
+const ASSET_NODE_DEFINITION: AssetNodeFragmentFragment = {
   __typename: 'AssetNode',
   assetKey: {__typename: 'AssetKey', path: ['asset1']},
   computeKind: null,
@@ -22,7 +21,7 @@ const ASSET_NODE_DEFINITION: AssetNodeFragment = {
   opVersion: '1',
 };
 
-const SOURCE_ASSET_NODE_DEFINITION: AssetNodeFragment = {
+const SOURCE_ASSET_NODE_DEFINITION: AssetNodeFragmentFragment = {
   __typename: 'AssetNode',
   assetKey: {__typename: 'AssetKey', path: ['source_asset']},
   computeKind: null,
@@ -44,7 +43,7 @@ export const LiveStates = () => {
   const caseWithLiveData = (
     name: string,
     liveData: LiveDataForNode | undefined = undefined,
-    def: AssetNodeFragment = ASSET_NODE_DEFINITION,
+    def: AssetNodeFragmentFragment = ASSET_NODE_DEFINITION,
   ) => {
     return (
       <Box flex={{direction: 'column', gap: 0, alignItems: 'flex-start'}}>

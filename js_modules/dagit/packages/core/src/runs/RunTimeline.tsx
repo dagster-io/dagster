@@ -14,9 +14,9 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {RunStatus} from '../graphql/graphql';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {RunStatus} from '../types/globalTypes';
 import {AnchorButton} from '../ui/AnchorButton';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useFormatDateTime} from '../ui/useFormatDateTime';

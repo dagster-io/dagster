@@ -6,25 +6,28 @@ import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
 import {assertUnreachable} from '../app/Util';
-import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
+import {
+  DagsterEventType,
+  ErrorSource,
+  LogsRowStructuredFragmentFragment,
+  MetadataEntryFragmentFragment,
+  PythonErrorFragmentFragment,
+} from '../graphql/graphql';
 import {
   LogRowStructuredContentTable,
   MetadataEntries,
   MetadataEntryLink,
 } from '../metadata/MetadataEntry';
-import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
-import {DagsterEventType, ErrorSource} from '../types/globalTypes';
 
 import {EventTypeColumn} from './LogsRowComponents';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
-import {LogsRowStructuredFragment} from './types/LogsRowStructuredFragment';
 
 interface IStructuredContentProps {
-  node: LogsRowStructuredFragment;
+  node: LogsRowStructuredFragmentFragment;
   metadata: IRunMetadataDict;
 }
 
@@ -258,7 +261,7 @@ const DefaultContent: React.FC<{
   eventType?: string;
   eventColor?: string;
   eventIntent?: Intent;
-  metadataEntries?: MetadataEntryFragment[];
+  metadataEntries?: MetadataEntryFragmentFragment[];
   children?: React.ReactElement;
 }> = ({message, eventType, eventColor, eventIntent, children}) => {
   return (
@@ -294,9 +297,9 @@ const DefaultContent: React.FC<{
 const FailureContent: React.FC<{
   message?: string;
   eventType: string;
-  error?: PythonErrorFragment | null;
+  error?: PythonErrorFragmentFragment | null;
   errorSource?: ErrorSource | null;
-  metadataEntries?: MetadataEntryFragment[];
+  metadataEntries?: MetadataEntryFragmentFragment[];
 }> = ({message, error, errorSource, eventType, metadataEntries}) => {
   let contextMessage = null;
   let errorMessage = null;
@@ -359,7 +362,7 @@ const FailureContent: React.FC<{
 
 const StepUpForRetryContent: React.FC<{
   message?: string;
-  error?: PythonErrorFragment | null;
+  error?: PythonErrorFragmentFragment | null;
 }> = ({message, error}) => {
   let contextMessage = null;
   let errorCause = null;
@@ -420,7 +423,7 @@ const StepUpForRetryContent: React.FC<{
 const AssetMetadataContent: React.FC<{
   message: string;
   assetKey: AssetKey | null;
-  metadataEntries: MetadataEntryFragment[];
+  metadataEntries: MetadataEntryFragmentFragment[];
   eventType: string;
   timestamp: string;
 }> = ({message, assetKey, metadataEntries, eventType, timestamp}) => {

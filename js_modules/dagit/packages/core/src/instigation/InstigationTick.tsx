@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -18,16 +18,14 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
 import {graphql} from '../graphql';
+import {InstigationTickStatus, InstigationType, TickTagFragmentFragment} from '../graphql/graphql';
 import {RunTable} from '../runs/RunTable';
-import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
-
-import {TickTagFragment} from './types/TickTagFragment';
 
 export const TickTag: React.FC<{
-  tick: TickTagFragment;
+  tick: TickTagFragmentFragment;
   instigationType?: InstigationType;
 }> = ({tick, instigationType}) => {
   const [open, setOpen] = React.useState<boolean>(false);
@@ -200,7 +198,7 @@ const LinkButton = styled.button`
   padding: 0;
 `;
 
-export const TICK_TAG_FRAGMENT = gql`
+export const TICK_TAG_FRAGMENT = graphql(`
   fragment TickTagFragment on InstigationTick {
     id
     status
@@ -212,9 +210,7 @@ export const TICK_TAG_FRAGMENT = gql`
       ...PythonErrorFragment
     }
   }
-
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);
 
 const LAUNCHED_RUN_LIST_QUERY = graphql(`
   query LaunchedRunListQuery($filter: RunsFilter!) {

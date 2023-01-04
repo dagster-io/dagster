@@ -3,7 +3,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {useViewport} from '../gantt/useViewport';
-import {RunStatus} from '../types/globalTypes';
+import {RunStatus} from '../graphql/graphql';
 
 import {assembleIntoSpans} from './SpanRepresentation';
 

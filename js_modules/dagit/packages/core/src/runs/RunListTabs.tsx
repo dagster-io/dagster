@@ -4,7 +4,7 @@ import * as React from 'react';
 import {useLocation} from 'react-router-dom';
 
 import {graphql} from '../graphql';
-import {RunStatus} from '../types/globalTypes';
+import {RunStatus} from '../graphql/graphql';
 import {TabLink} from '../ui/TabLink';
 
 import {doneStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';

@@ -3,13 +3,12 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {RunStatus, RunTimeFragmentFragment} from '../graphql/graphql';
 import {StepSummaryForRun} from '../instance/StepSummaryForRun';
-import {RunStatus} from '../types/globalTypes';
 
 import {RunStatusIndicator} from './RunStatusDots';
 import {failedStatuses, inProgressStatuses} from './RunStatuses';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
-import {RunTimeFragment} from './types/RunTimeFragment';
 
 const RUN_STATUS_COLORS = {
   QUEUED: Colors.Blue500,
@@ -43,7 +42,7 @@ export const RunStatusPez = (props: Props) => {
 interface ListProps {
   fade: boolean;
   jobName: string;
-  runs: RunTimeFragment[];
+  runs: RunTimeFragmentFragment[];
 }
 
 export const RunStatusPezList = (props: ListProps) => {
@@ -78,7 +77,7 @@ export const RunStatusPezList = (props: ListProps) => {
 };
 
 interface OverlayProps {
-  run: RunTimeFragment;
+  run: RunTimeFragmentFragment;
   name: string;
 }
 

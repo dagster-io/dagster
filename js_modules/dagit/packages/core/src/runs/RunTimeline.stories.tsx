@@ -2,9 +2,9 @@ import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 
+import {RunStatus} from '../graphql/graphql';
 import {RunTimeline, TimelineJob} from '../runs/RunTimeline';
 import {generateRunMocks} from '../testing/generateRunMocks';
-import {RunStatus} from '../types/globalTypes';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 // eslint-disable-next-line import/no-default-export

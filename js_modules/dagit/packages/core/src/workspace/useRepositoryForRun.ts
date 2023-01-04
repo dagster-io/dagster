@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import {RunFragmentForRepositoryMatch} from '../runs/types/RunFragmentForRepositoryMatch';
+import {RunFragmentForRepositoryMatchFragment} from '../graphql/graphql';
 
 import {DagsterRepoOption, useRepositoryOptions} from './WorkspaceContext';
 import {findRepoContainingPipeline, repoContainsPipeline} from './findRepoContainingPipeline';
@@ -14,7 +14,7 @@ type MatchType = {
  * Given a Run fragment, find the repository that contains its pipeline.
  */
 export const useRepositoryForRun = (
-  run: RunFragmentForRepositoryMatch | null | undefined,
+  run: RunFragmentForRepositoryMatchFragment | null | undefined,
 ): MatchType | null => {
   const {options} = useRepositoryOptions();
 

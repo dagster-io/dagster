@@ -4,16 +4,16 @@ import styled from 'styled-components/macro';
 
 import {GraphData, LiveData} from '../asset-graph/Utils';
 import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
+import {AssetNodeDefinitionFragmentFragment} from '../graphql/graphql';
 
 import {AssetLineageScope, AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {AssetViewParams} from './AssetView';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeLineage: React.FC<{
   params: AssetViewParams;
   setParams: (params: AssetViewParams) => void;
-  assetNode: AssetNodeDefinitionFragment;
+  assetNode: AssetNodeDefinitionFragmentFragment;
   assetGraphData: GraphData;
   liveDataByNode: LiveData;
   requestedDepth: number;

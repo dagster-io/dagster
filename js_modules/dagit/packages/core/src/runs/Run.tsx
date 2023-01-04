@@ -9,11 +9,15 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {GanttChart, GanttChartLoadingState, GanttChartMode, QueuedState} from '../gantt/GanttChart';
 import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
+import {
+  RunDagsterRunEventFragmentFragment,
+  RunFragmentFragment,
+  RunStatus,
+} from '../graphql/graphql';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
-import {RunStatus} from '../types/globalTypes';
 
 import {ComputeLogPanel} from './ComputeLogPanel';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
@@ -22,17 +26,12 @@ import {LogsToolbar, LogType} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
 import {ILogCaptureInfo, IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
-import {
-  RunDagsterRunEventFragment,
-  RunDagsterRunEventFragment_ExecutionStepFailureEvent,
-} from './types/RunDagsterRunEventFragment';
-import {RunFragment} from './types/RunFragment';
 import {useJobReExecution} from './useJobReExecution';
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 
 interface RunProps {
   runId: string;
-  run?: RunFragment;
+  run?: RunFragmentFragment;
 }
 
 const runStatusFavicon = (status: RunStatus) => {
@@ -66,10 +65,10 @@ export const Run: React.FC<RunProps> = (props) => {
       : `Run: ${runId}`,
   );
 
-  const onShowStateDetails = (stepKey: string, logs: RunDagsterRunEventFragment[]) => {
+  const onShowStateDetails = (stepKey: string, logs: RunDagsterRunEventFragmentFragment[]) => {
     const errorNode = logs.find(
       (node) => node.__typename === 'ExecutionStepFailureEvent' && node.stepKey === stepKey,
-    ) as RunDagsterRunEventFragment_ExecutionStepFailureEvent;
+    );
 
     if (errorNode) {
       showCustomAlert({
@@ -112,7 +111,7 @@ export const Run: React.FC<RunProps> = (props) => {
 };
 
 interface RunWithDataProps {
-  run?: RunFragment;
+  run?: RunFragmentFragment;
   runId: string;
   selectionQuery: string;
   logs: LogsProviderLogs;
@@ -120,7 +119,7 @@ interface RunWithDataProps {
   metadata: IRunMetadataDict;
   onSetLogsFilter: (v: LogFilter) => void;
   onSetSelectionQuery: (query: string) => void;
-  onShowStateDetails: (stepKey: string, logs: RunDagsterRunEventFragment[]) => void;
+  onShowStateDetails: (stepKey: string, logs: RunDagsterRunEventFragmentFragment[]) => void;
 }
 
 const logTypeFromQuery = (queryLogType: string) => {

@@ -1,12 +1,12 @@
 import {useApolloClient, ApolloClient} from '@apollo/client';
 import * as React from 'react';
 
-import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {graphql} from '../graphql';
 import {
   PartitionMatrixStepRunFragmentFragment,
   PartitionStepLoaderQueryQuery,
   PartitionStepLoaderQueryQueryVariables,
+  PythonErrorFragmentFragment,
   RepositorySelector,
   RunStatus,
 } from '../graphql/graphql';
@@ -20,7 +20,7 @@ interface DataState {
   partitionNames: string[];
   loading: boolean;
   loadingCursorIdx: number;
-  error?: PythonErrorFragment;
+  error?: PythonErrorFragmentFragment;
 }
 
 const InitialDataState: DataState = {

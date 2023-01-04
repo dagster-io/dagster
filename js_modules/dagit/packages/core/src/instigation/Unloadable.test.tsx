@@ -3,8 +3,8 @@ import {act, render, screen} from '@testing-library/react';
 import * as React from 'react';
 
 import {graphql} from '../graphql';
+import {InstigationStatus} from '../graphql/graphql';
 import {TestProvider} from '../testing/TestProvider';
-import {InstigationStatus} from '../types/globalTypes';
 
 import {UnloadableSchedules, UnloadableSensors} from './Unloadable';
 

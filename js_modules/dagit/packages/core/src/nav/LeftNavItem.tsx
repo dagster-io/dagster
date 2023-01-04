@@ -3,8 +3,8 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {InstigationStatus} from '../graphql/graphql';
 import {humanCronString} from '../schedules/humanCronString';
-import {InstigationStatus} from '../types/globalTypes';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {LeftNavItemType} from './LeftNavItemType';

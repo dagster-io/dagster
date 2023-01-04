@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -368,7 +368,7 @@ const Divider = styled.div`
   border-top: 1px solid ${Colors.KeylineGray};
 `;
 
-export const PARTITION_STEP_STATUS_RUN_FRAGMENT = gql`
+export const PARTITION_STEP_STATUS_RUN_FRAGMENT = graphql(`
   fragment PartitionStepStatusRun on Run {
     id
     runId
@@ -382,7 +382,7 @@ export const PARTITION_STEP_STATUS_RUN_FRAGMENT = gql`
       status
     }
   }
-`;
+`);
 
 // add in the explorer fragment, so we can reconstruct the faux-plan steps from the exploded plan
 // in the same way we construct the explorer graph

@@ -1,11 +1,11 @@
-import {gql, NetworkStatus, useQuery, useSubscription} from '@apollo/client';
+import {NetworkStatus, useQuery, useSubscription} from '@apollo/client';
 import uniq from 'lodash/uniq';
 import React from 'react';
 
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {graphql} from '../graphql';
+import {AssetKeyInput} from '../graphql/graphql';
 import {useDidLaunchEvent} from '../runs/RunUtils';
-import {AssetKeyInput} from '../types/globalTypes';
 
 import {buildLiveData, tokenForAssetKey} from './Utils';
 
@@ -151,7 +151,7 @@ const RunLogObserver: React.FC<{
   return <span />;
 });
 
-export const ASSET_LATEST_INFO_FRAGMENT = gql`
+export const ASSET_LATEST_INFO_FRAGMENT = graphql(`
   fragment AssetLatestInfoFragment on AssetLatestInfo {
     assetKey {
       path
@@ -168,7 +168,7 @@ export const ASSET_LATEST_INFO_FRAGMENT = gql`
     status
     id
   }
-`;
+`);
 
 const ASSETS_GRAPH_LIVE_QUERY = graphql(`
   query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]!) {
