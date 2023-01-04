@@ -13,6 +13,8 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    DagsterEventType,
+    EventRecordsFilter,
     Output,
     job,
     op,
@@ -653,7 +655,8 @@ def test_add_kvs_table(hostname, conn_string):
 
 def test_add_asset_event_tags_table(hostname, conn_string):
     @op
-    def yields_materialization_w_tags(_):
+    def yields_materialization_w_tags():
+        yield AssetMaterialization(asset_key=AssetKey(["a"]))
         yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={"dagster/foo": "bar"})
         yield Output(1)
 
@@ -683,6 +686,56 @@ def test_add_asset_event_tags_table(hostname, conn_string):
             assert "asset_event_tags" not in get_tables(instance)
 
             asset_job.execute_in_process(instance=instance)
+
+            assert (
+                len(
+                    instance.get_event_records(
+                        EventRecordsFilter(
+                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                            asset_key=AssetKey("a"),
+                            tags={"dagster/foo": "bar"},
+                        )
+                    )
+                )
+                == 1
+            )
+            assert (
+                len(
+                    instance.get_event_records(
+                        EventRecordsFilter(
+                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                            asset_key=AssetKey("a"),
+                            tags={"dagster/foo": "baz"},
+                        )
+                    )
+                )
+                == 0
+            )
+            assert (
+                len(
+                    instance.get_event_records(
+                        EventRecordsFilter(
+                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                            asset_key=AssetKey("a"),
+                            tags={"dagster/foo": "bar", "other": "otherr"},
+                        )
+                    )
+                )
+                == 0
+            )
+
+            with pytest.raises(
+                DagsterInvalidInvocationError, match="Cannot filter events on tags with a limit"
+            ):
+                instance.get_event_records(
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                        asset_key=AssetKey("a"),
+                        tags={"dagster/foo": "bar", "other": "otherr"},
+                    ),
+                    limit=5,
+                )
+
             with pytest.raises(
                 DagsterInvalidInvocationError, match="In order to search for asset event tags"
             ):
