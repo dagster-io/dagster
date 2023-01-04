@@ -5,8 +5,8 @@ from typing import Iterator
 
 import pytest
 from pandas import DataFrame as PandasDataFrame
-from project_fully_featured.resources import SHARED_SNOWFLAKE_CONF
-from project_fully_featured.resources.snowflake_io_manager import (
+from project_fully_featured_v2_resources.resources import SHARED_SNOWFLAKE_CONF
+from project_fully_featured_v2_resources.resources.snowflake_io_manager import (
     SnowflakeIOManager,
     connect_snowflake,
 )

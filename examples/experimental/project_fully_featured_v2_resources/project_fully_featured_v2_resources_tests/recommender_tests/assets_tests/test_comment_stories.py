@@ -1,6 +1,6 @@
 import pytest
 from pandas import DataFrame
-from project_fully_featured.assets.recommender.comment_stories import comment_stories
+from project_fully_featured_v2_resources.assets.recommender.comment_stories import comment_stories
 
 
 @pytest.mark.parametrize(
