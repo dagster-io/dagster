@@ -1,3 +1,5 @@
+# pylint: disable=protected-access
+
 import multiprocessing
 from os import path
 
@@ -6,7 +8,10 @@ import pytest
 from dagster import DagsterInstance, ExecutorRequirement
 from dagster import _check as check
 from dagster import execute_job, job, multiprocess_executor, op, reconstructable
-from dagster._core.definitions.executor_definition import executor
+from dagster._core.definitions.executor_definition import (
+    _core_multiprocess_executor_creation,
+    executor,
+)
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
@@ -290,3 +295,20 @@ def test_multiprocess_executor_default():
         )
 
         assert executor._max_concurrent == 12345  # pylint: disable=protected-access
+
+
+def test_multiprocess_executor_config():
+    tag_concurrency_limits = [{"key": "database", "value": "tiny", "limit": 2}]
+
+    executor = _core_multiprocess_executor_creation(
+        {
+            "retries": {
+                "disabled": {},
+            },
+            "max_concurrent": 2,
+            "tag_concurrency_limits": tag_concurrency_limits,
+        }
+    )
+    assert executor._retries == RetryMode.DISABLED
+    assert executor._max_concurrent == 2
+    assert executor._tag_concurrency_limits == tag_concurrency_limits
