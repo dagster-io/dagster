@@ -1136,23 +1136,18 @@ class DagsterInstance:
         from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
         # The "python origin" arguments exist so a job can be reconstructed in memory
-        # after a DagsterRun has been fetched from the database. In all cases where
-        # external_pipeline_origin is passed, pipeline_code_origin is also passed.
+        # after a DagsterRun has been fetched from the database.
+        #
         # There are cases (notably in _logged_execute_pipeline with Reconstructable pipelines)
-        # where pipeline_code_origin and is not. But they are almost always
-        # passed together. If these are not set the created run will never be
-        # able to be relaunched from the information just in the run or in another process.
+        # where pipeline_code_origin and is not. In some cloud test cases only
+        # external_pipeline_origin is passed But they are almost always passed together.
+        # If these are not set the created run will never be able to be relaunched from
+        # the information just in the run or in another process.
 
         check.opt_inst_param(
             external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
         )
         check.opt_inst_param(pipeline_code_origin, "pipeline_code_origin", PipelinePythonOrigin)
-
-        if external_pipeline_origin:
-            check.invariant(
-                pipeline_code_origin,
-                "If external_pipeline_origin is set, pipeline_code_origin must also be set",
-            )
 
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
