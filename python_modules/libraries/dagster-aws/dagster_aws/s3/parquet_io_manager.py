@@ -1,19 +1,41 @@
-from typing import Sequence
-
-
-from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
-from dagster._core.storage.db_io_manager import (
-    DbClient,
-    DbIOManager,
-    DbTypeHandler,
-    TablePartition,
-    TableSlice,
+from dagster import (
+    Field,
+    IOManagerDefinition,
+    OutputContext,
+    StringSource,
+    io_manager,
+    InputContext,
 )
 
-BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+from abc import ABC, abstractmethod
+from typing import Dict, Generic, Mapping, Optional, Type, TypeVar, Any, Sequence
+from upath import UPath
+
+import dagster._check as check
+from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.storage.upath_io_manager import UPathIOManager
+
+T = TypeVar("T")
 
 
-def build_s3_parquet_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManagerDefinition:
+class FsTypeHandler(ABC, Generic[T]):
+    @abstractmethod
+    def handle_output(
+        self, context: OutputContext, obj: T, path: UPath
+    ) -> Optional[Mapping[str, RawMetadataValue]]:
+        """Stores the given object at the given table in the given schema."""
+
+    @abstractmethod
+    def load_input(self, context: InputContext, path: UPath) -> T:
+        """Loads the contents of the given table in the given schema."""
+
+    @property
+    @abstractmethod
+    def supported_types(self) -> Sequence[Type]:
+        pass
+
+
+def build_s3_parquet_io_manager(type_handlers: Sequence[FsTypeHandler]) -> IOManagerDefinition:
     """
     Builds an IO manager definition that reads inputs from and writes outputs to S3 as Parquet files.
     # TODO - update doc string
@@ -61,13 +83,13 @@ def build_s3_parquet_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMan
 
     @io_manager(
         config_schema={
-            "dataset": Field(
-                StringSource, description="Name of the schema to use.", is_required=False
+            "bucket": Field(
+                StringSource,
+                description="Name of the bucket to use.",
             ),
-            "project": Field(StringSource),  # elementl-dev - sort of like the database?
-            "location": Field(StringSource, is_required=False),  # compute location? like us-east-2
+            "prefix": Field(StringSource),  # elementl-dev - sort of like the database?
         },
-        required_resource_keys="s3"
+        required_resource_keys="s3",
     )
     def s3_parquet_io_manager(init_context):
         """IO Manager for storing outputs in a S3 as Parquet files
@@ -77,65 +99,70 @@ def build_s3_parquet_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMan
         Op outputs will be stored in the schema specified by output metadata (defaults to public) in a
         table of the name of the output.
         """
-        return DbIOManager(
+        return S3ParquetIOManager(
             type_handlers=type_handlers,
-            db_client=S3ParquetClient(),
-            io_manager_name="S3ParquetIOManager",
-            database=init_context.resource_config["project"],
-            schema=init_context.resource_config.get("dataset"),
+            bucket=init_context.resource_config["bucket"],
+            prefix=init_context.resource_config.get("prefix"),
         )
 
     return s3_parquet_io_manager
 
 
-class S3ParquetClient(DbClient):
-    @staticmethod
-    def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
-        print("IN DELETE")
-        conn = _connect_s3(context)
-        try:
-            print("CLEANUP STATEMENT")
-            print(_get_cleanup_statement(table_slice))
-            conn.cursor().execute(_get_cleanup_statement(table_slice)).result()
-            print("DONE DELETE")
-        except Exception:  # TODO - find the real exception
-            # table doesn't exist yet, so ignore the error
-            pass
-        conn.close()
+class S3ParquetIOManager(UPathIOManager):
+    extension: str = ".parquet"
 
-    @staticmethod
-    def get_select_statement(table_slice: TableSlice) -> str:
-        col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
-        if table_slice.partition:
-            return (
-                f"SELECT {col_str} FROM {table_slice.schema}.{table_slice.table}\n"
-                + _time_window_where_clause(table_slice.partition)
+    def __init__(
+        self,
+        *,
+        type_handlers: Sequence[FsTypeHandler],
+        bucket: str,
+        prefix: Optional[str] = None,
+    ):
+        self._handlers_by_type: Dict[Optional[Type], FsTypeHandler] = {}
+        for type_handler in type_handlers:
+            for handled_type in type_handler.supported_types:
+                check.invariant(
+                    handled_type not in self._handlers_by_type,
+                    f"S3ParquetIOManager provided with two handlers for the same type. "
+                    f"Type: '{handled_type}'. Handler classes: '{type(type_handler)}' and "
+                    f"'{type(self._handlers_by_type.get(handled_type))}'.",
+                )
+
+                self._handlers_by_type[handled_type] = type_handler
+        self._bucket = bucket
+        self._prefix = prefix
+        self._upath = UPath(f"s3://{bucket}{'/' + self._prefix if self._prefix else ''}")
+
+        super().__init__(base_path=self._upath)
+
+    def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
+
+        if obj is not None:
+            obj_type = type(obj)
+            check.invariant(
+                obj_type in self._handlers_by_type,
+                f"S3ParquetIOManager does not have a handler for type '{obj_type}'. Has handlers "
+                f"for types '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'",
+            )
+
+            handler_metadata = (
+                self._handlers_by_type[obj_type].handle_output(context, obj, path) or {}
             )
         else:
-            return f"""SELECT {col_str} FROM {table_slice.schema}.{table_slice.table}"""
+            check.invariant(
+                context.dagster_type.is_nothing,
+                "Unexpected 'None' output value. If a 'None' value is intentional, set the output type to None.",
+            )
+            # if obj is None, assume that I/O was handled in the op body
+            handler_metadata = {}
 
+        context.add_output_metadata({**handler_metadata, "Path": path})
 
-def _connect_s3(context):
-    s3 = context.resources.s3
-
-
-
-def _get_cleanup_statement(table_slice: TableSlice) -> str:
-    """
-    Returns a SQL statement that deletes data in the given table to make way for the output data
-    being written.
-    """
-    if table_slice.partition:
-        return (
-            f"DELETE FROM {table_slice.schema}.{table_slice.table}\n"
-            + _time_window_where_clause(table_slice.partition)
+    def load_from_path(self, context: InputContext, path: UPath) -> object:
+        obj_type = context.dagster_type.typing_type
+        check.invariant(
+            obj_type in self._handlers_by_type,
+            f"S3ParquetIOManager does not have a handler for type '{obj_type}'. Has handlers "
+            f"for types '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'",
         )
-    else:
-        return f"DELETE FROM {table_slice.schema}.{table_slice.table}"
-
-
-def _time_window_where_clause(table_partition: TablePartition) -> str:
-    start_dt, end_dt = table_partition.time_window
-    start_dt_str = start_dt.strftime(BIGQUERY_DATETIME_FORMAT)
-    end_dt_str = end_dt.strftime(BIGQUERY_DATETIME_FORMAT)
-    return f"""WHERE {table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
+        return self._handlers_by_type[obj_type].load_input(context, path)
