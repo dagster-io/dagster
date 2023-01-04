@@ -259,7 +259,9 @@ class GraphenePartitionSet(graphene.ObjectType):
             for backfill in graphene_info.context.instance.get_backfills(
                 cursor=kwargs.get("cursor"),
             )
-            if backfill.partition_set_origin.partition_set_name == self._external_partition_set.name
+            if backfill.partition_set_origin
+            and backfill.partition_set_origin.partition_set_name
+            == self._external_partition_set.name
             and backfill.partition_set_origin.external_repository_origin.repository_name
             == self._external_repository_handle.repository_name
         ]

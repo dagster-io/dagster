@@ -5,9 +5,11 @@ from dagster import _check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
+from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -106,6 +108,56 @@ class PartitionBackfill(
             return BulkActionType.MULTI_RUN_ASSET_ACTION
         else:
             return BulkActionType.PARTITION_BACKFILL
+
+    @property
+    def partition_set_name(self) -> Optional[str]:
+        if self.partition_set_origin is None:
+            return None
+
+        return self.partition_set_origin.partition_set_name
+
+    def get_num_partitions(self, workspace: IWorkspace) -> int:
+        if self.serialized_asset_backfill_data is not None:
+            asset_backfill_data = AssetBackfillData.from_serialized(
+                self.serialized_asset_backfill_data, ExternalAssetGraph.from_workspace(workspace)
+            )
+            return asset_backfill_data.get_num_partitions()
+        else:
+            if self.partition_names is None:
+                check.failed("Non-asset backfills should have a non-null partition_names field")
+
+            return len(self.partition_names)
+
+    def get_partition_names(self, workspace: IWorkspace) -> Sequence[str]:
+        if self.serialized_asset_backfill_data is not None:
+            asset_backfill_data = AssetBackfillData.from_serialized(
+                self.serialized_asset_backfill_data, ExternalAssetGraph.from_workspace(workspace)
+            )
+            return asset_backfill_data.get_partition_names()
+        else:
+            if self.partition_names is None:
+                check.failed("Non-asset backfills should have a non-null partition_names field")
+
+            return self.partition_names
+
+    def get_num_cancelable(self) -> int:
+        if self.is_asset_backfill:
+            return 0
+
+        if self.status != BulkActionStatus.REQUESTED:
+            return 0
+
+        if self.partition_names is None:
+            check.failed("Expected partition_names to not be None for job backfill")
+
+        checkpoint = self.last_submitted_partition_name
+        total_count = len(self.partition_names)
+        checkpoint_idx = (
+            self.partition_names.index(checkpoint) + 1
+            if checkpoint and checkpoint in self.partition_names
+            else 0
+        )
+        return max(0, total_count - checkpoint_idx)
 
     def with_status(self, status):
         check.inst_param(status, "status", BulkActionStatus)

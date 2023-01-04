@@ -2248,7 +2248,7 @@ input MarshalledOutput {
 }
 
 input LaunchBackfillParams {
-  selector: PartitionSetSelector!
+  selector: PartitionSetSelector
   partitionNames: [String!]
   reexecutionSteps: [String!]
   assetSelection: [AssetKeyInput!]
@@ -2629,7 +2629,7 @@ type PartitionBackfill {
   fromFailure: Boolean!
   reexecutionSteps: [String!]
   assetSelection: [AssetKey!]
-  partitionSetName: String!
+  partitionSetName: String
   timestamp: Float!
   partitionSet: PartitionSet
   runs(limit: Int): [Run!]!

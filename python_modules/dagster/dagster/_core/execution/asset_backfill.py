@@ -65,6 +65,44 @@ class AssetBackfillData(NamedTuple):
             self.target_subset.filter_asset_keys(root_asset_keys).iterate_asset_partitions()
         )
 
+    def get_num_partitions(self) -> int:
+        """
+        Only valid when the same number of partitions are targeted in every asset.
+
+        When not valid, raises an error.
+        """
+        asset_partition_nums = {
+            len(subset) for subset in self.target_subset.partitions_subsets_by_asset_key.values()
+        }
+        if len(asset_partition_nums) == 0:
+            return 0
+        elif len(asset_partition_nums) == 1:
+            return next(iter(asset_partition_nums))
+        else:
+            check.failed(
+                "Can't compute number of partitions for asset backfill because different assets "
+                "have different numbers of partitions"
+            )
+
+    def get_partition_names(self) -> Sequence[str]:
+        """
+        Only valid when the same number of partitions are targeted in every asset.
+
+        When not valid, raises an error.
+        """
+        subsets = self.target_subset.partitions_subsets_by_asset_key.values()
+        if len(subsets) == 0:
+            return []
+
+        first_subset = next(iter(subsets))
+        if any(subset != subset for subset in subsets):
+            check.failed(
+                "Can't find partition names for asset backfill because different assets "
+                "have different partitions"
+            )
+
+        return list(first_subset.get_partition_keys())
+
     @classmethod
     def empty(cls, target_subset: AssetGraphSubset) -> "AssetBackfillData":
         asset_graph = target_subset.asset_graph
@@ -122,7 +160,7 @@ def execute_asset_backfill_iteration(
     """
     from dagster._core.execution.backfill import BulkActionStatus
 
-    asset_graph = ExternalAssetGraph.from_workspace_request_context(workspace)
+    asset_graph = ExternalAssetGraph.from_workspace(workspace)
     if backfill.serialized_asset_backfill_data is None:
         check.failed("Asset backfill missing serialized_asset_backfill_data")
 
@@ -317,6 +355,12 @@ def execute_asset_backfill_iteration_inner(
     run_requests = build_run_requests(
         asset_partitions_to_request, asset_graph, {BACKFILL_ID_TAG: backfill_id}
     )
+
+    if request_roots:
+        check.invariant(
+            len(run_requests) > 0,
+            "At least one run should be requested on first backfill iteration",
+        )
 
     updated_asset_backfill_data = AssetBackfillData(
         target_subset=asset_backfill_data.target_subset,

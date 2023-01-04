@@ -1,3 +1,5 @@
+from typing import Optional
+
 from graphene import ResolveInfo
 
 import dagster._check as check
@@ -196,7 +198,7 @@ def get_partition_set_partition_statuses(graphene_info, external_partition_set):
 
 
 def partition_statuses_from_run_partition_data(
-    partition_set_name, run_partition_data, partition_names, backfill_id=None
+    partition_set_name: Optional[str], run_partition_data, partition_names, backfill_id=None
 ):
     from ..schema.partition_sets import GraphenePartitionStatus, GraphenePartitionStatuses
 
@@ -208,7 +210,7 @@ def partition_statuses_from_run_partition_data(
 
     results = []
     for name in partition_names:
-        partition_id = f"{partition_set_name}:{name}{suffix}"
+        partition_id = f'{partition_set_name or "__NO_PARTITION_SET__"}:{name}{suffix}'
         if not partition_data_by_name.get(name):
             results.append(
                 GraphenePartitionStatus(
