@@ -99,10 +99,10 @@ def launch_reexecution_from_parent_run(
     external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
 
     run = instance.create_reexecuted_run(
-        cast(DagsterRun, parent_run),
-        repo_location,
-        external_pipeline,
-        ReexecutionStrategy(strategy),
+        parent_run=cast(DagsterRun, parent_run),
+        repo_location=repo_location,
+        external_pipeline=external_pipeline,
+        strategy=ReexecutionStrategy(strategy),
         use_parent_run_tags=True,  # inherit whatever tags were set on the parent run at launch time
     )
     graphene_info.context.instance.submit_run(
