@@ -9,6 +9,7 @@ import {
   PythonErrorFragmentFragment,
   PythonErrorChainFragment,
 } from '../graphql/graphql';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {MetadataEntries} from '../metadata/MetadataEntry';
 
 export type GenericError = {
