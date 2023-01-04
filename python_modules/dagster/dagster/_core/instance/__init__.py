@@ -1118,7 +1118,6 @@ class DagsterInstance:
         run_id,
         run_config,
         mode,
-        solids_to_execute,
         step_keys_to_execute,
         status,
         tags,
@@ -1128,12 +1127,25 @@ class DagsterInstance:
         execution_plan_snapshot,
         parent_pipeline_snapshot,
         asset_selection,
-        solid_selection,
+        solids_to_execute: Optional[AbstractSet[str]],
+        solid_selection: Optional[Sequence[str]],
         external_pipeline_origin: Optional[ExternalPipelineOrigin],
         pipeline_code_origin: Optional[PipelinePythonOrigin],
     ) -> DagsterRun:
 
         from dagster._core.host_representation.origin import ExternalPipelineOrigin
+
+        # solid_selection is a sequence of selection queries assigned by the user.
+        # *Most* callers expand the solid_selection into an explicit set of
+        # solids_to_execute via accessing external_pipeline.solids_to_execute
+        # but not all do. Some (launch execution mutation in graphql and backfill run
+        # creation, for example) actually pass the solid *selection* into the
+        # solids_to_execute parameter, but just as a frozen set, rather than
+        # fully resolving the selection, as the daemon launchers do. Given the
+        # state of callers we just check to ensure that the arguments are well-formed.
+
+        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
+        check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
 
         # The "python origin" arguments exist so a job can be reconstructed in memory
         # after a DagsterRun has been fetched from the database.
