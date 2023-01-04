@@ -1,7 +1,7 @@
 import json
 from unittest import mock
 
-from dagster import job, reconstructable
+from dagster import DagsterRunStatus, job, reconstructable
 from dagster._core.host_representation import RepositoryHandle
 from dagster._core.launcher import LaunchRunContext
 from dagster._core.launcher.base import WorkerStatus
@@ -498,11 +498,7 @@ def test_check_run_health(kubeconfig_file):
 
     # Construct a K8s run launcher in a fake k8s environment.
     mock_k8s_client_batch_api = mock.Mock(spec_set=["read_namespaced_job_status"])
-    mock_k8s_client_batch_api.read_namespaced_job_status.side_effect = [
-        V1Job(status=V1JobStatus(failed=0, succeeded=0)),
-        V1Job(status=V1JobStatus(failed=0, succeeded=1)),
-        V1Job(status=V1JobStatus(failed=1, succeeded=0)),
-    ]
+
     k8s_run_launcher = K8sRunLauncher(
         service_account_name="dagit-admin",
         instance_config_map="dagster-instance",
@@ -536,18 +532,49 @@ def test_check_run_health(kubeconfig_file):
 
             # Launch the run in a fake Dagster instance.
             pipeline_name = "demo_pipeline"
-            run = create_run_for_test(
+
+            started_run = create_run_for_test(
                 instance,
                 pipeline_name=pipeline_name,
                 external_pipeline_origin=fake_external_pipeline.get_external_origin(),
                 pipeline_code_origin=fake_external_pipeline.get_python_origin(),
+                status=DagsterRunStatus.STARTED,
+            )
+            finished_run = create_run_for_test(
+                instance,
+                pipeline_name=pipeline_name,
+                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
+                pipeline_code_origin=fake_external_pipeline.get_python_origin(),
+                status=DagsterRunStatus.FAILURE,
             )
             k8s_run_launcher.register_instance(instance)
 
-            # same order as side effects
-            health = k8s_run_launcher.check_run_worker_health(run)
+            mock_k8s_client_batch_api.read_namespaced_job_status.return_value = V1Job(
+                status=V1JobStatus(failed=0, succeeded=0, active=0)
+            )
+
+            health = k8s_run_launcher.check_run_worker_health(started_run)
             assert health.status == WorkerStatus.RUNNING, health.msg
-            health = k8s_run_launcher.check_run_worker_health(run)
+
+            health = k8s_run_launcher.check_run_worker_health(finished_run)
+            assert health.status == WorkerStatus.RUNNING, health.msg
+
+            mock_k8s_client_batch_api.read_namespaced_job_status.return_value = V1Job(
+                status=V1JobStatus(failed=0, succeeded=1, active=0)
+            )
+
+            health = k8s_run_launcher.check_run_worker_health(started_run)
+            assert health.status == WorkerStatus.FAILED, health.msg
+
+            health = k8s_run_launcher.check_run_worker_health(finished_run)
             assert health.status == WorkerStatus.SUCCESS, health.msg
-            health = k8s_run_launcher.check_run_worker_health(run)
+
+            mock_k8s_client_batch_api.read_namespaced_job_status.return_value = V1Job(
+                status=V1JobStatus(failed=1, succeeded=0, active=0)
+            )
+
+            health = k8s_run_launcher.check_run_worker_health(started_run)
+            assert health.status == WorkerStatus.FAILED, health.msg
+
+            health = k8s_run_launcher.check_run_worker_health(finished_run)
             assert health.status == WorkerStatus.FAILED, health.msg
