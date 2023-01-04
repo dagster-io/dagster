@@ -271,7 +271,7 @@ def make_dagster_asset_from_airflow_dag(dag, job_def):
     cron_schedule = dag.normalized_schedule_interval
     if isinstance(dag.normalized_schedule_interval, str) and cron_schedule == "Dataset":
         # TODO: add support for asset tags
-        logging.warn(f"({dag.dag_id}) transforming airflow datasets dependencies into SDA definitions is not currently supported in dagster-airflow")
+        logging.warn(f"({dag.dag_id}) transforming airflow dataset data-aware schedule dependencies into Dagster SDA definitions is not currently supported in dagster-airflow")
         return
 
 
