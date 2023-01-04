@@ -1099,7 +1099,7 @@ class DefaultPartitionsSubset(PartitionsSubset):
     def __init__(self, partitions_def: PartitionsDefinition, subset: Optional[Set[str]] = None):
         check.opt_set_param(subset, "subset")
         self._partitions_def = partitions_def
-        self._subset = subset or set()
+        self._subset = (subset & set(partitions_def.get_partition_keys())) if subset else set()
 
     def get_partition_keys_not_in_subset(
         self, current_time: Optional[datetime] = None
@@ -1132,7 +1132,11 @@ class DefaultPartitionsSubset(PartitionsSubset):
         return result
 
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "DefaultPartitionsSubset":
-        return DefaultPartitionsSubset(self._partitions_def, self._subset | set(partition_keys))
+        valid_partition_keys = set(self._partitions_def.get_partition_keys())
+        return DefaultPartitionsSubset(
+            self._partitions_def,
+            self._subset | (set(valid_partition_keys) & set(partition_keys)),
+        )
 
     def with_partition_key_range(
         self, partition_key_range: PartitionKeyRange

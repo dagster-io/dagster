@@ -1,7 +1,7 @@
 import itertools
 import json
 from datetime import datetime
-from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple
+from typing import Dict, Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, cast
 
 import dagster._check as check
 from dagster._annotations import experimental
@@ -174,6 +174,19 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     def partitions_defs(self) -> Sequence[PartitionDimensionDefinition]:
         return self._partitions_defs
 
+    def has_partition_key(self, partition_key: MultiPartitionKey) -> bool:
+        # Function exists for performance improvement. Scanning the entire list of partitions
+        # is expensive, so we can instead validate by dimension
+        if not set(partition_key.keys_by_dimension.keys()) == set(self.partition_dimension_names):
+            return False
+        return all(
+            [
+                partition_key.keys_by_dimension[dim_def.name]
+                in dim_def.partitions_def.get_partition_keys()
+                for dim_def in self._partitions_defs
+            ]
+        )
+
     def get_partitions(self, current_time: Optional[datetime] = None) -> Sequence[Partition]:
         partition_sequences = [
             partition_dim.partitions_def.get_partitions(current_time=current_time)
@@ -262,11 +275,50 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         )
         return multi_partition_key
 
+    def empty_subset(self) -> "MultiPartitionsSubset":
+        return MultiPartitionsSubset(self, set())
+
     def deserialize_subset(self, serialized: str) -> "MultiPartitionsSubset":
         return MultiPartitionsSubset.from_serialized(self, serialized)
 
 
 class MultiPartitionsSubset(DefaultPartitionsSubset):
+    def __init__(self, partitions_def: PartitionsDefinition, subset: Optional[Set[str]] = None):
+        if not isinstance(partitions_def, MultiPartitionsDefinition):
+            check.failed(
+                "Must pass a MultiPartitionsDefinition object to deserialize MultiPartitionsSubset."
+            )
+        validated_subset = (
+            (
+                subset
+                & set(
+                    [
+                        key
+                        for key in subset
+                        if partitions_def.has_partition_key(cast(MultiPartitionKey, key))
+                    ]
+                )
+            )
+            if subset
+            else set()
+        )
+        super(MultiPartitionsSubset, self).__init__(partitions_def, validated_subset)
+
+    def with_partition_keys(self, partition_keys: Iterable[str]) -> "MultiPartitionsSubset":
+        return MultiPartitionsSubset(
+            self._partitions_def,
+            self._subset
+            | set(
+                [
+                    key
+                    for key in partition_keys
+                    if cast(MultiPartitionsDefinition, self._partitions_def).has_partition_key(
+                        cast(MultiPartitionKey, key)
+                    )
+                ]
+            ),
+        )
+
     @staticmethod
     def from_serialized(
         partitions_def: PartitionsDefinition, serialized: str

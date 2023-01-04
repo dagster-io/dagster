@@ -96,7 +96,7 @@ class AssetStatusCacheValue(
 
 def get_materialized_multipartitions(
     instance: DagsterInstance, asset_key: AssetKey, partitions_def: MultiPartitionsDefinition
-) -> Sequence[MultiPartitionKey]:
+) -> Sequence[str]:
     dimension_names = partitions_def.partition_dimension_names
     materialized_keys: List[MultiPartitionKey] = []
     for event_tags in instance.get_event_tags_for_asset(asset_key):
