@@ -109,11 +109,11 @@ const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
             ) : null
           ) : null}
           <Box flex={{direction: 'column', gap: 8}} padding={{bottom: 24}}>
-            <Box as="label" flex={{direction: 'row', gap: 8}}>
+            <Box as="label" flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <Checkbox checked={true} disabled={true} onChange={() => {}} />{' '}
               <span>Notify me about Dagster security updates</span>
             </Box>
-            <Box as="label" flex={{direction: 'row', gap: 8}}>
+            <Box as="label" flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <Checkbox
                 checked={newsletter}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -124,7 +124,7 @@ const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
             </Box>
           </Box>
         </Box>
-        <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+        <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
           <a href="https://dagster.io/privacy" target="_blank" rel="noreferrer">
             Privacy Policy
           </a>
