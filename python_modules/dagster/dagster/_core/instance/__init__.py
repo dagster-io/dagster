@@ -1127,9 +1127,9 @@ class DagsterInstance:
         execution_plan_snapshot,
         parent_pipeline_snapshot,
         asset_selection,
-        solid_selection=None,
-        external_pipeline_origin=None,
-        pipeline_code_origin=None,
+        solid_selection,
+        external_pipeline_origin,
+        pipeline_code_origin,
     ) -> DagsterRun:
 
         pipeline_run = self._construct_run_with_snapshots(
