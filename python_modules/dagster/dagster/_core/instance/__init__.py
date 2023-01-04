@@ -49,6 +49,7 @@ from dagster._core.errors import (
     DagsterRunConflict,
     DagsterUndefinedLogicalVersionError,
 )
+from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
@@ -1128,9 +1129,25 @@ class DagsterInstance:
         parent_pipeline_snapshot,
         asset_selection,
         solid_selection,
-        external_pipeline_origin,
-        pipeline_code_origin,
+        external_pipeline_origin: Optional[ExternalPipelineOrigin],
+        pipeline_code_origin: Optional[PipelinePythonOrigin],
     ) -> DagsterRun:
+
+        from dagster._core.host_representation.origin import ExternalPipelineOrigin
+
+        # The "python origin" arguments exist so a job can be reconstructed in memory
+        # after a DagsterRun has been fetched from the database.
+        #
+        # There are cases (notably in _logged_execute_pipeline with Reconstructable pipelines)
+        # where pipeline_code_origin and is not. In some cloud test cases only
+        # external_pipeline_origin is passed But they are almost always passed together.
+        # If these are not set the created run will never be able to be relaunched from
+        # the information just in the run or in another process.
+
+        check.opt_inst_param(
+            external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
+        )
+        check.opt_inst_param(pipeline_code_origin, "pipeline_code_origin", PipelinePythonOrigin)
 
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
@@ -1773,8 +1790,7 @@ class DagsterInstance:
             run_id (str): The id of the run.
         """
 
-        from dagster._core.host_representation import ExternalPipelineOrigin
-        from dagster._core.origin import PipelinePythonOrigin
+        from dagster._core.host_representation.origin import ExternalPipelineOrigin
         from dagster._core.run_coordinator import SubmitRunContext
 
         run = self.get_run_by_id(run_id)
