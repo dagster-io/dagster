@@ -2000,7 +2000,7 @@ export type PartitionBackfill = {
   partitionSet: Maybe<PartitionSet>;
   partitionSetName: Scalars['String'];
   partitionStatuses: PartitionStatuses;
-  reexecutionSteps: Array<Scalars['String']>;
+  reexecutionSteps: Maybe<Array<Scalars['String']>>;
   runs: Array<Run>;
   status: BulkActionStatus;
   timestamp: Scalars['Float'];

@@ -2627,7 +2627,7 @@ type PartitionBackfill {
   numPartitions: Int!
   numCancelable: Int!
   fromFailure: Boolean!
-  reexecutionSteps: [String!]!
+  reexecutionSteps: [String!]
   assetSelection: [AssetKey!]
   partitionSetName: String!
   timestamp: Float!

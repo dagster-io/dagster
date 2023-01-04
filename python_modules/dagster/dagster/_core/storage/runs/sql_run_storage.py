@@ -33,7 +33,6 @@ from dagster._core.errors import (
 )
 from dagster._core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent, DagsterEventType
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.host_representation.origin import ExternalPipelineOrigin
 from dagster._core.snap import (
     ExecutionPlanSnapshot,
@@ -1097,7 +1096,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         if self.has_bulk_actions_selector_cols():
             values["selector_id"] = partition_backfill.selector_id
-            values["action_type"] = BulkActionType.PARTITION_BACKFILL.value
+            values["action_type"] = partition_backfill.bulk_action_type.value
 
         with self.connect() as conn:
             conn.execute(
