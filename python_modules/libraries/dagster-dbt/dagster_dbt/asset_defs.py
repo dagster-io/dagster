@@ -15,6 +15,8 @@ from typing import (
     Set,
     Tuple,
 )
+from dagster._core.definitions.executor_definition import multiprocess_executor
+from dagster._core.executor.multiprocess import MultiprocessExecutor
 
 from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
@@ -371,6 +373,11 @@ def _get_dbt_op(
         dbt_output = None
 
         dbt_resource = getattr(context.resources, dbt_resource_key)
+
+        if isinstance(context._step_execution_context.executor, MultiprocessExecutor):
+            # copy the dbt project to a temporary directory
+            dbt_resource.enter_temp_dir()
+
         # clean up any run results from the last run
         dbt_resource.remove_run_results_json()
 
@@ -418,6 +425,8 @@ def _get_dbt_op(
                     extra_metadata=extra_metadata,
                     generate_asset_outputs=True,
                 )
+
+            # dbt_resource.dispose
 
     return _dbt_op
 
