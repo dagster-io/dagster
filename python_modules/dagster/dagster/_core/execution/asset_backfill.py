@@ -208,6 +208,7 @@ def submit_run_request(
         pipeline_name=external_pipeline.name,
         run_id=None,
         solids_to_execute=None,
+        solid_selection=None,
         run_config={},
         mode=DEFAULT_MODE_NAME,
         step_keys_to_execute=None,
