@@ -19,7 +19,7 @@ def build_example_packages_steps() -> List[BuildkiteStep]:
         PackageSpec(pkg)
         for pkg in (
             _get_uncustomized_pkg_roots("examples", custom_example_pkg_roots)
-            + _get_uncustomized_pkg_roots("experiemental/examples", custom_example_pkg_roots)
+            + _get_uncustomized_pkg_roots("examples/experimental", custom_example_pkg_roots)
         )
     ]
 
