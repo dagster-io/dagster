@@ -101,12 +101,10 @@ const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
             strokeColor={!emailChanged || validEmail ? undefined : Colors.Red500}
             style={{width: '100%'}}
           />
-          {emailChanged ? (
-            !validEmail ? (
-              <div style={{paddingBottom: '12px', color: Colors.Red500, fontSize: '12px'}}>
-                Add your email to get updates from Dagster.
-              </div>
-            ) : null
+          {emailChanged && !validEmail ? (
+            <div style={{paddingBottom: '12px', color: Colors.Red500, fontSize: '12px'}}>
+              Add your email to get updates from Dagster.
+            </div>
           ) : null}
           <Box flex={{direction: 'column', gap: 8}} padding={{bottom: 24}}>
             <Box as="label" flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
