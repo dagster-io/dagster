@@ -1,6 +1,7 @@
 from dagster._core.utils import check_dagster_package_version
 
 from .asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
+from .asset_selection import DbtManifestAssetSelection
 from .cli import DbtCliOutput, DbtCliResource, dbt_cli_resource
 from .cloud import (
     DbtCloudOutput,
