@@ -683,6 +683,16 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
     def serialize(self) -> str:
         raise NotImplementedError()
 
+    @classmethod
+    def from_serialized(
+        cls, partitions_def: "PartitionsDefinition", serialized: str
+    ) -> "PartitionsSubset":
+        raise NotImplementedError()
+
+    @classmethod
+    def can_deserialize(cls, serialized: str) -> bool:
+        raise NotImplementedError()
+
     @property
     def partitions_def(self) -> "PartitionsDefinition":
         raise NotImplementedError()

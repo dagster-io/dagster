@@ -43,6 +43,7 @@ from ..errors import (
     DagsterUnknownPartitionError,
     ScheduleExecutionError,
     user_code_error_boundary,
+    DagsterInvalidDeserializationVersionError,
 )
 from ..storage.pipeline_run import DagsterRun
 from .config import ConfigMapping
@@ -1063,6 +1064,11 @@ class PartitionsSubset(ABC):
     def serialize(self) -> str:
         raise NotImplementedError()
 
+    @classmethod
+    @abstractmethod
+    def from_serialized(cls, serialized: str) -> "PartitionsSubset":
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def partitions_def(self) -> PartitionsDefinition:
@@ -1076,8 +1082,20 @@ class PartitionsSubset(ABC):
     def __contains__(self, value) -> bool:
         raise NotImplementedError()
 
+    @classmethod
+    @abstractmethod
+    def can_deserialize(cls, serialized: str) -> bool:
+        """
+        Returns True if this PartitionsSubset can deserialize the given serialized string.
+        """
+        raise NotImplementedError()
+
 
 class DefaultPartitionsSubset(PartitionsSubset):
+    # Every time we change the serialization format, we should increment the version number.
+    # This will ensure that we can gracefully degrade when deserializing old data.
+    SERIALIZATION_VERSION = 1
+
     def __init__(self, partitions_def: PartitionsDefinition, subset: Optional[Set[str]] = None):
         check.opt_set_param(subset, "subset")
         self._partitions_def = partitions_def
@@ -1123,9 +1141,6 @@ class DefaultPartitionsSubset(PartitionsSubset):
             self._partitions_def.get_partition_keys_in_range(partition_key_range)
         )
 
-    def serialize(self) -> str:
-        return json.dumps(list(self._subset))
-
     @property
     def partitions_def(self) -> PartitionsDefinition:
         return self._partitions_def
@@ -1143,15 +1158,31 @@ class DefaultPartitionsSubset(PartitionsSubset):
     def __contains__(self, value) -> bool:
         return value in self._subset
 
-    @staticmethod
-    def from_serialized(
-        partitions_def: PartitionsDefinition, serialized: str
-    ) -> "DefaultPartitionsSubset":
-        return DefaultPartitionsSubset(
-            subset=set(json.loads(serialized)), partitions_def=partitions_def
-        )
-
     def __repr__(self) -> str:
         return (
             f"DefaultPartitionsSubset(subset={self._subset}, partitions_def={self._partitions_def})"
         )
+
+    def serialize(self) -> str:
+        # Serialize version number, so attempting to deserialize old versions can be handled gracefully.
+        # Any time the serialization format changes, we should increment the version number.
+        return json.dumps({"version": self.SERIALIZATION_VERSION, "subset": list(self._subset)})
+
+    @classmethod
+    def can_deserialize(cls, serialized: str) -> bool:
+        # Check the version number to determine if the serialization format is supported
+        data = json.loads(serialized)
+        return data.get("version") == cls.SERIALIZATION_VERSION
+
+    @classmethod
+    def from_serialized(
+        cls, partitions_def: PartitionsDefinition, serialized: str
+    ) -> "DefaultPartitionsSubset":
+        # Check the version number, so only valid versions can be deserialized.
+        data = json.loads(serialized)
+        if data.get("version") != cls.SERIALIZATION_VERSION:
+            raise DagsterInvalidDeserializationVersionError(
+                f"Attempted to deserialize partition subset with version {data.get('version')}, but only version {cls.SERIALIZATION_VERSION} is supported."
+            )
+
+        return cls(subset=set(data.get("subset")), partitions_def=partitions_def)

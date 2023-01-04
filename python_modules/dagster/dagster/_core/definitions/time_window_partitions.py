@@ -32,6 +32,7 @@ from .partition import (
     cron_schedule_from_schedule_type_and_offsets,
 )
 from .partition_key_range import PartitionKeyRange
+from ..errors import DagsterInvalidDeserializationVersionError
 
 
 class TimeWindow(NamedTuple):
@@ -1023,6 +1024,10 @@ def weekly_partitioned_config(
 
 
 class TimeWindowPartitionsSubset(PartitionsSubset):
+    # Every time we change the serialization format, we should increment the version number.
+    # This will ensure that we can gracefully degrade when deserializing old data.
+    SERIALIZATION_VERSION = 1
+
     def __init__(
         self,
         partitions_def: TimeWindowPartitionsDefinition,
@@ -1134,11 +1139,16 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             self._partitions_def.get_partition_keys_in_range(partition_key_range)
         )
 
-    @staticmethod
+    @classmethod
     def from_serialized(
-        partitions_def: TimeWindowPartitionsDefinition, serialized: str
+        cls, partitions_def: TimeWindowPartitionsDefinition, serialized: str
     ) -> "TimeWindowPartitionsSubset":
         loaded = json.loads(serialized)
+
+        if loaded.get("version") != cls.SERIALIZATION_VERSION:
+            raise DagsterInvalidDeserializationVersionError(
+                f"Attempted to deserialize time window partition subset with version {loaded.get('version')} but only version {cls.SERIALIZATION_VERSION} is supported."
+            )
 
         def tuples_to_time_windows(tuples):
             return [
@@ -1160,11 +1170,20 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             time_windows = tuples_to_time_windows(loaded["time_windows"])
             num_partitions = loaded["num_partitions"]
 
-        return TimeWindowPartitionsSubset(partitions_def, time_windows, num_partitions)
+        return cls(partitions_def, time_windows, num_partitions)
+
+    @classmethod
+    def can_deserialize(cls, serialized: str) -> bool:
+        # Check the version number to determine if the serialization format is supported
+        data = json.loads(serialized)
+        return data.get("version") == cls.SERIALIZATION_VERSION
 
     def serialize(self) -> str:
+        # Serialize version number, so attempting to deserialize old versions can be handled gracefully.
+        # Any time the serialization format changes, we should increment the version number.
         return json.dumps(
             {
+                "version": self.SERIALIZATION_VERSION,
                 "time_windows": [
                     (window.start.timestamp(), window.end.timestamp())
                     for window in self._included_time_windows
