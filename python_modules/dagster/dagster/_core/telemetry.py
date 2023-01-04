@@ -398,6 +398,7 @@ def log_external_repo_stats(instance, source, external_repo, external_pipeline=N
         num_pipelines_in_repo = len(external_repo.get_all_external_jobs())
         num_schedules_in_repo = len(external_repo.get_external_schedules())
         num_sensors_in_repo = len(external_repo.get_external_sensors())
+        num_assets_in_repo = len(external_repo.get_external_asset_nodes())
 
         write_telemetry_log_line(
             TelemetryEntry(
@@ -411,6 +412,7 @@ def log_external_repo_stats(instance, source, external_repo, external_pipeline=N
                     "num_pipelines_in_repo": str(num_pipelines_in_repo),
                     "num_schedules_in_repo": str(num_schedules_in_repo),
                     "num_sensors_in_repo": str(num_sensors_in_repo),
+                    "num_assets_in_repo": str(num_assets_in_repo),
                     "repo_hash": repo_hash,
                 },
             )._asdict()
