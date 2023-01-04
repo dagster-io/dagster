@@ -11,7 +11,7 @@ type LaunchpadHooksContextValue = {
   LaunchRootExecutionButton?: typeof LaunchRootExecutionButton;
   useLaunchWithTelemetry?: typeof useLaunchWithTelemetry;
   MaterializeButton?: typeof Button;
-  MaybeMissingEnvVarErrorHeader?: React.FC<{
+  PythonErrorInfoHeader?: React.FC<{
     error: GenericError | PythonErrorFragment;
     fallback?: React.ReactNode;
   }>;
@@ -27,13 +27,13 @@ export function useLaunchPadHooks() {
     LaunchRootExecutionButton: overrideLaunchRootExecutionButton,
     useLaunchWithTelemetry: overrideUseLaunchWithTelemetry,
     MaterializeButton: OverrideMaterializeButton,
-    MaybeMissingEnvVarErrorHeader,
+    PythonErrorInfoHeader,
   } = React.useContext(LaunchpadHooksContext);
 
   return {
     LaunchRootExecutionButton: overrideLaunchRootExecutionButton ?? LaunchRootExecutionButton,
     useLaunchWithTelemetry: overrideUseLaunchWithTelemetry ?? useLaunchWithTelemetry,
     MaterializeButton: OverrideMaterializeButton ?? Button,
-    MaybeMissingEnvVarErrorHeader,
+    PythonErrorInfoHeader,
   };
 }
