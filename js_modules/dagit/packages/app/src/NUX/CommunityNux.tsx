@@ -108,7 +108,7 @@ const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
           ) : null}
           <Box flex={{direction: 'column', gap: 8}} padding={{bottom: 24}}>
             <Box as="label" flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-              <Checkbox checked={true} disabled={true} onChange={() => {}} />{' '}
+              <Checkbox checked={true} disabled={true} onChange={() => {}} />
               <span>Notify me about Dagster security updates</span>
             </Box>
             <Box as="label" flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
