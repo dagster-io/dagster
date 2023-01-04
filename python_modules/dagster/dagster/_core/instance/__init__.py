@@ -1126,7 +1126,7 @@ class DagsterInstance:
         pipeline_snapshot,
         execution_plan_snapshot,
         parent_pipeline_snapshot,
-        asset_selection,
+        asset_selection: Optional[AbstractSet[AssetKey]],
         solids_to_execute: Optional[AbstractSet[str]],
         solid_selection: Optional[Sequence[str]],
         external_pipeline_origin: Optional[ExternalPipelineOrigin],
@@ -1143,9 +1143,33 @@ class DagsterInstance:
         # solids_to_execute parameter, but just as a frozen set, rather than
         # fully resolving the selection, as the daemon launchers do. Given the
         # state of callers we just check to ensure that the arguments are well-formed.
+        #
+        # asset_selection adds another dimension to this lovely dance. solid_selection
+        # and asset_selection are mutually exclusive and should never both be set.
+        # This is invariant is checked in a sporadic fashion around
+        # the codebase, but is never enforced in a typed fashion.
+        #
+        # Additionally, the way that callsites currently behave *if* asset selection
+        # is set (i.e., not None) then *neither* solid_selection *nor*
+        # solids_to_execute is passed. In the asset selection case resolving
+        # the set of assets into the canonical solids_to_execute is done in
+        # the user process, and the exact resolution is never persisted in the run.
+        # We are asserting that invariant here to maintain that behavior.
 
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
+        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
+
+        if asset_selection is not None:
+            check.invariant(
+                solid_selection is None,
+                "Cannot pass both asset_selection and solid_selection",
+            )
+
+            check.invariant(
+                solids_to_execute is None,
+                "Cannot pass both asset_selection and solids_to_execute",
+            )
 
         # The "python origin" arguments exist so a job can be reconstructed in memory
         # after a DagsterRun has been fetched from the database.
