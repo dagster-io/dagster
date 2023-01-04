@@ -1,7 +1,10 @@
 import hashlib
 import json
 import os
+import shutil
+import tempfile
 import textwrap
+from contextlib import ExitStack
 from typing import (
     AbstractSet,
     Any,
@@ -15,8 +18,6 @@ from typing import (
     Set,
     Tuple,
 )
-from dagster._core.definitions.executor_definition import multiprocess_executor
-from dagster._core.executor.multiprocess import MultiprocessExecutor
 
 from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
@@ -374,59 +375,69 @@ def _get_dbt_op(
 
         dbt_resource = getattr(context.resources, dbt_resource_key)
 
-        if isinstance(context._step_execution_context.executor, MultiprocessExecutor):
-            # copy the dbt project to a temporary directory
-            dbt_resource.enter_temp_dir()
+        with ExitStack() as stack:
 
-        # clean up any run results from the last run
-        dbt_resource.remove_run_results_json()
+            kwargs: Dict[str, Any] = {}
 
-        # in the case that we're running everything, opt for the cleaner selection string
-        if len(context.selected_output_names) == len(outs):
-            kwargs = {"select": select, "exclude": exclude}
-        else:
-            # for each output that we want to emit, translate to a dbt select string by converting
-            # the out to its corresponding fqn
-            kwargs = {
-                "select": [
+            if len(context.selected_output_names) == len(outs):
+                # in the case that we're running everything, opt for the cleaner selection string
+                kwargs["select"] = select
+                kwargs["exclude"] = exclude
+            else:
+                # for each output that we want to emit, translate to a dbt select string by
+                # converting the out to its corresponding fqn
+                kwargs["select"] = [
                     ".".join(fqns_by_output_name[output_name])
                     for output_name in context.selected_output_names
                 ]
-            }
 
-        try:
-            # variables to pass into the command
-            if partition_key_to_vars_fn:
-                kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
-
-            if use_build_command:
-                dbt_output = dbt_resource.build(**kwargs)
+            project_dir = dbt_resource.default_flags["project-dir"]
+            # if the run is non-isolated, we should isolate the dbt execution manually
+            if context.pipeline_run.tags.get("dagster/isolation") == "disabled":
+                # copy the dbt project to a temporary directory, so that the output artifacts for
+                # this execution are isolated from other executions
+                tempdir = stack.enter_context(tempfile.TemporaryDirectory())
+                shutil.copytree(project_dir, tempdir, dirs_exist_ok=True)
+                kwargs["project_dir"] = tempdir
+                project_dir = tempdir
+                context.log.debug(f"Copied dbt project to temporary directory: {tempdir}")
             else:
-                dbt_output = dbt_resource.run(**kwargs)
-        finally:
-            # in the case that the project only partially runs successfully, still attempt to generate
-            # events for the parts that were successful
-            if dbt_output is None:
-                dbt_output = DbtOutput(result=dbt_resource.get_run_results_json())
+                # clean up any run results from the last run
+                dbt_resource.remove_run_results_json()
 
-            manifest_json = dbt_resource.get_manifest_json()
+            try:
+                # variables to pass into the command
+                if partition_key_to_vars_fn:
+                    kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
 
-            for result in dbt_output.result["results"]:
-                if runtime_metadata_fn:
-                    node_info = manifest_json["nodes"][result["unique_id"]]
-                    extra_metadata = runtime_metadata_fn(context, node_info)
+                if use_build_command:
+                    dbt_output = dbt_resource.build(**kwargs)
                 else:
-                    extra_metadata = None
-                yield from result_to_events(
-                    result=result,
-                    docs_url=dbt_output.docs_url,
-                    node_info_to_asset_key=node_info_to_asset_key,
-                    manifest_json=manifest_json,
-                    extra_metadata=extra_metadata,
-                    generate_asset_outputs=True,
-                )
+                    dbt_output = dbt_resource.run(**kwargs)
+            finally:
+                # in the case that the project only partially runs successfully, still attempt to generate
+                # events for the parts that were successful
+                if dbt_output is None:
+                    dbt_output = DbtOutput(
+                        result=dbt_resource.get_run_results_json(project_dir=project_dir)
+                    )
 
-            # dbt_resource.dispose
+                manifest_json = dbt_resource.get_manifest_json(project_dir=project_dir)
+
+                for result in dbt_output.result["results"]:
+                    if runtime_metadata_fn:
+                        node_info = manifest_json["nodes"][result["unique_id"]]
+                        extra_metadata = runtime_metadata_fn(context, node_info)
+                    else:
+                        extra_metadata = None
+                    yield from result_to_events(
+                        result=result,
+                        docs_url=dbt_output.docs_url,
+                        node_info_to_asset_key=node_info_to_asset_key,
+                        manifest_json=manifest_json,
+                        extra_metadata=extra_metadata,
+                        generate_asset_outputs=True,
+                    )
 
     return _dbt_op
 

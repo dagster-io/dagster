@@ -12,12 +12,14 @@ from dagster_dbt.types import DbtOutput
 from dagster import (
     AssetIn,
     AssetKey,
+    DailyPartitionsDefinition,
     FreshnessPolicy,
     IOManager,
     MetadataEntry,
     ResourceDefinition,
     asset,
     io_manager,
+    materialize_to_memory,
     repository,
 )
 from dagster._core.definitions import build_assets_job
@@ -270,8 +272,6 @@ def test_custom_freshness_policy():
 def test_partitions(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir
 ):  # pylint: disable=unused-argument
-    from dagster import DailyPartitionsDefinition, materialize_to_memory
-
     def _partition_key_to_vars(partition_key: str):
         if partition_key == "2022-01-02":
             return {"fail_test": True}
@@ -723,6 +723,36 @@ def test_source_tag_selection(
     dbt_assets = load_assets_from_dbt_manifest(manifest_json, select="tag:events")
 
     assert len(dbt_assets[0].keys) == 2
+
+
+@pytest.mark.parametrize("isolated_dagster_run", [True, False])
+def test_manual_isolation(
+    conn_string, dbt_seed, test_project_dir, dbt_config_dir, capsys, isolated_dagster_run
+):  # pylint: disable=unused-argument
+
+    manifest_path = os.path.join(test_project_dir, "target", "manifest.json")
+    with open(manifest_path, "r", encoding="utf8") as f:
+        manifest_json = json.load(f)
+
+    dbt_assets = load_assets_from_dbt_manifest(manifest_json)
+
+    tags = {"dagster/isolation": "disabled"} if isolated_dagster_run else {}
+    result = materialize_to_memory(
+        dbt_assets,
+        tags=tags,
+        resources={
+            "dbt": dbt_cli_resource.configured(
+                {
+                    "project_dir": test_project_dir,
+                    "profiles_dir": dbt_config_dir,
+                }
+            ),
+        },
+    )
+    assert result.success
+
+    used_tempdir = "Copied dbt project to temporary directory" in capsys.readouterr().err
+    assert used_tempdir == isolated_dagster_run
 
 
 def test_python_interleaving(
