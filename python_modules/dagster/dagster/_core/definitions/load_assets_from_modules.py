@@ -44,7 +44,7 @@ def assets_from_modules(
             group in addition to the source assets found in the modules.
 
     Returns:
-        Tuple[List[AssetsDefinition], List[SourceAsset], List[CacheableAssetsDefinition]]]:
+        Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]]:
             A tuple containing a list of assets, a list of source assets, and a list of
             cacheable assets defined in the given modules.
     """
@@ -100,12 +100,12 @@ def load_assets_from_modules(
         group_name (Optional[str]):
             Group name to apply to the loaded assets. The returned assets will be copies of the
             loaded objects, with the group name added.
-        key_prefix (Optional[Union[str, List[str]]]):
+        key_prefix (Optional[Union[str, Sequence[str]]]):
             Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
             of the loaded objects, with the prefix prepended.
 
     Returns:
-        List[Union[AssetsDefinition, SourceAsset]]:
+        Sequence[Union[AssetsDefinition, SourceAsset]]:
             A list containing assets and source assets defined in the given modules.
     """
     group_name = check.opt_str_param(group_name, "group_name")
@@ -152,12 +152,12 @@ def load_assets_from_current_module(
         group_name (Optional[str]):
             Group name to apply to the loaded assets. The returned assets will be copies of the
             loaded objects, with the group name added.
-        key_prefix (Optional[Union[str, List[str]]]):
+        key_prefix (Optional[Union[str, Sequence[str]]]):
             Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
             of the loaded objects, with the prefix prepended.
 
     Returns:
-        List[Union[AssetsDefinition, SourceAsset, CachableAssetsDefinition]]:
+        Sequence[Union[AssetsDefinition, SourceAsset, CachableAssetsDefinition]]:
             A list containing assets, source assets, and cacheable assets defined in the module.
     """
     caller = inspect.stack()[1]
@@ -175,7 +175,7 @@ def load_assets_from_current_module(
 def assets_from_package_module(
     package_module: ModuleType,
     extra_source_assets: Optional[Sequence[SourceAsset]] = None,
-) -> Union[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
+) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
     """
     Constructs three lists, a list of assets, a list of source assets, and a list of cacheable assets
     from the given package module.
@@ -186,7 +186,7 @@ def assets_from_package_module(
             group in addition to the source assets found in the modules.
 
     Returns:
-        Tuple[List[AssetsDefinition], List[SourceAsset], List[CacheableAssetsDefinition]]:
+        Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
             A tuple containing a list of assets, a list of source assets, and a list of cacheable assets
             defined in the given modules.
     """
@@ -211,12 +211,12 @@ def load_assets_from_package_module(
         group_name (Optional[str]):
             Group name to apply to the loaded assets. The returned assets will be copies of the
             loaded objects, with the group name added.
-        key_prefix (Optional[Union[str, List[str]]]):
+        key_prefix (Optional[Union[str, Sequence[str]]]):
             Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
             of the loaded objects, with the prefix prepended.
 
     Returns:
-        List[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+        Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
             A list containing assets, source assets, and cacheable assets defined in the module.
     """
     group_name = check.opt_str_param(group_name, "group_name")
@@ -260,12 +260,12 @@ def load_assets_from_package_name(
         group_name (Optional[str]):
             Group name to apply to the loaded assets. The returned assets will be copies of the
             loaded objects, with the group name added.
-        key_prefix (Optional[Union[str, List[str]]]):
+        key_prefix (Optional[Union[str, Sequence[str]]]):
             Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
             of the loaded objects, with the prefix prepended.
 
     Returns:
-        List[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+        Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
             A list containing assets, source assets, and cacheable assets defined in the module.
     """
     package_module = import_module(package_name)

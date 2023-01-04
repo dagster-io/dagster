@@ -1,6 +1,5 @@
 import re
-from types import ModuleType
-from typing import Callable, List, Union, cast
+from typing import cast
 
 import pytest
 

@@ -2,7 +2,7 @@ import hashlib
 import inspect
 import json
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
 import dagster._seven as seven
@@ -278,37 +278,46 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         return contents.hexdigest()
 
     def transformed_assets_def(self, assets_def: AssetsDefinition) -> AssetsDefinition:
-        group_names_by_key = deep_merge_dicts(
-            self._group_names_by_key,
-            {
-                k: self._group_name_for_all_assets
-                for k in assets_def.asset_keys
-                if self._group_name_for_all_assets
-            },
+        group_names_by_key = cast(
+            Mapping[AssetKey, str],
+            deep_merge_dicts(
+                self._group_names_by_key,
+                {
+                    k: self._group_name_for_all_assets
+                    for k in assets_def.asset_keys
+                    if self._group_name_for_all_assets
+                },
+            ),
         )
-        output_asset_key_replacements = deep_merge_dicts(
-            self._output_asset_key_replacements,
-            {
-                k: AssetKey(
-                    path=self._prefix_for_all_assets + k.path
+        output_asset_key_replacements = cast(
+            Mapping[AssetKey, AssetKey],
+            deep_merge_dicts(
+                self._output_asset_key_replacements,
+                {
+                    k: AssetKey(
+                        path=self._prefix_for_all_assets + list(k.path)
+                        if self._prefix_for_all_assets
+                        else k.path
+                    )
+                    for k in assets_def.asset_keys
                     if self._prefix_for_all_assets
-                    else k.path
-                )
-                for k in assets_def.asset_keys
-                if self._prefix_for_all_assets
-            },
+                },
+            ),
         )
-        input_asset_key_replacements = deep_merge_dicts(
-            self._input_asset_key_replacements,
-            {
-                k: AssetKey(
-                    path=self._prefix_for_all_assets + k.path
+        input_asset_key_replacements = cast(
+            Mapping[AssetKey, AssetKey],
+            deep_merge_dicts(
+                self._input_asset_key_replacements,
+                {
+                    k: AssetKey(
+                        path=self._prefix_for_all_assets + list(k.path)
+                        if self._prefix_for_all_assets
+                        else k.path
+                    )
+                    for k in assets_def.dependency_keys
                     if self._prefix_for_all_assets
-                    else k.path
-                )
-                for k in assets_def.dependency_keys
-                if self._prefix_for_all_assets
-            },
+                },
+            ),
         )
         return assets_def.with_prefix_or_group(
             output_asset_key_replacements=output_asset_key_replacements,
