@@ -9,6 +9,7 @@ from dagster_graphql.test.utils import (
 )
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
+    ReadonlyGraphQLContextTestMatrix,
 )
 
 from dagster import AssetMaterialization, Output, job, op, repository
@@ -224,6 +225,20 @@ def _get_runs_data(result, run_id):
             return copy.deepcopy(run_data)
 
     return None
+
+
+class TestDeleteRunReadonly(ReadonlyGraphQLContextTestMatrix):
+    def test_delete_runs_permission_readonly(self, graphql_context):
+        repo = get_repo_at_time_1()
+        run_id = graphql_context.instance.create_run_for_pipeline(
+            repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.STARTED
+        ).run_id
+
+        result = execute_dagster_graphql(
+            graphql_context, DELETE_RUN_MUTATION, variables={"runId": run_id}
+        )
+
+        assert result.data["deletePipelineRun"]["__typename"] == "UnauthorizedError"
 
 
 class TestGetRuns(ExecutingGraphQLContextTestMatrix):

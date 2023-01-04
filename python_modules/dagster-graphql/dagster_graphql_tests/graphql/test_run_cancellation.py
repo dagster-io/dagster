@@ -8,11 +8,16 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_s
 
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.test_utils import create_run_for_test
 from dagster._grpc.types import CancelExecutionRequest
 from dagster._legacy import execute_pipeline
 from dagster._utils import file_relative_path, safe_tempfile_path
 
-from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
+from .graphql_context_test_suite import (
+    GraphQLContextVariant,
+    ReadonlyGraphQLContextTestMatrix,
+    make_graphql_context_test_suite,
+)
 
 RUN_CANCELLATION_QUERY = """
 mutation($runId: String!, $terminatePolicy: TerminateRunPolicy) {
@@ -148,6 +153,19 @@ def _exception_terminate(_run_id):
 
 def _return_fail_terminate(_run_id):
     return False
+
+
+class TestTerminationReadonly(ReadonlyGraphQLContextTestMatrix):
+    def test_termination_permission_failure(self, graphql_context):
+        run_id = create_run_for_test(graphql_context.instance).run_id
+        result = execute_dagster_graphql(
+            graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": run_id}
+        )
+        assert not result.errors
+        assert result.data
+
+        # just test existence
+        assert result.data["terminatePipelineExecution"]["__typename"] == "UnauthorizedError"
 
 
 class TestRunVariantTermination(RunTerminationTestSuite):
