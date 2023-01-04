@@ -1,6 +1,7 @@
 import sys
 import tempfile
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
 
 import pendulum
 import pytest
@@ -672,6 +673,7 @@ class TestRunStorage:
             filters=RunsFilter(run_ids=[two], updated_after=datetime(2020, 1, 1))
         )[0]
         run_two_update_timestamp = record_two.update_timestamp
+        record_three = storage.get_run_records(filters=RunsFilter(run_ids=[three]))[0]
 
         assert [
             record.pipeline_run.run_id
@@ -688,6 +690,54 @@ class TestRunStorage:
                 filters=RunsFilter(
                     statuses=[DagsterRunStatus.FAILURE], updated_after=run_two_update_timestamp
                 ),
+            )
+        ] == [one]
+
+        assert [
+            record.pipeline_run.run_id
+            for record in storage.get_run_records(
+                filters=RunsFilter(updated_before=record_three.update_timestamp)
+            )
+        ] == [two]
+
+    def test_fetch_records_by_create_timestamp(self, storage):
+        assert storage
+        self._skip_in_memory(storage)
+
+        one = make_new_run_id()
+        two = make_new_run_id()
+        three = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=one, pipeline_name="some_pipeline", status=DagsterRunStatus.STARTED
+            )
+        )
+        time.sleep(2)
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=two, pipeline_name="some_pipeline", status=DagsterRunStatus.STARTED
+            )
+        )
+        time.sleep(2)
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=three, pipeline_name="some_pipeline", status=DagsterRunStatus.STARTED
+            )
+        )
+        records = storage.get_run_records()
+        assert len(records) == 3
+        run_two_create_timestamp = records[1].create_timestamp
+
+        assert [
+            record.pipeline_run.run_id
+            for record in storage.get_run_records(
+                filters=RunsFilter(created_after=run_two_create_timestamp + timedelta(seconds=1)),
+            )
+        ] == [three]
+        assert [
+            record.pipeline_run.run_id
+            for record in storage.get_run_records(
+                filters=RunsFilter(created_before=run_two_create_timestamp - timedelta(seconds=1)),
             )
         ] == [one]
 
