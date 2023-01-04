@@ -1,0 +1,24 @@
+query TickLogEventsQuery($instigationSelector: InstigationSelector!, $timestamp: Float!) {
+  instigationStateOrError(instigationSelector: $instigationSelector) {
+    __typename
+    ... on InstigationState {
+      id
+      tick(timestamp: $timestamp) {
+        id
+        status
+        timestamp
+        logEvents {
+          events {
+            ...TickLogEvent
+          }
+        }
+      }
+    }
+  }
+}
+
+fragment TickLogEvent on InstigationEvent {
+  message
+  timestamp
+  level
+}

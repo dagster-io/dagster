@@ -2,8 +2,12 @@ import {useQuery} from '@apollo/client';
 import {Box, Button, DialogFooter, Dialog, Colors, DialogBody} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {graphql} from './graphql';
-import {HistoryTickFragment, InstigationSelector, TickLogEventFragment} from './graphql/graphql';
+import {
+  HistoryTickFragment,
+  InstigationSelector,
+  TickLogEventFragment,
+  TickLogEventsQueryDocument,
+} from './graphql/graphql';
 import {EventTypeColumn, TimestampColumn, Row} from './runs/LogsRowComponents';
 import {
   ColumnWidthsProvider,
@@ -19,7 +23,7 @@ export const TickLogDialog: React.FC<{
   instigationSelector: InstigationSelector;
   onClose: () => void;
 }> = ({tick, instigationSelector, onClose}) => {
-  const {data} = useQuery(TICK_LOG_EVENTS_QUERY, {
+  const {data} = useQuery(TickLogEventsQueryDocument, {
     variables: {instigationSelector, timestamp: tick.timestamp},
     fetchPolicy: 'cache-and-network',
     partialRefetch: true,
@@ -108,30 +112,3 @@ const TickLogRow: React.FC<{event: TickLogEventFragment}> = ({event}) => {
     </Row>
   );
 };
-
-const TICK_LOG_EVENTS_QUERY = graphql(`
-  query TickLogEventsQuery($instigationSelector: InstigationSelector!, $timestamp: Float!) {
-    instigationStateOrError(instigationSelector: $instigationSelector) {
-      __typename
-      ... on InstigationState {
-        id
-        tick(timestamp: $timestamp) {
-          id
-          status
-          timestamp
-          logEvents {
-            events {
-              ...TickLogEvent
-            }
-          }
-        }
-      }
-    }
-  }
-
-  fragment TickLogEvent on InstigationEvent {
-    message
-    timestamp
-    level
-  }
-`);

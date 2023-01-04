@@ -1,0 +1,103 @@
+query RootWorkspaceQuery {
+  workspaceOrError {
+    __typename
+    ... on Workspace {
+      locationEntries {
+        id
+        ...WorkspaceLocationNode
+      }
+    }
+    ...PythonErrorFragment
+  }
+}
+
+fragment WorkspaceLocationNode on WorkspaceLocationEntry {
+  id
+  name
+  loadStatus
+  displayMetadata {
+    ...WorkspaceDisplayMetadata
+  }
+  updatedTimestamp
+  locationOrLoadError {
+    ... on RepositoryLocation {
+      id
+      ...WorkspaceLocation
+    }
+    ...PythonErrorFragment
+  }
+}
+
+fragment WorkspaceDisplayMetadata on RepositoryMetadata {
+  key
+  value
+}
+
+fragment WorkspaceLocation on RepositoryLocation {
+  id
+  isReloadSupported
+  serverId
+  name
+  repositories {
+    id
+    ...WorkspaceRepository
+  }
+}
+
+fragment WorkspaceRepository on Repository {
+  id
+  name
+  pipelines {
+    id
+    name
+    isJob
+    isAssetJob
+    pipelineSnapshotId
+  }
+  schedules {
+    id
+    ...WorkspaceSchedule
+  }
+  sensors {
+    id
+    ...WorkspaceSensor
+  }
+  partitionSets {
+    id
+    mode
+    pipelineName
+  }
+  assetGroups {
+    groupName
+  }
+  ...RepositoryInfoFragment
+}
+
+fragment WorkspaceSchedule on Schedule {
+  id
+  cronSchedule
+  executionTimezone
+  mode
+  name
+  pipelineName
+  scheduleState {
+    id
+    selectorId
+    status
+  }
+}
+
+fragment WorkspaceSensor on Sensor {
+  id
+  jobOriginId
+  name
+  targets {
+    mode
+    pipelineName
+  }
+  sensorState {
+    id
+    selectorId
+    status
+  }
+}

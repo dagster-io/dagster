@@ -1,0 +1,28 @@
+subscription CapturedLogsSubscription($logKey: [String!]!, $cursor: String) {
+  capturedLogs(logKey: $logKey, cursor: $cursor) {
+    ...CapturedLog
+  }
+}
+
+fragment CapturedLog on CapturedLogs {
+  stdout
+  stderr
+  cursor
+}
+
+query CapturedLogsMetadataQuery($logKey: [String!]!) {
+  capturedLogsMetadata(logKey: $logKey) {
+    stdoutDownloadUrl
+    stdoutLocation
+    stderrDownloadUrl
+    stderrLocation
+  }
+}
+
+query CapturedLogsQuery($logKey: [String!]!, $cursor: String, $limit: Int) {
+  capturedLogs(logKey: $logKey, cursor: $cursor, limit: $limit) {
+    stdout
+    stderr
+    cursor
+  }
+}

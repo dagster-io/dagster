@@ -5,8 +5,13 @@ import * as React from 'react';
 import {RawLogContent} from './RawLogContent';
 import {AppContext} from './app/AppContext';
 import {WebSocketContext} from './app/WebSocketProvider';
-import {graphql} from './graphql';
-import {CapturedLogFragment, CapturedLogsQueryQuery} from './graphql/graphql';
+import {
+  CapturedLogFragment,
+  CapturedLogsMetadataQueryDocument,
+  CapturedLogsQueryDocument,
+  CapturedLogsQueryQuery,
+  CapturedLogsSubscriptionDocument,
+} from './graphql/graphql';
 
 interface CapturedLogProps {
   logKey: string[];
@@ -115,7 +120,7 @@ const CapturedLogSubscription: React.FC<{
   logKey: string[];
   onLogData: (logData: CapturedLogFragment) => void;
 }> = React.memo(({logKey, onLogData}) => {
-  useSubscription(CAPTURED_LOGS_SUBSCRIPTION, {
+  useSubscription(CapturedLogsSubscriptionDocument, {
     fetchPolicy: 'no-cache',
     variables: {logKey},
     onSubscriptionData: ({subscriptionData}) => {
@@ -126,31 +131,6 @@ const CapturedLogSubscription: React.FC<{
   });
   return null;
 });
-
-const CAPTURED_LOGS_SUBSCRIPTION = graphql(`
-  subscription CapturedLogsSubscription($logKey: [String!]!, $cursor: String) {
-    capturedLogs(logKey: $logKey, cursor: $cursor) {
-      ...CapturedLog
-    }
-  }
-
-  fragment CapturedLog on CapturedLogs {
-    stdout
-    stderr
-    cursor
-  }
-`);
-
-const CAPTURED_LOGS_METADATA_QUERY = graphql(`
-  query CapturedLogsMetadataQuery($logKey: [String!]!) {
-    capturedLogsMetadata(logKey: $logKey) {
-      stdoutDownloadUrl
-      stdoutLocation
-      stderrDownloadUrl
-      stderrLocation
-    }
-  }
-`);
 
 const QUERY_LOG_LIMIT = 100000;
 const POLL_INTERVAL = 5000;
@@ -193,7 +173,7 @@ const CapturedLogsQueryProvider = ({
   }, [logKeyString]);
   const {cursor} = state;
 
-  const {stopPolling, startPolling} = useQuery(CAPTURED_LOGS_QUERY, {
+  const {stopPolling, startPolling} = useQuery(CapturedLogsQueryDocument, {
     notifyOnNetworkStatusChange: true,
     variables: {logKey, cursor, limit: QUERY_LOG_LIMIT},
     pollInterval: POLL_INTERVAL,
@@ -208,21 +188,11 @@ const CapturedLogsQueryProvider = ({
   return <>{children(state)}</>;
 };
 
-const CAPTURED_LOGS_QUERY = graphql(`
-  query CapturedLogsQuery($logKey: [String!]!, $cursor: String, $limit: Int) {
-    capturedLogs(logKey: $logKey, cursor: $cursor, limit: $limit) {
-      stdout
-      stderr
-      cursor
-    }
-  }
-`);
-
 export const CapturedLogPanel: React.FC<CapturedLogProps> = React.memo(
   ({logKey, visibleIOType, onSetDownloadUrl}) => {
     const {rootServerURI} = React.useContext(AppContext);
     const {availability, disabled} = React.useContext(WebSocketContext);
-    const queryResult = useQuery(CAPTURED_LOGS_METADATA_QUERY, {
+    const queryResult = useQuery(CapturedLogsMetadataQueryDocument, {
       variables: {logKey},
       fetchPolicy: 'cache-and-network',
     });

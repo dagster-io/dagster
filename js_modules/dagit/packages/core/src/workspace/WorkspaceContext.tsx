@@ -3,7 +3,6 @@ import sortBy from 'lodash/sortBy';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
-import {graphql} from '../graphql';
 import {
   PythonErrorFragmentFragment,
   RootWorkspaceQueryQuery,
@@ -13,6 +12,7 @@ import {
   WorkspaceScheduleFragment,
   WorkspaceSensorFragment,
   PipelineSelector,
+  RootWorkspaceQueryDocument,
 } from '../graphql/graphql';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
@@ -49,118 +49,13 @@ export const WorkspaceContext = React.createContext<WorkspaceState>(
 
 export const HIDDEN_REPO_KEYS = 'dagit.hidden-repo-keys';
 
-const ROOT_WORKSPACE_QUERY = graphql(`
-  query RootWorkspaceQuery {
-    workspaceOrError {
-      ... on Workspace {
-        locationEntries {
-          id
-          ...WorkspaceLocationNode
-        }
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  fragment WorkspaceLocationNode on WorkspaceLocationEntry {
-    id
-    name
-    loadStatus
-    displayMetadata {
-      ...WorkspaceDisplayMetadata
-    }
-    updatedTimestamp
-    locationOrLoadError {
-      ... on RepositoryLocation {
-        id
-        ...WorkspaceLocation
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  fragment WorkspaceDisplayMetadata on RepositoryMetadata {
-    key
-    value
-  }
-
-  fragment WorkspaceLocation on RepositoryLocation {
-    id
-    isReloadSupported
-    serverId
-    name
-    repositories {
-      id
-      ...WorkspaceRepository
-    }
-  }
-
-  fragment WorkspaceRepository on Repository {
-    id
-    name
-    pipelines {
-      id
-      name
-      isJob
-      isAssetJob
-      pipelineSnapshotId
-    }
-    schedules {
-      id
-      ...WorkspaceSchedule
-    }
-    sensors {
-      id
-      ...WorkspaceSensor
-    }
-    partitionSets {
-      id
-      mode
-      pipelineName
-    }
-    assetGroups {
-      groupName
-    }
-    ...RepositoryInfoFragment
-  }
-
-  fragment WorkspaceSchedule on Schedule {
-    id
-    cronSchedule
-    executionTimezone
-    mode
-    name
-    pipelineName
-    scheduleState {
-      id
-      selectorId
-      status
-    }
-  }
-
-  fragment WorkspaceSensor on Sensor {
-    id
-    jobOriginId
-    name
-    targets {
-      mode
-      pipelineName
-    }
-    sensorState {
-      id
-      selectorId
-      status
-    }
-  }
-`);
-
 /**
  * A hook that supplies the current workspace state of Dagit, including the current
  * "active" repo based on the URL or localStorage, all fetched repositories available
  * in the workspace, and loading/error state for the relevant query.
  */
 const useWorkspaceState = (): WorkspaceState => {
-  const {data, loading, refetch} = useQuery(ROOT_WORKSPACE_QUERY, {
+  const {data, loading, refetch} = useQuery(RootWorkspaceQueryDocument, {
     fetchPolicy: 'cache-and-network',
   });
 
