@@ -1,5 +1,5 @@
 import time
-from typing import Callable, Dict, Iterator, List, Mapping, Optional, Sequence, Set, cast
+from typing import Any, Callable, Dict, Iterator, List, Mapping, Optional, Sequence, Set, cast
 
 import dagster._check as check
 from dagster._core.errors import (
@@ -13,6 +13,7 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode, RetryState
 from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._utils.interrupts import pop_captured_interrupt
+from dagster._utils.tags import TagConcurrencyLimitsCounter
 
 from .outputs import StepOutputData, StepOutputHandle
 from .plan import ExecutionPlan
@@ -31,6 +32,8 @@ class ActiveExecution:
         execution_plan: ExecutionPlan,
         retry_mode: RetryMode,
         sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
+        max_concurrent: Optional[int] = None,
+        tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
     ):
         self._plan: ExecutionPlan = check.inst_param(
             execution_plan, "execution_plan", ExecutionPlan
@@ -44,6 +47,11 @@ class ActiveExecution:
                 "sort_key_fn",
             )
             or _default_sort_key
+        )
+
+        self._max_concurrent = check.opt_int_param(max_concurrent, "max_concurrent")
+        self._tag_concurrency_limits = check.opt_list_param(
+            tag_concurrency_limits, "tag_concurrency_limits"
         )
 
         self._context_guard: bool = False  # Prevent accidental direct use
@@ -239,12 +247,16 @@ class ActiveExecution:
         step = self._plan.get_step_by_key(step_key)
         return cast(ExecutionStep, check.inst(step, ExecutionStep))
 
-    def get_steps_to_execute(self, limit: Optional[int] = None) -> Sequence[ExecutionStep]:
+    def get_steps_to_execute(
+        self,
+        limit: Optional[int] = None,
+    ) -> List[ExecutionStep]:
         check.invariant(
             self._context_guard,
             "ActiveExecution must be used as a context manager",
         )
         check.opt_int_param(limit, "limit")
+
         self._update()
 
         steps = sorted(
@@ -252,15 +264,40 @@ class ActiveExecution:
             key=self._sort_key_fn,
         )
 
-        if limit is not None:
-            steps = steps[:limit]
+        tag_concurrency_limits_counter = None
+        if self._tag_concurrency_limits:
+            in_flight_steps = [self.get_step_by_key(key) for key in self._in_flight]
+            tag_concurrency_limits_counter = TagConcurrencyLimitsCounter(
+                self._tag_concurrency_limits,
+                in_flight_steps,
+            )
+
+        batch: List[ExecutionStep] = []
 
         for step in steps:
+            if limit is not None and len(batch) >= limit:
+                break
+
+            if (
+                self._max_concurrent is not None
+                and len(batch) + len(self._in_flight) >= self._max_concurrent
+            ):
+                break
+
+            if tag_concurrency_limits_counter:
+                if tag_concurrency_limits_counter.is_blocked(step):
+                    continue
+
+                tag_concurrency_limits_counter.update_counters_with_launched_item(step)
+
+            batch.append(step)
+
+        for step in batch:
             self._in_flight.add(step.key)
             self._executable.remove(step.key)
             self._prep_for_dynamic_outputs(step)
 
-        return steps
+        return batch
 
     def get_steps_to_skip(self) -> Sequence[ExecutionStep]:
         self._update()

@@ -1,6 +1,7 @@
 from collections import OrderedDict, defaultdict
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Dict,
     FrozenSet,
@@ -982,6 +983,8 @@ class ExecutionPlan(
         self,
         retry_mode: RetryMode,
         sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
+        max_concurrent: Optional[int] = None,
+        tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
     ) -> "ActiveExecution":
         from .active import ActiveExecution
 
@@ -989,6 +992,8 @@ class ExecutionPlan(
             self,
             retry_mode,
             sort_key_fn,
+            max_concurrent,
+            tag_concurrency_limits,
         )
 
     def step_handle_for_single_step_plans(

@@ -4,11 +4,12 @@ import docker
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
 
 import dagster._check as check
-from dagster import executor
+from dagster import Field, IntSource, executor
 from dagster._annotations import experimental
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.events import DagsterEvent, EngineEventData, MetadataEntry
 from dagster._core.execution.retries import RetryMode, get_retries_config
+from dagster._core.execution.tags import get_tag_concurrency_limits_config
 from dagster._core.executor.base import Executor
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating import StepDelegatingExecutor
@@ -32,6 +33,13 @@ from .container_context import DockerContainerContext
         DOCKER_CONFIG_SCHEMA,
         {
             "retries": get_retries_config(),
+            "max_concurrent": Field(
+                IntSource,
+                is_required=False,
+                description="Limit on the number of containers that will run concurrently within the scope "
+                "of a Dagster run. Note that this limit is per run, not global.",
+            ),
+            "tag_concurrency_limits": get_tag_concurrency_limits_config(),
         },
     ),
     requirements=multiple_process_executor_requirements(),
@@ -71,6 +79,8 @@ def docker_executor(init_context: InitExecutorContext) -> Executor:
     networks = check.opt_list_elem(config, "networks", of_type=str)
     container_kwargs = check.opt_dict_elem(config, "container_kwargs", key_type=str)
     retries = check.dict_elem(config, "retries", key_type=str)
+    max_concurrent = check.opt_int_elem(config, "max_concurrent")
+    tag_concurrency_limits = check.opt_list_elem(config, "tag_concurrency_limits")
 
     validate_docker_config(network, networks, container_kwargs)
 
@@ -87,6 +97,8 @@ def docker_executor(init_context: InitExecutorContext) -> Executor:
     return StepDelegatingExecutor(
         DockerStepHandler(image, container_context),
         retries=check.not_none(RetryMode.from_config(retries)),
+        max_concurrent=max_concurrent,
+        tag_concurrency_limits=tag_concurrency_limits,
     )
 
 

@@ -10,6 +10,7 @@ from dagster._core.definitions.executor_definition import multiple_process_execu
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.events import DagsterEvent, EngineEventData, MetadataEntry
 from dagster._core.execution.retries import RetryMode, get_retries_config
+from dagster._core.execution.tags import get_tag_concurrency_limits_config
 from dagster._core.executor.base import Executor
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating import (
@@ -43,6 +44,7 @@ from .job import (
                 description="Limit on the number of pods that will run concurrently within the scope "
                 "of a Dagster run. Note that this limit is per run, not global.",
             ),
+            "tag_concurrency_limits": get_tag_concurrency_limits_config(),
         },
     ),
     requirements=multiple_process_executor_requirements(),
@@ -118,6 +120,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         ),
         retries=RetryMode.from_config(exc_cfg["retries"]),  # type: ignore
         max_concurrent=check.opt_int_elem(exc_cfg, "max_concurrent"),
+        tag_concurrency_limits=check.opt_list_elem(exc_cfg, "tag_concurrency_limits"),
         should_verify_step=True,
     )
 
