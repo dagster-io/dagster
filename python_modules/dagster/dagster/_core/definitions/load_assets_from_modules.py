@@ -111,6 +111,10 @@ def load_assets_from_modules(
     group_name = check.opt_str_param(group_name, "group_name")
     key_prefix = check.opt_inst_param(key_prefix, "key_prefix", (str, list))
 
+    # There is a tricky edge case here where if a non-cacheable asset depends on a cacheable asset,
+    # and the assets are prefixed, the non-cacheable asset's dependency will not be prefixed since
+    # at prefix-time it is not known that its dependency is one of the cacheable assets.
+    # https://github.com/dagster-io/dagster/pull/10389#pullrequestreview-1170913271
     (
         assets,
         source_assets,
@@ -218,6 +222,10 @@ def load_assets_from_package_module(
     group_name = check.opt_str_param(group_name, "group_name")
     key_prefix = check.opt_inst_param(key_prefix, "key_prefix", (str, list))
 
+    # There is a tricky edge case here where if a non-cacheable asset depends on a cacheable asset,
+    # and the assets are prefixed, the non-cacheable asset's dependency will not be prefixed since
+    # at prefix-time it is not known that its dependency is one of the cacheable assets.
+    # https://github.com/dagster-io/dagster/pull/10389#pullrequestreview-1170913271
     (
         assets,
         source_assets,
