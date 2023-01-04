@@ -14,18 +14,34 @@ from dagster._core.definitions.asset_graph import AssetGraph
 
 @experimental
 class DbtManifestAssetSelection(AssetSelection):
-    """Defines a selection of assets from a parsed dbt manifest.json file and a dbt-syntax slection
+    """Defines a selection of assets from a parsed dbt manifest.json file and a dbt-syntax selection
     string.
 
     Args:
         manifest_json (Mapping[str, Any]): The parsed manifest.json file from your dbt project.
-        select (str): A dbt-syntax selection string, e.g. tag:foo or config.materilized:table.
+        select (str): A dbt-syntax selection string, e.g. tag:foo or config.materialized:table.
         exclude (str): A dbt-syntax exclude string. Defaults to "".
         resource_types (Sequence[str]): The resource types to select. Defaults to ["model"].
         node_info_to_asset_key (Callable[[Mapping[str, Any]], AssetKey]): A function that takes a
             dictionary of dbt metadata and returns the AssetKey that you want to represent a given
             model or source. If you pass in a custom function to `load_assets_from_dbt_manifest`,
             you must also pass in the same function here.
+
+    Example:
+
+            .. code-block:: python
+
+            my_dbt_assets = load_assets_from_dbt_manifest(
+                manifest_json,
+                node_info_to_asset_key=my_node_info_to_asset_key_fn,
+            )
+
+            # This will select all assets that have the tag "foo" and are in the path "marts/finance"
+            my_selection = DbtManifestAssetSelection(
+                manifest_json,
+                select="tag:foo,path:marts/finance",
+                node_info_to_asset_key=my_node_info_to_asset_key_fn,
+            )
     """
 
     def __init__(
