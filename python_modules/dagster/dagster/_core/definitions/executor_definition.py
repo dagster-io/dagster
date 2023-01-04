@@ -324,6 +324,7 @@ def _core_multiprocess_executor_creation(config: ExecutorConfig) -> "Multiproces
 
     return MultiprocessExecutor(
         max_concurrent=check.int_elem(config, "max_concurrent"),
+        tag_concurrency_limits=check.opt_list_elem(config, "tag_concurrency_limits"),
         retries=RetryMode.from_config(check.dict_elem(config, "retries")),  # type: ignore
         start_method=start_method,
         explicit_forkserver_preload=check.opt_list_elem(start_cfg, "preload_modules", of_type=str),
