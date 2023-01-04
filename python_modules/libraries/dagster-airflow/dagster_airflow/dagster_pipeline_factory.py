@@ -178,7 +178,6 @@ def make_dagster_repo_from_airflow_dag_bag(
 
     job_defs = []
     schedule_defs = []
-    asset_defs = []
     count = 0
     # To enforce predictable iteration order
     sorted_dag_ids = sorted(dag_bag.dag_ids)
@@ -218,11 +217,15 @@ def make_dagster_repo_from_airflow_dag_bag(
             dag=dag,
             job_def=job_def,
         )
-        asset_def = make_dagster_asset_from_airflow_dag(dag=dag, job_def=job_def)
+        if (
+            isinstance(dag.normalized_schedule_interval, str)
+            and dag.normalized_schedule_interval == "Dataset"
+        ):
+            logging.warning(
+                f"({dag.dag_id}) transforming airflow dataset data-aware schedule dependencies into Dagster SDA definitions is not currently supported in dagster-airflow"
+            )
         if schedule_def:
             schedule_defs.append(schedule_def)
-        elif asset_def:
-            asset_defs.append(asset_def)
         else:
             job_defs.append(job_def)
 
@@ -253,25 +256,6 @@ def make_dagster_schedule_from_airflow_dag(dag, job_def):
         return ScheduleDefinition(
             job=job_def, cron_schedule=cron_schedule, description=schedule_description
         )
-
-
-def make_dagster_asset_from_airflow_dag(dag, job_def):
-    """Construct a Dagster asset corresponding to an Airflow DAG.
-
-    Args:
-        dag (DAG): Airflow DAG
-        job_def (JobDefinition): Dagster pipeline corresponding to Airflow DAG
-
-    Returns:
-        AssetDefinition
-    """
-    check.inst_param(dag, "dag", DAG)
-    check.inst_param(job_def, "job_def", JobDefinition)
-
-    cron_schedule = dag.normalized_schedule_interval
-    if isinstance(dag.normalized_schedule_interval, str) and cron_schedule == "Dataset":
-        # TODO: add support for asset tags
-        return
 
 
 def make_dagster_repo_from_airflow_example_dags(
