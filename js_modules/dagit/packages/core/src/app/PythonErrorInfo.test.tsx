@@ -1,12 +1,13 @@
 import {render, screen} from '@testing-library/react';
 import * as React from 'react';
 
+import {PythonErrorFragmentFragment} from '../graphql/graphql';
+
 import {GenericError, PythonErrorInfo} from './PythonErrorInfo';
-import {PythonErrorFragment} from './types/PythonErrorFragment';
 
 describe('PythonErrorInfo', () => {
   it('renders a real PythonErrorFragment', async () => {
-    const error: PythonErrorFragment = {
+    const error: PythonErrorFragmentFragment = {
       __typename: 'PythonError',
       message: 'lol oh no',
       stack: ['u have failed', 'rofl'],

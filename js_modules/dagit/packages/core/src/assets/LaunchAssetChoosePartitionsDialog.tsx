@@ -26,6 +26,7 @@ import {
   ConfigPartitionSelectionQueryQueryVariables,
   LaunchPartitionBackfillMutation,
   LaunchPartitionBackfillMutationVariables,
+  PartitionDefinitionForLaunchAssetFragment,
 } from '../graphql/graphql';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
@@ -40,7 +41,6 @@ import {RepoAddress} from '../workspace/types';
 import {executionParamsForAssetJob} from './LaunchAssetExecutionButton';
 import {explodePartitionKeysInRanges, mergedAssetHealth} from './MultipartitioningSupport';
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
-import {LaunchAssetExecutionAssetNodeFragment_partitionDefinition} from './types/LaunchAssetExecutionAssetNodeFragment';
 import {usePartitionDimensionRanges} from './usePartitionDimensionRanges';
 import {PartitionHealthDimensionRange, usePartitionHealthData} from './usePartitionHealthData';
 import {usePartitionNameForPipeline} from './usePartitionNameForPipeline';
@@ -52,7 +52,7 @@ interface Props {
   assets: {
     assetKey: AssetKey;
     opNames: string[];
-    partitionDefinition: LaunchAssetExecutionAssetNodeFragment_partitionDefinition | null;
+    partitionDefinition: PartitionDefinitionForLaunchAssetFragment | null;
   }[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
 }

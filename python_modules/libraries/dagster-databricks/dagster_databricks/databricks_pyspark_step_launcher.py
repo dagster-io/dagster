@@ -227,6 +227,10 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             # waiting for the  execution to complete, so that we can terminate slow or hanging steps
             with raise_execution_interrupts():
                 yield from self.step_events_iterator(step_context, step_key, databricks_run_id)
+        except:
+            # if executon is interrupted before the step is completed, cancel the run
+            self.databricks_runner.client.client.jobs.cancel_run(databricks_run_id)
+            raise
         finally:
             self.log_compute_logs(log, run_id, step_key)
             # this is somewhat obsolete

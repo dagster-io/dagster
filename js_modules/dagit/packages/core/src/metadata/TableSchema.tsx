@@ -1,18 +1,18 @@
-import {gql} from '@apollo/client';
 import {Box, Colors, Tag, Tooltip} from '@dagster-io/ui';
 import {Spacing} from '@dagster-io/ui/src/components/types';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {graphql} from '../graphql';
 import {
-  MetadataEntryFragment_TableSchemaMetadataEntry,
-  MetadataEntryFragment_TableSchemaMetadataEntry_schema_columns_constraints,
-} from './types/MetadataEntryFragment';
-import {TableSchemaFragment} from './types/TableSchemaFragment';
+  ConstraintsForTableColumnFragment,
+  TableSchemaForMetadataEntryFragment,
+  TableSchemaFragmentFragment,
+} from '../graphql/graphql';
 
-export type ITableSchemaMetadataEntry = MetadataEntryFragment_TableSchemaMetadataEntry;
-export type ITableSchema = TableSchemaFragment;
-type ColumnConstraints = MetadataEntryFragment_TableSchemaMetadataEntry_schema_columns_constraints;
+export type ITableSchemaMetadataEntry = TableSchemaForMetadataEntryFragment;
+export type ITableSchema = TableSchemaFragmentFragment;
+type ColumnConstraints = ConstraintsForTableColumnFragment;
 
 const MAX_CONSTRAINT_TAG_CHARS = 30;
 
@@ -115,7 +115,7 @@ const ArbitraryConstraintTag: React.FC<{constraint: string}> = ({constraint}) =>
   }
 };
 
-export const TABLE_SCHEMA_FRAGMENT = gql`
+export const TABLE_SCHEMA_FRAGMENT = graphql(`
   fragment TableSchemaFragment on TableSchema {
     __typename
     columns {
@@ -123,13 +123,17 @@ export const TABLE_SCHEMA_FRAGMENT = gql`
       description
       type
       constraints {
-        nullable
-        unique
-        other
+        ...ConstraintsForTableColumn
       }
     }
     constraints {
       other
     }
   }
-`;
+
+  fragment ConstraintsForTableColumn on TableColumnConstraints {
+    nullable
+    unique
+    other
+  }
+`);

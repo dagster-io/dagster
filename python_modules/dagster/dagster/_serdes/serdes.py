@@ -14,6 +14,7 @@ Why not pickle?
   (in memory, not human readable, etc) just handle the json case effectively.
 """
 
+import warnings
 from abc import ABC, abstractmethod
 from enum import Enum
 from inspect import Parameter, signature
@@ -424,9 +425,13 @@ def deserialize_json_to_dagster_namedtuple(
     json_str: str,
 ) -> tuple:
     """Deserialize a json encoded string in to a whitelisted named tuple"""
-    dagster_namedtuple = _deserialize_json(
-        check.str_param(json_str, "json_str"), whitelist_map=_WHITELIST_MAP
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+
+        dagster_namedtuple = _deserialize_json(
+            check.str_param(json_str, "json_str"), whitelist_map=_WHITELIST_MAP
+        )
+
     if not isinstance(dagster_namedtuple, tuple):
         raise DeserializationError(
             f"Output of deserialized json_str was not expected type of tuple. Received type {type(dagster_namedtuple)}."

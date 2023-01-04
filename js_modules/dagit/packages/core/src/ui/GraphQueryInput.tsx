@@ -20,7 +20,7 @@ import styled from 'styled-components/macro';
 
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport';
-import {GraphExplorerSolidHandleFragment_solid} from '../pipelines/types/GraphExplorerSolidHandleFragment';
+import {GraphExplorerSolidFragment} from '../graphql/graphql';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
 interface GraphQueryInputProps {
@@ -115,11 +115,11 @@ const intentToStrokeColor = (intent: Intent | undefined) => {
 
 const buildSuggestions = (
   lastElementName: string,
-  items: GraphQueryItem[] | GraphExplorerSolidHandleFragment_solid[],
+  items: GraphQueryItem[] | GraphExplorerSolidFragment[],
   suffix: string,
 ) => {
   const available: SuggestionItem[] = items.map((item) => {
-    const solidItem = item as GraphExplorerSolidHandleFragment_solid;
+    const solidItem = item as GraphExplorerSolidFragment;
     const isGraph =
       solidItem.definition && solidItem.definition.__typename === 'CompositeSolidDefinition';
 

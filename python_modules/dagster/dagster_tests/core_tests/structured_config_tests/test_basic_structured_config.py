@@ -1,17 +1,25 @@
+import sys
+from typing import Optional
+
+import pydantic
 import pytest
 from pydantic import BaseModel
 
+import dagster
 from dagster import AssetOut
 from dagster import _check as check
 from dagster import asset, job, multi_asset, op, validate_run_config
 from dagster._config.config_type import ConfigTypeKind
 from dagster._config.field_utils import convert_potential_field
+from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.structured_config import Config, infer_schema_from_config_class
 from dagster._config.type_printer import print_config_type_to_string
 from dagster._core.definitions.assets_job import build_assets_job
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvalidConfigDefinitionError, DagsterInvalidConfigError
 from dagster._core.execution.context.invocation import build_op_context
 from dagster._legacy import pipeline
+from dagster._utils.cached_method import cached_method
 
 
 def test_disallow_config_schema_conflict():
@@ -26,7 +34,7 @@ def test_disallow_config_schema_conflict():
 
 
 def test_infer_config_schema():
-    old_schema = {"a_string": str, "an_int": int}
+    old_schema = {"a_string": StringSource, "an_int": IntSource}
 
     class ConfigClassTest(Config):
         a_string: str
@@ -351,3 +359,210 @@ def test_validate_run_config():
 
     with pytest.raises(DagsterInvalidConfigError):
         validate_run_config(pipeline_requires_config)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8")
+def test_cached_property():
+    from functools import cached_property
+
+    counts = {
+        "plus": 0,
+        "mult": 0,
+    }
+
+    class SomeConfig(Config):
+        x: int
+        y: int
+
+        @cached_property
+        def plus(self):
+            counts["plus"] += 1
+            return self.x + self.y
+
+        @cached_property
+        def mult(self):
+            counts["mult"] += 1
+            return self.x * self.y
+
+    config = SomeConfig(x=3, y=5)
+
+    assert counts["plus"] == 0
+    assert counts["mult"] == 0
+
+    assert config.plus == 8
+
+    assert counts["plus"] == 1
+    assert counts["mult"] == 0
+
+    assert config.plus == 8
+
+    assert counts["plus"] == 1
+    assert counts["mult"] == 0
+
+    assert config.mult == 15
+
+    assert counts["plus"] == 1
+    assert counts["mult"] == 1
+
+
+def test_cached_method():
+    counts = {
+        "plus": 0,
+        "mult": 0,
+    }
+
+    class SomeConfig(Config):
+        x: int
+        y: int
+
+        @cached_method
+        def plus(self):
+            counts["plus"] += 1
+            return self.x + self.y
+
+        @cached_method
+        def mult(self):
+            counts["mult"] += 1
+            return self.x * self.y
+
+    config = SomeConfig(x=3, y=5)
+
+    assert counts["plus"] == 0
+    assert counts["mult"] == 0
+
+    assert config.plus() == 8
+
+    assert counts["plus"] == 1
+    assert counts["mult"] == 0
+
+    assert config.plus() == 8
+
+    assert counts["plus"] == 1
+    assert counts["mult"] == 0
+
+    assert config.mult() == 15
+
+    assert counts["plus"] == 1
+    assert counts["mult"] == 1
+
+
+def test_string_source_default():
+    class RawStringConfigSchema(Config):
+        a_str: str
+
+    assert print_config_type_to_string({"a_str": StringSource}) == print_config_type_to_string(
+        infer_schema_from_config_class(RawStringConfigSchema).config_type
+    )
+
+
+def test_string_source_default_directly_on_op():
+    @op
+    def op_with_raw_str_config(config: str):
+        raise Exception("not called")
+
+    assert isinstance(op_with_raw_str_config, OpDefinition)
+    assert op_with_raw_str_config.config_field
+    assert op_with_raw_str_config.config_field.config_type is StringSource
+
+
+def test_bool_source_default():
+    class RawBoolConfigSchema(Config):
+        a_bool: bool
+
+    assert print_config_type_to_string({"a_bool": BoolSource}) == print_config_type_to_string(
+        infer_schema_from_config_class(RawBoolConfigSchema).config_type
+    )
+
+
+def test_int_source_default():
+    class RawIntConfigSchema(Config):
+        an_int: int
+
+    assert print_config_type_to_string({"an_int": IntSource}) == print_config_type_to_string(
+        infer_schema_from_config_class(RawIntConfigSchema).config_type
+    )
+
+
+def test_optional_string_source_default():
+    class RawStringConfigSchema(Config):
+        a_str: Optional[str]
+
+    assert print_config_type_to_string(
+        {"a_str": dagster.Field(StringSource, is_required=False)}
+    ) == print_config_type_to_string(
+        infer_schema_from_config_class(RawStringConfigSchema).config_type
+    )
+
+    assert RawStringConfigSchema(a_str=None).a_str is None
+
+
+def test_optional_string_source_with_default_none():
+    class RawStringConfigSchema(Config):
+        a_str: Optional[str] = None
+
+    assert print_config_type_to_string(
+        {"a_str": dagster.Field(StringSource, is_required=False)}
+    ) == print_config_type_to_string(
+        infer_schema_from_config_class(RawStringConfigSchema).config_type
+    )
+
+    assert RawStringConfigSchema().a_str is None
+    assert RawStringConfigSchema(a_str=None).a_str is None
+
+
+def test_optional_bool_source_default():
+    class RawBoolConfigSchema(Config):
+        a_bool: Optional[bool]
+
+    assert print_config_type_to_string(
+        {"a_bool": dagster.Field(BoolSource, is_required=False)}
+    ) == print_config_type_to_string(
+        infer_schema_from_config_class(RawBoolConfigSchema).config_type
+    )
+
+
+def test_optional_int_source_default():
+    class OptionalInt(Config):
+        an_int: Optional[int]
+
+    assert print_config_type_to_string(
+        {"an_int": dagster.Field(IntSource, is_required=False)}
+    ) == print_config_type_to_string(infer_schema_from_config_class(OptionalInt).config_type)
+
+
+def test_schema_aliased_field():
+    # schema is a common config element and you cannot use it in pydantic without an alias
+    class ConfigWithSchema(Config):
+        schema_: str = pydantic.Field(alias="schema")
+
+    # use the alias in the constructor
+    obj = ConfigWithSchema(schema="foo")
+    # actual field name to access
+    assert obj.schema_ == "foo"
+
+    # show different pydantic methods
+    assert obj.dict() == {"schema_": "foo"}
+    assert obj.dict(by_alias=True) == {"schema": "foo"}
+
+    # we respect the alias in the config space
+    assert print_config_type_to_string(
+        {"schema": dagster.Field(StringSource)}
+    ) == print_config_type_to_string(infer_schema_from_config_class(ConfigWithSchema).config_type)
+
+    executed = {}
+
+    @op
+    def an_op(context, config: ConfigWithSchema):
+        # use the raw property in python space
+        assert config.schema_ == "bar"
+        # use the alias in config space
+        assert context.op_config == {"schema": "bar"}
+        executed["yes"] = True
+
+    @job
+    def a_job():
+        an_op()
+
+    # use the alias in config space
+    assert a_job.execute_in_process({"ops": {"an_op": {"config": {"schema": "bar"}}}}).success
+    assert executed["yes"]

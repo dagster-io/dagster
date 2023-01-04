@@ -1,8 +1,6 @@
-import {gql} from '@apollo/client';
+import {graphql} from '../graphql';
 
-import {DAEMON_HEALTH_FRAGMENT} from './DaemonList';
-
-export const INSTANCE_HEALTH_FRAGMENT = gql`
+export const INSTANCE_HEALTH_FRAGMENT = graphql(`
   fragment InstanceHealthFragment on Instance {
     daemonHealth {
       id
@@ -10,5 +8,4 @@ export const INSTANCE_HEALTH_FRAGMENT = gql`
     }
     hasInfo
   }
-  ${DAEMON_HEALTH_FRAGMENT}
-`;
+`);

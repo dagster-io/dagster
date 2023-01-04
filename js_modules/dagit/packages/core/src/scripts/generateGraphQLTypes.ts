@@ -37,15 +37,7 @@ console.log('Generating possibleTypes.generated.json...');
 
 writeFileSync('./src/graphql/possibleTypes.generated.json', JSON.stringify(possibleTypes));
 
-console.log('Generating 💾 OLD 💾 TypeScript types...');
-
-// todo dish: Delete apollo codegen usage.
-execSync(
-  `find src -type d -name types | xargs rm -r && yarn apollo codegen:generate --includes "./src/**/*.tsx" --target typescript types --localSchemaFile ${TARGET_FILE} --globalTypesFile ./src/types/globalTypes.ts`,
-  {stdio: 'inherit'},
-);
-
-console.log('Generating ✨ NEW ✨ TypeScript types...');
+console.log('Generating TypeScript types...');
 
 execSync('yarn graphql-codegen', {stdio: 'inherit'});
 

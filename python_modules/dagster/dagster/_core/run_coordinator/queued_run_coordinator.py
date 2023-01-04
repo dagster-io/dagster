@@ -17,10 +17,25 @@ class RunQueueConfig(
         [
             ("max_concurrent_runs", int),
             ("tag_concurrency_limits", Optional[Sequence[Mapping[str, Any]]]),
+            ("max_user_code_failure_retries", int),
+            ("user_code_failure_retry_delay", int),
         ],
     )
 ):
-    pass
+    def __new__(
+        cls,
+        max_concurrent_runs,
+        tag_concurrency_limits,
+        max_user_code_failure_retries=0,
+        user_code_failure_retry_delay=60,
+    ):
+        return super(RunQueueConfig, cls).__new__(
+            cls,
+            check.int_param(max_concurrent_runs, "max_concurrent_runs"),
+            check.opt_sequence_param(tag_concurrency_limits, "tag_concurrency_limits"),
+            check.int_param(max_user_code_failure_retries, "max_user_code_failure_retries"),
+            check.int_param(user_code_failure_retry_delay, "user_code_failure_retry_delay"),
+        )
 
 
 class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
@@ -36,6 +51,8 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         dequeue_interval_seconds=None,
         dequeue_use_threads=None,
         dequeue_num_workers=None,
+        max_user_code_failure_retries=None,
+        user_code_failure_retry_delay=None,
         inst_data=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
@@ -57,6 +74,12 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             dequeue_use_threads, "dequeue_use_threads", False
         )
         self._dequeue_num_workers = check.opt_int_param(dequeue_num_workers, "dequeue_num_workers")
+        self._max_user_code_failure_retries = check.opt_int_param(
+            max_user_code_failure_retries, "max_user_code_failure_retries", 0
+        )
+        self._user_code_failure_retry_delay = check.opt_int_param(
+            user_code_failure_retry_delay, "user_code_failure_retry_delay", 60
+        )
         self._logger = logging.getLogger("dagster.run_coordinator.queued_run_coordinator")
         super().__init__()
 
@@ -68,6 +91,8 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         return RunQueueConfig(
             max_concurrent_runs=self._max_concurrent_runs,
             tag_concurrency_limits=self._tag_concurrency_limits,
+            max_user_code_failure_retries=self._max_user_code_failure_retries,
+            user_code_failure_retry_delay=self._user_code_failure_retry_delay,
         )
 
     @property
@@ -133,6 +158,24 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
                 is_required=False,
                 description="If dequeue_use_threads is true, limit the number of concurrent worker threads.",
             ),
+            "max_user_code_failure_retries": Field(
+                config=IntSource,
+                is_required=False,
+                default_value=0,
+                description="If there is an error reaching a Dagster gRPC server while dequeuing "
+                "the run, how many times to retry the dequeue before failing it. The only run "
+                "launcher that requires the gRPC server to be running is the DefaultRunLauncher, "
+                "so setting this will have no effect unless that run launcher is being used.",
+            ),
+            "user_code_failure_retry_delay": Field(
+                config=IntSource,
+                is_required=False,
+                default_value=60,
+                description="If there is an error reaching a Dagster gRPC server while dequeuing "
+                "the run, how long to wait before retrying any runs from that same code location. The only run "
+                "launcher that requires the gRPC server to be running is the DefaultRunLauncher, "
+                "so setting this will have no effect unless that run launcher is being used.",
+            ),
         }
 
     @classmethod
@@ -144,6 +187,8 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             dequeue_interval_seconds=config_value.get("dequeue_interval_seconds"),
             dequeue_use_threads=config_value.get("dequeue_use_threads"),
             dequeue_num_workers=config_value.get("dequeue_num_workers"),
+            max_user_code_failure_retries=config_value.get("max_user_code_failure_retries"),
+            user_code_failure_retry_delay=config_value.get("user_code_failure_retry_delay"),
         )
 
     def submit_run(self, context: SubmitRunContext) -> DagsterRun:

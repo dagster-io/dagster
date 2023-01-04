@@ -2,14 +2,13 @@ import {act, render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
+import {RunStatus, RunTableRunFragmentFragment} from '../graphql/graphql';
 import {TestProvider} from '../testing/TestProvider';
-import {RunStatus} from '../types/globalTypes';
 
 import {RunActionsMenu} from './RunActionsMenu';
-import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 describe('RunActionsMenu', () => {
-  const Test: React.FC<{permissionOverrides?: any; run: RunTableRunFragment}> = ({
+  const Test: React.FC<{permissionOverrides?: any; run: RunTableRunFragmentFragment}> = ({
     permissionOverrides,
     run,
   }) => {
@@ -20,7 +19,7 @@ describe('RunActionsMenu', () => {
     );
   };
 
-  const runFragment: RunTableRunFragment = {
+  const runFragment: RunTableRunFragmentFragment = {
     __typename: 'Run',
     id: 'run-foo-bar',
     runId: 'abcdef12',

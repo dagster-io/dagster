@@ -1,22 +1,24 @@
-import {gql} from '@apollo/client';
 import {Box, Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {graphql} from '../graphql';
+import {TypeListFragmentFragment} from '../graphql/graphql';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
 
-import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from './TypeWithTooltip';
-import {TypeListFragment} from './types/TypeListFragment';
+import {TypeWithTooltip} from './TypeWithTooltip';
 
 interface ITypeListProps {
   isGraph: boolean;
-  types: Array<TypeListFragment>;
+  types: Array<TypeListFragmentFragment>;
 }
 
-function groupTypes(types: TypeListFragment[]): {[key: string]: TypeListFragment[]} {
+function groupTypes(
+  types: TypeListFragmentFragment[],
+): {[key: string]: TypeListFragmentFragment[]} {
   const groups = {
-    Custom: Array<TypeListFragment>(),
-    'Built-in': Array<TypeListFragment>(),
+    Custom: Array<TypeListFragmentFragment>(),
+    'Built-in': Array<TypeListFragmentFragment>(),
   };
   types.forEach((type) => {
     if (type.isBuiltin) {
@@ -62,15 +64,13 @@ export const TypeList: React.FC<ITypeListProps> = (props) => {
   );
 };
 
-export const TYPE_LIST_FRAGMENT = gql`
+export const TYPE_LIST_FRAGMENT = graphql(`
   fragment TypeListFragment on DagsterType {
     name
     isBuiltin
     ...DagsterTypeWithTooltipFragment
   }
-
-  ${DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT}
-`;
+`);
 
 const StyledUL = styled.ul`
   display: flex;

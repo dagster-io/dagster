@@ -5,20 +5,23 @@ import * as React from 'react';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {usePermissions} from '../app/Permissions';
 import {
+  InstigationStateFragmentFragment,
+  InstigationStatus,
+  InstigationType,
+} from '../graphql/graphql';
+import {
   displayScheduleMutationErrors,
   STOP_SCHEDULE_MUTATION,
 } from '../schedules/ScheduleMutations';
 import {humanCronString} from '../schedules/humanCronString';
 import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from '../sensors/SensorMutations';
-import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {InstigatorSelectorInformation} from '../workspace/RepositoryInformation';
 
 import {TickTag} from './InstigationTick';
 import {InstigatedRunStatus} from './InstigationUtils';
-import {InstigationStateFragment} from './types/InstigationStateFragment';
 
 export const UnloadableSensors: React.FC<{
-  sensorStates: InstigationStateFragment[];
+  sensorStates: InstigationStateFragmentFragment[];
   showSubheading?: boolean;
 }> = ({sensorStates, showSubheading = true}) => {
   if (!sensorStates.length) {
@@ -50,7 +53,7 @@ export const UnloadableSensors: React.FC<{
 };
 
 export const UnloadableSchedules: React.FC<{
-  scheduleStates: InstigationStateFragment[];
+  scheduleStates: InstigationStateFragmentFragment[];
   showSubheading?: boolean;
 }> = ({scheduleStates, showSubheading = true}) => {
   if (!scheduleStates.length) {
@@ -119,7 +122,7 @@ const UnloadableScheduleInfo = () => (
   />
 );
 
-const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) => {
+const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragmentFragment}) => {
   const {id, selectorId, name, status, ticks} = sensorState;
   const {canStopSensor} = usePermissions();
 
@@ -186,7 +189,7 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
 };
 
 const ScheduleStateRow: React.FC<{
-  scheduleState: InstigationStateFragment;
+  scheduleState: InstigationStateFragmentFragment;
 }> = ({scheduleState}) => {
   const {canStopRunningSchedule} = usePermissions();
   const [stopSchedule, {loading: toggleOffInFlight}] = useMutation(STOP_SCHEDULE_MUTATION, {

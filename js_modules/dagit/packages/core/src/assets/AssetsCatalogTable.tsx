@@ -6,7 +6,6 @@ import * as React from 'react';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {graphql} from '../graphql';
 import {
   AssetCatalogGroupTableNodeFragment,
@@ -14,6 +13,7 @@ import {
   AssetCatalogTableQueryQuery,
   AssetGroupSelector,
   AssetTableFragmentFragment,
+  PythonErrorFragmentFragment,
 } from '../graphql/graphql';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {ClearButton} from '../ui/ClearButton';
@@ -22,7 +22,6 @@ import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
 import {AssetTable} from './AssetTable';
 import {AssetsEmptyState} from './AssetsEmptyState';
-import {AssetTableFragment} from './types/AssetTableFragment';
 import {useAssetSearch} from './useAssetSearch';
 import {AssetViewType, useAssetView} from './useAssetView';
 
@@ -34,8 +33,8 @@ function useAllAssets(
   query:
     | QueryResult<AssetCatalogTableQueryQuery, any>
     | QueryResult<AssetCatalogGroupTableQueryQuery, any>;
-  assets: AssetTableFragment[] | undefined;
-  error: PythonErrorFragment | undefined;
+  assets: Asset[] | undefined;
+  error: PythonErrorFragmentFragment | undefined;
 } {
   const assetsQuery = useQuery(ASSET_CATALOG_TABLE_QUERY, {
     skip: !!groupSelector,
@@ -275,9 +274,7 @@ const ASSET_CATALOG_GROUP_TABLE_QUERY = graphql(`
 // When we load the AssetCatalogTable for a particular asset group, we retrieve `assetNodes`,
 // not `assets`. To narrow the scope of this difference we coerce the nodes to look like
 // AssetCatalogTableQuery results.
-function definitionToAssetTableFragment(
-  definition: AssetCatalogGroupTableNodeFragment,
-): AssetTableFragment {
+function definitionToAssetTableFragment(definition: AssetCatalogGroupTableNodeFragment): Asset {
   return {__typename: 'Asset', id: definition.id, key: definition.assetKey, definition};
 }
 

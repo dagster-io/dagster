@@ -5,12 +5,12 @@ import {Link} from 'react-router-dom';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {graphql} from '../graphql';
+import {RunStatus} from '../graphql/graphql';
 import {timingStringForStatus} from '../runs/RunDetails';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
 import {RunTime} from '../runs/RunUtils';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {RunStatus} from '../types/globalTypes';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 

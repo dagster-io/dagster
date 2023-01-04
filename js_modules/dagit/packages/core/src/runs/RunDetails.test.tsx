@@ -4,8 +4,8 @@ import * as React from 'react';
 
 import {TimezoneProvider} from '../app/time/TimezoneContext';
 import {graphql} from '../graphql';
+import {RunStatus} from '../graphql/graphql';
 import {TestProvider} from '../testing/TestProvider';
-import {RunStatus} from '../types/globalTypes';
 
 import {RunDetails} from './RunDetails';
 

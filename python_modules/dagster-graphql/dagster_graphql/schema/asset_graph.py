@@ -380,12 +380,14 @@ class GrapheneAssetNode(graphene.ObjectType):
         except ValueError:
             before_timestamp = None
         limit = kwargs.get("limit")
+        partitions = kwargs.get("partitions")
+
         return [
             GrapheneObservationEvent(event=event)
             for event in get_asset_observations(
                 graphene_info,
                 self._external_asset_node.asset_key,
-                # partitions,
+                partitions,
                 before_timestamp=before_timestamp,
                 limit=limit,
             )

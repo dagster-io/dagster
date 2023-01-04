@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 
@@ -146,7 +146,7 @@ export const SidebarOp: React.FC<SidebarOpProps> = ({
   );
 };
 
-export const SIDEBAR_OP_FRAGMENT = gql`
+export const SIDEBAR_OP_FRAGMENT = graphql(`
   fragment SidebarOpFragment on SolidContainer {
     id
     name
@@ -161,7 +161,7 @@ export const SIDEBAR_OP_FRAGMENT = gql`
       }
     }
   }
-`;
+`);
 
 const SIDEBAR_PIPELINE_OP_QUERY = graphql(`
   query SidebarPipelineOpQuery($selector: PipelineSelector!, $handleID: String!) {

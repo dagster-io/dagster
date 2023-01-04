@@ -1112,6 +1112,7 @@ class DagsterInstance:
 
     def create_run(
         self,
+        *,
         pipeline_name,
         run_id,
         run_config,
@@ -1125,10 +1126,10 @@ class DagsterInstance:
         pipeline_snapshot,
         execution_plan_snapshot,
         parent_pipeline_snapshot,
-        asset_selection=None,
-        solid_selection=None,
-        external_pipeline_origin=None,
-        pipeline_code_origin=None,
+        asset_selection,
+        solid_selection,
+        external_pipeline_origin,
+        pipeline_code_origin,
     ) -> DagsterRun:
 
         pipeline_run = self._construct_run_with_snapshots(

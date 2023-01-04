@@ -2,7 +2,7 @@ import multiprocessing
 import os
 import sys
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
-from typing import Any, Dict, Iterator, Optional, Sequence
+from typing import Any, Dict, Iterator, List, Optional, Sequence
 
 from dagster import MetadataEntry
 from dagster import _check as check
@@ -17,6 +17,7 @@ from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster._core.execution.context.system import IStepContext, PlanOrchestrationContext
 from dagster._core.execution.context_creation_pipeline import create_context_free_log_manager
+from dagster._core.execution.plan.active import ActiveExecution
 from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
@@ -102,6 +103,7 @@ class MultiprocessExecutor(Executor):
         self,
         retries: RetryMode,
         max_concurrent: int,
+        tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
         start_method: Optional[str] = None,
         explicit_forkserver_preload: Optional[Sequence[str]] = None,
     ):
@@ -113,6 +115,9 @@ class MultiprocessExecutor(Executor):
             )
 
         self._max_concurrent = check.int_param(max_concurrent, "max_concurrent")
+        self._tag_concurrency_limits = check.opt_list_param(
+            tag_concurrency_limits, "tag_concurrency_limits"
+        )
         start_method = check.opt_str_param(start_method, "start_method")
         valid_starts = multiprocessing.get_all_start_methods()
 
@@ -162,6 +167,7 @@ class MultiprocessExecutor(Executor):
             multiproc_ctx.set_forkserver_preload(list(preload))
 
         limit = self._max_concurrent
+        tag_concurrency_limits = self._tag_concurrency_limits
 
         yield DagsterEvent.engine_event(
             plan_context,
@@ -173,11 +179,13 @@ class MultiprocessExecutor(Executor):
             ),
         )
 
-        # It would be good to implement a reference tracking algorithm here so we could
-        # garbage collect results that are no longer needed by any steps
-        # https://github.com/dagster-io/dagster/issues/811
         with time_execution_scope() as timer_result:
-            with execution_plan.start(retry_mode=self.retries) as active_execution:
+            with ActiveExecution(
+                execution_plan,
+                retry_mode=self.retries,
+                max_concurrent=limit,
+                tag_concurrency_limits=tag_concurrency_limits,
+            ) as active_execution:
                 active_iters: Dict[str, Iterator[DagsterEvent]] = {}
                 errors: Dict[int, SerializableErrorInfo] = {}
                 term_events: Dict[str, Any] = {}
@@ -196,10 +204,9 @@ class MultiprocessExecutor(Executor):
                         for key, event in term_events.items():
                             event.set()
 
-                    # start iterators
-                    while len(active_iters) < limit and not stopping:
+                    while not stopping:
                         steps = active_execution.get_steps_to_execute(
-                            limit=(limit - len(active_iters))
+                            limit=(limit - len(active_iters)),
                         )
 
                         if not steps:

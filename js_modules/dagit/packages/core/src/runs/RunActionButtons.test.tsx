@@ -3,8 +3,8 @@ import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
 import {graphql} from '../graphql';
+import {RunStatus} from '../graphql/graphql';
 import {TestProvider} from '../testing/TestProvider';
-import {RunStatus} from '../types/globalTypes';
 
 import {RunActionButtons} from './RunActionButtons';
 

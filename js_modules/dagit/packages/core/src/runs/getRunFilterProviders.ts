@@ -1,7 +1,7 @@
 import memoize from 'lodash/memoize';
 import uniq from 'lodash/uniq';
 
-import {DagsterEventType} from '../types/globalTypes';
+import {DagsterEventType} from '../graphql/graphql';
 const typeValues = memoize(() =>
   uniq(Object.values(DagsterEventType).map(eventTypeToDisplayType)).sort(),
 );

@@ -335,6 +335,74 @@ def test_priorities():
         _ = [active_execution.mark_skipped(step.key) for step in steps]
 
 
+def test_tag_concurrency_limits():
+    @op(tags={"database": "tiny", "dagster/priority": 5})
+    def tiny_op_pri_5(_):
+        pass
+
+    @op(tags={"database": "large", "dagster/priority": 4})
+    def large_op_pri_4(_):
+        pass
+
+    @op(tags={"dagster/priority": 3, "database": "tiny"})
+    def tiny_op_pri_3(_):
+        pass
+
+    @op(tags={"dagster/priority": 2, "database": "large"})
+    def large_op_pri_2(_):
+        pass
+
+    @op(tags={"dagster/priority": -1})
+    def pri_neg_1(_):
+        pass
+
+    @op
+    def pri_none(_):
+        pass
+
+    @job
+    def tag_concurrency_limits_job():
+        tiny_op_pri_5()
+        large_op_pri_4()
+        tiny_op_pri_3()
+        large_op_pri_2()
+        pri_neg_1()
+        pri_none()
+
+    plan = create_execution_plan(tag_concurrency_limits_job)
+
+    tag_concurrency_limits = [
+        {"key": "database", "value": "tiny", "limit": 1},
+        {"key": "database", "value": "large", "limit": 2},
+    ]
+
+    with plan.start(
+        RetryMode.DISABLED, tag_concurrency_limits=tag_concurrency_limits
+    ) as active_execution:
+
+        steps = active_execution.get_steps_to_execute()
+
+        assert len(steps) == 5
+        assert steps[0].key == "tiny_op_pri_5"
+        assert steps[1].key == "large_op_pri_4"
+        assert steps[2].key == "large_op_pri_2"
+        assert steps[3].key == "pri_none"
+        assert steps[4].key == "pri_neg_1"
+
+        assert active_execution.get_steps_to_execute() == []
+
+        active_execution.mark_skipped("tiny_op_pri_5")
+
+        next_steps = active_execution.get_steps_to_execute()
+
+        assert len(next_steps) == 1
+
+        assert next_steps[0].key == "tiny_op_pri_3"
+
+        for step_key in active_execution._in_flight.copy():  # pylint: disable=protected-access
+            active_execution.mark_skipped(step_key)
+
+
 def test_executor_not_created_for_execute_plan():
     instance = DagsterInstance.ephemeral()
     pipe = define_diamond_job()

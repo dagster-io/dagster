@@ -1,5 +1,4 @@
 import {
-  gql,
   OnSubscriptionDataOptions,
   useApolloClient,
   useQuery,
@@ -12,17 +11,17 @@ import * as React from 'react';
 import {WebSocketContext} from '../app/WebSocketProvider';
 import {graphql} from '../graphql';
 import {
+  PipelineRunLogsSubscriptionStatusFragmentFragment,
   PipelineRunLogsSubscriptionSubscription,
+  RunDagsterRunEventFragmentFragment,
   RunLogsQueryQuery,
   RunLogsSubscriptionSuccessFragment,
+  RunStatus,
 } from '../graphql/graphql';
-import {RunStatus} from '../types/globalTypes';
 
 import {LogLevelCounts} from './LogsToolbar';
 import {logNodeLevel} from './logNodeLevel';
 import {LogNode} from './types';
-import {PipelineRunLogsSubscriptionStatusFragment} from './types/PipelineRunLogsSubscriptionStatusFragment';
-import {RunDagsterRunEventFragment} from './types/RunDagsterRunEventFragment';
 
 export interface LogFilterValue extends TokenizingFieldValue {
   token?: 'step' | 'type' | 'query';
@@ -42,7 +41,7 @@ export interface LogsProviderLogs {
   loading: boolean;
 }
 
-const pipelineStatusFromMessages = (messages: RunDagsterRunEventFragment[]) => {
+const pipelineStatusFromMessages = (messages: RunDagsterRunEventFragmentFragment[]) => {
   const reversed = [...messages].reverse();
   for (const message of reversed) {
     const {__typename} = message;
@@ -77,7 +76,7 @@ type State = {
 };
 
 type Action =
-  | {type: 'append'; queued: RunDagsterRunEventFragment[]; hasMore: boolean; cursor: string}
+  | {type: 'append'; queued: RunDagsterRunEventFragmentFragment[]; hasMore: boolean; cursor: string}
   | {type: 'set-cursor'; cursor: string}
   | {type: 'reset'};
 
@@ -128,7 +127,7 @@ const useLogsProviderWithSubscription = (runId: string) => {
 
   const syncPipelineStatusToApolloCache = React.useCallback(
     (status: RunStatus) => {
-      const local = client.readFragment<PipelineRunLogsSubscriptionStatusFragment>({
+      const local = client.readFragment<PipelineRunLogsSubscriptionStatusFragmentFragment>({
         fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
         fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
         id: `Run:${runId}`,
@@ -374,14 +373,14 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION = graphql(`
   }
 `);
 
-const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
+const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = graphql(`
   fragment PipelineRunLogsSubscriptionStatusFragment on Run {
     id
     runId
     status
     canTerminate
   }
-`;
+`);
 
 const RUN_LOGS_QUERY = graphql(`
   query RunLogsQuery($runId: ID!, $cursor: String, $limit: Int) {
