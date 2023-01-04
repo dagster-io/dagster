@@ -75,3 +75,29 @@ def forkserver_job():
 
 
 # end_mp_cfg
+
+
+# start_tag_concurrency
+@job(
+    config={
+        "execution": {
+            "config": {
+                "multiprocess": {
+                    "max_concurrent": 4,
+                    "tag_concurrency_limits": [
+                        {
+                            "key": "database",
+                            "value": "redshift",
+                            "limit": 2,
+                        }
+                    ],
+                },
+            }
+        }
+    }
+)
+def tag_concurrency_job():
+    ...
+
+
+# end_tag_concurrency
