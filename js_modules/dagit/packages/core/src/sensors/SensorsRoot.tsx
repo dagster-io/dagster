@@ -34,7 +34,6 @@ export const SensorsRoot = (props: Props) => {
       repositorySelector,
       instigationType: InstigationType.SENSOR,
     },
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });

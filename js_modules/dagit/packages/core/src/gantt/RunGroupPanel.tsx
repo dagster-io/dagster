@@ -26,7 +26,6 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
 }) => {
   const queryResult = useQuery(RUN_GROUP_PANEL_QUERY, {
     variables: {runId},
-    fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
   });
 

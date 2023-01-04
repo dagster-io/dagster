@@ -53,7 +53,6 @@ export const BackfillRow = ({
 }) => {
   const history = useHistory();
   const [queryBackfill, queryResult] = useLazyQuery(SINGLE_BACKFILL_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {
       backfillId: backfill.backfillId,
     },

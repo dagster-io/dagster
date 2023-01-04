@@ -80,7 +80,9 @@ export const PermissionsContext = React.createContext<{
 }>({data: [], loading: true});
 
 export const PermissionsProvider: React.FC = (props) => {
-  const {data, loading} = useQuery(PERMISSIONS_QUERY);
+  const {data, loading} = useQuery(PERMISSIONS_QUERY, {
+    fetchPolicy: 'cache-first', // Not expected to change after initial load.
+  });
   const value = React.useMemo(
     () => ({
       data: data?.permissions || [],

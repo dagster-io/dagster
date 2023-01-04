@@ -41,7 +41,6 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
 
   const {data, error, loading} = useQuery(REPOSITORY_PIPELINES_LIST_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {repositorySelector},
   });
 

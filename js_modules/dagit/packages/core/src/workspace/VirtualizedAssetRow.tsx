@@ -54,7 +54,6 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
   } = props;
 
   const [queryAsset, queryResult] = useLazyQuery(SINGLE_ASSET_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {input: {path}},
   });
 

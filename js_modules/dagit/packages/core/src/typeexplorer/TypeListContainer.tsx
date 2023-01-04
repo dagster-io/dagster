@@ -38,7 +38,6 @@ export const TypeListContainer: React.FC<ITypeListContainerProps> = ({
   }, [options, pipelineName, repoAddress, snapshotId]);
 
   const queryResult = useQuery(TYPE_LIST_CONTAINER_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {pipelineSelector: pipelineSelector!},
     skip: !pipelineSelector,
   });

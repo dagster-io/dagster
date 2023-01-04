@@ -8,9 +8,7 @@ import {graphql} from '../graphql';
 export const RunningBackfillsNotice: React.FC<{partitionSetName: string}> = ({
   partitionSetName,
 }) => {
-  const {data} = useQuery(RUNNING_BACKFILLS_NOTICE_QUERY, {
-    fetchPolicy: 'cache-and-network',
-  });
+  const {data} = useQuery(RUNNING_BACKFILLS_NOTICE_QUERY);
 
   const runningBackfills =
     data?.partitionBackfillsOrError.__typename === 'PartitionBackfills'

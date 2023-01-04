@@ -185,7 +185,6 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
 
   const configResult = useQuery(PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY, {
     variables: {selector: pipelineSelector, mode: currentSession?.mode},
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
   });
 

@@ -5,7 +5,7 @@ import styled from 'styled-components/macro';
 import {graphql} from '../graphql';
 
 export const VersionNumber = () => {
-  const {data} = useQuery(VERSION_NUMBER_QUERY, {fetchPolicy: 'cache-and-network'});
+  const {data} = useQuery(VERSION_NUMBER_QUERY);
   return <Version>{data?.version || <span>&nbsp;</span>}</Version>;
 };
 

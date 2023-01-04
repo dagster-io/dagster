@@ -11,9 +11,7 @@ const typeDefs = loader('../graphql/schema.graphql');
 
 describe('ApolloTestProvider', () => {
   const Thing = () => {
-    const {data} = useQuery(INSTANCE_CONFIG_QUERY, {
-      fetchPolicy: 'cache-and-network',
-    });
+    const {data} = useQuery(INSTANCE_CONFIG_QUERY);
     return (
       <>
         <div>Version: {data?.version || ''}</div>

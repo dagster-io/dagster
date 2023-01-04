@@ -18,7 +18,6 @@ export const ScheduledRunListRoot = () => {
   useDocumentTitle('Scheduled runs');
 
   const queryResult = useQuery(SCHEDULER_INFO_QUERY, {
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });

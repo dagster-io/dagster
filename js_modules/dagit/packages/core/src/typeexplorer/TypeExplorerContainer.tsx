@@ -22,7 +22,6 @@ export const TypeExplorerContainer: React.FC<ITypeExplorerContainerProps> = ({
 }) => {
   const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
   const queryResult = useQuery(TYPE_EXPLORER_CONTAINER_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {
       pipelineSelector,
       dagsterTypeName: typeName,

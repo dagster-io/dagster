@@ -224,7 +224,6 @@ export const CapturedLogPanel: React.FC<CapturedLogProps> = React.memo(
     const {availability, disabled} = React.useContext(WebSocketContext);
     const queryResult = useQuery(CAPTURED_LOGS_METADATA_QUERY, {
       variables: {logKey},
-      fetchPolicy: 'cache-and-network',
     });
 
     React.useEffect(() => {

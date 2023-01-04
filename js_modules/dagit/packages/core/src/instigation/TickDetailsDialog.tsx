@@ -18,7 +18,6 @@ export const TickDetailsDialog: React.FC<{
 }> = ({timestamp, instigationSelector, onClose}) => {
   const {data} = useQuery(JOB_SELECTED_TICK_QUERY, {
     variables: {instigationSelector, timestamp: timestamp || 0},
-    fetchPolicy: 'cache-and-network',
     skip: !timestamp,
     partialRefetch: true,
   });

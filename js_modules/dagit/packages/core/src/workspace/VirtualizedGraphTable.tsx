@@ -83,7 +83,6 @@ const GraphRow = (props: GraphRowProps) => {
   const {name, path, description, repoAddress, start, height} = props;
 
   const [queryGraph, queryResult] = useLazyQuery(SINGLE_GRAPH_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {
       selector: {
         repositoryName: repoAddress.name,

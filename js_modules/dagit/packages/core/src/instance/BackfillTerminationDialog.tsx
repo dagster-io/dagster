@@ -17,7 +17,6 @@ interface Props {
 export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props) => {
   const [cancelBackfill] = useMutation(CANCEL_BACKFILL_MUTATION);
   const {data} = useQuery(SINGLE_BACKFILL_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {
       backfillId: backfill?.backfillId || '',
     },

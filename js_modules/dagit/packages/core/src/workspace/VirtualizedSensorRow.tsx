@@ -35,7 +35,6 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
   const repo = useRepository(repoAddress);
 
   const [querySensor, queryResult] = useLazyQuery(SINGLE_SENSOR_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {
       selector: {
         repositoryName: repoAddress.name,
