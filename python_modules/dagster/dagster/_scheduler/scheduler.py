@@ -604,7 +604,7 @@ def _schedule_runs_at_time(
         return
 
     for run_request in schedule_execution_data.run_requests:
-        asset_selection = resolve_asset_selection(workspace_process_context, run_request)
+        asset_selection = resolve_asset_selection(workspace_process_context, run_request)  # type: ignore
         pipeline_selector = PipelineSelector(
             location_name=schedule_origin.external_repository_origin.repository_location_origin.location_name,
             repository_name=schedule_origin.external_repository_origin.repository_name,
