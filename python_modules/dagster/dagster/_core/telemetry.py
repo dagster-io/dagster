@@ -436,8 +436,8 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
             num_schedules_in_repo = len(repository.schedule_defs)
             num_sensors_in_repo = len(repository.sensor_defs)
             all_assets = list(
-                repository._assets_defs_by_key.values()
-            )  # pylint: disable=protected-access
+                repository._assets_defs_by_key.values()  # pylint: disable=protected-access
+            )
             num_assets_in_repo = len(all_assets)
         elif isinstance(repo, ReconstructableRepository):
             pipeline_name_hash = ""
@@ -447,8 +447,8 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
             num_schedules_in_repo = len(repository.schedule_defs)
             num_sensors_in_repo = len(repository.sensor_defs)
             all_assets = list(
-                repository._assets_defs_by_key.values()
-            )  # pylint: disable=protected-access
+                repository._assets_defs_by_key.values()  # pylint: disable=protected-access
+            )
             num_assets_in_repo = len(all_assets)
         else:
             pipeline_name_hash = hash_name(pipeline.get_definition().name)
