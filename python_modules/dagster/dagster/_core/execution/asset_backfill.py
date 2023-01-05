@@ -28,6 +28,7 @@ from dagster._core.host_representation.selector import PipelineSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
+from dagster._core.utils import frozendict
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -315,7 +316,9 @@ def execute_asset_backfill_iteration_inner(
     recently_materialized_asset_partitions = AssetGraphSubset(asset_graph)
     for asset_key in asset_backfill_data.target_subset.asset_keys:
         records = instance_queryer.get_materialization_records(
-            asset_key=asset_key, after_cursor=asset_backfill_data.latest_storage_id
+            asset_key=asset_key,
+            after_cursor=asset_backfill_data.latest_storage_id,
+            tags=frozendict({BACKFILL_ID_TAG: backfill_id}),
         )
         recently_materialized_asset_partitions |= {
             AssetKeyPartitionKey(asset_key, record.partition_key) for record in records
