@@ -14,7 +14,7 @@ from typing import (
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.selector.subset_selector import DependencyGraph
-from dagster._core.workspace.context import BaseWorkspaceRequestContext
+from dagster._core.workspace.workspace import IWorkspace
 
 from .asset_graph import AssetGraph
 from .events import AssetKey
@@ -52,9 +52,7 @@ class ExternalAssetGraph(AssetGraph):
         self._job_names_by_key = job_names_by_key
 
     @classmethod
-    def from_workspace_request_context(
-        cls, context: BaseWorkspaceRequestContext
-    ) -> "ExternalAssetGraph":
+    def from_workspace(cls, context: IWorkspace) -> "ExternalAssetGraph":
         repo_locations = (
             location_entry.repository_location
             for location_entry in context.get_workspace_snapshot().values()

@@ -206,13 +206,17 @@ class CachingInstanceQueryer:
 
     @cached_method
     def get_materialization_records(
-        self, asset_key: AssetKey, after_cursor: Optional[int] = None
+        self,
+        asset_key: AssetKey,
+        after_cursor: Optional[int] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ) -> Iterable["EventLogRecord"]:
         return self._instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
                 asset_key=asset_key,
                 after_cursor=after_cursor,
+                tags=tags,
             )
         )
 

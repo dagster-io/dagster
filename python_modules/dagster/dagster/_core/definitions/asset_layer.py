@@ -476,6 +476,7 @@ class AssetLayer:
     _asset_defs_by_key: Mapping[AssetKey, "AssetsDefinition"]
     _asset_defs_by_node_handle: Mapping[NodeHandle, Set["AssetsDefinition"]]
     _io_manager_keys_by_asset_key: Mapping[AssetKey, str]
+    _partition_mappings_by_asset_dep: Mapping[Tuple[NodeHandle, AssetKey], "PartitionMapping"]
 
     def __init__(
         self,
@@ -490,6 +491,9 @@ class AssetLayer:
         io_manager_keys_by_asset_key: Optional[Mapping[AssetKey, str]] = None,
         node_output_handles_to_dep_asset_keys: Optional[
             Mapping[NodeOutputHandle, Set[AssetKey]]
+        ] = None,
+        partition_mappings_by_asset_dep: Optional[
+            Mapping[Tuple[NodeHandle, AssetKey], "PartitionMapping"]
         ] = None,
     ):
         from dagster._core.definitions import SourceAsset
@@ -549,6 +553,8 @@ class AssetLayer:
             value_type=set,
         )
 
+        self._partition_mappings_by_asset_dep = partition_mappings_by_asset_dep or {}
+
     @staticmethod
     def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
         """Scrape asset info off of InputDefinition/OutputDefinition instances"""
@@ -590,6 +596,7 @@ class AssetLayer:
         io_manager_by_asset: Dict[AssetKey, str] = {
             source_asset.key: source_asset.get_io_manager_key() for source_asset in source_assets
         }
+        partition_mappings_by_asset_dep: Dict[Tuple[NodeHandle, AssetKey], "PartitionMapping"] = {}
 
         (
             dep_node_handles_by_asset_key,
@@ -613,6 +620,12 @@ class AssetLayer:
                 )
                 for node_input_handle in node_input_handles:
                     asset_key_by_input[node_input_handle] = resolved_asset_key
+
+                partition_mapping = assets_def.get_partition_mapping_for_input(input_name)
+                if partition_mapping is not None:
+                    partition_mappings_by_asset_dep[
+                        (node_handle, resolved_asset_key)
+                    ] = partition_mapping
 
             for output_name, asset_key in assets_def.node_keys_by_output_name.items():
                 # resolve graph output to the op output it comes from
@@ -667,6 +680,7 @@ class AssetLayer:
             source_asset_defs=source_assets,
             io_manager_keys_by_asset_key=io_manager_by_asset,
             node_output_handles_to_dep_asset_keys=node_output_handles_to_dep_asset_keys,
+            partition_mappings_by_asset_dep=partition_mappings_by_asset_dep,
         )
 
     @property
@@ -793,13 +807,10 @@ class AssetLayer:
 
         return None
 
-    def partition_mapping_for_asset_dep(
-        self, asset_key: AssetKey, upstream_asset_key: AssetKey
+    def partition_mapping_for_node_input(
+        self, node_handle: NodeHandle, upstream_asset_key: AssetKey
     ) -> Optional["PartitionMapping"]:
-        assets_def = self._assets_defs_by_key.get(asset_key)
-        if not assets_def:
-            return None
-        return assets_def.get_partition_mapping(upstream_asset_key)
+        return self._partition_mappings_by_asset_dep.get((node_handle.root, upstream_asset_key))
 
     def downstream_dep_assets(self, node_handle: NodeHandle, output_name: str) -> Set[AssetKey]:
         """

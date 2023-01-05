@@ -15,13 +15,14 @@ except ImportError:
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Type, cast
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 from pydantic.fields import SHAPE_SINGLETON, ModelField
 
 import dagster._check as check
 from dagster import Field, Shape
 from dagster._config.field_utils import (
     FIELD_NO_DEFAULT_PROVIDED,
+    Permissive,
     config_dictionary_from_values,
     convert_potential_field,
 )
@@ -59,6 +60,12 @@ class MakeConfigCacheable(
 class Config(MakeConfigCacheable):
     """
     Base class for Dagster configuration models.
+    """
+
+
+class PermissiveConfig(Config, extra="allow"):
+    """
+    Base class for Dagster configuration models that allow arbitrary extra fields.
     """
 
 
@@ -318,5 +325,7 @@ def infer_schema_from_config_class(
     for pydantic_field in model_cls.__fields__.values():
         fields[pydantic_field.alias] = _convert_pydantic_field(pydantic_field)
 
+    shape_cls = Permissive if model_cls.__config__.extra == Extra.allow else Shape
+
     docstring = model_cls.__doc__.strip() if model_cls.__doc__ else None
-    return Field(config=Shape(fields), description=description or docstring)
+    return Field(config=shape_cls(fields), description=description or docstring)

@@ -49,6 +49,7 @@ from dagster._core.errors import (
     DagsterRunConflict,
     DagsterUndefinedLogicalVersionError,
 )
+from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
@@ -65,7 +66,7 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.utils import str_format_list
 from dagster._serdes import ConfigurableClass
 from dagster._seven import get_current_datetime_in_utc
-from dagster._utils import merge_dicts, traced
+from dagster._utils import frozentags, merge_dicts, traced
 from dagster._utils.backcompat import deprecation_warning, experimental_functionality_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import get_dagster_logger
@@ -937,7 +938,7 @@ class DagsterInstance:
             asset_selection=asset_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
-            status=status,
+            status=DagsterRunStatus(status) if status else None,
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
@@ -1113,24 +1114,121 @@ class DagsterInstance:
     def create_run(
         self,
         *,
-        pipeline_name,
-        run_id,
-        run_config,
-        mode,
-        solids_to_execute,
-        step_keys_to_execute,
-        status,
-        tags,
-        root_run_id,
-        parent_run_id,
-        pipeline_snapshot,
-        execution_plan_snapshot,
-        parent_pipeline_snapshot,
-        asset_selection,
-        solid_selection,
-        external_pipeline_origin,
-        pipeline_code_origin,
+        pipeline_name: str,
+        run_id: Optional[str],
+        run_config: Optional[Mapping[str, object]],
+        mode: Optional[str],
+        status: Optional[DagsterRunStatus],
+        tags: Optional[Mapping[str, Any]],
+        root_run_id: Optional[str],
+        parent_run_id: Optional[str],
+        step_keys_to_execute: Optional[Sequence[str]],
+        execution_plan_snapshot: Optional[ExecutionPlanSnapshot],
+        pipeline_snapshot: Optional[PipelineSnapshot],
+        parent_pipeline_snapshot: Optional[PipelineSnapshot],
+        asset_selection: Optional[AbstractSet[AssetKey]],
+        solids_to_execute: Optional[AbstractSet[str]],
+        solid_selection: Optional[Sequence[str]],
+        external_pipeline_origin: Optional[ExternalPipelineOrigin],
+        pipeline_code_origin: Optional[PipelinePythonOrigin],
     ) -> DagsterRun:
+
+        from dagster._core.definitions.utils import validate_tags
+        from dagster._core.host_representation.origin import ExternalPipelineOrigin
+        from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
+
+        check.str_param(pipeline_name, "pipeline_name")
+        check.opt_str_param(
+            run_id, "run_id"
+        )  # will be assigned to make_new_run_id() lower in callstack
+        check.opt_mapping_param(run_config, "run_config", key_type=str)
+        check.opt_str_param(mode, "mode")
+
+        check.opt_inst_param(status, "status", DagsterRunStatus)
+        check.opt_mapping_param(tags, "tags", key_type=str)
+
+        validated_tags = validate_tags(tags)
+
+        check.opt_str_param(root_run_id, "root_run_id")
+        check.opt_str_param(parent_run_id, "parent_run_id")
+
+        # If step_keys_to_execute is None, then everything is executed.  In some cases callers
+        # are still exploding and sending the full list of step keys even though that is
+        # unnecessary.
+
+        check.opt_sequence_param(step_keys_to_execute, "step_keys_to_execute")
+        check.opt_inst_param(
+            execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot
+        )
+
+        if root_run_id or parent_run_id:
+            check.invariant(
+                root_run_id and parent_run_id,
+                "If root_run_id or parent_run_id is passed, this is a re-execution scenario and "
+                "root_run_id and parent_run_id must both be passed.",
+            )
+
+        # The pipeline_snapshot should always be set in production scenarios. In tests
+        # we have sometimes omitted it out of convenience.
+
+        check.opt_inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
+        check.opt_inst_param(parent_pipeline_snapshot, "parent_pipeline_snapshot", PipelineSnapshot)
+
+        if parent_pipeline_snapshot:
+            check.invariant(
+                pipeline_snapshot,
+                "If parent_pipeline_snapshot is set, pipeline_snapshot should also be.",
+            )
+
+        # solid_selection is a sequence of selection queries assigned by the user.
+        # *Most* callers expand the solid_selection into an explicit set of
+        # solids_to_execute via accessing external_pipeline.solids_to_execute
+        # but not all do. Some (launch execution mutation in graphql and backfill run
+        # creation, for example) actually pass the solid *selection* into the
+        # solids_to_execute parameter, but just as a frozen set, rather than
+        # fully resolving the selection, as the daemon launchers do. Given the
+        # state of callers we just check to ensure that the arguments are well-formed.
+        #
+        # asset_selection adds another dimension to this lovely dance. solid_selection
+        # and asset_selection are mutually exclusive and should never both be set.
+        # This is invariant is checked in a sporadic fashion around
+        # the codebase, but is never enforced in a typed fashion.
+        #
+        # Additionally, the way that callsites currently behave *if* asset selection
+        # is set (i.e., not None) then *neither* solid_selection *nor*
+        # solids_to_execute is passed. In the asset selection case resolving
+        # the set of assets into the canonical solids_to_execute is done in
+        # the user process, and the exact resolution is never persisted in the run.
+        # We are asserting that invariant here to maintain that behavior.
+
+        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
+        check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
+        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
+
+        if asset_selection is not None:
+            check.invariant(
+                solid_selection is None,
+                "Cannot pass both asset_selection and solid_selection",
+            )
+
+            check.invariant(
+                solids_to_execute is None,
+                "Cannot pass both asset_selection and solids_to_execute",
+            )
+
+        # The "python origin" arguments exist so a job can be reconstructed in memory
+        # after a DagsterRun has been fetched from the database.
+        #
+        # There are cases (notably in _logged_execute_pipeline with Reconstructable pipelines)
+        # where pipeline_code_origin and is not. In some cloud test cases only
+        # external_pipeline_origin is passed But they are almost always passed together.
+        # If these are not set the created run will never be able to be relaunched from
+        # the information just in the run or in another process.
+
+        check.opt_inst_param(
+            external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
+        )
+        check.opt_inst_param(pipeline_code_origin, "pipeline_code_origin", PipelinePythonOrigin)
 
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
@@ -1142,7 +1240,7 @@ class DagsterInstance:
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
-            tags=tags,
+            tags=dict(validated_tags),
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
             pipeline_snapshot=pipeline_snapshot,
@@ -1161,6 +1259,7 @@ class DagsterInstance:
 
     def create_reexecuted_run(
         self,
+        *,
         parent_run: DagsterRun,
         repo_location: "RepositoryLocation",
         external_pipeline: "ExternalPipeline",
@@ -1773,8 +1872,7 @@ class DagsterInstance:
             run_id (str): The id of the run.
         """
 
-        from dagster._core.host_representation import ExternalPipelineOrigin
-        from dagster._core.origin import PipelinePythonOrigin
+        from dagster._core.host_representation.origin import ExternalPipelineOrigin
         from dagster._core.run_coordinator import SubmitRunContext
 
         run = self.get_run_by_id(run_id)

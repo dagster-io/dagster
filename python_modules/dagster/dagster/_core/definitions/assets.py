@@ -577,6 +577,9 @@ class AssetsDefinition(ResourceAddable):
     def get_partition_mapping(self, in_asset_key: AssetKey) -> Optional[PartitionMapping]:
         return self._partition_mappings.get(in_asset_key)
 
+    def get_partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
+        return self._partition_mappings.get(self._keys_by_input_name[input_name])
+
     def infer_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)

@@ -1024,8 +1024,8 @@ def external_asset_graph_from_defs(
             asset_info_by_asset_key[output_key] = asset_info
 
             for upstream_key in upstream_asset_keys:
-                partition_mapping = asset_layer.partition_mapping_for_asset_dep(
-                    output_key, upstream_key
+                partition_mapping = asset_layer.partition_mapping_for_node_input(
+                    node_output_handle.node_handle, upstream_key
                 )
                 deps[output_key][upstream_key] = ExternalAssetDependency(
                     upstream_asset_key=upstream_key,

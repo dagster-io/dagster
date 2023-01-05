@@ -590,7 +590,9 @@ class RunsFilter(
             ("tags", Mapping[str, Union[str, Sequence[str]]]),
             ("snapshot_id", Optional[str]),
             ("updated_after", Optional[datetime]),
+            ("updated_before", Optional[datetime]),
             ("mode", Optional[str]),
+            ("created_after", Optional[datetime]),
             ("created_before", Optional[datetime]),
         ],
     )
@@ -626,7 +628,9 @@ class RunsFilter(
         tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None,
         snapshot_id: Optional[str] = None,
         updated_after: Optional[datetime] = None,
+        updated_before: Optional[datetime] = None,
         mode: Optional[str] = None,
+        created_after: Optional[datetime] = None,
         created_before: Optional[datetime] = None,
         pipeline_name: Optional[str] = None,  # for backcompat purposes
     ):
@@ -642,7 +646,9 @@ class RunsFilter(
             tags=check.opt_mapping_param(tags, "tags", key_type=str),
             snapshot_id=check.opt_str_param(snapshot_id, "snapshot_id"),
             updated_after=check.opt_inst_param(updated_after, "updated_after", datetime),
+            updated_before=check.opt_inst_param(updated_before, "updated_before", datetime),
             mode=check.opt_str_param(mode, "mode"),
+            created_after=check.opt_inst_param(created_after, "created_after", datetime),
             created_before=check.opt_inst_param(created_before, "created_before", datetime),
         )
 

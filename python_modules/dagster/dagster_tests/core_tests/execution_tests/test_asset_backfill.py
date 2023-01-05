@@ -1,4 +1,4 @@
-from typing import AbstractSet, Mapping, NamedTuple, Optional, Sequence, Set, Union
+from typing import AbstractSet, Mapping, NamedTuple, Optional, Sequence, Set, Union, cast
 from unittest.mock import MagicMock, patch
 
 import pendulum
@@ -18,10 +18,10 @@ from dagster_tests.definitions_tests.test_asset_reconciliation_sensor import (
 )
 
 from dagster import (
-    AssetSelection,
     AssetsDefinition,
     DagsterInstance,
     Definitions,
+    PartitionsDefinition,
     RunRequest,
     SourceAsset,
 )
@@ -30,6 +30,7 @@ from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
+    AssetBackfillIterationResult,
     execute_asset_backfill_iteration_inner,
 )
 from dagster._core.host_representation.external_data import external_asset_graph_from_defs
@@ -69,61 +70,21 @@ def test_scenario_to_completion(scenario_name: str, failures: str, some_or_all: 
     with pendulum.test(create_pendulum_time(year=2020, month=1, day=7, hour=4)):
         assets_by_repo_name = assets_by_repo_name_by_scenario_name[scenario_name]
 
-        with patch(
-            "dagster._core.host_representation.external_data.get_builtin_partition_mapping_types"
-        ) as get_builtin_partition_mapping_types:
-            get_builtin_partition_mapping_types.return_value = tuple(
-                assets_def.infer_partition_mapping(dep_key).__class__
-                for assets in assets_by_repo_name.values()
-                for assets_def in assets
-                for dep_key in assets_def.dependency_keys
-            )
-            asset_graph = external_asset_graph_from_assets_by_repo_name(assets_by_repo_name)
-
-        asset_keys = asset_graph.all_asset_keys
-        root_asset_keys = AssetSelection.keys(*asset_keys).sources().resolve(asset_graph)
-
-        if some_or_all == "all":
-            target_subset = AssetGraphSubset.all(asset_graph)
-        elif some_or_all == "some":
-            # all partitions downstream of half of the partitions in each partitioned root asset
-            root_asset_partitions: Set[AssetKeyPartitionKey] = set()
-            for i, root_asset_key in enumerate(sorted(root_asset_keys)):
-                partitions_def = asset_graph.get_partitions_def(root_asset_key)
-
-                if partitions_def is not None:
-                    partition_keys = list(partitions_def.get_partition_keys())
-                    start_index = len(partition_keys) // 2
-                    chosen_partition_keys = partition_keys[start_index:]
-                    root_asset_partitions.update(
-                        AssetKeyPartitionKey(root_asset_key, partition_key)
-                        for partition_key in chosen_partition_keys
-                    )
-                else:
-                    if i % 2 == 0:
-                        root_asset_partitions.add(AssetKeyPartitionKey(root_asset_key, None))
-
-            target_asset_partitions = asset_graph.bfs_filter_asset_partitions(
-                lambda _a, _b: True, root_asset_partitions
-            )
-
-            target_subset = AssetGraphSubset.from_asset_partition_set(
-                target_asset_partitions, asset_graph
-            )
-
-        else:
-            assert False
+        asset_graph = get_asset_graph(assets_by_repo_name)
+        backfill_data = make_backfill_data(some_or_all=some_or_all, asset_graph=asset_graph)
 
         if failures == "no_failures":
             fail_asset_partitions: Set[AssetKeyPartitionKey] = set()
         elif failures == "root_failures":
             fail_asset_partitions = set(
-                (target_subset.filter_asset_keys(root_asset_keys)).iterate_asset_partitions()
+                (
+                    backfill_data.target_subset.filter_asset_keys(asset_graph.root_asset_keys)
+                ).iterate_asset_partitions()
             )
         elif failures == "random_half_failures":
             fail_asset_partitions = {
                 asset_partition
-                for asset_partition in target_subset.iterate_asset_partitions()
+                for asset_partition in backfill_data.target_subset.iterate_asset_partitions()
                 if hash(str(asset_partition.asset_key) + str(asset_partition.partition_key)) % 2
                 == 0
             }
@@ -131,21 +92,114 @@ def test_scenario_to_completion(scenario_name: str, failures: str, some_or_all: 
         else:
             assert False
 
-        backfill = AssetBackfillData.empty(target_subset)
         run_backfill_to_completion(
-            asset_graph, assets_by_repo_name, "backfillid_x", backfill, fail_asset_partitions
+            asset_graph, assets_by_repo_name, backfill_data, fail_asset_partitions
         )
+
+
+def test_materializations_outside_of_backfill():
+    assets_by_repo_name = {"repo": one_asset_one_partition}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    instance = DagsterInstance.ephemeral()
+
+    do_run(
+        all_assets=one_asset_one_partition,
+        asset_keys=[one_asset_one_partition[0].key],
+        partition_key=cast(
+            PartitionsDefinition, one_asset_one_partition[0].partitions_def
+        ).get_partition_keys()[0],
+        instance=instance,
+        tags={},
+    )
+
+    run_backfill_to_completion(
+        instance=instance,
+        asset_graph=asset_graph,
+        assets_by_repo_name=assets_by_repo_name,
+        backfill_data=make_backfill_data("all", asset_graph),
+        fail_asset_partitions=set(),
+    )
+
+
+def make_backfill_data(some_or_all: str, asset_graph: ExternalAssetGraph) -> AssetBackfillData:
+    if some_or_all == "all":
+        target_subset = AssetGraphSubset.all(asset_graph)
+    elif some_or_all == "some":
+        # all partitions downstream of half of the partitions in each partitioned root asset
+        root_asset_partitions: Set[AssetKeyPartitionKey] = set()
+        for i, root_asset_key in enumerate(sorted(asset_graph.root_asset_keys)):
+            partitions_def = asset_graph.get_partitions_def(root_asset_key)
+
+            if partitions_def is not None:
+                partition_keys = list(partitions_def.get_partition_keys())
+                start_index = len(partition_keys) // 2
+                chosen_partition_keys = partition_keys[start_index:]
+                root_asset_partitions.update(
+                    AssetKeyPartitionKey(root_asset_key, partition_key)
+                    for partition_key in chosen_partition_keys
+                )
+            else:
+                if i % 2 == 0:
+                    root_asset_partitions.add(AssetKeyPartitionKey(root_asset_key, None))
+
+        target_asset_partitions = asset_graph.bfs_filter_asset_partitions(
+            lambda _a, _b: True, root_asset_partitions
+        )
+
+        target_subset = AssetGraphSubset.from_asset_partition_set(
+            target_asset_partitions, asset_graph
+        )
+
+    else:
+        assert False
+
+    return AssetBackfillData.empty(target_subset)
+
+
+def get_asset_graph(
+    assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]]
+) -> ExternalAssetGraph:
+    with patch(
+        "dagster._core.host_representation.external_data.get_builtin_partition_mapping_types"
+    ) as get_builtin_partition_mapping_types:
+        get_builtin_partition_mapping_types.return_value = tuple(
+            assets_def.infer_partition_mapping(dep_key).__class__
+            for assets in assets_by_repo_name.values()
+            for assets_def in assets
+            for dep_key in assets_def.dependency_keys
+        )
+        return external_asset_graph_from_assets_by_repo_name(assets_by_repo_name)
+
+
+def execute_asset_backfill_iteration_consume_generator(
+    backfill_id: str,
+    asset_backfill_data: AssetBackfillData,
+    asset_graph: ExternalAssetGraph,
+    instance: DagsterInstance,
+) -> AssetBackfillIterationResult:
+    for result in execute_asset_backfill_iteration_inner(
+        backfill_id=backfill_id,
+        asset_backfill_data=asset_backfill_data,
+        instance=instance,
+        asset_graph=asset_graph,
+    ):
+        if isinstance(result, AssetBackfillIterationResult):
+            return result
+
+    assert False
 
 
 def run_backfill_to_completion(
     asset_graph: ExternalAssetGraph,
     assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
-    backfill_id: str,
     backfill_data: AssetBackfillData,
     fail_asset_partitions: AbstractSet[AssetKeyPartitionKey],
+    instance: Optional[DagsterInstance] = None,
 ) -> None:
     iteration_count = 0
-    instance = DagsterInstance.ephemeral()
+    instance = instance or DagsterInstance.ephemeral()
+    backfill_id = "backfillid_x"
 
     # assert each asset partition only targeted once
     requested_asset_partitions: Set[AssetKeyPartitionKey] = set()
@@ -156,7 +210,7 @@ def run_backfill_to_completion(
 
     while not backfill_data.is_complete():
         iteration_count += 1
-        result1 = execute_asset_backfill_iteration_inner(
+        result1 = execute_asset_backfill_iteration_consume_generator(
             backfill_id=backfill_id,
             asset_backfill_data=backfill_data,
             asset_graph=asset_graph,
@@ -166,7 +220,7 @@ def run_backfill_to_completion(
         assert result1.backfill_data != backfill_data
 
         # if nothing changes, nothing should happen in the iteration
-        result2 = execute_asset_backfill_iteration_inner(
+        result2 = execute_asset_backfill_iteration_consume_generator(
             backfill_id=backfill_id,
             asset_backfill_data=result1.backfill_data,
             asset_graph=asset_graph,

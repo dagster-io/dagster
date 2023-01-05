@@ -71,9 +71,9 @@ class AssetGraphSubset:
                 key.to_user_string(): value.serialize()
                 for key, value in self.partitions_subsets_by_asset_key.items()
             },
-            "non_partitioned_asset_keys": {
+            "non_partitioned_asset_keys": [
                 key.to_user_string() for key in self._non_partitioned_asset_keys
-            },
+            ],
         }
 
     def __or__(

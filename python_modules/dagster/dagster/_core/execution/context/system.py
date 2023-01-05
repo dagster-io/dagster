@@ -34,6 +34,7 @@ from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partition_mapping import infer_partition_mapping
 from dagster._core.definitions.pipeline_base import IPipeline
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.policy import RetryPolicy
@@ -923,7 +924,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     if partitions_def
                     else None
                 )
-                partition_mapping = assets_def.infer_partition_mapping(upstream_asset_key)
+                partition_mapping = infer_partition_mapping(
+                    asset_layer.partition_mapping_for_node_input(
+                        self.solid_handle, upstream_asset_key
+                    ),
+                    partitions_def,
+                )
                 return partition_mapping.get_upstream_partitions_for_partitions(
                     partitions_subset,
                     upstream_asset_partitions_def,
