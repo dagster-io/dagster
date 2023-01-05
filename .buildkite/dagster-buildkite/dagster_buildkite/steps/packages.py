@@ -17,7 +17,10 @@ def build_example_packages_steps() -> List[BuildkiteStep]:
     custom_example_pkg_roots = [pkg.directory for pkg in EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG]
     example_packages_with_standard_config = [
         PackageSpec(pkg)
-        for pkg in _get_uncustomized_pkg_roots("examples", custom_example_pkg_roots)
+        for pkg in (
+            _get_uncustomized_pkg_roots("examples", custom_example_pkg_roots)
+            + _get_uncustomized_pkg_roots("examples/experimental", custom_example_pkg_roots)
+        )
     ]
 
     return _build_steps_from_package_specs(
