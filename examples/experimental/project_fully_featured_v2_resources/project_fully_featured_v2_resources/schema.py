@@ -1,0 +1,1 @@
+SNOWFLAKE_SCHEMA = "hackernews"

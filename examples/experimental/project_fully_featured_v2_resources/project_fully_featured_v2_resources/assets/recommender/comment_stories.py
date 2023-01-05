@@ -1,16 +1,21 @@
 from dagster import AssetIn, asset
 from pandas import DataFrame, Series
 
+from project_fully_featured_v2_resources.schema import SNOWFLAKE_SCHEMA
+
 
 @asset(
     ins={
-        "stories": AssetIn(key_prefix=["snowflake", "core"], metadata={"columns": ["id"]}),
+        "stories": AssetIn(
+            key_prefix=["snowflake", SNOWFLAKE_SCHEMA], metadata={"columns": ["id"]}
+        ),
         "comments": AssetIn(
-            key_prefix=["snowflake", "core"], metadata={"columns": ["id", "user_id", "parent"]}
+            key_prefix=["snowflake", SNOWFLAKE_SCHEMA],
+            metadata={"columns": ["id", "user_id", "parent"]},
         ),
     },
     io_manager_key="warehouse_io_manager",
-    key_prefix=["snowflake", "recommender"],
+    key_prefix=["snowflake", SNOWFLAKE_SCHEMA],
 )
 def comment_stories(stories: DataFrame, comments: DataFrame) -> DataFrame:
     """

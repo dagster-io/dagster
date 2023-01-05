@@ -1,9 +1,12 @@
 from dataclasses import dataclass
+from dagster import AssetIn
 
 import numpy as np
 from dagster import Output, asset
 from pandas import DataFrame, Series
 from scipy.sparse import coo_matrix
+
+from project_fully_featured_v2_resources.schema import SNOWFLAKE_SCHEMA
 
 
 @dataclass
@@ -21,7 +24,10 @@ class IndexedCooMatrix:
     matrix and whose values are the corresponding values in this index."""
 
 
-@asset(key_prefix=["s3", "recommender"])
+@asset(
+    key_prefix=["s3", "recommender"],
+    ins={"comment_stories": AssetIn(key_prefix=["snowflake", SNOWFLAKE_SCHEMA])},
+)
 def user_story_matrix(comment_stories: DataFrame) -> Output[IndexedCooMatrix]:
     """
     A sparse matrix where the rows are users, the columns are stories, and the values

@@ -6,6 +6,7 @@ from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql.types import ArrayType, DoubleType, LongType, StringType, StructField, StructType
 
 from project_fully_featured_v2_resources.partitions import hourly_partitions
+from project_fully_featured_v2_resources.schema import SNOWFLAKE_SCHEMA
 
 from .id_range_for_time import id_range_for_time
 
@@ -63,7 +64,7 @@ def items(context) -> Output[DataFrame]:
 @asset(
     io_manager_key="warehouse_io_manager",
     partitions_def=hourly_partitions,
-    key_prefix=["snowflake", "core"],
+    key_prefix=["snowflake", SNOWFLAKE_SCHEMA],
 )
 def comments(items: SparkDF) -> SparkDF:
     return items.where(items["type"] == "comment")
@@ -72,7 +73,7 @@ def comments(items: SparkDF) -> SparkDF:
 @asset(
     io_manager_key="warehouse_io_manager",
     partitions_def=hourly_partitions,
-    key_prefix=["snowflake", "core"],
+    key_prefix=["snowflake", SNOWFLAKE_SCHEMA],
 )
 def stories(items: SparkDF) -> SparkDF:
     return items.where(items["type"] == "story")

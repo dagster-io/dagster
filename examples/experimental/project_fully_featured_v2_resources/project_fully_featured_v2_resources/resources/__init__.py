@@ -5,13 +5,13 @@ from dagster_aws.s3 import s3_resource
 from dagster_dbt import dbt_cli_resource
 from dagster_pyspark import pyspark_resource
 
-from .common_bucket_s3_pickle_io_manager import common_bucket_s3_pickle_io_manager
 from .duckdb_parquet_io_manager import duckdb_partitioned_parquet_io_manager
 from .hn_resource import HNAPIClient, HNAPISubsampleClient
 from .parquet_io_manager import (
     local_partitioned_parquet_io_manager,
     s3_partitioned_parquet_io_manager,
 )
+from .s3_pickle_io_manager import S3PickledIOManagerAdapter
 from .snowflake_io_manager import SnowflakeIOManager
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
@@ -27,6 +27,15 @@ dbt_prod_resource = dbt_cli_resource.configured(
 )
 
 
+# assert AWS_ACCESS_KEY_ID == os.getenv("AWS_ACCESS_KEY_ID")
+
+# s3 = boto3.client(
+#     service_name="s3",
+#     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID", ""),
+#     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", ""),
+# )
+# print(s3.list_objects(Bucket="hackernews-elementl-dev"))
+
 configured_pyspark = pyspark_resource.configured(
     {
         "spark_conf": {
@@ -38,8 +47,11 @@ configured_pyspark = pyspark_resource.configured(
                 ]
             ),
             "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3native.NativeS3FileSystem",
+            # Not here that you need AWS credentials that do not require an aws session token
             "spark.hadoop.fs.s3.awsAccessKeyId": os.getenv("AWS_ACCESS_KEY_ID", ""),
             "spark.hadoop.fs.s3.awsSecretAccessKey": os.getenv("AWS_SECRET_ACCESS_KEY", ""),
+            # "spark.hadoop.fs.s3.awsAccessKeyId": AWS_ACCESS_KEY_ID,
+            # "spark.hadoop.fs.s3.awsSecretAccessKey": AWS_SECRET_ACCESS_KEY,
             "spark.hadoop.fs.s3.buffer.dir": "/tmp",
         }
     }
@@ -52,9 +64,21 @@ SHARED_SNOWFLAKE_CONF = {
     "warehouse": "TINY_WAREHOUSE",
 }
 
+SHARED_SNOWFLAKE_CONF = {
+    "account": "na94824.us-east-1",
+    # os.getenv("SNOWFLAKE_ACCOUNT", ""),
+    "user": "DEVTOOLS@ELEMENTL.COM",
+    # os.getenv("SNOWFLAKE_USER", ""),
+    "password": "_$Q@_c5KbCpFeW@S",
+    # os.getenv("SNOWFLAKE_PASSWORD", ""),
+    "warehouse": "TINY_WAREHOUSE",
+}
+
+# "host": "https://na94824.us-east-1.snowflakecomputing.com/"
+
 RESOURCES_PROD = {
     "s3_bucket": "hackernews-elementl-prod",
-    "io_manager": common_bucket_s3_pickle_io_manager,
+    "io_manager": S3PickledIOManagerAdapter(s3_bucket="hackernews-elementl-prod"),
     "s3": s3_resource,
     "parquet_io_manager": s3_partitioned_parquet_io_manager,
     "warehouse_io_manager": SnowflakeIOManager(dict(database="DEMO_DB", **SHARED_SNOWFLAKE_CONF)),
@@ -66,7 +90,7 @@ RESOURCES_PROD = {
 
 RESOURCES_STAGING = {
     "s3_bucket": "hackernews-elementl-dev",
-    "io_manager": common_bucket_s3_pickle_io_manager,
+    "io_manager": S3PickledIOManagerAdapter(s3_bucket="hackernews-elementl-dev"),
     "s3": s3_resource,
     "parquet_io_manager": s3_partitioned_parquet_io_manager,
     "warehouse_io_manager": SnowflakeIOManager(

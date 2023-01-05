@@ -5,6 +5,8 @@ from dagster import AssetIn, MetadataValue, Output, asset
 from pandas import DataFrame, Series
 from sklearn.decomposition import TruncatedSVD
 
+from project_fully_featured_v2_resources.schema import SNOWFLAKE_SCHEMA
+
 from .user_story_matrix import IndexedCooMatrix
 
 
@@ -30,7 +32,9 @@ def recommender_model(user_story_matrix: IndexedCooMatrix) -> Output[TruncatedSV
 
 @asset(
     ins={
-        "stories": AssetIn(key_prefix=["snowflake", "core"], metadata={"columns": ["id", "title"]})
+        "stories": AssetIn(
+            key_prefix=["snowflake", SNOWFLAKE_SCHEMA], metadata={"columns": ["id", "title"]}
+        )
     },
     io_manager_key="warehouse_io_manager",
     key_prefix=["snowflake", "recommender"],
