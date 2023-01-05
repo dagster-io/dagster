@@ -57,7 +57,7 @@ def test_error_on_extra_keys_in_mapping():
 
     with pytest.raises(ValueError, match="OTHER"):
         StaticPartitionMapping(
-            {"p": "p", "q": "q", "q": "OTHER"}
+            {"p": "p", "q": {"q", "OTHER"}}
         ).get_downstream_partitions_for_partitions(
             upstream_partitions_subset=upstream_parts.empty_subset(),
             downstream_partitions_def=downstream_parts,
