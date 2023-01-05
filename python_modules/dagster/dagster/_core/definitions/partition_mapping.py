@@ -17,6 +17,7 @@ from dagster._core.definitions.partition import (
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils.cached_method import cached_method
 
 
 class PartitionMapping(ABC):
@@ -364,52 +365,48 @@ class StaticPartitionMapping(PartitionMapping):
             for downstream_key in downstream_keys:
                 self._inverse_mapping[downstream_key].add(upstream_key)
 
-        @functools.cache
-        def _check_upstream(upstream_partitions_def: StaticPartitionsDefinition):
-            """
-            validate that the mapping from upstream to downstream is only defined on upstream keys
-            """
-            check.inst_param(
-                upstream_partitions_def,
-                "upstream_partitions_def",
-                StaticPartitionsDefinition,
-                "StaticPartitionMapping can only be defined between two StaticPartitionsDefinitions",
+    @cached_method
+    def _check_upstream(self, *, upstream_partitions_def: StaticPartitionsDefinition):
+        """
+        validate that the mapping from upstream to downstream is only defined on upstream keys
+        """
+        check.inst_param(
+            upstream_partitions_def,
+            "upstream_partitions_def",
+            StaticPartitionsDefinition,
+            "StaticPartitionMapping can only be defined between two StaticPartitionsDefinitions",
+        )
+        upstream_keys = upstream_partitions_def.get_partition_keys()
+        extra_keys = set(self._mapping.keys()).difference(upstream_keys)
+        if extra_keys:
+            raise ValueError(
+                f"mapping source partitions not in the upstream partitions definition: {extra_keys}"
             )
-            upstream_keys = upstream_partitions_def.get_partition_keys()
-            extra_keys = set(self._mapping.keys()).difference(upstream_keys)
-            if extra_keys:
-                raise ValueError(
-                    f"mapping source partitions not in the upstream partitions definition: {extra_keys}"
-                )
 
-        self._check_upstream = _check_upstream
-
-        @functools.cache
-        def _check_downstream(downstream_partitions_def: StaticPartitionsDefinition):
-            """
-            validate that the mapping from upstream to downstream only maps to downstream keys
-            """
-            check.inst_param(
-                downstream_partitions_def,
-                "downstream_partitions_def",
-                StaticPartitionsDefinition,
-                "StaticPartitionMapping can only be defined between two StaticPartitionsDefinitions",
+    @cached_method
+    def _check_downstream(self, *, downstream_partitions_def: StaticPartitionsDefinition):
+        """
+        validate that the mapping from upstream to downstream only maps to downstream keys
+        """
+        check.inst_param(
+            downstream_partitions_def,
+            "downstream_partitions_def",
+            StaticPartitionsDefinition,
+            "StaticPartitionMapping can only be defined between two StaticPartitionsDefinitions",
+        )
+        downstream_keys = downstream_partitions_def.get_partition_keys()
+        extra_keys = set(self._inverse_mapping.keys()).difference(downstream_keys)
+        if extra_keys:
+            raise ValueError(
+                f"mapping target partitions not in the downstream partitions definition: {extra_keys}"
             )
-            downstream_keys = downstream_partitions_def.get_partition_keys()
-            extra_keys = set(self._inverse_mapping.keys()).difference(downstream_keys)
-            if extra_keys:
-                raise ValueError(
-                    f"mapping target partitions not in the downstream partitions definition: {extra_keys}"
-                )
-
-        self._check_downstream = _check_downstream
 
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
         downstream_partitions_def: StaticPartitionsDefinition,
     ) -> PartitionsSubset:
-        self._check_downstream(downstream_partitions_def)
+        self._check_downstream(downstream_partitions_def=downstream_partitions_def)
 
         downstream_subset = downstream_partitions_def.empty_subset()
         downstream_keys = set()
@@ -422,7 +419,7 @@ class StaticPartitionMapping(PartitionMapping):
         downstream_partitions_subset: Optional[PartitionsSubset],
         upstream_partitions_def: StaticPartitionsDefinition,
     ) -> PartitionsSubset:
-        self._check_upstream(upstream_partitions_def)
+        self._check_upstream(upstream_partitions_def=upstream_partitions_def)
 
         upstream_subset = upstream_partitions_def.empty_subset()
         if downstream_partitions_subset is None:
