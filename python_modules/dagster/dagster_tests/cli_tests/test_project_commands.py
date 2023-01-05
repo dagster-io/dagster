@@ -93,7 +93,6 @@ def test_from_example_command_succeeds():
 
 
 def test_available_examples_in_sync_with_example_folder():
-    # run me
     # ensure the list of AVAILABLE_EXAMPLES is in sync with the example folder minus EXAMPLES_TO_IGNORE
     example_folder = file_relative_path(__file__, "../../../../examples")
     available_examples_in_folder = [
