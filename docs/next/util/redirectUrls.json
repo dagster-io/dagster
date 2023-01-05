@@ -603,6 +603,11 @@
     "statusCode": 302
   },
   {
+    "source": "/tutorial/assets",
+    "destination": "/tutorial",
+    "statusCode": 302
+  },
+  {
     "source": "/tutorial/ops-jobs/connecting-ops",
     "destination": "/guides/dagster/intro-to-ops-jobs/connecting-ops",
     "statusCode": 302
