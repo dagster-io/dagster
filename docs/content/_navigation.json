@@ -29,10 +29,6 @@
     "path": "/tutorial",
     "children": [
       {
-        "title": "Setup",
-        "path": "/tutorial/setup"
-      },
-      {
         "title": "Defining an asset",
         "path": "/tutorial/assets/defining-an-asset"
       },
