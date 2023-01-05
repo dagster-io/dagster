@@ -7,7 +7,16 @@ from urllib.parse import urlparse
 import pytest
 from sqlalchemy import create_engine, inspect
 
-from dagster import AssetKey, AssetMaterialization, AssetObservation, Output, job, op
+from dagster import (
+    AssetKey,
+    AssetMaterialization,
+    AssetObservation,
+    DagsterEventType,
+    EventRecordsFilter,
+    Output,
+    job,
+    op,
+)
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
@@ -270,6 +279,37 @@ def test_add_asset_event_tags_table(conn_string):
                 DagsterInvalidInvocationError, match="In order to search for asset event tags"
             ):
                 instance._event_storage.get_event_tags_for_asset(asset_key=AssetKey(["a"]))
+
+            assert (
+                len(
+                    instance.get_event_records(
+                        EventRecordsFilter(
+                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                            asset_key=AssetKey("a"),
+                            tags={"dagster/foo": "bar"},
+                        )
+                    )
+                )
+                == 1
+            )
+            # test version that doesn't support intersect:
+            mysql_version = instance._event_storage._mysql_version
+            try:
+                instance._event_storage._mysql_version = "8.0.30"
+                assert (
+                    len(
+                        instance.get_event_records(
+                            EventRecordsFilter(
+                                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                                asset_key=AssetKey("a"),
+                                tags={"dagster/foo": "bar"},
+                            )
+                        )
+                    )
+                    == 1
+                )
+            finally:
+                instance._event_storage._mysql_version = mysql_version
 
             instance.upgrade()
             assert "asset_event_tags" in get_tables(instance)
