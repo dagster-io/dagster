@@ -896,7 +896,11 @@ class SqlEventLogStorage(EventLogStorage):
             results = conn.execute(query).fetchall()
 
         event_records = []
+        num_results = 0
+        num_unmigrated_tag_skips = 0
+        row_id = None
         for row_id, json_str in results:
+            num_results += 1
             try:
                 event_record = deserialize_json_to_dagster_namedtuple(json_str)
                 if not isinstance(event_record, EventLogEntry):
@@ -907,16 +911,11 @@ class SqlEventLogStorage(EventLogStorage):
 
                 if event_records_filter.tags and not self.has_table(AssetEventTagsTable.name):
                     # If we can't filter tags via the tags table, filter the returned records
-                    if limit is not None:
-                        raise DagsterInvalidInvocationError(
-                            "Cannot filter events on tags with a limit, without the asset event "
-                            "tags table. To fix, run `dagster instance migrate`."
-                        )
-
                     event_record_tags = event_record.tags
                     if not event_record_tags or any(
                         event_record_tags.get(k) != v for k, v in event_records_filter.tags.items()
                     ):
+                        num_unmigrated_tag_skips += 1
                         continue
 
                 event_records.append(
@@ -924,6 +923,36 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             except seven.JSONDecodeError:
                 logging.warning("Could not parse event record id `%s`.", row_id)
+
+        # If we haven't run the migration to add the event tags table, then it's possible that
+        # we haven't hit our limit. In that case, look further back.
+        if (
+            limit is not None
+            and num_results == limit
+            and num_unmigrated_tag_skips > 0
+            and event_records_filter.tags
+            and not self.has_table(AssetEventTagsTable.name)
+        ):
+            if ascending:
+                new_before_cursor = event_records_filter.before_cursor
+                new_after_cursor = row_id
+            else:
+                new_before_cursor = row_id
+                new_after_cursor = event_records_filter.after_cursor
+
+            event_records.extend(
+                self.get_event_records(
+                    limit=num_unmigrated_tag_skips,
+                    ascending=ascending,
+                    event_records_filter=EventRecordsFilter(
+                        **{
+                            **event_records_filter._asdict(),
+                            "before_cursor": new_before_cursor,
+                            "after_cursor": new_after_cursor,
+                        }
+                    ),
+                )
+            )
 
         return event_records
 
