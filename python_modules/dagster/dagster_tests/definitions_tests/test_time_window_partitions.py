@@ -551,3 +551,39 @@ def test_unique_identifier():
         DailyPartitionsDefinition(start_date="2015-01-01").serializable_unique_identifier
         == DailyPartitionsDefinition(start_date="2015-01-01").serializable_unique_identifier
     )
+
+
+def test_valid_partition_time_window():
+    partitions_def = DailyPartitionsDefinition(start_date="2023-01-01")
+    assert (
+        partitions_def.is_valid_partition_time_window(time_window("2023-01-01", "2023-01-02"))
+        == True
+    )
+    assert (
+        partitions_def.is_valid_partition_time_window(
+            time_window("2023-01-01", "2023-01-03"), cast(datetime, pendulum.parse("2023-01-04"))
+        )
+        == True
+    )
+    assert (
+        partitions_def.is_valid_partition_time_window(time_window("2023-01-01", "2023-01-01"))
+        == False
+    )
+    assert (
+        partitions_def.is_valid_partition_time_window(
+            time_window("2023-01-01", "2023-01-04"), cast(datetime, pendulum.parse("2023-01-03"))
+        )
+        == False
+    )
+    assert (
+        partitions_def.is_valid_partition_time_window(
+            time_window("2023-01-01", "2023-01-04"), cast(datetime, pendulum.parse("2023-01-04"))
+        )
+        == True
+    )
+    assert (
+        partitions_def.is_valid_partition_time_window(
+            time_window("2023-01-01", "2023-01-04"), cast(datetime, pendulum.parse("2023-01-01"))
+        )
+        == False
+    )

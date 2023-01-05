@@ -31,6 +31,37 @@ CACHEABLE_PARTITION_TYPES = {
 }
 
 
+class PartitionMaterializationStatus(
+    NamedTuple(
+        "_PartitionMaterializationStatus",
+        [
+            ("serialized_materialized_partition_subset", str),
+            ("serialized_unmaterialized_partition_subset", str),
+        ],
+    )
+):
+    """
+    docstring here
+    """
+
+    def __new__(
+        cls,
+        serialized_materialized_partition_subset: str,
+        serialized_unmaterialized_partition_subset: str,
+    ):
+        check.opt_str_param(
+            serialized_materialized_partition_subset, "serialized_materialized_partition_subset"
+        )
+        check.opt_str_param(
+            serialized_unmaterialized_partition_subset, "serialized_unmaterialized_partition_subset"
+        )
+        return super(PartitionMaterializationStatus, cls).__new__(
+            cls,
+            serialized_materialized_partition_subset,
+            serialized_unmaterialized_partition_subset,
+        )
+
+
 @whitelist_for_serdes
 class AssetStatusCacheValue(
     NamedTuple(
@@ -157,6 +188,7 @@ def _build_status_cache(
         )
     )
 
+    # TODO represent unmaterialized partition subset
     return AssetStatusCacheValue(
         latest_storage_id=latest_storage_id,
         partitions_def_id=partitions_def.serializable_unique_identifier,

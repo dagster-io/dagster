@@ -1090,6 +1090,13 @@ class PartitionsSubset(ABC):
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_inverse_subset(self) -> "PartitionsSubset":
+        """
+        Returns a PartitionsSubset that represents all partitions not selected in this PartitionsSubset.
+        """
+        raise NotImplementedError()
+
 
 class DefaultPartitionsSubset(PartitionsSubset):
     # Every time we change the serialization format, we should increment the version number.
@@ -1190,3 +1197,8 @@ class DefaultPartitionsSubset(PartitionsSubset):
             )
 
         return cls(subset=set(data.get("subset")), partitions_def=partitions_def)
+
+    def get_inverse_subset(self) -> "DefaultPartitionsSubset":
+        return DefaultPartitionsSubset(
+            self.partitions_def, set(self.get_partition_keys_not_in_subset())
+        )
