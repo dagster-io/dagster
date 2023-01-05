@@ -100,14 +100,19 @@ def make_dagster_definitions_from_airflow_dag_bag(
     connections=None,
 ):
     """Construct a Dagster definition corresponding to Airflow DAGs in DagBag.
+
     Usage:
-        Create ``make_dagster_definition.py``:
+
+        Create `make_dagster_definition.py`:
             from dagster_airflow import make_dagster_definition_from_airflow_dag_bag
             from airflow_home import my_dag_bag
+
             def make_definition_from_dag_bag():
                 return make_dagster_definition_from_airflow_dag_bag(my_dag_bag)
+
         Use Definitions as usual, for example:
             `dagit -f path/to/make_dagster_definition.py`
+
     Args:
         dag_bag (DagBag): Airflow DagBag Model
         use_airflow_template_context (bool): If True, will call get_template_context() on the
@@ -147,8 +152,6 @@ def make_dagster_definitions_from_airflow_dags_path(
     connections=None,
 ):
     """Construct a Dagster repository corresponding to Airflow DAGs in dag_path.
-
-    ``DagBag.get_dag()`` dependency requires Airflow DB to be initialized.
 
     Usage:
         Create ``make_dagster_definitions.py``:

@@ -338,8 +338,6 @@ def make_dagster_repo_from_airflow_dags_path(
 ):
     """Construct a Dagster repository corresponding to Airflow DAGs in dag_path.
 
-    ``DagBag.get_dag()`` dependency requires Airflow DB to be initialized.
-
     Usage:
         Create ``make_dagster_repo.py``:
 
