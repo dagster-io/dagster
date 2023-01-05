@@ -5,7 +5,6 @@ from dagster._core.definitions.partition import DefaultPartitionsSubset
 
 
 def test_single_valued_static_mapping():
-
     upstream_parts = StaticPartitionsDefinition(["p1", "p2", "p3", "q1", "q2", "r1"])
     downstream_parts = StaticPartitionsDefinition(["p", "q", "r"])
     mapping = StaticPartitionMapping({"p1": "p", "p2": "p", "p3": "p", "r1": "r"})
@@ -30,7 +29,6 @@ def test_single_valued_static_mapping():
 
 
 def test_multi_valued_static_mapping():
-
     upstream_parts = StaticPartitionsDefinition(["p", "q1", "q2", "r"])
     downstream_parts = StaticPartitionsDefinition(["p1", "p2", "p3", "q", "r1"])
 

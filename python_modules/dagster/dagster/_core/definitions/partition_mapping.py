@@ -1,8 +1,8 @@
-import collections
 import collections.abc
 import functools
 from abc import ABC, abstractmethod
-from typing import Collection, Dict, NamedTuple, Optional, Union, cast
+from collections import defaultdict
+from typing import Collection, Mapping, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
 from dagster._annotations import experimental, public
@@ -329,29 +329,37 @@ class SingleDimensionDependencyMapping(PartitionMapping):
 
 class StaticPartitionMapping(PartitionMapping):
     """
-    Define an explicit correspondence between two StaticPartitionDefinitions
+    Define an explicit correspondence between two StaticPartitionsDefinitions
 
     Args:
-        mapping (Dict[str, str | Collection[str]]): The single or multi-valued
-            correspondence from upstream keys to downstream keys.
+        downstream_partition_keys_by_upstream_partition_key (Dict[str, str | Collection[str]]):
+          The single or multi-valued correspondence from upstream keys to downstream keys.
     """
 
     def __init__(
         self,
-        mapping: Dict[str, Union[str, Collection[str]]],
+        downstream_partition_keys_by_upstream_partition_key: Mapping[
+            str, Union[str, Collection[str]]
+        ],
     ):
-        check.dict_param(
-            mapping, "mapping", key_type=str, value_type=(str, collections.abc.Collection)
+        check.mapping_param(
+            downstream_partition_keys_by_upstream_partition_key,
+            "downstream_partition_keys_by_upstream_partition_key",
+            key_type=str,
+            value_type=(str, collections.abc.Collection),
         )
 
         # cache forward and reverse mappings
-        self._mapping = collections.defaultdict(set)
-        for upstream_key, downstream_keys in mapping.items():
+        self._mapping = defaultdict(set)
+        for (
+            upstream_key,
+            downstream_keys,
+        ) in downstream_partition_keys_by_upstream_partition_key.items():
             self._mapping[upstream_key] = (
-                {downstream_keys} if isinstance(downstream_keys, str) else downstream_keys
+                {downstream_keys} if isinstance(downstream_keys, str) else set(downstream_keys)
             )
 
-        self._inverse_mapping = collections.defaultdict(set)
+        self._inverse_mapping = defaultdict(set)
         for upstream_key, downstream_keys in self._mapping.items():
             for downstream_key in downstream_keys:
                 self._inverse_mapping[downstream_key].add(upstream_key)
@@ -404,9 +412,9 @@ class StaticPartitionMapping(PartitionMapping):
         self._check_downstream(downstream_partitions_def)
 
         downstream_subset = downstream_partitions_def.empty_subset()
-        downstream_keys = []
+        downstream_keys = set()
         for key in upstream_partitions_subset.get_partition_keys():
-            downstream_keys.extend(self._mapping[key])
+            downstream_keys.update(self._mapping[key])
         return downstream_subset.with_partition_keys(downstream_keys)
 
     def get_upstream_partitions_for_partitions(
@@ -420,9 +428,9 @@ class StaticPartitionMapping(PartitionMapping):
         if downstream_partitions_subset is None:
             return upstream_subset
 
-        upstream_keys = []
+        upstream_keys = set()
         for key in downstream_partitions_subset.get_partition_keys():
-            upstream_keys.extend(self._inverse_mapping[key])
+            upstream_keys.update(self._inverse_mapping[key])
 
         return upstream_subset.with_partition_keys(upstream_keys)
 
