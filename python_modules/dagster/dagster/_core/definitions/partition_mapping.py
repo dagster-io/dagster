@@ -330,7 +330,7 @@ class SingleDimensionDependencyMapping(PartitionMapping):
 
 class StaticPartitionMapping(PartitionMapping):
     """
-    Define an explicit correspondence between two StaticPartitionsDefinitions
+    Define an explicit correspondence between two StaticPartitionsDefinitions.
 
     Args:
         downstream_partition_keys_by_upstream_partition_key (Dict[str, str | Collection[str]]):
@@ -370,9 +370,8 @@ class StaticPartitionMapping(PartitionMapping):
         """
         validate that the mapping from upstream to downstream is only defined on upstream keys
         """
-        check.inst_param(
+        check.inst(
             upstream_partitions_def,
-            "upstream_partitions_def",
             StaticPartitionsDefinition,
             "StaticPartitionMapping can only be defined between two StaticPartitionsDefinitions",
         )
@@ -388,9 +387,8 @@ class StaticPartitionMapping(PartitionMapping):
         """
         validate that the mapping from upstream to downstream only maps to downstream keys
         """
-        check.inst_param(
+        check.inst(
             downstream_partitions_def,
-            "downstream_partitions_def",
             StaticPartitionsDefinition,
             "StaticPartitionMapping can only be defined between two StaticPartitionsDefinitions",
         )
