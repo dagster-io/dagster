@@ -34,6 +34,7 @@ from dagster import AssetKey, ResourceDefinition
 from dagster._annotations import experimental, public
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import deep_merge_dicts
 
@@ -704,6 +705,9 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
         connections: Iterable[AirbyteConnection],
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
+        connection_to_freshness_policy_fn: Optional[
+            Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+        ],
     ):
         defined_conn_names = {conn.name for conn in connections}
         super().__init__(
@@ -715,6 +719,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
             connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
             connection_filter=lambda conn: conn.name in defined_conn_names,
             connection_to_asset_key_fn=connection_to_asset_key_fn,
+            connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
         )
         self._connections: List[AirbyteConnection] = list(connections)
 
@@ -744,6 +749,9 @@ def load_assets_from_connections(
     connection_to_asset_key_fn: Optional[
         Callable[[AirbyteConnectionMetadata, str], AssetKey]
     ] = None,
+    connection_to_freshness_policy_fn: Optional[
+        Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+    ] = None,
 ) -> CacheableAssetsDefinition:
     """
     Loads Airbyte connection assets from a configured AirbyteResource instance, checking against a list of AirbyteConnection objects.
@@ -768,6 +776,8 @@ def load_assets_from_connections(
         connection_to_asset_key_fn (Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]]): Optional function which
             takes in connection metadata and table name and returns an asset key for the table. If None, the default asset
             key is based on the table name. Any asset key prefix will be applied to the output of this function.
+        connection_to_freshness_policy_fn (Optional[Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]]): Optional function which
+            takes in connection metadata and returns a freshness policy for the connection. If None, no freshness policy will be applied.
 
     **Examples:**
 
@@ -815,4 +825,5 @@ def load_assets_from_connections(
         connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
         connections=check.iterable_param(connections, "connections", of_type=AirbyteConnection),
         connection_to_asset_key_fn=connection_to_asset_key_fn,
+        connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
     )

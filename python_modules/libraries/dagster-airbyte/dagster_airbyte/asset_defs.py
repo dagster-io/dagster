@@ -29,7 +29,7 @@ from dagster_airbyte.utils import (
     is_basic_normalization_operation,
 )
 
-from dagster import AssetKey, AssetOut, Output, ResourceDefinition
+from dagster import AssetKey, AssetOut, FreshnessPolicy, Output, ResourceDefinition
 from dagster import _check as check
 from dagster._annotations import experimental
 from dagster._core.definitions import AssetsDefinition, multi_asset
@@ -54,6 +54,7 @@ def _build_airbyte_asset_defn_metadata(
     group_name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
+    freshness_policy: Optional[FreshnessPolicy] = None,
 ) -> AssetsDefinitionCacheableData:
 
     asset_key_prefix = (
@@ -114,6 +115,7 @@ def _build_airbyte_asset_defn_metadata(
             "destination_tables": destination_tables,
             "normalization_tables": normalization_tables,
             "io_manager_key": io_manager_key,
+            "freshness_policy": freshness_policy,
         },
     )
 
@@ -129,6 +131,7 @@ def _build_airbyte_assets_from_metadata(
     destination_tables = cast(List[str], metadata["destination_tables"])
     normalization_tables = cast(Mapping[str, List[str]], metadata["normalization_tables"])
     io_manager_key = cast(Optional[str], metadata["io_manager_key"])
+    freshness_policy = cast(Optional[FreshnessPolicy], metadata["freshness_policy"])
 
     @multi_asset(
         name=f"airbyte_sync_{connection_id[:5]}",
@@ -143,6 +146,7 @@ def _build_airbyte_assets_from_metadata(
                 if assets_defn_meta.metadata_by_output_name
                 else None,
                 io_manager_key=io_manager_key,
+                freshness_policy=freshness_policy,
             )
             for k, v in (assets_defn_meta.keys_by_output_name or {}).items()
         },
@@ -190,6 +194,7 @@ def build_airbyte_assets(
     normalization_tables: Optional[Mapping[str, Set[str]]] = None,
     upstream_assets: Optional[Set[AssetKey]] = None,
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
+    freshness_policy: Optional[FreshnessPolicy] = None,
 ) -> Sequence[AssetsDefinition]:
     """
     Builds a set of assets representing the tables created by an Airbyte sync operation.
@@ -206,6 +211,7 @@ def build_airbyte_assets(
         asset_key_prefix (Optional[List[str]]): A prefix for the asset keys inside this asset.
             If left blank, assets will have a key of `AssetKey([table_name])`.
         upstream_assets (Optional[Set[AssetKey]]): A list of assets to add as sources.
+        freshness_policy (Optional[FreshnessPolicy]): A freshness policy to apply to the assets
     """
 
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
@@ -221,6 +227,7 @@ def build_airbyte_assets(
             metadata={"table_schema": MetadataValue.table_schema(schema_by_table_name[table])}
             if schema_by_table_name
             else None,
+            freshness_policy=freshness_policy,
         )
         for table in tables
     }
@@ -468,6 +475,9 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
+        connection_to_freshness_policy_fn: Optional[
+            Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+        ],
     ):
 
         self._key_prefix = key_prefix
@@ -478,6 +488,9 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._connection_to_asset_key_fn: Callable[
             [AirbyteConnectionMetadata, str], AssetKey
         ] = connection_to_asset_key_fn or (lambda _, table: AssetKey(path=[table]))
+        self._connection_to_freshness_policy_fn = connection_to_freshness_policy_fn or (
+            lambda _: None
+        )
 
         contents = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
         contents.update(",".join(key_prefix).encode("utf-8"))
@@ -518,6 +531,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
                 else None,
                 schema_by_table_name=schema_by_table_name,
                 table_to_asset_key_fn=table_to_asset_key,
+                freshness_policy=self._connection_to_freshness_policy_fn(connection),
             )
 
             asset_defn_data.append(asset_data_for_conn)
@@ -548,6 +562,9 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
+        connection_to_freshness_policy_fn: Optional[
+            Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+        ],
     ):
         super().__init__(
             key_prefix=key_prefix,
@@ -556,6 +573,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
             connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
             connection_filter=connection_filter,
             connection_to_asset_key_fn=connection_to_asset_key_fn,
+            connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
         )
         self._workspace_id = workspace_id
         self._airbyte_resource_def = airbyte_resource_def
@@ -629,6 +647,9 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
         connection_directories: Optional[Sequence[str]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
+        connection_to_freshness_policy_fn: Optional[
+            Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+        ],
     ):
         super().__init__(
             key_prefix=key_prefix,
@@ -637,6 +658,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
             connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
             connection_filter=connection_filter,
             connection_to_asset_key_fn=connection_to_asset_key_fn,
+            connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
         )
         self._workspace_id = workspace_id
         self._project_dir = project_dir
@@ -705,6 +727,9 @@ def load_assets_from_airbyte_instance(
     connection_to_asset_key_fn: Optional[
         Callable[[AirbyteConnectionMetadata, str], AssetKey]
     ] = None,
+    connection_to_freshness_policy_fn: Optional[
+        Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+    ] = None,
 ) -> CacheableAssetsDefinition:
     """
     Loads Airbyte connection assets from a configured AirbyteResource instance. This fetches information
@@ -733,6 +758,9 @@ def load_assets_from_airbyte_instance(
         connection_to_asset_key_fn (Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]]): Optional function which
             takes in connection metadata and table name and returns an asset key for the table. If None, the default asset
             key is based on the table name. Any asset key prefix will be applied to the output of this function.
+        connection_to_freshness_policy_fn (Optional[Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]]): Optional function
+            which takes in connection metadata and returns a freshness policy for the connection's assets. If None, no freshness policies
+            will be applied to the assets.
 
     **Examples:**
 
@@ -788,6 +816,7 @@ def load_assets_from_airbyte_instance(
         connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
         connection_filter=connection_filter,
         connection_to_asset_key_fn=connection_to_asset_key_fn,
+        connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
     )
 
 
@@ -804,6 +833,9 @@ def load_assets_from_airbyte_project(
     connection_directories: Optional[Sequence[str]] = None,
     connection_to_asset_key_fn: Optional[
         Callable[[AirbyteConnectionMetadata, str], AssetKey]
+    ] = None,
+    connection_to_freshness_policy_fn: Optional[
+        Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
     ] = None,
 ) -> CacheableAssetsDefinition:
     """
@@ -837,6 +869,9 @@ def load_assets_from_airbyte_project(
         connection_to_asset_key_fn (Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]]): Optional function which
             takes in connection metadata and table name and returns an asset key for the table. If None, the default asset
             key is based on the table name. Any asset key prefix will be applied to the output of this function.
+        connection_to_freshness_policy_fn (Optional[Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]]):
+            Optional function which takes in connection metadata and returns a freshness policy for the connection's assets.
+            If None, no freshness policies will be applied to the assets.
 
     **Examples:**
 
@@ -883,4 +918,5 @@ def load_assets_from_airbyte_project(
         connection_filter=connection_filter,
         connection_directories=connection_directories,
         connection_to_asset_key_fn=connection_to_asset_key_fn,
+        connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
     )
