@@ -2,7 +2,7 @@ import hashlib
 import inspect
 import json
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence, cast
+from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 import dagster._seven as seven
@@ -15,7 +15,6 @@ from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceAddable
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import frozendict, frozenlist, make_readonly_value
-from dagster._utils.merger import deep_merge_dicts
 
 
 @whitelist_for_serdes
@@ -237,6 +236,18 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         self._group_name_for_all_assets = group_name_for_all_assets
         self._prefix_for_all_assets = prefix_for_all_assets
 
+        check.invariant(
+            not (group_name_for_all_assets and group_names_by_key),
+            "Cannot set both group_name_for_all_assets and group_names_by_key",
+        )
+        check.invariant(
+            not (
+                prefix_for_all_assets
+                and (output_asset_key_replacements or input_asset_key_replacements)
+            ),
+            "Cannot set both prefix_for_all_assets and output_asset_key_replacements or input_asset_key_replacements",
+        )
+
         super().__init__(
             unique_id=f"{wrapped._unique_id}_prefix_or_group_{self._get_hash()}",
             wrapped=wrapped,
@@ -278,46 +289,38 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         return contents.hexdigest()
 
     def transformed_assets_def(self, assets_def: AssetsDefinition) -> AssetsDefinition:
-        group_names_by_key = cast(
-            Mapping[AssetKey, str],
-            deep_merge_dicts(
-                self._group_names_by_key,
-                {
-                    k: self._group_name_for_all_assets
-                    for k in assets_def.asset_keys
-                    if self._group_name_for_all_assets
-                },
-            ),
+        group_names_by_key = (
+            {
+                k: self._group_name_for_all_assets
+                for k in assets_def.asset_keys
+                if self._group_name_for_all_assets
+            }
+            if self._group_name_for_all_assets
+            else self._group_names_by_key
         )
-        output_asset_key_replacements = cast(
-            Mapping[AssetKey, AssetKey],
-            deep_merge_dicts(
-                self._output_asset_key_replacements,
-                {
-                    k: AssetKey(
-                        path=self._prefix_for_all_assets + list(k.path)
-                        if self._prefix_for_all_assets
-                        else k.path
-                    )
-                    for k in assets_def.asset_keys
+        output_asset_key_replacements = (
+            {
+                k: AssetKey(
+                    path=self._prefix_for_all_assets + list(k.path)
                     if self._prefix_for_all_assets
-                },
-            ),
+                    else k.path
+                )
+                for k in assets_def.asset_keys
+            }
+            if self._prefix_for_all_assets
+            else self._output_asset_key_replacements
         )
-        input_asset_key_replacements = cast(
-            Mapping[AssetKey, AssetKey],
-            deep_merge_dicts(
-                self._input_asset_key_replacements,
-                {
-                    k: AssetKey(
-                        path=self._prefix_for_all_assets + list(k.path)
-                        if self._prefix_for_all_assets
-                        else k.path
-                    )
-                    for k in assets_def.dependency_keys
+        input_asset_key_replacements = (
+            {
+                k: AssetKey(
+                    path=self._prefix_for_all_assets + list(k.path)
                     if self._prefix_for_all_assets
-                },
-            ),
+                    else k.path
+                )
+                for k in assets_def.dependency_keys
+            }
+            if self._prefix_for_all_assets
+            else self._input_asset_key_replacements
         )
         return assets_def.with_prefix_or_group(
             output_asset_key_replacements=output_asset_key_replacements,
