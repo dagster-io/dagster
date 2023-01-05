@@ -248,6 +248,7 @@ from dagster._core.definitions.partition_mapping import (
     IdentityPartitionMapping as IdentityPartitionMapping,
     LastPartitionMapping as LastPartitionMapping,
     PartitionMapping as PartitionMapping,
+    StaticPartitionMapping as StaticPartitionMapping,
 )
 from dagster._core.definitions.partitioned_schedule import (
     build_schedule_from_partitioned_job as build_schedule_from_partitioned_job,
