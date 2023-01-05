@@ -21,6 +21,7 @@ import styled from 'styled-components/macro';
 
 import {useCopyToClipboard} from '../app/browser';
 import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {compactNumber} from '../ui/formatters';
 
 import {ExecutionStateDot} from './ExecutionStateDot';
@@ -58,6 +59,8 @@ interface ILogsToolbarProps {
 const logQueryToString = (logQuery: LogFilterValue[]) =>
   logQuery.map(({token, value}) => (token ? `${token}:${value}` : value)).join(' ');
 
+const INITIAL_COMPUTE_LOG_TYPE = 'initial-compute-log-type';
+
 export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
   const {
     steps,
@@ -72,9 +75,24 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
     computeLogUrl,
   } = props;
 
+  const [
+    initialComputeLogType,
+    setInitialComputeLogType,
+  ] = useStateWithStorage(INITIAL_COMPUTE_LOG_TYPE, (value: any) =>
+    typeof value === 'string' ? (value as LogType) : LogType.stdout,
+  );
+
   const activeItems = React.useMemo(
     () => new Set([logType === LogType.structured ? logType : LogType.stdout]),
     [logType],
+  );
+
+  const setComputeLogType = React.useCallback(
+    (logType: LogType) => {
+      setInitialComputeLogType(logType);
+      onSetLogType(logType);
+    },
+    [onSetLogType, setInitialComputeLogType],
   );
 
   return (
@@ -83,7 +101,7 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
         activeItems={activeItems}
         buttons={[
           {id: LogType.structured, icon: 'list', tooltip: 'Structured event logs'},
-          {id: LogType.stdout, icon: 'wysiwyg', tooltip: 'Raw compute logs'},
+          {id: initialComputeLogType, icon: 'wysiwyg', tooltip: 'Raw compute logs'},
         ]}
         onClick={(id) => onSetLogType(id)}
       />
@@ -100,7 +118,7 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
           steps={steps}
           metadata={metadata}
           logType={logType}
-          onSetLogType={onSetLogType}
+          onSetLogType={setComputeLogType}
           computeLogFileKey={computeLogFileKey}
           onSetComputeLogKey={onSetComputeLogKey}
           computeLogUrl={computeLogUrl}
