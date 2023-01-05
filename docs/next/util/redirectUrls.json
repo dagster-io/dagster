@@ -601,5 +601,20 @@
     "source": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment",
     "destination": "/dagster-cloud/getting-started",
     "statusCode": 302
+  },
+  {
+    "source": "/tutorial/ops-jobs/connecting-ops",
+    "destination": "/guides/dagster/intro-to-ops-jobs/connecting-ops",
+    "statusCode": 302
+  },
+  {
+    "source": "/tutorial/ops-jobs/single-op-job",
+    "destination": "/guides/dagster/intro-to-ops-jobs/single-op-job",
+    "statusCode": 302
+  },
+  {
+    "source": "/tutorial/ops-jobs/testable",
+    "destination": "/guides/dagster/intro-to-ops-jobs/testable",
+    "statusCode": 302
   }
 ]
