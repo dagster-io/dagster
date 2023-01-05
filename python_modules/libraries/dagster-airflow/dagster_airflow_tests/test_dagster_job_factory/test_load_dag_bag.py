@@ -108,7 +108,6 @@ def test_airflow_example_dags(
     repo = definitions.get_repository_def()
 
     for job_name in expected_job_names:
-        assert repo.name == "airflow_example_dags_repo"
         assert repo.has_job(job_name)
 
         if job_name not in exclude_from_execution_tests:

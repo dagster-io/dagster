@@ -543,7 +543,7 @@ def make_dagster_pipeline_from_airflow_dag(
                 importlib.reload(airflow)
             if not airflow_initialized:
                 db.initdb()
-                create_airflow_connections(
+                _create_airflow_connections(
                     [Connection(**c) for c in context.resource_config["connections"]]
                 )
 

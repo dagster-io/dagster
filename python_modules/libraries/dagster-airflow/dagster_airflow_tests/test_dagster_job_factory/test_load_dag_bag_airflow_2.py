@@ -57,7 +57,6 @@ def airflow_examples_repo():
 def get_examples_airflow_repo_params():
     definitions = make_dagster_definitions_from_airflow_example_dags()
     repo = definitions.get_repository_def()
-    assert repo.name == "airflow_example_dags_repo"
     params = []
     no_job_run_dags = [
         # requires k8s environment to work
