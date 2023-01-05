@@ -63,6 +63,13 @@ class AssetGraph:
         return self._source_asset_keys
 
     @property
+    def root_asset_keys(self) -> AbstractSet[AssetKey]:
+        """Non-source asset keys that have no non-source parents."""
+        from .asset_selection import AssetSelection
+
+        return AssetSelection.keys(*self.all_asset_keys).sources().resolve(self)
+
+    @property
     def freshness_policies_by_key(self):
         return self._freshness_policies_by_key
 
