@@ -14,7 +14,11 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load import location_origins_from_yaml_paths
 from dagster._grpc.types import ListRepositoriesResponse
 
-from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
+from .graphql_context_test_suite import (
+    GraphQLContextVariant,
+    ReadonlyGraphQLContextTestMatrix,
+    make_graphql_context_test_suite,
+)
 
 RELOAD_REPOSITORY_LOCATION_QUERY = """
 mutation ($repositoryLocationName: String!) {
@@ -88,6 +92,16 @@ ManagedTestSuite: Any = make_graphql_context_test_suite(
         GraphQLContextVariant.non_launchable_sqlite_instance_managed_grpc_env(),
     ]
 )
+
+
+class TestReloadWorkspaceReadOnly(ReadonlyGraphQLContextTestMatrix):
+    def test_reload_workspace_permission_failure(self, graphql_context):
+        result = execute_dagster_graphql(graphql_context, RELOAD_WORKSPACE_QUERY)
+
+        assert result
+        assert result.data
+        assert result.data["reloadWorkspace"]
+        assert result.data["reloadWorkspace"]["__typename"] == "UnauthorizedError"
 
 
 class TestReloadWorkspace(MultiLocationTestSuite):
@@ -232,6 +246,18 @@ class TestReloadWorkspace(MultiLocationTestSuite):
             assert len(failures) == 1
 
             assert "new_location_name" in [node["name"] for node in nodes]
+
+
+class TestReloadRepositoriesReadOnly(ReadonlyGraphQLContextTestMatrix):
+    def test_reload_repository_permission_failure(self, graphql_context):
+        result = execute_dagster_graphql(
+            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "test"}
+        )
+
+        assert result
+        assert result.data
+        assert result.data["reloadRepositoryLocation"]
+        assert result.data["reloadRepositoryLocation"]["__typename"] == "UnauthorizedError"
 
 
 class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
