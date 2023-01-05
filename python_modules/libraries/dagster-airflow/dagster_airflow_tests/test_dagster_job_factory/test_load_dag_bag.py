@@ -3,9 +3,9 @@ import tempfile
 
 import pytest
 from airflow import __version__ as airflow_version
-from dagster_airflow.dagster_pipeline_factory import (
-    make_dagster_repo_from_airflow_dags_path,
-    make_dagster_repo_from_airflow_example_dags,
+from dagster_airflow import (
+    make_dagster_definitions_from_airflow_dags_path,
+    make_dagster_definitions_from_airflow_example_dags,
 )
 from dagster_airflow_tests.marks import requires_airflow_db
 
@@ -17,34 +17,33 @@ from ..airflow_utils import test_make_from_dagbag_inputs
     "path_and_content_tuples, fn_arg_path, expected_job_names",
     test_make_from_dagbag_inputs,
 )
-def test_make_repo(
+def test_make_definitions(
     path_and_content_tuples,
     fn_arg_path,
     expected_job_names,
 ):
-    repo_name = "my_repo_name"
     with tempfile.TemporaryDirectory() as tmpdir_path:
         for (path, content) in path_and_content_tuples:
             with open(os.path.join(tmpdir_path, path), "wb") as f:
                 f.write(bytes(content.encode("utf-8")))
 
-        repo = (
-            make_dagster_repo_from_airflow_dags_path(
-                tmpdir_path, repo_name, use_ephemeral_airflow_db=False
-            )
+        definitions = (
+            make_dagster_definitions_from_airflow_dags_path(tmpdir_path)
             if fn_arg_path is None
-            else make_dagster_repo_from_airflow_dags_path(
-                os.path.join(tmpdir_path, fn_arg_path), repo_name, use_ephemeral_airflow_db=False
+            else make_dagster_definitions_from_airflow_dags_path(
+                os.path.join(tmpdir_path, fn_arg_path)
             )
         )
+        repo = definitions.get_repository_def()
 
         for job_name in expected_job_names:
-            assert repo.name == repo_name
             assert repo.has_job(job_name)
 
-            job = repo.get_job(job_name)
+            job = definitions.get_job_def(job_name)
             result = job.execute_in_process()
             assert result.success
+            for event in result.all_events:
+                assert event.event_type_value != "STEP_FAILURE"
 
         assert set(repo.job_names) == set(expected_job_names)
 
@@ -105,10 +104,10 @@ def test_airflow_example_dags(
     expected_job_names,
     exclude_from_execution_tests,
 ):
-    repo = make_dagster_repo_from_airflow_example_dags()
+    definitions = make_dagster_definitions_from_airflow_example_dags()
+    repo = definitions.get_repository_def()
 
     for job_name in expected_job_names:
-        assert repo.name == "airflow_example_dags_repo"
         assert repo.has_job(job_name)
 
         if job_name not in exclude_from_execution_tests:
