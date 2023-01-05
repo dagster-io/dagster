@@ -90,7 +90,7 @@ data:
     run_monitoring:
       enabled: {{ $runMonitoring.enabled }}
       start_timeout_seconds:  {{ $runMonitoring.startTimeoutSeconds }}
-      {{- if $runMonitoring.maxResumeRunAttempts }}
+      {{- if not (kindIs "invalid" $runMonitoring.maxResumeRunAttempts) }}
       max_resume_run_attempts: {{ $runMonitoring.maxResumeRunAttempts }}
       {{- end }}
       poll_interval_seconds: {{ $runMonitoring.pollIntervalSeconds }}
