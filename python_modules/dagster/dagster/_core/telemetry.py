@@ -395,6 +395,7 @@ def log_external_repo_stats(instance, source, external_repo, external_pipeline=N
 
         pipeline_name_hash = hash_name(external_pipeline.name) if external_pipeline else ""
         repo_hash = hash_name(external_repo.name)
+        location_name_hash = hash_name(external_repo.handle.location_name)
         num_pipelines_in_repo = len(external_repo.get_all_external_jobs())
         num_schedules_in_repo = len(external_repo.get_external_schedules())
         num_sensors_in_repo = len(external_repo.get_external_sensors())
@@ -414,6 +415,7 @@ def log_external_repo_stats(instance, source, external_repo, external_pipeline=N
                     "num_sensors_in_repo": str(num_sensors_in_repo),
                     "num_assets_in_repo": str(num_assets_in_repo),
                     "repo_hash": repo_hash,
+                    "location_name_hash": location_name_hash,
                 },
             )._asdict()
         )
