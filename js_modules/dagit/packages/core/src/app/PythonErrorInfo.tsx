@@ -9,6 +9,7 @@ import {
   PythonErrorFragmentFragment,
   PythonErrorChainFragment,
 } from '../graphql/graphql';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {MetadataEntries} from '../metadata/MetadataEntry';
 
 export type GenericError = {
@@ -32,9 +33,15 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
   const context = props.errorSource ? <ErrorContext errorSource={props.errorSource} /> : null;
   const metadataEntries = props.failureMetadata?.metadataEntries;
 
+  const PythonErrorInfoHeader = useLaunchPadHooks().PythonErrorInfoHeader;
+
   return (
     <>
-      {context}
+      {PythonErrorInfoHeader ? (
+        <PythonErrorInfoHeader error={props.error} fallback={context} />
+      ) : (
+        context
+      )}
       <Wrapper>
         <ErrorHeader>{message}</ErrorHeader>
         {metadataEntries ? (
@@ -110,7 +117,7 @@ const CauseHeader = styled.h3`
   margin: 1em 0 1em;
 `;
 
-const ErrorHeader = styled.h3`
+export const ErrorHeader = styled.h3`
   color: #b05c47;
   font-weight: 400;
   margin: 0.5em 0 0.25em;
