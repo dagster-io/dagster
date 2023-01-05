@@ -664,16 +664,16 @@
             "path": "/guides/dagster/intro-to-ops-jobs",
             "children": [
               {
-                "title": "Writing, Executing a Single-Op Job",
-                "path": "/tutorial/ops-jobs/single-op-job"
+                "title": "Write and execute a single-op job",
+                "path": "/guides/dagster/intro-to-ops-jobs/single-op-job"
               },
               {
-                "title": "Connecting Ops In Jobs",
-                "path": "/tutorial/ops-jobs/connecting-ops"
+                "title": "Connecting ops in jobs",
+                "path": "/guides/dagster/intro-to-ops-jobs/connecting-ops"
               },
               {
-                "title": "Testing Ops and Jobs",
-                "path": "/tutorial/ops-jobs/testable"
+                "title": "Testing ops and jobs",
+                "path": "/guides/dagster/intro-to-ops-jobs/testable"
               }
             ]
           },
