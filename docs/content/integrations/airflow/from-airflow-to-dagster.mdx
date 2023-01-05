@@ -141,12 +141,13 @@ schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
 
 ## Step 4: Run Dagster locally
 
-In order to run our newly defined Dagster job we'll need to define a Dagster [repository](/concepts/repositories-workspaces/repositories). A Dagster repository is a logical grouping of jobs and schedules that provides an entrypoint for viewing and executing them.
+In order to run our newly defined Dagster job we'll need to add it and the schedule to our project's [Definitions](/concepts/code-locations#defining-code-locations).
 
 ```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_repo endbefore=end_repo
-@repository
-def rewrite_repo():
-    return [tutorial_job, schedule]
+defs = Definitions(
+    jobs=[tutorial_job],
+    schedules=[schedule],
+)
 ```
 
 We can now load this file with Dagit, the interactive web-UI for Dagster:
@@ -166,13 +167,13 @@ import time
 from datetime import datetime, timedelta
 
 from dagster import (
+    Definitions,
     In,
     Nothing,
     RetryPolicy,
     ScheduleDefinition,
     job,
     op,
-    repository,
     schedule,
 )
 
@@ -206,7 +207,8 @@ def tutorial_job():
 schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
 
 
-@repository
-def rewrite_repo():
-    return [tutorial_job, schedule]
+defs = Definitions(
+    jobs=[tutorial_job],
+    schedules=[schedule],
+)
 ```
