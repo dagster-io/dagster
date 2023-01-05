@@ -45,8 +45,8 @@ setup(
         "PyYAML",
         # cli
         "click>=7.0,<9.0",
-        f"dagster{pin}",
-        f"dagster-graphql{pin}",
+        "dagster==1.1.8",
+        "dagster-graphql==1.1.8",
         "requests",
         # watchdog
         "watchdog>=0.8.3",
