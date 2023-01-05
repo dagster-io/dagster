@@ -24,7 +24,7 @@
     ]
   },
   {
-    "title": "Tutorials",
+    "title": "Tutorial",
     "icon": "Tutorials",
     "path": "/tutorial",
     "children": [
@@ -33,42 +33,24 @@
         "path": "/tutorial/setup"
       },
       {
-        "title": "Assets",
-        "children": [
-          {
-            "title": "Defining an Asset",
-            "path": "/tutorial/assets/defining-an-asset"
-          },
-          {
-            "title": "Building Graphs of Assets",
-            "path": "/tutorial/assets/asset-graph"
-          },
-          {
-            "title": "Assets without Arguments and Return Values",
-            "path": "/tutorial/assets/non-argument-deps"
-          },
-          {
-            "title": "Testing Assets",
-            "path": "/tutorial/assets/testing-assets"
-          }
-        ]
+        "title": "Defining an asset",
+        "path": "/tutorial/assets/defining-an-asset"
       },
       {
-        "title": "Ops and Jobs",
-        "children": [
-          {
-            "title": "Writing, Executing a Single-Op Job",
-            "path": "/tutorial/ops-jobs/single-op-job"
-          },
-          {
-            "title": "Connecting Ops In Jobs",
-            "path": "/tutorial/ops-jobs/connecting-ops"
-          },
-          {
-            "title": "Testing Ops and Jobs",
-            "path": "/tutorial/ops-jobs/testable"
-          }
-        ]
+        "title": "Building graphs of assets",
+        "path": "/tutorial/assets/asset-graph"
+      },
+      {
+        "title": "Assets without arguments and return values",
+        "path": "/tutorial/assets/non-argument-deps"
+      },
+      {
+        "title": "Testing assets",
+        "path": "/tutorial/assets/testing-assets"
+      },
+      {
+        "title": "Next steps",
+        "path": "/tutorial/assets/next-steps"
       }
     ]
   },
@@ -680,6 +662,24 @@
           {
             "title": "Validating data",
             "path": "/guides/dagster/dagster_type_factories"
+          },
+          {
+            "title": "Intro to ops and jobs",
+            "path": "/guides/dagster/intro-to-ops-jobs",
+            "children": [
+              {
+                "title": "Writing, Executing a Single-Op Job",
+                "path": "/tutorial/ops-jobs/single-op-job"
+              },
+              {
+                "title": "Connecting Ops In Jobs",
+                "path": "/tutorial/ops-jobs/connecting-ops"
+              },
+              {
+                "title": "Testing Ops and Jobs",
+                "path": "/tutorial/ops-jobs/testable"
+              }
+            ]
           },
           {
             "title": "Migrating to graphs, jobs, ops",
