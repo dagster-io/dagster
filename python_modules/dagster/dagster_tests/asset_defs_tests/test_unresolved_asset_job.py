@@ -332,6 +332,14 @@ def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
             "start,a,b,c,d",
             ["core", "models"],
         ),
+        (
+            [
+                AssetKey.from_user_string("core/models/a"),
+                AssetKey.from_user_string("core/models/b"),
+            ],
+            "a,b",
+            ["core", "models"],
+        ),
     ],
 )
 def test_define_selection_job(job_selection, expected_assets, use_multi, prefixes):
@@ -406,6 +414,30 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
             # dealing with regular asset
             else:
                 assert result.output_for_node(output, "result") == value
+
+
+def test_define_selection_job_assets_definition_selection():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    @asset
+    def asset3():
+        ...
+
+    all_assets = [asset1, asset2, asset3]
+
+    job1 = define_asset_job("job1", selection=[asset1, asset2]).resolve(
+        all_assets, source_assets=[]
+    )
+    asset_keys = list(job1.asset_layer.asset_keys)
+    assert len(asset_keys) == 2
+    assert set(asset_keys) == {asset1.key, asset2.key}
+    job1.execute_in_process()
 
 
 def test_source_asset_selection():
