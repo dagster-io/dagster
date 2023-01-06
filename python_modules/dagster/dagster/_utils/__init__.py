@@ -169,7 +169,7 @@ def pushd(path: str) -> Iterator[str]:
 
 
 def safe_isfile(path: str) -> bool:
-    """ "Backport of Python 3.8 os.path.isfile behavior.
+    """Backport of Python 3.8 os.path.isfile behavior.
 
     This is intended to backport https://docs.python.org/dev/whatsnew/3.8.html#os-path. I'm not
     sure that there are other ways to provoke this behavior on Unix other than the null byte,
