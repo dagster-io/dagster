@@ -4,8 +4,8 @@
 
 ### Bugfixes
 
-- Fixed an issue which would cause errors when using builtin generic types in annotations for asset and op parameters.
-- Relaxed a dependency on pydantic>=1.8 to allow for older versions of the package.
+- Fixed an issue which would cause errors when using built-in generic types in annotations for asset and op parameters.
+- Fixed an unintentional dependency on Pydantic >=1.8 which lacked a pin, now older versions of the package may be used.
 
 # 1.1.8 (core) / 0.17.8 (libraries)
 
