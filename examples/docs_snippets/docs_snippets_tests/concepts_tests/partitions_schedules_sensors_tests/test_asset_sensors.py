@@ -41,7 +41,7 @@ def test_asset_sensors():
     instance = DagsterInstance.ephemeral()
     materialize([asset_a, asset_b], instance=instance)
     ctx = build_multi_asset_sensor_context(
-        asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
+        monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")],
         instance=instance,
         repository_def=my_repo,
     )
@@ -51,7 +51,7 @@ def test_asset_sensors():
         materialize([asset_c], instance=instance)
 
     ctx = build_multi_asset_sensor_context(
-        asset_keys=[AssetKey("asset_c")],
+        monitored_assets=[AssetKey("asset_c")],
         instance=instance,
         repository_def=my_repo,
     )
@@ -78,7 +78,10 @@ def test_multi_asset_sensor_AND():
             partition_key="2022-08-01",
         )
         and_ctx = build_multi_asset_sensor_context(
-            asset_keys=[AssetKey("upstream_daily_1"), AssetKey("upstream_daily_2")],
+            monitored_assets=[
+                AssetKey("upstream_daily_1"),
+                AssetKey("upstream_daily_2"),
+            ],
             instance=instance,
             repository_def=my_repo,
         )
@@ -116,7 +119,10 @@ def test_multi_asset_sensor_OR():
             partition_key="2022-08-01",
         )
         or_ctx = build_multi_asset_sensor_context(
-            asset_keys=[AssetKey("upstream_daily_1"), AssetKey("upstream_daily_2")],
+            monitored_assets=[
+                AssetKey("upstream_daily_1"),
+                AssetKey("upstream_daily_2"),
+            ],
             instance=instance,
             repository_def=my_repo,
         )
@@ -151,7 +157,7 @@ def test_multi_asset_sensor_weekly_from_daily():
         ]:
             materialize([upstream_daily_1], instance=instance, partition_key=date)
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[AssetKey("upstream_daily_1")],
+            monitored_assets=[AssetKey("upstream_daily_1")],
             instance=instance,
             repository_def=my_repo,
         )
