@@ -69,7 +69,6 @@ def test_launch_asset_backfill():
     all_asset_keys = repo.asset_graph.all_asset_keys
 
     with instance_for_test() as instance:
-
         # read-only context fails
         with define_out_of_process_context(
             __file__, "get_repo", instance, read_only=True
