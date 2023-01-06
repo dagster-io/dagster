@@ -12,7 +12,6 @@ export const AssetGraphJobSidebar: React.FC<{
   pipelineSelector: PipelineSelector;
 }> = ({pipelineSelector}) => {
   const queryResult = useQuery(ASSET_GRAPH_JOB_SIDEBAR, {
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     variables: {pipelineSelector},
   });

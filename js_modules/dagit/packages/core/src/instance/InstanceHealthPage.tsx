@@ -15,7 +15,6 @@ export const InstanceHealthPage = () => {
 
   const {pageTitle} = React.useContext(InstancePageContext);
   const queryData = useQuery(INSTANCE_HEALTH_QUERY, {
-    fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
   });
   const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);

@@ -291,7 +291,6 @@ export const TickHistoryTimeline = ({
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
   const queryResult = useQuery(JOB_TICK_HISTORY_QUERY, {
     variables: {instigationSelector, limit: 15},
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });

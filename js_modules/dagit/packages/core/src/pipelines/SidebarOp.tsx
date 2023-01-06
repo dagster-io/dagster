@@ -40,7 +40,6 @@ const useSidebarOpQuery = (
       },
       handleID,
     },
-    fetchPolicy: 'cache-and-network',
     skip: isGraph,
   });
 
@@ -53,7 +52,6 @@ const useSidebarOpQuery = (
       },
       handleID,
     },
-    fetchPolicy: 'cache-and-network',
     skip: !isGraph,
   });
 

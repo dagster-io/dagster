@@ -107,6 +107,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   }, [onLaunch]);
 
   const {loading, data} = useQuery(PARTITIONS_BACKFILL_SELECTOR_QUERY, {
+    fetchPolicy: 'network-only',
     variables: {
       repositorySelector,
       partitionSetName,
@@ -115,7 +116,6 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
         pipelineName,
       },
     },
-    fetchPolicy: 'network-only',
   });
 
   const [queryStatuses, {loading: statusesLoading, data: statusesData}] = useLazyQuery(
@@ -125,7 +125,6 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
         repositorySelector,
         partitionSetName,
       },
-      fetchPolicy: 'cache-and-network',
     },
   );
 

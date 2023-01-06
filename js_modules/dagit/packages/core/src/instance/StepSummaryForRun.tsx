@@ -14,7 +14,9 @@ interface Props {
 
 export const StepSummaryForRun = (props: Props) => {
   const {runId} = props;
-  const {data} = useQuery(STEP_SUMMARY_FOR_RUN_QUERY, {variables: {runId}});
+  const {data} = useQuery(STEP_SUMMARY_FOR_RUN_QUERY, {
+    variables: {runId},
+  });
 
   const run = data?.pipelineRunOrError;
   const status = run?.__typename === 'Run' ? run.status : null;

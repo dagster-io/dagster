@@ -10,7 +10,6 @@ import {StatusAndMessage} from './DeploymentStatusType';
 export const useDaemonStatus = (skip = false): StatusAndMessage | null => {
   const {options} = useRepositoryOptions();
   const queryResult = useQuery(INSTANCE_WARNING_QUERY, {
-    fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
     skip,
   });

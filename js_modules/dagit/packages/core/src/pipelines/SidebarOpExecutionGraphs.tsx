@@ -33,7 +33,6 @@ export const SidebarOpExecutionGraphs: React.FC<{
         pipelineName,
       },
     },
-    fetchPolicy: 'cache-and-network',
   });
   const stepStats =
     result.data?.pipelineOrError.__typename === 'Pipeline'

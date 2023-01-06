@@ -47,7 +47,6 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
   const repo = useRepository(repoAddress);
 
   const [querySchedule, queryResult] = useLazyQuery(SINGLE_SCHEDULE_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {
       selector: {
         repositoryName: repoAddress.name,

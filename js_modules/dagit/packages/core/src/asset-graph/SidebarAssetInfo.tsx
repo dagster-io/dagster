@@ -31,7 +31,6 @@ export const SidebarAssetInfo: React.FC<{
   const partitionHealthData = usePartitionHealthData([assetKey]);
   const {data} = useQuery(SIDEBAR_ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
-    fetchPolicy: 'cache-and-network',
   });
 
   const {lastMaterialization} = liveData || {};

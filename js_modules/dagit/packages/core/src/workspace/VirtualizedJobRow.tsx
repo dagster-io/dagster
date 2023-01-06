@@ -31,7 +31,6 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
   const {name, isJob, repoAddress, start, height} = props;
 
   const [queryJob, queryResult] = useLazyQuery(SINGLE_JOB_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {
       selector: buildPipelineSelector(repoAddress, name),
     },

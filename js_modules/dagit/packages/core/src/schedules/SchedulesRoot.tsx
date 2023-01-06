@@ -29,7 +29,6 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
       repositorySelector,
       instigationType: InstigationType.SCHEDULE,
     },
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });
