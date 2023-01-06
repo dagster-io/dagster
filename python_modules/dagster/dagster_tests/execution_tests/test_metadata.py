@@ -155,7 +155,6 @@ def test_unknown_metadata_value():
 
 
 def test_parse_null_metadata():
-
     metadata = {"foo": None}
     entries = normalize_metadata(metadata, [])
     assert entries[0].label == "foo"
