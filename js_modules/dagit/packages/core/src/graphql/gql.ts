@@ -216,6 +216,20 @@ const documents = {
 
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ *
+ *
+ * @example
+ * ```ts
+ * const query = gql(`query GetUser($id: ID!) { user(id: $id) { name } }`);
+ * ```
+ *
+ * The query argument is unknown!
+ * Please regenerate the types.
+**/
+export function graphql(source: string): unknown;
+
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  subscription CapturedLogsSubscription($logKey: [String!]!, $cursor: String) {\n    capturedLogs(logKey: $logKey, cursor: $cursor) {\n      ...CapturedLog\n    }\n  }\n\n  fragment CapturedLog on CapturedLogs {\n    stdout\n    stderr\n    cursor\n  }\n"): (typeof documents)["\n  subscription CapturedLogsSubscription($logKey: [String!]!, $cursor: String) {\n    capturedLogs(logKey: $logKey, cursor: $cursor) {\n      ...CapturedLog\n    }\n  }\n\n  fragment CapturedLog on CapturedLogs {\n    stdout\n    stderr\n    cursor\n  }\n"];
 /**
@@ -1010,20 +1024,6 @@ export function graphql(source: "\n  query WorkspaceSchedulesQuery($selector: Re
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  query WorkspaceSensorsQuery($selector: RepositorySelector!) {\n    repositoryOrError(repositorySelector: $selector) {\n      ... on Repository {\n        id\n        name\n        sensors {\n          id\n          name\n          description\n        }\n      }\n      ...PythonErrorFragment\n    }\n  }\n"): (typeof documents)["\n  query WorkspaceSensorsQuery($selector: RepositorySelector!) {\n    repositoryOrError(repositorySelector: $selector) {\n      ... on Repository {\n        id\n        name\n        sensors {\n          id\n          name\n          description\n        }\n      }\n      ...PythonErrorFragment\n    }\n  }\n"];
-
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- *
- *
- * @example
- * ```ts
- * const query = gql(`query GetUser($id: ID!) { user(id: $id) { name } }`);
- * ```
- *
- * The query argument is unknown!
- * Please regenerate the types.
-**/
-export function graphql(source: string): unknown;
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};
