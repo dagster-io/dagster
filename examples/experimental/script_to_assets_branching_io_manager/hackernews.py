@@ -1,10 +1,11 @@
 import base64
 from io import BytesIO
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
-from wordcloud import STOPWORDS, WordCloud
 from tqdm import tqdm
+from wordcloud import STOPWORDS, WordCloud
 
 
 def extract() -> pd.DataFrame:
@@ -12,10 +13,8 @@ def extract() -> pd.DataFrame:
     hackernews_topstory_ids = requests.get(newstories_url).json()
 
     results = []
-    for item_id in tqdm(hackernews_topstory_ids):
-        item = requests.get(
-            f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
-        ).json()
+    for item_id in tqdm(hackernews_topstory_ids[:100]):
+        item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
         results.append(item)
 
     hackernews_topstories = pd.DataFrame(results)
@@ -27,9 +26,7 @@ def transform(hackernews_topstories: pd.DataFrame) -> bytes:
     stopwords = set(STOPWORDS)
     stopwords.update(["Ask", "Show", "HN"])
     titles_text = " ".join([str(item) for item in hackernews_topstories["title"]])
-    titles_cloud = WordCloud(stopwords=stopwords, background_color="white").generate(
-        titles_text
-    )
+    titles_cloud = WordCloud(stopwords=stopwords, background_color="white").generate(titles_text)
 
     # Generate the word cloud image
     plt.figure(figsize=(8, 8), facecolor=None)

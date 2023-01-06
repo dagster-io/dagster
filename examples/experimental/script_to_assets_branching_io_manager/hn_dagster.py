@@ -1,24 +1,22 @@
 import os
-from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
+
 import pandas
-from hackernews import extract, transform, load
 from dagster import (
-    asset,
-    RetryPolicy,
-    FreshnessPolicy,
-    IOManager,
+    AssetKey,
+    AssetMaterialization,
+    DagsterInstance,
     Definitions,
-    fs_io_manager,
+    OpExecutionContext,
+    Output,
+    asset,
+    file_relative_path,
     job,
     op,
-    DagsterInstance,
-    file_relative_path,
-    AssetKey,
-    OpExecutionContext,
-    AssetMaterialization,
-    Output,
 )
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
 from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
+from hackernews import extract, transform
 
 
 @op
@@ -40,14 +38,19 @@ def replicate_asset_materializations_for_group(context: OpExecutionContext):
                     f"Inserting {latest_event_log_entry} into dev with metadata"
                     f" {asset_mat.metadata}"
                 )
+                parent_run_id = latest_event_log_entry.run_id
+                parent_run_url = f"http://127.0.0.1:3000/runs/{parent_run_id}"
                 yield AssetMaterialization(
                     asset_key=asset_key_str,
                     description=asset_mat.description,
                     metadata={
                         **asset_mat.metadata,
                         **{
-                            "parent_asset_catalog_url": f"path/to/url/assets/{asset_key_str}",
-                            "parent_run_id": latest_event_log_entry.run_id,
+                            "parent_asset_catalog_url": MetadataValue.url(
+                                f"http://127.0.0.1:3000/assets/{asset_key_str}"
+                            ),
+                            "parent_run_id": parent_run_id,
+                            "parent_run_url": MetadataValue.url(parent_run_url),
                             "parent_timestamp": latest_event_log_entry.timestamp,
                         },
                     },
