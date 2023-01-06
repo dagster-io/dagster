@@ -15,12 +15,11 @@ import dagster._check as check
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import PipelineSelector
-from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation import ExternalSchedule
-from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance.persist_run import persist_run
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -626,7 +625,6 @@ def _schedule_runs_at_time(
             solid_selection=external_schedule.solid_selection,
             asset_selection=run_request.asset_selection,
         )
-        external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
 
         run = _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request)
         if run:
@@ -649,12 +647,12 @@ def _schedule_runs_at_time(
                 )
         else:
             run = _create_scheduler_run(
-                instance,
-                schedule_time,
-                repo_location,
-                external_schedule,
-                external_pipeline,
-                run_request,
+                instance=instance,
+                schedule_time=schedule_time,
+                repo_location=repo_location,
+                external_schedule=external_schedule,
+                run_request=run_request,
+                pipeline_selector=pipeline_selector,
             )
 
         _check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
@@ -714,35 +712,15 @@ def _get_existing_run_for_request(
 
 
 def _create_scheduler_run(
+    *,
     instance: DagsterInstance,
     schedule_time: datetime.datetime,
     repo_location: RepositoryLocation,
     external_schedule: ExternalSchedule,
-    external_pipeline: ExternalPipeline,
+    pipeline_selector: PipelineSelector,
     run_request: RunRequest,
 ) -> DagsterRun:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
-
-    run_config = run_request.run_config
-    schedule_tags = run_request.tags
-
-    external_execution_plan = repo_location.get_external_execution_plan(
-        external_pipeline,
-        run_config,
-        check.not_none(external_schedule.mode),
-        step_keys_to_execute=None,
-        known_state=None,
-    )
-    execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
-
-    tags = merge_dicts(
-        validate_tags(external_pipeline.tags, allow_reserved_tags=False) or {},
-        schedule_tags,
-    )
-
-    tags[SCHEDULED_EXECUTION_TIME_TAG] = to_timezone(schedule_time, "UTC").isoformat()
-    if run_request.run_key:
-        tags[RUN_KEY_TAG] = run_request.run_key
 
     log_action(
         instance,
@@ -751,28 +729,19 @@ def _create_scheduler_run(
             "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
             "SCHEDULE_NAME_HASH": hash_name(external_schedule.name),
             "repo_hash": hash_name(repo_location.name),
-            "pipeline_name_hash": hash_name(external_pipeline.name),
+            "pipeline_name_hash": hash_name(pipeline_selector.pipeline_name),
         },
     )
 
-    return instance.create_run(
-        pipeline_name=external_schedule.pipeline_name,
-        run_id=None,
-        run_config=run_config,
-        mode=external_schedule.mode,
-        solids_to_execute=external_pipeline.solids_to_execute,
-        step_keys_to_execute=None,
-        solid_selection=external_pipeline.solid_selection,
-        status=DagsterRunStatus.NOT_STARTED,
-        root_run_id=None,
-        parent_run_id=None,
-        tags=tags,
-        pipeline_snapshot=external_pipeline.pipeline_snapshot,
-        execution_plan_snapshot=execution_plan_snapshot,
-        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
-        asset_selection=frozenset(run_request.asset_selection)
-        if run_request.asset_selection
-        else None,
+    return persist_run(
+        instance=instance,
+        repository_location=repo_location,
+        pipeline_selector=pipeline_selector,
+        run_config=run_request.run_config,
+        run_tags={
+            **run_request.tags,
+            **{SCHEDULED_EXECUTION_TIME_TAG: to_timezone(schedule_time, "UTC").isoformat()},
+            **({RUN_KEY_TAG: run_request.run_key} if run_request.run_key else {}),
+        },
+        explicit_mode=external_schedule.mode,
     )
