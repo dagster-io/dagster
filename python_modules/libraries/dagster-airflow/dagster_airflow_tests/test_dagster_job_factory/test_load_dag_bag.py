@@ -105,6 +105,7 @@ def test_airflow_example_dags(
     expected_job_names,
     exclude_from_execution_tests,
 ):
+    # run me
     definitions = make_dagster_definitions_from_airflow_example_dags()
     repo = definitions.get_repository_def()
 
