@@ -86,13 +86,14 @@ exclude = [
   "*/__generated__/*",
   "*/dagster_airflow/vendor/*",
   "*/snapshots/*",
+  ".git/*"
 ]
 
 ignore = [
 
   # (module level import not at top) There are several places where we use e.g.
   # warnings.filterwarings calls before imports.
-  "E402", 
+  "E402",
 
   # (line too long): This fires for comments, which black won't wrap.
   # Disabling until there is an autoformat solution available for comments.
