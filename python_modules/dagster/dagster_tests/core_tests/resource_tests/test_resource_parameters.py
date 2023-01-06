@@ -311,11 +311,6 @@ def test_no_err_builtin_annotations():
     # Ensures that we can use Python builtin types without causing any issues, see
     # https://github.com/dagster-io/dagster/issues/11541
 
-    # Use aliases for the builtin types so that this doesn't cause a load error on
-    # python < 3.9
-    _list = list
-    _dict = dict
-
     executed = {}
 
     @asset
@@ -326,7 +321,7 @@ def test_no_err_builtin_annotations():
         return [{"hello": "world"}]
 
     @asset
-    def the_other_asset(context, the_asset: _list[_dict[str, str]], foo: ResourceOutput[str]):
+    def the_other_asset(context, the_asset: list[dict[str, str]], foo: ResourceOutput[str]):
         assert context.resources.foo == "blah"
         assert foo == "blah"
         assert the_asset == [{"hello": "world"}]
