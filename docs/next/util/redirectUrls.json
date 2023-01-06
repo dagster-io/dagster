@@ -6,12 +6,7 @@
   },
   {
     "source": "/tutorial/intro-tutorial/setup",
-    "destination": "/tutorial",
-    "statusCode": 302
-  },
-  {
-    "source": "/tutorial/setup",
-    "destination": "/tutorial",
+    "destination": "/tutorial/setup",
     "statusCode": 302
   },
   {
