@@ -91,6 +91,8 @@ test_airflow_example_dags_inputs = [
             "airflow_test_utils",
             # patching airflow.models.DAG causes this to fail
             "airflow_example_complex",
+            # can flake due to 502 Server Error: Bad Gateway for url: https://www.httpbin.org/
+            "airflow_example_http_operator",
         ],
     ),
 ]
