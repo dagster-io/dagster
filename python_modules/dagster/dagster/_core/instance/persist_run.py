@@ -16,6 +16,7 @@ def persist_run(
     run_config: Mapping[str, object],
     run_tags: Mapping[str, str],
     explicit_mode: Optional[str],
+    explicit_run_id: Optional[str],
 ) -> DagsterRun:
     """
     Creates a run suitable for production using host process (i.e. External*) APIs.
@@ -33,6 +34,8 @@ def persist_run(
             specific to their context (e.g. users can specify ad hoc tags for runs in UI-driven cases).
             This set of tags will be merged with the tags on the pipeline itself.
         explicit_mode Optional[str]: Explicitly override the default mode for the pipeline.
+        explicit_run_id Optional[str]: Explicitly override run_id. If not specified run created
+            using make_new_run_id
     """
     external_pipeline = repository_location.get_external_pipeline(pipeline_selector)
     mode = explicit_mode or external_pipeline.get_default_mode_name()
@@ -51,7 +54,7 @@ def persist_run(
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
         pipeline_name=external_pipeline.name,
-        run_id=make_new_run_id(),
+        run_id=explicit_run_id or make_new_run_id(),
         asset_selection=frozenset(pipeline_selector.asset_selection)
         if pipeline_selector.asset_selection
         else None,

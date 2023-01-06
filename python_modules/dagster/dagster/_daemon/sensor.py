@@ -839,4 +839,5 @@ def _create_sensor_run(
             **({RUN_KEY_TAG: run_request.run_key} if run_request.run_key else {}),
         },
         explicit_mode=external_sensor.mode,
+        explicit_run_id=None,
     )
