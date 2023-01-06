@@ -2044,7 +2044,7 @@ class CourierSource(GeneratedAirbyteSource):
 class CloseComSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_key: str, start_date: Optional[str] = None):
-        """
+        r"""
         Airbyte Source for Close Com
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/close-com
@@ -2159,7 +2159,7 @@ class ElasticsearchSource(GeneratedAirbyteSource):
             "ElasticsearchSource.UsernamePassword",
         ],
     ):
-        """
+        r"""
         Airbyte Source for Elasticsearch
 
         Documentation can be found at https://docs.airbyte.com/integrations/source/elasticsearch
@@ -3220,7 +3220,7 @@ class StripeSource(GeneratedAirbyteSource):
         lookback_window_days: Optional[int] = None,
         slice_range: Optional[int] = None,
     ):
-        """
+        r"""
         Airbyte Source for Stripe
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/stripe
@@ -3798,7 +3798,7 @@ class PaystackSource(GeneratedAirbyteSource):
         start_date: str,
         lookback_window_days: Optional[int] = None,
     ):
-        """
+        r"""
         Airbyte Source for Paystack
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/paystack
@@ -5502,7 +5502,7 @@ class MetabaseSource(GeneratedAirbyteSource):
         password: Optional[str] = None,
         session_token: Optional[str] = None,
     ):
-        """
+        r"""
         Airbyte Source for Metabase
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/metabase

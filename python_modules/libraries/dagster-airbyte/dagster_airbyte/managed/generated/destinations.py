@@ -548,7 +548,7 @@ class ElasticsearchDestination(GeneratedAirbyteDestination):
         ],
         upsert: Optional[bool] = None,
     ):
-        """
+        r"""
         Airbyte Destination for Elasticsearch
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/elasticsearch
@@ -1191,7 +1191,7 @@ class MongodbDestination(GeneratedAirbyteDestination):
         database: str,
         auth_type: Union["MongodbDestination.None_", "MongodbDestination.LoginPassword"],
     ):
-        """
+        r"""
         Airbyte Destination for Mongodb
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/mongodb

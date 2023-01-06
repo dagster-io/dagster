@@ -16,7 +16,7 @@ def asset_cli():
 @click.option("--all", is_flag=True, help="Eliminate all asset key indexes")
 @click.option("--noprompt", is_flag=True)
 def asset_wipe_command(key, **cli_args):
-    """
+    r"""
     Eliminate asset key indexes from event logs.
 
     Warning: Cannot be undone.

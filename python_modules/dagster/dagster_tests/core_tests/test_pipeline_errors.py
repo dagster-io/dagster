@@ -57,7 +57,7 @@ def test_compute_failure_pipeline():
 
 
 def test_failure_midstream():
-    """
+    r"""
     A
      \\
        C (fails) = D (skipped)
@@ -98,7 +98,7 @@ def test_failure_midstream():
 
 
 def test_failure_propagation():
-    """
+    r"""
       B =========== C
      //             \\
     A                F (skipped)

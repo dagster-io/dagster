@@ -721,7 +721,7 @@ def build_asset_reconciliation_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     run_tags: Optional[Mapping[str, str]] = None,
 ) -> SensorDefinition:
-    """Constructs a sensor that will monitor the provided assets and launch materializations to
+    r"""Constructs a sensor that will monitor the provided assets and launch materializations to
     "reconcile" them.
 
     An asset is considered "unreconciled" if any of:

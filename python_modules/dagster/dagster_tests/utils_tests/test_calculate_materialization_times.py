@@ -96,7 +96,7 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 def test_caching_instance_queryer(
     ignore_asset_tags, relative_to, runs_to_expected_data_times_index
 ):
-    """
+    r"""
     A = B = D = F
      \\  //
        C = E
