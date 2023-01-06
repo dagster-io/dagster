@@ -94,7 +94,6 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.host_representation import (
-        ExternalPipeline,
         ExternalPipelineOrigin,
         ExternalSensor,
         HistoricalPipeline,

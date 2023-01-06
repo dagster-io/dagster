@@ -12,12 +12,7 @@ from dagster._core.instance.persist_run_for_production import (
 )
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
-<<<<<<< HEAD
-from dagster._core.utils import make_new_run_id
-from dagster._utils.merger import merge_dicts
 from graphene import ResolveInfo
-=======
->>>>>>> aa2f799919 (graphql impl)
 
 from ..external import ensure_valid_config
 from ..utils import ExecutionParams, UserFacingGraphQLError
