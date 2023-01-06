@@ -1,20 +1,12 @@
-from typing import Mapping, NamedTuple, Optional, Sequence
+from typing import Mapping, Optional
 
 from dagster._core.definitions.utils import validate_tags
-from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.host_representation.selector import PipelineSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.utils import make_new_run_id
 from dagster._utils.merger import merge_dicts
-
-
-class ReexecutionInfoForProduction(NamedTuple):
-    parent_run_id: str
-    root_run_id: str
-    known_state: Optional[KnownExecutionState]
-    step_keys_to_execute: Optional[Sequence[str]]
 
 
 def persist_run_for_production(
