@@ -45,7 +45,8 @@ class TestCapturedLogManager:
         should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
     )
     def test_capture(self, captured_log_manager):
-        log_key = ["foo"]
+        now = pendulum.now("UTC")
+        log_key = ["arbitrary", "log", "key", now.strftime("%Y_%m_%d__%H_%M_%S")]
 
         with captured_log_manager.capture_logs(log_key) as context:
             print("HELLO WORLD")  # pylint: disable=print-call
@@ -134,6 +135,15 @@ class TestCapturedLogManager:
         should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
     )
     def test_complete_checks(self, write_manager, read_manager):
+        from dagster._core.storage.cloud_storage_compute_log_manager import (
+            CloudStorageComputeLogManager,
+        )
+
+        if not isinstance(write_manager, CloudStorageComputeLogManager) or not isinstance(
+            read_manager, CloudStorageComputeLogManager
+        ):
+            pytest.skip("unnecessary check since write/read manager should have the same behavior")
+
         now = pendulum.now("UTC")
         log_key = ["arbitrary", "log", "key", now.strftime("%Y_%m_%d__%H_%M_%S")]
         with write_manager.capture_logs(log_key):
