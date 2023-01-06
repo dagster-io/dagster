@@ -1,5 +1,12 @@
 # Changelog
 
+# 1.1.9 (core) / 0.17.9 (libraries)
+
+### Bugfixes
+
+- Fixed an issue which would cause errors when using builtin generic types in annotations for asset and op parameters.
+- Relaxed a dependency on pydantic>=1.8 to allow for older versions of the package.
+
 # 1.1.8 (core) / 0.17.8 (libraries)
 
 ### New
