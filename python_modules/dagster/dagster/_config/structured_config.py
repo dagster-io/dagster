@@ -37,7 +37,7 @@ class MakeConfigCacheable(BaseModel):
     """
 
     # Pydantic config for this class
-    # Cannot use kwargs for base class as this is not support for pydnatic <1.8
+    # Cannot use kwargs for base class as this is not support for pydnatic<1.8
     class Config:
         # Various pydantic model config (https://docs.pydantic.dev/usage/model_config/)
         # Necessary to allow for caching decorators
@@ -67,7 +67,7 @@ class Config(MakeConfigCacheable):
 
 class PermissiveConfig(Config):
     # Pydantic config for this class
-    # Cannot use kwargs for base class as this is not support for pydnatic <1.8
+    # Cannot use kwargs for base class as this is not support for pydantic<1.8
     class Config:
         extra = "allow"
 
