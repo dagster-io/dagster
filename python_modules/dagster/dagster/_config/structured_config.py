@@ -30,20 +30,22 @@ from dagster._core.definitions.resource_definition import ResourceDefinition, Re
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 
 
-class MakeConfigCacheable(
-    BaseModel,
-    # Various pydantic model config (https://docs.pydantic.dev/usage/model_config/)
-    # Necessary to allow for caching decorators
-    arbitrary_types_allowed=True,
-    # Avoid pydantic reading a cached property class as part of the schema
-    keep_untouched=(cached_property,),
-    # Ensure the class is serializable, for caching purposes
-    frozen=True,
-):
+class MakeConfigCacheable(BaseModel):
     """This class centralizes and implements all the chicanery we need in order
     to support caching decorators. If we decide this is a bad idea we can remove it
     all in one go.
     """
+
+    # Pydantic config for this class
+    # Cannot use kwargs for base class as this is not support for pydnatic<1.8
+    class Config:
+        # Various pydantic model config (https://docs.pydantic.dev/usage/model_config/)
+        # Necessary to allow for caching decorators
+        arbitrary_types_allowed = True
+        # Avoid pydantic reading a cached property class as part of the schema
+        keep_untouched = (cached_property,)
+        # Ensure the class is serializable, for caching purposes
+        frozen = True
 
     def __setattr__(self, name: str, value: Any):
         # This is a hack to allow us to set attributes on the class that are not part of the
@@ -63,7 +65,12 @@ class Config(MakeConfigCacheable):
     """
 
 
-class PermissiveConfig(Config, extra="allow"):
+class PermissiveConfig(Config):
+    # Pydantic config for this class
+    # Cannot use kwargs for base class as this is not support for pydantic<1.8
+    class Config:
+        extra = "allow"
+
     """
     Base class for Dagster configuration models that allow arbitrary extra fields.
     """
