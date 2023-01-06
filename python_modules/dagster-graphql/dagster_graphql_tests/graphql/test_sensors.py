@@ -263,6 +263,14 @@ mutation($sensorSelector: SensorSelector!, $cursor: String) {
 }
 """
 
+INSTIGATE_CURSOR_MUTATION = """
+mutation($instigatorSelector: InstigatorSelector!, $cursor: String) {
+  testInstigator(instigatorSelector: $sensorSelector, cursor: $cursor) {
+    __typename
+  }
+}
+"""
+
 REPOSITORY_SENSORS_QUERY = """
 query RepositorySensorsQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
@@ -524,6 +532,27 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         )
 
         assert start_result.data["startSensor"]["sensorState"]["status"] == "RUNNING"
+
+    def test_instigate_sensor(self, graphql_context):
+        def set_cursor(selector, cursor):
+            result = execute_dagster_graphql(
+                graphql_context,
+                SET_SENSOR_CURSOR_MUTATION,
+                variables={"sensorSelector": selector, "cursor": cursor},
+            )
+            assert result.data
+            assert result.data["setSensorCursor"]["__typename"] == "Sensor"
+            sensor = result.data["setSensorCursor"]
+            return sensor["sensorState"]["typeSpecificData"]["lastCursor"]
+
+        sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
+        instigator_selector = sensor_selector.update({"instigatorType": "SENSOR"})
+        result = execute_dagster_graphql(
+            graphql_context,
+            INSTIGATE_CURSOR_MUTATION,
+            variables={"instigatorSelector": instigator_selector, "cursor": "blah"},
+        )
+        assert result.data
 
 
 def test_sensor_next_ticks(graphql_context):
