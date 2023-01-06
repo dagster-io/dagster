@@ -8,7 +8,9 @@ from dagster import (
     DagsterEventType,
     FloatMetadataValue,
     IntMetadataValue,
+    JsonMetadataValue,
     MetadataValue,
+    NullMetadataValue,
     PathMetadataValue,
     PythonArtifactMetadataValue,
     TextMetadataValue,
@@ -18,7 +20,6 @@ from dagster._check import CheckError
 from dagster._core.definitions.metadata import (
     DagsterInvalidMetadata,
     MetadataEntry,
-    NullMetadataValue,
     normalize_metadata,
 )
 from dagster._core.definitions.metadata.table import (
@@ -159,6 +160,13 @@ def test_parse_null_metadata():
     entries = normalize_metadata(metadata, [])
     assert entries[0].label == "foo"
     assert entries[0].value == NullMetadataValue()
+
+
+def test_parse_list_metadata():
+    metadata = {"foo": ["bar"]}
+    entries = normalize_metadata(metadata, [])
+    assert entries[0].label == "foo"
+    assert entries[0].value == JsonMetadataValue(["bar"])
 
 
 def test_parse_invalid_metadata():

@@ -151,7 +151,7 @@ def normalize_metadata_value(raw_value: RawMetadataValue):
         return MetadataValue.bool(raw_value)
     elif isinstance(raw_value, int):
         return MetadataValue.int(raw_value)
-    elif isinstance(raw_value, dict):
+    elif isinstance(raw_value, (list, dict)):
         return MetadataValue.json(raw_value)
     elif isinstance(raw_value, os.PathLike):
         return MetadataValue.path(raw_value)
@@ -307,9 +307,9 @@ class MetadataValue(ABC):
 
     @public
     @staticmethod
-    def json(data: Mapping[str, Any]) -> "JsonMetadataValue":
-        """Static constructor for a metadata value wrapping a path as
-        :py:class:`JsonMetadataValue`. Can be used as the value type for the `metadata`
+    def json(data: Union[Sequence[Any], Mapping[str, Any]]) -> "JsonMetadataValue":
+        """Static constructor for a metadata value wrapping a json-serializable list or dict
+        as :py:class:`JsonMetadataValue`. Can be used as the value type for the `metadata`
         parameter for supported events. For example:
 
         .. code-block:: python
@@ -325,7 +325,7 @@ class MetadataValue(ABC):
                 )
 
         Args:
-            data (Dict[str, Any]): The JSON data for a metadata entry.
+            data (Union[Sequence[Any], Mapping[str, Any]]): The JSON data for a metadata entry.
         """
         return JsonMetadataValue(data)
 
@@ -675,7 +675,7 @@ class JsonMetadataValue(
     NamedTuple(
         "_JsonMetadataValue",
         [
-            ("data", PublicAttr[Mapping[str, Any]]),
+            ("data", PublicAttr[Optional[Union[Sequence[Any], Mapping[str, Any]]]]),
         ],
     ),
     MetadataValue,
@@ -686,8 +686,8 @@ class JsonMetadataValue(
         data (Dict[str, Any]): The JSON data.
     """
 
-    def __new__(cls, data: Optional[Mapping[str, Any]]):
-        data = check.opt_mapping_param(data, "data", key_type=str)
+    def __new__(cls, data: Optional[Union[Sequence[Any], Mapping[str, Any]]]):
+        data = check.opt_inst_param(data, "data", (Sequence, Mapping))
         try:
             # check that the value is JSON serializable
             seven.dumps(data)
@@ -697,7 +697,7 @@ class JsonMetadataValue(
 
     @public  # type: ignore
     @property
-    def value(self) -> Mapping[str, Any]:
+    def value(self) -> Optional[Union[Sequence[Any], Mapping[str, Any]]]:
         return self.data
 
 
@@ -1174,7 +1174,7 @@ class MetadataEntry(
                 )
 
         Args:
-            data (Optional[Dict[str, Any]]): The JSON data contained by this metadata entry.
+            data (Optional[Union[Sequence[Any], Mapping[str, Any]]]): The JSON data contained by this metadata entry.
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
