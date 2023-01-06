@@ -777,7 +777,8 @@ def make_dagster_solid_from_airflow_task(
             )
         except OverflowError:
             raise DagsterInvariantViolationError(
-                'Date "{execution_date_str}" exceeds the largest valid C integer on the system.'.format(
+                'Date "{execution_date_str}" exceeds the largest valid C integer on the system.'
+                .format(
                     execution_date_str=execution_date_str,
                 )
             )

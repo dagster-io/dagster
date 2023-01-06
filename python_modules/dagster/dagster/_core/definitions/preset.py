@@ -57,7 +57,6 @@ class PresetDefinition(
         mode: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
     ):
-
         return super(PresetDefinition, cls).__new__(
             cls,
             name=check_valid_name(name),

@@ -104,10 +104,13 @@ class ColumnConstraintViolationException(ConstraintViolationException):
         super(ColumnConstraintViolationException, self).__init__(self.construct_message())
 
     def construct_message(self):
-        base_message = 'Violated "{constraint_name}" for column "{column_name}" - {constraint_description}'.format(
-            constraint_name=self.constraint_name,
-            constraint_description=self.constraint_description,
-            column_name=self.column_name,
+        base_message = (
+            'Violated "{constraint_name}" for column "{column_name}" - {constraint_description}'
+            .format(
+                constraint_name=self.constraint_name,
+                constraint_description=self.constraint_description,
+                column_name=self.column_name,
+            )
         )
         if self.offending_rows is not None:
             base_message += "The offending (index, row values) are the following: {}".format(
@@ -235,7 +238,6 @@ class MultiConstraintWithMetadata(ConstraintWithMetadata):
         validation_fn_arr = check.list_param(validation_fn_arr, "validation_fn_arr")
 
         def validation_fn(data, *args, **kwargs):
-
             results = [f(data, *args, **kwargs) for f in validation_fn_arr]
             truthparam = all(item[0] for item in results)
             metadict = defaultdict(dict)
@@ -337,8 +339,11 @@ class StrictColumnsConstraint(DataFrameConstraint):
             if self.strict_column_list != columns_received:
                 raise DataFrameConstraintViolationException(
                     constraint_name=self.name,
-                    constraint_description="Expected the following ordering of columns {expected}. Received: {received}".format(
-                        expected=self.strict_column_list, received=columns_received
+                    constraint_description=(
+                        "Expected the following ordering of columns {expected}. Received:"
+                        " {received}".format(
+                            expected=self.strict_column_list, received=columns_received
+                        )
                     ),
                 )
         for column in columns_received:
@@ -382,10 +387,12 @@ class RowCountConstraint(DataFrameConstraint):
         ):
             raise DataFrameConstraintViolationException(
                 constraint_name=self.name,
-                constraint_description="Expected {expected} +- {tolerance} rows. Got {received}".format(
-                    expected=self.num_allowed_rows,
-                    tolerance=self.error_tolerance,
-                    received=len(dataframe),
+                constraint_description=(
+                    "Expected {expected} +- {tolerance} rows. Got {received}".format(
+                        expected=self.num_allowed_rows,
+                        tolerance=self.error_tolerance,
+                        received=len(dataframe),
+                    )
                 ),
             )
 
@@ -955,8 +962,10 @@ class ColumnDTypeInSetConstraint(ColumnConstraint):
         if str(received_dtypes) not in self.expected_dtype_set:
             raise ColumnConstraintViolationException(
                 constraint_name=self.name,
-                constraint_description="{base_error_message}. DTypes received: {received_dtypes}".format(
-                    base_error_message=self.error_description, received_dtypes=received_dtypes
+                constraint_description=(
+                    "{base_error_message}. DTypes received: {received_dtypes}".format(
+                        base_error_message=self.error_description, received_dtypes=received_dtypes
+                    )
                 ),
                 column_name=column_name,
             )

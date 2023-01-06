@@ -119,7 +119,6 @@ def result_to_events(
     node_resource_type = _resource_type(unique_id)
 
     if node_resource_type in ASSET_RESOURCE_TYPES and status == "success":
-
         if generate_asset_outputs:
             yield Output(
                 value=None,
@@ -159,7 +158,6 @@ def generate_events(
     node_info_to_asset_key: Optional[Callable[[Mapping[str, Any]], AssetKey]] = None,
     manifest_json: Optional[Mapping[str, Any]] = None,
 ) -> Iterator[Union[AssetMaterialization, AssetObservation]]:
-
     """
     This function yields :py:class:`dagster.AssetMaterialization` events for each model updated by
     a dbt command, and :py:class:`dagster.AssetObservation` events for each test run.

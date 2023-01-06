@@ -34,9 +34,7 @@ def get_step_keys_to_execute(pipeline, run_config, mode, instance):
 
 def test_dev_loop_changing_versions():
     with tempfile.TemporaryDirectory() as temp_dir:
-
         with instance_for_test(temp_dir=temp_dir) as instance:
-
             run_config = {
                 "solids": {
                     "create_string_1_asset": {"config": {"input_str": "apple"}},
@@ -390,7 +388,10 @@ def test_dynamic_memoization_error():
         for cur_graph in [dynamic_graph, just_mapping_graph]:
             with pytest.raises(
                 DagsterInvariantViolationError,
-                match="Attempted to use memoization with dynamic orchestration, which is not yet supported.",
+                match=(
+                    "Attempted to use memoization with dynamic orchestration, which is not yet"
+                    " supported."
+                ),
             ):
                 my_job = cur_graph.to_job(
                     version_strategy=MyVersionStrategy(),

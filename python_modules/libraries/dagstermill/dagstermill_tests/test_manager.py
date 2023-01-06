@@ -127,7 +127,7 @@ def test_yield_unserializable_result():
 def test_in_job_manager_bad_solid():
     with pytest.raises(
         check.CheckError,
-        match=("hello_world_job has no op named foobar"),
+        match="hello_world_job has no op named foobar",
     ):
         with in_job_manager(solid_handle=NodeHandle("foobar", None)) as _manager:
             pass

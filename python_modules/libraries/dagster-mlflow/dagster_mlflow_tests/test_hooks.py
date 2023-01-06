@@ -7,7 +7,6 @@ from dagster._legacy import InputDefinition, ModeDefinition, execute_pipeline, p
 
 
 def test_cleanup_on_success():
-
     # Given: - two mock solids
     mock_solid_1 = Mock(name="solid_1")
     mock_solid_2 = Mock(name="solid_2")

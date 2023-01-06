@@ -98,7 +98,6 @@ def test_basic_partitioning_workflow():
     )
 
     with DagsterInstance.ephemeral() as dev_instance, DagsterInstance.ephemeral() as prod_instance:
-
         # Simulate a full prod run. All partitions are full
         prod_runner = DefinitionsRunner(prod_defs, prod_instance)
         prod_runner.materialize_all_assets(partition_key="A")

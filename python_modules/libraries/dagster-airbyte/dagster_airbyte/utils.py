@@ -31,7 +31,6 @@ def _materialization_for_stream(
     stream_stats: Mapping[str, Any],
     asset_key_prefix: Sequence[str],
 ) -> AssetMaterialization:
-
     return AssetMaterialization(
         asset_key=[*asset_key_prefix, name],
         metadata={

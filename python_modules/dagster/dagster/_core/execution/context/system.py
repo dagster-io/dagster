@@ -313,7 +313,6 @@ class PlanExecutionContext(IPlanContext):
         step: ExecutionStep,
         known_state: Optional["KnownExecutionState"] = None,
     ) -> IStepContext:
-
         return StepExecutionContext(
             plan_data=self.plan_data,
             execution_data=self._execution_data,
@@ -393,7 +392,10 @@ class PlanExecutionContext(IPlanContext):
 
         if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
             check.failed(
-                f"Expected a TimeWindowPartitionsDefinition, but instead found {type(partitions_def)}",
+                (
+                    "Expected a TimeWindowPartitionsDefinition, but instead found"
+                    f" {type(partitions_def)}"
+                ),
             )
 
         # mypy thinks partitions_def is <nothing> here because ????
@@ -646,7 +648,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def get_known_state(self) -> "KnownExecutionState":
         if not self._known_state:
             check.failed(
-                "Attempted to access KnownExecutionState but it was not provided at context creation"
+                "Attempted to access KnownExecutionState but it was not provided at context"
+                " creation"
             )
         return self._known_state
 
@@ -688,13 +691,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         output_name: Optional[str] = None,
         mapping_key: Optional[str] = None,
     ) -> None:
-
         if output_name is None and len(self.solid_def.output_defs) == 1:
             output_def = self.solid_def.output_defs[0]
             output_name = output_def.name
         elif output_name is None:
             raise DagsterInvariantViolationError(
-                "Attempted to log metadata without providing output_name, but multiple outputs exist. Please provide an output_name to the invocation of `context.add_output_metadata`."
+                "Attempted to log metadata without providing output_name, but multiple outputs"
+                " exist. Please provide an output_name to the invocation of"
+                " `context.add_output_metadata`."
             )
         else:
             output_def = self.solid_def.output_def_named(output_name)
@@ -706,17 +710,22 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 else f"output '{output_def.name}' with mapping_key '{mapping_key}'"
             )
             raise DagsterInvariantViolationError(
-                f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log output metadata for {output_desc} which has already been yielded. Metadata must be logged before the output is yielded."
+                f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log output"
+                f" metadata for {output_desc} which has already been yielded. Metadata must be"
+                " logged before the output is yielded."
             )
         if output_def.is_dynamic and not mapping_key:
             raise DagsterInvariantViolationError(
-                f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log metadata for dynamic output '{output_def.name}' without providing a mapping key. When logging metadata for a dynamic output, it is necessary to provide a mapping key."
+                f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log metadata"
+                f" for dynamic output '{output_def.name}' without providing a mapping key. When"
+                " logging metadata for a dynamic output, it is necessary to provide a mapping key."
             )
 
         if output_name in self._output_metadata:
             if not mapping_key or mapping_key in self._output_metadata[output_name]:
                 raise DagsterInvariantViolationError(
-                    f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log metadata for output '{output_name}' more than once."
+                    f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log"
+                    f" metadata for output '{output_name}' more than once."
                 )
         if mapping_key:
             if not output_name in self._output_metadata:
@@ -735,12 +744,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return metadata
 
     def _get_source_run_id_from_logs(self, step_output_handle: StepOutputHandle) -> Optional[str]:
-
         # walk through event logs to find the right run_id based on the run lineage
 
         parent_state = self.get_known_state().parent_state
         while parent_state:
-
             # if the parent run has yielded an StepOutput event for the given step output,
             # we find the source run id
             if step_output_handle in parent_state.produced_outputs:
@@ -901,8 +908,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         if len(partition_key_ranges) != 1:
             check.failed(
-                "Tried to access asset partition key range, but there are "
-                f"({len(partition_key_ranges)}) key ranges associated with this input.",
+                (
+                    "Tried to access asset partition key range, but there are "
+                    f"({len(partition_key_ranges)}) key ranges associated with this input."
+                ),
             )
 
         return partition_key_ranges[0]
@@ -943,8 +952,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             return start
         else:
             check.failed(
-                f"Tried to access partition key for input '{input_name}' of step '{self.step.key}', "
-                f"but the step input has a partition range: '{start}' to '{end}'."
+                f"Tried to access partition key for input '{input_name}' of step '{self.step.key}',"
+                f" but the step input has a partition range: '{start}' to '{end}'."
             )
 
     def _partitions_def_for_output(self, output_name: str) -> Optional[PartitionsDefinition]:
@@ -971,8 +980,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             return start
         else:
             check.failed(
-                f"Tried to access partition key for output '{output_name}' of step '{self.step.key}', "
-                f"but the step output has a partition range: '{start}' to '{end}'."
+                f"Tried to access partition key for output '{output_name}' of step"
+                f" '{self.step.key}', but the step output has a partition range: '{start}' to"
+                f" '{end}'."
             )
 
     def asset_partitions_time_window_for_output(self, output_name: str) -> TimeWindow:
@@ -1004,7 +1014,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def get_input_lineage(self) -> Sequence[AssetLineageInfo]:
         if not self._input_lineage:
-
             for step_input in self.step.step_inputs:
                 input_def = self.solid_def.input_def_named(step_input.name)
                 dagster_type = input_def.dagster_type
@@ -1103,7 +1112,8 @@ class DagsterTypeMaterializerContext(StepExecutionContext):
     @public  # type: ignore
     @property
     def resources(self) -> "Resources":
-        """The resources available to the type materializer, specified by the `required_resource_keys` argument of the decorator."""
+        """The resources available to the type materializer, specified by the `required_resource_keys` argument of the decorator.
+        """
         return super(DagsterTypeMaterializerContext, self).resources
 
     @public  # type: ignore
@@ -1128,7 +1138,8 @@ class DagsterTypeLoaderContext(StepExecutionContext):
     @public  # type: ignore
     @property
     def resources(self) -> "Resources":
-        """The resources available to the type loader, specified by the `required_resource_keys` argument of the decorator."""
+        """The resources available to the type loader, specified by the `required_resource_keys` argument of the decorator.
+        """
         return super(DagsterTypeLoaderContext, self).resources
 
     @public  # type: ignore

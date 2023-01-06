@@ -117,7 +117,6 @@ final: "result"
 
 
 def test_dump_octal_string():
-
     octal_str_list = {"keys": ["0001823", "0001234"]}
 
     # normal dump parses the first string as an int

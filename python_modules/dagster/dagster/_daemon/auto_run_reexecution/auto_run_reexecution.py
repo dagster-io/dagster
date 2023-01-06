@@ -105,7 +105,10 @@ def retry_run(
 
     if not repo_location.has_repository(repo_name):
         instance.report_engine_event(
-            f"Could not find repository {repo_name} in location {repo_location.name}, unable to retry the run. It was likely renamed or deleted.",
+            (
+                f"Could not find repository {repo_name} in location {repo_location.name}, unable to"
+                " retry the run. It was likely renamed or deleted."
+            ),
             failed_run,
         )
         return
@@ -114,7 +117,10 @@ def retry_run(
 
     if not external_repo.has_external_job(failed_run.pipeline_name):
         instance.report_engine_event(
-            f"Could not find job {failed_run.pipeline_name} in repository {repo_name}, unable to retry the run. It was likely renamed or deleted.",
+            (
+                f"Could not find job {failed_run.pipeline_name} in repository {repo_name}, unable"
+                " to retry the run. It was likely renamed or deleted."
+            ),
             failed_run,
         )
         return
@@ -167,7 +173,6 @@ def consume_new_runs_for_automatic_reexecution(
         workspace_process_context.instance,
         workspace_process_context.instance.run_retries_max_retries,
     ):
-
         yield
 
         try:

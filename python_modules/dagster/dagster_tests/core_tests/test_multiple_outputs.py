@@ -152,7 +152,6 @@ def test_multiple_outputs_only_emit_one():
 
 def test_multiple_outputs_only_emit_one_multiproc():
     with instance_for_test() as instance:
-
         pipe = reconstructable(define_multi_out)
         result = execute_pipeline(
             pipe,

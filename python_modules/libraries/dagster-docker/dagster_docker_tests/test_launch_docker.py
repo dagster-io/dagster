@@ -57,7 +57,6 @@ def test_launch_docker_no_network(aws_env):
         with get_test_project_workspace_and_external_pipeline(
             instance, "demo_pipeline_s3", container_image=docker_image
         ) as (workspace, orig_pipeline):
-
             external_pipeline = ReOriginatedExternalPipelineForTest(
                 orig_pipeline,
                 container_image=docker_image,
@@ -141,7 +140,6 @@ def test_launch_docker_image_on_pipeline_config(aws_env):
             with get_test_project_workspace_and_external_pipeline(
                 instance, "demo_pipeline_s3", container_image=docker_image
             ) as (workspace, orig_pipeline):
-
                 external_pipeline = ReOriginatedExternalPipelineForTest(
                     orig_pipeline,
                     container_image=docker_image,

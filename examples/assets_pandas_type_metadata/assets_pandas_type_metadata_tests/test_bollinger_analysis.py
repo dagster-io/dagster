@@ -9,7 +9,10 @@ from dagster import AssetSelection, define_asset_job, with_resources
 
 
 def test_bollinger_analysis():
-    bollinger_sda = define_asset_job("test_job", AssetSelection.all(),).resolve(
+    bollinger_sda = define_asset_job(
+        "test_job",
+        AssetSelection.all(),
+    ).resolve(
         with_resources(
             [sp500_anomalous_events, sp500_bollinger_bands, sp500_prices],
             {"io_manager": local_csv_io_manager},

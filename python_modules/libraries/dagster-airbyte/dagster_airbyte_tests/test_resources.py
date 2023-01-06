@@ -290,7 +290,6 @@ def test_logging_multi_attempts(capsys):
     [True, False],
 )
 def test_assets(forward_logs):
-
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={

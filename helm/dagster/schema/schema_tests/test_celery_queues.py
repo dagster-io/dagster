@@ -81,7 +81,6 @@ def test_celery_queue_image(deployment_template: HelmTemplate):
 def test_celery_queue_inherit_config_source(
     deployment_template: HelmTemplate, celery_queue_configmap_template: HelmTemplate
 ):
-
     configSource = {
         "broker_transport_options": {"priority_steps": [9]},
         "worker_concurrency": 1,
@@ -136,7 +135,10 @@ def test_celery_queue_inherit_config_source(
     liveness_command = [
         "/bin/sh",
         "-c",
-        'dagster-celery status -A dagster_celery_k8s.app -y /opt/dagster/dagster_home/celery-config.yaml | grep "${HOSTNAME}:.*OK"',
+        (
+            "dagster-celery status -A dagster_celery_k8s.app -y"
+            ' /opt/dagster/dagster_home/celery-config.yaml | grep "${HOSTNAME}:.*OK"'
+        ),
     ]
 
     assert (

@@ -67,6 +67,7 @@ def _build_steps_from_package_specs(package_specs: List[PackageSpec]) -> List[Bu
 
 _PACKAGE_TYPE_ORDER = ["core", "extension", "example", "infrastructure", "unknown"]
 
+
 # Find packages under a root subdirectory that are not configured above.
 def _get_uncustomized_pkg_roots(root, custom_pkg_roots) -> List[str]:
     all_files_in_root = [

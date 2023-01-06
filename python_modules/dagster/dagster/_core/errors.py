@@ -109,7 +109,8 @@ class DagsterInvalidConfigDefinitionError(DagsterError):
             (
                 "Error defining config. Original value passed: {original_root}. "
                 "{stack_str}{current_value} "
-                "cannot be resolved.{reason_str}" + CONFIG_ERROR_VERBIAGE
+                "cannot be resolved.{reason_str}"
+                + CONFIG_ERROR_VERBIAGE
             ).format(
                 original_root=repr(original_root),
                 stack_str="Error at stack path :" + ":".join(stack) + ". " if stack else "",
@@ -405,7 +406,8 @@ class DagsterUserCodeProcessError(DagsterError):
 
 
 class DagsterMaxRetriesExceededError(DagsterError):
-    """Raised when raise_on_error is true, and retries were exceeded, this error should be raised."""
+    """Raised when raise_on_error is true, and retries were exceeded, this error should be raised.
+    """
 
     def __init__(self, *args, **kwargs):
         from dagster._utils.error import SerializableErrorInfo

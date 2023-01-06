@@ -7,8 +7,7 @@ def daily_schedule_definition_from_pipeline_preset(pipeline, preset_name, start_
     preset = pipeline.get_preset(preset_name)
     if not preset:
         raise Exception(
-            "Preset {preset_name} was not found "
-            "on pipeline {pipeline_name}".format(
+            "Preset {preset_name} was not found on pipeline {pipeline_name}".format(
                 preset_name=preset_name, pipeline_name=pipeline.name
             )
         )

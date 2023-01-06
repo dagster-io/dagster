@@ -92,16 +92,14 @@ def check_repo_and_scheduler(repository: ExternalRepository, instance: DagsterIn
 
     if not os.getenv("DAGSTER_HOME"):
         raise click.UsageError(
-            (
-                "The environment variable $DAGSTER_HOME is not set. Dagster requires this "
-                "environment variable to be set to an existing directory in your filesystem "
-                "that contains your dagster instance configuration file (dagster.yaml).\n"
-                "You can resolve this error by exporting the environment variable."
-                "For example, you can run the following command in your shell or "
-                "include it in your shell configuration file:\n"
-                '\texport DAGSTER_HOME="~/dagster_home"'
-                "\n\n"
-            )
+            "The environment variable $DAGSTER_HOME is not set. Dagster requires this "
+            "environment variable to be set to an existing directory in your filesystem "
+            "that contains your dagster instance configuration file (dagster.yaml).\n"
+            "You can resolve this error by exporting the environment variable."
+            "For example, you can run the following command in your shell or "
+            "include it in your shell configuration file:\n"
+            '\texport DAGSTER_HOME="~/dagster_home"'
+            "\n\n"
         )
 
 
@@ -307,7 +305,8 @@ def execute_preview_command(
                 if not sensor_runtime_data.run_requests:
                     if sensor_runtime_data.skip_message:
                         print_fn(
-                            "Sensor returned false for {sensor_name}, skipping: {skip_message}".format(
+                            "Sensor returned false for {sensor_name}, skipping: {skip_message}"
+                            .format(
                                 sensor_name=external_sensor.name,
                                 skip_message=sensor_runtime_data.skip_message,
                             )

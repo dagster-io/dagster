@@ -533,7 +533,6 @@ def test_retries(capsys):
     with exec_for_test(
         "retries_job", {"execution": {"config": {"in_process": {}}}}, raise_on_error=False
     ) as result:
-
         assert result.result_for_node("yield_retry").retry_attempts == 1
 
         # the raise_retry op should trigger a warning to use yield_event

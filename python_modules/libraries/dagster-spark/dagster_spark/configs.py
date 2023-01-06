@@ -54,7 +54,10 @@ def define_spark_config():
 
     spark_home = Field(
         StringSource,
-        description="The path to your spark installation. Defaults to $SPARK_HOME at runtime if not provided.",
+        description=(
+            "The path to your spark installation. Defaults to $SPARK_HOME at runtime if not"
+            " provided."
+        ),
         is_required=False,
     )
 

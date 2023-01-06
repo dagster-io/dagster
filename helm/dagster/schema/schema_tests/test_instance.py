@@ -255,7 +255,6 @@ def _check_valid_run_launcher_yaml(dagster_config):
 
 
 def test_k8s_run_launcher_scheduler_name(template: HelmTemplate):
-
     helm_values = DagsterHelmValues.construct(
         runLauncher=RunLauncher.construct(
             type=RunLauncherType.K8S,
@@ -313,7 +312,6 @@ def test_k8s_run_launcher_security_context(template: HelmTemplate):
 
 
 def test_k8s_run_launcher_raw_k8s_config(template: HelmTemplate):
-
     container_config = {
         "resources": {
             "requests": {"cpu": "250m", "memory": "64Mi"},

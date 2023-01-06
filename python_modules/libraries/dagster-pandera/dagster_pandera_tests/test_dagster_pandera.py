@@ -72,7 +72,6 @@ def make_schema_model_config(**config_attrs):
 
 def sample_schema_model(**config_attrs):
     class SampleSchemaModel(pa.SchemaModel):
-
         a: pa.typing.Series[int] = pa.Field(le=10, description="a desc")
         b: pa.typing.Series[float] = pa.Field(lt=-1.2, description="b desc")
         c: pa.typing.Series[str] = pa.Field(str_startswith="value_", description="c desc")

@@ -378,7 +378,10 @@ def pack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -
         klass_name = val.__class__.__name__
         if not whitelist_map.has_tuple_entry(klass_name):
             raise SerializationError(
-                f"Can only serialize whitelisted namedtuples, received {val}.{_path_msg(descent_path)}",
+                (
+                    "Can only serialize whitelisted namedtuples, received"
+                    f" {val}.{_path_msg(descent_path)}"
+                ),
             )
         val = cast(NamedTuple, val)
         _, serializer, _ = whitelist_map.get_tuple_entry(klass_name)
@@ -387,7 +390,10 @@ def pack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -
         klass_name = val.__class__.__name__
         if not whitelist_map.has_enum_entry(klass_name):
             raise SerializationError(
-                f"Can only serialize whitelisted Enums, received {klass_name}.{_path_msg(descent_path)}",
+                (
+                    "Can only serialize whitelisted Enums, received"
+                    f" {klass_name}.{_path_msg(descent_path)}"
+                ),
             )
         _, enum_serializer = whitelist_map.get_enum_entry(klass_name)
         return {"__enum__": enum_serializer.value_to_storage_str(val, whitelist_map, descent_path)}
@@ -434,7 +440,8 @@ def deserialize_json_to_dagster_namedtuple(
 
     if not isinstance(dagster_namedtuple, tuple):
         raise DeserializationError(
-            f"Output of deserialized json_str was not expected type of tuple. Received type {type(dagster_namedtuple)}."
+            "Output of deserialized json_str was not expected type of tuple. Received type"
+            f" {type(dagster_namedtuple)}."
         )
 
     return dagster_namedtuple
@@ -625,7 +632,6 @@ def _check_serdes_tuple_class_invariants(klass, sig_params):
     value_params = dunder_new_params[1:]
 
     for index, field in enumerate(klass._fields):
-
         if index >= len(value_params):
             error_msg = (
                 "Missing parameters to __new__. You have declared fields "

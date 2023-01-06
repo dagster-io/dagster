@@ -130,7 +130,6 @@ class GrapheneAssetNodeDefinitionCollision(graphene.ObjectType):
 
 
 class GrapheneAssetNode(graphene.ObjectType):
-
     _depended_by_loader: Optional[CrossRepoAssetDependedByLoader]
     _external_asset_node: ExternalAssetNode
     _node_definition_snap: Optional[Union[CompositeSolidDefSnap, SolidDefSnap]]
@@ -330,7 +329,6 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_assetMaterializations(
         self, graphene_info, **kwargs
     ) -> Sequence[GrapheneMaterializationEvent]:
-
         beforeTimestampMillis: Optional[str] = kwargs.get("beforeTimestampMillis")
         try:
             before_timestamp = (
@@ -432,7 +430,10 @@ class GrapheneAssetNode(graphene.ObjectType):
         else:
             loader = check.not_none(
                 self._projected_logical_version_loader,
-                "projected_logical_version_loader must exist in order to resolve projected logical versions",
+                (
+                    "projected_logical_version_loader must exist in order to resolve projected"
+                    " logical versions"
+                ),
             )
             return loader.get(self.external_asset_node.asset_key)
 
@@ -558,7 +559,6 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_latestMaterializationByPartition(
         self, graphene_info, **kwargs
     ) -> Sequence[Optional[GrapheneMaterializationEvent]]:
-
         get_partition = (
             lambda event: event.dagster_event.step_materialization_data.materialization.partition
         )

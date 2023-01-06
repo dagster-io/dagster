@@ -14,7 +14,6 @@ from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
 
 
 class PipelineIndex:
-
     pipeline_snapshot: PipelineSnapshot
     parent_pipeline_snapshot: Optional[PipelineSnapshot]
     _node_defs_snaps_index: Mapping[str, Union[SolidDefSnap, CompositeSolidDefSnap]]
@@ -38,7 +37,10 @@ class PipelineIndex:
         if self.pipeline_snapshot.lineage_snapshot:
             check.invariant(
                 self.parent_pipeline_snapshot is not None,
-                "Can not create PipelineIndex for pipeline_snapshot with lineage without parent_pipeline_snapshot",
+                (
+                    "Can not create PipelineIndex for pipeline_snapshot with lineage without"
+                    " parent_pipeline_snapshot"
+                ),
             )
 
         node_def_snaps: Sequence[Union[SolidDefSnap, CompositeSolidDefSnap]] = [

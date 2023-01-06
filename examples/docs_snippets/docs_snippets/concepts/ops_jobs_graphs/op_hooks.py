@@ -128,6 +128,7 @@ def test_my_success_hook():
 
 # end_testing_hooks
 
+
 # start_repo_marker_1_with_configured
 @job(
     resource_defs={

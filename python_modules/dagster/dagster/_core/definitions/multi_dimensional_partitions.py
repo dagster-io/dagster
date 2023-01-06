@@ -136,8 +136,9 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     def __init__(self, partitions_defs: Mapping[str, PartitionsDefinition]):
         if not len(partitions_defs.keys()) == 2:
             raise DagsterInvalidInvocationError(
-                "Dagster currently only supports multi-partitions definitions with 2 partitions definitions. "
-                f"Your multi-partitions definition has {len(partitions_defs.keys())} partitions definitions."
+                "Dagster currently only supports multi-partitions definitions with 2 partitions"
+                " definitions. Your multi-partitions definition has"
+                f" {len(partitions_defs.keys())} partitions definitions."
             )
         check.mapping_param(
             partitions_defs, "partitions_defs", key_type=str, value_type=PartitionsDefinition
@@ -240,8 +241,10 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         partition_key_strs = partition_key_str.split("|")
         check.invariant(
             len(partition_key_strs) == len(self.partitions_defs),
-            f"Expected {len(self.partitions_defs)} partition keys in partition key string {partition_key_str}, "
-            f"but got {len(partition_key_strs)}",
+            (
+                f"Expected {len(self.partitions_defs)} partition keys in partition key string"
+                f" {partition_key_str}, but got {len(partition_key_strs)}"
+            ),
         )
         keys_per_dimension = [
             (dim.name, dim.partitions_def.get_partition_keys()) for dim in self._partitions_defs

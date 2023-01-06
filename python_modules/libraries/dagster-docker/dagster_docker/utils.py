@@ -16,7 +16,9 @@ DOCKER_CONFIG_SCHEMA = merge_dicts(
         "network": Field(
             StringSource,
             is_required=False,
-            description="Name of the network to which to connect the launched container at creation time",
+            description=(
+                "Name of the network to which to connect the launched container at creation time"
+            ),
         ),
     },
     DOCKER_CONTAINER_CONTEXT_SCHEMA,
@@ -35,12 +37,14 @@ def validate_docker_config(network, networks, container_kwargs):
 
         if "environment" in container_kwargs:
             raise Exception(
-                "'environment' cannot be used in 'container_kwargs'. Use the 'env_vars' config key instead."
+                "'environment' cannot be used in 'container_kwargs'. Use the 'env_vars' config key"
+                " instead."
             )
 
         if "network" in container_kwargs:
             raise Exception(
-                "'network' cannot be used in 'container_kwargs'. Use the 'networks' config key instead."
+                "'network' cannot be used in 'container_kwargs'. Use the 'networks' config key"
+                " instead."
             )
 
 

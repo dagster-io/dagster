@@ -312,7 +312,6 @@ class SqlEventLogStorage(EventLogStorage):
             )
             and event.dagster_event.step_materialization_data.materialization.tags
         ):
-
             if not self.has_table(AssetEventTagsTable.name):
                 # If tags table does not exist, silently exit. This is to support OSS
                 # users who have not yet run the migration to create the table.

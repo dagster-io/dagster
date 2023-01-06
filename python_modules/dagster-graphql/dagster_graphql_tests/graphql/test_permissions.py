@@ -153,7 +153,10 @@ class TestPermissionsQuery(NonLaunchableGraphQLContextTestMatrix):
 
         with pytest.raises(
             Exception,
-            match="Don't check a PermissionResult for truthiness - check the `enabled` property instead",
+            match=(
+                "Don't check a PermissionResult for truthiness - check the `enabled` property"
+                " instead"
+            ),
         ):
             if permission_result:
                 pass

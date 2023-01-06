@@ -88,7 +88,7 @@ def host_mode_execution_context_event_generator(
 
     loggers = []
 
-    for (logger_def, logger_config) in default_system_loggers(instance):
+    for logger_def, logger_config in default_system_loggers(instance):
         loggers.append(
             logger_def.logger_fn(
                 InitLoggerContext(
@@ -137,8 +137,9 @@ def host_mode_execution_context_event_generator(
             event = DagsterEvent.pipeline_failure(
                 pipeline_context_or_name=pipeline_run.pipeline_name,
                 context_msg=(
-                    f'Pipeline failure during initialization for pipeline "{pipeline_run.pipeline_name}". '
-                    "This may be due to a failure in initializing the executor or one of the loggers."
+                    "Pipeline failure during initialization for pipeline"
+                    f' "{pipeline_run.pipeline_name}". This may be due to a failure in initializing'
+                    " the executor or one of the loggers."
                 ),
                 error_info=error_info,
             )

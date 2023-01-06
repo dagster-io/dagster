@@ -38,7 +38,9 @@ class ExecutorRequirement(PyEnum):
     """
 
     # The passed in IPipeline must be reconstructable across process boundaries
-    RECONSTRUCTABLE_PIPELINE = "RECONSTRUCTABLE_PIPELINE"  # This needs to still exist for folks who may have written their own executor
+    RECONSTRUCTABLE_PIPELINE = (  # This needs to still exist for folks who may have written their own executor
+        "RECONSTRUCTABLE_PIPELINE"
+    )
     RECONSTRUCTABLE_JOB = "RECONSTRUCTABLE_PIPELINE"
 
     # The DagsterInstance must be loadable in a different process
@@ -358,11 +360,11 @@ MULTI_PROC_CONFIG = Field(
                                 [str],
                                 is_required=False,
                                 description=(
-                                    "Explicitly specify the modules to preload in the forkserver. "
-                                    "Otherwise, there are two cases for default values if modules "
-                                    "are not specified. If the Dagster job was loaded from a module, "
-                                    "the same module will be preloaded. If not, the `dagster` module "
-                                    "is preloaded."
+                                    "Explicitly specify the modules to preload in the forkserver."
+                                    " Otherwise, there are two cases for default values if modules"
+                                    " are not specified. If the Dagster job was loaded from a"
+                                    " module, the same module will be preloaded. If not, the"
+                                    " `dagster` module is preloaded."
                                 ),
                             ),
                         },
@@ -438,11 +440,11 @@ def _check_intra_process_pipeline(pipeline: IPipeline) -> None:
     if not isinstance(pipeline, ReconstructablePipeline):
         target = "job" if isinstance(pipeline.get_definition(), JobDefinition) else "pipeline"
         raise DagsterUnmetExecutorRequirementsError(
-            'You have attempted to use an executor that uses multiple processes with the {target} "{name}" '
-            "that is not reconstructable. {target_cap} must be loaded in a way that allows dagster to reconstruct "
-            "them in a new process. This means: \n"
-            "  * using the file, module, or repository.yaml arguments of dagit/dagster-graphql/dagster\n"
-            "  * loading the {target} through the reconstructable() function\n".format(
+            "You have attempted to use an executor that uses multiple processes with the {target}"
+            ' "{name}" that is not reconstructable. {target_cap} must be loaded in a way that'
+            " allows dagster to reconstruct them in a new process. This means: \n  * using the"
+            " file, module, or repository.yaml arguments of dagit/dagster-graphql/dagster\n  *"
+            " loading the {target} through the reconstructable() function\n".format(
                 target=target, name=pipeline.get_definition().name, target_cap=target.capitalize()
             )
         )
@@ -451,12 +453,12 @@ def _check_intra_process_pipeline(pipeline: IPipeline) -> None:
 def _check_non_ephemeral_instance(instance: "DagsterInstance") -> None:
     if instance.is_ephemeral:
         raise DagsterUnmetExecutorRequirementsError(
-            "You have attempted to use an executor that uses multiple processes with an "
-            "ephemeral DagsterInstance. A non-ephemeral instance is needed to coordinate "
-            "execution between multiple processes. You can configure your default instance "
-            "via $DAGSTER_HOME or ensure a valid one is passed when invoking the python APIs. "
-            "You can learn more about setting up a persistent DagsterInstance from the "
-            "DagsterInstance docs here: https://docs.dagster.io/deployment/dagster-instance#default-local-behavior"
+            "You have attempted to use an executor that uses multiple processes with an ephemeral"
+            " DagsterInstance. A non-ephemeral instance is needed to coordinate execution between"
+            " multiple processes. You can configure your default instance via $DAGSTER_HOME or"
+            " ensure a valid one is passed when invoking the python APIs. You can learn more about"
+            " setting up a persistent DagsterInstance from the DagsterInstance docs here:"
+            " https://docs.dagster.io/deployment/dagster-instance#default-local-behavior"
         )
 
 

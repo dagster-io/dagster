@@ -177,7 +177,10 @@ def asset(
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         check.invariant(
             not (io_manager_key and io_manager_def),
-            "Both io_manager_key and io_manager_def were provided to `@asset` decorator. Please provide one or the other. ",
+            (
+                "Both io_manager_key and io_manager_def were provided to `@asset` decorator. Please"
+                " provide one or the other. "
+            ),
         )
         if resource_defs is not None:
             experimental_arg_warning("resource_defs", "asset")
@@ -273,7 +276,10 @@ class _Asset:
             )
             check.param_invariant(
                 len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
-                "Cannot specify resource requirements in both @asset decorator and as arguments to the decorated function",
+                (
+                    "Cannot specify resource requirements in both @asset decorator and as arguments"
+                    " to the decorated function"
+                ),
             )
 
             if isinstance(self.io_manager, str):
@@ -426,7 +432,6 @@ def multi_asset(
             )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
-
         op_name = name or fn.__name__
         asset_ins = build_asset_ins(
             fn, ins or {}, non_argument_deps=_make_asset_keys(non_argument_deps)
@@ -436,7 +441,10 @@ def multi_asset(
         arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
         check.param_invariant(
             len(required_resource_keys or []) == 0 or len(arg_resource_keys) == 0,
-            "Cannot specify resource requirements in both @multi_asset decorator and as arguments to the decorated function",
+            (
+                "Cannot specify resource requirements in both @multi_asset decorator and as"
+                " arguments to the decorated function"
+            ),
         )
 
         # validate that the asset_deps make sense
@@ -444,16 +452,21 @@ def multi_asset(
         for out_name, asset_keys in asset_deps.items():
             check.invariant(
                 out_name in outs,
-                f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for multi-asset "
-                f"{op_name}. Must be one of the outs for this multi-asset {list(outs.keys())}.",
+                (
+                    f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for"
+                    f" multi-asset {op_name}. Must be one of the outs for this multi-asset"
+                    f" {list(outs.keys())}."
+                ),
             )
             invalid_asset_deps = asset_keys.difference(valid_asset_deps)
             check.invariant(
                 not invalid_asset_deps,
-                f"Invalid asset dependencies: {invalid_asset_deps} specified in `internal_asset_deps` "
-                f"argument for multi-asset '{op_name}' on key '{out_name}'. Each specified asset key "
-                "must be associated with an input to the asset or produced by this asset. Valid "
-                f"keys: {valid_asset_deps}",
+                (
+                    f"Invalid asset dependencies: {invalid_asset_deps} specified in"
+                    f" `internal_asset_deps` argument for multi-asset '{op_name}' on key"
+                    f" '{out_name}'. Each specified asset key must be associated with an input to"
+                    f" the asset or produced by this asset. Valid keys: {valid_asset_deps}"
+                ),
             )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
@@ -489,8 +502,10 @@ def multi_asset(
         if group_name:
             check.invariant(
                 not group_names_by_key,
-                "Cannot set group_name parameter on multi_asset if one or more of the AssetOuts "
-                "supplied to this multi_asset have a group_name defined.",
+                (
+                    "Cannot set group_name parameter on multi_asset if one or more of the AssetOuts"
+                    " supplied to this multi_asset have a group_name defined."
+                ),
             )
             group_names_by_key = {
                 asset_key: group_name for asset_key in keys_by_output_name.values()

@@ -397,7 +397,6 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert valid_data["pipelineName"] == "more_complicated_nested_config"
 
     def test_multiple_missing_fields(self, graphql_context):
-
         result = execute_config_graphql(
             graphql_context,
             pipeline_name="more_complicated_nested_config",

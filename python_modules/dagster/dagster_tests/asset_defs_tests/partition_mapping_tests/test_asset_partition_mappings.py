@@ -486,7 +486,6 @@ def test_non_partitioned_depends_on_all_partitions():
 
 
 def test_partition_keys_in_range():
-
     daily_partition_keys_for_week_2022_09_11 = [
         "2022-09-11",
         "2022-09-12",

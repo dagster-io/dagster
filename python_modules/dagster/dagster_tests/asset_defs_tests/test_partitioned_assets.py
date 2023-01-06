@@ -579,7 +579,10 @@ def test_mismatched_job_partitioned_config_with_asset_partitions():
 
     with pytest.raises(
         CheckError,
-        match="Can't supply a PartitionedConfig for 'config' with a different PartitionsDefinition than supplied for 'partitions_def'.",
+        match=(
+            "Can't supply a PartitionedConfig for 'config' with a different PartitionsDefinition"
+            " than supplied for 'partitions_def'."
+        ),
     ):
         define_asset_job("job", config=myconfig).resolve([asset1], [])
 

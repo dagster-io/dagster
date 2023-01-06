@@ -167,7 +167,6 @@ class AssetSelection(ABC):
     def resolve(
         self, all_assets: Union[Sequence[Union[AssetsDefinition, SourceAsset]], AssetGraph]
     ) -> AbstractSet[AssetKey]:
-
         if isinstance(all_assets, AssetGraph):
             asset_graph = all_assets
         else:

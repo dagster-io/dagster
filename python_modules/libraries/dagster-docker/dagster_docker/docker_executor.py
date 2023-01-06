@@ -36,8 +36,10 @@ from .container_context import DockerContainerContext
             "max_concurrent": Field(
                 IntSource,
                 is_required=False,
-                description="Limit on the number of containers that will run concurrently within the scope "
-                "of a Dagster run. Note that this limit is per run, not global.",
+                description=(
+                    "Limit on the number of containers that will run concurrently within the scope "
+                    "of a Dagster run. Note that this limit is per run, not global."
+                ),
             ),
             "tag_concurrency_limits": get_tag_concurrency_limits_config(),
         },
@@ -265,7 +267,8 @@ class DockerStepHandler(StepHandler):
             container_info = container.wait(timeout=0.1)
         except Exception as e:
             raise Exception(
-                f"Container status is {container.status}. Raised exception attempting to get its return code."
+                f"Container status is {container.status}. Raised exception attempting to get its"
+                " return code."
             ) from e
 
         ret_code = container_info.get("StatusCode")

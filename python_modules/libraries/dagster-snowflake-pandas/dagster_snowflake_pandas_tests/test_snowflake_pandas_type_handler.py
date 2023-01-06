@@ -149,7 +149,6 @@ def test_io_manager_with_snowflake_pandas():
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
         column_str="foo string, quux integer",
     ) as table_name:
-
         # Create a job with the temporary table name as an output, so that it will write to that table
         # and not interfere with other runs of this test
 
@@ -195,7 +194,6 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
         column_str="foo string, date TIMESTAMP_NTZ(9)",
     ) as table_name:
-
         time_df = pandas.DataFrame(
             {
                 "foo": ["bar", "baz"],

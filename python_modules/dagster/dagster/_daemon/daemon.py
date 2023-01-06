@@ -84,7 +84,8 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
                             self._errors.appendleft((result, pendulum.now("UTC")))
                     except StopIteration:
                         self._logger.error(
-                            "Daemon loop finished without raising an error - daemon loops should run forever until they are interrupted."
+                            "Daemon loop finished without raising an error - daemon loops should"
+                            " run forever until they are interrupted."
                         )
                         break
                     except Exception:
@@ -148,10 +149,12 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
             and last_stored_heartbeat.daemon_id != daemon_uuid
         ):
             self._logger.error(
-                "Another %s daemon is still sending heartbeats. You likely have multiple "
-                "daemon processes running at once, which is not supported. "
-                "Last heartbeat daemon id: %s, "
-                "Current daemon_id: %s",
+                (
+                    "Another %s daemon is still sending heartbeats. You likely have multiple "
+                    "daemon processes running at once, which is not supported. "
+                    "Last heartbeat daemon id: %s, "
+                    "Current daemon_id: %s"
+                ),
                 daemon_type,
                 last_stored_heartbeat.daemon_id,
                 daemon_uuid,

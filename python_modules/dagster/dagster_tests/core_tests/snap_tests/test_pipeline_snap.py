@@ -45,7 +45,6 @@ def test_empty_pipeline_snap_snapshot(snapshot):
 
 
 def test_empty_pipeline_snap_props(snapshot):
-
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(get_noop_pipeline())
 
     assert pipeline_snapshot.name == "noop_job"

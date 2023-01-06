@@ -2,7 +2,6 @@ from docs_snippets.concepts.configuration.configured_named_op_example import dat
 
 
 def test_job():
-
     result = datasets.execute_in_process(
         run_config={
             "ops": {

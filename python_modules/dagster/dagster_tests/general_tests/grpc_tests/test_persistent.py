@@ -61,7 +61,6 @@ def test_load_grpc_server(capfd):
     process = subprocess.Popen(subprocess_args)
 
     try:
-
         client = DagsterGrpcClient(port=port, host="localhost")
 
         wait_for_grpc_server(process, client, subprocess_args)
@@ -95,7 +94,6 @@ def test_python_environment_args():
     )
 
     with instance_for_test() as instance:
-
         process = None
         try:
             process = open_server_process(
@@ -149,7 +147,6 @@ def test_load_grpc_server_python_env():
     process = subprocess.Popen(subprocess_args)
 
     try:
-
         client = DagsterGrpcClient(port=port, host="localhost")
 
         wait_for_grpc_server(process, client, subprocess_args)
@@ -271,7 +268,10 @@ def test_load_with_invalid_param(capfd):
     try:
         with pytest.raises(
             Exception,
-            match='gRPC server exited with return code 2 while starting up with the command: "dagster api grpc --port',
+            match=(
+                'gRPC server exited with return code 2 while starting up with the command: "dagster'
+                " api grpc --port"
+            ),
         ):
             wait_for_grpc_server(
                 process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
@@ -421,11 +421,11 @@ def test_crash_during_load():
         stdout=subprocess.PIPE,
     )
     try:
-
         with pytest.raises(
             Exception,
             match=re.escape(
-                'gRPC server exited with return code 123 while starting up with the command: "dagster api grpc --port'
+                "gRPC server exited with return code 123 while starting up with the command:"
+                ' "dagster api grpc --port'
             ),
         ):
             wait_for_grpc_server(
@@ -811,7 +811,6 @@ def test_load_with_container_context(capfd):
     process = subprocess.Popen(subprocess_args)
 
     try:
-
         client = DagsterGrpcClient(port=port, host="localhost")
 
         wait_for_grpc_server(process, client, subprocess_args)

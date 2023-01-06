@@ -123,7 +123,7 @@ setup(
             "pylint==2.13.7",
         ],
         "black": [
-            "black[jupyter]==22.3.0",
+            "black[jupyter]==22.12.0",
         ],
         "isort": [
             "isort==5.10.1",

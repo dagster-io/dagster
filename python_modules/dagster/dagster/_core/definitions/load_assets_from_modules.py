@@ -68,13 +68,17 @@ def assets_from_modules(
                             modules_str = ", ".join(
                                 set([asset_keys[key].__name__, module.__name__])
                             )
-                            error_str = f"Asset key {key} is defined multiple times. Definitions found in modules: {modules_str}. "
+                            error_str = (
+                                f"Asset key {key} is defined multiple times. Definitions found in"
+                                f" modules: {modules_str}. "
+                            )
 
                             if key in assets and isinstance(asset, AssetsDefinition):
                                 if assets[key].node_def == asset.node_def:
                                     error_str += (
-                                        "One possible cause of this bug is a call to with_resources outside of "
-                                        "a repository definition, causing a duplicate asset definition."
+                                        "One possible cause of this bug is a call to with_resources"
+                                        " outside of a repository definition, causing a duplicate"
+                                        " asset definition."
                                     )
 
                             raise DagsterInvalidDefinitionError(error_str)

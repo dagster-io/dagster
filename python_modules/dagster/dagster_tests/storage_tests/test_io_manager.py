@@ -297,7 +297,6 @@ def define_composite_job():
 
 
 def test_reexecute_subset_of_subset_with_composite():
-
     with instance_for_test() as instance:
         result = execute_job(reconstructable(define_composite_job), instance)
         assert result.success
@@ -642,9 +641,11 @@ def test_get_output_context_with_resources():
 
     with pytest.raises(
         CheckError,
-        match="Expected either resources or step context to be set, but "
-        "received both. If step context is provided, resources for IO manager will be "
-        "retrieved off of that.",
+        match=(
+            "Expected either resources or step context to be set, but "
+            "received both. If step context is provided, resources for IO manager will be "
+            "retrieved off of that."
+        ),
     ):
         get_output_context(
             execution_plan=create_execution_plan(basic_job),
@@ -719,8 +720,10 @@ def test_output_identifier_dynamic_memoization():
 
     with pytest.raises(
         CheckError,
-        match="Mapping key and version both provided for output 'buzz' of step 'baz'. Dynamic "
-        "mapping is not supported when using versioning.",
+        match=(
+            "Mapping key and version both provided for output 'buzz' of step 'baz'. Dynamic "
+            "mapping is not supported when using versioning."
+        ),
     ):
         context.get_identifier()
 
@@ -897,7 +900,12 @@ def test_context_logging_metadata():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="When handling output 'result' of op 'the_op', received a materialization with metadata, while context.add_output_metadata was used within the same call to handle_output. Due to potential conflicts, this is not allowed. Please specify metadata in one place within the `handle_output` function.",
+        match=(
+            "When handling output 'result' of op 'the_op', received a materialization with"
+            " metadata, while context.add_output_metadata was used within the same call to"
+            " handle_output. Due to potential conflicts, this is not allowed. Please specify"
+            " metadata in one place within the `handle_output` function."
+        ),
     ):
         build_for_materialization(AssetMaterialization("has_metadata", metadata={"bar": "baz"}))
 
@@ -1089,7 +1097,6 @@ def test_instance_set_on_asset_loader():
         return an_asset + 1
 
     with DagsterInstance.ephemeral() as instance:
-
         defs = Definitions(
             assets=[an_asset, another_asset],
             resources={"io_manager": AssertingContextInputOnLoadInputIOManager()},

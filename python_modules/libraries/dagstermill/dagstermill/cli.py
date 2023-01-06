@@ -69,7 +69,7 @@ def get_notebook_scaffolding(kernelspec: Mapping[str, str]):
 
 
 @click.command(
-    name="register-notebook", help=("Scaffolds existing notebook for dagstermill compatibility")
+    name="register-notebook", help="Scaffolds existing notebook for dagstermill compatibility"
 )
 @click.option("--notebook", "-note", type=click.Path(exists=True), help="Path to existing notebook")
 def retroactively_scaffold_notebook(notebook: str):
@@ -83,7 +83,7 @@ def execute_retroactive_scaffold(notebook_path: str):
     write_ipynb(new_nb, notebook_path)
 
 
-@click.command(name="create-notebook", help=("Creates new dagstermill notebook."))
+@click.command(name="create-notebook", help="Creates new dagstermill notebook.")
 @click.option("--notebook", "-note", type=click.Path(), help="Name of notebook")
 @click.option(
     "--force-overwrite",

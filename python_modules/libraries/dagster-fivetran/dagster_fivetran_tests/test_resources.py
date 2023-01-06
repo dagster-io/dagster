@@ -18,7 +18,6 @@ from .utils import (
 
 
 def test_get_connector_details():
-
     ft_resource = fivetran_resource(
         build_init_resource_context(
             config={
@@ -42,7 +41,6 @@ def test_get_connector_details():
 
 @pytest.mark.parametrize("max_retries,n_flakes", [(0, 0), (1, 2), (5, 7), (7, 5), (4, 4)])
 def test_get_connector_details_flake(max_retries, n_flakes):
-
     ft_resource = fivetran_resource(
         build_init_resource_context(
             config={
@@ -74,7 +72,8 @@ def test_get_connector_details_flake(max_retries, n_flakes):
         with pytest.raises(
             Failure,
             match=re.escape(
-                f"Max retries ({max_retries}) exceeded with url: https://api.fivetran.com/v1/connectors/some_connector."
+                f"Max retries ({max_retries}) exceeded with url:"
+                " https://api.fivetran.com/v1/connectors/some_connector."
             ),
         ):
             _mock_interaction()
@@ -120,7 +119,6 @@ def test_get_connector_details_flake(max_retries, n_flakes):
     ],
 )
 def test_get_connector_sync_status(data, expected):
-
     ft_resource = fivetran_resource(
         build_init_resource_context(
             config={
@@ -144,7 +142,6 @@ def test_get_connector_sync_status(data, expected):
     [(0, True), (0, False), (4, True), (4, False), (30, True)],
 )
 def test_sync_and_poll(n_polls, succeed_at_end):
-
     ft_resource = fivetran_resource(
         build_init_resource_context(
             config={
@@ -162,7 +159,6 @@ def test_sync_and_poll(n_polls, succeed_at_end):
     )
 
     def _mock_interaction():
-
         with responses.RequestsMock() as rsps:
             rsps.add(
                 rsps.GET,
@@ -191,7 +187,6 @@ def test_sync_and_poll(n_polls, succeed_at_end):
 
 
 def test_sync_and_poll_timeout():
-
     ft_resource = fivetran_resource(
         build_init_resource_context(
             config={
@@ -234,7 +229,6 @@ def test_sync_and_poll_timeout():
     ],
 )
 def test_sync_and_poll_invalid(data, match):
-
     ft_resource = fivetran_resource(
         build_init_resource_context(
             config={
@@ -274,7 +268,6 @@ def test_sync_and_poll_invalid(data, match):
     [(0, True), (0, False), (4, True), (4, False), (30, True)],
 )
 def test_resync_and_poll(n_polls, succeed_at_end):
-
     ft_resource = fivetran_resource(
         build_init_resource_context(
             config={
@@ -292,7 +285,6 @@ def test_resync_and_poll(n_polls, succeed_at_end):
     )
 
     def _mock_interaction():
-
         with responses.RequestsMock() as rsps:
             rsps.add(
                 rsps.GET,

@@ -56,6 +56,7 @@ query PipelineSnapshotQueryByActivePipelineName($activePipelineSelector: Pipelin
 }
 """
 
+
 # makes snapshot tests much easier to debug
 def pretty_dump(data):
     return json.dumps(data, indent=2, separators=(",", ": "))

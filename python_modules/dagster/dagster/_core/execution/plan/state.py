@@ -139,7 +139,6 @@ class KnownExecutionState(
         instance: DagsterInstance,
         parent_run: DagsterRun,
     ) -> "KnownExecutionState":
-
         # recursively build parent state chain
 
         def _create_parent_state(target_run):

@@ -385,15 +385,19 @@ def test_two_dim_dict():
 
     with raises_with_message(
         CheckError,
-        "Value in dict mismatches expected type for key int_value. Expected value "
-        "of type <class 'dict'>. Got value 2 of type <class 'int'>.",
+        (
+            "Value in dict mismatches expected type for key int_value. Expected value "
+            "of type <class 'dict'>. Got value 2 of type <class 'int'>."
+        ),
     ):
         check.two_dim_dict_param({"int_value": 2}, "foo")
 
     with raises_with_message(
         CheckError,
-        "Value in dict mismatches expected type for key level_two_value_mismatch. "
-        "Expected value of type <class 'str'>. Got value 2 of type <class 'int'>.",
+        (
+            "Value in dict mismatches expected type for key level_two_value_mismatch. "
+            "Expected value of type <class 'str'>. Got value 2 of type <class 'int'>."
+        ),
     ):
         check.two_dim_dict_param(
             {"level_one_key": {"level_two_value_mismatch": 2}}, "foo", value_type=str
@@ -1107,7 +1111,6 @@ def test_sequence_param():
 
 
 def test_opt_sequence_param():
-
     assert check.opt_sequence_param([], "sequence_param") == []
     assert check.opt_sequence_param(tuple(), "sequence_param") == tuple()
 
@@ -1125,7 +1128,6 @@ def test_opt_sequence_param():
 
 
 def test_opt_nullable_sequence_param():
-
     assert check.opt_nullable_sequence_param([], "sequence_param") == []
     assert check.opt_nullable_sequence_param(tuple(), "sequence_param") == tuple()
 

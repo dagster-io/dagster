@@ -94,8 +94,10 @@ class PickledObjectADLS2IOManager(IOManager):
         if context.dagster_type.typing_type == type(None):
             check.invariant(
                 obj is None,
-                "Output had Nothing type or 'None' annotation, but handle_output received value "
-                f"that was not None and was of type {type(obj)}.",
+                (
+                    "Output had Nothing type or 'None' annotation, but handle_output received"
+                    f" value that was not None and was of type {type(obj)}."
+                ),
             )
             return None
 

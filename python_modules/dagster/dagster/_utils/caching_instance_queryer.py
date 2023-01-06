@@ -304,7 +304,8 @@ class CachingInstanceQueryer:
     def _upstream_subset(
         self, asset_graph: AssetGraph, start_key: AssetKey, input_keys: AbstractSet[AssetKey]
     ) -> AbstractSet[AssetKey]:
-        """Helper method which returns the set up keys in the input set which are upstream of start_key"""
+        """Helper method which returns the set up keys in the input set which are upstream of start_key
+        """
         ret = set()
         if start_key in input_keys:
             ret.add(start_key)
@@ -334,7 +335,6 @@ class CachingInstanceQueryer:
         # not all required keys have known values
         unknown_required_keys = required_keys - set(known_data.keys())
         if unknown_required_keys:
-
             # find the upstream times of each of the parents of this asset
             for parent_key in asset_graph.get_parents(asset_key):
                 if parent_key in asset_graph.source_asset_keys:
@@ -407,7 +407,8 @@ class CachingInstanceQueryer:
         """
         if record.asset_key is None or record.asset_materialization is None:
             raise DagsterInvariantViolationError(
-                "Can only calculate data times for records with a materialization event and an asset_key."
+                "Can only calculate data times for records with a materialization event and an"
+                " asset_key."
             )
         if upstream_keys is None:
             upstream_keys = asset_graph.get_non_source_roots(record.asset_key)

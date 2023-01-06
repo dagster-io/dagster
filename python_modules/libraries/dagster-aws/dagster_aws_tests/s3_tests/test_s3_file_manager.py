@@ -131,7 +131,6 @@ def test_s3_file_manager_resource(MockS3FileManager, mock_boto3_resource):
 
 
 def test_s3_file_manager_resource_with_profile():
-
     resource_config = {
         "use_unsigned_session": True,
         "region_name": "us-west-1",

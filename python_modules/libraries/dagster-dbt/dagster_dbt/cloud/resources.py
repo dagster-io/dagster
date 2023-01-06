@@ -435,8 +435,10 @@ class DbtCloudResourceV2:
                 ):
                     self.cancel_run(run_id)
                     raise Failure(
-                        f"Run {run_id} timed out after "
-                        f"{datetime.datetime.now() - poll_start}. Attempted to cancel.",
+                        (
+                            f"Run {run_id} timed out after "
+                            f"{datetime.datetime.now() - poll_start}. Attempted to cancel."
+                        ),
                         metadata={"run_page_url": MetadataValue.url(href)},
                     )
 
@@ -509,28 +511,37 @@ class DbtCloudResourceV2:
         "auth_token": Field(
             StringSource,
             is_required=True,
-            description="dbt Cloud API Token. User tokens can be found in the "
-            "[dbt Cloud UI](https://cloud.getdbt.com/#/profile/api/), or see the "
-            "[dbt Cloud Docs](https://docs.getdbt.com/docs/dbt-cloud/dbt-cloud-api/service-tokens) "
-            "for instructions on creating a Service Account token.",
+            description=(
+                "dbt Cloud API Token. User tokens can be found in the [dbt Cloud"
+                " UI](https://cloud.getdbt.com/#/profile/api/), or see the [dbt Cloud"
+                " Docs](https://docs.getdbt.com/docs/dbt-cloud/dbt-cloud-api/service-tokens) for"
+                " instructions on creating a Service Account token."
+            ),
         ),
         "account_id": Field(
             IntSource,
             is_required=True,
-            description="dbt Cloud Account ID. This value can be found in the url of a variety of "
-            "views in the dbt Cloud UI, e.g. https://cloud.getdbt.com/#/accounts/{account_id}/settings/.",
+            description=(
+                "dbt Cloud Account ID. This value can be found in the url of a variety of views in"
+                " the dbt Cloud UI, e.g."
+                " https://cloud.getdbt.com/#/accounts/{account_id}/settings/."
+            ),
         ),
         "disable_schedule_on_trigger": Field(
             bool,
             default_value=True,
-            description="Specifies if you would like any job that is triggered using this "
-            "resource to automatically disable its schedule.",
+            description=(
+                "Specifies if you would like any job that is triggered using this "
+                "resource to automatically disable its schedule."
+            ),
         ),
         "request_max_retries": Field(
             int,
             default_value=3,
-            description="The maximum number of times requests to the dbt Cloud API should be retried "
-            "before failing.",
+            description=(
+                "The maximum number of times requests to the dbt Cloud API should be retried "
+                "before failing."
+            ),
         ),
         "request_retry_delay": Field(
             float,
@@ -540,7 +551,10 @@ class DbtCloudResourceV2:
         "dbt_cloud_host": Field(
             config=StringSource,
             default_value=DBT_DEFAULT_HOST,
-            description="The hostname where dbt cloud is being hosted (e.g. https://my_org.cloud.getdbt.com/).",
+            description=(
+                "The hostname where dbt cloud is being hosted (e.g."
+                " https://my_org.cloud.getdbt.com/)."
+            ),
         ),
     },
     description="This resource helps interact with dbt Cloud connectors",

@@ -632,8 +632,8 @@ class PipelineDefinition:
             )
         else:
             msg = (
-                f"Attempted to call pipeline '{self.name}' directly. Pipelines should be invoked by "
-                "using an execution API function (e.g. `execute_pipeline`)."
+                f"Attempted to call pipeline '{self.name}' directly. Pipelines should be invoked by"
+                " using an execution API function (e.g. `execute_pipeline`)."
             )
         raise DagsterInvariantViolationError(msg)
 
@@ -761,8 +761,9 @@ def _get_pipeline_subset_def(
         # input cannot be loaded from config. Instead of throwing a DagsterInvalidDefinitionError,
         # we re-raise a DagsterInvalidSubsetError.
         raise DagsterInvalidSubsetError(
-            f"The attempted subset {str_format_set(solids_to_execute)} for {pipeline_def.target_type} "
-            f"{pipeline_def.name} results in an invalid {pipeline_def.target_type}"
+            f"The attempted subset {str_format_set(solids_to_execute)} for"
+            f" {pipeline_def.target_type} {pipeline_def.name} results in an invalid"
+            f" {pipeline_def.target_type}"
         ) from exc
 
 

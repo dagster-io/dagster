@@ -25,7 +25,6 @@ def get_conn(conn_string):
 
 
 def pg_url_from_config(config_value):
-
     if config_value.get("postgres_url"):
         check.invariant(
             not "postgres_db" in config_value,

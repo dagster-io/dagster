@@ -44,7 +44,8 @@ class ChildProcessSystemErrorEvent(
 class ChildProcessCommand(ABC):  # pylint: disable=no-init
     """Inherit from this class in order to use this library.
 
-    The object must be picklable; instantiate it and pass it to _execute_command_in_child_process."""
+    The object must be picklable; instantiate it and pass it to _execute_command_in_child_process.
+    """
 
     @abstractmethod
     def execute(self) -> Iterator[Union[ChildProcessEvent, "DagsterEvent"]]:

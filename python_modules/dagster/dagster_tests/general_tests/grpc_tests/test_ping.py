@@ -54,7 +54,6 @@ def test_server_socket():
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")
 def test_process_killed_after_client_finished():
     with instance_for_test() as instance:
-
         server_process = GrpcServerProcess(instance_ref=instance.get_ref())
         try:
             with server_process.create_ephemeral_client() as client:

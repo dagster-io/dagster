@@ -51,7 +51,6 @@ def _launch_run_and_wait_for_resume(
     namespace,
     pipeline_name="slow_pipeline",
 ):
-
     run_id = None
 
     try:

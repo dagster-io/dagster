@@ -103,16 +103,19 @@ class PrometheusResource:
     {
         "gateway": Field(
             str,
-            description="the url for your push gateway. Either of the form "
-            "'http://pushgateway.local', or 'pushgateway.local'. "
-            "Scheme defaults to 'http' if none is provided",
+            description=(
+                "the url for your push gateway. Either of the form "
+                "'http://pushgateway.local', or 'pushgateway.local'. "
+                "Scheme defaults to 'http' if none is provided"
+            ),
         ),
         "timeout": Field(
             int,
             default_value=30,
             is_required=False,
-            description="is how long delete will attempt to connect before giving up. "
-            "Defaults to 30s.",
+            description=(
+                "is how long delete will attempt to connect before giving up. Defaults to 30s."
+            ),
         ),
     },
     description="""This resource is for sending metrics to a Prometheus Pushgateway.""",

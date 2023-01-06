@@ -226,7 +226,6 @@ class ResolvedRunConfig(
         )
 
     def to_dict(self) -> Mapping[str, Mapping[str, object]]:
-
         env_dict: Dict[str, Mapping[str, object]] = {}
 
         solid_configs: Dict[str, object] = {}

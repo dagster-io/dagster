@@ -13,7 +13,6 @@ SNAPSHOT_END_ID = 25582000
 
 
 if __name__ == "__main__":
-
     client = HNAPIClient()
     ids = range(SNAPSHOT_START_ID, SNAPSHOT_END_ID)
     with ThreadPoolExecutor() as executor:

@@ -55,8 +55,10 @@ def _rename_for_airflow(name):
 class DagsterOperatorInvocationArgs(
     namedtuple(
         "DagsterOperatorInvocationArgs",
-        "recon_repo pipeline_name run_config mode step_keys instance_ref pipeline_snapshot "
-        "execution_plan_snapshot parent_pipeline_snapshot",
+        (
+            "recon_repo pipeline_name run_config mode step_keys instance_ref pipeline_snapshot "
+            "execution_plan_snapshot parent_pipeline_snapshot"
+        ),
     )
 ):
     def __new__(

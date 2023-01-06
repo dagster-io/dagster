@@ -178,7 +178,6 @@ def test_multi_asset():
 
 
 def test_primitive_struct_config():
-
     executed = {}
 
     @op

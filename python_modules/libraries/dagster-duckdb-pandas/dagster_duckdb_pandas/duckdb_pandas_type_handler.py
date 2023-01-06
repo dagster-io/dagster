@@ -38,7 +38,8 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
         conn.execute(f"create schema if not exists {table_slice.schema};")
         conn.execute(
-            f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from obj;"
+            f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
+            " obj;"
         )
         if not conn.fetchall():
             # table was not created, therefore already exists. Insert the data

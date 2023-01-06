@@ -212,7 +212,9 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
                 IntSource,
                 default_value=0,
                 is_required=False,
-                description="For each schedule tick that raises an error, how many times to retry that tick",
+                description=(
+                    "For each schedule tick that raises an error, how many times to retry that tick"
+                ),
             ),
         }
 

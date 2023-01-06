@@ -88,7 +88,8 @@ class ExternalRepository:
             self._deferred_snapshots = True
             if ref_to_data_fn is None:
                 check.failed(
-                    "ref_to_data_fn is required when ExternalRepositoryData is loaded with deferred snapshots"
+                    "ref_to_data_fn is required when ExternalRepositoryData is loaded with deferred"
+                    " snapshots"
                 )
 
             self._ref_to_data_fn = ref_to_data_fn

@@ -61,7 +61,6 @@ class StringHandler(DbTypeHandler[str]):
 
 
 def build_db_io_manager(type_handlers, db_client, resource_config_override=None):
-
     conf = resource_config_override if resource_config_override else resource_config
 
     return DbIOManager(

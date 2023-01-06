@@ -209,7 +209,6 @@ def test_dict_type_loader_typing_fail():
 
 
 def test_dict_type_loader_inner_type_mismatch():
-
     test_input = {"hello": "foo", "goodbye": "bar"}
 
     @op(ins={"dict_input": In(dagster_type=typing.Dict[str, int])})

@@ -142,7 +142,8 @@ class RepositoryLocation(AbstractContextManager):
         external_data = subset_result.external_pipeline_data
         if external_data is None:
             check.failed(
-                f"Failed to fetch subset data, success: {subset_result.success} error: {subset_result.error}"
+                f"Failed to fetch subset data, success: {subset_result.success} error:"
+                f" {subset_result.error}"
             )
 
         return ExternalPipeline(external_data, repo_handle)
@@ -349,9 +350,8 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.inst_param(selector, "selector", PipelineSelector)
         check.invariant(
             selector.location_name == self.name,
-            "PipelineSelector location_name mismatch, got {selector.location_name} expected {self.name}".format(
-                self=self, selector=selector
-            ),
+            "PipelineSelector location_name mismatch, got {selector.location_name} expected"
+            " {self.name}".format(self=self, selector=selector),
         )
 
         from dagster._grpc.impl import get_external_pipeline_subset_result
@@ -738,9 +738,8 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         check.inst_param(selector, "selector", PipelineSelector)
         check.invariant(
             selector.location_name == self.name,
-            "PipelineSelector location_name mismatch, got {selector.location_name} expected {self.name}".format(
-                self=self, selector=selector
-            ),
+            "PipelineSelector location_name mismatch, got {selector.location_name} expected"
+            " {self.name}".format(self=self, selector=selector),
         )
 
         external_repository = self.get_repository(selector.repository_name)

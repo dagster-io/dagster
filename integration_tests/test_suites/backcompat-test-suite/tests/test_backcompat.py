@@ -99,7 +99,6 @@ def docker_service_up(docker_compose_file, build_args=None):
         try:
             yield  # buildkite pipeline handles the service
         finally:
-
             # collect logs from the containers and upload to buildkite
             client = docker.client.from_env()
             containers = client.containers.list()

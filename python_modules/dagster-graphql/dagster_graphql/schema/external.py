@@ -361,7 +361,6 @@ class GrapheneLocationStateChangeSubscription(graphene.ObjectType):
 
 
 async def gen_location_state_changes(graphene_info: HasContext):
-
     # This lives on the process context and is never modified/destroyed, so we can
     # access it directly
     context = graphene_info.context.process_context

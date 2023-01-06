@@ -239,9 +239,10 @@ def run_backfill_to_completion(
                     parent_asset_partition in backfill_data.target_subset
                     and parent_asset_partition not in backfill_data.materialized_subset
                 ):
-                    assert (
-                        False
-                    ), f"{asset_partition} was materialized before its parent {parent_asset_partition},"
+                    assert False, (
+                        f"{asset_partition} was materialized before its parent"
+                        f" {parent_asset_partition},"
+                    )
 
         for run_request in result1.run_requests:
             asset_keys = run_request.asset_selection
@@ -291,7 +292,6 @@ def external_asset_graph_from_assets_by_repo_name(
     from_repository_handles_and_external_asset_nodes = []
 
     for repo_name, assets in assets_by_repo_name.items():
-
         repo = Definitions(assets=assets).get_repository_def()
 
         external_asset_nodes = external_asset_graph_from_defs(

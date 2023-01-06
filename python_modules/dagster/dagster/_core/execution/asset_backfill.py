@@ -180,7 +180,8 @@ def execute_asset_backfill_iteration(
 
     if not isinstance(result, AssetBackfillIterationResult):
         check.failed(
-            "Expected execute_asset_backfill_iteration_inner to return an AssetBackfillIterationResult"
+            "Expected execute_asset_backfill_iteration_inner to return an"
+            " AssetBackfillIterationResult"
         )
 
     updated_backfill = backfill.with_asset_backfill_data(result.backfill_data)
@@ -217,7 +218,8 @@ def submit_run_request(
     )
     if job_name is None:
         check.failed(
-            f"Could not find an implicit asset job for the given assets: {run_request.asset_selection}"
+            "Could not find an implicit asset job for the given assets:"
+            f" {run_request.asset_selection}"
         )
     pipeline_selector = PipelineSelector(
         location_name=location_name,

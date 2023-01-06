@@ -8,7 +8,6 @@ from dagster._core.definitions.resource_definition import ResourceDefinition
 
 
 def get_resource_args(fn) -> Sequence[Parameter]:
-
     return [param for param in get_function_params(fn) if _is_resource_annotated(param)]
 
 

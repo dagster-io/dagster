@@ -57,7 +57,6 @@ def configurable_secrets_loader_data(
 def configurable_storage_data(
     config_field: Mapping[str, Any], defaults: Mapping[str, Optional[ConfigurableClassData]]
 ) -> Sequence[Optional[ConfigurableClassData]]:
-
     storage_data: ConfigurableClassData
     run_storage_data: Optional[ConfigurableClassData]
     event_storage_data: Optional[ConfigurableClassData]

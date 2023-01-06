@@ -118,7 +118,6 @@ def setup_airbyte():
 
 
 def _random_dates():
-
     start = pd.to_datetime("2021-01-01")
     end = pd.to_datetime("2022-01-01")
 

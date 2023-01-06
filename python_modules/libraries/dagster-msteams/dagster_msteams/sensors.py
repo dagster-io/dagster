@@ -116,7 +116,6 @@ def make_teams_on_run_failure_sensor(
         monitor_all_repositories=monitor_all_repositories,
     )
     def teams_on_run_failure(context: RunFailureSensorContext):
-
         text = message_fn(context)
         if dagit_base_url:
             text += "<a href='{base_url}/instance/runs/{run_id}'>View in Dagit</a>".format(

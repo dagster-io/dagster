@@ -12,7 +12,6 @@ from .utils import get_bar_repo_repository_location
 def test_launch_run_grpc():
     with instance_for_test() as instance:
         with get_bar_repo_repository_location(instance) as repository_location:
-
             job_handle = JobHandle("forever", repository_location.get_repository("bar_repo").handle)
             api_client = repository_location.client
 

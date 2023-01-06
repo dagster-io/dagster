@@ -158,7 +158,6 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
     def add_daemon_heartbeat(self, daemon_heartbeat):
         with self.connect() as conn:
-
             # insert or update if already present, using postgres specific on_conflict
             conn.execute(
                 db.dialects.postgresql.insert(DaemonHeartbeatsTable)

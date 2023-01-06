@@ -134,7 +134,6 @@ def test_docker_monitoring():
                 )
 
                 with log_run_events(instance, run.run_id):
-
                     instance.launch_run(run.run_id, workspace)
 
                     start_time = time.time()
@@ -223,7 +222,6 @@ def test_docker_monitoring_run_out_of_attempts():
                 )
 
                 with log_run_events(instance, run.run_id):
-
                     instance.launch_run(run.run_id, workspace)
 
                     start_time = time.time()

@@ -515,7 +515,8 @@ def _ensure_resources_dont_conflict(
     source_assets: Sequence[SourceAsset],
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> None:
-    """Ensures that resources between assets, source assets, and provided resource dictionary do not conflict."""
+    """Ensures that resources between assets, source assets, and provided resource dictionary do not conflict.
+    """
     resource_defs_from_assets = {}
     all_assets: Sequence[Union[AssetsDefinition, SourceAsset]] = [*assets, *source_assets]
     for asset in all_assets:
@@ -567,7 +568,6 @@ def get_all_resource_defs(
     source_assets: Sequence[SourceAsset],
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> Mapping[str, ResourceDefinition]:
-
     # Ensures that no resource keys conflict, and each asset has its resource requirements satisfied.
     check_resources_satisfy_requirements(assets, source_assets, resource_defs)
 

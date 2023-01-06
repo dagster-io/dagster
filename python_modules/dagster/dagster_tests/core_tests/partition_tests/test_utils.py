@@ -178,7 +178,6 @@ def test_date_partition_range_out_of_order():
 def test_date_partition_range(
     start, end, delta_range, fmt, inclusive, timezone, expected_partitions
 ):
-
     partition_generator = date_partition_range(
         start,
         end,

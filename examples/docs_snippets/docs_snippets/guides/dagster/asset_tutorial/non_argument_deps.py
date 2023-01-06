@@ -68,6 +68,7 @@ def cereal_ratings_csv() -> None:
 
 # cereal_ratings_csv_end
 
+
 # nabisco_cereal_ratings_start
 @asset(non_argument_deps={"cereal_ratings_csv"})
 def nabisco_cereal_ratings(nabisco_cereals):

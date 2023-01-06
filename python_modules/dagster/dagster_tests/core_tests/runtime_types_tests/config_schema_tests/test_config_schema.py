@@ -14,7 +14,6 @@ def test_dagster_type_loader_one():
 
 
 def test_dagster_type_loader_missing_context():
-
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @dagster_type_loader(String)
@@ -23,7 +22,6 @@ def test_dagster_type_loader_missing_context():
 
 
 def test_dagster_type_loader_missing_variable():
-
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @dagster_type_loader(String)

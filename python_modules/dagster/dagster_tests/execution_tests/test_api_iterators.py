@@ -151,7 +151,8 @@ def test_execute_run_iterator():
                 )
             )
             assert (
-                "Ignoring a duplicate run that was started from somewhere other than the run monitor daemon"
+                "Ignoring a duplicate run that was started from somewhere other than the run"
+                " monitor daemon"
                 in event.message
             )
 
@@ -211,7 +212,8 @@ def test_restart_running_run_worker():
 
         assert any(
             [
-                f"{pipeline_run.pipeline_name} ({pipeline_run.run_id}) started a new run worker while the run was already in state DagsterRunStatus.STARTED. "
+                f"{pipeline_run.pipeline_name} ({pipeline_run.run_id}) started a new run worker"
+                " while the run was already in state DagsterRunStatus.STARTED. "
                 in event.message
                 for event in events
             ]

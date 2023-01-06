@@ -13,7 +13,9 @@ from ..runs.schema import BulkActionsTable, RunTagsTable, RunsTable
 from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, REPOSITORY_LABEL_TAG
 
 RUN_PARTITIONS = "run_partitions"
-RUN_START_END = "run_start_end_overwritten"  # was run_start_end, but renamed to overwrite bad timestamps written
+RUN_START_END = (  # was run_start_end, but renamed to overwrite bad timestamps written
+    "run_start_end_overwritten"
+)
 RUN_REPO_LABEL_TAGS = "run_repo_label_tags"
 BULK_ACTION_TYPES = "bulk_action_types"
 

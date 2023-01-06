@@ -385,7 +385,8 @@ class OpExecutionResult:
 
     @property
     def compute_output_events_dict(self) -> Mapping[str, Sequence[DagsterEvent]]:
-        """Dict[str, List[DagsterEvent]]: All events of type ``STEP_OUTPUT``, keyed by output name"""
+        """Dict[str, List[DagsterEvent]]: All events of type ``STEP_OUTPUT``, keyed by output name
+        """
         results: DefaultDict[str, List[DagsterEvent]] = defaultdict(list)
         for se in self.output_events_during_compute:
             results[se.step_output_data.output_name].append(se)
@@ -593,7 +594,7 @@ class OpExecutionResult:
                 return result
 
             raise DagsterInvariantViolationError(
-                (f"Did not find result {output_name} in node {self.node.name} " "execution result")
+                f"Did not find result {output_name} in node {self.node.name} execution result"
             )
 
     def _get_value(self, context: StepExecutionContext, step_output_data: StepOutputData) -> object:

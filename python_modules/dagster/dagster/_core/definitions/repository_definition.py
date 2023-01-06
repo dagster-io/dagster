@@ -486,7 +486,8 @@ Resolvable = Callable[[], T]
 
 
 class CachingRepositoryData(RepositoryData):
-    """Default implementation of RepositoryData used by the :py:func:`@repository <repository>` decorator."""
+    """Default implementation of RepositoryData used by the :py:func:`@repository <repository>` decorator.
+    """
 
     _all_jobs: Optional[Sequence[JobDefinition]]
     _all_pipelines: Optional[Sequence[PipelineDefinition]]
@@ -668,7 +669,8 @@ class CachingRepositoryData(RepositoryData):
         )
         if duplicate_keys:
             raise DagsterInvalidDefinitionError(
-                f"Duplicate definitions between schedules and sensors found for keys: {', '.join(duplicate_keys)}"
+                "Duplicate definitions between schedules and sensors found for keys:"
+                f" {', '.join(duplicate_keys)}"
             )
 
         # merge jobs in to pipelines while they are just implemented as pipelines
@@ -689,7 +691,8 @@ class CachingRepositoryData(RepositoryData):
                 )
             elif not isinstance(job, JobDefinition) and not isfunction(job):
                 raise DagsterInvalidDefinitionError(
-                    f"Object mapped to {key} is not an instance of JobDefinition or GraphDefinition."
+                    f"Object mapped to {key} is not an instance of JobDefinition or"
+                    " GraphDefinition."
                 )
 
         return CachingRepositoryData(
@@ -729,7 +732,8 @@ class CachingRepositoryData(RepositoryData):
                     and pipelines_or_jobs[definition.name] != definition
                 ) or definition.name in unresolved_jobs:
                     raise DagsterInvalidDefinitionError(
-                        f"Duplicate {definition.target_type} definition found for {definition.describe_target()}"
+                        f"Duplicate {definition.target_type} definition found for"
+                        f" {definition.describe_target()}"
                     )
                 if is_base_asset_job_name(definition.name):
                     raise DagsterInvalidDefinitionError(
@@ -740,7 +744,8 @@ class CachingRepositoryData(RepositoryData):
             elif isinstance(definition, PartitionSetDefinition):
                 if definition.name in partition_sets:
                     raise DagsterInvalidDefinitionError(
-                        f"Duplicate partition set definition found for partition set {definition.name}"
+                        "Duplicate partition set definition found for partition set"
+                        f" {definition.name}"
                     )
                 partition_sets[definition.name] = definition
             elif isinstance(definition, SensorDefinition):
@@ -770,7 +775,8 @@ class CachingRepositoryData(RepositoryData):
                 coerced = definition.coerce_to_job()
                 if coerced.name in pipelines_or_jobs:
                     raise DagsterInvalidDefinitionError(
-                        f"Duplicate {coerced.target_type} definition found for graph '{coerced.name}'"
+                        f"Duplicate {coerced.target_type} definition found for graph"
+                        f" '{coerced.name}'"
                     )
                 pipelines_or_jobs[coerced.name] = coerced
                 coerced_graphs[coerced.name] = coerced
@@ -848,8 +854,8 @@ class CachingRepositoryData(RepositoryData):
         for name, unresolved_job_def in unresolved_jobs.items():
             if not combined_asset_group:
                 raise DagsterInvalidDefinitionError(
-                    f"UnresolvedAssetJobDefinition {name} specified, but no AssetsDefinitions exist "
-                    "on the repository."
+                    f"UnresolvedAssetJobDefinition {name} specified, but no AssetsDefinitions exist"
+                    " on the repository."
                 )
             resolved_job = unresolved_job_def.resolve(
                 assets=combined_asset_group.assets,
@@ -1127,12 +1133,11 @@ class CachingRepositoryData(RepositoryData):
                         [solid_to_pipeline[solid_def.name], pipeline.name]
                     )
                     raise DagsterInvalidDefinitionError(
-                        (
-                            f"Conflicting definitions found in repository with name '{solid_def.name}'. "
-                            "Op/Graph definition names must be unique within a "
-                            f"repository. {solid_def.__class__.__name__} is defined in {pipeline.target_type} "
-                            f"'{first_name}' and in {pipeline.target_type} '{second_name}'."
-                        )
+                        f"Conflicting definitions found in repository with name '{solid_def.name}'."
+                        " Op/Graph definition names must be unique within a repository."
+                        f" {solid_def.__class__.__name__} is defined in"
+                        f" {pipeline.target_type} '{first_name}' and in"
+                        f" {pipeline.target_type} '{second_name}'."
                     )
 
     def _validate_pipeline(self, pipeline: PipelineDefinition) -> PipelineDefinition:
@@ -1349,7 +1354,8 @@ class RepositoryDefinition:
         return self._repository_data.get_assets_defs_by_key()
 
     def has_implicit_global_asset_job_def(self) -> bool:
-        """Returns true is there is a single implicit asset job for all asset keys in a repository."""
+        """Returns true is there is a single implicit asset job for all asset keys in a repository.
+        """
         return self.has_job(ASSET_BASE_JOB_PREFIX)
 
     def get_implicit_global_asset_job_def(self) -> JobDefinition:
@@ -1496,7 +1502,9 @@ class PendingRepositoryDefinition:
         self._repository_definitions = check.list_param(
             repository_definitions,
             "repository_definition",
-            additional_message="PendingRepositoryDefinition supports only list-based repository data at this time.",
+            additional_message=(
+                "PendingRepositoryDefinition supports only list-based repository data at this time."
+            ),
         )
         self._name = name
         self._description = description
@@ -1521,7 +1529,6 @@ class PendingRepositoryDefinition:
     def _get_repository_definition(
         self, repository_load_data: RepositoryLoadData
     ) -> RepositoryDefinition:
-
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
         resolved_definitions: List[RepositoryListDefinition] = []
@@ -1530,7 +1537,10 @@ class PendingRepositoryDefinition:
                 # should always have metadata for each cached defn at this point
                 check.invariant(
                     defn.unique_id in repository_load_data.cached_data_by_key,
-                    f"No metadata found for CacheableAssetsDefinition with unique_id {defn.unique_id}.",
+                    (
+                        "No metadata found for CacheableAssetsDefinition with unique_id"
+                        f" {defn.unique_id}."
+                    ),
                 )
                 # use the emtadata to generate definitions
                 resolved_definitions.extend(
@@ -1562,7 +1572,8 @@ class PendingRepositoryDefinition:
         return self._get_repository_definition(repository_load_data)
 
     def compute_repository_definition(self) -> RepositoryDefinition:
-        """Compute the required RepositoryLoadData and use it to construct and return a RepositoryDefinition"""
+        """Compute the required RepositoryLoadData and use it to construct and return a RepositoryDefinition
+        """
         repository_load_data = self._compute_repository_load_data()
         return self._get_repository_definition(repository_load_data)
 
@@ -1634,7 +1645,11 @@ def _process_and_validate_target(
 
 
 def _get_error_msg_for_target_conflict(targeter, target_type, target_name, dupe_target_type):
-    return f"{targeter} targets {target_type} '{target_name}', but a different {dupe_target_type} with the same name was provided. Disambiguate between these by providing a separate name to one of them."
+    return (
+        f"{targeter} targets {target_type} '{target_name}', but a different {dupe_target_type} with"
+        " the same name was provided. Disambiguate between these by providing a separate name to"
+        " one of them."
+    )
 
 
 def _get_partition_set_from_schedule(

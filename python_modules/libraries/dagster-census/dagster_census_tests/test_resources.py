@@ -15,7 +15,6 @@ from .utils import (
 
 
 def test_get_sync():
-
     census = CensusResource(api_key="foo")
     with responses.RequestsMock() as rsps:
         rsps.add(
@@ -27,7 +26,6 @@ def test_get_sync():
 
 
 def test_get_source():
-
     census = CensusResource(api_key="foo")
     with responses.RequestsMock() as rsps:
         rsps.add(
@@ -39,7 +37,6 @@ def test_get_source():
 
 
 def test_get_destination():
-
     census = CensusResource(api_key="foo")
     with responses.RequestsMock() as rsps:
         rsps.add(
@@ -51,7 +48,6 @@ def test_get_destination():
 
 
 def test_get_sync_run():
-
     census = CensusResource(api_key="foo")
     with responses.RequestsMock() as rsps:
         rsps.add(
@@ -63,7 +59,6 @@ def test_get_sync_run():
 
 
 def test_poll_sync_run():
-
     mock_logger = MagicMock()
     census = CensusResource(api_key="foo", log=mock_logger)
     with responses.RequestsMock() as rsps:
@@ -79,7 +74,6 @@ def test_poll_sync_run():
 
 
 def test_trigger_sync():
-
     census = CensusResource(api_key="foo")
     with responses.RequestsMock() as rsps:
         rsps.add(
@@ -91,7 +85,6 @@ def test_trigger_sync():
 
 
 def test_trigger_sync_and_poll():
-
     census = CensusResource(api_key="foo")
     with responses.RequestsMock() as rsps:
         rsps.add(
@@ -128,7 +121,6 @@ def test_trigger_sync_and_poll():
 
 
 def test_resource_init():
-
     cen_resource = census_resource(
         build_init_resource_context(
             config={

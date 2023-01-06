@@ -142,7 +142,7 @@ def load_python_module(
                 abs_working_directory = os.path.abspath(os.path.expanduser(working_directory))
                 raise DagsterImportError(
                     f"Encountered ImportError: `{msg}` while importing module {module_name}. "
-                    f"Local modules were resolved using the working "
+                    "Local modules were resolved using the working "
                     f"directory `{abs_working_directory}`. If another working directory should be "
                     "used, please explicitly specify the appropriate path using the `-d` or "
                     "`--working-directory` for CLI based targets or the `working_directory` "
@@ -151,7 +151,7 @@ def load_python_module(
             else:
                 raise DagsterImportError(
                     f"Encountered ImportError: `{msg}` while importing module {module_name}. "
-                    f"If relying on the working directory to resolve modules, please "
+                    "If relying on the working directory to resolve modules, please "
                     "explicitly specify the appropriate path using the `-d` or "
                     "`--working-directory` for CLI based targets or the `working_directory` "
                     "configuration option for workspace targets. "

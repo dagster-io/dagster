@@ -72,6 +72,7 @@ def test_job():
 
 # end_test_job_marker
 
+
 # start_invocation_op_marker
 @op
 def my_op_to_test():
@@ -80,12 +81,14 @@ def my_op_to_test():
 
 # end_invocation_op_marker
 
+
 # start_test_op_marker
 def test_op_with_invocation():
     assert my_op_to_test() == 5
 
 
 # end_test_op_marker
+
 
 # start_invocation_op_inputs_marker
 @op
@@ -95,12 +98,14 @@ def my_op_with_inputs(x, y):
 
 # end_invocation_op_inputs_marker
 
+
 # start_test_op_with_inputs_marker
 def test_inputs_op_with_invocation():
     assert my_op_with_inputs(5, 6) == 11
 
 
 # end_test_op_with_inputs_marker
+
 
 # start_op_requires_foo_marker
 @op(required_resource_keys={"foo"})
@@ -123,6 +128,7 @@ def test_op_with_context():
 
 from dagster import resource
 
+
 # start_test_resource_def_marker
 @resource(config_schema={"my_str": str})
 def my_foo_resource(context):
@@ -137,6 +143,7 @@ def test_op_resource_def():
 
 
 # end_test_resource_def_marker
+
 
 # start_test_job_with_config
 def test_job_with_config():

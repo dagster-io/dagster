@@ -64,7 +64,7 @@ def test_indent_printer():
         printer.line("another")
         printer.line("yet")
 
-    assert printer.result() == ("test\n" "  test indent\n" "bop\n" "  another\n" "  yet")
+    assert printer.result() == "test\n  test indent\nbop\n  another\n  yet"
 
 
 def test_parameterized_indent():

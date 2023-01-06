@@ -74,7 +74,8 @@ def resource_initialization_manager(
 def resolve_resource_dependencies(
     resource_defs: Mapping[str, ResourceDefinition]
 ) -> Mapping[str, AbstractSet[str]]:
-    """Generates a dictionary that maps resource key to resource keys it requires for initialization"""
+    """Generates a dictionary that maps resource key to resource keys it requires for initialization
+    """
     resource_dependencies = {
         key: resource_def.required_resource_keys for key, resource_def in resource_defs.items()
     }
@@ -95,7 +96,8 @@ def ensure_resource_deps_satisfiable(resource_deps: Mapping[str, AbstractSet[str
                 )
             if reqd_resource_key not in resource_deps:
                 raise DagsterInvariantViolationError(
-                    f"Resource with key '{reqd_resource_key}' required by resource with key '{resource_key}', but not provided."
+                    f"Resource with key '{reqd_resource_key}' required by resource with key"
+                    f" '{resource_key}', but not provided."
                 )
             _helper(reqd_resource_key)
         path.remove(resource_key)
@@ -134,13 +136,15 @@ def _core_resource_initialization_event_generator(
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
 ):
-
     pipeline_name = ""  # Must be initialized to a string to satisfy typechecker
     contains_generator = False
     if emit_persistent_events:
         check.invariant(
             pipeline_run and execution_plan,
-            "If emit_persistent_events is enabled, then pipeline_run and execution_plan must be provided",
+            (
+                "If emit_persistent_events is enabled, then pipeline_run and execution_plan must be"
+                " provided"
+            ),
         )
         pipeline_name = cast(DagsterRun, pipeline_run).pipeline_name
     resource_keys_to_init = check.opt_set_param(resource_keys_to_init, "resource_keys_to_init")
@@ -253,7 +257,6 @@ def resource_initialization_event_generator(
     resource_managers: Deque[EventGenerationManager] = deque()
 
     try:
-
         yield from _core_resource_initialization_event_generator(
             resource_defs=resource_defs,
             resource_configs=resource_configs,
@@ -385,7 +388,6 @@ def get_required_resource_keys_to_init(
 def get_transitive_required_resource_keys(
     required_resource_keys: AbstractSet[str], resource_defs: Mapping[str, ResourceDefinition]
 ) -> AbstractSet[str]:
-
     resource_dependencies = resolve_resource_dependencies(resource_defs)
     ensure_resource_deps_satisfiable(resource_dependencies)
 
@@ -435,7 +437,6 @@ def get_required_resource_keys_for_step(
 
     # add output type, output materializer, and output io manager resource keys
     for step_output in execution_step.step_outputs:
-
         # Load the output type
         output_def = solid_def.output_def_named(step_output.name)
 

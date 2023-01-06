@@ -50,7 +50,6 @@ class AssetsDefinitionCacheableData(
         extra_metadata: Optional[Mapping[Any, Any]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
     ):
-
         keys_by_input_name = check.opt_nullable_mapping_param(
             keys_by_input_name, "keys_by_input_name", key_type=str, value_type=AssetKey
         )
@@ -133,7 +132,6 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
     def with_resources(
         self, resource_defs: Mapping[str, ResourceDefinition]
     ) -> "CacheableAssetsDefinition":
-
         return ResourceWrappedCacheableAssetsDefinition(self, resource_defs)
 
     def with_prefix_or_group(
@@ -142,7 +140,6 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
         input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
     ) -> "CacheableAssetsDefinition":
-
         return PrefixOrGroupWrappedCacheableAssetsDefinition(
             self,
             output_asset_key_replacements=output_asset_key_replacements,
@@ -245,7 +242,10 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
                 prefix_for_all_assets
                 and (output_asset_key_replacements or input_asset_key_replacements)
             ),
-            "Cannot set both prefix_for_all_assets and output_asset_key_replacements or input_asset_key_replacements",
+            (
+                "Cannot set both prefix_for_all_assets and output_asset_key_replacements or"
+                " input_asset_key_replacements"
+            ),
         )
 
         super().__init__(

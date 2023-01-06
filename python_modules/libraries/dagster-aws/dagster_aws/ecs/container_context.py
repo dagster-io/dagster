@@ -18,9 +18,11 @@ SHARED_ECS_SCHEMA = {
     "env_vars": Field(
         [StringSource],
         is_required=False,
-        description="List of environment variable names to include in the ECS task. "
-        "Each can be of the form KEY=VALUE or just KEY (in which case the value will be pulled "
-        "from the current process)",
+        description=(
+            "List of environment variable names to include in the ECS task. "
+            "Each can be of the form KEY=VALUE or just KEY (in which case the value will be pulled "
+            "from the current process)"
+        ),
     ),
     "run_resources": Field(
         Permissive(

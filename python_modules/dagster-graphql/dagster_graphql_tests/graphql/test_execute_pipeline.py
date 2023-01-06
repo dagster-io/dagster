@@ -258,7 +258,8 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         )
         assert (
             result.data["launchPipelineExecution"]["message"]
-            == "Invalid ExecutionParams. Cannot define selector.solid_selection when using a preset."
+            == "Invalid ExecutionParams. Cannot define selector.solid_selection when using a"
+            " preset."
         )
 
         # while illegally defining runConfigData
@@ -713,7 +714,6 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
 
         with get_temp_file_name() as out_csv_path:
-
             run_config = {
                 "solids": {
                     "sum_solid": {

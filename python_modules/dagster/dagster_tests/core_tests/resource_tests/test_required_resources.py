@@ -733,7 +733,10 @@ def test_root_input_manager_missing_fails():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="input manager with key 'missing_root_input_manager' required by input 'root_input' of op 'requires_missing_root_input_manager' was not provided",
+        match=(
+            "input manager with key 'missing_root_input_manager' required by input 'root_input' of"
+            " op 'requires_missing_root_input_manager' was not provided"
+        ),
     ):
 
         @job
@@ -748,7 +751,10 @@ def test_io_manager_missing_fails():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="io manager with key 'missing_io_manager' required by output 'result' of op 'requires_missing_io_manager'' was not provided",
+        match=(
+            "io manager with key 'missing_io_manager' required by output 'result' of op"
+            " 'requires_missing_io_manager'' was not provided"
+        ),
     ):
 
         @job

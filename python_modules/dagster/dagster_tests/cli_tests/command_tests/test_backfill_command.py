@@ -16,7 +16,6 @@ def run_test_backfill(
     expected_count=None,
     error_message=None,
 ):
-
     run_test_backfill_inner(execution_args, instance, expected_count, error_message)
 
 

@@ -337,7 +337,8 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """Explicit lifecycle management."""
 
     def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
-        """Allows for optimizing database connection / use in the context of a long lived dagit process"""
+        """Allows for optimizing database connection / use in the context of a long lived dagit process
+        """
 
     # Daemon Heartbeat Storage
     #

@@ -32,7 +32,6 @@ def define_the_job():
 
 
 def test_simple_job_no_warnings():
-
     # will fail if any warning is emitted
     with warnings.catch_warnings():
         warnings.simplefilter("error")

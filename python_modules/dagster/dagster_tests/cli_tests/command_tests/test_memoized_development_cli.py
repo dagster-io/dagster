@@ -29,7 +29,6 @@ class Capturing(list):
 def test_execute_display_command():
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test(temp_dir=temp_dir) as instance:
-
             run_config = {
                 "ops": {
                     "create_string_1_asset_op": {"config": {"input_str": "apple"}},

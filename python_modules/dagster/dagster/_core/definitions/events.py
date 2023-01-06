@@ -247,7 +247,6 @@ class Output(Generic[T]):
         metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_sequence_param(
             metadata_entries,
@@ -316,7 +315,6 @@ class DynamicOutput(Generic[T]):
         metadata_entries: Optional[Sequence[Union[PartitionMetadataEntry, MetadataEntry]]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
@@ -491,8 +489,8 @@ class AssetMaterialization(
         invalid_tags = [tag for tag in tags or {} if not tag.startswith(SYSTEM_TAG_PREFIX)]
         if len(invalid_tags) > 0:
             check.failed(
-                f"Invalid tags: {tags} Users should not pass values into the tags argument for AssetMaterializations. "
-                "The tags argument is reserved for system-populated tags."
+                f"Invalid tags: {tags} Users should not pass values into the tags argument for"
+                " AssetMaterializations. The tags argument is reserved for system-populated tags."
             )
 
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
@@ -753,7 +751,6 @@ class TypeCheck(
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-
         metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )

@@ -53,7 +53,8 @@ def execute_job_backfill_iteration(
         logger.info(f"Starting backfill for {backfill.backfill_id}")
     else:
         logger.info(
-            f"Resuming backfill for {backfill.backfill_id} from {backfill.last_submitted_partition_name}"
+            f"Resuming backfill for {backfill.backfill_id} from"
+            f" {backfill.last_submitted_partition_name}"
         )
 
     origin = cast(
@@ -95,7 +96,8 @@ def execute_job_backfill_iteration(
         else:
             partition_names = cast(Sequence[str], backfill.partition_names)
             logger.info(
-                f"Backfill completed for {backfill.backfill_id} for {len(partition_names)} partitions"
+                f"Backfill completed for {backfill.backfill_id} for"
+                f" {len(partition_names)} partitions"
             )
             instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED))
             yield None

@@ -100,7 +100,6 @@ class DagsterEcsTaskDefinitionConfig(
 
     @staticmethod
     def from_task_definition_dict(task_definition_dict, container_name):
-
         matching_container_defs = [
             container
             for container in task_definition_dict["containerDefinitions"]
@@ -161,7 +160,6 @@ def get_task_definition_dict_from_current_task(
     secrets=None,
     include_sidecars=False,
 ):
-
     current_container_name = current_ecs_container_name()
 
     current_task_definition_arn = current_task["taskDefinitionArn"]

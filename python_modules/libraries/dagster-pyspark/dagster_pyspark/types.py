@@ -95,7 +95,9 @@ WriteCompressionParquetOptions = Enum(
                     "mode": Field(
                         WriteModeOptions,
                         is_required=False,
-                        description="specifies the behavior of the save operation when data already exists.",
+                        description=(
+                            "specifies the behavior of the save operation when data already exists."
+                        ),
                     ),
                     "compression": Field(
                         WriteCompressionTextOptions,
@@ -105,7 +107,10 @@ WriteCompressionParquetOptions = Enum(
                     "sep": Field(
                         String,
                         is_required=False,
-                        description="sets a single character as a separator for each field and value. If None is set, it uses the default value, ``,``.",
+                        description=(
+                            "sets a single character as a separator for each field and value. If"
+                            " None is set, it uses the default value, ``,``."
+                        ),
                     ),
                     "quote": Field(
                         String,
@@ -115,63 +120,106 @@ WriteCompressionParquetOptions = Enum(
                     "escape": Field(
                         String,
                         is_required=False,
-                        description="sets a single character used for escaping quotes inside an already quoted value. If None is set, it uses the default value, ``\\``.",
+                        description=(
+                            "sets a single character used for escaping quotes inside an already"
+                            " quoted value. If None is set, it uses the default value, ``\\``."
+                        ),
                     ),
                     "escapeQuotes": Field(
                         Bool,
                         is_required=False,
-                        description="a flag indicating whether values containing quotes should always be enclosed in quotes. If None is set, it uses the default value ``true``, escaping all values containing a quote character.",
+                        description=(
+                            "a flag indicating whether values containing quotes should always be"
+                            " enclosed in quotes. If None is set, it uses the default value"
+                            " ``true``, escaping all values containing a quote character."
+                        ),
                     ),
                     "quoteAll": Field(
                         Bool,
                         is_required=False,
-                        description="a flag indicating whether all values should always be enclosed in quotes. If None is set, it uses the default value ``false``, only escaping values containing a quote character.",
+                        description=(
+                            "a flag indicating whether all values should always be enclosed in"
+                            " quotes. If None is set, it uses the default value ``false``, only"
+                            " escaping values containing a quote character."
+                        ),
                     ),
                     "header": Field(
                         Bool,
                         is_required=False,
-                        description="writes the names of columns as the first line. If None is set, it uses the default value, ``false``.",
+                        description=(
+                            "writes the names of columns as the first line. If None is set, it uses"
+                            " the default value, ``false``."
+                        ),
                     ),
                     "nullValue": Field(
                         String,
                         is_required=False,
-                        description="sets the string representation of a null value. If None is set, it uses the default value, empty string.",
+                        description=(
+                            "sets the string representation of a null value. If None is set, it"
+                            " uses the default value, empty string."
+                        ),
                     ),
                     "dateFormat": Field(
                         String,
                         is_required=False,
-                        description="sets the string that indicates a date format. Custom date formats follow the formats at ``java.text.SimpleDateFormat``. This applies to date type. If None is set, it uses the default value, ``yyyy-MM-dd``.",
+                        description=(
+                            "sets the string that indicates a date format. Custom date formats"
+                            " follow the formats at ``java.text.SimpleDateFormat``. This applies to"
+                            " date type. If None is set, it uses the default value, ``yyyy-MM-dd``."
+                        ),
                     ),
                     "timestampFormat": Field(
                         String,
                         is_required=False,
-                        description="sets the string that indicates a timestamp format. Custom date formats follow the formats at ``java.text.SimpleDateFormat``. This applies to timestamp type. If None is set, it uses the default value, ``yyyy-MM-dd'T'HH:mm:ss.SSSXXX``.",
+                        description=(
+                            "sets the string that indicates a timestamp format. Custom date formats"
+                            " follow the formats at ``java.text.SimpleDateFormat``. This applies to"
+                            " timestamp type. If None is set, it uses the default value,"
+                            " ``yyyy-MM-dd'T'HH:mm:ss.SSSXXX``."
+                        ),
                     ),
                     "ignoreLeadingWhiteSpace": Field(
                         Bool,
                         is_required=False,
-                        description="a flag indicating whether or not leading whitespaces from values being written should be skipped. If None is set, it uses the default value, ``true``.",
+                        description=(
+                            "a flag indicating whether or not leading whitespaces from values being"
+                            " written should be skipped. If None is set, it uses the default value,"
+                            " ``true``."
+                        ),
                     ),
                     "ignoreTrailingWhiteSpace": Field(
                         Bool,
                         is_required=False,
-                        description="a flag indicating whether or not trailing whitespaces from values being written should be skipped. If None is set, it uses the default value, ``true``.",
+                        description=(
+                            "a flag indicating whether or not trailing whitespaces from values"
+                            " being written should be skipped. If None is set, it uses the default"
+                            " value, ``true``."
+                        ),
                     ),
                     "charToEscapeQuoteEscaping": Field(
                         String,
                         is_required=False,
-                        description="sets a single character used for escaping the escape for the quote character. If None is set, the default value is escape character when escape and quote characters are different, ``\0`` otherwise..",
+                        description=(
+                            "sets a single character used for escaping the escape for the quote"
+                            " character. If None is set, the default value is escape character when"
+                            " escape and quote characters are different, ``\0`` otherwise.."
+                        ),
                     ),
                     "encoding": Field(
                         String,
                         is_required=False,
-                        description="sets the encoding (charset) of saved csv files. If None is set, the default UTF-8 charset will be used.",
+                        description=(
+                            "sets the encoding (charset) of saved csv files. If None is set, the"
+                            " default UTF-8 charset will be used."
+                        ),
                     ),
                     "emptyValue": Field(
                         String,
                         is_required=False,
-                        description="sets the string representation of an empty value. If None is set, it uses the default value, ``"
-                        "``.",
+                        description=(
+                            "sets the string representation of an empty value. If None is set, it"
+                            " uses the default value, ````."
+                        ),
                     ),
                 }
             ),
@@ -185,7 +233,9 @@ WriteCompressionParquetOptions = Enum(
                     "mode": Field(
                         WriteModeOptions,
                         is_required=False,
-                        description="specifies the behavior of the save operation when data already exists.",
+                        description=(
+                            "specifies the behavior of the save operation when data already exists."
+                        ),
                     ),
                     "partitionBy": Field(
                         String,
@@ -195,7 +245,11 @@ WriteCompressionParquetOptions = Enum(
                     "compression": Field(
                         WriteCompressionParquetOptions,
                         is_required=False,
-                        description="compression codec to use when saving to file. This will override ``spark.sql.parquet.compression.codec``. If None is set, it uses the value specified in ``spark.sql.parquet.compression.codec``.",
+                        description=(
+                            "compression codec to use when saving to file. This will override"
+                            " ``spark.sql.parquet.compression.codec``. If None is set, it uses the"
+                            " value specified in ``spark.sql.parquet.compression.codec``."
+                        ),
                     ),
                 }
             ),
@@ -209,7 +263,9 @@ WriteCompressionParquetOptions = Enum(
                     "mode": Field(
                         WriteModeOptions,
                         is_required=False,
-                        description="specifies the behavior of the save operation when data already exists.",
+                        description=(
+                            "specifies the behavior of the save operation when data already exists."
+                        ),
                     ),
                     "compression": Field(
                         WriteCompressionTextOptions,
@@ -219,22 +275,37 @@ WriteCompressionParquetOptions = Enum(
                     "dateFormat": Field(
                         String,
                         is_required=False,
-                        description="sets the string that indicates a date format. Custom date formats follow the formats at ``java.text.SimpleDateFormat``. This applies to date type. If None is set, it uses the default value, ``yyyy-MM-dd``.",
+                        description=(
+                            "sets the string that indicates a date format. Custom date formats"
+                            " follow the formats at ``java.text.SimpleDateFormat``. This applies to"
+                            " date type. If None is set, it uses the default value, ``yyyy-MM-dd``."
+                        ),
                     ),
                     "timestampFormat": Field(
                         String,
                         is_required=False,
-                        description="sets the string that indicates a timestamp format. Custom date formats follow the formats at ``java.text.SimpleDateFormat``. This applies to timestamp type. If None is set, it uses the default value, ``yyyy-MM-dd'T'HH:mm:ss.SSSXXX``.",
+                        description=(
+                            "sets the string that indicates a timestamp format. Custom date formats"
+                            " follow the formats at ``java.text.SimpleDateFormat``. This applies to"
+                            " timestamp type. If None is set, it uses the default value,"
+                            " ``yyyy-MM-dd'T'HH:mm:ss.SSSXXX``."
+                        ),
                     ),
                     "encoding": Field(
                         String,
                         is_required=False,
-                        description="sets the encoding (charset) of saved csv files. If None is set, the default UTF-8 charset will be used.",
+                        description=(
+                            "sets the encoding (charset) of saved csv files. If None is set, the"
+                            " default UTF-8 charset will be used."
+                        ),
                     ),
                     "lineSep": Field(
                         String,
                         is_required=False,
-                        description="defines the line separator that should be used for writing. If None is set, it uses the default value, ``\\n``.",
+                        description=(
+                            "defines the line separator that should be used for writing. If None is"
+                            " set, it uses the default value, ``\\n``."
+                        ),
                     ),
                 }
             ),
@@ -253,7 +324,9 @@ WriteCompressionParquetOptions = Enum(
                     "mode": Field(
                         WriteModeOptions,
                         is_required=False,
-                        description="specifies the behavior of the save operation when data already exists.",
+                        description=(
+                            "specifies the behavior of the save operation when data already exists."
+                        ),
                     ),
                     "properties": Field(
                         Permissive(),
@@ -272,7 +345,9 @@ WriteCompressionParquetOptions = Enum(
                     "mode": Field(
                         WriteModeOptions,
                         is_required=False,
-                        description="specifies the behavior of the save operation when data already exists.",
+                        description=(
+                            "specifies the behavior of the save operation when data already exists."
+                        ),
                     ),
                     "partitionBy": Field(
                         String,
@@ -282,7 +357,12 @@ WriteCompressionParquetOptions = Enum(
                     "compression": Field(
                         WriteCompressionOrcOptions,
                         is_required=False,
-                        description="compression codec to use when saving to file. This will override ``orc.compress`` and ``spark.sql.orc.compression.codec``. If None is set, it uses the value specified in ``spark.sql.orc.compression.codec``.",
+                        description=(
+                            "compression codec to use when saving to file. This will override"
+                            " ``orc.compress`` and ``spark.sql.orc.compression.codec``. If None is"
+                            " set, it uses the value specified in"
+                            " ``spark.sql.orc.compression.codec``."
+                        ),
                     ),
                 }
             ),
@@ -297,7 +377,9 @@ WriteCompressionParquetOptions = Enum(
                     "mode": Field(
                         WriteModeOptions,
                         is_required=False,
-                        description="specifies the behavior of the save operation when data already exists.",
+                        description=(
+                            "specifies the behavior of the save operation when data already exists."
+                        ),
                     ),
                     "partitionBy": Field(
                         String,
@@ -321,12 +403,20 @@ WriteCompressionParquetOptions = Enum(
                     "compression": Field(
                         WriteCompressionTextOptions,
                         is_required=False,
-                        description="compression codec to use when saving to file. This will override ``orc.compress`` and ``spark.sql.orc.compression.codec``. If None is set, it uses the value specified in ``spark.sql.orc.compression.codec``.",
+                        description=(
+                            "compression codec to use when saving to file. This will override"
+                            " ``orc.compress`` and ``spark.sql.orc.compression.codec``. If None is"
+                            " set, it uses the value specified in"
+                            " ``spark.sql.orc.compression.codec``."
+                        ),
                     ),
                     "lineSep": Field(
                         String,
                         is_required=False,
-                        description="defines the line separator that should be used for writing. If None is set, it uses the default value, ``\\n``.",
+                        description=(
+                            "defines the line separator that should be used for writing. If None is"
+                            " set, it uses the default value, ``\\n``."
+                        ),
                     ),
                 }
             ),
@@ -859,12 +949,16 @@ def dataframe_materializer(_context, config, spark_df):
                     "lowerBound": Field(
                         Int,
                         is_required=False,
-                        description="the minimum value of ``column`` used to decide partition stride.",
+                        description=(
+                            "the minimum value of ``column`` used to decide partition stride."
+                        ),
                     ),
                     "upperBound": Field(
                         Int,
                         is_required=False,
-                        description="the maximum value of ``column`` used to decide partition stride.",
+                        description=(
+                            "the maximum value of ``column`` used to decide partition stride."
+                        ),
                     ),
                     "numPartitions": Field(
                         Int,

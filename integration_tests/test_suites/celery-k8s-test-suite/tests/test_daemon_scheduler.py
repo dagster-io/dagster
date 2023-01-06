@@ -30,7 +30,6 @@ def test_execute_schedule_on_celery_k8s(  # pylint: disable=redefined-outer-name
         assert len(scheduler_runs) == 0
 
         try:
-
             start_time = time.time()
 
             while True:

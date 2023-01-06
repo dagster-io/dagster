@@ -79,7 +79,6 @@ def dynamic_echo(_, nums):
 
 @job
 def dynamic_pipeline():
-
     numbers = emit(num_range())
     dynamic = numbers.map(lambda num: multiply_by_two(multiply_inputs(num, emit_ten())))
     n = multiply_by_two.alias("double_total")(sum_numbers(dynamic.collect()))

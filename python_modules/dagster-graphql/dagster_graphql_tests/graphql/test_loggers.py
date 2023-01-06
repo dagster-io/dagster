@@ -30,6 +30,7 @@ query LoggerQuery($selector: PipelineSelector!) {
 }
 """
 
+
 # Warning: If _compute_fields_hash changes, verify that the result.data has the same shape/keys/values
 # as the existing snapshot and then run update snapshot
 def test_mode_fetch_loggers(graphql_context, snapshot):

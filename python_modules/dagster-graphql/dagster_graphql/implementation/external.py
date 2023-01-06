@@ -91,7 +91,6 @@ def ensure_valid_config(
     )
 
     if not validated_config.success:
-
         raise UserFacingGraphQLError(
             GrapheneRunConfigValidationInvalid.for_validation_errors(
                 external_pipeline, validated_config.errors
@@ -109,7 +108,6 @@ def get_external_execution_plan_or_raise(
     step_keys_to_execute: Optional[Sequence[str]],
     known_state: Optional[KnownExecutionState],
 ) -> ExternalExecutionPlan:
-
     return graphene_info.context.get_external_execution_plan(
         external_pipeline=external_pipeline,
         run_config=run_config,

@@ -68,7 +68,6 @@ class ConfigType:
         description: Optional[str] = None,
         type_params: Optional[Sequence["ConfigType"]] = None,
     ):
-
         self.key: str = check.str_param(key, "key")
         self.kind: ConfigTypeKind = check.inst_param(kind, "kind", ConfigTypeKind)
         self.given_name: Optional[str] = check.opt_str_param(given_name, "given_name")
@@ -321,8 +320,7 @@ class Enum(ConfigType):
 
         check.failed(
             (
-                "Should never reach this. config_value should be pre-validated. "
-                "Got {config_value}"
+                "Should never reach this. config_value should be pre-validated. Got {config_value}"
             ).format(config_value=value)
         )
 

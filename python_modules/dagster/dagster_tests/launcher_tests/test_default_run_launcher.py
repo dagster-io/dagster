@@ -178,7 +178,6 @@ def test_successful_run(instance, workspace, run_config):  # pylint: disable=red
 def test_successful_run_from_pending(
     instance: DagsterInstance, pending_workspace
 ):  # pylint: disable=redefined-outer-name
-
     repo_location = pending_workspace.get_repository_location("test2")
     external_pipeline = repo_location.get_repository("pending").get_full_external_job(
         "my_cool_asset_job"
@@ -304,9 +303,8 @@ def test_invalid_instance_run():
                         with pytest.raises(
                             DagsterLaunchFailedError,
                             match=re.escape(
-                                "gRPC server could not load run {run_id} in order to execute it".format(
-                                    run_id=pipeline_run.run_id
-                                )
+                                "gRPC server could not load run {run_id} in order to execute it"
+                                .format(run_id=pipeline_run.run_id)
                             ),
                         ):
                             instance.launch_run(run_id=pipeline_run.run_id, workspace=workspace)
@@ -451,7 +449,10 @@ def test_terminated_run(instance, workspace, run_config):  # pylint: disable=red
                 ("PIPELINE_CANCELING", "Sending run termination request."),
                 (
                     "ENGINE_EVENT",
-                    "Multiprocess executor: received termination signal - forwarding to active child process",
+                    (
+                        "Multiprocess executor: received termination signal - forwarding to active"
+                        " child process"
+                    ),
                 ),
                 (
                     "ENGINE_EVENT",
@@ -524,7 +525,8 @@ def test_cleanup_after_force_terminate(run_config, instance, workspace):
         logs = instance.all_logs(run_id)
         if any(
             [
-                "Computational resources were cleaned up after the run was forcibly marked as canceled."
+                "Computational resources were cleaned up after the run was forcibly marked as"
+                " canceled."
                 in str(event)
                 for event in logs
             ]
@@ -554,7 +556,6 @@ def _get_engine_events(event_records):
 
 
 def _get_successful_step_keys(event_records):
-
     step_keys = set()
 
     for er in event_records:

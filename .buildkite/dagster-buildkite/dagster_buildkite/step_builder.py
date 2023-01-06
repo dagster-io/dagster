@@ -27,7 +27,6 @@ class BuildkiteQueue(Enum):
 
 
 class CommandStepBuilder:
-
     _step: CommandStep
 
     def __init__(

@@ -360,7 +360,8 @@ def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
         job_id=DBT_CLOUD_JOB_ID,
         cause="Generating software-defined assets for Dagster.",
         steps_override=[
-            f"dbt compile --vars '{json.dumps({'run_date': partition_def.get_last_partition_key()})}'"
+            "dbt compile --vars"
+            f" '{json.dumps({'run_date': partition_def.get_last_partition_key()})}'"
         ],
     )
 

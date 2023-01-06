@@ -238,7 +238,10 @@ DBT_RPC_RESPONSE_SAMPLE = {
                 "build_path": "target/compiled/my_schema/models/table_3.sql",
                 "deferred": False,
                 "unrendered_config": {"materialized": "table", "partitions": [20201230]},
-                "compiled_sql": "\nSELECT * FROM `my_db`.`my_schema`.`table_2` FULL OUTER JOIN `my_db`.`my_schema`.`table_1` USING (`by`)",
+                "compiled_sql": (
+                    "\nSELECT * FROM `my_db`.`my_schema`.`table_2` FULL OUTER JOIN"
+                    " `my_db`.`my_schema`.`table_1` USING (`by`)"
+                ),
                 "extra_ctes_injected": True,
                 "extra_ctes": [],
                 "relation_name": "`my_db`.`my_schema`.`table_3`",

@@ -140,7 +140,6 @@ def _step_handler_context(pipeline, pipeline_run, instance, executor):
 
 
 def test_executor_init(k8s_run_launcher_instance):
-
     resources = {
         "requests": {"memory": "64Mi", "cpu": "250m"},
         "limits": {"memory": "128Mi", "cpu": "500m"},
@@ -194,7 +193,6 @@ def test_executor_init(k8s_run_launcher_instance):
 def test_executor_init_container_context(
     k8s_run_launcher_instance, python_origin_with_container_context
 ):
-
     executor = _get_executor(
         k8s_run_launcher_instance,
         reconstructable(bar),
@@ -301,7 +299,6 @@ def test_step_handler(kubeconfig_file, k8s_instance):
 
 
 def test_step_handler_user_defined_config(kubeconfig_file, k8s_instance):
-
     mock_k8s_client_batch_api = mock.MagicMock()
     handler = K8sStepHandler(
         image="bizbuz",
@@ -354,7 +351,6 @@ def test_step_handler_user_defined_config(kubeconfig_file, k8s_instance):
 
 
 def test_step_handler_image_override(kubeconfig_file, k8s_instance):
-
     mock_k8s_client_batch_api = mock.MagicMock()
     handler = K8sStepHandler(
         image="bizbuz",

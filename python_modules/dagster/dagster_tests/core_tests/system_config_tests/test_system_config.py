@@ -49,7 +49,10 @@ def create_run_config_schema_type(job_def):
 
 
 def test_all_types_provided():
-    job_def = GraphDefinition(name="pipeline", node_defs=[],).to_job(
+    job_def = GraphDefinition(
+        name="pipeline",
+        node_defs=[],
+    ).to_job(
         resource_defs={
             "some_resource": ResourceDefinition(
                 lambda _: None,
@@ -463,7 +466,10 @@ def test_required_resource_with_required_subfield():
     def needs_resource(_):
         pass
 
-    job_def = GraphDefinition(name="some_pipeline", node_defs=[needs_resource],).to_job(
+    job_def = GraphDefinition(
+        name="some_pipeline",
+        node_defs=[needs_resource],
+    ).to_job(
         resource_defs={
             "with_required": ResourceDefinition(
                 resource_fn=lambda _: None,
@@ -484,7 +490,10 @@ def test_required_resource_with_required_subfield():
 
 
 def test_all_optional_field_on_single_resource():
-    job_def = GraphDefinition(name="some_pipeline", node_defs=[],).to_job(
+    job_def = GraphDefinition(
+        name="some_pipeline",
+        node_defs=[],
+    ).to_job(
         resource_defs={
             "with_optional": ResourceDefinition(
                 resource_fn=lambda _: None,
@@ -510,7 +519,10 @@ def test_optional_and_required_context():
     def needs_resource(_):
         pass
 
-    job_def = GraphDefinition(name="some_pipeline", node_defs=[needs_resource],).to_job(
+    job_def = GraphDefinition(
+        name="some_pipeline",
+        node_defs=[needs_resource],
+    ).to_job(
         resource_defs={
             "optional_resource": ResourceDefinition(
                 lambda _: None,

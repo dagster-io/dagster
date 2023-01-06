@@ -38,7 +38,10 @@ if TYPE_CHECKING:
 
 from dagster._core.host_representation.external import ExternalPipeline
 
-WORKSPACE_TARGET_WARNING = "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port, --grpc-socket."
+WORKSPACE_TARGET_WARNING = (
+    "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port,"
+    " --grpc-socket."
+)
 
 ClickArgMapping: TypeAlias = Mapping[str, Union[str, Tuple[str]]]
 
@@ -192,7 +195,8 @@ def get_workspace_load_target(kwargs: ClickArgMapping):
 
             if kwargs.get("attribute"):
                 raise UsageError(
-                    f"If you are specifying multiple modules you cannot specify an attribute. Got modules {module_names}."
+                    "If you are specifying multiple modules you cannot specify an attribute. Got"
+                    f" modules {module_names}."
                 )
 
             return CompositeTarget(
@@ -292,9 +296,11 @@ def python_target_click_options():
             # are better equipped to surface errors
             type=click.Path(exists=False),
             multiple=True,
-            help="Specify python file or files (flag can be used multiple times) where "
-            "dagster definitions reside as top-level symbols/variables and load each "
-            "file as a code location in the current python environment.",
+            help=(
+                "Specify python file or files (flag can be used multiple times) where "
+                "dagster definitions reside as top-level symbols/variables and load each "
+                "file as a code location in the current python environment."
+            ),
             envvar="DAGSTER_PYTHON_FILE",
         ),
         click.option(
@@ -306,9 +312,11 @@ def python_target_click_options():
             "--module-name",
             "-m",
             multiple=True,
-            help="Specify module or modules (flag can be used multiple times) where "
-            "dagster definitions reside as top-level symbols/variables and load each "
-            "module as a code location in the current python environment.",
+            help=(
+                "Specify module or modules (flag can be used multiple times) where "
+                "dagster definitions reside as top-level symbols/variables and load each "
+                "module as a code location in the current python environment."
+            ),
             envvar="DAGSTER_MODULE_NAME",
         ),
         click.option(
@@ -329,25 +337,25 @@ def grpc_server_target_click_options():
             "--grpc-port",
             type=click.INT,
             required=False,
-            help=("Port to use to connect to gRPC server"),
+            help="Port to use to connect to gRPC server",
         ),
         click.option(
             "--grpc-socket",
             type=click.Path(),
             required=False,
-            help=("Named socket to use to connect to gRPC server"),
+            help="Named socket to use to connect to gRPC server",
         ),
         click.option(
             "--grpc-host",
             type=click.STRING,
             required=False,
-            help=("Host to use to connect to gRPC server, defaults to localhost"),
+            help="Host to use to connect to gRPC server, defaults to localhost",
         ),
         click.option(
             "--use-ssl",
             is_flag=True,
             required=False,
-            help=("Use a secure channel when connecting to the gRPC server"),
+            help="Use a secure channel when connecting to the gRPC server",
         ),
     ]
 
@@ -361,7 +369,7 @@ def workspace_target_click_options():
                 "-w",
                 multiple=True,
                 type=click.Path(exists=True),
-                help=("Path to workspace file. Argument can be provided multiple times."),
+                help="Path to workspace file. Argument can be provided multiple times.",
             ),
         ]
         + python_target_click_options()
@@ -376,7 +384,7 @@ def python_job_target_click_options():
             click.option(
                 "--repository",
                 "-r",
-                help=("Repository name, necessary if more than one repository is present."),
+                help="Repository name, necessary if more than one repository is present.",
             )
         ]
         + [job_option()]
@@ -458,7 +466,8 @@ def repository_click_options():
             "--location",
             "-l",
             help=(
-                "RepositoryLocation within the workspace, necessary if more than one location is present."
+                "RepositoryLocation within the workspace, necessary if more than one location is"
+                " present."
             ),
         ),
     ]
@@ -481,7 +490,7 @@ def job_option():
         "--job",
         "-j",
         "job_name",
-        help=("Job within the repository, necessary if more than one job is present."),
+        help="Job within the repository, necessary if more than one job is present.",
     )
 
 
@@ -504,17 +513,13 @@ def get_job_python_origin_from_kwargs(kwargs):
         pipeline_name = next(iter(job_names))
     elif provided_name is None:
         raise click.UsageError(
-            (
-                "Must provide --job as there is more than one job "
-                f"in {repo_definition.name}. Options are: {_sorted_quoted(job_names)}."
-            )
+            "Must provide --job as there is more than one job "
+            f"in {repo_definition.name}. Options are: {_sorted_quoted(job_names)}."
         )
     elif not provided_name in job_names:
         raise click.UsageError(
-            (
-                f'Job "{provided_name}" not found in repository "{repo_definition.name}" '
-                f"Found {_sorted_quoted(job_names)} instead."
-            )
+            f'Job "{provided_name}" not found in repository "{repo_definition.name}" '
+            f"Found {_sorted_quoted(job_names)} instead."
         )
     else:
         pipeline_name = provided_name
@@ -595,7 +600,10 @@ def unwrap_single_code_location_target_cli_arg(kwargs: ClickArgMapping, key: str
     value_tuple = cast(Tuple[str], kwargs[key])
     check.invariant(
         len(value_tuple) == 1,
-        "Must specify only one code location when executing this command. Multiple {key} options given",
+        (
+            "Must specify only one code location when executing this command. Multiple {key}"
+            " options given"
+        ),
     )
     return value_tuple[0]
 
@@ -648,10 +656,8 @@ def get_repository_python_origin_from_kwargs(kwargs: ClickArgMapping) -> Reposit
         code_pointer = next(iter(code_pointer_dict.values()))
     elif provided_repo_name is None:
         raise click.UsageError(
-            (
-                "Must provide --repository as there is more than one repository. "
-                f"Options are: {found_repo_names}."
-            )
+            "Must provide --repository as there is more than one repository. "
+            f"Options are: {found_repo_names}."
         )
     elif not provided_repo_name in code_pointer_dict:
         raise click.UsageError(
@@ -774,18 +780,14 @@ def get_external_job_from_external_repo(
 
     if provided_name is None:
         raise click.UsageError(
-            (
-                "Must provide --job as there is more than one job "
-                f"in {external_repo.name}. Options are: {_sorted_quoted(external_pipelines.keys())}."
-            )
+            "Must provide --job as there is more than one job "
+            f"in {external_repo.name}. Options are: {_sorted_quoted(external_pipelines.keys())}."
         )
 
     if not provided_name in external_pipelines:
         raise click.UsageError(
-            (
-                f'Job "{provided_name}" not found in repository "{external_repo.name}". '
-                f"Found {_sorted_quoted(external_pipelines.keys())} instead."
-            )
+            f'Job "{provided_name}" not found in repository "{external_repo.name}". '
+            f"Found {_sorted_quoted(external_pipelines.keys())} instead."
         )
 
     return external_pipelines[provided_name]

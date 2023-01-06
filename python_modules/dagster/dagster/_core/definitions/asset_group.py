@@ -494,8 +494,8 @@ def _validate_resource_reqs_for_asset_group(
         missing_resource_keys = list(set(required_resource_keys) - present_resource_keys)
         if missing_resource_keys:
             raise DagsterInvalidDefinitionError(
-                f"AssetGroup is missing required resource keys for asset '{asset_def.node_def.name}'. "
-                f"Missing resource keys: {missing_resource_keys}"
+                "AssetGroup is missing required resource keys for asset"
+                f" '{asset_def.node_def.name}'. Missing resource keys: {missing_resource_keys}"
             )
 
         for output_name, asset_key in asset_def.keys_by_output_name.items():
@@ -504,9 +504,9 @@ def _validate_resource_reqs_for_asset_group(
             )
             if output_def.io_manager_key and output_def.io_manager_key not in present_resource_keys:
                 raise DagsterInvalidDefinitionError(
-                    f"Output '{output_def.name}' with AssetKey '{asset_key}' "
-                    f"requires io manager '{output_def.io_manager_key}' but was "
-                    f"not provided on asset group. Provided resources: {sorted(list(present_resource_keys))}"
+                    f"Output '{output_def.name}' with AssetKey '{asset_key}' requires io manager"
+                    f" '{output_def.io_manager_key}' but was not provided on asset group. Provided"
+                    f" resources: {sorted(list(present_resource_keys))}"
                 )
 
     for source_asset in source_assets:

@@ -62,7 +62,8 @@ def _k8s_parse_value(data, classname, attr_name):
     else:
         if not isinstance(data, (frozendict, dict)):
             raise Exception(
-                f"Attribute {attr_name} of type {klass.__name__} must be a dict, received {data} instead"
+                f"Attribute {attr_name} of type {klass.__name__} must be a dict, received"
+                f" {data} instead"
             )
 
         return k8s_model_from_dict(klass, data)
@@ -89,7 +90,8 @@ def _k8s_snake_case_value(val, attr_type, attr_name):
         else:
             if not isinstance(val, (frozendict, dict)):
                 raise Exception(
-                    f"Attribute {attr_name} of type {klass.__name__} must be a dict, received {val} instead"
+                    f"Attribute {attr_name} of type {klass.__name__} must be a dict, received"
+                    f" {val} instead"
                 )
             return k8s_snake_case_dict(klass, val)
 
@@ -104,7 +106,8 @@ def k8s_snake_case_dict(model_class, model_dict: Mapping[str, Any]):
 
         if snake_case_key != key and snake_case_key in model_dict:
             raise Exception(
-                f"Model class {model_class.__name__} cannot contain both {key} and {snake_case_key} keys"
+                f"Model class {model_class.__name__} cannot contain both {key} and"
+                f" {snake_case_key} keys"
             )
 
         snake_case_dict[snake_case_key] = val

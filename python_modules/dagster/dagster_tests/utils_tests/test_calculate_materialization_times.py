@@ -149,7 +149,6 @@ def test_caching_instance_queryer(
         return set().union(*(_get_root_keys(upstream_key) for upstream_key in upstream_keys))
 
     with DagsterInstance.ephemeral() as instance:
-
         # mapping from asset key to a mapping of materialization timestamp to run index
         materialization_times_index = defaultdict(dict)
 

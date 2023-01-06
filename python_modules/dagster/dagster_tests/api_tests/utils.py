@@ -57,7 +57,6 @@ def get_bar_repo_handle(instance=None):
 
 @contextmanager
 def get_foo_job_handle(instance=None):
-
     with ExitStack() as stack:
         if not instance:
             instance = stack.enter_context(instance_for_test())

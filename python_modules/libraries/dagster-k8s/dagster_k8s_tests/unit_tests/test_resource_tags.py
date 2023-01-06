@@ -209,7 +209,6 @@ def test_bad_user_defined_k8s_config_tags():
 
 
 def test_user_defined_config_from_tags():
-
     config_args = {
         "container_config": {
             "resources": {

@@ -320,7 +320,8 @@ class BatchMaterializationLoader:
     ) -> Optional[EventLogEntry]:
         if asset_key not in self._asset_keys:
             check.failed(
-                f"Asset key {asset_key} not recognized for this loader.  Expected one of: {self._asset_keys}"
+                f"Asset key {asset_key} not recognized for this loader.  Expected one of:"
+                f" {self._asset_keys}"
             )
 
         if not self._fetched:

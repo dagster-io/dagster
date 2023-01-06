@@ -13,7 +13,6 @@ from .utils import (
 
 
 def test_census_trigger_sync_op():
-
     cen_resource = census_resource.configured({"api_key": "foo"})
 
     @op

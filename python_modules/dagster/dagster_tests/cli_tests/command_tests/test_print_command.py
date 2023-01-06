@@ -37,7 +37,6 @@ def test_print_command(gen_pipeline_args):
 @pytest.mark.parametrize("job_cli_args", valid_external_job_target_cli_args())
 def test_job_print_command_cli(job_cli_args):
     with instance_for_test():
-
         runner = CliRunner()
 
         result = runner.invoke(job_print_command, job_cli_args)

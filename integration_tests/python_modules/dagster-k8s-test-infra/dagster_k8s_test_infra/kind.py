@@ -49,8 +49,9 @@ def create_kind_cluster(cluster_name, should_cleanup=True):
 
     try:
         print(
-            "--- \033[32m:k8s: Running kind cluster setup for cluster "
-            "{cluster_name}\033[0m".format(cluster_name=cluster_name)
+            "--- \033[32m:k8s: Running kind cluster setup for cluster {cluster_name}\033[0m".format(
+                cluster_name=cluster_name
+            )
         )
 
         p = subprocess.Popen(
@@ -150,9 +151,9 @@ def kind_cluster(cluster_name=None, should_cleanup=False, kind_ready_timeout=60.
 
             if should_cleanup:
                 print(
-                    "WARNING: should_cleanup is true, but won't delete your existing cluster. If you'd "
-                    "like to delete this cluster, please manually remove by running the command:\n"
-                    "kind delete cluster --name %s" % cluster_name
+                    "WARNING: should_cleanup is true, but won't delete your existing cluster. If"
+                    " you'd like to delete this cluster, please manually remove by running the"
+                    " command:\nkind delete cluster --name %s" % cluster_name
                 )
     else:
         with create_kind_cluster(cluster_name, should_cleanup=should_cleanup):

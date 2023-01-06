@@ -13,7 +13,6 @@ from dagster._core.storage.pipeline_run import DagsterRunStatus
 
 
 class DagsterHook(BaseHook):
-
     conn_name_attr = "dagster_conn_id"
     default_conn_name = "dagster_default"
     conn_type = "dagster"
@@ -174,7 +173,8 @@ fragment PythonErrorFragment on PythonError {
             return run["id"]
         else:
             raise AirflowException(
-                f'Error launching run: {response_json["data"]["launchPipelineExecution"]["message"]}'
+                "Error launching run:"
+                f' {response_json["data"]["launchPipelineExecution"]["message"]}'
             )
 
     def wait_for_run(
@@ -294,5 +294,6 @@ fragment PythonErrorFragment on PythonError {
             != "TerminateRunSuccess"
         ):
             raise AirflowException(
-                f'Error terminating run: {response_json["data"]["terminatePipelineExecution"]["message"]}'
+                "Error terminating run:"
+                f' {response_json["data"]["terminatePipelineExecution"]["message"]}'
             )

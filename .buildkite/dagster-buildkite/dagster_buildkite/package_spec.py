@@ -138,7 +138,6 @@ class PackageSpec:
         ]
 
         if self.run_pytest:
-
             default_python_versions = AvailablePythonVersion.get_pytest_defaults()
             pytest_python_versions = sorted(
                 list(set(default_python_versions) - set(self.unsupported_python_versions))
@@ -155,7 +154,6 @@ class PackageSpec:
 
             for py_version in pytest_python_versions:
                 for other_factor in tox_factors:
-
                     version_factor = AvailablePythonVersion.to_tox_factor(py_version)
                     if other_factor is None:
                         tox_env = version_factor

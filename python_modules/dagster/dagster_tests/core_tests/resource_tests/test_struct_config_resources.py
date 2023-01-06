@@ -23,7 +23,6 @@ from dagster._utils.cached_method import cached_method
 
 
 def test_basic_structured_resource():
-
     out_txt = []
 
     class WriterResource(Resource):
@@ -65,7 +64,6 @@ def test_invalid_config():
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8")
 def test_caching_within_resource():
-
     called = {"greeting": 0, "get_introduction": 0}
 
     from functools import cached_property
@@ -138,7 +136,6 @@ def test_caching_within_resource():
 
 
 def test_abc_resource():
-
     out_txt = []
 
     class WriterResource(Resource, ABC):
@@ -217,7 +214,6 @@ def test_yield_in_resource_function():
 
 
 def test_wrapping_function_resource():
-
     out_txt = []
 
     @resource(config_schema={"prefix": str})

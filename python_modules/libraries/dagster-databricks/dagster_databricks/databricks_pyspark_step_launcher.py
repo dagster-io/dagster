@@ -73,22 +73,28 @@ DAGSTER_SYSTEM_ENV_VARS = {
         "local_pipeline_package_path": Field(
             StringSource,
             is_required=False,
-            description="Absolute path to root python package containing your Dagster code. If you "
-            "set this value to a directory lower than the root package, and have user relative "
-            "imports in your code (e.g. `from .foo import bar`), it's likely you'll encounter an "
-            "import error on the remote step. Before every step run, the launcher will zip up the "
-            "code in this local path, upload it to DBFS, and unzip it into the Python path of the "
-            "remote Spark process. This gives the remote process access to up-to-date user code.",
+            description=(
+                "Absolute path to root python package containing your Dagster code. If you set this"
+                " value to a directory lower than the root package, and have user relative imports"
+                " in your code (e.g. `from .foo import bar`), it's likely you'll encounter an"
+                " import error on the remote step. Before every step run, the launcher will zip up"
+                " the code in this local path, upload it to DBFS, and unzip it into the Python path"
+                " of the remote Spark process. This gives the remote process access to up-to-date"
+                " user code."
+            ),
         ),
         "local_dagster_job_package_path": Field(
             StringSource,
             is_required=False,
-            description="Absolute path to root python package containing your Dagster code. If you "
-            "set this value to a directory lower than the root package, and have user relative "
-            "imports in your code (e.g. `from .foo import bar`), it's likely you'll encounter an "
-            "import error on the remote step. Before every step run, the launcher will zip up the "
-            "code in this local path, upload it to DBFS, and unzip it into the Python path of the "
-            "remote Spark process. This gives the remote process access to up-to-date user code.",
+            description=(
+                "Absolute path to root python package containing your Dagster code. If you set this"
+                " value to a directory lower than the root package, and have user relative imports"
+                " in your code (e.g. `from .foo import bar`), it's likely you'll encounter an"
+                " import error on the remote step. Before every step run, the launcher will zip up"
+                " the code in this local path, upload it to DBFS, and unzip it into the Python path"
+                " of the remote Spark process. This gives the remote process access to up-to-date"
+                " user code."
+            ),
         ),
         "staging_prefix": Field(
             StringSource,
@@ -100,39 +106,50 @@ DAGSTER_SYSTEM_ENV_VARS = {
             Bool,
             is_required=False,
             default_value=False,
-            description="If set, and if the specified cluster is configured to export logs, "
-            "the system will wait after job completion for the logs to appear in the configured "
-            "location. Note that logs are copied every 5 minutes, so enabling this will add "
-            "several minutes to the job runtime. NOTE: this integration will export stdout/stderr"
-            "from the remote Databricks process automatically, so this option is not generally "
-            "necessary.",
+            description=(
+                "If set, and if the specified cluster is configured to export logs, the system will"
+                " wait after job completion for the logs to appear in the configured location. Note"
+                " that logs are copied every 5 minutes, so enabling this will add several minutes"
+                " to the job runtime. NOTE: this integration will export stdout/stderrfrom the"
+                " remote Databricks process automatically, so this option is not generally"
+                " necessary."
+            ),
         ),
         "max_completion_wait_time_seconds": Field(
             IntSource,
             is_required=False,
             default_value=DEFAULT_RUN_MAX_WAIT_TIME_SEC,
-            description="If the Databricks job run takes more than this many seconds, then "
-            "consider it failed and terminate the step.",
+            description=(
+                "If the Databricks job run takes more than this many seconds, then "
+                "consider it failed and terminate the step."
+            ),
         ),
         "poll_interval_sec": Field(
             float,
             is_required=False,
             default_value=5.0,
-            description="How frequently Dagster will poll Databricks to determine the state of the job.",
+            description=(
+                "How frequently Dagster will poll Databricks to determine the state of the job."
+            ),
         ),
         "verbose_logs": Field(
             bool,
             default_value=True,
-            description="Determines whether to display debug logs emitted while job is being polled. "
-            "It can be helpful for Dagit performance to set to False when running long-running or fan-out "
-            "Databricks jobs, to avoid forcing the UI to fetch large amounts of debug logs.",
+            description=(
+                "Determines whether to display debug logs emitted while job is being polled. It can"
+                " be helpful for Dagit performance to set to False when running long-running or"
+                " fan-out Databricks jobs, to avoid forcing the UI to fetch large amounts of debug"
+                " logs."
+            ),
         ),
         "add_dagster_env_variables": Field(
             bool,
             default_value=True,
-            description="Automatically add Dagster system environment variables. This option is only applicable when "
-            "the code being executed is deployed on Dagster Cloud. It will be ignored when the environment "
-            "variables provided by Dagster Cloud are not present.",
+            description=(
+                "Automatically add Dagster system environment variables. This option is only"
+                " applicable when the code being executed is deployed on Dagster Cloud. It will be"
+                " ignored when the environment variables provided by Dagster Cloud are not present."
+            ),
         ),
     }
 )
@@ -181,11 +198,17 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         self.storage = check.opt_dict_param(storage, "storage")
         check.invariant(
             local_dagster_job_package_path is not None or local_pipeline_package_path is not None,
-            "Missing config: need to provide either 'local_dagster_job_package_path' or 'local_pipeline_package_path' config entry",
+            (
+                "Missing config: need to provide either 'local_dagster_job_package_path' or"
+                " 'local_pipeline_package_path' config entry"
+            ),
         )
         check.invariant(
             local_dagster_job_package_path is None or local_pipeline_package_path is None,
-            "Error in config: Provided both 'local_dagster_job_package_path' and 'local_pipeline_package_path' entries. Need to specify one or the other.",
+            (
+                "Error in config: Provided both 'local_dagster_job_package_path' and"
+                " 'local_pipeline_package_path' entries. Need to specify one or the other."
+            ),
         )
         self.local_dagster_job_package_path = check.str_param(
             local_pipeline_package_path or local_dagster_job_package_path,
@@ -246,8 +269,8 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             log.info(stdout)
         except Exception as e:
             log.error(
-                f"Encountered exception {e} when attempting to load stdout logs for step {step_key}. "
-                "Check the databricks console for more info."
+                f"Encountered exception {e} when attempting to load stdout logs for step"
+                f" {step_key}. Check the databricks console for more info."
             )
         try:
             stderr = self.databricks_runner.client.read_file(
@@ -257,8 +280,8 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             log.info(stderr)
         except Exception as e:
             log.error(
-                f"Encountered exception {e} when attempting to load stderr logs for step {step_key}. "
-                "Check the databricks console for more info."
+                f"Encountered exception {e} when attempting to load stderr logs for step"
+                f" {step_key}. Check the databricks console for more info."
             )
 
     def step_events_iterator(self, step_context, step_key: str, databricks_run_id: int):
@@ -556,7 +579,8 @@ class DatabricksConfig:
             self.setup_adls2_storage(self.storage["adls2"], dbutils, sc)
 
     def setup_s3_storage(self, s3_storage, dbutils, sc):
-        """Obtain AWS credentials from Databricks secrets and export so both Spark and boto can use them."""
+        """Obtain AWS credentials from Databricks secrets and export so both Spark and boto can use them.
+        """
 
         scope = s3_storage["secret_scope"]
 
@@ -577,7 +601,8 @@ class DatabricksConfig:
         os.environ["AWS_SECRET_ACCESS_KEY"] = secret_key
 
     def setup_adls2_storage(self, adls2_storage, dbutils, sc):
-        """Obtain an Azure Storage Account key from Databricks secrets and export so Spark can use it."""
+        """Obtain an Azure Storage Account key from Databricks secrets and export so Spark can use it.
+        """
         storage_account_key = dbutils.secrets.get(
             scope=adls2_storage["secret_scope"], key=adls2_storage["storage_account_key_key"]
         )

@@ -158,7 +158,6 @@ def schedule_partition_range(
 
     partitions: List[Partition[datetime]] = []
     for next_time in schedule_execution_time_iterator(_start.timestamp(), cron_schedule, tz):
-
         partition_time = execution_time_to_partition_fn(next_time)
 
         if partition_time.timestamp() > end_timestamp:
@@ -330,8 +329,7 @@ class ScheduleTimeBasedPartitionsDefinition(
         if end is not None:
             check.invariant(
                 start <= end,
-                f'Selected date range start "{start}" '
-                f'is after date range end "{end}"'.format(
+                f'Selected date range start "{start}" is after date range end "{end}"'.format(
                     start=start.strftime(fmt) if fmt is not None else start,
                     end=cast(datetime, end).strftime(fmt) if fmt is not None else end,
                 ),
@@ -345,15 +343,19 @@ class ScheduleTimeBasedPartitionsDefinition(
             execution_day = execution_day if execution_day is not None else 0
             check.invariant(
                 execution_day is not None and 0 <= execution_day <= 6,
-                f'Execution day "{execution_day}" must be between 0 and 6 for '
-                f'schedule type "{schedule_type}"',
+                (
+                    f'Execution day "{execution_day}" must be between 0 and 6 for '
+                    f'schedule type "{schedule_type}"'
+                ),
             )
         elif schedule_type is ScheduleType.MONTHLY:
             execution_day = execution_day if execution_day is not None else 1
             check.invariant(
                 execution_day is not None and 1 <= execution_day <= 31,
-                f'Execution day "{execution_day}" must be between 1 and 31 for '
-                f'schedule type "{schedule_type}"',
+                (
+                    f'Execution day "{execution_day}" must be between 1 and 31 for '
+                    f'schedule type "{schedule_type}"'
+                ),
             )
 
         return super(ScheduleTimeBasedPartitionsDefinition, cls).__new__(
@@ -906,8 +908,10 @@ class PartitionedConfig(Generic[T]):
         if isinstance(config, PartitionedConfig):
             check.invariant(
                 config.partitions_def == partitions_def,
-                "Can't supply a PartitionedConfig for 'config' with a different "
-                "PartitionsDefinition than supplied for 'partitions_def'.",
+                (
+                    "Can't supply a PartitionedConfig for 'config' with a different "
+                    "PartitionsDefinition than supplied for 'partitions_def'."
+                ),
             )
             return config
         else:

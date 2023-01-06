@@ -205,7 +205,8 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
             (
                 DagsterInvalidSubsetError,
                 r"When building job, the AssetsDefinition 'abc_' contains asset keys "
-                r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\], but attempted to "
+                r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\], but"
+                r" attempted to "
                 r"select only \[AssetKey\(\['a'\]\)\]",
             ),
         ),
@@ -335,7 +336,6 @@ def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
     ],
 )
 def test_define_selection_job(job_selection, expected_assets, use_multi, prefixes):
-
     _, io_manager_def = asset_aware_io_manager()
     # for these, if we have multi assets, we'll always allow them to be subset
     prefixed_assets = _get_assets_defs(use_multi=use_multi, allow_subset=use_multi)

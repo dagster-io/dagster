@@ -52,7 +52,6 @@ class ModifiedDiffData(
     NamedTuple("_ModifiedDiffData", [("key", str), ("old_value", Any), ("new_value", Any)])
 ):
     def __new__(cls, key: str, old_value: Any, new_value: Any):
-
         return super(ModifiedDiffData, cls).__new__(
             cls, key=check.str_param(key, "key"), old_value=old_value, new_value=new_value
         )

@@ -124,7 +124,6 @@ class GrapheneRegularConfigType(graphene.ObjectType):
 
 
 class GrapheneMapConfigType(graphene.ObjectType):
-
     key_type = graphene.Field(graphene.NonNull(GrapheneConfigType))
     value_type = graphene.Field(graphene.NonNull(GrapheneConfigType))
     key_label_name = graphene.Field(graphene.String)

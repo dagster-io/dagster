@@ -6,8 +6,9 @@
 
 [tool.black]
 line-length = 88
-required-version = "22.3.0"
-target-version = ['py36', 'py37', 'py38', 'py39', 'py310']
+preview = true
+required-version = "22.12.0"
+target-version = ['py37', 'py38', 'py39', 'py310', 'py311']
 
 [tool.isort]
 known_first_party = ['dagster']

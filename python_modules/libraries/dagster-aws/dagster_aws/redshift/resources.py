@@ -292,14 +292,18 @@ def define_redshift_config():
         ),
         "database": Field(
             StringSource,
-            description="Name of the default database to use. After login, you can use USE DATABASE"
-            " to change the database.",
+            description=(
+                "Name of the default database to use. After login, you can use USE DATABASE"
+                " to change the database."
+            ),
             is_required=False,
         ),
         "autocommit": Field(
             bool,
-            description="None by default, which honors the Redshift parameter AUTOCOMMIT. Set to "
-            "True or False to enable or disable autocommit mode in the session, respectively.",
+            description=(
+                "None by default, which honors the Redshift parameter AUTOCOMMIT. Set to "
+                "True or False to enable or disable autocommit mode in the session, respectively."
+            ),
             is_required=False,
         ),
         "connect_timeout": Field(
@@ -310,8 +314,10 @@ def define_redshift_config():
         ),
         "sslmode": Field(
             str,
-            description="SSL mode to use. See the Redshift documentation for more information on "
-            "usage: https://docs.aws.amazon.com/redshift/latest/mgmt/connecting-ssl-support.html",
+            description=(
+                "SSL mode to use. See the Redshift documentation for more information on usage:"
+                " https://docs.aws.amazon.com/redshift/latest/mgmt/connecting-ssl-support.html"
+            ),
             is_required=False,
             default_value="require",
         ),
@@ -353,9 +359,11 @@ def redshift_resource(context):
 
 @resource(
     config_schema=define_redshift_config(),
-    description="Fake resource for connecting to the Redshift data warehouse. Usage is identical "
-    "to the real redshift_resource. Will always return [(1,)] for the single query case and "
-    "[[(1,)], [(1,)], [(1,)]] for the multi query case.",
+    description=(
+        "Fake resource for connecting to the Redshift data warehouse. Usage is identical "
+        "to the real redshift_resource. Will always return [(1,)] for the single query case and "
+        "[[(1,)], [(1,)], [(1,)]] for the multi query case."
+    ),
 )
 def fake_redshift_resource(context):
     return FakeRedshiftResource(context)

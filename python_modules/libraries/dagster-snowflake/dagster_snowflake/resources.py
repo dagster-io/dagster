@@ -261,9 +261,8 @@ class SnowflakeConnection:
             "CREATE OR REPLACE TABLE {table} ( data VARIANT DEFAULT NULL);".format(table=table),
             "CREATE OR REPLACE FILE FORMAT parquet_format TYPE = 'parquet';",
             "PUT {src} @%{table};".format(src=src, table=table),
-            "COPY INTO {table} FROM @%{table} FILE_FORMAT = (FORMAT_NAME = 'parquet_format');".format(
-                table=table
-            ),
+            "COPY INTO {table} FROM @%{table} FILE_FORMAT = (FORMAT_NAME = 'parquet_format');"
+            .format(table=table),
         ]
 
         self.execute_queries(sql_queries)

@@ -97,8 +97,10 @@ def celery_k8s_job_executor(init_context):
 
     if not isinstance(run_launcher, CeleryK8sRunLauncher):
         raise DagsterUnmetExecutorRequirementsError(
-            "This engine is only compatible with a CeleryK8sRunLauncher; configure the "
-            "CeleryK8sRunLauncher on your instance to use it.",
+            (
+                "This engine is only compatible with a CeleryK8sRunLauncher; configure the "
+                "CeleryK8sRunLauncher on your instance to use it."
+            ),
         )
 
     job_config = run_launcher.get_k8s_job_config(
@@ -142,7 +144,6 @@ class CeleryK8sJobExecutor(Executor):
         repo_location_name=None,
         job_wait_timeout=None,
     ):
-
         if load_incluster_config:
             check.invariant(
                 kubeconfig_file is None,

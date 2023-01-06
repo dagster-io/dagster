@@ -146,7 +146,6 @@ class DagsterGrpcClient:
         request,
         timeout=DEFAULT_GRPC_TIMEOUT,
     ):
-
         with self._channel() as channel:
             stub = DagsterApiStub(channel)
             yield from getattr(stub, method)(request, metadata=self._metadata, timeout=timeout)

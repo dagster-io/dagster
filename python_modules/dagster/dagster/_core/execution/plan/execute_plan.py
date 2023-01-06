@@ -72,8 +72,8 @@ def inner_plan_execution_iterator(
                 check.invariant(
                     len(missing_resources) == 0,
                     (
-                        "Expected step context for solid {solid_name} to have all required resources, but "
-                        "missing {missing_resources}."
+                        "Expected step context for solid {solid_name} to have all required"
+                        " resources, but missing {missing_resources}."
                     ).format(
                         solid_name=step_context.solid.name, missing_resources=missing_resources
                     ),

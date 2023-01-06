@@ -176,7 +176,6 @@ def _apply_cursor_limit_reverse(items, cursor, limit, reverse):
 
 @capture_error
 def get_partition_set_partition_statuses(graphene_info, external_partition_set):
-
     check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
 
     repository_handle = external_partition_set.repository_handle

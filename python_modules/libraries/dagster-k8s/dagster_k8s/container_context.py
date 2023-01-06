@@ -98,7 +98,6 @@ class K8sContainerContext(
     def _merge_k8s_config(
         self, first_config: Mapping[str, Any], second_config: Mapping[str, Any]
     ) -> Mapping[str, Any]:
-
         # Keys are always the same and initialized in constructor
         assert set(first_config) == set(second_config)
 

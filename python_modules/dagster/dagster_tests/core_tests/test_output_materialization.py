@@ -159,7 +159,10 @@ def test_no_outputs_one_input_config_schema():
         )
 
     assert len(exc_context.value.errors) == 1
-    exp_msg = 'Error 1: Received unexpected config entry "outputs" at path root:solids:take_input_return_nothing'
+    exp_msg = (
+        'Error 1: Received unexpected config entry "outputs" at path'
+        " root:solids:take_input_return_nothing"
+    )
     assert exp_msg in exc_context.value.message
 
 
@@ -222,7 +225,6 @@ def test_basic_string_json_materialization():
 
 
 def test_basic_int_and_string_json_materialization():
-
     pipeline = multiple_output_pipeline()
 
     with get_temp_file_names(2) as file_tuple:
@@ -258,7 +260,6 @@ def read_file_contents(path):
 
 
 def test_basic_int_and_string_json_multiple_materialization():
-
     pipeline = multiple_output_pipeline()
 
     with get_temp_file_names(4) as file_tuple:

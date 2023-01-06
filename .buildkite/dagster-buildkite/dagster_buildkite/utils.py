@@ -89,7 +89,9 @@ def buildkite_yaml_for_steps(steps) -> str:
             "notify": [
                 {
                     "slack": f"elementl#{slack_channel}",
-                    "if": f"build.creator.email == '{buildkite_email}'  && build.state != 'canceled'",
+                    "if": (
+                        f"build.creator.email == '{buildkite_email}'  && build.state != 'canceled'"
+                    ),
                 }
                 for buildkite_email, slack_channel in BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP.items()
             ],
@@ -138,11 +140,9 @@ def connect_sibling_docker_container(
     return [
         # Now, we grab the IP address of the target container from within the target
         # bridge network and export it; this will let the tox tests talk to the target cot.
-        (
-            f"export {env_variable}=`docker inspect --format "
-            f"'{{{{ .NetworkSettings.Networks.{network_name}.IPAddress }}}}' "
-            f"{container_name}`"
-        )
+        f"export {env_variable}=`docker inspect --format "
+        f"'{{{{ .NetworkSettings.Networks.{network_name}.IPAddress }}}}' "
+        f"{container_name}`"
     ]
 
 

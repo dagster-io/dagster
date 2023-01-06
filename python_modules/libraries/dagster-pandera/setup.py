@@ -21,7 +21,7 @@ setup(
     author="Elementl",
     author_email="hello@elementl.com",
     license="Apache-2.0",
-    description=("Integration layer for dagster and pandera."),
+    description="Integration layer for dagster and pandera.",
     url="https://github.com/dagster-io/dagster",
     classifiers=[
         "Programming Language :: Python :: 3.7",

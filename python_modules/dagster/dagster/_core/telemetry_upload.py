@@ -21,7 +21,6 @@ def is_running_in_test():
 
 @contextmanager
 def uploading_logging_thread():
-
     stop_event = threading.Event()
     logging_thread = threading.Thread(
         target=upload_logs, args=([stop_event]), name="telemetry-upload"

@@ -51,7 +51,6 @@ class _Hook:
         self.decorated_fn = check.opt_callable_param(decorated_fn, "decorated_fn")
 
     def __call__(self, fn) -> HookDefinition:
-
         check.callable_param(fn, "fn")
 
         if not self.name:
@@ -188,7 +187,6 @@ def success_hook(
     """
 
     def wrapper(fn: SuccessOrFailureHookFn) -> HookDefinition:
-
         check.callable_param(fn, "fn")
 
         expected_positionals = ["context"]

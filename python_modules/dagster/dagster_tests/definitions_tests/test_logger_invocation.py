@@ -17,8 +17,10 @@ def test_logger_invocation_arguments():
     # Check that proper error is thrown when logger def is invoked with no context arg.
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Logger initialization function has context argument, but no context argument was "
-        "provided when invoking.",
+        match=(
+            "Logger initialization function has context argument, but no context argument was "
+            "provided when invoking."
+        ),
     ):
         foo_logger()  # pylint: disable=no-value-for-parameter
 

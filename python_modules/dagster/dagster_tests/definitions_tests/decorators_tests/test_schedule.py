@@ -174,7 +174,6 @@ def test_schedule_decorators_bad():
 
 
 def test_schedule_with_nested_tags():
-
     nested_tags = {"foo": {"bar": "baz"}}
 
     @schedule(cron_schedule="* * * * *", job_name="foo_job", tags=nested_tags)

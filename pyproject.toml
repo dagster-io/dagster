@@ -10,11 +10,16 @@
 [tool.black]
 line-length = 100
 
+# Enable "preview" mode-- this adds style rules likely to be incorporated into black's next major
+# release. The reason for enabling this, as of 2022-12-04, is to turn on formatting of long string
+# literals.
+preview = true
+
 # Black will refuse to run if it's not this version.
-required-version = "22.3.0"
+required-version = "22.12.0"
 
 # Ensure black's output will be compatible with all listed versions.
-target-version = ['py36', 'py37', 'py38', 'py39', 'py310']
+target-version = ['py37', 'py38', 'py39', 'py310', 'py311']
 
 # ########################
 # ##### ISORT

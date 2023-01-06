@@ -148,10 +148,12 @@ class AssetsDefinition(ResourceAddable):
         }
         check.invariant(
             set(self._asset_deps.keys()) == all_asset_keys,
-            "The set of asset keys with dependencies specified in the asset_deps argument must "
-            "equal the set of asset keys produced by this AssetsDefinition. \n"
-            f"asset_deps keys: {set(self._asset_deps.keys())} \n"
-            f"expected keys: {all_asset_keys}",
+            (
+                "The set of asset keys with dependencies specified in the asset_deps argument must "
+                "equal the set of asset keys produced by this AssetsDefinition. \n"
+                f"asset_deps keys: {set(self._asset_deps.keys())} \n"
+                f"expected keys: {all_asset_keys}"
+            ),
         )
         self._resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
 
@@ -407,7 +409,10 @@ class AssetsDefinition(ResourceAddable):
             for output_name, asset_keys in internal_asset_deps.items():
                 check.invariant(
                     output_name in keys_by_output_name,
-                    f"output_name {output_name} specified in internal_asset_deps does not exist in the decorated function",
+                    (
+                        f"output_name {output_name} specified in internal_asset_deps does not exist"
+                        " in the decorated function"
+                    ),
                 )
                 transformed_internal_asset_deps[keys_by_output_name[output_name]] = asset_keys
 
@@ -920,10 +925,12 @@ def _infer_keys_by_input_names(
     if keys_by_input_name:
         check.invariant(
             set(keys_by_input_name.keys()) == set(all_input_names),
-            "The set of input names keys specified in the keys_by_input_name argument must "
-            f"equal the set of asset keys inputted by '{node_def.name}'. \n"
-            f"keys_by_input_name keys: {set(keys_by_input_name.keys())} \n"
-            f"expected keys: {all_input_names}",
+            (
+                "The set of input names keys specified in the keys_by_input_name argument must "
+                f"equal the set of asset keys inputted by '{node_def.name}'. \n"
+                f"keys_by_input_name keys: {set(keys_by_input_name.keys())} \n"
+                f"expected keys: {all_input_names}"
+            ),
         )
 
     # If asset key is not supplied in keys_by_input_name, create asset key
@@ -943,10 +950,12 @@ def _infer_keys_by_output_names(
     if keys_by_output_name:
         check.invariant(
             set(keys_by_output_name.keys()) == set(output_names),
-            "The set of output names keys specified in the keys_by_output_name argument must "
-            f"equal the set of asset keys outputted by {node_def.name}. \n"
-            f"keys_by_input_name keys: {set(keys_by_output_name.keys())} \n"
-            f"expected keys: {set(output_names)}",
+            (
+                "The set of output names keys specified in the keys_by_output_name argument must "
+                f"equal the set of asset keys outputted by {node_def.name}. \n"
+                f"keys_by_input_name keys: {set(keys_by_output_name.keys())} \n"
+                f"expected keys: {set(output_names)}"
+            ),
         )
 
     inferred_keys_by_output_names: Dict[str, AssetKey] = {
@@ -1031,10 +1040,13 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
 
     check.invariant(
         not unmapped_leaf_nodes,
-        f"All leaf nodes within graph '{graph_def.name}' must generate outputs which are mapped to "
-        "outputs of the graph, and produce assets. The following leaf node(s) are non-asset producing "
-        f"ops: {unmapped_leaf_nodes}. This behavior is not currently supported because these ops "
-        "are not required for the creation of the associated asset(s).",
+        (
+            f"All leaf nodes within graph '{graph_def.name}' must generate outputs which are mapped"
+            " to outputs of the graph, and produce assets. The following leaf node(s) are"
+            f" non-asset producing ops: {unmapped_leaf_nodes}. This behavior is not currently"
+            " supported because these ops are not required for the creation of the associated"
+            " asset(s)."
+        ),
     )
 
 
@@ -1056,5 +1068,6 @@ def _validate_self_deps(
                     continue
 
             raise DagsterInvalidDefinitionError(
-                "Assets can only depend on themselves if they are time-partitioned and each partition depends on earlier partitions"
+                "Assets can only depend on themselves if they are time-partitioned and each"
+                " partition depends on earlier partitions"
             )
