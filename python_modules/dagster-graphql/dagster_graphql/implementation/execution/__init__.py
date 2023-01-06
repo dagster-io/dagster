@@ -3,23 +3,24 @@ import os
 import sys
 from typing import TYPE_CHECKING, Any, AsyncIterator, Optional, Sequence, Tuple, Union
 
+# re-exports
 import dagster._check as check
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.workspace.permissions import Permissions
 from dagster._utils.error import serializable_error_info_from_exc_info
 from starlette.concurrency import (
     run_in_threadpool,  # can provide this indirectly if we dont want starlette dep in dagster-graphql
 )
 
-if TYPE_CHECKING:
-    pass
-
-from ..utils import capture_error
-
-# re-exports
+from ..utils import (
+    assert_permission,
+    assert_permission_for_location,
+    capture_error,
+)
 from .backfill import (
     cancel_partition_backfill as cancel_partition_backfill,
     create_and_launch_partition_backfill as create_and_launch_partition_backfill,
@@ -53,7 +54,7 @@ def _force_mark_as_canceled(instance: DagsterInstance, run_id):
 
 
 @capture_error
-def terminate_pipeline_execution(instance: DagsterInstance, run_id, terminate_policy):
+def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
     from ...schema.errors import GrapheneRunNotFoundError
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.roots.mutation import (
@@ -62,8 +63,9 @@ def terminate_pipeline_execution(instance: DagsterInstance, run_id, terminate_po
         GrapheneTerminateRunSuccess,
     )
 
-    check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(run_id, "run_id")
+
+    instance = graphene_info.context.instance
 
     records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
 
@@ -77,6 +79,17 @@ def terminate_pipeline_execution(instance: DagsterInstance, run_id, terminate_po
     record = records[0]
     run = record.pipeline_run
     graphene_run = GrapheneRun(record)
+
+    location_name = (
+        run.external_pipeline_origin.location_name if run.external_pipeline_origin else None
+    )
+
+    if location_name:
+        assert_permission_for_location(
+            graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION, location_name
+        )
+    else:
+        assert_permission(graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION)
 
     can_cancel_run = run.status == DagsterRunStatus.STARTED or run.status == DagsterRunStatus.QUEUED
 
@@ -123,8 +136,19 @@ def delete_pipeline_run(graphene_info: "HasContext", run_id: str):
 
     instance = graphene_info.context.instance
 
-    if not instance.has_run(run_id):
+    run = instance.get_run_by_id(run_id)
+    if not run:
         return GrapheneRunNotFoundError(run_id)
+
+    location_name = (
+        run.external_pipeline_origin.location_name if run.external_pipeline_origin else None
+    )
+    if location_name:
+        assert_permission_for_location(
+            graphene_info, Permissions.DELETE_PIPELINE_RUN, location_name
+        )
+    else:
+        assert_permission(graphene_info, Permissions.DELETE_PIPELINE_RUN)
 
     instance.delete_run(run_id)
 

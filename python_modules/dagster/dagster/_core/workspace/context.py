@@ -5,7 +5,7 @@ import warnings
 from abc import ABC, abstractmethod
 from contextlib import ExitStack
 from itertools import count
-from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Set, Union, cast
 
 import dagster._check as check
 from dagster._core.errors import (
@@ -37,7 +37,11 @@ from dagster._core.instance import DagsterInstance
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from .load_target import WorkspaceLoadTarget
-from .permissions import PermissionResult, get_user_permissions
+from .permissions import (
+    PermissionResult,
+    get_location_scoped_user_permissions,
+    get_user_permissions,
+)
 from .workspace import (
     IWorkspace,
     WorkspaceLocationEntry,
@@ -104,7 +108,23 @@ class BaseWorkspaceRequestContext(IWorkspace):
         pass
 
     @abstractmethod
+    def permissions_for_location(self, location_name: str) -> Mapping[str, PermissionResult]:
+        pass
+
+    def has_permission_for_location(self, permission: str, location_name: str) -> bool:
+        if self.has_repository_location_name(location_name):
+            permissions = self.permissions_for_location(location_name)
+            return permissions[permission].enabled
+
+        # if not in workspace, fall back to the global permissions across all code locations
+        return self.has_permission(permission)
+
+    @abstractmethod
     def has_permission(self, permission: str) -> bool:
+        pass
+
+    @abstractmethod
+    def was_permission_checked(self, permission: str) -> bool:
         pass
 
     @property
@@ -286,6 +306,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         self._version = version
         self._source = source
         self._read_only = read_only
+        self._checked_permissions: Set[str] = set()
 
     @property
     def instance(self) -> DagsterInstance:
@@ -319,12 +340,23 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def permissions(self) -> Mapping[str, PermissionResult]:
         return get_user_permissions(self._read_only)
 
+    def permissions_for_location(self, location_name: str) -> Mapping[str, PermissionResult]:
+        return get_location_scoped_user_permissions(self._read_only)
+
     def has_permission(self, permission: str) -> bool:
         permissions = self.permissions
         check.invariant(
             permission in permissions, f"Permission {permission} not listed in permissions map"
         )
+        self._checked_permissions.add(permission)
         return permissions[permission].enabled
+
+    def has_permission_for_location(self, permission: str, location_name: str) -> bool:
+        self._checked_permissions.add(permission)
+        return super().has_permission_for_location(permission, location_name)
+
+    def was_permission_checked(self, permission: str) -> bool:
+        return permission in self._checked_permissions
 
     @property
     def source(self) -> Optional[object]:
@@ -497,6 +529,9 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
     @property
     def permissions(self) -> Mapping[str, PermissionResult]:
         return get_user_permissions(True)
+
+    def permissions_for_location(self, _location_name: str) -> Mapping[str, PermissionResult]:
+        return get_location_scoped_user_permissions(True)
 
     @property
     def version(self) -> str:

@@ -69,6 +69,31 @@ def test_launch_asset_backfill():
     all_asset_keys = repo.asset_graph.all_asset_keys
 
     with instance_for_test() as instance:
+
+        # read-only context fails
+        with define_out_of_process_context(
+            __file__, "get_repo", instance, read_only=True
+        ) as read_only_context:
+            assert read_only_context.read_only
+            # launchPartitionBackfill
+            launch_backfill_result = execute_dagster_graphql(
+                read_only_context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["a", "b"],
+                        "assetSelection": [key.to_graphql_input() for key in all_asset_keys],
+                    }
+                },
+            )
+            assert launch_backfill_result
+            assert launch_backfill_result.data
+
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "UnauthorizedError"
+            )
+
         with define_out_of_process_context(__file__, "get_repo", instance) as context:
             # launchPartitionBackfill
             launch_backfill_result = execute_dagster_graphql(

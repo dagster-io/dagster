@@ -163,6 +163,10 @@ class ExternalAssetGraph(AssetGraph):
             job_names_by_key=job_names_by_key,
         )
 
+    @property
+    def repository_handles_by_key(self) -> Mapping[AssetKey, RepositoryHandle]:
+        return self._repo_handles_by_key
+
     def get_repository_handle(self, asset_key: AssetKey) -> RepositoryHandle:
         return self._repo_handles_by_key[asset_key]
 

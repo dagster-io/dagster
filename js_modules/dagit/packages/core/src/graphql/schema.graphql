@@ -1326,6 +1326,7 @@ type WorkspaceLocationEntry {
   loadStatus: RepositoryLocationLoadStatus!
   displayMetadata: [RepositoryMetadata!]!
   updatedTimestamp: Float!
+  permissions: [Permission!]!
 }
 
 union RepositoryLocationOrLoadError = RepositoryLocation | PythonError
@@ -1333,6 +1334,12 @@ union RepositoryLocationOrLoadError = RepositoryLocation | PythonError
 enum RepositoryLocationLoadStatus {
   LOADING
   LOADED
+}
+
+type Permission {
+  permission: String!
+  value: Boolean!
+  disabledReason: String
 }
 
 """
@@ -3322,12 +3329,6 @@ union PartitionBackfillsOrError = PartitionBackfills | PythonError
 
 type PartitionBackfills {
   results: [PartitionBackfill!]!
-}
-
-type Permission {
-  permission: String!
-  value: Boolean!
-  disabledReason: String
 }
 
 type AssetLatestInfo {

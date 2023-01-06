@@ -563,14 +563,16 @@ class ExternalSchedule:
         return self.get_external_origin().get_id()
 
     @property
-    def selector_id(self) -> str:
-        return create_snapshot_id(
-            InstigatorSelector(
-                self.handle.location_name,
-                self.handle.repository_name,
-                self._external_schedule_data.name,
-            )
+    def selector(self) -> InstigatorSelector:
+        return InstigatorSelector(
+            self.handle.location_name,
+            self.handle.repository_name,
+            self._external_schedule_data.name,
         )
+
+    @property
+    def selector_id(self) -> str:
+        return create_snapshot_id(self.selector)
 
     @property
     def default_status(self) -> DefaultScheduleStatus:
@@ -687,14 +689,16 @@ class ExternalSensor:
         return self.get_external_origin().get_id()
 
     @property
-    def selector_id(self) -> str:
-        return create_snapshot_id(
-            InstigatorSelector(
-                self.handle.location_name,
-                self.handle.repository_name,
-                self._external_sensor_data.name,
-            )
+    def selector(self) -> InstigatorSelector:
+        return InstigatorSelector(
+            self.handle.location_name,
+            self.handle.repository_name,
+            self._external_sensor_data.name,
         )
+
+    @property
+    def selector_id(self) -> str:
+        return create_snapshot_id(self.selector)
 
     def get_current_instigator_state(
         self, stored_state: Optional["InstigatorState"]
