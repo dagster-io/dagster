@@ -306,6 +306,8 @@ def test_asset_with_structured_config():
     assert executed["the_asset"]
 
 
+# Disabled for Python versions <3.9 as builtin types do not support generics
+# until Python 3.9, https://peps.python.org/pep-0585/
 @pytest.mark.skipif(sys.version_info < (3, 9), reason="requires python3.9")
 def test_no_err_builtin_annotations():
     # Ensures that we can use Python builtin types without causing any issues, see
