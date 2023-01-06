@@ -201,6 +201,7 @@ from dagster._core.definitions.metadata import (
     MetadataEntry as MetadataEntry,
     MetadataValue as MetadataValue,
     NotebookMetadataValue as NotebookMetadataValue,
+    NullMetadataValue as NullMetadataValue,
     PathMetadataValue as PathMetadataValue,
     PythonArtifactMetadataValue as PythonArtifactMetadataValue,
     TableMetadataValue as TableMetadataValue,

@@ -158,7 +158,9 @@ export const MetadataEntry: React.FC<{
     case 'IntMetadataEntry':
       return <>{entry.intValue !== null ? entry.intValue : entry.intRepr}</>;
     case 'BoolMetadataEntry':
-      return entry.boolValue !== null ? <>{entry.boolValue.toString()}</> : null;
+      return <>{entry.boolValue !== null ? entry.boolValue.toString() : 'null'}</>;
+    case 'NullMetadataEntry':
+      return <>null</>;
     case 'PipelineRunMetadataEntry':
       return <MetadataEntryLink to={`/runs/${entry.runId}`}>{entry.runId}</MetadataEntryLink>;
     case 'AssetMetadataEntry':

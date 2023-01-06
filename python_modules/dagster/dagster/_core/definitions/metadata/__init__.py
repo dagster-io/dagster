@@ -46,6 +46,7 @@ RawMetadataValue = Union[
     int,
     List[Any],
     str,
+    None,
 ]
 
 MetadataMapping = Mapping[str, "MetadataValue"]
@@ -158,6 +159,8 @@ def normalize_metadata_value(raw_value: RawMetadataValue):
         return MetadataValue.asset(raw_value)
     elif isinstance(raw_value, TableSchema):
         return MetadataValue.table_schema(raw_value)
+    elif raw_value is None:
+        return MetadataValue.null()
 
     raise DagsterInvalidMetadata(
         f"Its type was {type(raw_value)}. Consider wrapping the value with the appropriate "
@@ -550,6 +553,14 @@ class MetadataValue(ABC):
         """
         return TableSchemaMetadataValue(schema)
 
+    @public
+    @staticmethod
+    def null() -> "NullMetadataValue":
+        """Static constructor for a metadata value representing null. Can be used as the value type
+        for the `metadata` parameter for supported events.
+        """
+        return NullMetadataValue()
+
 
 # ########################
 # ##### METADATA VALUE TYPES
@@ -927,6 +938,15 @@ class TableSchemaMetadataValue(
     @property
     def value(self) -> TableSchema:
         return self.schema
+
+
+@whitelist_for_serdes(storage_name="NullMetadataEntryData")
+class NullMetadataValue(NamedTuple("_NullMetadataValue", []), MetadataValue):
+    """Representation of null."""
+
+    @property
+    def value(self) -> None:
+        return None
 
 
 # ########################
