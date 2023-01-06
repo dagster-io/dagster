@@ -935,10 +935,9 @@ def static_partitioned_config(
 ) -> Callable[[Callable[[str], Mapping[str, Any]]], PartitionedConfig]:
     """Creates a static partitioned config for a job.
 
-    The provided partition_keys returns a static list of strings identifying the set of partitions,
-    given an optional datetime argument (representing the current time).  The list of partitions
-    is static, so while the run config returned by the decorated function may change over time, the
-    list of valid partition keys does not.
+    The provided partition_keys is a static list of strings identifying the set of partitions. The
+    list of partitions is static, so while the run config returned by the decorated function may
+    change over time, the list of valid partition keys does not.
 
     This has performance advantages over `dynamic_partitioned_config` in terms of loading different
     partition views in Dagit.
