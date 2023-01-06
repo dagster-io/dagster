@@ -29,12 +29,12 @@ import dagster._seven as seven
 from dagster._core.definitions.run_request import InstigatorType, RunRequest
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
-from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterError
 from dagster._core.host_representation.code_location import CodeLocation
-from dagster._core.host_representation.external import ExternalPipeline, ExternalSensor
+from dagster._core.host_representation.external import ExternalSensor
 from dagster._core.host_representation.external_data import ExternalTargetData
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance.persist_run import persist_run
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -50,7 +50,6 @@ from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
     from pendulum.datetime import DateTime
@@ -669,16 +668,26 @@ def _evaluate_sensor(
             solid_selection=target_data.solid_selection,
             asset_selection=run_request.asset_selection,
         )
-        external_pipeline = code_location.get_external_pipeline(pipeline_selector)
+        # <<<<<<< HEAD
+        #         external_pipeline = code_location.get_external_pipeline(pipeline_selector)
+        #         run = _get_or_create_sensor_run(
+        #             context,
+        #             instance,
+        #             code_location,
+        #             external_sensor,
+        #             external_pipeline,
+        #             run_request,
+        #             target_data,
+        #             existing_runs_by_key,
+        # # =======
         run = _get_or_create_sensor_run(
-            context,
-            instance,
-            code_location,
-            external_sensor,
-            external_pipeline,
-            run_request,
-            target_data,
-            existing_runs_by_key,
+            context=context,
+            instance=instance,
+            code_location=code_location,
+            external_sensor=external_sensor,
+            run_request=run_request,
+            existing_runs_by_key=existing_runs_by_key,
+            pipeline_selector=pipeline_selector,
         )
 
         if isinstance(run, SkippedSensorRun):
@@ -785,18 +794,22 @@ def _fetch_existing_runs(
 
 
 def _get_or_create_sensor_run(
+    *,
     context: SensorLaunchContext,
     instance: DagsterInstance,
     code_location: CodeLocation,
     external_sensor: ExternalSensor,
-    external_pipeline: ExternalPipeline,
     run_request: RunRequest,
-    target_data: ExternalTargetData,
     existing_runs_by_key: Mapping[str, DagsterRun],
+    pipeline_selector: PipelineSelector,
 ) -> Union[DagsterRun, SkippedSensorRun]:
     if not run_request.run_key:
         return _create_sensor_run(
-            instance, code_location, external_sensor, external_pipeline, run_request, target_data
+            instance=instance,
+            code_location=code_location,
+            external_sensor=external_sensor,
+            run_request=run_request,
+            pipeline_selector=pipeline_selector,
         )
 
     run = existing_runs_by_key.get(run_request.run_key)
@@ -816,37 +829,23 @@ def _get_or_create_sensor_run(
     context.logger.info(f"Creating new run for {external_sensor.name}")
 
     return _create_sensor_run(
-        instance, code_location, external_sensor, external_pipeline, run_request, target_data
+        instance=instance,
+        code_location=code_location,
+        external_sensor=external_sensor,
+        run_request=run_request,
+        pipeline_selector=pipeline_selector,
     )
 
 
 def _create_sensor_run(
+    *,
     instance: DagsterInstance,
     code_location: CodeLocation,
     external_sensor: ExternalSensor,
-    external_pipeline: ExternalPipeline,
     run_request: RunRequest,
-    target_data: ExternalTargetData,
-) -> DagsterRun:
+    pipeline_selector: PipelineSelector,
+):
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
-
-    external_execution_plan = code_location.get_external_execution_plan(
-        external_pipeline,
-        run_request.run_config,
-        target_data.mode,
-        step_keys_to_execute=None,
-        known_state=None,
-        instance=instance,
-    )
-    execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
-
-    pipeline_tags = validate_tags(external_pipeline.tags or {}, allow_reserved_tags=False)
-    tags = merge_dicts(
-        merge_dicts(pipeline_tags, run_request.tags),
-        DagsterRun.tags_for_sensor(external_sensor),
-    )
-    if run_request.run_key:
-        tags[RUN_KEY_TAG] = run_request.run_key
 
     log_action(
         instance,
@@ -854,29 +853,20 @@ def _create_sensor_run(
         metadata={
             "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
             "SENSOR_NAME_HASH": hash_name(external_sensor.name),
-            "pipeline_name_hash": hash_name(external_pipeline.name),
+            "pipeline_name_hash": hash_name(pipeline_selector.pipeline_name),
             "repo_hash": hash_name(code_location.name),
         },
     )
 
-    return instance.create_run(
-        pipeline_name=target_data.pipeline_name,
-        run_id=None,
+    return persist_run(
+        instance=instance,
+        code_location=code_location,
+        pipeline_selector=pipeline_selector,
         run_config=run_request.run_config,
-        mode=target_data.mode,
-        solids_to_execute=external_pipeline.solids_to_execute,
-        step_keys_to_execute=None,
-        status=DagsterRunStatus.NOT_STARTED,
-        solid_selection=target_data.solid_selection,
-        root_run_id=None,
-        parent_run_id=None,
-        tags=tags,
-        pipeline_snapshot=external_pipeline.pipeline_snapshot,
-        execution_plan_snapshot=execution_plan_snapshot,
-        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
-        asset_selection=frozenset(run_request.asset_selection)
-        if run_request.asset_selection
-        else None,
+        run_tags={
+            **run_request.tags,
+            **DagsterRun.tags_for_sensor(external_sensor),
+            **({RUN_KEY_TAG: run_request.run_key} if run_request.run_key else {}),
+        },
+        explicit_mode=external_sensor.mode,
     )
