@@ -4,6 +4,7 @@ from dagster import job, op
 from dagster._config.config_type import ConfigTypeKind
 from dagster._config.structured_config import Config, PermissiveConfig
 from dagster._core.errors import DagsterInvalidConfigError
+from dagster._utils.cached_method import cached_method
 
 
 def test_default_config_class_non_permissive():
@@ -77,3 +78,24 @@ def test_struct_config_permissive():
     )
 
     assert executed["yes"]
+
+
+def test_struct_config_persmissive_cached_method():
+    calls = {"plus": 0}
+
+    class PlusConfig(PermissiveConfig):
+        x: int
+        y: int
+
+        @cached_method
+        def plus(self):
+            calls["plus"] += 1
+            return self.x + self.y
+
+    plus_config = PlusConfig(x=1, y=2)
+
+    assert plus_config.plus() == 3
+    assert calls["plus"] == 1
+
+    assert plus_config.plus() == 3
+    assert calls["plus"] == 1
