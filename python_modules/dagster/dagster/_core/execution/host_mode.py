@@ -166,7 +166,7 @@ def execute_run_host_mode(
     check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
     check.opt_sequence_param(executor_defs, "executor_defs", of_type=ExecutorDefinition)
-    executor_defs = executor_defs if executor_defs != None else default_executors
+    executor_defs = executor_defs if executor_defs is not None else default_executors
 
     if pipeline_run.status == DagsterRunStatus.CANCELED:
         message = "Not starting execution since the run was canceled before execution could start"

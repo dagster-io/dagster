@@ -23,7 +23,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import OpDefinition, PartitionsDefinition
+    from dagster._core.definitions import PartitionsDefinition
     from dagster._core.definitions.op_definition import OpDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.events import DagsterEvent

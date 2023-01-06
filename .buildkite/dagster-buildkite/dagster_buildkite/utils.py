@@ -7,8 +7,9 @@ from typing import Dict, List, Optional, Union
 
 import packaging.version
 import yaml
-from dagster_buildkite.git import ChangedFiles, get_commit_message
 from typing_extensions import Literal, TypeAlias, TypedDict
+
+from dagster_buildkite.git import ChangedFiles, get_commit_message
 
 BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
     "rex@elementl.com": "eng-buildkite-rex",

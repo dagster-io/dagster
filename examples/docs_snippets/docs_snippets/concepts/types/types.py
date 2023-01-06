@@ -1,6 +1,6 @@
 # isort: skip_file
 
-from dagster import DagsterType, In, Out, op, asset
+from dagster import DagsterType, In, Out, asset, op
 
 
 # start_basic_even_type
@@ -61,7 +61,7 @@ def my_op() -> MyClass:
 
 
 # start_test_dagster_type
-from dagster import check_dagster_type, Dict, Any
+from dagster import Any, Dict, check_dagster_type
 
 
 def test_dagster_type():

@@ -34,7 +34,7 @@ from dagster._core.definitions.reconstruct import (
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 from dagster.version import __version__ as dagster_module_version
 
 TELEMETRY_STR = ".telemetry"

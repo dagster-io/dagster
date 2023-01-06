@@ -2,7 +2,6 @@ import re
 from typing import cast
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -22,19 +21,19 @@ get_unique_asset_identifier = (
 
 
 def check_asset_group(assets):
-    for asset in assets:
-        if isinstance(asset, AssetsDefinition):
-            asset_keys = asset.keys
+    for a in assets:
+        if isinstance(a, AssetsDefinition):
+            asset_keys = a.keys
             for asset_key in asset_keys:
-                assert asset.group_names_by_key.get(asset_key) == "my_cool_group"
-        elif isinstance(asset, SourceAsset):
-            assert asset.group_name == "my_cool_group"
+                assert a.group_names_by_key.get(asset_key) == "my_cool_group"
+        elif isinstance(a, SourceAsset):
+            assert a.group_name == "my_cool_group"
 
 
 def check_asset_prefix(prefix, assets):
-    for asset in assets:
-        if isinstance(asset, AssetsDefinition):
-            asset_keys = asset.keys
+    for a in assets:
+        if isinstance(a, AssetsDefinition):
+            asset_keys = a.keys
             for asset_key in asset_keys:
                 observed_prefix = asset_key.path[:-1]
                 if len(observed_prefix) == 1:

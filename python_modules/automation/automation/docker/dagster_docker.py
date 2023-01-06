@@ -2,9 +2,8 @@ import contextlib
 import os
 from typing import Callable, Dict, Iterator, List, NamedTuple, Optional
 
-import yaml
-
 import dagster._check as check
+import yaml
 
 from ..git import git_repo_root
 from .ecr import ecr_image, get_aws_account_id, get_aws_region

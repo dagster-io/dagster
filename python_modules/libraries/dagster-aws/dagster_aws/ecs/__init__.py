@@ -1,2 +1,2 @@
-from .launcher import EcsRunLauncher
-from .tasks import EcsEventualConsistencyTimeout
+from .launcher import EcsRunLauncher as EcsRunLauncher
+from .tasks import EcsEventualConsistencyTimeout as EcsEventualConsistencyTimeout

@@ -6,10 +6,15 @@ import tempfile
 import time
 
 import pytest
-
-from dagster import DagsterEventType, DefaultRunLauncher
-from dagster import _check as check
-from dagster import _seven, file_relative_path, fs_io_manager, repository
+from dagster import (
+    DagsterEventType,
+    DefaultRunLauncher,
+    _check as check,
+    _seven,
+    file_relative_path,
+    fs_io_manager,
+    repository,
+)
 from dagster._core.errors import DagsterLaunchFailedError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRunStatus
@@ -21,13 +26,13 @@ from dagster._core.test_utils import (
     poll_for_finished_run,
     poll_for_step_start,
 )
+from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.types import CancelExecutionRequest
 from dagster._legacy import ModeDefinition, pipeline, solid
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
-from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._core.workspace.load_target import PythonFileTarget
 
 
 @solid

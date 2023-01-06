@@ -1,7 +1,6 @@
 import datetime
 
 import pytest
-
 from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,

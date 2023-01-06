@@ -1,9 +1,9 @@
-import graphene
-from dagster_graphql.schema.util import non_null_list
-
 import dagster._check as check
+import graphene
 from dagster._core.storage.captured_log_manager import CapturedLogData
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
+
+from dagster_graphql.schema.util import non_null_list
 
 
 class GrapheneComputeIOType(graphene.Enum):

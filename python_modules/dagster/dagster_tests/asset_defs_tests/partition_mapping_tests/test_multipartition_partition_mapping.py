@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from dagster import MultiPartitionKey, MultiPartitionsDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.partition import DefaultPartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange

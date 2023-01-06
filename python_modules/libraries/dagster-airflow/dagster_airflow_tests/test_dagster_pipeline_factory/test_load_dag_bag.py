@@ -7,6 +7,7 @@ from dagster_airflow.dagster_pipeline_factory import (
     make_dagster_repo_from_airflow_dags_path,
     make_dagster_repo_from_airflow_example_dags,
 )
+
 from dagster_airflow_tests.marks import requires_airflow_db
 
 from ..airflow_utils import test_make_from_dagbag_inputs

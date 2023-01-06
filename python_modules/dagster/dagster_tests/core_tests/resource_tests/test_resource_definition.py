@@ -3,7 +3,6 @@ from enum import Enum as PythonEnum
 from unittest import mock
 
 import pytest
-
 from dagster import (
     DagsterEventType,
     DagsterInvariantViolationError,

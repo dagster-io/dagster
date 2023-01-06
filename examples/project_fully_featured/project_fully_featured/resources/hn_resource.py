@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
 import requests
-
 from dagster._utils import file_relative_path
 
 HNItemRecord = Dict[str, Any]

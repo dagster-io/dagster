@@ -2,7 +2,6 @@ from contextlib import ExitStack
 
 import pytest
 import yaml
-
 from dagster import _seven
 from dagster._check import CheckError
 from dagster._core.errors import DagsterUserCodeUnreachableError

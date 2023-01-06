@@ -10,8 +10,10 @@ from typing import Generator, Generic, TypeVar, Union
 
 import pendulum
 
-from dagster import DagsterInstance
-from dagster import _check as check
+from dagster import (
+    DagsterInstance,
+    _check as check,
+)
 from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 from dagster._core.telemetry import DAEMON_ALIVE, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext

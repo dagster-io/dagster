@@ -1,10 +1,9 @@
 import numpy as np
 import pandas as pd
+from dagster import asset
 from dagster_airbyte import build_airbyte_assets
 from dagster_dbt import load_assets_from_dbt_project
 from scipy import optimize
-
-from dagster import asset
 
 from ..utils.constants import AIRBYTE_CONNECTION_ID, DBT_PROJECT_DIR
 

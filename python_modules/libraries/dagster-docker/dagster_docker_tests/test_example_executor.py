@@ -1,8 +1,9 @@
 # isort: skip_file
 # fmt: off
 # start_marker
-from dagster import job
 from dagster_docker import docker_executor
+
+from dagster import job
 
 @job(executor_def=docker_executor)
 def docker_job():

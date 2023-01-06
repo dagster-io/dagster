@@ -1,15 +1,5 @@
-import graphene
-from dagster_graphql.implementation.fetch_partition_sets import (
-    get_partition_by_name,
-    get_partition_config,
-    get_partition_set_partition_runs,
-    get_partition_set_partition_statuses,
-    get_partition_tags,
-    get_partitions,
-)
-from dagster_graphql.implementation.fetch_runs import get_runs
-
 import dagster._check as check
+import graphene
 from dagster._core.host_representation import ExternalPartitionSet, RepositoryHandle
 from dagster._core.host_representation.external_data import (
     ExternalMultiPartitionsDefinitionData,
@@ -19,7 +9,17 @@ from dagster._core.host_representation.external_data import (
 )
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
+
+from dagster_graphql.implementation.fetch_partition_sets import (
+    get_partition_by_name,
+    get_partition_config,
+    get_partition_set_partition_runs,
+    get_partition_set_partition_statuses,
+    get_partition_tags,
+    get_partitions,
+)
+from dagster_graphql.implementation.fetch_runs import get_runs
 
 from .backfill import GraphenePartitionBackfill
 from .errors import (

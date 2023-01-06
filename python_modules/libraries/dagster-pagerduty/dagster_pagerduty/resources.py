@@ -1,7 +1,6 @@
 from typing import Dict, Optional, cast
 
 import pypd
-
 from dagster import Field, resource
 
 

@@ -65,7 +65,7 @@ def dbt_rpc_server(
     tries_remaining = RPC_ESTABLISH_RETRIES
     while True:
         poll_result = proc.poll()  # check on the child
-        if poll_result != None:
+        if poll_result is not None:
             raise Exception("DBT subprocess terminated before test could start.")
 
         try:

@@ -45,12 +45,13 @@ from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
 from dagster._legacy import PipelineDefinition, execute_pipeline
 from dagster._seven import IS_WINDOWS, JSONDecodeError, json
-from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
+from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_pipeline_from_origin
 from dagster._utils.indenting_printer import IndentingPrinter
 from dagster._utils.interrupts import capture_interrupts
-from dagster._utils.yaml_utils import dump_run_config_yaml
+from dagster._utils.merger import merge_dicts
+from dagster._utils.yaml_utils import dump_run_config_yaml, load_yaml_from_glob_list
 
 from .config_scaffolder import scaffold_pipeline_config
 from .utils import get_instance_for_service
@@ -905,9 +906,9 @@ def print_partition_format(partitions, indent_level):
     return "\n" + "\n".join(lines)
 
 
-def split_chunk(l, n):
-    for i in range(0, len(l), n):
-        yield l[i : i + n]
+def split_chunk(lst, n):
+    for i in range(0, len(lst), n):
+        yield lst[i : i + n]
 
 
 def validate_partition_slice(partition_names, name, value):

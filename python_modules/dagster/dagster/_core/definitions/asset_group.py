@@ -24,7 +24,7 @@ from dagster._core.errors import (
     DagsterUnmetExecutorRequirementsError,
 )
 from dagster._core.selector.subset_selector import AssetSelectionData
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .asset_layer import build_asset_selection_job
 from .assets import AssetsDefinition

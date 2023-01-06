@@ -6,9 +6,15 @@ from typing import Any, Dict, List, Mapping, Optional
 
 import boto3
 from botocore.exceptions import ClientError
-
-from dagster import Array, Field, Noneable, Permissive, ScalarUnion, StringSource
-from dagster import _check as check
+from dagster import (
+    Array,
+    Field,
+    Noneable,
+    Permissive,
+    ScalarUnion,
+    StringSource,
+    _check as check,
+)
 from dagster._core.events import EngineEventData, MetadataEntry
 from dagster._core.launcher.base import (
     CheckRunHealthResult,
@@ -428,12 +434,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def _get_current_task_metadata(self):
-        if self._current_task_metadata == None:
+        if self._current_task_metadata is None:
             self._current_task_metadata = get_current_ecs_task_metadata()
         return self._current_task_metadata
 
     def _get_current_task(self):
-        if self._current_task == None:
+        if self._current_task is None:
             current_task_metadata = self._get_current_task_metadata()
             self._current_task = get_current_ecs_task(
                 self.ecs, current_task_metadata.task_arn, current_task_metadata.cluster

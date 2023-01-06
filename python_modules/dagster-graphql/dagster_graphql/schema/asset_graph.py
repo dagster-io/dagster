@@ -1,6 +1,26 @@
 from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
 
 import graphene
+from dagster import (
+    AssetKey,
+    _check as check,
+)
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.logical_version import (
+    DEFAULT_LOGICAL_VERSION,
+    extract_logical_version_from_entry,
+)
+from dagster._core.host_representation import ExternalRepository, RepositoryLocation
+from dagster._core.host_representation.external import ExternalPipeline
+from dagster._core.host_representation.external_data import (
+    ExternalAssetNode,
+    ExternalMultiPartitionsDefinitionData,
+    ExternalStaticPartitionsDefinitionData,
+    ExternalTimeWindowPartitionsDefinitionData,
+)
+from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.implementation.fetch_assets import (
     get_asset_materializations,
@@ -17,24 +37,6 @@ from dagster_graphql.schema.solids import (
     GrapheneResourceRequirement,
     GrapheneSolidDefinition,
 )
-
-from dagster import AssetKey
-from dagster import _check as check
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.logical_version import (
-    DEFAULT_LOGICAL_VERSION,
-    extract_logical_version_from_entry,
-)
-from dagster._core.host_representation import ExternalRepository, RepositoryLocation
-from dagster._core.host_representation.external import ExternalPipeline
-from dagster._core.host_representation.external_data import (
-    ExternalAssetNode,
-    ExternalMultiPartitionsDefinitionData,
-    ExternalStaticPartitionsDefinitionData,
-    ExternalTimeWindowPartitionsDefinitionData,
-)
-from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from ..implementation.fetch_assets import (
     get_freshness_info,
@@ -279,10 +281,13 @@ class GrapheneAssetNode(graphene.ObjectType):
         # TODO: Add functionality for dynamic partitions definition
         partitions_def_data = self._external_asset_node.partitions_def_data
         if partitions_def_data:
-            if (
-                isinstance(partitions_def_data, ExternalStaticPartitionsDefinitionData)
-                or isinstance(partitions_def_data, ExternalTimeWindowPartitionsDefinitionData)
-                or isinstance(partitions_def_data, ExternalMultiPartitionsDefinitionData)
+            if isinstance(
+                partitions_def_data,
+                (
+                    ExternalStaticPartitionsDefinitionData,
+                    ExternalTimeWindowPartitionsDefinitionData,
+                    ExternalMultiPartitionsDefinitionData,
+                ),
             ):
                 return [
                     partition.name

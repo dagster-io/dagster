@@ -1,7 +1,6 @@
 import hashlib
 
 import pytest
-
 from dagster import String
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.config_schema import dagster_type_loader

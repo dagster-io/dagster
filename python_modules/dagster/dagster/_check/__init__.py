@@ -14,7 +14,6 @@ from typing import (
     NoReturn,
     Optional,
     Sequence,
-    Set,
     Tuple,
     Type,
     TypeVar,
@@ -22,8 +21,6 @@ from typing import (
     cast,
     overload,
 )
-
-from typing_extensions import TypeGuard
 
 TypeOrTupleOfTypes = Union[type, Tuple[type, ...]]
 Numeric = Union[int, float]

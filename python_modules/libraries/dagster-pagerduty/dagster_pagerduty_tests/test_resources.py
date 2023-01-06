@@ -1,7 +1,6 @@
 import responses
-from dagster_pagerduty import pagerduty_resource
-
 from dagster import build_op_context, op
+from dagster_pagerduty import pagerduty_resource
 
 
 @responses.activate

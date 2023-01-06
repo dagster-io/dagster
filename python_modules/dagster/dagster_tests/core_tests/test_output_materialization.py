@@ -1,7 +1,6 @@
 import json
 
 import pytest
-
 from dagster import (
     AssetMaterialization,
     DagsterEventType,
@@ -361,7 +360,7 @@ def test_basic_yield_multiple_materializations():
     assert result.success
 
     event_types = [event.event_type_value for event in result.event_list]
-    assert 2 == (
+    assert (
         sum(
             [
                 True
@@ -369,6 +368,7 @@ def test_basic_yield_multiple_materializations():
                 if event_type == DagsterEventType.ASSET_MATERIALIZATION.value
             ]
         )
+        == 2
     )
 
 

@@ -1,6 +1,5 @@
 import pendulum
 import pytest
-
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE

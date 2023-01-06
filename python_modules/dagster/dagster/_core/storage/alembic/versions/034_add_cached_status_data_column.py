@@ -5,8 +5,6 @@ Revises: 958a9495162d
 Create Date: 2022-11-16 15:23:53.522887
 
 """
-import sqlalchemy as sa
-from alembic import op
 
 from dagster._core.storage.migration.utils import add_cached_status_data_column
 

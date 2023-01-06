@@ -1,12 +1,16 @@
 from contextlib import contextmanager
 
-from dagster_aws.utils import BOTO3_SESSION_CONFIG
-
-from dagster import Array, Field, Shape
-from dagster import _check as check
-from dagster import resource
+from dagster import (
+    Array,
+    Field,
+    Shape,
+    _check as check,
+    resource,
+)
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
+
+from dagster_aws.utils import BOTO3_SESSION_CONFIG
 
 from .parameters import (
     construct_ssm_client,

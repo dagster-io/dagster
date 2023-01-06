@@ -6,10 +6,11 @@ from urllib.parse import quote, urlencode
 import psycopg2
 import psycopg2.errorcodes
 import sqlalchemy
-
 from dagster import _check as check
 from dagster._core.definitions.policy import Backoff, Jitter, calculate_delay
-from dagster._core.storage.config import pg_config  # pylint: disable=unused-import
+
+# re-export
+from dagster._core.storage.config import pg_config as pg_config
 from dagster._core.storage.sql import get_alembic_config
 
 
@@ -27,7 +28,7 @@ def get_conn(conn_string):
 def pg_url_from_config(config_value):
     if config_value.get("postgres_url"):
         check.invariant(
-            not "postgres_db" in config_value,
+            "postgres_db" not in config_value,
             "postgres storage config must have exactly one of `postgres_url` or `postgres_db`",
         )
         return config_value["postgres_url"]

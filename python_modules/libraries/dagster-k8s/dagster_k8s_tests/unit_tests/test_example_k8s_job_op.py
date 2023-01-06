@@ -1,8 +1,9 @@
 # isort: skip_file
 # fmt: off
 # start_marker
-from dagster import job
 from dagster_k8s import k8s_job_op
+
+from dagster import job
 
 first_op = k8s_job_op.configured(
     {

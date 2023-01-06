@@ -3,10 +3,6 @@ import json
 from unittest import mock
 
 import pytest
-from dagster_k8s.container_context import K8sContainerContext
-from dagster_k8s.executor import K8sStepHandler, k8s_job_executor
-from dagster_k8s.job import UserDefinedDagsterK8sConfig
-
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
@@ -20,6 +16,9 @@ from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._legacy import PipelineDefinition, execute_pipeline, solid
+from dagster_k8s.container_context import K8sContainerContext
+from dagster_k8s.executor import K8sStepHandler, k8s_job_executor
+from dagster_k8s.job import UserDefinedDagsterK8sConfig
 
 
 def _get_pipeline(name, solid_tags=None):

@@ -8,10 +8,15 @@ from base64 import standard_b64encode as b64
 from typing import Any, Dict, Mapping, Optional, Sequence, cast
 
 import requests
-
-from dagster import Failure, Field, IntSource, RetryRequested, StringSource
-from dagster import _check as check
-from dagster import resource
+from dagster import (
+    Failure,
+    Field,
+    IntSource,
+    RetryRequested,
+    StringSource,
+    _check as check,
+    resource,
+)
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.utils import coerce_valid_log_level
 

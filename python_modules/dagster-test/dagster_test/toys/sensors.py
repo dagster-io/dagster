@@ -1,15 +1,22 @@
 import os
 
+from dagster import (
+    AssetKey,
+    RunFailureSensorContext,
+    RunRequest,
+    SkipReason,
+    _check as check,
+    asset_sensor,
+    run_failure_sensor,
+    sensor,
+)
 from dagster_slack import make_slack_on_run_failure_sensor
+from slack_sdk.web.client import WebClient
+
 from dagster_test.toys.error_monster import error_monster_failing_job
 from dagster_test.toys.log_asset import log_asset_job
 from dagster_test.toys.log_file import log_file_job
 from dagster_test.toys.log_s3 import log_s3_job
-from slack_sdk.web.client import WebClient
-
-from dagster import AssetKey, RunFailureSensorContext, RunRequest, SkipReason
-from dagster import _check as check
-from dagster import asset_sensor, run_failure_sensor, sensor
 
 
 def get_directory_files(directory_name, since=None):

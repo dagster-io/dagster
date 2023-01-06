@@ -465,7 +465,7 @@ def nabisco_cereals():
 **This recommended approach** constructs a group of assets from a specified module in your project. Using the `load_assets_from_package_module` function, you can import all assets in a module and apply a grouping:
 
 ```python file=/concepts/assets/asset_group_module.py startafter=start_example endbefore=end_example
-import my_package.cereal as cereal
+from my_package import cereal
 
 cereal_assets = load_assets_from_package_module(
     cereal,

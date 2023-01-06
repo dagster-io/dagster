@@ -2,14 +2,14 @@ import os
 import time
 
 import pytest
+from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.test_utils import poll_for_finished_run
+from dagster._utils.merger import merge_dicts
+from dagster._utils.yaml_utils import load_yaml_from_path
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.job import get_job_name_from_run_id
 from dagster_k8s_test_infra.integration_utils import image_pull_policy, launch_run_over_graphql
 from dagster_test.test_project import get_test_project_environments_path
-
-from dagster._core.storage.pipeline_run import DagsterRunStatus
-from dagster._core.test_utils import poll_for_finished_run
-from dagster._utils import load_yaml_from_path, merge_dicts
 
 
 def log_run_events(instance, run_id):

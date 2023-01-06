@@ -1,11 +1,11 @@
 # pylint: disable=redefined-outer-name
 
+from dagster import Output, asset
 from pandas import DataFrame
-from project_fully_featured_v2_resources.partitions import hourly_partitions
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql.types import ArrayType, DoubleType, LongType, StringType, StructField, StructType
 
-from dagster import Output, asset
+from project_fully_featured_v2_resources.partitions import hourly_partitions
 
 from .id_range_for_time import id_range_for_time
 

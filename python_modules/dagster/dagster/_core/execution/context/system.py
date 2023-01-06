@@ -728,7 +728,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     f" metadata for output '{output_name}' more than once."
                 )
         if mapping_key:
-            if not output_name in self._output_metadata:
+            if output_name not in self._output_metadata:
                 self._output_metadata[output_name] = {}
             self._output_metadata[output_name][mapping_key] = metadata
 
@@ -840,7 +840,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._is_external_input_asset_records_loaded
 
     def get_input_asset_record(self, key: AssetKey) -> Optional["EventLogRecord"]:
-        if not key in self._input_asset_records:
+        if key not in self._input_asset_records:
             self._fetch_input_asset_record(key)
         return self._input_asset_records[key]
 
@@ -862,7 +862,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 continue
             dep_keys = self.pipeline_def.asset_layer.upstream_assets_for_asset(output_key)
             for key in dep_keys:
-                if not key in all_dep_keys and key not in output_keys:
+                if key not in all_dep_keys and key not in output_keys:
                     all_dep_keys.append(key)
 
         self._input_asset_records = {}

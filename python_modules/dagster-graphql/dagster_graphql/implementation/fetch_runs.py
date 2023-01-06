@@ -1,10 +1,10 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, KeysView, List, Mapping, Sequence, cast
 
-from graphene import ResolveInfo
-
-from dagster import AssetKey
-from dagster import _check as check
+from dagster import (
+    AssetKey,
+    _check as check,
+)
 from dagster._config import validate_config
 from dagster._core.definitions import create_run_config_schema
 from dagster._core.errors import DagsterRunNotFoundError
@@ -13,6 +13,7 @@ from dagster._core.host_representation import PipelineSelector
 from dagster._core.storage.pipeline_run import RunRecord, RunsFilter
 from dagster._core.storage.tags import TagType, get_tag_type
 from dagster._legacy import DagsterRunStatus, PipelineDefinition
+from graphene import ResolveInfo
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import UserFacingGraphQLError, capture_error

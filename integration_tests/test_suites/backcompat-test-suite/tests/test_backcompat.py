@@ -9,14 +9,13 @@ from pathlib import Path
 import docker
 import pytest
 import requests
-from dagster_graphql import DagsterGraphQLClient
-
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._utils import (
     file_relative_path,
     library_version_from_core_version,
     parse_package_version,
 )
+from dagster_graphql import DagsterGraphQLClient
 
 DAGSTER_CURRENT_BRANCH = "current_branch"
 MAX_TIMEOUT_SECONDS = 20

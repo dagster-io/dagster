@@ -1,6 +1,9 @@
 from dagster import Definitions, load_assets_from_package_module
 
-from . import assets, lib
+from . import (
+    assets,
+    lib as lib,
+)
 from .resources.csv_io_manager import local_csv_io_manager
 
 defs = Definitions(

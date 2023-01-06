@@ -1,13 +1,11 @@
 import base64
 from io import BytesIO
-from typing import List
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
-from wordcloud import STOPWORDS, WordCloud
-
 from dagster import MetadataValue, OpExecutionContext, asset
+from wordcloud import STOPWORDS, WordCloud
 
 
 @asset(group_name="hackernews", compute_kind="HackerNews API")

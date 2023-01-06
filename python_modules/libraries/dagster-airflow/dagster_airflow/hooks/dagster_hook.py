@@ -8,7 +8,6 @@ from airflow import __version__ as airflow_version
 from airflow.exceptions import AirflowException
 from airflow.hooks.base_hook import BaseHook
 from airflow.models import Connection
-
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 
 
@@ -151,7 +150,7 @@ fragment PythonErrorFragment on PythonError {
         """
         variables = {
             "executionParams": {
-                "runConfigData": json.dumps({} if run_config == None else run_config),
+                "runConfigData": json.dumps({} if run_config is None else run_config),
                 "selector": {
                     "repositoryName": repository_name,
                     "repositoryLocationName": repostitory_location_name,

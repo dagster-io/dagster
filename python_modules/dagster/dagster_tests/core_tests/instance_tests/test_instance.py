@@ -2,10 +2,14 @@ import re
 
 import pytest
 import yaml
-from dagster_tests.api_tests.utils import get_bar_workspace
-
-from dagster import _check as check
-from dagster import _seven, execute_job, job, op, reconstructable
+from dagster import (
+    _check as check,
+    _seven,
+    execute_job,
+    job,
+    op,
+    reconstructable,
+)
 from dagster._check import CheckError
 from dagster._config import Field
 from dagster._core.errors import (
@@ -38,6 +42,8 @@ from dagster._core.test_utils import (
 from dagster._legacy import PipelineDefinition
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
+
+from dagster_tests.api_tests.utils import get_bar_workspace
 
 
 def test_get_run_by_id():

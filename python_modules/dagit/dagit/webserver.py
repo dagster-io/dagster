@@ -4,6 +4,14 @@ import uuid
 from os import path
 from typing import Generic, List, TypeVar
 
+import dagster._check as check
+from dagster import __version__ as dagster_version
+from dagster._core.debug import DebugRunPayload
+from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
+from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
+from dagster._seven import json
+from dagster._utils import Counter, traced_counter
 from dagster_graphql import __version__ as dagster_graphql_version
 from dagster_graphql.schema import create_schema
 from graphene import Schema
@@ -22,15 +30,6 @@ from starlette.responses import (
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 from starlette.types import Message
-
-import dagster._check as check
-from dagster import __version__ as dagster_version
-from dagster._core.debug import DebugRunPayload
-from dagster._core.storage.compute_log_manager import ComputeIOType
-from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
-from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
-from dagster._seven import json
-from dagster._utils import Counter, traced_counter
 
 from .graphql import GraphQLServer
 from .version import __version__

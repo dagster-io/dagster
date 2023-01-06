@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import DagsterInstance, resource
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import create_execution_plan

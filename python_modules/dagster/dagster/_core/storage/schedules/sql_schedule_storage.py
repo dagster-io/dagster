@@ -426,7 +426,7 @@ class SqlScheduleStorage(ScheduleStorage):
         query = (
             db.select([1])
             .where(SecondaryIndexMigrationTable.c.name == migration_name)
-            .where(SecondaryIndexMigrationTable.c.migration_completed != None)
+            .where(SecondaryIndexMigrationTable.c.migration_completed != None)  # noqa: E711
             .limit(1)
         )
         with self.connect() as conn:

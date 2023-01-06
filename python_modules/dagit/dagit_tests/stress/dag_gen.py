@@ -2,8 +2,16 @@ import random
 from collections import defaultdict
 from typing import Dict
 
-from dagster import DependencyDefinition, Field, GraphDefinition, In, OpDefinition, Out, Output
-from dagster import _check as check
+from dagster import (
+    DependencyDefinition,
+    Field,
+    GraphDefinition,
+    In,
+    OpDefinition,
+    Out,
+    Output,
+    _check as check,
+)
 
 
 def generate_op(op_id, num_inputs, num_outputs, num_cfg) -> OpDefinition:

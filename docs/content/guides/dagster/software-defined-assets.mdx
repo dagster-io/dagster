@@ -29,9 +29,8 @@ Here are our asset definitions that define tables we want to materialize.
 
 ```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/assets/table_assets.py startafter=start_marker endbefore=end_marker
 import pandas as pd
-from pandas import DataFrame
-
 from dagster import AssetKey, SourceAsset, asset
+from pandas import DataFrame
 
 sfo_q2_weather_sample = SourceAsset(
     key=AssetKey("sfo_q2_weather_sample"),
@@ -96,9 +95,8 @@ The functions we used to define our assets describe how to compute their content
 import os
 
 import pandas as pd
-from pandas import DataFrame
-
 from dagster import AssetKey, IOManager
+from pandas import DataFrame
 
 
 class LocalFileSystemIOManager(IOManager):
@@ -124,11 +122,12 @@ class LocalFileSystemIOManager(IOManager):
 Not all the assets in the same dependency graph need to have the same Python type. Here's an asset whose computation is defined using Spark DataFrames, that depends on the `daily_temperature_highs` asset we defined above using Pandas.
 
 ```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/assets/spark_asset.py
-from pyspark.sql import DataFrame as SparkDF
-from pyspark.sql import Window
-from pyspark.sql import functions as f
-
 from dagster import asset
+from pyspark.sql import (
+    DataFrame as SparkDF,
+    Window,
+    functions as f,
+)
 
 
 @asset
@@ -178,12 +177,16 @@ import os
 from typing import Union
 
 import pandas as pd
+from dagster import (
+    AssetKey,
+    IOManager,
+    _check as check,
+)
 from pandas import DataFrame as PandasDF
-from pyspark.sql import DataFrame as SparkDF
-from pyspark.sql import SparkSession
-
-from dagster import AssetKey, IOManager
-from dagster import _check as check
+from pyspark.sql import (
+    DataFrame as SparkDF,
+    SparkSession,
+)
 
 
 class LocalFileSystemIOManager(IOManager):

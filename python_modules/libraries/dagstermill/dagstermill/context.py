@@ -1,7 +1,11 @@
 from typing import AbstractSet, Any, Mapping, Optional, cast
 
-from dagster import DagsterRun, JobDefinition, OpDefinition
-from dagster import _check as check
+from dagster import (
+    DagsterRun,
+    JobDefinition,
+    OpDefinition,
+    _check as check,
+)
 from dagster._annotations import public
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.execution.context.compute import AbstractComputeExecutionContext

@@ -25,7 +25,7 @@ def get_data_without_resource(context):
 # end_test_before_marker
 
 # start_test_after_marker
-from dagster import op, graph
+from dagster import graph, op
 
 
 @op(required_resource_keys={"api"})

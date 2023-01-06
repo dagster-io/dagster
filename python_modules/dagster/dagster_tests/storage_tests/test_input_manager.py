@@ -1,16 +1,15 @@
 import tempfile
 
 import pytest
-
 from dagster import (
     AssetIn,
     AssetKey,
     DagsterInstance,
     DagsterInvalidDefinitionError,
-    IOManager,
-    IOManagerDefinition,
     In,
     InputManager,
+    IOManager,
+    IOManagerDefinition,
     MetadataEntry,
     Out,
     PythonObjectDagsterType,

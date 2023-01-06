@@ -27,7 +27,8 @@ from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariant
 from dagster._core.instance import DagsterInstance
 from dagster._core.selector import parse_solid_selection
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import make_readonly_value, merge_dicts
+from dagster._utils import make_readonly_value
+from dagster._utils.merger import merge_dicts
 
 from .asset_selection import AssetGraph
 from .assets_job import ASSET_BASE_JOB_PREFIX, get_base_asset_jobs, is_base_asset_job_name
@@ -1128,7 +1129,7 @@ class CachingRepositoryData(RepositoryData):
                     solid_defs[solid_def.name] = solid_def
                     solid_to_pipeline[solid_def.name] = pipeline.name
 
-                if not solid_defs[solid_def.name] is solid_def:
+                if solid_defs[solid_def.name] is not solid_def:
                     first_name, second_name = sorted(
                         [solid_to_pipeline[solid_def.name], pipeline.name]
                     )

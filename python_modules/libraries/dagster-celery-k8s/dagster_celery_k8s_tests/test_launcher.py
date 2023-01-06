@@ -2,16 +2,6 @@ import json
 from unittest import mock
 
 import pytest
-from dagster_celery_k8s.config import get_celery_engine_config, get_celery_engine_job_config
-from dagster_celery_k8s.executor import CELERY_K8S_CONFIG_KEY
-from dagster_celery_k8s.launcher import (
-    CeleryK8sRunLauncher,
-    _get_validated_celery_k8s_executor_config,
-)
-from dagster_k8s.client import DEFAULT_WAIT_TIMEOUT
-from dagster_k8s.job import UserDefinedDagsterK8sConfig
-from dagster_test.test_project import get_test_project_workspace_and_external_pipeline
-
 from dagster import reconstructable
 from dagster._check import CheckError
 from dagster._core.host_representation import RepositoryHandle
@@ -26,8 +16,17 @@ from dagster._core.test_utils import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ExecuteRunArgs
 from dagster._legacy import pipeline
-from dagster._utils import merge_dicts
 from dagster._utils.hosted_user_process import external_pipeline_from_recon_pipeline
+from dagster._utils.merger import merge_dicts
+from dagster_celery_k8s.config import get_celery_engine_config, get_celery_engine_job_config
+from dagster_celery_k8s.executor import CELERY_K8S_CONFIG_KEY
+from dagster_celery_k8s.launcher import (
+    CeleryK8sRunLauncher,
+    _get_validated_celery_k8s_executor_config,
+)
+from dagster_k8s.client import DEFAULT_WAIT_TIMEOUT
+from dagster_k8s.job import UserDefinedDagsterK8sConfig
+from dagster_test.test_project import get_test_project_workspace_and_external_pipeline
 
 
 def test_empty_celery_config():

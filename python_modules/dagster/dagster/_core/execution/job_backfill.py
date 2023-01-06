@@ -5,7 +5,6 @@ from typing import Iterable, Mapping, Optional, Sequence, Tuple, cast
 
 import dagster._check as check
 from dagster._core.errors import DagsterBackfillFailedError
-from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import (
@@ -31,8 +30,8 @@ from dagster._core.telemetry import BACKFILL_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._core.workspace.workspace import IWorkspace
-from dagster._utils import merge_dicts
 from dagster._utils.error import SerializableErrorInfo
+from dagster._utils.merger import merge_dicts
 
 from .backfill import BulkActionStatus, PartitionBackfill
 

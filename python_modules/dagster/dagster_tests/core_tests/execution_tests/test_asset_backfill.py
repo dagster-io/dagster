@@ -3,20 +3,6 @@ from unittest.mock import MagicMock, patch
 
 import pendulum
 import pytest
-from dagster_tests.definitions_tests.test_asset_reconciliation_sensor import (
-    RunSpec,
-    do_run,
-    non_partitioned_after_partitioned,
-    one_asset_one_partition,
-    one_asset_self_dependency,
-    one_asset_two_partitions,
-    partitioned_after_non_partitioned,
-    two_assets_in_sequence_fan_in_partitions,
-    two_assets_in_sequence_fan_out_partitions,
-    two_assets_in_sequence_one_partition,
-    two_assets_in_sequence_two_partitions,
-)
-
 from dagster import (
     AssetsDefinition,
     DagsterInstance,
@@ -35,6 +21,20 @@ from dagster._core.execution.asset_backfill import (
 )
 from dagster._core.host_representation.external_data import external_asset_graph_from_defs
 from dagster._seven.compat.pendulum import create_pendulum_time
+
+from dagster_tests.definitions_tests.test_asset_reconciliation_sensor import (
+    RunSpec,
+    do_run,
+    non_partitioned_after_partitioned,
+    one_asset_one_partition,
+    one_asset_self_dependency,
+    one_asset_two_partitions,
+    partitioned_after_non_partitioned,
+    two_assets_in_sequence_fan_in_partitions,
+    two_assets_in_sequence_fan_out_partitions,
+    two_assets_in_sequence_one_partition,
+    two_assets_in_sequence_two_partitions,
+)
 
 
 class AssetBackfillScenario(NamedTuple):

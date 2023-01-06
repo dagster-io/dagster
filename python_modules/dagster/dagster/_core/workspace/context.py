@@ -150,7 +150,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         ]
 
     def has_repository_location_error(self, name: str) -> bool:
-        return self.get_repository_location_error(name) != None
+        return self.get_repository_location_error(name) is not None
 
     def get_repository_location_error(self, name: str) -> Optional[SerializableErrorInfo]:
         entry = self.get_location_entry(name)
@@ -161,7 +161,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
     def has_repository_location(self, name: str) -> bool:
         location_entry = self.get_location_entry(name)
-        return bool(location_entry and location_entry.repository_location != None)
+        return bool(location_entry and location_entry.repository_location is not None)
 
     def is_reload_supported(self, name: str) -> bool:
         entry = self.get_location_entry(name)

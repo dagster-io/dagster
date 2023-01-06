@@ -1,14 +1,10 @@
 import asyncio
 
 import graphene
-from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
-from dagster_graphql.implementation.loader import (
-    ProjectedLogicalVersionLoader,
-    RepositoryScopedBatchLoader,
+from dagster import (
+    DagsterInstance,
+    _check as check,
 )
-
-from dagster import DagsterInstance
-from dagster import _check as check
 from dagster._core.host_representation import (
     ExternalRepository,
     GrpcServerRepositoryLocation,
@@ -23,6 +19,12 @@ from dagster._core.workspace.context import (
     WorkspaceLocationEntry,
     WorkspaceLocationLoadStatus,
     WorkspaceProcessContext,
+)
+
+from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
+from dagster_graphql.implementation.loader import (
+    ProjectedLogicalVersionLoader,
+    RepositoryScopedBatchLoader,
 )
 
 from .asset_graph import GrapheneAssetGroup, GrapheneAssetNode

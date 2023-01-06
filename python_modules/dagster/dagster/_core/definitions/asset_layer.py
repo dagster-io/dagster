@@ -19,7 +19,6 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._utils.backcompat import ExperimentalWarning
@@ -37,7 +36,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partition_mapping import PartitionMapping
-    from dagster._core.definitions.resolved_asset_defs import ResolvedAssetDependencies
+    from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
     from dagster._core.execution.context.output import OutputContext
 
     from .partition import PartitionedConfig, PartitionsDefinition

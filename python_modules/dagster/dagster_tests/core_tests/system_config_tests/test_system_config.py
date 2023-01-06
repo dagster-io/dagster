@@ -623,7 +623,7 @@ def test_mix_required_inputs():
     inputs_fields_dict = add_numbers_type.fields["inputs"].config_type.fields
 
     assert "left" in inputs_fields_dict
-    assert not "right" in inputs_fields_dict
+    assert "right" not in inputs_fields_dict
 
 
 def test_directly_init_environment_config():

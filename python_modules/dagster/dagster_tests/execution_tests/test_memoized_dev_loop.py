@@ -1,7 +1,6 @@
 import tempfile
 
 import pytest
-
 from dagster import (
     DagsterInvariantViolationError,
     DynamicOut,

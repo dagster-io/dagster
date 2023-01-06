@@ -2,7 +2,6 @@ import warnings
 from typing import Any
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetOut,
@@ -15,9 +14,12 @@ from dagster import (
     StaticPartitionsDefinition,
     String,
     TimeWindowPartitionMapping,
+    _check as check,
+    build_op_context,
+    io_manager,
+    materialize_to_memory,
+    resource,
 )
-from dagster import _check as check
-from dagster import build_op_context, io_manager, materialize_to_memory, resource
 from dagster._core.definitions import (
     AssetIn,
     AssetsDefinition,

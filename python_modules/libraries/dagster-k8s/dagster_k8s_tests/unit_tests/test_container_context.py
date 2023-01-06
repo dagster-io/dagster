@@ -1,10 +1,9 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-from dagster_k8s.container_context import K8sContainerContext
-
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils import make_readonly_value
+from dagster_k8s.container_context import K8sContainerContext
 
 
 @pytest.fixture
@@ -163,7 +162,7 @@ def test_empty_container_context(empty_container_context):
     assert empty_container_context.labels == {}
     assert empty_container_context.namespace is None
     assert empty_container_context.resources == {}
-    assert empty_container_context.scheduler_name == None
+    assert empty_container_context.scheduler_name is None
     assert all(
         empty_container_context.server_k8s_config[key] == {}
         for key in empty_container_context.server_k8s_config

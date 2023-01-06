@@ -1,14 +1,16 @@
 import shutil
 
 import pytest
-from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
-from dagster_pyspark import lazy_pyspark_resource, pyspark_resource
-from pyspark.sql import Row, SparkSession
-
 from dagster import file_relative_path
 from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, execute_solid, solid
 from dagster._utils import dict_without_keys
 from dagster._utils.test import get_temp_dir
+from dagster_pyspark import (
+    DataFrame as DagsterPySparkDataFrame,
+    lazy_pyspark_resource,
+    pyspark_resource,
+)
+from pyspark.sql import Row, SparkSession
 
 spark = SparkSession.builder.getOrCreate()
 

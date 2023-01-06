@@ -1,6 +1,5 @@
-from dagster_gcp.gcs.resources import gcs_resource
-
 from dagster import build_op_context, op
+from dagster_gcp.gcs.resources import gcs_resource
 
 PROJECT_ID = "test-project1231"
 

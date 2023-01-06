@@ -1,10 +1,16 @@
 import pytest
 import responses
+from dagster import AssetIn, AssetKey, IOManager, asset, build_init_resource_context, io_manager
+from dagster._core.definitions.assets_job import build_assets_job
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dagster._core.execution.with_resources import with_resources
 from dagster_fivetran import fivetran_resource
 from dagster_fivetran.asset_defs import (
     FivetranConnectionMetadata,
     load_assets_from_fivetran_instance,
 )
+
 from dagster_fivetran_tests.utils import (
     DEFAULT_CONNECTOR_ID,
     get_complex_sample_connector_schema_config,
@@ -14,12 +20,6 @@ from dagster_fivetran_tests.utils import (
     get_sample_sync_response,
     get_sample_update_response,
 )
-
-from dagster import AssetIn, AssetKey, IOManager, asset, build_init_resource_context, io_manager
-from dagster._core.definitions.assets_job import build_assets_job
-from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.metadata.table import TableColumn, TableSchema
-from dagster._core.execution.with_resources import with_resources
 
 
 @responses.activate

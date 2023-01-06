@@ -3,7 +3,6 @@ import sys
 import types
 
 import pytest
-
 from dagster import (
     DagsterInvariantViolationError,
     GraphDefinition,

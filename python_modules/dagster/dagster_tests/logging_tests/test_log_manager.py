@@ -3,16 +3,15 @@ import sys
 import textwrap
 
 import pytest
-
 from dagster import DagsterEvent
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.errors import DagsterUserCodeExecutionError, user_code_error_boundary
 from dagster._core.execution.plan.objects import ErrorSource, StepFailureData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.log_manager import (
+    DagsterLoggingMetadata,
     DagsterLogHandler,
     DagsterLogManager,
-    DagsterLoggingMetadata,
     DagsterMessageProps,
     construct_log_string,
 )

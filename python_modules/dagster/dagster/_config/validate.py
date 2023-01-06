@@ -126,7 +126,7 @@ def _validate_scalar_union_config(
     check.param_invariant(context.config_type_snap.kind == ConfigTypeKind.SCALAR_UNION, "context")
     check.not_none_param(config_value, "config_value")
 
-    if isinstance(config_value, dict) or isinstance(config_value, list):
+    if isinstance(config_value, (dict, list)):
         return _validate_config(
             context.for_new_config_type_key(context.config_type_snap.non_scalar_type_key),
             cast(T, config_value),

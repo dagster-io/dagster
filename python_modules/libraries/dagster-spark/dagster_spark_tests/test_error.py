@@ -2,11 +2,10 @@ import os
 import uuid
 
 import yaml
-from dagster_spark import spark_resource
-from dagster_spark.ops import create_spark_op
-
 from dagster._legacy import ModeDefinition, execute_solid
 from dagster._utils import file_relative_path
+from dagster_spark import spark_resource
+from dagster_spark.ops import create_spark_op
 
 CONFIG_FILE = """
 ops:

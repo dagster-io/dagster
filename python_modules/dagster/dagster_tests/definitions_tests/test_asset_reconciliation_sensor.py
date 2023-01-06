@@ -6,13 +6,12 @@ from typing import Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set,
 import mock
 import pendulum
 import pytest
-
 from dagster import (
     AssetIn,
     AssetKey,
     AssetOut,
-    AssetSelection,
     AssetsDefinition,
+    AssetSelection,
     DagsterInstance,
     DailyPartitionsDefinition,
     Field,
@@ -90,19 +89,19 @@ class AssetReconciliationScenario(NamedTuple):
             with pendulum.test(test_time), mock.patch("time.time", new=test_time_fn):
                 assets_in_run = []
                 run_keys = set(run.asset_keys)
-                for asset in self.assets:
-                    if isinstance(asset, SourceAsset):
-                        assets_in_run.append(asset)
+                for a in self.assets:
+                    if isinstance(a, SourceAsset):
+                        assets_in_run.append(a)
                     else:
-                        selected_keys = run_keys.intersection(asset.keys)
-                        if selected_keys == asset.keys:
-                            assets_in_run.append(asset)
+                        selected_keys = run_keys.intersection(a.keys)
+                        if selected_keys == a.keys:
+                            assets_in_run.append(a)
                         elif not selected_keys:
-                            assets_in_run.extend(asset.to_source_assets())
+                            assets_in_run.extend(a.to_source_assets())
                         else:
-                            assets_in_run.append(asset.subset_for(run_keys))
+                            assets_in_run.append(a.subset_for(run_keys))
                             assets_in_run.extend(
-                                asset.subset_for(asset.keys - selected_keys).to_source_assets()
+                                a.subset_for(a.keys - selected_keys).to_source_assets()
                             )
 
                 do_run(
@@ -141,20 +140,18 @@ def do_run(
 ) -> None:
     assets_in_run: List[Union[SourceAsset, AssetsDefinition]] = []
     asset_keys_set = set(asset_keys)
-    for asset in all_assets:
-        if isinstance(asset, SourceAsset):
-            assets_in_run.append(asset)
+    for a in all_assets:
+        if isinstance(a, SourceAsset):
+            assets_in_run.append(a)
         else:
-            selected_keys = asset_keys_set.intersection(asset.keys)
-            if selected_keys == asset.keys:
-                assets_in_run.append(asset)
+            selected_keys = asset_keys_set.intersection(a.keys)
+            if selected_keys == a.keys:
+                assets_in_run.append(a)
             elif not selected_keys:
-                assets_in_run.extend(asset.to_source_assets())
+                assets_in_run.extend(a.to_source_assets())
             else:
-                assets_in_run.append(asset.subset_for(asset_keys_set))
-                assets_in_run.extend(
-                    asset.subset_for(asset.keys - selected_keys).to_source_assets()
-                )
+                assets_in_run.append(a.subset_for(asset_keys_set))
+                assets_in_run.extend(a.subset_for(a.keys - selected_keys).to_source_assets())
     materialize_to_memory(
         instance=instance,
         partition_key=partition_key,

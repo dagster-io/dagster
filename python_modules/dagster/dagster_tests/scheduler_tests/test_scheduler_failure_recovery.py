@@ -2,7 +2,6 @@ import multiprocessing
 
 import pendulum
 import pytest
-
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.pipeline_run import DagsterRunStatus

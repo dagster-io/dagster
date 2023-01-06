@@ -2,8 +2,10 @@ import logging
 import sys
 import time
 
-from dagster import DagsterInstance
-from dagster import _check as check
+from dagster import (
+    DagsterInstance,
+    _check as check,
+)
 from dagster._core.events import DagsterEventType
 from dagster._core.launcher import WorkerStatus
 from dagster._core.storage.pipeline_run import (

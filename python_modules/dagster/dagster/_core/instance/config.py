@@ -2,13 +2,16 @@ import os
 import warnings
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Tuple, Type, cast
 
-from dagster import Array, Bool
-from dagster import _check as check
+from dagster import (
+    Array,
+    Bool,
+    _check as check,
+)
 from dagster._config import Field, Permissive, ScalarUnion, Selector, StringSource, validate_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.config import mysql_config, pg_config
 from dagster._serdes import class_from_code_pointer
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import load_yaml_from_globs
 
 if TYPE_CHECKING:

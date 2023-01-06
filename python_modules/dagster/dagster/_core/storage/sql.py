@@ -95,7 +95,7 @@ def run_migrations_offline(context, config, target_metadata):
     except DatabaseError as exc:
         # This is to deal with concurrent execution -- if this table already exists thanks to a
         # race with another process, we are fine and can continue.
-        if not "table alembic_version already exists" in str(exc):
+        if "table alembic_version already exists" not in str(exc):
             raise
 
 
@@ -126,7 +126,7 @@ def run_migrations_online(context, config, target_metadata):
         except DatabaseError as exc:
             # This is to deal with concurrent execution -- if this table already exists thanks to a
             # race with another process, we are fine and can continue.
-            if not "table alembic_version already exists" in str(exc):
+            if "table alembic_version already exists" not in str(exc):
                 raise
 
 

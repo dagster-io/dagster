@@ -10,9 +10,8 @@ from os import environ
 from typing import Any, Optional
 
 import mlflow
-from mlflow.entities.run_status import RunStatus
-
 from dagster import Field, Noneable, Permissive, StringSource, resource
+from mlflow.entities.run_status import RunStatus
 
 CONFIG_SCHEMA = {
     "experiment_name": Field(StringSource, is_required=True, description="MlFlow experiment name."),

@@ -11,10 +11,15 @@ from typing import NamedTuple, Optional, Union
 import pendulum
 import pytest
 import sqlalchemy as db
-
-from dagster import AssetKey, AssetMaterialization, Output
-from dagster import _check as check
-from dagster import file_relative_path, job, op
+from dagster import (
+    AssetKey,
+    AssetMaterialization,
+    Output,
+    _check as check,
+    file_relative_path,
+    job,
+    op,
+)
 from dagster._cli.debug import DebugRunPayload
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.errors import DagsterInvalidInvocationError
@@ -698,7 +703,6 @@ def test_external_job_origin_instigator_origin():
         job_name="simple_schedule",
     )
     job_origin_str = serialize_value(job_origin, legacy_env)
-    from dagster._serdes.serdes import _WHITELIST_MAP
 
     job_to_instigator = deserialize_json_to_dagster_namedtuple(job_origin_str)
     assert isinstance(job_to_instigator, ExternalInstigatorOrigin)
@@ -1005,7 +1009,7 @@ def test_add_kvs_table():
         db_path = os.path.join(test_dir, "history", "runs.db")
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
-            assert not "kvs" in get_sqlite3_tables(db_path)
+            assert "kvs" not in get_sqlite3_tables(db_path)
             assert get_sqlite3_indexes(db_path, "kvs") == []
 
             instance.upgrade()
@@ -1015,7 +1019,7 @@ def test_add_kvs_table():
 
             instance._run_storage._alembic_downgrade(rev="6860f830e40c")
 
-            assert not "kvs" in get_sqlite3_tables(db_path)
+            assert "kvs" not in get_sqlite3_tables(db_path)
             assert get_sqlite3_indexes(db_path, "kvs") == []
 
 
@@ -1035,7 +1039,7 @@ def test_add_asset_event_tags_table():
         db_path = os.path.join(test_dir, "history", "runs.db")
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
-            assert not "asset_event_tags" in get_sqlite3_tables(db_path)
+            assert "asset_event_tags" not in get_sqlite3_tables(db_path)
 
             asset_job.execute_in_process(instance=instance)
             with pytest.raises(
@@ -1060,7 +1064,7 @@ def test_add_asset_event_tags_table():
 
             instance._run_storage._alembic_downgrade(rev="a00dd8d936a1")
 
-            assert not "asset_event_tags" in get_sqlite3_tables(db_path)
+            assert "asset_event_tags" not in get_sqlite3_tables(db_path)
             assert get_sqlite3_indexes(db_path, "asset_event_tags") == []
 
 

@@ -2,7 +2,6 @@ import re
 import warnings
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetOut,

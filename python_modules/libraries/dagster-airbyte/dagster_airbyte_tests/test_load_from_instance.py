@@ -1,8 +1,5 @@
 import pytest
 import responses
-from dagster_airbyte import airbyte_resource
-from dagster_airbyte.asset_defs import AirbyteConnectionMetadata, load_assets_from_airbyte_instance
-
 from dagster import (
     AssetKey,
     FreshnessPolicy,
@@ -15,6 +12,8 @@ from dagster import (
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.execution.with_resources import with_resources
+from dagster_airbyte import airbyte_resource
+from dagster_airbyte.asset_defs import AirbyteConnectionMetadata, load_assets_from_airbyte_instance
 
 from .utils import (
     get_instance_connections_json,

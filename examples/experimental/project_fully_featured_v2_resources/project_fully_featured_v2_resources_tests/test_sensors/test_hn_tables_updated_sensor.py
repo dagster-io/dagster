@@ -2,12 +2,11 @@ import json
 from typing import List, Tuple
 from unittest import mock
 
+from dagster import EventLogRecord, GraphDefinition, build_sensor_context
+from dagster._core.test_utils import instance_for_test
 from project_fully_featured_v2_resources.sensors.hn_tables_updated_sensor import (
     make_hn_tables_updated_sensor,
 )
-
-from dagster import EventLogRecord, GraphDefinition, build_sensor_context
-from dagster._core.test_utils import instance_for_test
 
 
 def get_mock_event_records(asset_events: List[Tuple[str, int]]):

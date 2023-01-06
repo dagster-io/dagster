@@ -2,7 +2,6 @@ import sys
 from typing import Generator, Iterable, Iterator
 
 import pytest
-
 from dagster import AssetKey, DynamicOut, DynamicOutput, In, Out, Output, op
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._legacy import InputDefinition, OutputDefinition

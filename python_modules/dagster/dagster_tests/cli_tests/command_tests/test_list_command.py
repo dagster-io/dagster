@@ -4,7 +4,6 @@ import sys
 import pytest
 from click import UsageError
 from click.testing import CliRunner
-
 from dagster import _seven
 from dagster._cli.job import execute_list_command, job_list_command
 from dagster._core.test_utils import instance_for_test

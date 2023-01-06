@@ -1,15 +1,15 @@
 from typing import AbstractSet, Any, Callable, Mapping, Optional, Sequence
 
+import dagster._check as check
+from dagster import AssetKey, AssetSelection
+from dagster._annotations import experimental
+from dagster._core.definitions.asset_graph import AssetGraph
+
 from dagster_dbt.asset_defs import (
     _get_node_asset_key,
     _is_non_asset_node,
     _select_unique_ids_from_manifest_json,
 )
-
-import dagster._check as check
-from dagster import AssetKey, AssetSelection
-from dagster._annotations import experimental
-from dagster._core.definitions.asset_graph import AssetGraph
 
 
 @experimental

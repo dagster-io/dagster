@@ -1,10 +1,9 @@
-import pytest
-
 import dagster._check as check
+import pytest
 from dagster import (
     AssetKey,
-    AssetSelection,
     AssetsDefinition,
+    AssetSelection,
     DagsterInvalidDefinitionError,
     JobDefinition,
     RepositoryDefinition,

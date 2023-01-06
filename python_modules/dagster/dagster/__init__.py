@@ -1,7 +1,7 @@
 import sys
 from types import ModuleType
 
-import dagster._module_alias_map as _module_alias_map
+from . import _module_alias_map
 
 # Imports of a key will return the module named by the corresponding value.
 sys.meta_path.insert(
@@ -61,11 +61,12 @@ sys.meta_path.insert(
 #     ### some_user_code.py
 #     # from dagster import BAR  # linter error even though `BAR` is in `dagster.__all__`!
 #
-# We could get around this by always remembering to use the `from .foo import X as X` form in containers, but
-# it is simpler to just import directly from the defining module.
+# We could get around this by always remembering to use the `from .foo import X as X` form in
+# containers, but it is simpler to just import directly from the defining module.
 
-# Turn off isort here so that we keep nice one-import-per-line formatting
-# isort: off
+# ########################
+# ##### DYNAMIC IMPORTS
+# ########################
 
 from dagster._builtins import (
     Any as Any,
@@ -75,9 +76,7 @@ from dagster._builtins import (
     Nothing as Nothing,
     String as String,
 )
-from dagster._config.config_schema import (
-    ConfigSchema as ConfigSchema,
-)
+from dagster._config.config_schema import ConfigSchema as ConfigSchema
 from dagster._config.config_type import (
     Array as Array,
     Enum as Enum,
@@ -85,9 +84,7 @@ from dagster._config.config_type import (
     Noneable as Noneable,
     ScalarUnion as ScalarUnion,
 )
-from dagster._config.field import (
-    Field as Field,
-)
+from dagster._config.field import Field as Field
 from dagster._config.field_utils import (
     Map as Map,
     Permissive as Permissive,
@@ -99,31 +96,19 @@ from dagster._config.source import (
     IntSource as IntSource,
     StringSource as StringSource,
 )
-
-from dagster._core.definitions.asset_in import (
-    AssetIn as AssetIn,
+from dagster._core.definitions.asset_in import AssetIn as AssetIn
+from dagster._core.definitions.asset_out import AssetOut as AssetOut
+from dagster._core.definitions.asset_reconciliation_sensor import (
+    build_asset_reconciliation_sensor as build_asset_reconciliation_sensor,
 )
-from dagster._core.definitions.asset_out import (
-    AssetOut as AssetOut,
-)
-from dagster._core.definitions.asset_selection import (
-    AssetSelection as AssetSelection,
-)
+from dagster._core.definitions.asset_selection import AssetSelection as AssetSelection
 from dagster._core.definitions.asset_sensor_definition import (
     AssetSensorDefinition as AssetSensorDefinition,
 )
-from dagster._core.definitions.assets import (
-    AssetsDefinition as AssetsDefinition,
-)
-from dagster._core.definitions.config import (
-    ConfigMapping as ConfigMapping,
-)
-from dagster._core.definitions.composition import (
-    PendingNodeInvocation as PendingNodeInvocation,
-)
-from dagster._core.definitions.configurable import (
-    configured as configured,
-)
+from dagster._core.definitions.assets import AssetsDefinition as AssetsDefinition
+from dagster._core.definitions.composition import PendingNodeInvocation as PendingNodeInvocation
+from dagster._core.definitions.config import ConfigMapping as ConfigMapping
+from dagster._core.definitions.configurable import configured as configured
 from dagster._core.definitions.decorators.asset_decorator import (
     asset as asset,
     multi_asset as multi_asset,
@@ -131,39 +116,29 @@ from dagster._core.definitions.decorators.asset_decorator import (
 from dagster._core.definitions.decorators.config_mapping_decorator import (
     config_mapping as config_mapping,
 )
-from dagster._core.definitions.decorators.graph_decorator import (
-    graph as graph,
-)
+from dagster._core.definitions.decorators.graph_decorator import graph as graph
 from dagster._core.definitions.decorators.hook_decorator import (
     failure_hook as failure_hook,
     success_hook as success_hook,
 )
-from dagster._core.definitions.decorators.job_decorator import (
-    job as job,
-)
-from dagster._core.definitions.decorators.op_decorator import (
-    op as op,
-)
-from dagster._core.definitions.decorators.repository_decorator import (
-    repository as repository,
-)
-from dagster._core.definitions.decorators.schedule_decorator import (
-    schedule as schedule,
-)
+from dagster._core.definitions.decorators.job_decorator import job as job
+from dagster._core.definitions.decorators.op_decorator import op as op
+from dagster._core.definitions.decorators.repository_decorator import repository as repository
+from dagster._core.definitions.decorators.schedule_decorator import schedule as schedule
 from dagster._core.definitions.decorators.sensor_decorator import (
     asset_sensor as asset_sensor,
-    sensor as sensor,
     multi_asset_sensor as multi_asset_sensor,
+    sensor as sensor,
 )
 from dagster._core.definitions.decorators.source_asset_decorator import (
     observable_source_asset as observable_source_asset,
 )
+from dagster._core.definitions.definitions_class import Definitions as Definitions
 from dagster._core.definitions.dependency import (
     DependencyDefinition as DependencyDefinition,
     MultiDependencyDefinition as MultiDependencyDefinition,
     NodeInvocation as NodeInvocation,
 )
-from dagster._core.definitions.definitions_class import Definitions as Definitions
 from dagster._core.definitions.events import (
     AssetKey as AssetKey,
     AssetMaterialization as AssetMaterialization,
@@ -184,29 +159,21 @@ from dagster._core.definitions.executor_definition import (
     multiple_process_executor_requirements as multiple_process_executor_requirements,
     multiprocess_executor as multiprocess_executor,
 )
-from dagster._core.definitions.freshness_policy import (
-    FreshnessPolicy as FreshnessPolicy,
-)
+from dagster._core.definitions.freshness_policy import FreshnessPolicy as FreshnessPolicy
 from dagster._core.definitions.freshness_policy_sensor_definition import (
     FreshnessPolicySensorContext as FreshnessPolicySensorContext,
     FreshnessPolicySensorDefinition as FreshnessPolicySensorDefinition,
     build_freshness_policy_sensor_context as build_freshness_policy_sensor_context,
     freshness_policy_sensor as freshness_policy_sensor,
 )
-from dagster._core.definitions.graph_definition import (
-    GraphDefinition as GraphDefinition,
-)
-from dagster._core.definitions.hook_definition import (
-    HookDefinition as HookDefinition,
-)
+from dagster._core.definitions.graph_definition import GraphDefinition as GraphDefinition
+from dagster._core.definitions.hook_definition import HookDefinition as HookDefinition
 from dagster._core.definitions.input import (
     GraphIn as GraphIn,
     In as In,
     InputMapping as InputMapping,
 )
-from dagster._core.definitions.job_definition import (
-    JobDefinition as JobDefinition,
-)
+from dagster._core.definitions.job_definition import JobDefinition as JobDefinition
 from dagster._core.definitions.load_assets_from_modules import (
     load_assets_from_current_module as load_assets_from_current_module,
     load_assets_from_modules as load_assets_from_modules,
@@ -218,9 +185,7 @@ from dagster._core.definitions.logger_definition import (
     build_init_logger_context as build_init_logger_context,
     logger as logger,
 )
-from dagster._core.definitions.logical_version import (
-    LogicalVersion as LogicalVersion,
-)
+from dagster._core.definitions.logical_version import LogicalVersion as LogicalVersion
 from dagster._core.definitions.materialize import (
     materialize as materialize,
     materialize_to_memory as materialize_to_memory,
@@ -255,9 +220,11 @@ from dagster._core.definitions.multi_asset_sensor_definition import (
     MultiAssetSensorEvaluationContext as MultiAssetSensorEvaluationContext,
     build_multi_asset_sensor_context as build_multi_asset_sensor_context,
 )
-from dagster._core.definitions.op_definition import (
-    OpDefinition as OpDefinition,
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionKey as MultiPartitionKey,
+    MultiPartitionsDefinition as MultiPartitionsDefinition,
 )
+from dagster._core.definitions.op_definition import OpDefinition as OpDefinition
 from dagster._core.definitions.output import (
     DynamicOut as DynamicOut,
     GraphOut as GraphOut,
@@ -267,16 +234,14 @@ from dagster._core.definitions.output import (
 from dagster._core.definitions.partition import (
     DynamicPartitionsDefinition as DynamicPartitionsDefinition,
     Partition as Partition,
-    PartitionScheduleDefinition as PartitionScheduleDefinition,
     PartitionedConfig as PartitionedConfig,
+    PartitionScheduleDefinition as PartitionScheduleDefinition,
     PartitionsDefinition as PartitionsDefinition,
     StaticPartitionsDefinition as StaticPartitionsDefinition,
     dynamic_partitioned_config as dynamic_partitioned_config,
     static_partitioned_config as static_partitioned_config,
 )
-from dagster._core.definitions.partition_key_range import (
-    PartitionKeyRange as PartitionKeyRange,
-)
+from dagster._core.definitions.partition_key_range import PartitionKeyRange as PartitionKeyRange
 from dagster._core.definitions.partition_mapping import (
     AllPartitionMapping as AllPartitionMapping,
     IdentityPartitionMapping as IdentityPartitionMapping,
@@ -328,9 +293,7 @@ from dagster._core.definitions.sensor_definition import (
     SensorEvaluationContext as SensorEvaluationContext,
     build_sensor_context as build_sensor_context,
 )
-from dagster._core.definitions.source_asset import (
-    SourceAsset as SourceAsset,
-)
+from dagster._core.definitions.source_asset import SourceAsset as SourceAsset
 from dagster._core.definitions.step_launcher import (
     StepLauncher as StepLauncher,
     StepRunRef as StepRunRef,
@@ -350,16 +313,8 @@ from dagster._core.definitions.time_window_partitions import (
     monthly_partitioned_config as monthly_partitioned_config,
     weekly_partitioned_config as weekly_partitioned_config,
 )
-from dagster._core.definitions.multi_dimensional_partitions import (
-    MultiPartitionsDefinition as MultiPartitionsDefinition,
-    MultiPartitionKey as MultiPartitionKey,
-)
 from dagster._core.definitions.unresolved_asset_job_definition import (
     define_asset_job as define_asset_job,
-)
-
-from dagster._core.definitions.asset_reconciliation_sensor import (
-    build_asset_reconciliation_sensor as build_asset_reconciliation_sensor,
 )
 from dagster._core.definitions.utils import (
     config_from_files as config_from_files,
@@ -397,23 +352,22 @@ from dagster._core.errors import (
     DagsterUserCodeExecutionError as DagsterUserCodeExecutionError,
     raise_execution_interrupts as raise_execution_interrupts,
 )
+from dagster._core.event_api import (
+    EventLogRecord as EventLogRecord,
+    EventRecordsFilter as EventRecordsFilter,
+    RunShardedEventsCursor as RunShardedEventsCursor,
+)
 from dagster._core.events import (
     DagsterEvent as DagsterEvent,
     DagsterEventType as DagsterEventType,
 )
-from dagster._core.events.log import (
-    EventLogEntry as EventLogEntry,
-)
+from dagster._core.events.log import EventLogEntry as EventLogEntry
 from dagster._core.execution.api import (
     ReexecutionOptions as ReexecutionOptions,
     execute_job as execute_job,
 )
-from dagster._core.execution.build_resources import (
-    build_resources as build_resources,
-)
-from dagster._core.execution.context.compute import (
-    OpExecutionContext as OpExecutionContext,
-)
+from dagster._core.execution.build_resources import build_resources as build_resources
+from dagster._core.execution.context.compute import OpExecutionContext as OpExecutionContext
 from dagster._core.execution.context.hook import (
     HookContext as HookContext,
     build_hook_context as build_hook_context,
@@ -426,67 +380,40 @@ from dagster._core.execution.context.input import (
     InputContext as InputContext,
     build_input_context as build_input_context,
 )
-from dagster._core.execution.context.invocation import (
-    build_op_context as build_op_context,
-)
-from dagster._core.execution.context.logger import (
-    InitLoggerContext as InitLoggerContext,
-)
+from dagster._core.execution.context.invocation import build_op_context as build_op_context
+from dagster._core.execution.context.logger import InitLoggerContext as InitLoggerContext
 from dagster._core.execution.context.output import (
     OutputContext as OutputContext,
     build_output_context as build_output_context,
 )
 from dagster._core.execution.context.system import (
+    DagsterTypeLoaderContext as DagsterTypeLoaderContext,
+    StepExecutionContext as StepExecutionContext,
     TypeCheckContext as TypeCheckContext,
 )
 from dagster._core.execution.execute_in_process_result import (
     ExecuteInProcessResult as ExecuteInProcessResult,
 )
-from dagster._core.execution.execute_job_result import (
-    ExecuteJobResult as ExecuteJobResult,
-)
+from dagster._core.execution.execute_job_result import ExecuteJobResult as ExecuteJobResult
 from dagster._core.execution.plan.external_step import (
     external_instance_from_step_run_ref as external_instance_from_step_run_ref,
     run_step_from_ref as run_step_from_ref,
     step_context_to_step_run_ref as step_context_to_step_run_ref,
     step_run_ref_to_step_context as step_run_ref_to_step_context,
 )
-from dagster._core.execution.validate_run_config import (
-    validate_run_config as validate_run_config,
-)
-from dagster._core.execution.with_resources import (
-    with_resources as with_resources,
-)
-from dagster._core.executor.base import (
-    Executor as Executor,
-)
-from dagster._core.executor.init import (
-    InitExecutorContext as InitExecutorContext,
-)
-
+from dagster._core.execution.validate_run_config import validate_run_config as validate_run_config
+from dagster._core.execution.with_resources import with_resources as with_resources
+from dagster._core.executor.base import Executor as Executor
+from dagster._core.executor.init import InitExecutorContext as InitExecutorContext
 from dagster._core.host_representation.selector import (
     CodeLocationSelector as CodeLocationSelector,
-    RepositorySelector as RepositorySelector,
     JobSelector as JobSelector,
+    RepositorySelector as RepositorySelector,
 )
-from dagster._core.instance import (
-    DagsterInstance as DagsterInstance,
-)
-from dagster._core.launcher.default_run_launcher import (
-    DefaultRunLauncher as DefaultRunLauncher,
-)
-from dagster._core.log_manager import (
-    DagsterLogManager as DagsterLogManager,
-)
-
-from dagster._core.event_api import (
-    EventLogRecord as EventLogRecord,
-    EventRecordsFilter as EventRecordsFilter,
-    RunShardedEventsCursor as RunShardedEventsCursor,
-)
-from dagster._core.storage.asset_value_loader import (
-    AssetValueLoader as AssetValueLoader,
-)
+from dagster._core.instance import DagsterInstance as DagsterInstance
+from dagster._core.launcher.default_run_launcher import DefaultRunLauncher as DefaultRunLauncher
+from dagster._core.log_manager import DagsterLogManager as DagsterLogManager
+from dagster._core.storage.asset_value_loader import AssetValueLoader as AssetValueLoader
 from dagster._core.storage.file_manager import (
     FileHandle as FileHandle,
     LocalFileHandle as LocalFileHandle,
@@ -509,28 +436,25 @@ from dagster._core.storage.mem_io_manager import (
     InMemoryIOManager as InMemoryIOManager,
     mem_io_manager as mem_io_manager,
 )
-from dagster._core.storage.memoizable_io_manager import (
-    MemoizableIOManager as MemoizableIOManager,
-)
+from dagster._core.storage.memoizable_io_manager import MemoizableIOManager as MemoizableIOManager
 from dagster._core.storage.pipeline_run import (
     DagsterRun as DagsterRun,
     DagsterRunStatus as DagsterRunStatus,
-    RunsFilter as RunsFilter,
     RunRecord as RunRecord,
+    RunsFilter as RunsFilter,
 )
 from dagster._core.storage.root_input_manager import (
     RootInputManager as RootInputManager,
     RootInputManagerDefinition as RootInputManagerDefinition,
     root_input_manager as root_input_manager,
 )
-from dagster._core.storage.tags import (
-    MEMOIZED_RUN_TAG as MEMOIZED_RUN_TAG,
-)
+from dagster._core.storage.tags import MEMOIZED_RUN_TAG as MEMOIZED_RUN_TAG
+from dagster._core.storage.upath_io_manager import UPathIOManager as UPathIOManager
+from dagster._core.test_utils import instance_for_test as instance_for_test
 from dagster._core.types.config_schema import (
     DagsterTypeLoader as DagsterTypeLoader,
     dagster_type_loader as dagster_type_loader,
 )
-from dagster._core.test_utils import instance_for_test
 from dagster._core.types.dagster_type import (
     DagsterType as DagsterType,
     List as List,
@@ -538,64 +462,44 @@ from dagster._core.types.dagster_type import (
     PythonObjectDagsterType as PythonObjectDagsterType,
     make_python_type_usable_as_dagster_type as make_python_type_usable_as_dagster_type,
 )
-from dagster._core.types.decorator import (
-    usable_as_dagster_type as usable_as_dagster_type,
-)
-from dagster._core.types.python_dict import (
-    Dict as Dict,
-)
-from dagster._core.types.python_set import (
-    Set as Set,
-)
-from dagster._core.types.python_tuple import (
-    Tuple as Tuple,
-)
+from dagster._core.types.decorator import usable_as_dagster_type as usable_as_dagster_type
+from dagster._core.types.python_dict import Dict as Dict
+from dagster._core.types.python_set import Set as Set
+from dagster._core.types.python_tuple import Tuple as Tuple
 from dagster._loggers import (
     colored_console_logger as colored_console_logger,
     default_loggers as default_loggers,
     default_system_loggers as default_system_loggers,
     json_console_logger as json_console_logger,
 )
-from dagster._core.execution.context.system import (
-    DagsterTypeLoaderContext as DagsterTypeLoaderContext,
-    StepExecutionContext as StepExecutionContext,
-)
 from dagster._serdes.serdes import (
     deserialize_value as deserialize_value,
     serialize_value as serialize_value,
 )
-from dagster._core.storage.upath_io_manager import UPathIOManager as UPathIOManager
-from dagster._utils import (
-    file_relative_path as file_relative_path,
-)
+from dagster._utils import file_relative_path as file_relative_path
 from dagster._utils.alert import (
     make_email_on_run_failure_sensor as make_email_on_run_failure_sensor,
 )
-from dagster._utils.backcompat import (
-    ExperimentalWarning as ExperimentalWarning,
-)
-from dagster._utils.log import (
-    get_dagster_logger as get_dagster_logger,
-)
+from dagster._utils.backcompat import ExperimentalWarning as ExperimentalWarning
+from dagster._utils.dagster_type import check_dagster_type as check_dagster_type
+from dagster._utils.log import get_dagster_logger as get_dagster_logger
+from dagster.version import __version__ as __version__
 
-from dagster._utils.dagster_type import (
-    check_dagster_type as check_dagster_type,
-)
-
-# isort: on
-
-from dagster.version import __version__
+# isort: split
 
 # ########################
 # ##### DYNAMIC IMPORTS
 # ########################
 
-# isort: split
 import importlib
-from typing import TYPE_CHECKING
-from typing import Any as TypingAny
-from typing import Callable, Mapping, Sequence
-from typing import Tuple as TypingTuple
+from typing import (
+    TYPE_CHECKING,
+    Any as TypingAny,
+    Callable,
+    Mapping,
+    Sequence,
+    Tuple as TypingTuple,
+)
 
 from typing_extensions import Final
 
@@ -606,11 +510,14 @@ from dagster._utils.backcompat import deprecation_warning, rename_warning
 # in `_DEPRECATED` is required  for us to generate the deprecation warning.
 
 if TYPE_CHECKING:
-    # pylint:disable=reimported
-    from dagster._core.execution.context.system import DagsterTypeMaterializerContext
-    from dagster._core.types.config_schema import DagsterTypeMaterializer, dagster_type_materializer
+    from dagster._core.execution.context.system import (
+        DagsterTypeMaterializerContext as DagsterTypeMaterializerContext,
+    )
+    from dagster._core.types.config_schema import (
+        DagsterTypeMaterializer as DagsterTypeMaterializer,
+        dagster_type_materializer as dagster_type_materializer,
+    )
 
-    # pylint:enable=reimported
 
 _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
     "dagster_type_materializer": (

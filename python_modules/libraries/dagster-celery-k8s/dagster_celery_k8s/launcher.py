@@ -2,16 +2,11 @@ import sys
 from typing import cast
 
 import kubernetes
-from dagster_k8s.client import DagsterKubernetesClient
-from dagster_k8s.job import (
-    DagsterK8sJobConfig,
-    construct_dagster_k8s_job,
-    get_job_name_from_run_id,
-    get_user_defined_k8s_config,
+from dagster import (
+    DagsterInvariantViolationError,
+    MetadataEntry,
+    _check as check,
 )
-
-from dagster import DagsterInvariantViolationError, MetadataEntry
-from dagster import _check as check
 from dagster._config import process_config, resolve_to_config_type
 from dagster._core.events import EngineEventData
 from dagster._core.execution.retries import RetryMode
@@ -21,8 +16,16 @@ from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import frozentags, merge_dicts
+from dagster._utils import frozentags
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.merger import merge_dicts
+from dagster_k8s.client import DagsterKubernetesClient
+from dagster_k8s.job import (
+    DagsterK8sJobConfig,
+    construct_dagster_k8s_job,
+    get_job_name_from_run_id,
+    get_user_defined_k8s_config,
+)
 
 from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
 
@@ -369,7 +372,7 @@ def _get_validated_celery_k8s_executor_config(run_config):
     execution_config_schema = resolve_to_config_type(celery_k8s_executor_config())
 
     # In run config on jobs, we don't have an executor key
-    if not CELERY_K8S_CONFIG_KEY in executor_config:
+    if CELERY_K8S_CONFIG_KEY not in executor_config:
         execution_run_config = executor_config.get("config", {})
     else:
         execution_run_config = (run_config["execution"][CELERY_K8S_CONFIG_KEY] or {}).get(

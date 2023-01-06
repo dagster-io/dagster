@@ -1,7 +1,6 @@
 import contextlib
 
 import dask.dataframe as dd
-
 from dagster import (
     Any,
     AssetMaterialization,
@@ -18,9 +17,10 @@ from dagster import (
     Shape,
     String,
     TypeCheck,
+    _check as check,
+    dagster_type_loader,
+    dagster_type_materializer,
 )
-from dagster import _check as check
-from dagster import dagster_type_loader, dagster_type_materializer
 
 from .utils import DataFrameUtilities, apply_utilities_to_df
 
@@ -59,7 +59,7 @@ DataFrameReadTypes = {
                 Bool,
                 False,
                 (
-                    "If True, all integer columns that aren’t specified in `dtype` are assumed to"
+                    "If True, all integer columns that aren't specified in `dtype` are assumed to"
                     " contain missing values, and are converted to floats."
                 ),
             ),
@@ -165,7 +165,7 @@ DataFrameReadTypes = {
                     " blocks without data."
                 ),
             ),
-            "compression": (String, False, "String like ‘gzip’ or ‘xz’."),
+            "compression": (String, False, "String like 'gzip' or 'xz'."),
         },
     },
     "sql_table": {
@@ -225,7 +225,7 @@ DataFrameReadTypes = {
                 Bool,
                 False,
                 (
-                    "If True, all integer columns that aren’t specified in dtype are assumed to"
+                    "If True, all integer columns that aren't specified in dtype are assumed to"
                     " contain missing values, and are converted to floats."
                 ),
             ),
@@ -256,7 +256,7 @@ DataFrameReadTypes = {
                 Bool,
                 False,
                 (
-                    "If True, all integer columns that aren’t specified in dtype are assumed to"
+                    "If True, all integer columns that aren't specified in dtype are assumed to"
                     " contain missing values, and are converted to floats."
                 ),
             ),
@@ -474,7 +474,7 @@ def dataframe_loader(_context, config):
 
     if not read_type:
         raise DagsterInvariantViolationError("No read_type found. Expected read key in config.")
-    if not read_type in DataFrameReadTypes:
+    if read_type not in DataFrameReadTypes:
         raise DagsterInvariantViolationError(
             "Unsupported read_type {read_type}.".format(read_type=read_type)
         )
@@ -538,7 +538,7 @@ def dataframe_materializer(_context, config, dask_df):
 
     # Materialize to specified types
     for to_type, to_options in to_specs.items():
-        if not to_type in DataFrameToTypes:
+        if to_type not in DataFrameToTypes:
             check.failed("Unsupported to_type {to_type}".format(to_type=to_type))
 
         # Get the metadata entry for the read_type in order to know which method

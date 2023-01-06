@@ -4,7 +4,6 @@ import sys
 import time
 
 import pytest
-
 from dagster import (
     Failure,
     Field,

@@ -1,14 +1,13 @@
 import hashlib
 
 import pytest
-
 from dagster import (
     Bool,
     DagsterInvariantViolationError,
     Float,
-    IOManagerDefinition,
     In,
     Int,
+    IOManagerDefinition,
     Output,
     SourceHashVersionStrategy,
     String,

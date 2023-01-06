@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import DagsterInvalidConfigError, Field, String, root_input_manager
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators.graph_decorator import graph

@@ -5,10 +5,15 @@ import sys
 from contextlib import contextmanager
 
 import pytest
-
-from dagster import DagsterInvalidConfigError
-from dagster import _check as check
-from dagster import execute_job, job, op, reconstructable, resource
+from dagster import (
+    DagsterInvalidConfigError,
+    _check as check,
+    execute_job,
+    job,
+    op,
+    reconstructable,
+    resource,
+)
 from dagster._core.definitions import NodeHandle
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.logger import InitLoggerContext

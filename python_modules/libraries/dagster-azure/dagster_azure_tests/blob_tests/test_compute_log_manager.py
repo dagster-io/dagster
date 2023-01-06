@@ -4,9 +4,6 @@ import tempfile
 from unittest import mock
 
 import pytest
-from dagster_azure.blob import AzureBlobComputeLogManager, FakeBlobServiceClient
-from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
-
 from dagster import DagsterEventType, graph, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -16,6 +13,8 @@ from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import environ
+from dagster_azure.blob import AzureBlobComputeLogManager, FakeBlobServiceClient
+from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
@@ -174,7 +173,7 @@ def test_prefix_filter(mock_create_blob_client, storage_account, container, cred
 
         adls2_object = fake_client.get_blob_client(
             container=container,
-            blob=f"foo/bar/storage/arbitrary/log/key.err",
+            blob="foo/bar/storage/arbitrary/log/key.err",
         )
         logs = adls2_object.download_blob().readall().decode("utf-8")
         assert logs == "hello hello"

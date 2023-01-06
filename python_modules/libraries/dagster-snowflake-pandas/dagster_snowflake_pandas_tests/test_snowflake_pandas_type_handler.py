@@ -7,15 +7,6 @@ from unittest.mock import patch
 
 import pandas
 import pytest
-from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake.resources import SnowflakeConnection
-from dagster_snowflake_pandas import SnowflakePandasTypeHandler, snowflake_pandas_io_manager
-from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
-    _convert_string_to_timestamp,
-    _convert_timestamp_to_string,
-)
-from pandas import DataFrame
-
 from dagster import (
     IOManagerDefinition,
     MetadataValue,
@@ -28,6 +19,14 @@ from dagster import (
     op,
 )
 from dagster._core.storage.db_io_manager import TableSlice
+from dagster_snowflake import build_snowflake_io_manager
+from dagster_snowflake.resources import SnowflakeConnection
+from dagster_snowflake_pandas import SnowflakePandasTypeHandler, snowflake_pandas_io_manager
+from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
+    _convert_string_to_timestamp,
+    _convert_timestamp_to_string,
+)
+from pandas import DataFrame
 
 resource_config = {
     "database": "database_abc",

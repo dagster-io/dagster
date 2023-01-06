@@ -1,15 +1,14 @@
 import re
 
 import pytest
-
 from dagster import (
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
     DependencyDefinition,
     MetadataEntry,
     Output,
+    _check as check,
 )
-from dagster import _check as check
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
 from dagster._legacy import (

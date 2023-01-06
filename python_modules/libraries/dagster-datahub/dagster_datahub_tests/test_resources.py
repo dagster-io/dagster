@@ -1,13 +1,12 @@
 import datahub.emitter.mce_builder as builder
 import pytest
 import responses
+from dagster import DagsterResourceFunctionError, OpExecutionContext, build_op_context, op
 from dagster_datahub import datahub_kafka_emitter, datahub_rest_emitter
 from datahub.configuration.common import ConfigurationError
 from datahub.emitter.kafka_emitter import MCE_KEY
 from datahub.emitter.mcp import MetadataChangeProposalWrapper
 from datahub.metadata.schema_classes import ChangeTypeClass, DatasetPropertiesClass
-
-from dagster import DagsterResourceFunctionError, OpExecutionContext, build_op_context, op
 
 
 @responses.activate

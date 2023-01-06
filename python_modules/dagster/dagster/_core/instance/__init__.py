@@ -35,7 +35,6 @@ import yaml
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._config.field import Field
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import (
@@ -47,7 +46,6 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
     DagsterRunConflict,
-    DagsterUndefinedLogicalVersionError,
 )
 from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.storage.pipeline_run import (
@@ -62,21 +60,19 @@ from dagster._core.storage.pipeline_run import (
     TagBucket,
 )
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, RESUME_RETRY_TAG, ROOT_RUN_ID_TAG
-from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.utils import str_format_list
 from dagster._serdes import ConfigurableClass
 from dagster._seven import get_current_datetime_in_utc
-from dagster._utils import frozentags, merge_dicts, traced
+from dagster._utils import traced
 from dagster._utils.backcompat import deprecation_warning, experimental_functionality_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.log import get_dagster_logger
+from dagster._utils.merger import merge_dicts
 
 from .config import (
     DAGSTER_CONFIG_YAML_FILENAME,
     DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
     get_default_tick_retention_settings,
     get_tick_retention_settings,
-    is_dagster_home_set,
 )
 from .ref import InstanceRef
 
@@ -99,11 +95,11 @@ if TYPE_CHECKING:
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.host_representation import (
         ExternalPipeline,
+        ExternalPipelineOrigin,
         ExternalSensor,
         HistoricalPipeline,
         RepositoryLocation,
     )
-    from dagster._core.host_representation.origin import ExternalPipelineOrigin
     from dagster._core.launcher import RunLauncher
     from dagster._core.run_coordinator import RunCoordinator
     from dagster._core.scheduler import Scheduler
@@ -115,7 +111,6 @@ if TYPE_CHECKING:
     )
     from dagster._core.secrets import SecretsLoader
     from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
-    from dagster._core.storage.captured_log_manager import CapturedLogManager
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.event_log.base import AssetRecord, EventLogRecord, EventRecordsFilter
@@ -1136,7 +1131,7 @@ class DagsterInstance:
         asset_selection: Optional[AbstractSet[AssetKey]],
         solids_to_execute: Optional[AbstractSet[str]],
         solid_selection: Optional[Sequence[str]],
-        external_pipeline_origin: Optional[ExternalPipelineOrigin],
+        external_pipeline_origin: Optional["ExternalPipelineOrigin"],
         pipeline_code_origin: Optional[PipelinePythonOrigin],
     ) -> DagsterRun:
         from dagster._core.definitions.utils import validate_tags

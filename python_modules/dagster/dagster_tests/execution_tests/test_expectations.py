@@ -1,7 +1,6 @@
 from typing import Sequence
 
 import pytest
-
 from dagster import DagsterEventType, DagsterInvariantViolationError, ExpectationResult
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult

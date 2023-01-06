@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import (
     DynamicOut,
     DynamicOutput,
@@ -17,7 +16,7 @@ from dagster._core.errors import DagsterExecutionStepNotFoundError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.test_utils import instance_for_test
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 
 @op(tags={"third": "3"})

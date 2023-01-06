@@ -3,7 +3,6 @@ import threading
 import time
 
 import pytest
-
 from dagster import file_relative_path, repository
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry

@@ -45,7 +45,7 @@ def _construct_events_by_step_key(
 ) -> Mapping[str, Sequence[DagsterEvent]]:
     events_by_step_key: DefaultDict[str, List[DagsterEvent]] = defaultdict(list)
     for event in event_list:
-        if not event.step_key is None:
+        if event.step_key is not None:
             events_by_step_key[event.step_key].append(event)
     return dict(events_by_step_key)
 

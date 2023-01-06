@@ -6,7 +6,6 @@ import time
 
 import pendulum
 import pytest
-
 from dagster import (
     Any,
     AssetKey,

@@ -31,7 +31,8 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.target import ExecutableDefinition
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
-from dagster._utils import frozenlist, merge_dicts
+from dagster._utils import frozenlist
+from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import schedule_execution_time_iterator
 
 from ..decorator_utils import get_function_params
@@ -1024,9 +1025,9 @@ def cron_schedule_from_schedule_type_and_offsets(
     elif schedule_type is ScheduleType.DAILY:
         return f"{minute_offset} {hour_offset} * * *"
     elif schedule_type is ScheduleType.WEEKLY:
-        return f"{minute_offset} {hour_offset} * * {day_offset if day_offset != None else 0}"
+        return f"{minute_offset} {hour_offset} * * {day_offset if day_offset is not None else 0}"
     elif schedule_type is ScheduleType.MONTHLY:
-        return f"{minute_offset} {hour_offset} {day_offset if day_offset != None else 1} * *"
+        return f"{minute_offset} {hour_offset} {day_offset if day_offset is not None else 1} * *"
     else:
         check.assert_never(schedule_type)
 

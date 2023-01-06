@@ -60,7 +60,7 @@ from dagster._grpc.impl import (
 from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
 from dagster._serdes import deserialize_as
 from dagster._seven.compat.pendulum import PendulumDateTime
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .selector import PipelineSelector
 

@@ -2,7 +2,6 @@ import os
 import warnings
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetOut,
@@ -15,8 +14,8 @@ from dagster import (
     GraphIn,
     GraphOut,
     HourlyPartitionsDefinition,
-    IOManager,
     In,
+    IOManager,
     Nothing,
     Out,
     Output,
@@ -1344,8 +1343,8 @@ def dbt_op():
 
 
 dbt_asset_def = AssetsDefinition(
-    keys_by_output_name={l: AssetKey(l) for l in ["d", "e", "f"]},
-    keys_by_input_name={l: AssetKey(l) for l in ["a", "b", "c"]},
+    keys_by_output_name={k: AssetKey(k) for k in ["d", "e", "f"]},
+    keys_by_input_name={k: AssetKey(k) for k in ["a", "b", "c"]},
     node_def=dbt_op,
     can_subset=True,
     asset_deps={

@@ -11,8 +11,6 @@ from .config_type import Array, ConfigType, ConfigTypeKind
 if TYPE_CHECKING:
     from dagster._config import Field
 
-    from .snap import ConfigTypeSnap
-
 
 def all_optional_type(config_type: ConfigType) -> bool:
     check.inst_param(config_type, "config_type", ConfigType)
@@ -307,7 +305,7 @@ class Selector(_ConfigHasFields):
             if 'haw' in context.op_config:
                 return 'Aloha {whom}!'.format(whom=context.op_config['haw']['whom'])
             if 'cn' in context.op_config:
-                return '你好，{whom}!'.format(whom=context.op_config['cn']['whom'])
+                return '你好, {whom}!'.format(whom=context.op_config['cn']['whom'])
             if 'en' in context.op_config:
                 return 'Hello, {whom}!'.format(whom=context.op_config['en']['whom'])
     """

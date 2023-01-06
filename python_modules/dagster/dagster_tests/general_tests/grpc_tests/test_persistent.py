@@ -6,7 +6,6 @@ import sys
 import uuid
 
 import pytest
-
 from dagster import _seven
 from dagster._api.list_repositories import sync_list_repositories_grpc
 from dagster._core.errors import DagsterUserCodeUnreachableError

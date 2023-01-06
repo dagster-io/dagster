@@ -19,19 +19,16 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataUserInput
-from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
-from dagster._core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from dagster._utils import merge_dicts
 from dagster._utils.backcompat import (
     ExperimentalWarning,
     deprecation_warning,
     experimental_arg_warning,
 )
+from dagster._utils.merger import merge_dicts
 
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKeyPrefix

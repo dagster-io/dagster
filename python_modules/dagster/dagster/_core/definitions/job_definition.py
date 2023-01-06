@@ -24,7 +24,6 @@ from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
 from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.dependency import (
-    DependencyDefinition,
     DynamicCollectDependencyDefinition,
     IDependencyDefinition,
     MultiDependencyDefinition,
@@ -51,7 +50,7 @@ from dagster._core.selector.subset_selector import (
 )
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._core.utils import str_format_set
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer, build_asset_selection_job
 from .config import ConfigMapping
@@ -62,7 +61,7 @@ from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
 from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue
 from .mode import ModeDefinition
-from .partition import PartitionSetDefinition, PartitionedConfig, PartitionsDefinition
+from .partition import PartitionedConfig, PartitionsDefinition, PartitionSetDefinition
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .resource_definition import ResourceDefinition
@@ -872,7 +871,7 @@ def default_job_io_manager(init_context: "InitResourceContext"):
                 ),
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
-                return resources.io_manager
+                return resources.io_manager  # type: ignore
         except Exception as e:
             if not silence_failures:
                 raise
@@ -913,7 +912,7 @@ def default_job_io_manager_with_fs_io_manager_schema(init_context: "InitResource
                 ),
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
-                return resources.io_manager
+                return resources.io_manager  # type: ignore
         except Exception as e:
             if not silence_failures:
                 raise

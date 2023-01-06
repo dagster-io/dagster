@@ -1,9 +1,14 @@
 from typing import Any, Callable, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
 
 import dateutil
-
-from dagster import AssetKey, AssetMaterialization, AssetObservation, MetadataValue, Output
-from dagster import _check as check
+from dagster import (
+    AssetKey,
+    AssetMaterialization,
+    AssetObservation,
+    MetadataValue,
+    Output,
+    _check as check,
+)
 from dagster._core.definitions.metadata import RawMetadataValue
 
 from .types import DbtOutput

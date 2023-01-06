@@ -719,7 +719,9 @@ def grpc_command(
                 else DEFAULT_DAGSTER_ENTRY_POINT
             ),
             container_image=container_image,
-            container_context=json.loads(container_context) if container_context != None else None,
+            container_context=json.loads(container_context)
+            if container_context is not None
+            else None,
             inject_env_vars_from_instance=inject_env_vars_from_instance,
             instance_ref=deserialize_as(instance_ref, InstanceRef) if instance_ref else None,
             location_name=location_name,

@@ -518,9 +518,7 @@ class PendingNodeInvocation:
                 " Dynamic output must be unpacked by invoking map or collect."
             )
 
-        elif isinstance(output_node, PendingNodeInvocation) or isinstance(
-            output_node, NodeDefinition
-        ):
+        elif isinstance(output_node, (NodeDefinition, PendingNodeInvocation)):
             raise DagsterInvalidDefinitionError(
                 "In {source} {name}, received an un-invoked {described_node} "
                 " for input "

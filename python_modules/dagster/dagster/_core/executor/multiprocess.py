@@ -4,8 +4,10 @@ import sys
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
 from typing import Any, Dict, Iterator, List, Optional, Sequence
 
-from dagster import MetadataEntry
-from dagster import _check as check
+from dagster import (
+    MetadataEntry,
+    _check as check,
+)
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import (

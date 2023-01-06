@@ -21,8 +21,6 @@ from ..definitions.resource_requirement import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import JobDefinition, OpDefinition
-    from dagster._core.execution.context.init import Resources
     from dagster._core.execution.context.system import (
         DagsterTypeLoaderContext,
         DagsterTypeMaterializerContext,

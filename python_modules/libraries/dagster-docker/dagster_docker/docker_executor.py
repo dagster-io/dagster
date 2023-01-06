@@ -1,9 +1,7 @@
 from typing import Iterator, Optional, cast
 
-import docker
-from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
-
 import dagster._check as check
+import docker
 from dagster import Field, IntSource, executor
 from dagster._annotations import experimental
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
@@ -22,7 +20,9 @@ from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.utils import parse_env_var
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._serdes.utils import hash_str
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
+
+from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
 
 from .container_context import DockerContainerContext
 

@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 from typing import Callable
 
 import pytest
-from pydantic import ValidationError
-
 from dagster import IOManager, asset, job, op, resource
 from dagster._config.structured_config import (
     Resource,
@@ -20,6 +18,7 @@ from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._utils.cached_method import cached_method
+from pydantic import ValidationError
 
 
 def test_basic_structured_resource():

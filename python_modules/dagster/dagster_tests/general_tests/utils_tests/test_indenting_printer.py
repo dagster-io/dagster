@@ -1,5 +1,4 @@
 import pytest
-
 from dagster._check import CheckError
 from dagster._utils.indenting_printer import IndentingPrinter, IndentingStringIoPrinter
 
@@ -38,7 +37,7 @@ class CollectingIndentingPrinter(IndentingPrinter):
             if str is not None:
                 self.lines.append(text)
 
-        super(CollectingIndentingPrinter, self).__init__(printer=_add_line, *args, **kwargs)
+        super(CollectingIndentingPrinter, self).__init__(*args, printer=_add_line, **kwargs)
 
     def result(self):
         return "\n".join(self.lines)

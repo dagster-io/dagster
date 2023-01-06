@@ -3,7 +3,6 @@ import subprocess
 import time
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -30,7 +29,7 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
 )
 from dagster._core.test_utils import instance_for_test
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .retry_jobs import (
     assert_expected_failure_behavior,

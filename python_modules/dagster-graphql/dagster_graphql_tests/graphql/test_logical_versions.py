@@ -1,11 +1,3 @@
-from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
-from dagster_graphql.test.utils import (
-    define_out_of_process_context,
-    execute_dagster_graphql,
-    infer_job_or_pipeline_selector,
-)
-from dagster_graphql_tests.graphql.test_assets import GET_ASSET_LOGICAL_VERSIONS
-
 from dagster import (
     AssetIn,
     DailyPartitionsDefinition,
@@ -16,6 +8,14 @@ from dagster import (
 )
 from dagster._core.test_utils import instance_for_test, wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
+from dagster_graphql.test.utils import (
+    define_out_of_process_context,
+    execute_dagster_graphql,
+    infer_job_or_pipeline_selector,
+)
+
+from dagster_graphql_tests.graphql.test_assets import GET_ASSET_LOGICAL_VERSIONS
 
 
 def get_repo_v1():

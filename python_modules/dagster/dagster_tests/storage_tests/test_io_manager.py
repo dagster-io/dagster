@@ -4,7 +4,6 @@ import time
 
 import mock
 import pytest
-
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -14,8 +13,8 @@ from dagster import (
     DynamicOut,
     DynamicOutput,
     Field,
-    IOManagerDefinition,
     In,
+    IOManagerDefinition,
     MetadataEntry,
     Nothing,
     Out,

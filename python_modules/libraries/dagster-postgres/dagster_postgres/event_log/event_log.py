@@ -1,8 +1,7 @@
 from typing import Optional
 
-import sqlalchemy as db
-
 import dagster._check as check
+import sqlalchemy as db
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry

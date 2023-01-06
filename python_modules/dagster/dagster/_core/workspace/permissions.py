@@ -1,8 +1,5 @@
 from enum import Enum, unique
-from typing import TYPE_CHECKING, Dict, Mapping, NamedTuple, Optional
-
-if TYPE_CHECKING:
-    from .context import WorkspaceProcessContext
+from typing import Dict, Mapping, NamedTuple, Optional
 
 
 @unique

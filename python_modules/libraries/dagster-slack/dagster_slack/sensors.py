@@ -11,8 +11,6 @@ from typing import (
     Union,
 )
 
-from slack_sdk.web.client import WebClient
-
 from dagster import (
     AssetSelection,
     DefaultSensorStatus,
@@ -27,6 +25,7 @@ from dagster._core.definitions.run_status_sensor_definition import (
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._utils.backcompat import deprecation_warning
+from slack_sdk.web.client import WebClient
 
 if TYPE_CHECKING:
     from dagster._core.host_representation.selector import (

@@ -37,16 +37,12 @@ from typing import (
     cast,
     overload,
 )
-from warnings import warn
 
 import packaging.version
 from typing_extensions import Literal
 
 import dagster._check as check
 import dagster._seven as seven
-
-from .merger import deep_merge_dicts, merge_dicts
-from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
 if sys.version_info > (3,):
     from pathlib import Path  # pylint: disable=import-error

@@ -1,5 +1,4 @@
 import pytest
-
 from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_ephemeral_grpc
 from dagster._core.definitions.sensor_definition import SensorExecutionData
 from dagster._core.errors import DagsterUserCodeProcessError

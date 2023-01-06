@@ -4,11 +4,6 @@ from unittest.mock import MagicMock
 
 import psycopg2
 import pytest
-from dagster_dbt import dbt_cli_resource
-from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
-from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliHandledRuntimeError
-from dagster_dbt.types import DbtOutput
-
 from dagster import (
     AssetIn,
     AssetKey,
@@ -23,6 +18,10 @@ from dagster import (
 from dagster._core.definitions import build_assets_job
 from dagster._legacy import AssetGroup
 from dagster._utils import file_relative_path
+from dagster_dbt import dbt_cli_resource
+from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
+from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliHandledRuntimeError
+from dagster_dbt.types import DbtOutput
 
 from .utils import assert_assets_match_project
 

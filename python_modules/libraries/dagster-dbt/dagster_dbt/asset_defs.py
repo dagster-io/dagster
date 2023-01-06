@@ -16,11 +16,6 @@ from typing import (
     Tuple,
 )
 
-from dagster_dbt.cli.types import DbtCliOutput
-from dagster_dbt.cli.utils import execute_cli
-from dagster_dbt.types import DbtOutput
-from dagster_dbt.utils import _get_input_name, _get_output_name, result_to_events
-
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -32,15 +27,21 @@ from dagster import (
     PartitionsDefinition,
     TableColumn,
     TableSchema,
+    _check as check,
+    get_dagster_logger,
+    op,
 )
-from dagster import _check as check
-from dagster import get_dagster_logger, op
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._legacy import OpExecutionContext
 from dagster._utils.backcompat import experimental_arg_warning
+
+from dagster_dbt.cli.types import DbtCliOutput
+from dagster_dbt.cli.utils import execute_cli
+from dagster_dbt.types import DbtOutput
+from dagster_dbt.utils import _get_input_name, _get_output_name, result_to_events
 
 
 def _load_manifest_for_project(

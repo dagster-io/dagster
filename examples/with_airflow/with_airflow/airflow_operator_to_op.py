@@ -2,9 +2,8 @@ import json
 
 from airflow.models import Connection
 from airflow.operators.http_operator import SimpleHttpOperator
-from dagster_airflow import airflow_operator_to_op
-
 from dagster import job
+from dagster_airflow import airflow_operator_to_op
 
 # start_operator_to_op_1
 http_task = SimpleHttpOperator(task_id="http_task", method="GET", endpoint="images")

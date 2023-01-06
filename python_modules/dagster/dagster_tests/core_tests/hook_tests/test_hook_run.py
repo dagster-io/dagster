@@ -1,7 +1,6 @@
 from collections import defaultdict
 
 import pytest
-
 from dagster import DynamicOut, DynamicOutput, Int, Out, Output, graph, job, op, resource
 from dagster._core.definitions import failure_hook, success_hook
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook

@@ -1,7 +1,6 @@
 import responses
-from dagster_census import CensusOutput, census_resource, census_trigger_sync_op
-
 from dagster import job, op
+from dagster_census import CensusOutput, census_resource, census_trigger_sync_op
 
 from .utils import (
     get_destination_data,

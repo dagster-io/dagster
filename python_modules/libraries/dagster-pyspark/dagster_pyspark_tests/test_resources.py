@@ -1,9 +1,8 @@
-from dagster_pyspark.resources import lazy_pyspark_resource, pyspark_resource
-from pyspark.sql import SparkSession
-
 from dagster import job, multiprocess_executor, op, reconstructable
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import execute_pipeline
+from dagster_pyspark.resources import lazy_pyspark_resource, pyspark_resource
+from pyspark.sql import SparkSession
 
 
 def assert_pipeline_runs_with_resource(resource_def):

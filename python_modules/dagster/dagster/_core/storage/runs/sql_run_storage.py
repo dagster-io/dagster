@@ -53,7 +53,8 @@ from dagster._serdes import (
     serialize_dagster_namedtuple,
 )
 from dagster._seven import JSONDecodeError
-from dagster._utils import merge_dicts, utc_datetime_from_timestamp
+from dagster._utils import utc_datetime_from_timestamp
+from dagster._utils.merger import merge_dicts
 
 from ..pipeline_run import (
     DagsterRun,
@@ -71,8 +72,8 @@ from .schema import (
     DaemonHeartbeatsTable,
     InstanceInfo,
     KeyValueStoreTable,
-    RunTagsTable,
     RunsTable,
+    RunTagsTable,
     SecondaryIndexMigrationTable,
     SnapshotsTable,
 )
@@ -971,7 +972,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         query = (
             db.select([1])
             .where(SecondaryIndexMigrationTable.c.name == migration_name)
-            .where(SecondaryIndexMigrationTable.c.migration_completed != None)
+            .where(SecondaryIndexMigrationTable.c.migration_completed != None)  # noqa: E711
             .limit(1)
         )
         with self.connect() as conn:

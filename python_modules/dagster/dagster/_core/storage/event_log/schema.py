@@ -103,7 +103,7 @@ db.Index(
     SqlEventLogStorageTable.c.asset_key,
     SqlEventLogStorageTable.c.dagster_event_type,
     SqlEventLogStorageTable.c.id,
-    postgresql_where=(SqlEventLogStorageTable.c.asset_key != None),
+    postgresql_where=(SqlEventLogStorageTable.c.asset_key != None),  # noqa: E711
     mysql_length={"asset_key": 64, "dagster_event_type": 64},
 )
 db.Index(
@@ -114,8 +114,8 @@ db.Index(
     SqlEventLogStorageTable.c.id,
     postgresql_where=(
         db.and_(
-            SqlEventLogStorageTable.c.asset_key != None,
-            SqlEventLogStorageTable.c.partition != None,
+            SqlEventLogStorageTable.c.asset_key != None,  # noqa: E711
+            SqlEventLogStorageTable.c.partition != None,  # noqa: E711
         )
     ),
     mysql_length={"asset_key": 64, "dagster_event_type": 64, "partition": 64},

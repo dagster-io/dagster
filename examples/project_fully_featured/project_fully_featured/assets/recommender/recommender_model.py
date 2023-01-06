@@ -1,10 +1,9 @@
 # pylint: disable=redefined-outer-name
 import random
 
+from dagster import AssetIn, MetadataValue, Output, asset
 from pandas import DataFrame, Series
 from sklearn.decomposition import TruncatedSVD
-
-from dagster import AssetIn, MetadataValue, Output, asset
 
 from .user_story_matrix import IndexedCooMatrix
 

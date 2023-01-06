@@ -1,9 +1,9 @@
 from dagster import (
     Failure,
     Field,
-    IOManager,
     In,
     Int,
+    IOManager,
     Out,
     ResourceDefinition,
     RetryRequested,

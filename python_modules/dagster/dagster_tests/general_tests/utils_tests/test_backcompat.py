@@ -2,8 +2,6 @@ import re
 from typing import NamedTuple
 
 import pytest
-from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
-
 from dagster._annotations import experimental
 from dagster._check import CheckError
 from dagster._utils.backcompat import (
@@ -11,6 +9,8 @@ from dagster._utils.backcompat import (
     canonicalize_backcompat_args,
     experimental_arg_warning,
 )
+
+from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
 
 
 def is_new(old_flag=None, new_flag=None, include_additional_warn_txt=True):
