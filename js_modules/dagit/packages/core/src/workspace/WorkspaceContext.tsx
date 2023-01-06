@@ -122,6 +122,9 @@ const ROOT_WORKSPACE_QUERY = gql`
     assetGroups {
       groupName
     }
+    topLevelResources {
+      name
+    }
     ...RepositoryInfoFragment
   }
 

@@ -15,6 +15,7 @@ interface SplitPanelContainerProps {
   firstInitialPercent: number;
   firstMinSize?: number;
   second: React.ReactNode | null; // Note: pass null to hide / animate away the second panel
+  height?: string;
 }
 
 interface SplitPanelContainerState {
@@ -64,7 +65,12 @@ export class SplitPanelContainer extends React.Component<
     }
 
     return (
-      <Container axis={axis} id="split-panel-container" resizing={resizing}>
+      <Container
+        axis={axis}
+        id="split-panel-container"
+        resizing={resizing}
+        height={this.props.height}
+      >
         <div className="split-panel" style={firstPaneStyles}>
           {first}
         </div>
@@ -263,6 +269,7 @@ const DividerHitArea = {
 const Container = styled.div<{
   axis?: 'horizontal' | 'vertical';
   resizing: boolean;
+  height?: string;
 }>`
   display: flex;
   overflow: hidden;
@@ -271,6 +278,7 @@ const Container = styled.div<{
   width: 100%;
   min-width: 0;
   min-height: 0;
+  height: ${({height}) => (height ? height : 'auto')};
 
   .split-panel {
     position: relative;
