@@ -1,3 +1,4 @@
+import sys
 from typing import Any
 
 import pytest
@@ -303,3 +304,37 @@ def test_asset_with_structured_config():
         .success
     )
     assert executed["the_asset"]
+
+
+# Disabled for Python versions <3.9 as builtin types do not support generics
+# until Python 3.9, https://peps.python.org/pep-0585/
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="requires python3.9")
+def test_no_err_builtin_annotations():
+    # Ensures that we can use Python builtin types without causing any issues, see
+    # https://github.com/dagster-io/dagster/issues/11541
+
+    executed = {}
+
+    @asset
+    def the_asset(context, foo: ResourceOutput[str]):
+        assert context.resources.foo == "blah"
+        assert foo == "blah"
+        executed["the_asset"] = True
+        return [{"hello": "world"}]
+
+    @asset
+    def the_other_asset(context, the_asset: list[dict[str, str]], foo: ResourceOutput[str]):
+        assert context.resources.foo == "blah"
+        assert foo == "blah"
+        assert the_asset == [{"hello": "world"}]
+        executed["the_other_asset"] = True
+        return "world"
+
+    transformed_assets = with_resources(
+        [the_asset, the_other_asset],
+        {"foo": ResourceDefinition.hardcoded_resource("blah")},
+    )
+
+    assert build_assets_job("the_job", transformed_assets).execute_in_process().success
+    assert executed["the_asset"]
+    assert executed["the_other_asset"]
