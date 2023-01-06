@@ -14,11 +14,16 @@ from dagster import (
     hourly_partitioned_config,
     monthly_partitioned_config,
     weekly_partitioned_config,
+    DagsterInvalidInvocationError,
 )
 from dagster._core.definitions.time_window_partitions import ScheduleType, TimeWindow
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 DATE_FORMAT = "%Y-%m-%d"
+
+
+def str_to_dt(dt_str: str) -> datetime:
+    return cast(datetime, pendulum.parse(dt_str))
 
 
 def time_window(start: str, end: str) -> TimeWindow:
@@ -553,37 +558,76 @@ def test_unique_identifier():
     )
 
 
+def test_partition_subset_123():
+    subset = (
+        DailyPartitionsDefinition(start_date="2023-01-01")
+        .empty_subset()
+        .with_partition_keys(["2023-01-01", "2023-01-02", "2023-01-03"])
+    )
+    assert subset.get_partition_keys() == ["2023-01-01", "2023-01-02", "2023-01-03"]
+
+
 def test_valid_partition_time_window():
     partitions_def = DailyPartitionsDefinition(start_date="2023-01-01")
-    assert (
-        partitions_def.is_valid_partition_time_window(time_window("2023-01-01", "2023-01-02"))
-        == True
+    tws, _ = partitions_def.get_validated_merged_time_windows_and_length(
+        [time_window("2023-01-01", "2023-01-02")]
     )
-    assert (
-        partitions_def.is_valid_partition_time_window(
-            time_window("2023-01-01", "2023-01-03"), cast(datetime, pendulum.parse("2023-01-04"))
+    assert tws == [time_window("2023-01-01", "2023-01-02")]
+    tws, _ = partitions_def.get_validated_merged_time_windows_and_length(
+        [time_window("2023-01-01", "2023-01-02"), time_window("2023-01-02", "2023-01-03")]
+    )
+    assert tws == [time_window("2023-01-01", "2023-01-03")]
+
+    with pytest.raises(DagsterInvalidInvocationError):
+        partitions_def.get_validated_merged_time_windows_and_length(
+            [time_window("2023-01-01", "2023-01-01")]
         )
-        == True
-    )
-    assert (
-        partitions_def.is_valid_partition_time_window(time_window("2023-01-01", "2023-01-01"))
-        == False
-    )
-    assert (
-        partitions_def.is_valid_partition_time_window(
-            time_window("2023-01-01", "2023-01-04"), cast(datetime, pendulum.parse("2023-01-03"))
+
+    with pytest.raises(DagsterInvalidInvocationError):
+        partitions_def.get_validated_merged_time_windows_and_length(
+            [time_window("2022-01-01", "2022-01-04")]
         )
-        == False
-    )
-    assert (
-        partitions_def.is_valid_partition_time_window(
-            time_window("2023-01-01", "2023-01-04"), cast(datetime, pendulum.parse("2023-01-04"))
+
+
+def test_iterate_valid_time_windows():
+    partitions_def = DailyPartitionsDefinition(start_date="2023-01-01")
+
+    assert list(
+        partitions_def.iterate_valid_time_windows(
+            str_to_dt("2023-01-01"), current_time=str_to_dt("2023-01-04")
         )
-        == True
-    )
+    ) == [
+        time_window("2023-01-01", "2023-01-02"),
+        time_window("2023-01-02", "2023-01-03"),
+        time_window("2023-01-03", "2023-01-04"),
+    ]
     assert (
-        partitions_def.is_valid_partition_time_window(
-            time_window("2023-01-01", "2023-01-04"), cast(datetime, pendulum.parse("2023-01-01"))
+        list(
+            partitions_def.iterate_valid_time_windows(
+                str_to_dt("2023-01-01"), current_time=str_to_dt("2023-01-01")
+            )
         )
-        == False
+        == []
     )
+
+    partitions_def = DailyPartitionsDefinition(start_date="2023-01-01", end_offset=1)
+    assert list(
+        partitions_def.iterate_valid_time_windows(
+            str_to_dt("2023-01-01"), current_time=str_to_dt("2023-01-04")
+        )
+    ) == [
+        time_window("2023-01-01", "2023-01-02"),
+        time_window("2023-01-02", "2023-01-03"),
+        time_window("2023-01-03", "2023-01-04"),
+        time_window("2023-01-04", "2023-01-05"),
+    ]
+
+    partitions_def = DailyPartitionsDefinition(start_date="2023-01-01", end_offset=-1)
+    assert list(
+        partitions_def.iterate_valid_time_windows(
+            str_to_dt("2023-01-01"), current_time=str_to_dt("2023-01-04")
+        )
+    ) == [
+        time_window("2023-01-01", "2023-01-02"),
+        time_window("2023-01-02", "2023-01-03"),
+    ]

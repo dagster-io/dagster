@@ -229,6 +229,9 @@ def _get_updated_status_cache(
         current_status_cache_value.partitions_def_id
         == partitions_def.serializable_unique_identifier
     )
+
+    # TODO add checks to see if a subset can be deserialized
+
     materialized_subset: PartitionsSubset = (
         partitions_def.deserialize_subset(
             current_status_cache_value.serialized_materialized_partition_subset

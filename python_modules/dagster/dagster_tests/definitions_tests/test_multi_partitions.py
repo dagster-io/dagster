@@ -167,3 +167,12 @@ def test_tags_multi_dimensional_partitions():
             )
         )
         assert len(materializations) == 1
+
+
+def test_get_primary_and_secondary_dimensions():
+    pass
+    # TODO add test to confirm that partitions subset is aligned with primary/secondary dimension
+
+
+def test_multipartitions_subset_serialization():
+    pass

@@ -6,7 +6,11 @@ from typing import Dict, Iterable, List, Mapping, NamedTuple, Optional, Sequence
 from collections import defaultdict
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterInvalidDeserializationVersionError,
+)
 from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_multidimensional_partition_tag,
@@ -18,6 +22,7 @@ from .partition import (
     Partition,
     PartitionsDefinition,
     StaticPartitionsDefinition,
+    PartitionKeyRange,
 )
 from .time_window_partitions import TimeWindowPartitionsDefinition
 
@@ -279,87 +284,15 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         return multi_partition_key
 
     def empty_subset(self) -> "MultiPartitionsSubset":
-        return MultiPartitionsSubset(self, set())
+        return MultiPartitionsSubset(self)
 
     def deserialize_subset(self, serialized: str) -> "MultiPartitionsSubset":
         return MultiPartitionsSubset.from_serialized(self, serialized)
 
-
-class MultiPartitionsSubset(DefaultPartitionsSubset):
-    def __init__(
-        self,
-        partitions_def: PartitionsDefinition,
-        subset: Optional[Set[str]] = None,
-    ):
-        if not isinstance(partitions_def, MultiPartitionsDefinition):
-            check.failed(
-                "Must pass a MultiPartitionsDefinition object to deserialize MultiPartitionsSubset."
-            )
-
-        (
-            self._primary_dimension,
-            self._secondary_dimension,
-        ) = self._get_primary_and_secondary_dimension(partitions_def)
-
-        subset = (
-            {
-                key
-                for key in subset
-                if partitions_def.has_partition_key(cast(MultiPartitionKey, key))
-            }
-            if subset
-            else set()
-        )
-
-        subsets_by_primary_dimension_partition_key = defaultdict(set)
-        for partition_key in subset:
-            multi_partition_key = cast(
-                MultiPartitionsDefinition, self._partitions_def
-            ).get_multi_partition_key_from_str(partition_key)
-            subsets_by_primary_dimension_partition_key[
-                multi_partition_key.keys_by_dimension[self._primary_dimension.name]
-            ].add(multi_partition_key.keys_by_dimension[self._secondary_dimension.name])
-
-        self.subsets_by_primary_dimension_partition_key = (
-            {
-                primary_key: self._secondary_dimension.partitions_def.empty_subset()
-                for primary_key in self._primary_dimension.partitions_def.get_partition_keys()
-            }
-            if not subset
-            else {
-                primary_key: self._secondary_dimension.partitions_def.empty_subset().with_partition_keys(
-                    subsets_by_primary_dimension_partition_key[primary_key]
-                )
-                for primary_key in self._primary_dimension.partitions_def.get_partition_keys()
-            }
-        )
-        super(MultiPartitionsSubset, self).__init__(partitions_def, subset)
-
-    def with_partition_keys(self, partition_keys: Iterable[str]) -> "MultiPartitionsSubset":
-        return MultiPartitionsSubset(self._partitions_def, self._subset | set(partition_keys))
-
-    @staticmethod
-    def from_serialized(
-        partitions_def: PartitionsDefinition, serialized: str
-    ) -> "MultiPartitionsSubset":
-        if not isinstance(partitions_def, MultiPartitionsDefinition):
-            check.failed(
-                "Must pass a MultiPartitionsDefinition object to deserialize MultiPartitionsSubset."
-            )
-        return MultiPartitionsSubset(
-            subset=set(
-                [
-                    partitions_def.get_multi_partition_key_from_str(key)
-                    for key in json.loads(serialized)
-                ]
-            ),
-            partitions_def=partitions_def,
-        )
-
     def _get_primary_and_secondary_dimension(
-        self, partitions_def: MultiPartitionsDefinition
+        self,
     ) -> Tuple[PartitionDimensionDefinition, PartitionDimensionDefinition]:
-        partition_defs = partitions_def.partitions_defs
+        partition_defs = self.partitions_defs
         time_partition_defs = [
             dimension_def
             for dimension_def in partition_defs
@@ -373,8 +306,229 @@ class MultiPartitionsSubset(DefaultPartitionsSubset):
         )
         return primary_serialization_dimension, secondary_serialization_dimension
 
-    def get_inverse_subset(self) -> "MultiPartitionsSubset":
+    @property
+    def primary_dimension(self) -> PartitionDimensionDefinition:
+        return self._get_primary_and_secondary_dimension()[0]
+
+    @property
+    def secondary_dimension(self) -> PartitionDimensionDefinition:
+        return self._get_primary_and_secondary_dimension()[1]
+
+
+class MultiPartitionsSubset(PartitionsSubset):
+    # TODO serialization version comment
+    SERIALIZATION_VERSION = 1
+
+    def __init__(
+        self,
+        partitions_def: MultiPartitionsDefinition,
+        subsets_by_primary_dimension_partition_key: Optional[Mapping[str, PartitionsSubset]] = None
+        # subset: Optional[Set[str]] = None,
+    ):
+        self._partitions_def = check.inst_param(
+            partitions_def, "partitions_def", MultiPartitionsDefinition
+        )
+
+        check.opt_mapping_param(
+            subsets_by_primary_dimension_partition_key,
+            "subsets_by_primary_dimension_partition_key",
+            key_type=str,
+            value_type=PartitionsSubset,
+        )
+        if not subsets_by_primary_dimension_partition_key:
+            self.subsets_by_primary_dimension_partition_key = {
+                primary_key: partitions_def.secondary_dimension.partitions_def.empty_subset()
+                for primary_key in partitions_def.primary_dimension.partitions_def.get_partition_keys()
+            }
+        else:
+            check.invariant(
+                set(partitions_def.primary_dimension.partitions_def.get_partition_keys())
+                == set(subsets_by_primary_dimension_partition_key.keys()),
+                f"The provided primary dimension partition keys must equal the set of partition keys of dimension {partitions_def.primary_dimension.name}",
+            )
+            for secondary_dim_subset in subsets_by_primary_dimension_partition_key.values():
+                check.invariant(
+                    secondary_dim_subset.partitions_def
+                    == partitions_def.secondary_dimension.partitions_def,
+                    f"Secondary dimension subset partitions definition {secondary_dim_subset.partitions_def} does not match partitions definition for dimension {partitions_def.secondary_dimension.name}",
+                )
+            self.subsets_by_primary_dimension_partition_key = (
+                subsets_by_primary_dimension_partition_key
+            )
+
+        # subsets_by_primary_dimension_partition_key = defaultdict(set)
+        # for partition_key in subset:
+        #     multi_partition_key = cast(
+        #         MultiPartitionsDefinition, self._partitions_def
+        #     ).get_multi_partition_key_from_str(partition_key)
+        #     subsets_by_primary_dimension_partition_key[
+        #         multi_partition_key.keys_by_dimension[self._primary_dimension.name]
+        #     ].add(multi_partition_key.keys_by_dimension[self._secondary_dimension.name])
+
+        # super(MultiPartitionsSubset, self).__init__(partitions_def, subset)
+
+    @property
+    def partitions_def(self) -> MultiPartitionsDefinition:
+        return self._partitions_def
+
+    def get_partition_keys_not_in_subset(
+        self, current_time: Optional[datetime] = None
+    ) -> Iterable[str]:
+        keys_not_in_subset = set()
+        for (
+            primary_key,
+            secondary_subset,
+        ) in self.subsets_by_primary_dimension_partition_key.items():
+            for secondary_key in secondary_subset.get_partition_keys_not_in_subset(current_time):
+                keys_not_in_subset.add(
+                    MultiPartitionKey(
+                        {
+                            self.partitions_def.primary_dimension.name: primary_key,
+                            self.partitions_def.secondary_dimension.name: secondary_key,
+                        }
+                    )
+                )
+        return keys_not_in_subset
+
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
+        keys_in_subset = set()
+        for (
+            primary_key,
+            secondary_subset,
+        ) in self.subsets_by_primary_dimension_partition_key.items():
+            for secondary_key in secondary_subset.get_partition_keys(current_time):
+                keys_in_subset.add(
+                    MultiPartitionKey(
+                        {
+                            self.partitions_def.primary_dimension.name: primary_key,
+                            self.partitions_def.secondary_dimension.name: secondary_key,
+                        }
+                    )
+                )
+
+    def get_partition_key_ranges(
+        self, current_time: Optional[datetime] = None
+    ) -> Sequence[PartitionKeyRange]:
+        # TODO
         pass
+
+    def __eq__(self, other):
+        # TODO
+        pass
+
+    def __len__(self) -> int:
+        # TODO
+        pass
+
+    def __contains__(self, partition_key: str) -> bool:
+        if not isinstance(partition_key, MultiPartitionKey):
+            check.failed("partition_key must be a MultiPartitionKey")
+
+        primary_key = partition_key.keys_by_dimension.get(
+            self.partitions_def.primary_dimension.name
+        )
+        secondary_key = partition_key.keys_by_dimension.get(
+            self.partitions_def.secondary_dimension.name
+        )
+        return (
+            primary_key is not None
+            and primary_key in self.subsets_by_primary_dimension_partition_key
+            and secondary_key is not None
+            and secondary_key in self.subsets_by_primary_dimension_partition_key[primary_key]
+        )
+
+    def with_partition_keys(self, partition_keys: Iterable[str]) -> "MultiPartitionsSubset":
+        new_keys_by_primary_dim_key = defaultdict(set)
+        for partition_key in partition_keys:
+            multi_partition_key = cast(
+                MultiPartitionsDefinition, self._partitions_def
+            ).get_multi_partition_key_from_str(partition_key)
+            new_keys_by_primary_dim_key[
+                multi_partition_key.keys_by_dimension[self.partitions_def.primary_dimension.name]
+            ].add(
+                multi_partition_key.keys_by_dimension[self.partitions_def.secondary_dimension.name]
+            )
+
+        return MultiPartitionsSubset(
+            self._partitions_def,
+            {
+                primary_key: secondary_dim_subset.with_partition_keys(
+                    new_keys_by_primary_dim_key[primary_key]
+                )
+                for primary_key, secondary_dim_subset in self.subsets_by_primary_dimension_partition_key.items()
+            },
+        )
+
+    def serialize(self) -> str:
+        # Serialize version number, so attempting to deserialize old versions can be handled gracefully.
+        # Any time the serialization format changes, we should increment the version number.
+        return json.dumps(
+            {
+                "version": self.SERIALIZATION_VERSION,
+                "serialized_subsets_by_primary_key": {
+                    primary_key: secondary_dim_subset.serialize()
+                    for primary_key, secondary_dim_subset in self.subsets_by_primary_dimension_partition_key.items()
+                },
+            }
+        )
+
+    @classmethod
+    def can_deserialize(cls, serialized: str) -> bool:
+        # Check the version number to determine if the serialization format is supported
+        data = json.loads(serialized)
+        return data.get("version") == cls.SERIALIZATION_VERSION
+
+    @classmethod
+    def from_serialized(
+        cls, partitions_def: PartitionsDefinition, serialized: str
+    ) -> "MultiPartitionsSubset":
+        # TODO add comment on serialization version
+        if not isinstance(partitions_def, MultiPartitionsDefinition):
+            check.failed(
+                "Must pass a MultiPartitionsDefinition object to deserialize MultiPartitionsSubset."
+            )
+
+        data = json.loads(serialized)
+        if data.get("version") != cls.SERIALIZATION_VERSION:
+            raise DagsterInvalidDeserializationVersionError(
+                f"Attempted to deserialize partition subset with version {data.get('version')}, but only version {cls.SERIALIZATION_VERSION} is supported."
+            )
+
+        return MultiPartitionsSubset(
+            partitions_def=partitions_def,
+            subsets_by_primary_dimension_partition_key={
+                primary_key: partitions_def.secondary_dimension.partitions_def.deserialize_subset(
+                    subset
+                )
+                for primary_key, subset in data["serialized_subsets_by_primary_key"].items()
+            },
+        )
+
+    # def _get_primary_and_secondary_dimension(
+    #     self, partitions_def: MultiPartitionsDefinition
+    # ) -> Tuple[PartitionDimensionDefinition, PartitionDimensionDefinition]:
+    #     partition_defs = partitions_def.partitions_defs
+    #     time_partition_defs = [
+    #         dimension_def
+    #         for dimension_def in partition_defs
+    #         if isinstance(dimension_def.partitions_def, TimeWindowPartitionsDefinition)
+    #     ]
+    #     secondary_serialization_dimension = (
+    #         next(iter(time_partition_defs)) if len(time_partition_defs) == 1 else partition_defs[1]
+    #     )
+    #     primary_serialization_dimension = next(
+    #         iter([dim for dim in partition_defs if dim != secondary_serialization_dimension])
+    #     )
+    #     return primary_serialization_dimension, secondary_serialization_dimension
+
+    def get_inverse_subset(self) -> "MultiPartitionsSubset":
+        return MultiPartitionsSubset(
+            partitions_def=self._partitions_def,
+            subsets_by_primary_dimension_partition_key={
+                primary_key: secondary_dim_subset.get_inverse_subset()
+                for primary_key, secondary_dim_subset in self.subsets_by_primary_dimension_partition_key.items()
+            },
+        )
 
 
 def get_tags_from_multi_partition_key(multi_partition_key: MultiPartitionKey) -> Mapping[str, str]:
