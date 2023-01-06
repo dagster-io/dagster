@@ -770,7 +770,7 @@ class ExecutionPlan(
 
     def resolve(
         self,
-        mappings: Mapping[str, Mapping[str, Sequence[str]]],
+        mappings: Mapping[str, Mapping[str, Optional[Sequence[str]]]],
     ) -> Mapping[str, Set[str]]:
         """Resolve any dynamic map or collect steps with the resolved dynamic mappings"""
 
@@ -1197,7 +1197,7 @@ def _update_from_resolved_dynamic_outputs(
     executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
     resolvable_map: Dict[FrozenSet[str], Sequence[Union[StepHandle, UnresolvedStepHandle]]],
     step_handles_to_execute: Sequence[StepHandleUnion],
-    dynamic_mappings: Mapping[str, Mapping[str, Sequence[str]]],
+    dynamic_mappings: Mapping[str, Mapping[str, Optional[Sequence[str]]]],
 ) -> None:
     resolved_steps: List[ExecutionStep] = []
     key_sets_to_clear: List[FrozenSet[str]] = []

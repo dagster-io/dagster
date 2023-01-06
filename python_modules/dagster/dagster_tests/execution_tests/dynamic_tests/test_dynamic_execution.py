@@ -571,17 +571,73 @@ def test_fan_in_skips():
         total.alias("grand_total")(
             [
                 total.alias("nums_total")(emit_dyn(nums).map(echo).collect()),
-                total.alias("empty_total")(emit_dyn(empty).map(echo).collect()),
-                total.alias("skip_total")(emit_dyn(skip).map(echo).collect()),
+                total.alias("empty_total")(
+                    emit_dyn.alias("emit_dyn_empty")(empty).map(echo.alias("echo_empty")).collect()
+                ),
+                total.alias("skip_total")(
+                    emit_dyn.alias("emit_dyn_skip")(skip).map(echo.alias("echo_skip")).collect()
+                ),
             ]
         )
 
     result = dyn_fork.execute_in_process()
     assert result.success
+    skips = {ev.step_key for ev in result.get_step_skipped_events()}
 
     assert result.output_for_node("nums_total")
     assert result.output_for_node("empty_total") == 0
 
-    assert result.output_for_node("skip_total") == 0  # arguably should skip
+    assert "skip_total" in skips
 
     assert result.output_for_node("grand_total") == 6
+
+
+def test_collect_optional():
+    @op(out=Out(is_required=False))
+    def optional_out_op():
+        if False:  # pylint: disable=using-constant-test
+            yield None
+
+    @op(out=DynamicOut())
+    def dynamic_out_op(_in):
+        yield DynamicOutput("a", "a")
+
+    @op
+    def collect_op(_in):
+        # this assert gets hit
+        assert False
+
+    @job
+    def job1():
+        echo(collect_op(dynamic_out_op(optional_out_op()).collect()))
+
+    result = job1.execute_in_process()
+    skips = {ev.step_key for ev in result.get_step_skipped_events()}
+    assert "dynamic_out_op" in skips
+    assert "collect_op" in skips
+    assert "echo" in skips
+
+
+def test_non_required_dynamic_collect_skips():
+    @op(out=DynamicOut(is_required=False))
+    def producer():
+        if False:  # pylint: disable=using-constant-test
+            yield DynamicOutput("yay")
+
+    @op
+    def consumer1(item):
+        pass
+
+    @op
+    def consumer2(items):
+        pass
+
+    @job()
+    def my_job():
+        items = producer()
+        items.map(consumer1)
+        consumer2(items.collect())
+
+    result = my_job.execute_in_process()
+    skips = {ev.step_key for ev in result.get_step_skipped_events()}
+    assert "consumer2" in skips

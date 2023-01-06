@@ -164,6 +164,9 @@ class ExecutionResult(ABC):
     def get_step_success_events(self) -> Sequence[DagsterEvent]:
         return [event for event in self.all_events if event.is_step_success]
 
+    def get_step_skipped_events(self) -> Sequence[DagsterEvent]:
+        return [event for event in self.all_events if event.is_step_skipped]
+
     def get_failed_step_keys(self) -> AbstractSet[str]:
         failure_events = self.filter_events(
             lambda event: event.is_step_failure or event.is_resource_init_failure
