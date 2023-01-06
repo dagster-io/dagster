@@ -53,7 +53,6 @@ def _force_mark_as_canceled(instance: DagsterInstance, run_id):
     return GrapheneTerminateRunSuccess(GrapheneRun(reloaded_record))
 
 
-@capture_error
 def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
     from ...schema.errors import GrapheneRunNotFoundError
     from ...schema.pipelines.pipeline import GrapheneRun
@@ -74,6 +73,7 @@ def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
     )
 
     if not records:
+        assert_permission(graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION)
         return GrapheneRunNotFoundError(run_id)
 
     record = records[0]
