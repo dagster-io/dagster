@@ -46,7 +46,7 @@ def persist_run_for_production(
         instance=instance,
     )
 
-    run_tags = {**validate_tags(external_pipeline.tags), **validate_tags(context_specific_tags)}
+    run_tags = validate_tags({**external_pipeline.tags, **context_specific_tags})
 
     return instance.create_run(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
