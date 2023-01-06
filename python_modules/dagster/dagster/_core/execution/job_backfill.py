@@ -227,11 +227,19 @@ def submit_backfill_runs(
         yield None
 
 
+class ExternalSubsettedPipelineCache:
+    """Avoids"""
+
+    @cached_method
+    def get_external_pipeline(pipeline_selector: PipelineSelector) -> ExternalPipeline:
+        ...
+
+
 def create_backfill_run(
     instance: DagsterInstance,
     repo_location: RepositoryLocation,
     external_pipeline: ExternalPipeline,
-    external_partition_set: ExternalPartitionSet,
+    external_partition_set: Optional[ExternalPartitionSet],
     backfill_job: PartitionBackfill,
     partition_data: ExternalPartitionExecutionParamData,
 ) -> Optional[DagsterRun]:

@@ -41,8 +41,8 @@ class PartitionBackfill(
             ("backfill_timestamp", float),
             ("error", Optional[SerializableErrorInfo]),
             ("asset_selection", Optional[Sequence[AssetKey]]),
-            # fields that are only used by job backfills
             ("partition_set_origin", Optional[ExternalPartitionSetOrigin]),
+            # fields that are only used by job backfills
             ("partition_names", Optional[Sequence[str]]),
             ("last_submitted_partition_name", Optional[str]),
             ("reexecution_steps", Optional[Sequence[str]]),
@@ -243,6 +243,7 @@ class PartitionBackfill(
     def from_asset_partitions(
         cls,
         backfill_id: str,
+        partition_set_origin: Optional[PartitionSetOrigin],
         asset_graph: AssetGraph,
         partition_names: Sequence[str],
         asset_selection: Sequence[AssetKey],
@@ -263,6 +264,7 @@ class PartitionBackfill(
         return cls(
             backfill_id=backfill_id,
             status=BulkActionStatus.REQUESTED,
+            partition_set_origin=partition_set_origin,
             from_failure=False,
             tags=tags,
             backfill_timestamp=backfill_timestamp,
