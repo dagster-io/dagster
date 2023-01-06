@@ -91,6 +91,50 @@ exclude = [
 
 ignore = [
 
+  # (non-google docstring)  These docstring rules are collectively incompatible
+  # with the Google-style docstrings we use. List taken from:
+  # https://github.com/charliermarsh/ruff#does-ruff-support-numpy--or-google-style-docstrings
+  "D203",
+  "D204",
+  "D213",
+  "D215",
+  "D400",
+  "D404",
+  "D406",
+  "D407",
+  "D408",
+  "D409",
+  "D413",
+
+  # (missing public docstrings) These work off of the Python sense of "public", rather than our
+  # bespoke definition based off of `@public`. When ruff supports custom plugins then we can write
+  # appropriate rules to require docstrings for `@public`.
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "D105",
+  "D106",
+  "D107",
+
+  # (stack ignores) These are here just to make intermediate steps in the stack
+  # green, they will be gone when this is merged.
+  "D202",
+  "D209",
+  "D210",
+  "D212",
+  "D214",
+  "D300",
+  "D301",
+  "D403",
+  "D405",
+  "D411",
+  "D412",
+  "D414",
+  "D419",
+  "D415",
+
   # (module level import not at top) There are several places where we use e.g.
   # warnings.filterwarings calls before imports.
   "E402",
@@ -119,8 +163,21 @@ ignore = [
 
   ##### TEMPORARY DISABLES
 
-  # (disallow print statements) Allowing until there are file-scoped
-  # error-specific ignores and we can bulk-convert our pylint disables.
+  # (assorted docstring rules) There are too many violations of these to enable
+  # right now, but we should enable after fixing the violations.
+  "D200",  # (one-line docstring should fit)
+  "D205",  # (blank line after summary)
+  "D212",  # (multi-line docstring summary should start at 1st line)
+  "D415",  # (docstring summary should end with a period)
+  "D417",  # (missing arg in docstring)
+
+  # (buggy docstring rules) These rules should be enabled when bugs with them are fixed.
+  "D207", # (under-indented docstring)
+  "D208", # (over-indented docstring)
+  "D402", # (first line should not be the function's "signature")
+
+  # (disallow print statements) Allowing until there are file-scoped error-specific ignores and we
+  # can bulk-convert our pylint disables.
   "T201",  # (no print call)
   "T203",  # (no pprint call)
 
@@ -132,6 +189,11 @@ line-length = 100
 # By default, ruff only uses all "E" (pycodestyle) and "F" (pyflakes) rules.
 # Here we append to the defaults.
 select = [
+
+  # (pydocstyle) Docstring-related rules. See above ignore section for selected
+  # exclusions that sculpt the rules to fit Google-style docstrings. See:
+  # https://github.com/charliermarsh/ruff#does-ruff-support-numpy--or-google-style-docstrings
+  "D",
 
   # (pycodestyle) use all pycodestyle rules
   "E",
