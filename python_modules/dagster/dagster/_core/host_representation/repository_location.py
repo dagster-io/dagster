@@ -130,7 +130,8 @@ class RepositoryLocation(AbstractContextManager):
         """Return the ExternalPipeline for a specific pipeline. Subclasses only
         need to implement get_subset_external_pipeline_result to handle the case where
         a solid selection is specified, which requires access to the underlying PipelineDefinition
-        to generate the subsetted pipeline snapshot."""
+        to generate the subsetted pipeline snapshot.
+        """
         if not selector.solid_selection and not selector.asset_selection:
             return self.get_repository(selector.repository_name).get_full_external_job(
                 selector.pipeline_name
@@ -154,7 +155,8 @@ class RepositoryLocation(AbstractContextManager):
     ) -> ExternalPipelineSubsetResult:
         """Returns a snapshot about an ExternalPipeline with a solid selection, which requires
         access to the underlying PipelineDefinition. Callsites should likely use
-        `get_external_pipeline` instead."""
+        `get_external_pipeline` instead.
+        """
 
     @abstractmethod
     def get_external_partition_config(

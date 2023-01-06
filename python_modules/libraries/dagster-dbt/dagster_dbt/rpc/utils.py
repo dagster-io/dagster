@@ -81,5 +81,6 @@ def raise_for_rpc_error(context: OpExecutionContext, resp: Response) -> None:
 
 def is_fatal_code(e: RequestException) -> bool:
     """Helper function to determine if a Requests reponse status code
-    is a "fatal" status code. If it is, we will not request a solid retry."""
+    is a "fatal" status code. If it is, we will not request a solid retry.
+    """
     return 400 <= e.response.status_code < 500 and e.response.status_code != 429

@@ -130,7 +130,8 @@ class GraphExecutionResult:
         self,
     ) -> Sequence[Union["CompositeSolidExecutionResult", "OpExecutionResult"]]:
         """List[Union[CompositeSolidExecutionResult, SolidExecutionResult]]: The results for each
-        top level solid."""
+        top level solid.
+        """
         return [self.result_for_node(node.name) for node in self.container.solids]
 
     def _result_for_handle(
@@ -621,7 +622,8 @@ class OpExecutionResult:
     @property
     def failure_data(self) -> Optional[StepFailureData]:
         """Union[None, StepFailureData]: Any data corresponding to this step's failure, if it
-        failed."""
+        failed.
+        """
         for step_event in self.compute_step_events:
             if step_event.event_type == DagsterEventType.STEP_FAILURE:
                 return step_event.step_failure_data

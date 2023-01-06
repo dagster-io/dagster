@@ -45,7 +45,8 @@ class ComputeLogFileData(
 
 class ComputeLogManager(ABC, MayHaveInstanceWeakref):
     """Abstract base class for storing unstructured compute logs (stdout/stderr) from the compute
-    steps of pipeline solids."""
+    steps of pipeline solids.
+    """
 
     @contextmanager
     def watch(self, pipeline_run, step_key=None):

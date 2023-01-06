@@ -248,7 +248,8 @@ def wrap_op_in_graph_and_execute(
     do_output_mapping: bool = True,
 ) -> ExecuteInProcessResult:
     """Run a dagster op in an actual execution.
-    For internal use."""
+    For internal use.
+    """
     return wrap_op_in_graph(
         op_def, tags, do_input_mapping=do_input_mapping, do_output_mapping=do_output_mapping
     ).execute_in_process(

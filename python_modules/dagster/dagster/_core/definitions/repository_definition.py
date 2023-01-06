@@ -1362,7 +1362,8 @@ class RepositoryDefinition:
     def get_implicit_global_asset_job_def(self) -> JobDefinition:
         """A useful conveninence method for repositories where there are a set of assets with
         the same partitioning schema and one wants to access their corresponding implicit job
-        easily."""
+        easily.
+        """
 
         if not self.has_job(ASSET_BASE_JOB_PREFIX):
             raise DagsterInvariantViolationError(

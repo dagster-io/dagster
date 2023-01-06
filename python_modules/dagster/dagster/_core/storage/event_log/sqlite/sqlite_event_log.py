@@ -70,7 +70,8 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def __init__(self, base_dir, inst_data=None):
         """Note that idempotent initialization of the SQLite database is done on a per-run_id
-        basis in the body of connect, since each run is stored in a separate database."""
+        basis in the body of connect, since each run is stored in a separate database.
+        """
         self._base_dir = os.path.abspath(check.str_param(base_dir, "base_dir"))
         mkdir_p(self._base_dir)
 

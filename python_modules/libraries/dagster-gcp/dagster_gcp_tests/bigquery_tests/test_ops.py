@@ -27,7 +27,8 @@ from google.cloud.exceptions import NotFound
 
 def dataset_exists(name):
     """Check if dataset exists - ensures we have properly cleaned up after tests and haven't leaked
-    any datasets"""
+    any datasets
+    """
     client = bigquery.Client()
     dataset_ref = client.dataset(name)
 

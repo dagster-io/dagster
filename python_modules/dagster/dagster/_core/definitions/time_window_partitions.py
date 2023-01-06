@@ -377,7 +377,8 @@ class TimeWindowPartitionsDefinition(
         the minute/hour/day offset of the partitioning.
 
         This is useful e.g. if you have partitions that span midnight to midnight but you want to
-        schedule a job that runs at 2 am."""
+        schedule a job that runs at 2 am.
+        """
         if (
             minute_of_hour is None
             and hour_of_day is None

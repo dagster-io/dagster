@@ -496,7 +496,8 @@ class NodeHandle(
     @classmethod
     def from_dict(cls, dict_repr: Dict[str, Any]) -> Optional["NodeHandle"]:
         """This method makes it possible to load a potentially nested NodeHandle after a
-        roundtrip through json.loads(json.dumps(NodeHandle._asdict()))"""
+        roundtrip through json.loads(json.dumps(NodeHandle._asdict()))
+        """
 
         check.dict_param(dict_repr, "dict_repr", key_type=str)
         check.invariant(

@@ -41,7 +41,8 @@ class DagsterExecutionInterruptedError(BaseException):
 class DagsterError(Exception):
     """Base class for all errors thrown by the Dagster framework.
 
-    Users should not subclass this base class for their own exceptions."""
+    Users should not subclass this base class for their own exceptions.
+    """
 
     @property
     def is_user_code_error(self):
@@ -123,7 +124,8 @@ class DagsterInvalidConfigDefinitionError(DagsterError):
 
 class DagsterInvariantViolationError(DagsterError):
     """Indicates the user has violated a well-defined invariant that can only be enforced
-    at runtime."""
+    at runtime.
+    """
 
 
 class DagsterExecutionStepNotFoundError(DagsterError):
@@ -148,7 +150,8 @@ class DagsterRunNotFoundError(DagsterError):
 
 class DagsterStepOutputNotFoundError(DagsterError):
     """Indicates that previous step outputs required for an execution step to proceed are not
-    available."""
+    available.
+    """
 
     def __init__(self, *args, **kwargs):
         self.step_key = check.str_param(kwargs.pop("step_key"), "step_key")
@@ -333,7 +336,8 @@ class DagsterInvalidInvocationError(DagsterError):
 
 class DagsterInvalidConfigError(DagsterError):
     """Thrown when provided config is invalid (does not type check against the relevant config
-    schema)."""
+    schema).
+    """
 
     def __init__(self, preamble, errors, config_value, *args, **kwargs):
         from dagster._config import EvaluationError
@@ -383,7 +387,8 @@ class DagsterUserCodeUnreachableError(DagsterError):
 
 class DagsterUserCodeProcessError(DagsterError):
     """An exception has occurred in a user code process that the host process raising this error
-    was communicating with."""
+    was communicating with.
+    """
 
     @staticmethod
     def from_error_info(error_info):
@@ -565,7 +570,8 @@ class DagsterObjectStoreError(DagsterError):
 
 class DagsterInvalidPropertyError(DagsterError):
     """Indicates that an invalid property was accessed. May often happen by accessing a property
-    that no longer exists after breaking changes."""
+    that no longer exists after breaking changes.
+    """
 
 
 class DagsterHomeNotSetError(DagsterError):

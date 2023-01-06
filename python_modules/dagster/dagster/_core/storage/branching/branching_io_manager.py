@@ -49,7 +49,8 @@ class BranchingIOManager(IOManager):
 
     Some storage systems branching functionality natively. Examples include Snowflake's
     CLONE feature. Branching I/O managers allow users to implement that functionality
-    in more flexible software layer over arbitrary storage systems."""
+    in more flexible software layer over arbitrary storage systems.
+    """
 
     def __init__(
         self,

@@ -28,7 +28,8 @@ class StepDelegatingExecutor(Executor):
     """This executor tails the event log for events from the steps that it spins up. It also
     sometimes creates its own events - when it does, that event is automatically written to the
     event log. But we wait until we later tail it from the event log database before yielding it,
-    to avoid yielding the same event multiple times to callsites."""
+    to avoid yielding the same event multiple times to callsites.
+    """
 
     def __init__(
         self,

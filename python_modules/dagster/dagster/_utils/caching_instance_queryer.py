@@ -42,7 +42,8 @@ USED_DATA_TAG = ".dagster/used_data"
 
 class CachingInstanceQueryer:
     """Provides utility functions for querying for asset-materialization related data from the
-    instance which will attempt to limit redundant expensive calls."""
+    instance which will attempt to limit redundant expensive calls.
+    """
 
     def __init__(self, instance: "DagsterInstance"):
         self._instance = instance

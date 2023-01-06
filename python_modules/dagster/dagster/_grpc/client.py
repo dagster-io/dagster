@@ -474,7 +474,8 @@ class DagsterGrpcClient:
 
 class EphemeralDagsterGrpcClient(DagsterGrpcClient):
     """A client that tells the server process that created it to shut down once it leaves a
-    context manager."""
+    context manager.
+    """
 
     def __init__(
         self, server_process=None, *args, **kwargs
