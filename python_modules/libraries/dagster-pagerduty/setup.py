@@ -32,6 +32,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_pagerduty_tests*"]),
-    install_requires=["dagster==1.1.8", "pypd"],
+    install_requires=["dagster==1.1.9", "pypd"],
     zip_safe=False,
 )

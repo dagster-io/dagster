@@ -45,8 +45,8 @@ setup(
         "PyYAML",
         # cli
         "click>=7.0,<9.0",
-        "dagster==1.1.8",
-        "dagster-graphql==1.1.8",
+        "dagster==1.1.9",
+        "dagster-graphql==1.1.9",
         "requests",
         # watchdog
         "watchdog>=0.8.3",

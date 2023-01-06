@@ -33,7 +33,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_graphql_tests*"]),
     install_requires=[
-        "dagster==1.1.8",
+        "dagster==1.1.9",
         "graphene>=3",
         "gql[requests]>=3.0.0",
         "requests",

@@ -32,7 +32,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_airbyte_tests*"]),
     install_requires=[
-        "dagster==1.1.8",
+        "dagster==1.1.9",
         "requests",
     ],
     zip_safe=False,
