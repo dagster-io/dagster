@@ -6,7 +6,7 @@ from dagster._core.host_representation.selector import PipelineSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.utils import make_new_run_id
-from dagster._utils.merger import merge_dicts
+from dagster._utils import frozentags
 
 
 def persist_run_for_production(
@@ -15,7 +15,7 @@ def persist_run_for_production(
     repository_location: RepositoryLocation,
     pipeline_selector: PipelineSelector,
     run_config: Mapping[str, object],
-    context_specific_tags: Mapping[str, str],
+    context_specific_tags: frozentags,
     explicit_mode: Optional[str],
 ) -> DagsterRun:
     """
@@ -47,10 +47,7 @@ def persist_run_for_production(
         instance=instance,
     )
 
-    run_tags = merge_dicts(
-        validate_tags(external_pipeline.tags, allow_reserved_tags=False) or {},
-        context_specific_tags,
-    )
+    run_tags = {**validate_tags(external_pipeline.tags), **context_specific_tags}
 
     return instance.create_run(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
