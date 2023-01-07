@@ -27,7 +27,7 @@ from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
-from dagster._utils import start_termination_thread
+from dagster._utils import get_run_crash_explanation, start_termination_thread
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration, time_execution_scope
 
@@ -253,10 +253,10 @@ class MultiprocessExecutor(Executor):
                             )
                             yield DagsterEvent.engine_event(
                                 step_context,
-                                (
-                                    "Multiprocess executor: child process for step {step_key} "
-                                    "unexpectedly exited with code {exit_code}"
-                                ).format(step_key=key, exit_code=crash.exit_code),
+                                get_run_crash_explanation(
+                                    prefix=f"Multiprocess executor: child process for step {key}",
+                                    exit_code=crash.exit_code,
+                                ),
                                 EngineEventData.engine_error(serializable_error),
                             )
                             step_failure_event = DagsterEvent.step_failure_event(

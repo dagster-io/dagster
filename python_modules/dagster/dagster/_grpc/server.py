@@ -32,7 +32,12 @@ from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environ
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import deserialize_as, serialize_dagster_namedtuple, whitelist_for_serdes
 from dagster._serdes.ipc import IPCErrorMessage, ipc_write_stream, open_ipc_subprocess
-from dagster._utils import find_free_port, frozenlist, safe_tempfile_path_unmanaged
+from dagster._utils import (
+    find_free_port,
+    frozenlist,
+    get_run_crash_explanation,
+    safe_tempfile_path_unmanaged,
+)
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from .__generated__ import api_pb2
@@ -303,10 +308,9 @@ class DagsterApiServer(DagsterApiServicer):
                         if not run or run.is_finished:
                             continue
 
-                        # the process died in an unexpected manner. inform the system
-                        message = (
-                            f"Run execution process for {run.run_id} unexpectedly "
-                            f"exited with exit code {process.exitcode}."
+                        message = get_run_crash_explanation(
+                            prefix=f"Run execution process for {run.run_id}",
+                            exit_code=process.exitcode,
                         )
 
                         instance.report_engine_event(message, run, cls=self.__class__)

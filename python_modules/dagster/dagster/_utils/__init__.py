@@ -17,6 +17,7 @@ import threading
 from collections import OrderedDict
 from datetime import timezone
 from enum import Enum
+from signal import Signals
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -667,3 +668,26 @@ def traced(func: T_Callable) -> T_Callable:
         return func(*args, **kwargs)
 
     return cast(T_Callable, inner)
+
+
+def get_run_crash_explanation(prefix: str, exit_code: int):
+    # As per https://docs.python.org/3/library/subprocess.html#subprocess.CompletedProcess.returncode
+    # negative exit code means a posix signal
+    if exit_code < 0 and -exit_code in [signal.value for signal in Signals]:
+        posix_signal = -exit_code
+        signal_str = Signals(posix_signal).name
+        exit_clause = f"was terminated by signal {posix_signal} ({signal_str})."
+        if posix_signal == Signals.SIGKILL:
+            exit_clause = (
+                exit_clause
+                + " This usually indicates that the process was"
+                " killed by the operating system due to running out of"
+                " memory. Possible solutions include increasing the"
+                " amount of memory available to the run, reducing"
+                " the amount of memory used by the ops in the run, or"
+                " configuring the executor to run fewer ops concurrently."
+            )
+    else:
+        exit_clause = f"unexpectedly exited with code {exit_code}."
+
+    return prefix + " " + exit_clause
