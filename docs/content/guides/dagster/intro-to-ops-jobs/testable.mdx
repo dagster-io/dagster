@@ -1,21 +1,23 @@
 ---
-title: Testing Ops and Jobs | Dagster
+title: "Intro to ops and jobs, part three: Testing ops and jobs | Dagster Docs"
 description: Dagster enables you to build testable ops and jobs
 ---
 
-# Testing ops and jobs
+# Intro to ops and jobs, part three: Testing ops and jobs
 
 <CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/basics/testing/" />
 
 Data applications are notoriously difficult to test and are therefore often un- or under-tested.
 
-Creating testable and verifiable ops and jobs is one of the focuses of Dagster. We believe ensuring data quality is critical for managing the complexity of data systems. Here, we'll show how to write unit tests for Dagster jobs and ops.
+Creating testable and verifiable ops and jobs is one of the focuses of Dagster. We believe ensuring data quality is critical for managing the complexity of data systems.
+
+In the final part of this tutorial, you'll learn how to write unit tests for Dagster jobs and ops.
 
 ---
 
 ## Testing the job (and its ops)
 
-Let's go back to the `diamond` job we wrote in the [prior section](/tutorial/ops-jobs/connecting-ops#a-more-complex-dag), and ensure that it's working as expected by writing some unit tests.
+Let's go back to the `diamond` job we wrote in the [prior section](/guides/dagster/intro-to-ops-jobs/connecting-ops#step-2-use-op-outputs-as-op-inputs), and ensure that it's working as expected by writing some unit tests.
 
 We'll start by writing a test for the `test_get_total_size` op, which takes a dictionary of file sizes as input and returns the sum of the file sizes. To run an op, we can invoke it directly, as if it's a regular Python function:
 
@@ -37,7 +39,7 @@ def test_diamond():
     assert res.output_for_node("get_total_size") > 0
 ```
 
-Now we can use pytest, or another test runner of choice, to run these unit tests.
+Now we can use pytest or another test runner of choice to run these unit tests.
 
 ```bash
 pytest test_complex_job.py
@@ -45,7 +47,7 @@ pytest test_complex_job.py
 
 Obviously, in production we'll often execute jobs in a parallel, streaming way that doesn't admit this kind of API, which is intended to enable local tests like this.
 
-Dagster is written to make testing easy in a domain where it has historically been very difficult. You can learn more about Testing in Dagster by reading the [Testing](/concepts/testing) page.
+Dagster is written to make testing easy in a domain where it has historically been very difficult. You can learn more about Testing in Dagster by reading the [Testing](/concepts/testing) documentation.
 
 <br />
 

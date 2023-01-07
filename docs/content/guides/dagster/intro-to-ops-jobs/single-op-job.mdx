@@ -1,21 +1,23 @@
 ---
-title: A Single-Op Job | Dagster
+title: "Intro to ops and jobs, part one: Write a single-op job | Dagster Docs"
 description: Executing your first job - with a single op.
 ---
 
-# A single-op job
+# Intro to ops and jobs, part one: Write a single-op job
 
 <CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/basics/single_op_job/" />
 
-Dagster's asset functionality sits on top of a general orchestration engine that can be used for tasks other than creating and maintaining assets. The core abstractions of this engine are **[ops](/concepts/ops-jobs-graphs/ops)** and **[jobs](/concepts/ops-jobs-graphs/jobs)**.
+The core abstractions of the Dagster engine are [ops](/concepts/ops-jobs-graphs/ops) and [jobs](/concepts/ops-jobs-graphs/jobs). [Ops](/concepts/ops-jobs-graphs/ops) are individual units of computation that we wire together to form [jobs](/concepts/ops-jobs-graphs/jobs).
 
-**[Ops](/concepts/ops-jobs-graphs/ops)** are individual units of computation that we wire together to form **[jobs](/concepts/ops-jobs-graphs/jobs)**.
+In this part, you'll:
 
-In this section, we'll cover how to define a simple job with a single op, and then execute it.
+- [Write your first op](#step-1-write-your-first-op)
+- [Write your first job](#step-2-write-your-first-job)
+- [Execute the job](#step-3-execute-your-first-job)
 
 ---
 
-## Hello, op!
+## Step 1: Write your first op
 
 Let's write our first Dagster op and save it as `hello.py`.
 
@@ -39,7 +41,7 @@ In this simple case, our op takes no arguments, and also returns no outputs. Don
 
 ---
 
-## Hello, job!
+## Step 2: Write your first job
 
 To execute our op, we'll embed it in an equally simple job. A job is a set of ops arranged into a [DAG](https://en.wikipedia.org/wiki/Directed_acyclic_graph) of computation. You'll typically define jobs by annotating ordinary Python functions with the <PyObject
 module="dagster" object="job" displayText="@job" /> decorator.
@@ -55,9 +57,12 @@ displayText="@job" />, we use function calls to indicate the dependency structur
 
 ---
 
-## Executing our first job
+## Step 3: Execute your first job
 
 Assuming you’ve saved this job as `hello.py`, you can execute it via any of three different mechanisms:
+
+<TabGroup>
+    <TabItem name="Dagit">
 
 ### Dagit
 
@@ -112,6 +117,9 @@ height={1962}
 
 In this view, you can filter and search through the logs corresponding to your job run.
 
+</TabItem>
+<TabItem name="Dagster CLI">
+
 ### Dagster CLI
 
 From the directory in which you've saved the job file, just run:
@@ -128,6 +136,9 @@ You'll see the full stream of events emitted by Dagster appear in the console, i
 
 Success!
 
+</TabItem>
+<TabItem name="Python API">
+
 ### Python API
 
 If you'd rather execute your jobs as a script, you can do that without using the Dagster CLI at all. Just add a few lines to `hello.py`
@@ -142,3 +153,12 @@ Now you can just run:
 ```bash
 python hello.py
 ```
+
+</TabItem>
+</TabGroup>
+
+---
+
+## What's next?
+
+At this point, you should have an executed job that contains a single op. The next step is to [connect a series of ops in a job](/guides/dagster/intro-to-ops-jobs/connecting-ops).
