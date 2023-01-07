@@ -137,6 +137,7 @@ class GrapheneMultiPartitionRange(graphene.ObjectType):
 
 class GrapheneMultiPartitions(graphene.ObjectType):
     ranges = non_null_list(GrapheneMultiPartitionRange)
+    primaryDimensionName = graphene.NonNull(graphene.String)
 
     class Meta:
         name = "MultiPartitions"

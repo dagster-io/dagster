@@ -474,7 +474,9 @@ def get_2d_run_length_encoded_materialized_partitions(
             range_start_idx = unevaluated_idx
         unevaluated_idx += 1
 
-    return GrapheneMultiPartitions(ranges=materialized_2d_ranges)
+    return GrapheneMultiPartitions(
+        ranges=materialized_2d_ranges, primaryDimensionName=primary_dim.name
+    )
 
 
 def get_freshness_info(

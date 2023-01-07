@@ -1945,6 +1945,7 @@ export type ModeNotFoundError = Error & {
 
 export type MultiPartitions = {
   __typename: 'MultiPartitions';
+  primaryDimensionName: Scalars['String'];
   ranges: Array<MaterializedPartitionRange2D>;
 };
 
