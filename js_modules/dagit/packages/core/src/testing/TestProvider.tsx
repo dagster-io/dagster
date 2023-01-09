@@ -6,7 +6,7 @@ import {AppContext, AppContextValue} from '../app/AppContext';
 import {extractPermissions, PermissionsContext, PermissionsFromJSON} from '../app/Permissions';
 import {WebSocketContext, WebSocketContextType} from '../app/WebSocketProvider';
 import {AnalyticsContext} from '../app/analytics';
-import {PermissionFragmentFragment} from '../graphql/graphql';
+import {PermissionFragment} from '../app/types/Permissions.types';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
 import {ApolloTestProps, ApolloTestProvider} from './ApolloTestProvider';
@@ -55,7 +55,7 @@ interface Props {
 
 export const TestProvider: React.FC<Props> = (props) => {
   const {apolloProps, appContextProps, permissionOverrides, routerProps} = props;
-  const permissions: PermissionFragmentFragment[] = React.useMemo(() => {
+  const permissions: PermissionFragment[] = React.useMemo(() => {
     return Object.keys(PERMISSIONS_ALLOW_ALL).map((permission) => {
       const override = permissionOverrides ? permissionOverrides[permission] : null;
       const value = override ? override.enabled : true;

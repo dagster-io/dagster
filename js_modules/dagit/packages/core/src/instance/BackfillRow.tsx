@@ -1,4 +1,4 @@
-import {useLazyQuery} from '@apollo/client';
+import {gql, useLazyQuery} from '@apollo/client';
 import {Box, Button, Colors, Icon, MenuItem, Menu, Popover, Tag, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
@@ -9,13 +9,7 @@ import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {graphql} from '../graphql';
-import {
-  PartitionStatusesForBackfillFragment,
-  BulkActionStatus,
-  RunStatus,
-  BackfillTableFragmentFragment,
-} from '../graphql/graphql';
+import {RunStatus, BulkActionStatus} from '../graphql/types';
 import {
   PartitionState,
   PartitionStatus,
@@ -32,6 +26,13 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {workspacePathFromAddress, workspacePipelinePath} from '../workspace/workspacePath';
 
+import {
+  PartitionStatusesForBackfillFragment,
+  SingleBackfillQuery,
+  SingleBackfillQueryVariables,
+} from './types/BackfillRow.types';
+import {BackfillTableFragment} from './types/BackfillTable.types';
+
 type BackfillPartitionStatusData = PartitionStatusesForBackfillFragment;
 
 export const BackfillRow = ({
@@ -43,16 +44,19 @@ export const BackfillRow = ({
   onShowStepStatus,
   onShowPartitionsRequested,
 }: {
-  backfill: BackfillTableFragmentFragment;
+  backfill: BackfillTableFragment;
   allPartitions?: string[];
-  onTerminateBackfill: (backfill: BackfillTableFragmentFragment) => void;
-  onResumeBackfill: (backfill: BackfillTableFragmentFragment) => void;
+  onTerminateBackfill: (backfill: BackfillTableFragment) => void;
+  onResumeBackfill: (backfill: BackfillTableFragment) => void;
   showBackfillTarget: boolean;
-  onShowStepStatus: (backfill: BackfillTableFragmentFragment) => void;
-  onShowPartitionsRequested: (backfill: BackfillTableFragmentFragment) => void;
+  onShowStepStatus: (backfill: BackfillTableFragment) => void;
+  onShowPartitionsRequested: (backfill: BackfillTableFragment) => void;
 }) => {
   const history = useHistory();
-  const [queryBackfill, queryResult] = useLazyQuery(SINGLE_BACKFILL_QUERY, {
+  const [queryBackfill, queryResult] = useLazyQuery<
+    SingleBackfillQuery,
+    SingleBackfillQueryVariables
+  >(SINGLE_BACKFILL_QUERY, {
     variables: {
       backfillId: backfill.backfillId,
     },
@@ -146,12 +150,12 @@ const BackfillMenu = ({
   onResumeBackfill,
   onShowStepStatus,
 }: {
-  backfill: BackfillTableFragmentFragment;
+  backfill: BackfillTableFragment;
   statusData: BackfillPartitionStatusData;
   history: any;
-  onTerminateBackfill: (backfill: BackfillTableFragmentFragment) => void;
-  onResumeBackfill: (backfill: BackfillTableFragmentFragment) => void;
-  onShowStepStatus: (backfill: BackfillTableFragmentFragment) => void;
+  onTerminateBackfill: (backfill: BackfillTableFragment) => void;
+  onResumeBackfill: (backfill: BackfillTableFragment) => void;
+  onShowStepStatus: (backfill: BackfillTableFragment) => void;
 }) => {
   const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissionsDEPRECATED();
   const runsUrl = runsPathWithFilters([
@@ -225,7 +229,7 @@ const BackfillRunStatus = ({
   statusData,
   history,
 }: {
-  backfill: BackfillTableFragmentFragment;
+  backfill: BackfillTableFragment;
   history: any;
   statusData: BackfillPartitionStatusData;
 }) => {
@@ -253,7 +257,7 @@ const BackfillRunStatus = ({
 };
 
 const BackfillTarget: React.FC<{
-  backfill: BackfillTableFragmentFragment;
+  backfill: BackfillTableFragment;
 }> = ({backfill}) => {
   const {assetSelection, partitionSet, partitionSetName} = backfill;
 
@@ -328,7 +332,7 @@ const BackfillRequested = ({
   onExpand,
 }: {
   allPartitions: string[];
-  backfill: BackfillTableFragmentFragment;
+  backfill: BackfillTableFragment;
   onExpand: () => void;
 }) => {
   return (
@@ -354,7 +358,7 @@ const BackfillStatus = ({
   backfill,
   statusData,
 }: {
-  backfill: BackfillTableFragmentFragment;
+  backfill: BackfillTableFragment;
   statusData: BackfillPartitionStatusData;
 }) => {
   switch (backfill.status) {
@@ -401,7 +405,7 @@ const TagButton = styled.button`
   }
 `;
 
-export const SINGLE_BACKFILL_QUERY = graphql(`
+export const SINGLE_BACKFILL_QUERY = gql`
   query SingleBackfillQuery($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
@@ -420,4 +424,4 @@ export const SINGLE_BACKFILL_QUERY = graphql(`
       runStatus
     }
   }
-`);
+`;

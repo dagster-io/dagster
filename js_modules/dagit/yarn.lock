@@ -6236,8 +6236,9 @@ __metadata:
     "@blueprintjs/select": ^3.16.4
     "@dagster-io/eslint-config": "workspace:*"
     "@dagster-io/ui": "workspace:*"
+    "@graphql-codegen/add": ^3.2.3
     "@graphql-codegen/cli": ^2.16.3
-    "@graphql-codegen/client-preset": ^1.2.5
+    "@graphql-codegen/near-operation-file-preset": ^2.5.0
     "@graphql-tools/mock": ^8.5.0
     "@graphql-tools/schema": ^8.3.1
     "@mdx-js/react": ^1.6.22
@@ -6349,7 +6350,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@dagster-io/eslint-config@1.0.9, @dagster-io/eslint-config@^1.0.1, @dagster-io/eslint-config@workspace:*, @dagster-io/eslint-config@workspace:packages/eslint-config":
+"@dagster-io/eslint-config@^1.0.1, @dagster-io/eslint-config@workspace:*, @dagster-io/eslint-config@workspace:packages/eslint-config":
   version: 0.0.0-use.local
   resolution: "@dagster-io/eslint-config@workspace:packages/eslint-config"
   dependencies:
@@ -6374,6 +6375,27 @@ __metadata:
     prettier: 2.8.1
   languageName: unknown
   linkType: soft
+
+"@dagster-io/eslint-config@npm:1.0.9":
+  version: 1.0.9
+  resolution: "@dagster-io/eslint-config@npm:1.0.9"
+  dependencies:
+    "@typescript-eslint/eslint-plugin": 5.47.0
+    "@typescript-eslint/parser": 5.47.0
+    eslint-config-prettier: 8.5.0
+    eslint-plugin-dagster-rules: "link:./rules"
+    eslint-plugin-import: 2.26.0
+    eslint-plugin-jest: ^27.1.7
+    eslint-plugin-jsx-a11y: 6.6.1
+    eslint-plugin-prettier: ^4.2.1
+    eslint-plugin-react: 7.31.11
+    eslint-plugin-react-hooks: 4.6.0
+  peerDependencies:
+    eslint: ^8.30.0
+    prettier: 2.8.1
+  checksum: 398e84f404479d2db33978a1fd7bec3884701be18980db967e43160bfe022953f418dba6c0fd614a6171ab600b4f0522663cd2a82eb3238dbd44a6828b759bb1
+  languageName: node
+  linkType: hard
 
 "@dagster-io/react-scripts@npm:^5.0.5":
   version: 5.0.5
@@ -6707,7 +6729,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@graphql-codegen/add@npm:^3.2.3":
+"@graphql-codegen/add@npm:^3.2.1, @graphql-codegen/add@npm:^3.2.3":
   version: 3.2.3
   resolution: "@graphql-codegen/add@npm:3.2.3"
   dependencies:
@@ -6820,6 +6842,38 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@graphql-codegen/near-operation-file-preset@npm:^2.5.0":
+  version: 2.5.0
+  resolution: "@graphql-codegen/near-operation-file-preset@npm:2.5.0"
+  dependencies:
+    "@graphql-codegen/add": ^3.2.1
+    "@graphql-codegen/plugin-helpers": ^2.7.2
+    "@graphql-codegen/visitor-plugin-common": 2.13.1
+    "@graphql-tools/utils": ^8.8.0
+    parse-filepath: ^1.0.2
+    tslib: ~2.4.0
+  peerDependencies:
+    graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
+  checksum: 4d66e1e3df6530d561b5bc1eb2a9341f96c1c77b3247fb4bb03e2694e2da73d64ec97249a9c3c47416e1eaca2f15b189ec108e19a599076b27f2088fcbf4daf8
+  languageName: node
+  linkType: hard
+
+"@graphql-codegen/plugin-helpers@npm:^2.7.2":
+  version: 2.7.2
+  resolution: "@graphql-codegen/plugin-helpers@npm:2.7.2"
+  dependencies:
+    "@graphql-tools/utils": ^8.8.0
+    change-case-all: 1.0.14
+    common-tags: 1.8.2
+    import-from: 4.0.0
+    lodash: ~4.17.0
+    tslib: ~2.4.0
+  peerDependencies:
+    graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
+  checksum: 66e0d507ad5db60b67092ebf7632d464d56ab446ac8fd87c293e00d9016944912d8cf9199e3e026b0a9247a50f50c4118a44f49e13675db64211652cd6259b05
+  languageName: node
+  linkType: hard
+
 "@graphql-codegen/plugin-helpers@npm:^3.1.1, @graphql-codegen/plugin-helpers@npm:^3.1.2":
   version: 3.1.2
   resolution: "@graphql-codegen/plugin-helpers@npm:3.1.2"
@@ -6891,6 +6945,26 @@ __metadata:
   peerDependencies:
     graphql: ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
   checksum: 67cbafc0dc8695222fd3b2db26c3fcd91148a1dba7bb5dcf71eaf6425dadbaa378c5703f2844e34718954aa283aa95919d8d4650bd1d0b85b22b404ffc3436fa
+  languageName: node
+  linkType: hard
+
+"@graphql-codegen/visitor-plugin-common@npm:2.13.1":
+  version: 2.13.1
+  resolution: "@graphql-codegen/visitor-plugin-common@npm:2.13.1"
+  dependencies:
+    "@graphql-codegen/plugin-helpers": ^2.7.2
+    "@graphql-tools/optimize": ^1.3.0
+    "@graphql-tools/relay-operation-optimizer": ^6.5.0
+    "@graphql-tools/utils": ^8.8.0
+    auto-bind: ~4.0.0
+    change-case-all: 1.0.14
+    dependency-graph: ^0.11.0
+    graphql-tag: ^2.11.0
+    parse-filepath: ^1.0.2
+    tslib: ~2.4.0
+  peerDependencies:
+    graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
+  checksum: 0c329aa6e435602f2f6c1569ec2091b7850f58cc5dca7ac763c38c82588545ec1110c1de587f5f3949b11ff96f94401d1e63e329607d78424583b276fd08f1ae
   languageName: node
   linkType: hard
 
@@ -7574,7 +7648,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@graphql-tools/utils@npm:^8.6.5":
+"@graphql-tools/utils@npm:^8.6.5, @graphql-tools/utils@npm:^8.8.0":
   version: 8.13.1
   resolution: "@graphql-tools/utils@npm:8.13.1"
   dependencies:
@@ -14477,6 +14551,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"change-case-all@npm:1.0.14":
+  version: 1.0.14
+  resolution: "change-case-all@npm:1.0.14"
+  dependencies:
+    change-case: ^4.1.2
+    is-lower-case: ^2.0.2
+    is-upper-case: ^2.0.2
+    lower-case: ^2.0.2
+    lower-case-first: ^2.0.2
+    sponge-case: ^1.0.1
+    swap-case: ^2.0.2
+    title-case: ^3.0.3
+    upper-case: ^2.0.2
+    upper-case-first: ^2.0.2
+  checksum: 6ff893e005e1bf115cc2969cc5ca3610f7c6ece9e90b7927ed12c980c7d3ea9a565150d246c6dba0fee21aaacbd38d69b98a4670d96b892c76f66e46616506d3
+  languageName: node
+  linkType: hard
+
 "change-case-all@npm:1.0.15":
   version: 1.0.15
   resolution: "change-case-all@npm:1.0.15"
@@ -17313,6 +17405,12 @@ __metadata:
   checksum: 77048263f309167a1e6a1e1b896bfb5ddd1d3859b2e2abbd9c32c432aee13d610d46e6820b1ca81b37fba437cf423a404bc6649be64ace9148a3062d1886a678
   languageName: node
   linkType: hard
+
+"eslint-plugin-dagster-rules@link:./rules::locator=%40dagster-io%2Feslint-config%40npm%3A1.0.9":
+  version: 0.0.0-use.local
+  resolution: "eslint-plugin-dagster-rules@link:./rules::locator=%40dagster-io%2Feslint-config%40npm%3A1.0.9"
+  languageName: node
+  linkType: soft
 
 "eslint-plugin-dagster-rules@link:./rules::locator=%40dagster-io%2Feslint-config%40workspace%3Apackages%2Feslint-config":
   version: 0.0.0-use.local

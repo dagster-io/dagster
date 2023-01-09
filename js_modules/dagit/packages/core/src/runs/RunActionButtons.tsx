@@ -4,7 +4,6 @@ import * as React from 'react';
 import {SharedToaster} from '../app/DomUtils';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {usePermissionsDEPRECATED} from '../app/Permissions';
-import {RunFragmentFragment} from '../graphql/graphql';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
 import {buildRepoAddress, buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -16,16 +15,17 @@ import {DagsterTag} from './RunTag';
 import {ReExecutionStyle} from './RunUtils';
 import {StepSelection} from './StepSelection';
 import {TerminationDialog, TerminationState} from './TerminationDialog';
+import {RunFragment} from './types/RunFragments.types';
 
 interface RunActionButtonsProps {
-  run: RunFragmentFragment;
+  run: RunFragment;
   selection: StepSelection;
   graph: GraphQueryItem[];
   metadata: IRunMetadataDict;
   onLaunch: (style: ReExecutionStyle) => Promise<void>;
 }
 
-export const CancelRunButton: React.FC<{run: RunFragmentFragment}> = ({run}) => {
+export const CancelRunButton: React.FC<{run: RunFragment}> = ({run}) => {
   const {id: runId, canTerminate} = run;
   const [showDialog, setShowDialog] = React.useState<boolean>(false);
   const closeDialog = React.useCallback(() => setShowDialog(false), []);
@@ -85,7 +85,7 @@ function stepSelectionWithState(selection: StepSelection, metadata: IRunMetadata
 }
 
 function stepSelectionFromRunTags(
-  run: RunFragmentFragment,
+  run: RunFragment,
   graph: GraphQueryItem[],
   metadata: IRunMetadataDict,
 ) {
@@ -99,8 +99,8 @@ function stepSelectionFromRunTags(
   );
 }
 
-export const canRunAllSteps = (run: RunFragmentFragment) => doneStatuses.has(run.status);
-export const canRunFromFailure = (run: RunFragmentFragment) =>
+export const canRunAllSteps = (run: RunFragment) => doneStatuses.has(run.status);
+export const canRunFromFailure = (run: RunFragment) =>
   run.executionPlan && failedStatuses.has(run.status);
 
 export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
@@ -251,7 +251,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
 };
 
 function usePipelineAvailabilityErrorForRun(
-  run: RunFragmentFragment | null | undefined,
+  run: RunFragment | null | undefined,
 ): null | {tooltip?: string | JSX.Element; icon?: IconName; disabled: boolean} {
   const repoMatch = useRepositoryForRun(run);
 

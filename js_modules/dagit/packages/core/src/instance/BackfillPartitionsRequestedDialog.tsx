@@ -1,10 +1,10 @@
 import {Button, DialogBody, DialogFooter, Dialog, FontFamily, Box} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {BackfillTableFragmentFragment} from '../graphql/graphql';
+import {BackfillTableFragment} from './types/BackfillTable.types';
 
 interface Props {
-  backfill?: BackfillTableFragmentFragment;
+  backfill?: BackfillTableFragment;
   onClose: () => void;
 }
 export const BackfillPartitionsRequestedDialog = ({backfill, onClose}: Props) => {

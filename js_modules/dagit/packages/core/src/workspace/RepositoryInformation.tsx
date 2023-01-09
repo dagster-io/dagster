@@ -1,9 +1,9 @@
+import {gql} from '@apollo/client';
 import * as React from 'react';
 
-import {graphql} from '../graphql';
-import {InstigationStateFragmentFragment} from '../graphql/graphql';
+import {InstigationStateFragment} from '../instigation/types/InstigationUtils.types';
 
-export const REPOSITORY_INFO_FRAGMENT = graphql(`
+export const REPOSITORY_INFO_FRAGMENT = gql`
   fragment RepositoryInfoFragment on Repository {
     id
     name
@@ -16,10 +16,10 @@ export const REPOSITORY_INFO_FRAGMENT = graphql(`
       value
     }
   }
-`);
+`;
 
 export const InstigatorSelectorInformation: React.FC<{
-  instigatorState: InstigationStateFragmentFragment;
+  instigatorState: InstigationStateFragment;
 }> = ({instigatorState}) => {
   return (
     <>

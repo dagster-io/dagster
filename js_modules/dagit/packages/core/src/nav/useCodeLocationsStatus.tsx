@@ -1,4 +1,4 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, ButtonLink, Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
@@ -6,10 +6,11 @@ import styled from 'styled-components/macro';
 
 import {SharedToaster} from '../app/DomUtils';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {graphql} from '../graphql';
-import {CodeLocationStatusQueryQuery, RepositoryLocationLoadStatus} from '../graphql/graphql';
+import {RepositoryLocationLoadStatus} from '../graphql/types';
 import {StatusAndMessage} from '../instance/DeploymentStatusType';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
+
+import {CodeLocationStatusQuery} from './types/useCodeLocationsStatus.types';
 
 type LocationStatusEntry = {
   loadStatus: RepositoryLocationLoadStatus;
@@ -80,7 +81,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     }
   }, [onClickViewButton, refetch]);
 
-  const onLocationUpdate = (data: CodeLocationStatusQueryQuery) => {
+  const onLocationUpdate = (data: CodeLocationStatusQuery) => {
     // Given the previous and current code locations, determine whether to show a) a loading spinner
     // and/or b) a toast indicating that a code location is being reloaded.
     const entries =
@@ -213,7 +214,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     }
   };
 
-  const queryData = useQuery(CODE_LOCATION_STATUS_QUERY, {
+  const queryData = useQuery<CodeLocationStatusQuery>(CODE_LOCATION_STATUS_QUERY, {
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true,
     skip,
@@ -261,7 +262,7 @@ const ViewButton = styled(ButtonLink)`
   white-space: nowrap;
 `;
 
-const CODE_LOCATION_STATUS_QUERY = graphql(`
+const CODE_LOCATION_STATUS_QUERY = gql`
   query CodeLocationStatusQuery {
     locationStatusesOrError {
       __typename
@@ -275,4 +276,4 @@ const CODE_LOCATION_STATUS_QUERY = graphql(`
       }
     }
   }
-`);
+`;

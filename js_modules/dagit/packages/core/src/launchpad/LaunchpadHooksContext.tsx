@@ -2,7 +2,7 @@ import {Button} from '@dagster-io/ui';
 import React from 'react';
 
 import {GenericError} from '../app/PythonErrorInfo';
-import {PythonErrorFragmentFragment} from '../graphql/graphql';
+import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 
 import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
 import {useLaunchWithTelemetry} from './useLaunchWithTelemetry';
@@ -12,7 +12,7 @@ type LaunchpadHooksContextValue = {
   useLaunchWithTelemetry?: typeof useLaunchWithTelemetry;
   MaterializeButton?: typeof Button;
   PythonErrorInfoHeader?: React.FC<{
-    error: GenericError | PythonErrorFragmentFragment;
+    error: GenericError | PythonErrorFragment;
     fallback?: React.ReactNode;
   }>;
 };

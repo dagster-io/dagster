@@ -1,10 +1,10 @@
 import {Alert, Box} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {DaemonHealthFragmentFragment} from '../graphql/graphql';
+import {DaemonHealthFragment} from '../instance/types/DaemonList.types';
 
 type Props = React.ComponentPropsWithRef<typeof Box> & {
-  daemonHealth: DaemonHealthFragmentFragment | undefined;
+  daemonHealth: DaemonHealthFragment | undefined;
 };
 
 export const SensorInfo: React.FC<Props> = ({daemonHealth, ...boxProps}) => {

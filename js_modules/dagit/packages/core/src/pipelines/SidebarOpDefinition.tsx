@@ -1,3 +1,4 @@
+import {gql} from '@apollo/client';
 import {Box, Colors, ConfigTypeSchema, FontFamily, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -6,11 +7,10 @@ import styled from 'styled-components/macro';
 import {breakOnUnderscores} from '../app/Util';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {graphql} from '../graphql';
-import {SidebarOpDefinitionFragmentFragment} from '../graphql/graphql';
-import {OpTypeSignature} from '../ops/OpTypeSignature';
+import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignature';
 import {pluginForMetadata} from '../plugins';
-import {TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
+import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
+import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
 import {RepoAddress} from '../workspace/types';
 
 import {Description} from './Description';
@@ -31,9 +31,10 @@ import {
   OpMappingTable,
   TypeWrapper,
 } from './SidebarOpHelpers';
+import {SidebarOpDefinitionFragment} from './types/SidebarOpDefinition.types';
 
 interface SidebarOpDefinitionProps {
-  definition: SidebarOpDefinitionFragmentFragment;
+  definition: SidebarOpDefinitionFragment;
   getInvocations?: (definitionName: string) => {handleID: string}[];
   showingSubgraph: boolean;
   onClickInvocation: (arg: SidebarOpInvocationInfo) => void;
@@ -170,9 +171,8 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
   );
 };
 
-export const SIDEBAR_OP_DEFINITION_FRAGMENT = graphql(`
+export const SIDEBAR_OP_DEFINITION_FRAGMENT = gql`
   fragment SidebarOpDefinitionFragment on ISolidDefinition {
-    ...OpTypeSignatureFragment
     __typename
     name
     description
@@ -243,8 +243,13 @@ export const SIDEBAR_OP_DEFINITION_FRAGMENT = graphql(`
         }
       }
     }
+    ...OpTypeSignatureFragment
   }
-`);
+
+  ${DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT}
+  ${CONFIG_TYPE_SCHEMA_FRAGMENT}
+  ${OP_TYPE_SIGNATURE_FRAGMENT}
+`;
 
 const InvocationList: React.FC<{
   invocations: SidebarOpInvocationInfo[];

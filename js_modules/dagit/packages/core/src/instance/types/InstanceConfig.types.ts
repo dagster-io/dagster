@@ -1,0 +1,11 @@
+// Generated GraphQL types, do not edit manually.
+
+import * as Types from '../../graphql/types';
+
+export type InstanceConfigQueryVariables = Types.Exact<{[key: string]: never}>;
+
+export type InstanceConfigQuery = {
+  __typename: 'DagitQuery';
+  version: string;
+  instance: {__typename: 'Instance'; info: string | null};
+};

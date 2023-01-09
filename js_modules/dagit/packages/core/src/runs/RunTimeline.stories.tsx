@@ -2,7 +2,7 @@ import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 
-import {RunStatus} from '../graphql/graphql';
+import {RunStatus} from '../graphql/types';
 import {RunTimeline, TimelineJob} from '../runs/RunTimeline';
 import {generateRunMocks} from '../testing/generateRunMocks';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';

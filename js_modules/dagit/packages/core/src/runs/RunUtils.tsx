@@ -1,3 +1,4 @@
+import {gql} from '@apollo/client';
 import {History} from 'history';
 import qs from 'qs';
 import * as React from 'react';
@@ -5,22 +6,18 @@ import * as React from 'react';
 import {Mono} from '../../../ui/src';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetKey} from '../assets/types';
-import {graphql} from '../graphql';
-import {
-  ExecutionParams,
-  LaunchPipelineExecutionMutation,
-  RunFragmentFragment,
-  RunStatus,
-  RunTableRunFragmentFragment,
-  RunTimeFragmentFragment,
-} from '../graphql/graphql';
+import {ExecutionParams, RunStatus} from '../graphql/types';
 
 import {DagsterTag} from './RunTag';
 import {StepSelection} from './StepSelection';
 import {TimeElapsed} from './TimeElapsed';
+import {RunFragment} from './types/RunFragments.types';
+import {RunTableRunFragment} from './types/RunTable.types';
+import {LaunchPipelineExecutionMutation, RunTimeFragment} from './types/RunUtils.types';
 
 export function titleForRun(run: {runId: string}) {
   return run.runId.split('-').shift();
@@ -121,7 +118,7 @@ export function handleLaunchResult(
   }
 }
 
-function getBaseExecutionMetadata(run: RunFragmentFragment | RunTableRunFragmentFragment) {
+function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment) {
   const hiddenTagKeys: string[] = [DagsterTag.IsResumeRetry, DagsterTag.StepSelection];
 
   return {
@@ -156,7 +153,7 @@ export type ReExecutionStyle =
   | {type: 'selection'; selection: StepSelection};
 
 export function getReexecutionVariables(input: {
-  run: (RunFragmentFragment | RunTableRunFragmentFragment) & {runConfigYaml: string};
+  run: (RunFragment | RunTableRunFragment) & {runConfigYaml: string};
   style: ReExecutionStyle;
   repositoryLocationName: string;
   repositoryName: string;
@@ -200,7 +197,7 @@ export function getReexecutionVariables(input: {
   return {executionParams};
 }
 
-export const LAUNCH_PIPELINE_EXECUTION_MUTATION = graphql(`
+export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
   mutation LaunchPipelineExecution($executionParams: ExecutionParams!) {
     launchPipelineExecution(executionParams: $executionParams) {
       __typename
@@ -225,24 +222,28 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
 
-export const DELETE_MUTATION = graphql(`
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const DELETE_MUTATION = gql`
   mutation Delete($runId: String!) {
     deletePipelineRun(runId: $runId) {
       __typename
-      ...PythonErrorFragment
       ... on UnauthorizedError {
         message
       }
       ... on RunNotFoundError {
         message
       }
+      ...PythonErrorFragment
     }
   }
-`);
 
-export const TERMINATE_MUTATION = graphql(`
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const TERMINATE_MUTATION = gql`
   mutation Terminate($runId: String!, $terminatePolicy: TerminateRunPolicy) {
     terminatePipelineExecution(runId: $runId, terminatePolicy: $terminatePolicy) {
       __typename
@@ -265,9 +266,11 @@ export const TERMINATE_MUTATION = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
 
-export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = graphql(`
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
   mutation LaunchPipelineReexecution(
     $executionParams: ExecutionParams
     $reexecutionParams: ReexecutionParams
@@ -300,10 +303,12 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
+
+  ${PYTHON_ERROR_FRAGMENT}
+`;
 
 interface RunTimeProps {
-  run: RunTimeFragmentFragment;
+  run: RunTimeFragment;
 }
 
 export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
@@ -341,7 +346,7 @@ export const RunStateSummary: React.FC<RunTimeProps> = React.memo(({run}) => {
   );
 });
 
-export const RUN_TIME_FRAGMENT = graphql(`
+export const RUN_TIME_FRAGMENT = gql`
   fragment RunTimeFragment on Run {
     id
     runId
@@ -350,4 +355,4 @@ export const RUN_TIME_FRAGMENT = graphql(`
     endTime
     updateTime
   }
-`);
+`;
