@@ -718,7 +718,7 @@ class CachingRepositoryData(RepositoryData):
                 )
 
         return CachingRepositoryData(
-            **repository_definitions, source_assets_by_key={}, assets_defs_by_key={}
+            **repository_definitions, source_assets_by_key={}, assets_defs_by_key={}, top_level_resources={}
         )
 
     @classmethod
