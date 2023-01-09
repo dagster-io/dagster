@@ -17,7 +17,6 @@ from typing import (
     Tuple,
     cast,
 )
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 
 import pendulum
 
@@ -25,6 +24,7 @@ import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessConstraint
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
