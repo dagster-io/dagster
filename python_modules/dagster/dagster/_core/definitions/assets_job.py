@@ -2,12 +2,11 @@ import warnings
 from collections import defaultdict
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
-from toposort import CircularDependencyError, toposort
-
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import AssetSelectionData
+from dagster._core.utils import CycleError, toposort
 from dagster._utils.backcompat import ExperimentalWarning
 from dagster._utils.merger import merge_dicts
 
@@ -424,10 +423,10 @@ def _has_cycles(
                 else:
                     check.failed(f"Unexpected dependency type {type(dep)}.")
         # make sure that there is a valid topological sorting of these node dependencies
-        list(toposort(node_deps))
+        toposort(node_deps)
         return False
     # only try to resolve cycles if we have a cycle
-    except CircularDependencyError:
+    except CycleError:
         return True
 
 
@@ -484,7 +483,7 @@ def _attempt_resolve_cycles(
                 _dfs(downstream_key, new_color)
 
     # validate that there are no cycles in the overall asset graph
-    toposorted = list(toposort(asset_deps["upstream"]))
+    toposorted = toposort(asset_deps["upstream"])
 
     # dfs for each root node
     for root_name in toposorted[0]:

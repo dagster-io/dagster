@@ -19,8 +19,6 @@ from typing import (
     cast,
 )
 
-from toposort import CircularDependencyError, toposort_flatten
-
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.config import ConfigMapping
@@ -34,6 +32,7 @@ from dagster._core.types.dagster_type import (
     DagsterTypeKind,
     construct_dagster_type_dictionary,
 )
+from dagster._core.utils import CycleError, toposort_flatten
 
 from .dependency import (
     DependencyStructure,
@@ -246,7 +245,7 @@ class GraphDefinition(NodeDefinition):
 
         try:
             order = toposort_flatten(backward_edges)
-        except CircularDependencyError as err:
+        except CycleError as err:
             raise DagsterInvalidDefinitionError(str(err)) from err
 
         return [self.solid_named(solid_name) for solid_name in order]

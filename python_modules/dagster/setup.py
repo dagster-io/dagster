@@ -90,7 +90,7 @@ setup(
         "tqdm",
         "typing_extensions>=4.0.1",
         "sqlalchemy>=1.0",
-        "toposort>=1.0; python_version < '3.9'",
+        "graphlib2>=0.4.7; python_version < '3.9'",
         "watchdog>=0.8.3",
         'psutil >= 1.0; platform_system=="Windows"',
         # https://github.com/mhammond/pywin32/issues/1439

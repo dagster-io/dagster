@@ -812,7 +812,7 @@ def test_subset_cycle_resolution_basic():
 
 
 def test_cycle_resolution_impossible():
-    from toposort import CircularDependencyError
+    from dagster._core.utils import CycleError
 
     @asset
     def a(s, c):
@@ -827,7 +827,7 @@ def test_cycle_resolution_impossible():
         return b + 1
 
     s = SourceAsset(key="s")
-    with pytest.raises(CircularDependencyError):
+    with pytest.raises(CycleError):
         AssetGroup([a, b, c], source_assets=[s]).build_job("job")
 
 

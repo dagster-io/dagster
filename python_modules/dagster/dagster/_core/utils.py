@@ -5,28 +5,22 @@ import sys
 import uuid
 import warnings
 from collections import OrderedDict
-from typing import Iterable, List, Mapping, Set, Tuple, TypeVar, Union, cast
+from typing import Iterable, List, Mapping, Tuple, TypeVar, Union, cast
 
 T = TypeVar("T")
 
 
 if sys.version_info >= (3, 9):
-    from graphlib import TopologicalSorter
-
-    def _toposort(dag: Mapping[T, Set[T]]) -> List[Set[T]]:
-        ts: "TopologicalSorter[T]" = TopologicalSorter()
-        for node, predecessors in dag.items():
-            ts.add(node, *predecessors)
-        ts.prepare()
-        res: List[Set[T]] = []
-        while ts.is_active():
-            ready = ts.get_ready()
-            res.append(set(ready))
-            ts.done(*ready)
-        return res
+    from graphlib import (
+        CycleError as CycleError,
+        TopologicalSorter,
+    )
 
 else:
-    from toposort import toposort as _toposort
+    from graphlib2 import (
+        CycleError as CycleError,
+        TopologicalSorter,
+    )
 
 
 import dagster._check as check
@@ -69,9 +63,14 @@ def coerce_valid_log_level(log_level: Union[str, int]) -> int:
 
 
 def toposort(data: Mapping[T, Iterable[T]]) -> List[List[T]]:
-    # Workaround a bug in older versions of toposort that choke on frozenset
-    data = {k: set(v) if isinstance(v, frozenset) else v for k, v in data.items()}
-    return [sorted(list(level)) for level in _toposort(data)]  # type: ignore  # T should implement comparison
+    ts = TopologicalSorter(data)
+    ts.prepare()
+    res: "List[List[T]]" = []
+    while ts.is_active():
+        ready = ts.get_ready()
+        res.append(sorted(list(set(ready))))  # type: ignore  # T should implement comparison
+        ts.done(*ready)
+    return res
 
 
 def toposort_flatten(data: Mapping[T, Iterable[T]]) -> List[T]:

@@ -131,6 +131,7 @@ autodoc_mock_imports = [
     "docker",
     "docker_image",
     "gevent",
+    "graphlib2",
     "great_expectations",
     "grpc_health",
     "jwt",
@@ -146,7 +147,6 @@ autodoc_mock_imports = [
     "slack_sdk",
     "snowflake",
     "sshtunnel",
-    "toposort",
     "twilio",
 ]
 
