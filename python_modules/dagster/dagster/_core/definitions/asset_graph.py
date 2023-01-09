@@ -303,9 +303,7 @@ class AssetGraph:
         return set()
 
     def toposort_asset_keys(self) -> Sequence[AbstractSet[AssetKey]]:
-        return [
-            {key for key in level} for level in toposort(self._asset_dep_graph["upstream"])
-        ]
+        return [{key for key in level} for level in toposort(self._asset_dep_graph["upstream"])]
 
     def has_self_dependency(self, asset_key: AssetKey) -> bool:
         return asset_key in self.get_parents(asset_key)

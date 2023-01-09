@@ -23,6 +23,7 @@ if sys.version_info >= (3, 9):
             res.append(set(ready))
             ts.done(*ready)
         return res
+
 else:
     from toposort import toposort as _toposort
 
