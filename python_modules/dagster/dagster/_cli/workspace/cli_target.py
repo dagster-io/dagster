@@ -261,11 +261,16 @@ def get_workspace_process_context_from_kwargs(
     version: str,
     read_only: bool,
     kwargs: ClickArgMapping,
+    code_server_log_level: str = "INFO",
 ) -> "WorkspaceProcessContext":
     from dagster._core.workspace.context import WorkspaceProcessContext
 
     return WorkspaceProcessContext(
-        instance, get_workspace_load_target(kwargs), version=version, read_only=read_only
+        instance,
+        get_workspace_load_target(kwargs),
+        version=version,
+        read_only=read_only,
+        code_server_log_level=code_server_log_level,
     )
 
 
@@ -281,6 +286,47 @@ def get_workspace_from_kwargs(
         yield workspace_process_context.create_request_context()
 
 
+def python_file_option():
+    return click.option(
+        "--python-file",
+        "-f",
+        # Checks that the path actually exists lower in the stack, where we
+        # are better equipped to surface errors
+        type=click.Path(exists=False),
+        multiple=True,
+        help=(
+            "Specify python file or files (flag can be used multiple times) where "
+            "dagster definitions reside as top-level symbols/variables and load each "
+            "file as a code location in the current python environment."
+        ),
+        envvar="DAGSTER_PYTHON_FILE",
+    )
+
+
+def workspace_option():
+    return click.option(
+        "--workspace",
+        "-w",
+        multiple=True,
+        type=click.Path(exists=True),
+        help="Path to workspace file. Argument can be provided multiple times.",
+    )
+
+
+def python_module_option():
+    return click.option(
+        "--module-name",
+        "-m",
+        multiple=True,
+        help=(
+            "Specify module or modules (flag can be used multiple times) where "
+            "dagster definitions reside as top-level symbols/variables and load each "
+            "module as a code location in the current python environment."
+        ),
+        envvar="DAGSTER_MODULE_NAME",
+    )
+
+
 def python_target_click_options():
     return [
         click.option(
@@ -289,35 +335,12 @@ def python_target_click_options():
             help="Specify working directory to use when loading the repository or job",
             envvar="DAGSTER_WORKING_DIRECTORY",
         ),
-        click.option(
-            "--python-file",
-            "-f",
-            # Checks that the path actually exists lower in the stack, where we
-            # are better equipped to surface errors
-            type=click.Path(exists=False),
-            multiple=True,
-            help=(
-                "Specify python file or files (flag can be used multiple times) where "
-                "dagster definitions reside as top-level symbols/variables and load each "
-                "file as a code location in the current python environment."
-            ),
-            envvar="DAGSTER_PYTHON_FILE",
-        ),
+        python_file_option(),
+        python_module_option(),
         click.option(
             "--package-name",
             help="Specify Python package where repository or job function lives",
             envvar="DAGSTER_PACKAGE_NAME",
-        ),
-        click.option(
-            "--module-name",
-            "-m",
-            multiple=True,
-            help=(
-                "Specify module or modules (flag can be used multiple times) where "
-                "dagster definitions reside as top-level symbols/variables and load each "
-                "module as a code location in the current python environment."
-            ),
-            envvar="DAGSTER_MODULE_NAME",
         ),
         click.option(
             "--attribute",
@@ -364,13 +387,7 @@ def workspace_target_click_options():
     return (
         [
             click.option("--empty-workspace", is_flag=True, help="Allow an empty workspace"),
-            click.option(
-                "--workspace",
-                "-w",
-                multiple=True,
-                type=click.Path(exists=True),
-                help="Path to workspace file. Argument can be provided multiple times.",
-            ),
+            workspace_option(),
         ]
         + python_target_click_options()
         + grpc_server_target_click_options()
