@@ -46,7 +46,7 @@ from ..asset_defs import (
 )
 from ..errors import DagsterDbtCloudJobInvariantViolationError
 from ..utils import ASSET_RESOURCE_TYPES, result_to_events
-from .resources import DbtCloudResourceV2
+from .resources import DbtCloudResource
 
 
 class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
@@ -61,7 +61,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     ):
         self._dbt_cloud_resource_def = dbt_cloud_resource_def
-        self._dbt_cloud: DbtCloudResourceV2 = dbt_cloud_resource_def(build_init_resource_context())
+        self._dbt_cloud: DbtCloudResource = dbt_cloud_resource_def(build_init_resource_context())
         self._job_id = job_id
         self._project_id: int
         self._has_generate_docs: bool
@@ -361,7 +361,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             compute_kind="dbt",
         )
         def _assets(context: OpExecutionContext):
-            dbt_cloud = cast(DbtCloudResourceV2, context.resources.dbt_cloud)
+            dbt_cloud = cast(DbtCloudResource, context.resources.dbt_cloud)
 
             # Add the partition variable as a variable to the dbt Cloud job command.
             dbt_options: List[str] = []
