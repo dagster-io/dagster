@@ -8,7 +8,7 @@ import {
   spanTextToSelections,
 } from '../partitions/SpanRepresentation';
 
-import {placeholderDimensionRange} from './MultipartitioningSupport';
+import {placeholderDimensionSelection} from './MultipartitioningSupport';
 import {PartitionHealthData, PartitionDimensionSelection} from './usePartitionHealthData';
 
 type DimensionQueryState = {
@@ -45,7 +45,7 @@ export const usePartitionDimensionSelections = (opts: {
 
   const inflated = React.useMemo((): PartitionDimensionSelection[] => {
     if (!assetHealth || !assetHealth.dimensions.length) {
-      return JSON.parse(knownDimensionNamesJSON).map(placeholderDimensionRange);
+      return JSON.parse(knownDimensionNamesJSON).map(placeholderDimensionSelection);
     }
     return assetHealth.dimensions.map((dimension) => {
       const saved =

@@ -113,7 +113,8 @@ export function explodePartitionKeysInSelection(
   throw new Error('Unsupported >2 partitions defined');
 }
 
-export const placeholderDimensionRange = (name: string) => ({
+export const placeholderDimensionSelection = (name: string): PartitionDimensionSelection => ({
   dimension: {name, partitionKeys: []},
-  selected: [],
+  selectedKeys: [],
+  selectedRanges: [],
 });
