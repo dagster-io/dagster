@@ -99,7 +99,12 @@ export const LiveStates = () => {
         lastMaterialization: null,
         lastMaterializationRunStatus: null,
         lastObservation: null,
-        runWhichFailedToMaterialize: {__typename: 'Run', id: 'ABCDEF', status: RunStatus.FAILURE},
+        runWhichFailedToMaterialize: {
+          __typename: 'Run',
+          id: 'ABCDEF',
+          status: RunStatus.FAILURE,
+          endTime: 1673301346,
+        },
         currentLogicalVersion: null,
         projectedLogicalVersion: null,
         freshnessInfo: null,
