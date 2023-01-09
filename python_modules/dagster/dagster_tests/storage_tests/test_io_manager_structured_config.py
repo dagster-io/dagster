@@ -1,6 +1,6 @@
 # pylint: disable=unused-argument
 
-from dagster import In, job, op
+from dagster import Definitions, In, asset, job, op
 from dagster._config.structured_config import StructuredConfigIOManager
 
 
@@ -44,3 +44,41 @@ def test_load_input_handle_output():
     check_input_managers.execute_in_process()
     assert did_run["first_op"]
     assert did_run["second_op"]
+
+
+def test_structured_resource_runtime_config():
+    out_txt = []
+
+    class MyIOManager(StructuredConfigIOManager):
+        prefix: str
+
+        def handle_output(self, context, obj):
+            out_txt.append(f"{self.prefix}{obj}")
+
+        def load_input(self, context):
+            assert False, "should not be called"
+
+    @asset
+    def hello_world_asset():
+        return "hello, world!"
+
+    defs = Definitions(
+        assets=[hello_world_asset],
+        resources={"io_manager": MyIOManager},
+    )
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process({"resources": {"io_manager": {"config": {"prefix": ""}}}})
+        .success
+    )
+    assert out_txt == ["hello, world!"]
+
+    out_txt.clear()
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process({"resources": {"io_manager": {"config": {"prefix": "greeting: "}}}})
+        .success
+    )
+    assert out_txt == ["greeting: hello, world!"]

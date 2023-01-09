@@ -3,6 +3,7 @@ import inspect
 from dagster._config.config_type import ConfigType
 from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
+from dagster._core.execution.context.init import InitResourceContext
 
 try:
     from functools import cached_property
@@ -137,6 +138,31 @@ class Resource(
         return self
 
 
+def is_structured_resource_cls(resource: Any) -> bool:
+    try:
+        return issubclass(resource, Resource)
+    except TypeError:
+        pass
+    return False
+
+
+class UnconfiguredStructuredResource(ResourceDefinition):
+    def __init__(
+        self,
+        resource: Type[Resource],
+    ):
+        schema = infer_schema_from_config_class(resource)
+
+        def resource_fn(context: InitResourceContext):
+            return resource(**context.resource_config).resource_fn(context)
+
+        super().__init__(
+            resource_fn=resource_fn,
+            config_schema=schema,
+            description=resource.__doc__,
+        )
+
+
 class StructuredResourceAdapter(Resource, ABC):
     """
     Adapter base class for wrapping a decorated, function-style resource
@@ -217,6 +243,31 @@ class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
 
     def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
         return self
+
+
+def is_structured_io_manager_cls(resource: Any) -> bool:
+    try:
+        return issubclass(resource, StructuredConfigIOManagerBase)
+    except TypeError:
+        pass
+    return False
+
+
+class UnconfiguredStructuredIOManager(IOManagerDefinition):
+    def __init__(
+        self,
+        io_manager: Type[StructuredConfigIOManagerBase],
+    ):
+        schema = infer_schema_from_config_class(io_manager)
+
+        def resource_fn(context: InitResourceContext):
+            return io_manager(**context.resource_config).resource_fn(context)
+
+        super().__init__(
+            resource_fn=resource_fn,
+            config_schema=schema,
+            description=io_manager.__doc__,
+        )
 
 
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:

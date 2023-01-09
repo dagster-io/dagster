@@ -314,3 +314,38 @@ def test_io_manager_factory_class():
     defs.get_implicit_global_asset_job_def().execute_in_process()
 
     assert executed["yes"]
+
+
+def test_structured_resource_runtime_config():
+    out_txt = []
+
+    class WriterResource(Resource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    @asset
+    def hello_world_asset(writer: WriterResource):
+        writer.output("hello, world!")
+
+    defs = Definitions(
+        assets=[hello_world_asset],
+        resources={"writer": WriterResource},
+    )
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process({"resources": {"writer": {"config": {"prefix": ""}}}})
+        .success
+    )
+    assert out_txt == ["hello, world!"]
+
+    out_txt.clear()
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process({"resources": {"writer": {"config": {"prefix": "greeting: "}}}})
+        .success
+    )
+    assert out_txt == ["greeting: hello, world!"]

@@ -3,6 +3,12 @@ from typing import Any, Dict, Generator, Mapping, Optional, cast
 
 import dagster._check as check
 from dagster._config import process_config
+from dagster._config.structured_config import (
+    UnconfiguredStructuredIOManager,
+    UnconfiguredStructuredResource,
+    is_structured_io_manager_cls,
+    is_structured_resource_cls,
+)
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition,
     Resources,
@@ -124,6 +130,10 @@ def wrap_resources_for_execution(
     for resource_key, resource in resources.items():
         if isinstance(resource, ResourceDefinition):
             resource_defs[resource_key] = resource
+        elif is_structured_resource_cls(resource):
+            resource_defs[resource_key] = UnconfiguredStructuredResource(resource)
+        elif is_structured_io_manager_cls(resource):
+            resource_defs[resource_key] = UnconfiguredStructuredIOManager(resource)
         elif isinstance(resource, IOManager):
             resource_defs[resource_key] = IOManagerDefinition.hardcoded_io_manager(resource)
         else:
