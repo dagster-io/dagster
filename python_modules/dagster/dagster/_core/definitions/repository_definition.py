@@ -718,7 +718,10 @@ class CachingRepositoryData(RepositoryData):
                 )
 
         return CachingRepositoryData(
-            **repository_definitions, source_assets_by_key={}, assets_defs_by_key={}, top_level_resources={}
+            **repository_definitions,
+            source_assets_by_key={},
+            assets_defs_by_key={},
+            top_level_resources={},
         )
 
     @classmethod
@@ -947,7 +950,7 @@ class CachingRepositoryData(RepositoryData):
             sensors=sensors,
             source_assets_by_key=source_assets_by_key,
             assets_defs_by_key=assets_defs_by_key,
-            top_level_resources=top_level_resources,
+            top_level_resources=top_level_resources or {},
         )
 
     def get_pipeline_names(self) -> Sequence[str]:
