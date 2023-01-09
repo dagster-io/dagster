@@ -1,7 +1,12 @@
 # pylint: disable=unused-argument
 
 from dagster import Definitions, In, asset, job, op
-from dagster._config.structured_config import StructuredConfigIOManager
+from dagster._config.structured_config import (
+    Config,
+    RequiresResources,
+    Resource,
+    StructuredConfigIOManager,
+)
 
 
 def test_load_input_handle_output():
@@ -82,3 +87,50 @@ def test_structured_resource_runtime_config():
         .success
     )
     assert out_txt == ["greeting: hello, world!"]
+
+
+def test_io_manager_resource_deps():
+    out_txt = []
+
+    class AWSCredentialsResource(Resource):
+        username: str
+        password: str
+
+    class AWSDeps(Config):
+        aws_credentials: AWSCredentialsResource
+
+    class S3IOManager(StructuredConfigIOManager, RequiresResources[AWSDeps]):
+        bucket_name: str
+
+        def handle_output(self, context, obj):
+            assert self.required_resources.aws_credentials.username == "foo"
+            assert self.required_resources.aws_credentials.password == "bar"
+            out_txt.append(f"{self.bucket_name}: {obj}")
+
+        def load_input(self, context):
+            assert False, "should not be called"
+
+    @asset
+    def my_asset():
+        return "hello, world"
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={
+            "aws_credentials": AWSCredentialsResource(username="foo", password="bar"),
+            "io_manager": S3IOManager,
+        },
+    )
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process(
+            {
+                "resources": {
+                    "io_manager": {"config": {"bucket_name": "my_bucket"}},
+                }
+            }
+        )
+        .success
+    )
+    assert out_txt == ["my_bucket: hello, world"]

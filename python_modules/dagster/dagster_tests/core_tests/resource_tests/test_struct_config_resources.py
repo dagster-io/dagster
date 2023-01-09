@@ -1,10 +1,13 @@
+import json
 import sys
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Any, Callable
 
 import pytest
 from dagster import IOManager, asset, job, op, resource
 from dagster._config.structured_config import (
+    Config,
+    RequiresResources,
     Resource,
     StructuredConfigIOManagerBase,
     StructuredIOManagerAdapter,
@@ -349,3 +352,166 @@ def test_structured_resource_runtime_config():
         .success
     )
     assert out_txt == ["greeting: hello, world!"]
+
+
+def test_nested_resources():
+    out_txt = []
+
+    class WriterResource(Resource):
+        def output(self, text: str) -> None:
+            out_txt.append(text)
+
+    class PrefixedWriterResource(WriterResource, Resource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    class JsonWriterDeps(Config):
+        base_writer: WriterResource
+
+    class JsonWriterResource(RequiresResources[JsonWriterDeps], WriterResource):
+        indent: int
+
+        def output(self, obj: Any) -> None:
+            self.required_resources.base_writer.output(json.dumps(obj, indent=self.indent))
+
+    @asset
+    def hello_world_asset(writer: JsonWriterResource):
+        writer.output({"hello": "world"})
+
+    # Construct a resource that is needed by another resource
+    writer_resource = WriterResource()
+    json_writer_resource = JsonWriterResource(indent=2)
+
+    assert (
+        build_assets_job(
+            "blah",
+            [hello_world_asset],
+            resource_defs={"base_writer": writer_resource, "writer": json_writer_resource},
+        )
+        .execute_in_process()
+        .success
+    )
+
+    assert out_txt == ['{\n  "hello": "world"\n}']
+
+    # Do it again, with a different nested resource
+    out_txt.clear()
+    prefixed_writer_resource = PrefixedWriterResource(prefix="greeting: ")
+    prefixed_json_writer_resource = JsonWriterResource(indent=2)
+
+    assert (
+        build_assets_job(
+            "blah",
+            [hello_world_asset],
+            resource_defs={
+                "base_writer": prefixed_writer_resource,
+                "writer": prefixed_json_writer_resource,
+            },
+        )
+        .execute_in_process()
+        .success
+    )
+
+    assert out_txt == ['greeting: {\n  "hello": "world"\n}']
+
+
+def test_nested_resources_multiuse():
+    out_txt = []
+
+    class AWSCredentialsResource(Resource):
+        username: str
+        password: str
+
+    class AWSDeps(Config):
+        aws_credentials: AWSCredentialsResource
+
+    class S3Resource(Resource, RequiresResources[AWSDeps]):
+        bucket_name: str
+
+    class EC2Resource(Resource, RequiresResources[AWSDeps]):
+        pass
+
+    completed = {}
+
+    @asset
+    def my_asset(s3: S3Resource, ec2: EC2Resource):
+        assert s3.required_resources.aws_credentials.username == "foo"
+        assert s3.required_resources.aws_credentials.password == "bar"
+        assert s3.bucket_name == "my_bucket"
+
+        assert ec2.required_resources.aws_credentials.username == "foo"
+        assert ec2.required_resources.aws_credentials.password == "bar"
+
+        completed["yes"] = True
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={
+            "aws_credentials": AWSCredentialsResource(username="foo", password="bar"),
+            "s3": S3Resource(bucket_name="my_bucket"),
+            "ec2": EC2Resource(),
+        },
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert completed["yes"]
+
+
+def test_nested_resources_runtime_config():
+    out_txt = []
+
+    class AWSCredentialsResource(Resource):
+        username: str
+        password: str
+
+    class AWSDeps(Config):
+        aws_credentials: AWSCredentialsResource
+
+    class S3Resource(Resource, RequiresResources[AWSDeps]):
+        bucket_name: str
+
+    class EC2Resource(Resource, RequiresResources[AWSDeps]):
+        pass
+
+    completed = {}
+
+    @asset
+    def my_asset(s3: S3Resource, ec2: EC2Resource):
+        assert s3.required_resources.aws_credentials.username == "foo"
+        assert s3.required_resources.aws_credentials.password == "bar"
+        assert s3.bucket_name == "my_bucket"
+
+        assert ec2.required_resources.aws_credentials.username == "foo"
+        assert ec2.required_resources.aws_credentials.password == "bar"
+
+        completed["yes"] = True
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={
+            "aws_credentials": AWSCredentialsResource,
+            "s3": S3Resource,
+            "ec2": EC2Resource(),
+        },
+    )
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process(
+            {
+                "resources": {
+                    "aws_credentials": {
+                        "config": {
+                            "username": "foo",
+                            "password": "bar",
+                        }
+                    },
+                    "s3": {"config": {"bucket_name": "my_bucket"}},
+                }
+            }
+        )
+        .success
+    )
+    assert completed["yes"]

@@ -14,7 +14,7 @@ except ImportError:
 
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Type, cast
+from typing import Any, Generic, Optional, Set, Type, TypeVar, cast, get_args, get_origin
 
 from pydantic import BaseModel, Extra
 from pydantic.fields import SHAPE_SINGLETON, ModelField
@@ -94,6 +94,21 @@ def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSch
     return configured_resource_def.config_schema
 
 
+RequiredResources = TypeVar("RequiredResources")
+
+
+class RequiresResources(Generic[RequiredResources]):
+    _resources: Optional[RequiredResources] = None
+
+    @property
+    def required_resources(self) -> RequiredResources:
+        check.invariant(
+            self._resources is not None,
+            "Attempted to access required_resources before they were set.",
+        )
+        return self._resources
+
+
 class Resource(
     ResourceDefinition,
     Config,
@@ -119,14 +134,35 @@ class Resource(
     def __init__(self, **data: Any):
         schema = infer_schema_from_config_class(self.__class__)
         Config.__init__(self, **data)
+
+        required_resource_keys = self.__class__.get_required_resource_keys()
+
         ResourceDefinition.__init__(
             self,
             resource_fn=self.create_object_to_pass_to_user_code,
             config_schema=_curry_config_schema(schema, data),
             description=self.__doc__,
+            required_resource_keys=required_resource_keys,
         )
 
-    def create_object_to_pass_to_user_code(self, context) -> Any:  # pylint: disable=unused-argument
+    @classmethod
+    def get_required_resource_keys(cls) -> Optional[Set[str]]:
+        rrcls = cls.get_required_resource_cls()
+        if rrcls:
+            return set(rrcls.__fields__.keys())
+        return None
+
+    @classmethod
+    def get_required_resource_cls(cls) -> Optional[Type[Config]]:
+        if issubclass(cls, RequiresResources):
+            for base in cls.__orig_bases__:
+                if get_origin(base) == RequiresResources:
+                    return get_args(base)[0]
+        return None
+
+    def create_object_to_pass_to_user_code(
+        self, context: InitResourceContext
+    ) -> Any:  # pylint: disable=unused-argument
         """
         Returns the object that this resource hands to user code, accessible by ops or assets
         through the context or resource parameters. This works like the function decorated
@@ -135,6 +171,14 @@ class Resource(
         Default behavior for new class-based resources is to return itself, passing
         the actual resource object to user code.
         """
+
+        if isinstance(self, RequiresResources):
+            resource_dict = {}
+            for resource_key in self.required_resource_keys:
+                resource_dict[resource_key] = getattr(context.resources, resource_key)
+
+            self._resources = self.__class__.get_required_resource_cls()(**resource_dict)
+
         return self
 
 
@@ -152,6 +196,7 @@ class UnconfiguredStructuredResource(ResourceDefinition):
         resource: Type[Resource],
     ):
         schema = infer_schema_from_config_class(resource)
+        required_resource_keys = resource.get_required_resource_keys()
 
         def resource_fn(context: InitResourceContext):
             instantiated = resource(**context.resource_config)
@@ -161,6 +206,7 @@ class UnconfiguredStructuredResource(ResourceDefinition):
             resource_fn=resource_fn,
             config_schema=schema,
             description=resource.__doc__,
+            required_resource_keys=required_resource_keys,
         )
 
 
@@ -219,18 +265,37 @@ class StructuredConfigIOManagerBase(IOManagerDefinition, Config, ABC):
 
     def __init__(self, **data: Any):
         schema = infer_schema_from_config_class(self.__class__)
+
+        required_resource_keys = self.__class__.get_required_resource_keys()
+
         Config.__init__(self, **data)
         IOManagerDefinition.__init__(
             self,
             resource_fn=self.create_io_manager_to_pass_to_user_code,
             config_schema=_curry_config_schema(schema, data),
             description=self.__doc__,
+            required_resource_keys=required_resource_keys,
         )
 
     @abstractmethod
     def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
         """Implement as one would implement a @io_manager decorator function"""
         raise NotImplementedError()
+
+    @classmethod
+    def get_required_resource_keys(cls) -> Optional[Set[str]]:
+        rrcls = cls.get_required_resource_cls()
+        if rrcls:
+            return set(rrcls.__fields__.keys())
+        return None
+
+    @classmethod
+    def get_required_resource_cls(cls) -> Optional[Type[Config]]:
+        if issubclass(cls, RequiresResources):
+            for base in cls.__orig_bases__:
+                if get_origin(base) == RequiresResources:
+                    return get_args(base)[0]
+        return None
 
 
 class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
@@ -243,6 +308,13 @@ class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
     """
 
     def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
+        if isinstance(self, RequiresResources):
+            resource_dict = {}
+            for resource_key in self.required_resource_keys:
+                resource_dict[resource_key] = getattr(context.resources, resource_key)
+
+            self._resources = self.__class__.get_required_resource_cls()(**resource_dict)
+
         return self
 
 
@@ -261,6 +333,8 @@ class UnconfiguredStructuredIOManager(IOManagerDefinition):
     ):
         schema = infer_schema_from_config_class(io_manager)
 
+        required_resource_keys = io_manager.get_required_resource_keys()
+
         def resource_fn(context: InitResourceContext):
             instantiated = io_manager(**context.resource_config)
             return instantiated.create_io_manager_to_pass_to_user_code(context)
@@ -269,6 +343,7 @@ class UnconfiguredStructuredIOManager(IOManagerDefinition):
             resource_fn=resource_fn,
             config_schema=schema,
             description=io_manager.__doc__,
+            required_resource_keys=required_resource_keys,
         )
 
 
