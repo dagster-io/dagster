@@ -245,7 +245,7 @@ export const AssetNodeMinimal: React.FC<{
           </div>
 
           <MinimalName style={{fontSize: 30}} $isSource={isSource}>
-            {withMiddleTruncation(displayName, {maxLength: 17})}
+            {withMiddleTruncation(displayName, {maxLength: 14})}
           </MinimalName>
         </MinimalAssetNodeBox>
       </MinimalAssetNodeContainer>
