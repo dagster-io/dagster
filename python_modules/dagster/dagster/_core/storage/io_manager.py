@@ -1,6 +1,17 @@
 from abc import abstractmethod
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Set, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Optional,
+    Set,
+    TypeGuard,
+    Union,
+    cast,
+    overload,
+)
 
 from typing_extensions import TypeAlias
 
@@ -18,15 +29,24 @@ from dagster._core.storage.input_manager import InputManager
 from dagster._core.storage.output_manager import IOutputManagerDefinition, OutputManager
 from dagster._core.storage.root_input_manager import IInputManagerDefinition
 
+from ..decorator_utils import get_function_params
+
 if TYPE_CHECKING:
     from dagster._core.execution.context.init import InitResourceContext
     from dagster._core.execution.context.input import InputContext
     from dagster._core.execution.context.output import OutputContext
 
+IOManagerFunctionWithContext = (Callable[["InitResourceContext"], "IOManager"],)
 IOManagerFunction: TypeAlias = Union[
-    Callable[["InitResourceContext"], "IOManager"],
+    IOManagerFunctionWithContext,
     Callable[[], "IOManager"],
 ]
+
+
+def is_io_manager_context_provided(
+    fn: IOManagerFunction,
+) -> TypeGuard[IOManagerFunctionWithContext]:
+    return len(get_function_params(fn)) >= 1
 
 
 class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputManagerDefinition):

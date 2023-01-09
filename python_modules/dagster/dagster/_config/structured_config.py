@@ -27,8 +27,16 @@ from dagster._config.field_utils import (
     config_dictionary_from_values,
     convert_potential_field,
 )
-from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
-from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
+from dagster._core.definitions.resource_definition import (
+    ResourceDefinition,
+    ResourceFunction,
+    is_context_provided,
+)
+from dagster._core.storage.io_manager import (
+    IOManager,
+    IOManagerDefinition,
+    is_io_manager_context_provided,
+)
 
 
 class MakeConfigCacheable(BaseModel):
@@ -154,7 +162,12 @@ class UnconfiguredStructuredResource(ResourceDefinition):
         schema = infer_schema_from_config_class(resource)
 
         def resource_fn(context: InitResourceContext):
-            return resource(**context.resource_config).resource_fn(context)
+            instantiated = resource(**context.resource_config)
+
+            if is_context_provided(instantiated):
+                return resource_fn(context)
+            else:
+                return resource_fn()
 
         super().__init__(
             resource_fn=resource_fn,
@@ -261,7 +274,12 @@ class UnconfiguredStructuredIOManager(IOManagerDefinition):
         schema = infer_schema_from_config_class(io_manager)
 
         def resource_fn(context: InitResourceContext):
-            return io_manager(**context.resource_config).resource_fn(context)
+            instantiated = io_manager(**context.resource_config)
+
+            if is_io_manager_context_provided(instantiated):
+                return resource_fn(context)
+            else:
+                return resource_fn()
 
         super().__init__(
             resource_fn=resource_fn,
