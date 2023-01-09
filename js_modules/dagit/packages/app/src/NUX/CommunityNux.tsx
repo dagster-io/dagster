@@ -80,7 +80,7 @@ const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
   );
 };
 
-const IFRAME_SRC = 'http://localhost:4000/dagit_iframes/community_nux';
+const IFRAME_SRC = 'http://dagster.io/dagit_iframes/community_nux';
 
 type Props = {
   width: string;
