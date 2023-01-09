@@ -16,7 +16,7 @@ def _get_sf_options(config, table_slice):
         "sfPassword": config["password"],
         "sfDatabase": config["database"],
         "sfSchema": table_slice.schema,
-        "sfWarehouse": config["warehouse"],
+        "sfWarehouse": config.get("warehouse"),
         "dbtable": table_slice.table,
     }
 
