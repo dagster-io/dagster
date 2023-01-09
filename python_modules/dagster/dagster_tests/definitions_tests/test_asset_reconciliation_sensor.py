@@ -2,6 +2,7 @@ import contextlib
 import datetime
 import itertools
 from typing import Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set, Union
+from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
 
 import mock
 import pendulum
@@ -321,6 +322,7 @@ class FanOutPartitionMapping(PartitionMapping):
 
 
 daily_partitions_def = DailyPartitionsDefinition("2013-01-05")
+hourly_partitions_def = HourlyPartitionsDefinition("2013-01-05-00:00")
 one_partition_partitions_def = StaticPartitionsDefinition(["a"])
 two_partitions_partitions_def = StaticPartitionsDefinition(["a", "b"])
 fanned_out_partitions_def = StaticPartitionsDefinition(["a_1", "a_2", "a_3"])
@@ -477,6 +479,13 @@ two_assets_in_sequence_fan_out_partitions = [
     ),
 ]
 one_asset_daily_partitions = [asset_def("asset1", partitions_def=daily_partitions_def)]
+
+hourly_to_daily_partitions = [
+    asset_def("hourly", partitions_def=hourly_partitions_def),
+    asset_def(
+        "daily", ["hourly"], partitions_def=daily_partitions_def,
+    )
+]
 
 partitioned_after_non_partitioned = [
     asset_def("asset1"),
@@ -735,6 +744,35 @@ scenarios = {
             run_request(asset_keys=["asset1"], partition_key=partition_key)
             for partition_key in daily_partitions_def.get_partition_keys(
                 current_time=create_pendulum_time(year=2015, month=1, day=7, hour=4)
+            )[-2:]
+        ],
+    ),
+    "hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
+        assets=hourly_to_daily_partitions,
+        unevaluated_runs=[],
+        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        expected_run_requests=[
+            run_request(asset_keys=["hourly"], partition_key=partition_key)
+            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(start="2013-01-06-03:00", end="2013-01-07-03:00")
+            )
+        ],
+    ),
+    "hourly_to_daily_partitions_never_materialized2": AssetReconciliationScenario(
+        assets=hourly_to_daily_partitions,
+        unevaluated_runs=[
+            run(["hourly"], partition_key=partition_key)
+            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(start="2013-01-06-00:00", end="2013-01-06-23:00")
+            )
+        ],
+        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        expected_run_requests=[
+            run_request(asset_keys=["daily"], partition_key="2013-01-06")
+        ] + [
+            run_request(asset_keys=["hourly"], partition_key=partition_key)
+            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(start="2013-01-07-00:00", end="2013-01-07-03:00")
             )
         ],
     ),

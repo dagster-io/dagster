@@ -17,6 +17,7 @@ from typing import (
     Tuple,
     cast,
 )
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 
 import pendulum
 
@@ -321,6 +322,23 @@ def determine_asset_partitions_to_reconcile(
         candidates_unit: Iterable[AssetKeyPartitionKey],
         to_reconcile: AbstractSet[AssetKeyPartitionKey],
     ) -> bool:
+        # do not attempt to materialize partitions more than one day older than the latest partition
+        for candidate in candidates_unit:
+            partitions_def = asset_graph.get_partitions_def(candidate.asset_key)
+            if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+                latest_partition = partitions_def.get_last_partition_key()
+                if latest_partition is None or candidate.partition_key is None:
+                    continue
+                latest_partition_end = partitions_def.time_window_for_partition_key(
+                    latest_partition
+                ).end
+                candidate_partition_end = partitions_def.time_window_for_partition_key(
+                    candidate.partition_key
+                ).end
+                time_delta = latest_partition_end - candidate_partition_end
+                if time_delta > datetime.timedelta(days=1):
+                    return False
+
         if any(
             candidate in eventual_asset_partitions_to_reconcile_for_freshness
             or candidate.asset_key not in target_asset_keys
