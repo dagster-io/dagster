@@ -18,6 +18,7 @@ from dagster import (
     op,
 )
 from dagster._core.storage.db_io_manager import TableSlice
+from dagster_pyspark import pyspark_resource
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
 from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler, snowflake_pyspark_io_manager
@@ -134,7 +135,8 @@ def test_io_manager_with_snowflake_pyspark():
                 table_name: Out(
                     io_manager_key="snowflake", metadata={"schema": "SNOWFLAKE_IO_MANAGER_SCHEMA"}
                 )
-            }
+            },
+            required_resource_keys={"pyspark"},
         )
         def emit_pyspark_df(_):
             spark = SparkSession.builder.getOrCreate()
@@ -143,13 +145,13 @@ def test_io_manager_with_snowflake_pyspark():
             df = spark.createDataFrame(data).toDF(*columns)
             return df
 
-        @op
+        @op(required_resource_keys={"pyspark"})
         def read_pyspark_df(df: DataFrame):
             assert set(df.schema.fields) == {"foo", "quux"}
             assert len(df.count()) == 2
 
         @job(
-            resource_defs={"snowflake": snowflake_pyspark_io_manager},
+            resource_defs={"snowflake": snowflake_pyspark_io_manager, "pyspark": pyspark_resource},
             config={
                 "resources": {
                     "snowflake": {
@@ -157,7 +159,19 @@ def test_io_manager_with_snowflake_pyspark():
                             **SHARED_BUILDKITE_SNOWFLAKE_CONF,
                             "database": "TEST_SNOWFLAKE_IO_MANAGER",
                         }
-                    }
+                    },
+                    "pyspark": {
+                        "config": {
+                            "spark_conf": {
+                                "spark.jars.packages": ",".join(
+                                    [
+                                        "net.snowflake:snowflake-jdbc:3.8.0",
+                                        "net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
+                                    ]
+                                ),
+                            }
+                        }
+                    },
                 }
             },
         )
