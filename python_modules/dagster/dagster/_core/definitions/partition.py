@@ -1185,12 +1185,16 @@ class DefaultPartitionsSubset(PartitionsSubset):
     ) -> "DefaultPartitionsSubset":
         # Check the version number, so only valid versions can be deserialized.
         data = json.loads(serialized)
-        if data.get("version") != cls.SERIALIZATION_VERSION:
-            raise DagsterInvalidDeserializationVersionError(
-                f"Attempted to deserialize partition subset with version {data.get('version')}, but only version {cls.SERIALIZATION_VERSION} is supported."
-            )
 
-        return cls(subset=set(data.get("subset")), partitions_def=partitions_def)
+        if isinstance(data, list):
+            # backwards compatibility
+            return cls(subset=set(data), partitions_def=partitions_def)
+        else:
+            if data.get("version") != cls.SERIALIZATION_VERSION:
+                raise DagsterInvalidDeserializationVersionError(
+                    f"Attempted to deserialize partition subset with version {data.get('version')}, but only version {cls.SERIALIZATION_VERSION} is supported."
+                )
+            return cls(subset=set(data.get("subset")), partitions_def=partitions_def)
 
     def get_inverse_subset(self) -> "DefaultPartitionsSubset":
         return DefaultPartitionsSubset(
