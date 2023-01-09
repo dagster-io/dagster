@@ -17,6 +17,7 @@ if sys.version_info >= (3, 9):
         ts: "TopologicalSorter[T]" = TopologicalSorter()
         for node, predecessors in dag.items():
             ts.add(node, *predecessors)
+        ts.prepare()
         res: List[Set[T]] = []
         while ts.is_active():
             ready = ts.get_ready()
@@ -68,9 +69,13 @@ def coerce_valid_log_level(log_level: Union[str, int]) -> int:
 
 
 def toposort(data: Mapping[T, Iterable[T]]) -> List[List[T]]:
-    # Workaround a bug in older versions of toposort that choke on frozenset
-    data = {k: set(v) if isinstance(v, frozenset) else v for k, v in data.items()}
-    return [sorted(list(level)) for level in _toposort(data)]  # type: ignore  # T should implement comparison
+    try:
+        # Workaround a bug in older versions of toposort that choke on frozenset
+        data = {k: set(v) if isinstance(v, frozenset) else v for k, v in data.items()}
+        return [sorted(list(level)) for level in _toposort(data)]  # type: ignore  # T should implement comparison
+    except Exception as e:
+        print(e)
+        raise e
 
 
 def toposort_flatten(data: Mapping[T, Iterable[T]]) -> List[T]:
