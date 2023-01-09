@@ -8,7 +8,7 @@ from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.utils import make_new_run_id
 
 
-def persist_run_for_production(
+def persist_run(
     *,
     instance: DagsterInstance,
     repository_location: RepositoryLocation,
