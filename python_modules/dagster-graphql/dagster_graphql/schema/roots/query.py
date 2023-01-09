@@ -1,7 +1,10 @@
 from typing import Any, Dict, Mapping, Sequence, cast
 
-import dagster._check as check
 import graphene
+from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
+from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
+
+import dagster._check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.selector import (
@@ -11,11 +14,9 @@ from dagster._core.definitions.selector import (
     SensorSelector,
 )
 from dagster._core.execution.backfill import BulkActionStatus
+from dagster._core.host_representation.selector import ResourceSelector
 from dagster._core.nux import get_has_seen_nux
 from dagster._core.scheduler.instigation import InstigatorType
-
-from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
-from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
 
 from ...implementation.external import (
     fetch_location_statuses,
@@ -41,6 +42,7 @@ from ...implementation.fetch_pipelines import (
     get_pipeline_snapshot_or_error_from_pipeline_selector,
     get_pipeline_snapshot_or_error_from_snapshot_id,
 )
+from ...implementation.fetch_resources import get_resource_or_error, get_resources_or_error
 from ...implementation.fetch_runs import (
     get_execution_plan,
     get_logs_for_run,
@@ -89,6 +91,7 @@ from ..inputs import (
     GrapheneInstigationSelector,
     GraphenePipelineSelector,
     GrapheneRepositorySelector,
+    GrapheneResourceSelector,
     GrapheneRunsFilter,
     GrapheneScheduleSelector,
     GrapheneSensorSelector,
@@ -109,6 +112,7 @@ from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
 from ..pipelines.pipeline import GrapheneEventConnectionOrError, GrapheneRunOrError
 from ..pipelines.snapshot import GraphenePipelineSnapshotOrError
+from ..resources import GrapheneTopLevelResourceOrError, GrapheneTopLevelResourcesOrError
 from ..run_config import GrapheneRunConfigSchemaOrError
 from ..runs import (
     GrapheneRunConfigData,
@@ -196,6 +200,21 @@ class GrapheneDagitQuery(graphene.ObjectType):
         graphene.NonNull(GrapheneSchedulesOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
         description="Retrieve all the schedules.",
+    )
+
+    topLevelResourceOrError = graphene.Field(
+        graphene.NonNull(GrapheneTopLevelResourceOrError),
+        resourceSelector=graphene.NonNull(GrapheneResourceSelector),
+        description=(
+            "Retrieve a top level resource by its location name, repository name, and resource"
+            " name."
+        ),
+    )
+
+    topLevelResourcesOrError = graphene.Field(
+        graphene.NonNull(GrapheneTopLevelResourcesOrError),
+        repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
+        description="Retrieve all the top level resources.",
     )
 
     sensorOrError = graphene.Field(
@@ -476,6 +495,17 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_schedulesOrError(self, graphene_info: ResolveInfo, **kwargs):
         return get_schedules_or_error(
+            graphene_info,
+            RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
+        )
+
+    def resolve_topLevelResourceOrError(self, graphene_info: ResolveInfo, resourceSelector):
+        return get_resource_or_error(
+            graphene_info, ResourceSelector.from_graphql_input(resourceSelector)
+        )
+
+    def resolve_topLevelResourcesOrError(self, graphene_info: ResolveInfo, **kwargs):
+        return get_resources_or_error(
             graphene_info,
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )

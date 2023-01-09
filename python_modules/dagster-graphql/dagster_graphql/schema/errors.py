@@ -418,6 +418,19 @@ class GrapheneScheduleNotFoundError(graphene.ObjectType):
         self.message = f"Schedule {self.schedule_name} could not be found."
 
 
+class GrapheneResourceNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "ResourceNotFoundError"
+
+    resource_name = graphene.NonNull(graphene.String)
+
+    def __init__(self, resource_name):
+        super().__init__()
+        self.resource_name = check.str_param(resource_name, "resource_name")
+        self.message = f"Top-level resource {self.resource_name} could not be found."
+
+
 class GrapheneSensorNotFoundError(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneError,)
@@ -506,6 +519,7 @@ types = [
     GrapheneReloadNotSupported,
     GrapheneRepositoryLocationNotFound,
     GrapheneRepositoryNotFoundError,
+    GrapheneResourceNotFoundError,
     GrapheneRunGroupNotFoundError,
     GrapheneRunNotFoundError,
     GrapheneScheduleNotFoundError,
