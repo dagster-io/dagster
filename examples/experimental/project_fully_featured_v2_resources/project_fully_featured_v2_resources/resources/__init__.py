@@ -27,15 +27,6 @@ dbt_prod_resource = dbt_cli_resource.configured(
 )
 
 
-# assert AWS_ACCESS_KEY_ID == os.getenv("AWS_ACCESS_KEY_ID")
-
-# s3 = boto3.client(
-#     service_name="s3",
-#     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID", ""),
-#     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", ""),
-# )
-# print(s3.list_objects(Bucket="hackernews-elementl-dev"))
-
 configured_pyspark = pyspark_resource.configured(
     {
         "spark_conf": {
@@ -50,12 +41,11 @@ configured_pyspark = pyspark_resource.configured(
             # Not here that you need AWS credentials that do not require an aws session token
             "spark.hadoop.fs.s3.awsAccessKeyId": os.getenv("AWS_ACCESS_KEY_ID", ""),
             "spark.hadoop.fs.s3.awsSecretAccessKey": os.getenv("AWS_SECRET_ACCESS_KEY", ""),
-            # "spark.hadoop.fs.s3.awsAccessKeyId": AWS_ACCESS_KEY_ID,
-            # "spark.hadoop.fs.s3.awsSecretAccessKey": AWS_SECRET_ACCESS_KEY,
             "spark.hadoop.fs.s3.buffer.dir": "/tmp",
         }
     }
 )
+
 
 SHARED_SNOWFLAKE_CONF = {
     "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
@@ -64,17 +54,6 @@ SHARED_SNOWFLAKE_CONF = {
     "warehouse": "TINY_WAREHOUSE",
 }
 
-SHARED_SNOWFLAKE_CONF = {
-    "account": "na94824.us-east-1",
-    # os.getenv("SNOWFLAKE_ACCOUNT", ""),
-    "user": "DEVTOOLS@ELEMENTL.COM",
-    # os.getenv("SNOWFLAKE_USER", ""),
-    "password": "_$Q@_c5KbCpFeW@S",
-    # os.getenv("SNOWFLAKE_PASSWORD", ""),
-    "warehouse": "TINY_WAREHOUSE",
-}
-
-# "host": "https://na94824.us-east-1.snowflakecomputing.com/"
 
 RESOURCES_PROD = {
     "s3_bucket": "hackernews-elementl-prod",

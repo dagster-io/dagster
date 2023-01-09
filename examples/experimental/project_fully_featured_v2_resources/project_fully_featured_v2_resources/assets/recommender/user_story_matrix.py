@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from dagster import AssetIn
 
 import numpy as np
-from dagster import Output, asset
+from dagster import AssetIn, Output, asset
 from pandas import DataFrame, Series
 from scipy.sparse import coo_matrix
 

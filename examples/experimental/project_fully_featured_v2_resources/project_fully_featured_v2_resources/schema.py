@@ -1,1 +1,1 @@
-SNOWFLAKE_SCHEMA = "hackernews"
+SNOWFLAKE_SCHEMA = "core"
