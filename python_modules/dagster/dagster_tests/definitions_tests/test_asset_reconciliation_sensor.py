@@ -732,7 +732,6 @@ scenarios = {
         unevaluated_runs=[],
         current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
         expected_run_requests=[
-            run_request(asset_keys=["asset1"], partition_key="2013-01-05"),
             run_request(asset_keys=["asset1"], partition_key="2013-01-06"),
         ],
     ),
@@ -741,10 +740,7 @@ scenarios = {
         unevaluated_runs=[],
         current_time=create_pendulum_time(year=2015, month=1, day=7, hour=4),
         expected_run_requests=[
-            run_request(asset_keys=["asset1"], partition_key=partition_key)
-            for partition_key in daily_partitions_def.get_partition_keys(
-                current_time=create_pendulum_time(year=2015, month=1, day=7, hour=4)
-            )[-2:]
+            run_request(asset_keys=["asset1"], partition_key="2015-01-06"),
         ],
     ),
     "hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
@@ -754,7 +750,7 @@ scenarios = {
         expected_run_requests=[
             run_request(asset_keys=["hourly"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-06-03:00", end="2013-01-07-03:00")
+                PartitionKeyRange(start="2013-01-06-04:00", end="2013-01-07-03:00")
             )
         ],
     ),
@@ -882,7 +878,7 @@ scenarios = {
         assets=one_asset_self_dependency,
         unevaluated_runs=[],
         expected_run_requests=[run_request(asset_keys=["asset1"], partition_key="2020-01-01")],
-        current_time=create_pendulum_time(year=2020, month=1, day=3, hour=4),
+        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=4),
     ),
     "self_dependency_prior_partition_requested": AssetReconciliationScenario(
         assets=one_asset_self_dependency,

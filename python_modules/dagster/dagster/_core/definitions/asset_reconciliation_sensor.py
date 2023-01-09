@@ -336,7 +336,7 @@ def determine_asset_partitions_to_reconcile(
                     candidate.partition_key
                 ).end
                 time_delta = latest_partition_end - candidate_partition_end
-                if time_delta > datetime.timedelta(days=1):
+                if time_delta >= datetime.timedelta(days=1):
                     return False
 
         if any(
