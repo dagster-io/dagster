@@ -17,20 +17,20 @@ export default {
     index: './src/index.ts',
 
     // Our core fonts, usable as global style components, e.g. `<GlobalInconsolata />`.
-    GlobalInconsolata: './src/fonts/GlobalInconsolata.tsx',
-    GlobalInter: './src/fonts/GlobalInter.tsx',
+    'fonts/GlobalInconsolata': './src/fonts/GlobalInconsolata.tsx',
+    'fonts/GlobalInter': './src/fonts/GlobalInter.tsx',
 
     // Components are listed here individually so that they may be imported
     // without pulling in the entire library.
-    Box: './src/components/Box.tsx',
-    Button: './src/components/Button.tsx',
-    Colors: './src/components/Colors.tsx',
-    Icon: './src/components/Icon.tsx',
+    'components/Box': './src/components/Box.tsx',
+    'components/Button': './src/components/Button.tsx',
+    'components/Colors': './src/components/Colors.tsx',
+    'components/Icon': './src/components/Icon.tsx',
   },
   output: {
     dir: 'lib',
     exports: 'named',
-    format: 'esm',
+    format: 'cjs',
     sourcemap: true,
   },
   plugins: [
