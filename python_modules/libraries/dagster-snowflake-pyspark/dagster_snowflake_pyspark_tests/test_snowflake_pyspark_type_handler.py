@@ -5,7 +5,6 @@ from contextlib import contextmanager
 from typing import Iterator
 from unittest.mock import patch
 
-import pandas
 import pytest
 from dagster import (
     IOManagerDefinition,
@@ -22,9 +21,7 @@ from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
 from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler, snowflake_pyspark_io_manager
-from pyspark.sql import (
-    SparkSession,
-)
+from pyspark.sql import DataFrame, SparkSession
 
 resource_config = {
     "database": "database_abc",
@@ -114,31 +111,6 @@ def test_load_input():
         assert mock_read.called
 
 
-# def test_type_conversions():
-#     # no timestamp data
-#     no_time = pandas.Series([1, 2, 3, 4, 5])
-#     converted = _convert_string_to_timestamp(_convert_timestamp_to_string(no_time))
-
-#     assert (converted == no_time).all()
-
-#     # timestamp data
-#     with_time = pandas.Series(
-#         [
-#             pandas.Timestamp("2017-01-01T12:30:45.35"),
-#             pandas.Timestamp("2017-02-01T12:30:45.35"),
-#             pandas.Timestamp("2017-03-01T12:30:45.35"),
-#         ]
-#     )
-#     time_converted = _convert_string_to_timestamp(_convert_timestamp_to_string(with_time))
-
-#     assert (with_time == time_converted).all()
-
-#     # string that isn't a time
-#     string_data = pandas.Series(["not", "a", "timestamp"])
-
-#     assert (_convert_string_to_timestamp(string_data) == string_data).all()
-
-
 def test_build_snowflake_pyspark_io_manager():
     assert isinstance(
         build_snowflake_io_manager([SnowflakePySparkTypeHandler()]), IOManagerDefinition
@@ -148,7 +120,7 @@ def test_build_snowflake_pyspark_io_manager():
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_io_manager_with_snowflake_pandas():
+def test_io_manager_with_snowflake_pyspark():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
@@ -172,7 +144,7 @@ def test_io_manager_with_snowflake_pandas():
             return df
 
         @op
-        def read_pyspark_df(df: pandas.DataFrame):
+        def read_pyspark_df(df: DataFrame):
             assert set(df.schema.fields) == {"foo", "quux"}
             assert len(df.count()) == 2
 
@@ -194,55 +166,3 @@ def test_io_manager_with_snowflake_pandas():
 
         res = io_manager_test_pipeline.execute_in_process()
         assert res.success
-
-
-# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-# def test_io_manager_with_snowflake_pyspark_timestamp_data():
-#     with temporary_snowflake_table(
-#         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
-#         db_name="TEST_SNOWFLAKE_IO_MANAGER",
-#         column_str="foo string, date TIMESTAMP_NTZ(9)",
-#     ) as table_name:
-#         time_df = pandas.DataFrame(
-#             {
-#                 "foo": ["bar", "baz"],
-#                 "date": [
-#                     pandas.Timestamp("2017-01-01T12:30:45.350"),
-#                     pandas.Timestamp("2017-02-01T12:30:45.350"),
-#                 ],
-#             }
-#         )
-
-#         @op(
-#             out={
-#                 table_name: Out(
-#                     io_manager_key="snowflake", metadata={"schema": "SNOWFLAKE_IO_MANAGER_SCHEMA"}
-#                 )
-#             }
-#         )
-#         def emit_time_df(_):
-#             return time_df
-
-#         @op
-#         def read_time_df(df: pandas.DataFrame):
-#             assert set(df.columns) == {"foo", "date"}
-#             assert (df["date"] == time_df["date"]).all()
-
-#         @job(
-#             resource_defs={"snowflake": snowflake_pandas_io_manager},
-#             config={
-#                 "resources": {
-#                     "snowflake": {
-#                         "config": {
-#                             **SHARED_BUILDKITE_SNOWFLAKE_CONF,
-#                             "database": "TEST_SNOWFLAKE_IO_MANAGER",
-#                         }
-#                     }
-#                 }
-#             },
-#         )
-#         def io_manager_timestamp_test_job():
-#             read_time_df(emit_time_df())
-
-#         res = io_manager_timestamp_test_job.execute_in_process()
-#         assert res.success
