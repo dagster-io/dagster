@@ -148,7 +148,7 @@ def test_io_manager_with_snowflake_pyspark():
         @op(required_resource_keys={"pyspark"})
         def read_pyspark_df(df: DataFrame):
             assert set(df.schema.fields) == {"foo", "quux"}
-            assert len(df.count()) == 2
+            assert df.count() == 2
 
         @job(
             resource_defs={"snowflake": snowflake_pyspark_io_manager, "pyspark": pyspark_resource},
