@@ -1,19 +1,8 @@
 from abc import abstractmethod
 from functools import update_wrapper
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Optional,
-    Set,
-    TypeGuard,
-    Union,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Set, Union, cast, overload
 
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._annotations import public
@@ -36,7 +25,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.context.input import InputContext
     from dagster._core.execution.context.output import OutputContext
 
-IOManagerFunctionWithContext = (Callable[["InitResourceContext"], "IOManager"],)
+IOManagerFunctionWithContext = Callable[["InitResourceContext"], "IOManager"]
 IOManagerFunction: TypeAlias = Union[
     IOManagerFunctionWithContext,
     Callable[[], "IOManager"],

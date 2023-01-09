@@ -165,9 +165,9 @@ class UnconfiguredStructuredResource(ResourceDefinition):
             instantiated = resource(**context.resource_config)
 
             if is_context_provided(instantiated):
-                return resource_fn(context)
+                return instantiated.resource_fn(context)
             else:
-                return resource_fn()
+                return instantiated.resource_fn()
 
         super().__init__(
             resource_fn=resource_fn,
@@ -277,9 +277,9 @@ class UnconfiguredStructuredIOManager(IOManagerDefinition):
             instantiated = io_manager(**context.resource_config)
 
             if is_io_manager_context_provided(instantiated):
-                return resource_fn(context)
+                return instantiated.resource_fn(context)
             else:
-                return resource_fn()
+                return instantiated.resource_fn()
 
         super().__init__(
             resource_fn=resource_fn,
