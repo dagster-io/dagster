@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, Optional, Sequence, Tuple, cast
 
 import dagster._check as check
 from dagster._core.errors import DagsterRunNotFoundError
-from dagster._core.execution.plan.resume_retry import get_retry_steps_from_parent_run
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.instance import DagsterInstance
@@ -38,7 +37,7 @@ def compute_step_keys_to_execute(
         # Get step keys from parent_run_id if it's a resume/retry
         parent_run_id = check.not_none(execution_params.execution_metadata.parent_run_id)
         parent_run = _get_run(instance, parent_run_id)
-        return get_retry_steps_from_parent_run(
+        return KnownExecutionState.build_resume_retry_reexecution(
             instance,
             parent_run,
         )

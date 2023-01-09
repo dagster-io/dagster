@@ -1290,8 +1290,8 @@ class DagsterInstance:
     ) -> DagsterRun:
         from dagster._core.execution.plan.resume_retry import (
             ReexecutionStrategy,
-            get_retry_steps_from_parent_run,
         )
+        from dagster._core.execution.plan.state import KnownExecutionState
         from dagster._core.host_representation import ExternalPipeline, RepositoryLocation
 
         check.inst_param(parent_run, "parent_run", DagsterRun)
@@ -1327,7 +1327,10 @@ class DagsterInstance:
                 "Cannot reexecute from failure a run that is not failed",
             )
 
-            step_keys_to_execute, known_state = get_retry_steps_from_parent_run(
+            (
+                step_keys_to_execute,
+                known_state,
+            ) = KnownExecutionState.build_resume_retry_reexecution(
                 self,
                 parent_run=parent_run,
             )

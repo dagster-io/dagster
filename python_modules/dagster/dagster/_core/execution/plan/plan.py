@@ -747,7 +747,7 @@ class ExecutionPlan(
         for step in self.step_dict.values():
             if isinstance(step, ExecutionStep):
                 deps[step.key] = step.get_execution_dependency_keys()
-            elif isinstance(step, UnresolvedMappedExecutionStep):
+            elif isinstance(step, (UnresolvedMappedExecutionStep, UnresolvedCollectExecutionStep)):
                 deps[step.key] = step.get_all_dependency_keys()
             else:
                 check.failed(f"Unexpected execution step type {step}")
@@ -1009,10 +1009,9 @@ class ExecutionPlan(
         # https://github.com/dagster-io/dagster/issues/2239
         if len(self.step_handles_to_execute) == 1:
             only_step = self.step_dict[self.step_handles_to_execute[0]]
-            check.invariant(
-                isinstance(only_step, ExecutionStep),
-                "Unexpected unresolved single step plan",
-            )
+            if not isinstance(only_step, ExecutionStep):
+                return None
+
             return cast(ExecutionStep, only_step).handle
 
         return None
@@ -1385,14 +1384,6 @@ def _compute_artifacts_persisted(
     return True
 
 
-def _get_step_by_key(step_dict: Dict[StepHandleUnion, IExecutionStep], key: str) -> IExecutionStep:
-    check.str_param(key, "key")
-    for step in step_dict.values():
-        if step.key == key:
-            return step
-    check.failed(f"plan has no step with key {key}")
-
-
 def _get_steps_to_execute_by_level(
     step_dict: Mapping[StepHandleUnion, IExecutionStep],
     step_dict_by_key: Mapping[str, IExecutionStep],
@@ -1493,6 +1484,7 @@ def _compute_step_maps(
         )
 
     step_keys_to_execute = [step_handle.to_key() for step_handle in step_handles_to_execute]
+    past_mappings = known_state.dynamic_mappings if known_state else {}
 
     executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]] = {}
     resolvable_map: Dict[
@@ -1504,10 +1496,10 @@ def _compute_step_maps(
             executable_map[step.key] = step.handle
         elif isinstance(step, (UnresolvedMappedExecutionStep, UnresolvedCollectExecutionStep)):
             for key in step.resolved_by_step_keys:
-                if key not in step_keys_to_execute:
+                if key not in step_keys_to_execute and key not in past_mappings:
                     raise DagsterInvariantViolationError(
-                        f'Unresolved ExecutionStep "{step.key}" is resolved by "{key}" '
-                        "which is not part of the current step selection"
+                        f'Unresolved ExecutionStep "{step.key}" is resolved by "{key}" which is not'
+                        " part of the current step selection or known state from parent run."
                     )
 
             resolvable_map[step.resolved_by_step_keys].append(step.handle)
@@ -1516,14 +1508,14 @@ def _compute_step_maps(
                 step.key in executable_map, "Expect all steps to be executable or resolvable"
             )
 
-    if known_state:
+    if past_mappings:
         _update_from_resolved_dynamic_outputs(
             step_dict,
             step_dict_by_key,
             executable_map,
             dict(resolvable_map),
             step_handles_to_execute,
-            known_state.dynamic_mappings,
+            past_mappings,
         )
 
     return (executable_map, dict(resolvable_map))
