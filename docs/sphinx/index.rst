@@ -58,6 +58,7 @@
    sections/api/apidocs/libraries/dagster-slack
    sections/api/apidocs/libraries/dagster-snowflake
    sections/api/apidocs/libraries/dagster-snowflake-pandas
+   sections/api/apidocs/libraries/dagster-snowflake-pyspark
    sections/api/apidocs/libraries/dagster-spark
    sections/api/apidocs/libraries/dagster-ssh
    sections/api/apidocs/libraries/dagster-twilio
