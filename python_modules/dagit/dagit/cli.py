@@ -11,9 +11,11 @@ from dagster._cli.workspace import (
     workspace_target_argument,
 )
 from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
+from dagster._core.instance import InstanceRef
 from dagster._core.telemetry import START_DAGIT_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
 from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._serdes import deserialize_as
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, find_free_port, is_port_in_use
 from dagster._utils.log import configure_loggers
 
@@ -120,6 +122,21 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
         ["critical", "error", "warning", "info", "debug", "trace"], case_sensitive=False
     ),
 )
+@click.option(
+    "--code-server-log-level",
+    help="Set the log level for any code servers spun up by dagit.",
+    show_default=True,
+    default="info",
+    type=click.Choice(
+        ["critical", "error", "warning", "info", "debug", "trace"], case_sensitive=False
+    ),
+)
+@click.option(
+    "--instance-ref",
+    type=click.STRING,
+    required=False,
+    hidden=True,
+)
 @click.version_option(version=__version__, prog_name="dagit")
 def dagit(
     host,
@@ -130,12 +147,21 @@ def dagit(
     read_only,
     suppress_warnings,
     log_level,
+    code_server_log_level,
+    instance_ref,
     **kwargs,
 ):
     if suppress_warnings:
         os.environ["PYTHONWARNINGS"] = "ignore"
 
-    with get_instance_for_service("dagit") as instance:
+    configure_loggers()
+    logger = logging.getLogger("dagit")
+
+    with get_instance_for_service(
+        "dagit",
+        instance_ref=deserialize_as(instance_ref, InstanceRef) if instance_ref else None,
+        logger_fn=logger.info,
+    ) as instance:
         # Allow the instance components to change behavior in the context of a long running server process
         instance.optimize_for_dagit(db_statement_timeout, db_pool_recycle)
 
@@ -144,13 +170,10 @@ def dagit(
             version=__version__,
             read_only=read_only,
             kwargs=kwargs,
+            code_server_log_level=code_server_log_level,
         ) as workspace_process_context:
             host_dagit_ui_with_workspace_process_context(
-                workspace_process_context,
-                host,
-                port,
-                path_prefix,
-                log_level,
+                workspace_process_context, host, port, path_prefix, log_level
             )
 
 
@@ -168,7 +191,6 @@ def host_dagit_ui_with_workspace_process_context(
     check.opt_int_param(port, "port")
     check.str_param(path_prefix, "path_prefix")
 
-    configure_loggers()
     logger = logging.getLogger("dagit")
 
     app = create_app_from_workspace_process_context(workspace_process_context, path_prefix)

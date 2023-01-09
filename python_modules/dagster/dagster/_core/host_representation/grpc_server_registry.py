@@ -114,6 +114,7 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
         heartbeat_ttl,
         # How long to wait for the server to start up and receive connections before timing out
         startup_timeout,
+        log_level="INFO",
     ):
         self.instance = instance
 
@@ -140,6 +141,8 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
 
         self._cleanup_thread_shutdown_event = None
         self._cleanup_thread = None
+
+        self._log_level = check.str_param(log_level, "log_level")
 
         if self._reload_interval > 0:
             self._cleanup_thread_shutdown_event = threading.Event()
@@ -224,6 +227,7 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
                     heartbeat_timeout=self._heartbeat_ttl,
                     fixed_server_id=new_server_id,
                     startup_timeout=self._startup_timeout,
+                    log_level=self._log_level,
                 )
                 self._all_processes.append(server_process)
             except Exception:
