@@ -4,9 +4,9 @@ import * as React from 'react';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {ClearButton} from '../ui/ClearButton';
 
-import {partitionsToText, textToPartitions} from './SpanRepresentation';
+import {partitionsToText, spanTextToSelections} from './SpanRepresentation';
 
-export const PartitionRangeInput: React.FC<{
+export const DimensionRangeInput: React.FC<{
   value: string[];
   onChange: (partitionNames: string[]) => void;
   partitionKeys: string[];
@@ -28,7 +28,7 @@ export const PartitionRangeInput: React.FC<{
 
   const tryCommit = (e: React.SyntheticEvent<HTMLInputElement>) => {
     try {
-      onChange(textToPartitions(valueString, partitionKeys));
+      onChange(spanTextToSelections(partitionKeys, valueString).selectedKeys);
     } catch (err: any) {
       e.preventDefault();
       showCustomAlert({body: err.message});

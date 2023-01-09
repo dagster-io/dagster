@@ -39,7 +39,7 @@ import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {PartitionRangeWizard} from './PartitionRangeWizard';
+import {DimensionRangeWizard} from './DimensionRangeWizard';
 import {PartitionStateCheckboxes} from './PartitionStateCheckboxes';
 import {PartitionState} from './PartitionStatus';
 import {
@@ -178,7 +178,7 @@ export const BackfillPartitionSelector: React.FC<{
               Select partitions to materialize. Click and drag to select a range on the timeline.
             </Box>
 
-            <PartitionRangeWizard
+            <DimensionRangeWizard
               selected={range}
               setSelected={setRange}
               partitionStateForKey={(name) => partitionData[name]}

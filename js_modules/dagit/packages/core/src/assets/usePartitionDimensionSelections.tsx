@@ -4,11 +4,12 @@ import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQue
 import {
   allPartitionsSpan,
   partitionsToText,
-  textToPartitions,
+  allPartitionsRange,
+  spanTextToSelections,
 } from '../partitions/SpanRepresentation';
 
 import {placeholderDimensionRange} from './MultipartitioningSupport';
-import {PartitionHealthData, PartitionHealthDimensionRange} from './usePartitionHealthData';
+import {PartitionHealthData, PartitionDimensionSelection} from './usePartitionHealthData';
 
 type DimensionQueryState = {
   name: string;
@@ -31,7 +32,7 @@ const serializer: QueryPersistedStateConfig<DimensionQueryState[]> = {
  * Internally, this hook reads initial state from the query string and (optionally)
  * writes changes back to the query string using the compacted "spans" format.
  */
-export const usePartitionDimensionRanges = (opts: {
+export const usePartitionDimensionSelections = (opts: {
   assetHealth: Pick<PartitionHealthData, 'dimensions'>;
   modifyQueryString: boolean;
   knownDimensionNames?: string[]; // improves loading state if available
@@ -42,7 +43,7 @@ export const usePartitionDimensionRanges = (opts: {
 
   const knownDimensionNamesJSON = JSON.stringify(knownDimensionNames);
 
-  const inflated = React.useMemo((): PartitionHealthDimensionRange[] => {
+  const inflated = React.useMemo((): PartitionDimensionSelection[] => {
     if (!assetHealth || !assetHealth.dimensions.length) {
       return JSON.parse(knownDimensionNamesJSON).map(placeholderDimensionRange);
     }
@@ -54,20 +55,23 @@ export const usePartitionDimensionRanges = (opts: {
       // Note: It's valid for the user to clear the range to "", so it's
       // important that we persist "" and specifically check for `undefined`
       // when filling in the default value (all keys)
-      return {
-        dimension,
-        selected:
-          saved?.rangeText !== undefined
-            ? textToPartitions(saved.rangeText, dimension.partitionKeys)
-            : dimension.partitionKeys,
-      };
+      return saved?.rangeText !== undefined
+        ? {
+            dimension,
+            ...spanTextToSelections(dimension.partitionKeys, saved.rangeText),
+          }
+        : {
+            dimension,
+            selectedRanges: [allPartitionsRange(dimension)],
+            selectedKeys: [...dimension.partitionKeys],
+          };
     });
   }, [query, local, assetHealth, knownDimensionNamesJSON]);
 
   const setInflated = React.useCallback(
-    (ranges: PartitionHealthDimensionRange[]) => {
+    (ranges: PartitionDimensionSelection[]) => {
       const next = ranges.map((r) => {
-        const rangeText = partitionsToText(r.selected, r.dimension.partitionKeys);
+        const rangeText = partitionsToText(r.selectedKeys, r.dimension.partitionKeys);
         return {
           name: r.dimension.name,
           rangeText: rangeText !== allPartitionsSpan(r.dimension) ? rangeText : undefined,
