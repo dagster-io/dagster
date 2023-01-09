@@ -28,8 +28,7 @@ class DbtManifestAssetSelection(AssetSelection):
             you must also pass in the same function here.
 
     Example:
-
-            .. code-block:: python
+        .. code-block:: python
 
             my_dbt_assets = load_assets_from_dbt_manifest(
                 manifest_json,
@@ -42,6 +41,7 @@ class DbtManifestAssetSelection(AssetSelection):
                 select="tag:foo,path:marts/finance",
                 node_info_to_asset_key=my_node_info_to_asset_key_fn,
             )
+
     """
 
     def __init__(
