@@ -483,8 +483,10 @@ one_asset_daily_partitions = [asset_def("asset1", partitions_def=daily_partition
 hourly_to_daily_partitions = [
     asset_def("hourly", partitions_def=hourly_partitions_def),
     asset_def(
-        "daily", ["hourly"], partitions_def=daily_partitions_def,
-    )
+        "daily",
+        ["hourly"],
+        partitions_def=daily_partitions_def,
+    ),
 ]
 
 partitioned_after_non_partitioned = [
@@ -763,9 +765,8 @@ scenarios = {
             )
         ],
         current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
-        expected_run_requests=[
-            run_request(asset_keys=["daily"], partition_key="2013-01-06")
-        ] + [
+        expected_run_requests=[run_request(asset_keys=["daily"], partition_key="2013-01-06")]
+        + [
             run_request(asset_keys=["hourly"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
                 PartitionKeyRange(start="2013-01-07-00:00", end="2013-01-07-03:00")
