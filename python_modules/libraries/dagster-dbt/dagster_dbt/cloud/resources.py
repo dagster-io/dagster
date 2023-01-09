@@ -25,6 +25,7 @@ from .types import DbtCloudOutput
 
 DBT_DEFAULT_HOST = "https://cloud.getdbt.com/"
 DBT_API_V2_PATH = "api/v2/accounts/"
+DBT_API_V3_PATH = "api/v3/accounts/"
 
 # default polling interval (in seconds)
 DEFAULT_POLL_INTERVAL = 10
@@ -74,6 +75,10 @@ class DbtCloudResource:
     def api_v2_base_url(self) -> str:
         return urljoin(self._dbt_cloud_host, DBT_API_V2_PATH)
 
+    @property
+    def api_v3_base_url(self) -> str:
+        return urljoin(self._dbt_cloud_host, DBT_API_V3_PATH)
+
     def build_url_for_job(self, project_id: int, job_id: int) -> str:
         return urljoin(
             self._dbt_cloud_host,
@@ -91,7 +96,9 @@ class DbtCloudResource:
         method: str,
         endpoint: str,
         data: Optional[Mapping[str, Any]] = None,
+        params: Optional[Mapping[str, Any]] = None,
         return_text: bool = False,
+        base_url: Optional[str] = None,
     ) -> Any:
         """
         Creates and sends a request to the desired dbt Cloud API endpoint.
@@ -99,7 +106,8 @@ class DbtCloudResource:
         Args:
             method (str): The http method to use for this request (e.g. "POST", "GET", "PATCH").
             endpoint (str): The dbt Cloud API endpoint to send this request to.
-            data (Optional[str]): JSON-formatted data string to be included in the request.
+            data (Optional[Mapping[str, Any]]): JSON-formatable data string to be included in the request.
+            params (Optional[Mapping[str, Any]]): Payload to add to query string of the request.
             return_text (bool): Override default behavior and return unparsed {"text": response.text}
                 blob instead of json.
 
@@ -111,7 +119,8 @@ class DbtCloudResource:
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self._auth_token}",
         }
-        url = urljoin(self.api_v2_base_url, endpoint)
+        base_url = base_url or self.api_v2_base_url
+        url = urljoin(base_url, endpoint)
 
         if self._log_requests:
             self._log.debug(f"Making Request: method={method} url={url} data={data}")
@@ -124,7 +133,7 @@ class DbtCloudResource:
                     url=url,
                     headers=headers,
                     data=json.dumps(data),
-                    allow_redirects=False,
+                    params=params,
                 )
                 response.raise_for_status()
                 return {"text": response.text} if return_text else response.json()["data"]
@@ -512,6 +521,56 @@ class DbtCloudResource:
         if output.docs_url:
             self._log.info(f"Docs for this run can be viewed here: {output.docs_url}")
         return output
+
+    def get_job_environment_variables(self, project_id: int, job_id: int) -> Mapping[str, Any]:
+        """
+        Get the dbt Cloud environment variables for a specific job.
+
+        Args:
+            project_id (int): The ID of the relevant dbt Cloud project. You can find this value by
+                going to your account settings in the dbt Cloud UI. It will be the final
+                number in the url, e.g.: ``https://cloud.getdbt.com/next/settings/accounts/{account_id}/projects/{project_id}/``
+            job_id (int): The ID of the relevant dbt Cloud job. You can find this value by going to
+                the details page of your job in the dbt Cloud UI. It will be the final number in the
+                url, e.g.: ``https://cloud.getdbt.com/#/accounts/{account_id}/projects/{project_id}/jobs/{job_id}/``
+        """
+        return self.make_request(
+            "GET",
+            f"{self._account_id}/projects/{project_id}/environment-variables/job",
+            params={"job_definition_id": job_id},
+            base_url=self.api_v3_base_url,
+        )
+
+    def set_job_environment_variable(
+        self, project_id: int, job_id: int, environment_variable_id: int, name: str, value: str
+    ) -> Mapping[str, Any]:
+        """
+        Set the dbt Cloud environment variables for a specific job.
+
+        Args:
+            project_id (int): The ID of the relevant dbt Cloud project. You can find this value by
+                going to your account settings in the dbt Cloud UI. It will be the final
+                number in the url, e.g.: ``https://cloud.getdbt.com/next/settings/accounts/{account_id}/projects/{project_id}/``
+            job_id (int): The ID of the relevant dbt Cloud job. You can find this value by going to
+                the details page of your job in the dbt Cloud UI. It will be the final number in the
+                url, e.g.: ``https://cloud.getdbt.com/#/accounts/{account_id}/projects/{project_id}/jobs/{job_id}/``
+            name (str): The name of the environment variable to set.
+            value (str): The raw value of the environment variable.
+        """
+        return self.make_request(
+            "POST",
+            f"{self._account_id}/projects/{project_id}/environment-variables/{environment_variable_id}",
+            data={
+                "id": environment_variable_id,
+                "account_id": self._account_id,
+                "project_id": project_id,
+                "job_definition_id": job_id,
+                "type": "job",
+                "name": name,
+                "raw_value": value,
+            },
+            base_url=self.api_v3_base_url,
+        )
 
 
 # This is a temporary shim to support the old resource name.
