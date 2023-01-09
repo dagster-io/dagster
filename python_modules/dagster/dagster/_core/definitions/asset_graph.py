@@ -16,11 +16,10 @@ from typing import (
     cast,
 )
 
-import toposort
-
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.selector.subset_selector import DependencyGraph, generate_asset_dep_graph
+from dagster._core.utils import toposort
 
 from .assets import AssetsDefinition
 from .events import AssetKey, AssetKeyPartitionKey
@@ -305,7 +304,7 @@ class AssetGraph:
 
     def toposort_asset_keys(self) -> Sequence[AbstractSet[AssetKey]]:
         return [
-            {key for key in level} for level in toposort.toposort(self._asset_dep_graph["upstream"])
+            {key for key in level} for level in toposort(self._asset_dep_graph["upstream"])
         ]
 
     def has_self_dependency(self, asset_key: AssetKey) -> bool:

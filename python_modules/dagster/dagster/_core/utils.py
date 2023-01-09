@@ -1,12 +1,31 @@
 import os
 import random
 import string
+import sys
 import uuid
 import warnings
 from collections import OrderedDict
-from typing import Tuple, Union, cast
+from typing import Iterable, List, Mapping, Set, Tuple, TypeVar, Union, cast
 
-import toposort as toposort_
+T = TypeVar("T")
+
+
+if sys.version_info >= (3, 9):
+    from graphlib import TopologicalSorter
+
+    def _toposort(dag: Mapping[T, Set[T]]) -> List[Set[T]]:
+        ts: "TopologicalSorter[T]" = TopologicalSorter()
+        for node, predecessors in dag.items():
+            ts.add(node, *predecessors)
+        res: List[Set[T]] = []
+        while ts.is_active():
+            ready = ts.get_ready()
+            res.append(set(ready))
+            ts.done(*ready)
+        return res
+else:
+    from toposort import toposort as _toposort
+
 
 import dagster._check as check
 from dagster._utils import frozendict, library_version_from_core_version, parse_package_version
@@ -47,13 +66,13 @@ def coerce_valid_log_level(log_level: Union[str, int]) -> int:
     return PYTHON_LOGGING_LEVELS_MAPPING[log_level]
 
 
-def toposort(data):
+def toposort(data: Mapping[T, Iterable[T]]) -> List[List[T]]:
     # Workaround a bug in older versions of toposort that choke on frozenset
     data = {k: set(v) if isinstance(v, frozenset) else v for k, v in data.items()}
-    return [sorted(list(level)) for level in toposort_.toposort(data)]
+    return [sorted(list(level)) for level in _toposort(data)]  # type: ignore  # T should implement comparison
 
 
-def toposort_flatten(data):
+def toposort_flatten(data: Mapping[T, Iterable[T]]) -> List[T]:
     return [item for level in toposort(data) for item in level]
 
 
