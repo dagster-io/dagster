@@ -108,7 +108,7 @@ class TestCapturedLogManager:
             pytest.skip("does not support streaming")
 
         now = pendulum.now("UTC")
-        log_key = ["arbitrary", "log", "key", now.strftime("%Y_%m_%d__%H_%M_%S")]
+        log_key = ["streaming", "log", "key", now.strftime("%Y_%m_%d__%H_%M_%S")]
         with write_manager.capture_logs(log_key):
             print("hello stdout")  # pylint: disable=print-call
             print("hello stderr", file=sys.stderr)  # pylint: disable=print-call
@@ -145,7 +145,7 @@ class TestCapturedLogManager:
             pytest.skip("unnecessary check since write/read manager should have the same behavior")
 
         now = pendulum.now("UTC")
-        log_key = ["arbitrary", "log", "key", now.strftime("%Y_%m_%d__%H_%M_%S")]
+        log_key = ["complete", "test", "log", "key", now.strftime("%Y_%m_%d__%H_%M_%S")]
         with write_manager.capture_logs(log_key):
             print("hello stdout")  # pylint: disable=print-call
             print("hello stderr", file=sys.stderr)  # pylint: disable=print-call
