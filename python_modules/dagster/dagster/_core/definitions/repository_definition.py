@@ -23,6 +23,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.selector import parse_solid_selection
@@ -279,6 +280,16 @@ class RepositoryData(ABC):
             List[PipelineDefinition]: All pipelines/jobs in the repository.
         """
 
+    @abstractmethod
+    def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
+        """
+        Return all top-level resources in the repository as a list,
+        such as those provided to the Definitions constructor.
+
+        Returns:
+            List[ResourceDefinition]: All top-level resources in the repository.
+        """
+
     @public
     def get_all_jobs(self) -> Sequence[JobDefinition]:
         """Return all jobs in the repository as a list.
@@ -507,6 +518,7 @@ class CachingRepositoryData(RepositoryData):
         sensors: Mapping[str, Union[SensorDefinition, Resolvable[SensorDefinition]]],
         source_assets_by_key: Mapping[AssetKey, SourceAsset],
         assets_defs_by_key: Mapping[AssetKey, "AssetsDefinition"],
+        top_level_resources: Mapping[str, ResourceDefinition],
     ):
         """Constructs a new CachingRepositoryData object.
 
@@ -533,6 +545,8 @@ class CachingRepositoryData(RepositoryData):
             source_assets_by_key (Mapping[AssetKey, SourceAsset]): The source assets belonging to a repository.
             assets_defs_by_key (Mapping[AssetKey, AssetsDefinition]): The assets definitions
                 belonging to a repository.
+            top_level_resources (Mapping[str, ResourceDefinition]): A dict of top-level
+                resource keys to defintions, for resources which should be displayed in the UI.
         """
         from dagster._core.definitions import AssetsDefinition
 
@@ -557,6 +571,9 @@ class CachingRepositoryData(RepositoryData):
         )
         check.mapping_param(
             assets_defs_by_key, "assets_defs_by_key", key_type=AssetKey, value_type=AssetsDefinition
+        )
+        check.mapping_param(
+            top_level_resources, "top_level_resources", key_type=str, value_type=ResourceDefinition
         )
 
         self._pipelines = _CacheingDefinitionIndex(
@@ -591,6 +608,7 @@ class CachingRepositoryData(RepositoryData):
         )
         self._source_assets_by_key = source_assets_by_key
         self._assets_defs_by_key = assets_defs_by_key
+        self._top_level_resources = top_level_resources
 
         def load_partition_sets_from_pipelines() -> Sequence[PartitionSetDefinition]:
             job_partition_sets = []
@@ -709,6 +727,7 @@ class CachingRepositoryData(RepositoryData):
         repository_definitions: Sequence[RepositoryListDefinition],
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
+        top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
     ) -> "CachingRepositoryData":
         """Static constructor.
 
@@ -716,6 +735,8 @@ class CachingRepositoryData(RepositoryData):
             repository_definitions (List[Union[PipelineDefinition, PartitionSetDefinition, ScheduleDefinition, SensorDefinition, AssetGroup, GraphDefinition]]):
                 Use this constructor when you have no need to lazy load pipelines/jobs or other
                 definitions.
+            top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
+                resource keys to defintions, for resources which should be displayed in the UI.
         """
         from dagster._core.definitions import AssetGroup, AssetsDefinition
         from dagster._core.definitions.partitioned_schedule import (
@@ -926,6 +947,7 @@ class CachingRepositoryData(RepositoryData):
             sensors=sensors,
             source_assets_by_key=source_assets_by_key,
             assets_defs_by_key=assets_defs_by_key,
+            top_level_resources=top_level_resources,
         )
 
     def get_pipeline_names(self) -> Sequence[str]:
@@ -970,6 +992,9 @@ class CachingRepositoryData(RepositoryData):
         """
         check.str_param(job_name, "job_name")
         return self._jobs.has_definition(job_name)
+
+    def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
+        return self._top_level_resources
 
     def get_all_pipelines(self) -> Sequence[PipelineDefinition]:
         """Return all pipelines/jobs in the repository as a list.
@@ -1232,7 +1257,9 @@ class RepositoryDefinition:
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
-        self._repository_data = check.inst_param(repository_data, "repository_data", RepositoryData)
+        self._repository_data: RepositoryData = check.inst_param(
+            repository_data, "repository_data", RepositoryData
+        )
         self._repository_load_data = check.opt_inst_param(
             repository_load_data, "repository_load_data", RepositoryLoadData
         )
@@ -1302,6 +1329,9 @@ class RepositoryDefinition:
             List[PipelineDefinition]: All pipelines/jobs in the repository.
         """
         return self._repository_data.get_all_pipelines()
+
+    def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
+        return self._repository_data.get_top_level_resources()
 
     @public  # type: ignore
     def has_job(self, name: str) -> bool:
@@ -1532,6 +1562,7 @@ class PendingRepositoryDefinition:
         description: Optional[str] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
+        top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
     ):
         self._repository_definitions = check.list_param(
             repository_definitions,
@@ -1544,6 +1575,7 @@ class PendingRepositoryDefinition:
         self._description = description
         self._default_logger_defs = default_logger_defs
         self._default_executor_def = default_executor_def
+        self._top_level_resources = top_level_resources
 
     @property
     def name(self) -> str:
@@ -1589,6 +1621,7 @@ class PendingRepositoryDefinition:
             resolved_definitions,
             default_executor_def=self._default_executor_def,
             default_logger_defs=self._default_logger_defs,
+            top_level_resources=self._top_level_resources,
         )
 
         return RepositoryDefinition(
