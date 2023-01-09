@@ -59,4 +59,4 @@ By default, it will load for the local deployment. You can toggle deployments by
 
 AWS_KEY_ACCESS_ID and AWS_SECRET_ACCESS_KEY must get you access to s3 buckets (currently hardcoded to hackernews-elementl-prod and hackernews-elementl-dev). It cannot require AWS temporary credentials (AWS_SESSION_TOKEN) because of the way that pyspark is configured.
 
-You must have snowflake credentials to database DEMO_DB and DEMO_DB_STAGING. Within that database you must have full access to the schema at schema.SNOWFLAKE_SCHEMA.
+You must have snowflake credentials to database DEMO_DB and DEMO_DB_STAGING. Within that database you must have full access to the schema at schema.SNOWFLAKE_SCHEMA (core).

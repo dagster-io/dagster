@@ -49,13 +49,6 @@ class PartitionedParquetIOManager(IOManager):
 
     def load_input(self, context) -> Union[pyspark.sql.DataFrame, str]:
         path = self._get_path(context)
-        import os
-
-        aws_key_id = os.getenv("AWS_ACCESS_KEY_ID", "")
-        aws_secret_id = os.getenv("AWS_SECRET_ACCESS_KEY", "")
-        context.log.info("IN load_input")
-        context.log.info(f"AWS_ACCESS_KEY_ID {aws_key_id}")
-        context.log.info(f"AWS_SECRET_ACCESS_KEY {aws_secret_id}")
         if context.dagster_type.typing_type == pyspark.sql.DataFrame:
             # return pyspark dataframe
             return context.resources.pyspark.spark_session.read.parquet(path)
