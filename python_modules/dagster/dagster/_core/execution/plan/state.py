@@ -74,7 +74,7 @@ class KnownExecutionState(
             # step_key -> count
             ("previous_retry_attempts", Mapping[str, int]),
             # step_key -> output_name -> mapping_keys
-            ("dynamic_mappings", Mapping[str, Mapping[str, Sequence[str]]]),
+            ("dynamic_mappings", Mapping[str, Mapping[str, Optional[Sequence[str]]]]),
             # step_output_handle -> version
             ("step_output_versions", Sequence[StepOutputVersionData]),
             ("ready_outputs", Set[StepOutputHandle]),
@@ -91,7 +91,7 @@ class KnownExecutionState(
     def __new__(
         cls,
         previous_retry_attempts: Optional[Mapping[str, int]] = None,
-        dynamic_mappings: Optional[Mapping[str, Mapping[str, Sequence[str]]]] = None,
+        dynamic_mappings: Optional[Mapping[str, Mapping[str, Optional[Sequence[str]]]]] = None,
         step_output_versions: Optional[Sequence[StepOutputVersionData]] = None,
         ready_outputs: Optional[Set[StepOutputHandle]] = None,
         parent_state: Optional[PastExecutionState] = None,

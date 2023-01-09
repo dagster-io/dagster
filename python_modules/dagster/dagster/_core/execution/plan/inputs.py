@@ -1037,7 +1037,17 @@ class FromDynamicCollect(
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
 
-    def resolve(self, mapping_keys):
+    def resolve(self, mapping_keys: Optional[Sequence[str]]):
+        if mapping_keys is None:
+            # None means that the dynamic output was skipped, so create
+            # a dependency on the dynamic output that will continue cascading the skip
+            return FromStepOutput(
+                step_output_handle=StepOutputHandle(
+                    step_key=self.resolved_by_step_key,
+                    output_name=self.resolved_by_output_name,
+                ),
+                fan_in=False,
+            )
         return FromMultipleSources(
             sources=[self.source.resolve(map_key) for map_key in mapping_keys],
         )
@@ -1086,7 +1096,7 @@ class UnresolvedCollectStepInput(NamedTuple):
     def resolved_by_output_name(self) -> str:
         return self.source.resolved_by_output_name
 
-    def resolve(self, mapping_keys: Sequence[str]) -> StepInput:
+    def resolve(self, mapping_keys: Optional[Sequence[str]]) -> StepInput:
         return StepInput(
             name=self.name,
             dagster_type_key=self.dagster_type_key,

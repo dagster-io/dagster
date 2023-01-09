@@ -64,12 +64,15 @@ class ActiveExecution:
 
         # track mapping keys from DynamicOutputs, step_key, output_name -> list of keys
         # to _gathering while in flight
-        self._gathering_dynamic_outputs: Dict[str, Mapping[str, List[str]]] = {}
-        # then on success move to _successful
-        self._successful_dynamic_outputs: Dict[str, Mapping[str, Sequence[str]]] = (
+        self._gathering_dynamic_outputs: Dict[str, Mapping[str, Optional[List[str]]]] = {}
+        # then on resolution move to _completed
+        self._completed_dynamic_outputs: Dict[str, Mapping[str, Optional[Sequence[str]]]] = (
             dict(self._plan.known_state.dynamic_mappings) if self._plan.known_state else {}
         )
         self._new_dynamic_mappings: bool = False
+
+        # track which upstream deps caused a step to skip
+        self._skipped_deps: Dict[str, Sequence[str]] = {}
 
         # steps move in to these buckets as a result of _update calls
         self._executable: List[str] = []
@@ -160,7 +163,7 @@ class ActiveExecution:
         failed_or_abandoned_steps = self._failed | self._abandoned
 
         if self._new_dynamic_mappings:
-            new_step_deps = self._plan.resolve(self._successful_dynamic_outputs)
+            new_step_deps = self._plan.resolve(self._completed_dynamic_outputs)
             for step_key, deps in new_step_deps.items():
                 self._pending[step_key] = deps
 
@@ -192,6 +195,9 @@ class ActiveExecution:
                             step_input.get_step_output_handle_dependencies()
                         ):
                             should_skip = True
+                            self._skipped_deps[step_key] = [
+                                f"{h.step_key}.{h.output_name}" for h in missing_source_handles
+                            ]
                             break
 
                 if should_skip:
@@ -308,7 +314,8 @@ class ActiveExecution:
             steps.append(step)
             self._in_flight.add(key)
             self._pending_skip.remove(key)
-            self._prep_for_dynamic_outputs(step)
+            self._gathering_dynamic_outputs
+            self._skip_for_dynamic_outputs(step)
 
         return sorted(steps, key=self._sort_key_fn)
 
@@ -331,14 +338,9 @@ class ActiveExecution:
         while steps_to_skip:
             for step in steps_to_skip:
                 step_context = pipeline_context.for_step(step)
-                skipped_inputs: List[str] = []
-                for step_input in step.step_inputs:
-                    skipped_inputs.extend(self._skipped.intersection(step_input.dependency_keys))
-
                 step_context.log.info(
-                    "Skipping step {step} due to skipped dependencies: {skipped_inputs}.".format(
-                        step=step.key, skipped_inputs=skipped_inputs
-                    )
+                    f"Skipping step {step.key} due to skipped dependencies:"
+                    f" {self._skipped_deps[step.key]}."
                 )
                 yield DagsterEvent.step_skipped_event(step_context)
 
@@ -461,9 +463,11 @@ class ActiveExecution:
             event_specific_data = cast(StepOutputData, dagster_event.event_specific_data)
             self.mark_step_produced_output(event_specific_data.step_output_handle)
             if dagster_event.step_output_data.step_output_handle.mapping_key:
-                self._gathering_dynamic_outputs[step_key][
-                    dagster_event.step_output_data.step_output_handle.output_name
-                ].append(dagster_event.step_output_data.step_output_handle.mapping_key)
+                check.not_none(
+                    self._gathering_dynamic_outputs[step_key][
+                        dagster_event.step_output_data.step_output_handle.output_name
+                    ],
+                ).append(dagster_event.step_output_data.step_output_handle.mapping_key)
 
     def verify_complete(self, pipeline_context: PlanOrchestrationContext, step_key: str) -> None:
         """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure
@@ -505,7 +509,7 @@ class ActiveExecution:
     def get_known_state(self) -> KnownExecutionState:
         return KnownExecutionState(
             previous_retry_attempts=self._retry_state.snapshot_attempts(),
-            dynamic_mappings=dict(self._successful_dynamic_outputs),
+            dynamic_mappings=dict(self._completed_dynamic_outputs),
             ready_outputs=self._step_outputs,
             step_output_versions=self._plan.known_state.step_output_versions,
             parent_state=self._plan.known_state.parent_state,
@@ -513,13 +517,28 @@ class ActiveExecution:
 
     def _prep_for_dynamic_outputs(self, step: ExecutionStep):
         dyn_outputs = [step_out for step_out in step.step_outputs if step_out.is_dynamic]
-
         if dyn_outputs:
             self._gathering_dynamic_outputs[step.key] = {out.name: [] for out in dyn_outputs}
 
+    def _skip_for_dynamic_outputs(self, step: ExecutionStep):
+        dyn_outputs = [step_out for step_out in step.step_outputs if step_out.is_dynamic]
+        if dyn_outputs:
+            # place None to indicate the dynamic output was skipped, different than having 0 entries
+            self._gathering_dynamic_outputs[step.key] = {out.name: None for out in dyn_outputs}
+
     def _resolve_any_dynamic_outputs(self, step_key: str) -> None:
         if step_key in self._gathering_dynamic_outputs:
-            self._successful_dynamic_outputs[step_key] = self._gathering_dynamic_outputs[step_key]
+            step = self.get_step_by_key(step_key)
+            completed_mappings: Dict[str, Optional[Sequence[str]]] = {}
+            for output_name, mappings in self._gathering_dynamic_outputs[step_key].items():
+                # if no dynamic outputs were returned and the output was marked is_required=False
+                # set to None to indicate a skip should occur
+                if not mappings and not step.step_output_dict[output_name].is_required:
+                    completed_mappings[output_name] = None
+                else:
+                    completed_mappings[output_name] = mappings
+
+            self._completed_dynamic_outputs[step_key] = completed_mappings
             self._new_dynamic_mappings = True
 
     def rebuild_from_events(
