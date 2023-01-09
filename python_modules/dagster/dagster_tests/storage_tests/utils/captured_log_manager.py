@@ -45,7 +45,8 @@ class TestCapturedLogManager:
         should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
     )
     def test_capture(self, captured_log_manager):
-        log_key = ["foo"]
+        now = pendulum.now("UTC")
+        log_key = ["arbitrary", "log", "key", now.strftime("%Y_%m_%d__%H_%M_%S")]
 
         with captured_log_manager.capture_logs(log_key) as context:
             print("HELLO WORLD")  # pylint: disable=print-call
@@ -107,7 +108,7 @@ class TestCapturedLogManager:
             pytest.skip("does not support streaming")
 
         now = pendulum.now("UTC")
-        log_key = ["arbitrary", "log", "key", now.strftime("%Y_%m_%d__%H_%M_%S")]
+        log_key = ["streaming", "log", "key", now.strftime("%Y_%m_%d__%H_%M_%S")]
         with write_manager.capture_logs(log_key):
             print("hello stdout")  # pylint: disable=print-call
             print("hello stderr", file=sys.stderr)  # pylint: disable=print-call
@@ -129,6 +130,30 @@ class TestCapturedLogManager:
             assert not read_manager.cloud_storage_has_logs(log_key, ComputeIOType.STDOUT)
             assert read_manager.cloud_storage_has_logs(log_key, ComputeIOType.STDERR, partial=True)
             assert read_manager.cloud_storage_has_logs(log_key, ComputeIOType.STDERR, partial=True)
+
+    @pytest.mark.skipif(
+        should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
+    )
+    def test_complete_checks(self, write_manager, read_manager):
+        from dagster._core.storage.cloud_storage_compute_log_manager import (
+            CloudStorageComputeLogManager,
+        )
+
+        if not isinstance(write_manager, CloudStorageComputeLogManager) or not isinstance(
+            read_manager, CloudStorageComputeLogManager
+        ):
+            pytest.skip("unnecessary check since write/read manager should have the same behavior")
+
+        now = pendulum.now("UTC")
+        log_key = ["complete", "test", "log", "key", now.strftime("%Y_%m_%d__%H_%M_%S")]
+        with write_manager.capture_logs(log_key):
+            print("hello stdout")  # pylint: disable=print-call
+            print("hello stderr", file=sys.stderr)  # pylint: disable=print-call
+            assert not write_manager.is_capture_complete(log_key)
+            assert not read_manager.is_capture_complete(log_key)
+
+        assert write_manager.is_capture_complete(log_key)
+        assert read_manager.is_capture_complete(log_key)
 
     def test_log_stream(self, captured_log_manager):
         log_key = ["some", "log", "key"]
