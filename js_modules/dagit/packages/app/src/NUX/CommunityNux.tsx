@@ -20,12 +20,14 @@ export const CommunityNux = () => {
   );
 };
 
+const TIMEOUT = 5000;
+
 const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
   const [shouldShowNux, setShouldShowNux] = React.useState(false);
   React.useEffect(() => {
     const timeout = setTimeout(() => {
       setShouldShowNux(true);
-    }, 0); // wait 5 seconds before showing Nux
+    }, TIMEOUT); // wait 5 seconds before showing Nux
     return () => {
       clearTimeout(timeout);
     };
@@ -150,7 +152,6 @@ const useCommuniyNuxIframe = ({width, height}: Props) => {
         ref={iframeRef}
         onLoad={() => {
           setLoaded(true);
-          console.log('loaded', iframeRef.current);
         }}
       />
     ),
