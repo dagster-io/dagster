@@ -7,7 +7,7 @@ import {
   applyCreateSession,
   useExecutionSessionStorage,
 } from '../app/ExecutionSessionStorage';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {graphql} from '../graphql';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
@@ -20,7 +20,7 @@ import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
 
 export const LaunchpadSetupFromRunRoot: React.FC<{repoAddress: RepoAddress}> = (props) => {
   const {repoAddress} = props;
-  const {canLaunchPipelineExecution} = usePermissions();
+  const {canLaunchPipelineExecution} = usePermissionsForLocation(repoAddress.location);
   const {repoPath, pipelinePath, runId} = useParams<{
     repoPath: string;
     pipelinePath: string;

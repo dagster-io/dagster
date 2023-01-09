@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -16,7 +16,7 @@ export const RepositoryLink: React.FC<{
   showRefresh?: boolean;
 }> = ({repoAddress, showIcon = false, showRefresh = true}) => {
   const {location} = repoAddress;
-  const {canReloadRepositoryLocation} = usePermissions();
+  const {canReloadRepositoryLocation} = usePermissionsForLocation(repoAddress.location);
   const repoString = repoAddressAsHumanString(repoAddress);
 
   return (

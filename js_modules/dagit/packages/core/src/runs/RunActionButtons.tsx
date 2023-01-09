@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {RunFragmentFragment} from '../graphql/graphql';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
 import {buildRepoAddress, buildRepoPathForHuman} from '../workspace/buildRepoAddress';
@@ -106,7 +106,7 @@ export const canRunFromFailure = (run: RunFragmentFragment) =>
 export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const {metadata, graph, onLaunch, run} = props;
   const artifactsPersisted = run?.executionPlan?.artifactsPersisted;
-  const {canLaunchPipelineReexecution} = usePermissions();
+  const {canLaunchPipelineReexecution} = usePermissionsDEPRECATED();
   const pipelineError = usePipelineAvailabilityErrorForRun(run);
 
   const selection = stepSelectionWithState(props.selection, metadata);

@@ -16,7 +16,7 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
@@ -95,7 +95,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 }) => {
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
 
-  const {canLaunchPartitionBackfill} = usePermissions();
+  const {canLaunchPartitionBackfill} = usePermissionsForLocation(repoAddress.location);
   const [launching, setLaunching] = React.useState(false);
   const [previewCount, setPreviewCount] = React.useState(0);
   const morePreviewsCount = partitionedAssets.length - previewCount;

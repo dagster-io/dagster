@@ -20,7 +20,7 @@ import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {graphql} from '../graphql';
 import {RunDetailsFragmentFragment, RunFragmentFragment, RunStatus} from '../graphql/graphql';
@@ -134,7 +134,7 @@ export const RunConfigDialog: React.FC<{run: RunFragmentFragment; isJob: boolean
 
   const {rootServerURI} = React.useContext(AppContext);
   const {refetch} = React.useContext(RunsQueryRefetchContext);
-  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
+  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissionsDEPRECATED();
 
   const copy = useCopyToClipboard();
   const history = useHistory();

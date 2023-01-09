@@ -17,7 +17,7 @@ import {useHistory} from 'react-router-dom';
 
 import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {graphql} from '../graphql';
 import {ReexecutionStrategy, RunTableRunFragmentFragment} from '../graphql/graphql';
@@ -50,7 +50,7 @@ export const RunActionsMenu: React.FC<{
     canTerminatePipelineExecution,
     canDeletePipelineRun,
     canLaunchPipelineReexecution,
-  } = usePermissions();
+  } = usePermissionsDEPRECATED();
   const history = useHistory();
 
   const copyConfig = useCopyToClipboard();
@@ -246,7 +246,7 @@ export const RunBulkActionsMenu: React.FC<{
     canTerminatePipelineExecution,
     canDeletePipelineRun,
     canLaunchPipelineReexecution,
-  } = usePermissions();
+  } = usePermissionsDEPRECATED();
   const [visibleDialog, setVisibleDialog] = React.useState<
     'none' | 'terminate' | 'delete' | 'reexecute-from-failure' | 'reexecute'
   >('none');

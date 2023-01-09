@@ -2,7 +2,7 @@ import {useMutation} from '@apollo/client';
 import {Checkbox, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {graphql} from '../graphql';
 import {InstigationStatus, ScheduleSwitchFragmentFragment} from '../graphql/graphql';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -25,7 +25,9 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
   const {name, scheduleState} = schedule;
   const {status, id, selectorId} = scheduleState;
 
-  const {canStartSchedule, canStopRunningSchedule} = usePermissions();
+  const {canStartSchedule, canStopRunningSchedule} = usePermissionsForLocation(
+    repoAddress.location,
+  );
 
   const [startSchedule, {loading: toggleOnInFlight}] = useMutation(START_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,

@@ -4,7 +4,7 @@ import * as React from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {useTrackPageView} from '../app/analytics';
 import {graphql} from '../graphql';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
@@ -58,7 +58,7 @@ export const AssetLaunchpad: React.FC<{
 export const JobLaunchpad: React.FC<{repoAddress: RepoAddress}> = (props) => {
   const {repoAddress} = props;
   const {pipelinePath, repoPath} = useParams<{repoPath: string; pipelinePath: string}>();
-  const {canLaunchPipelineExecution} = usePermissions();
+  const {canLaunchPipelineExecution} = usePermissionsForLocation(repoAddress.location);
 
   if (!canLaunchPipelineExecution.enabled) {
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;

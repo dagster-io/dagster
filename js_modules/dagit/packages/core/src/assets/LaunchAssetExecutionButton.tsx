@@ -7,7 +7,7 @@ import React from 'react';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
@@ -122,7 +122,7 @@ export const LaunchAssetExecutionButton: React.FC<{
   intent?: 'primary' | 'none';
   preferredJobName?: string;
 }> = ({scope, liveDataForStale, preferredJobName, intent = 'primary'}) => {
-  const {canLaunchPipelineExecution} = usePermissions();
+  const {canLaunchPipelineExecution} = usePermissionsDEPRECATED();
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
 

@@ -3,7 +3,7 @@ import {Alert, Box, Checkbox, Colors, Group, Table, Subheading, Tooltip} from '@
 import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {
   InstigationStateFragmentFragment,
   InstigationStatus,
@@ -124,7 +124,7 @@ const UnloadableScheduleInfo = () => (
 
 const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragmentFragment}) => {
   const {id, selectorId, name, status, ticks} = sensorState;
-  const {canStopSensor} = usePermissions();
+  const {canStopSensor} = usePermissionsDEPRECATED();
 
   const [stopSensor, {loading: toggleOffInFlight}] = useMutation(STOP_SENSOR_MUTATION, {
     onCompleted: displaySensorMutationErrors,
@@ -191,7 +191,7 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragmentFra
 const ScheduleStateRow: React.FC<{
   scheduleState: InstigationStateFragmentFragment;
 }> = ({scheduleState}) => {
-  const {canStopRunningSchedule} = usePermissions();
+  const {canStopRunningSchedule} = usePermissionsDEPRECATED();
   const [stopSchedule, {loading: toggleOffInFlight}] = useMutation(STOP_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,
   });

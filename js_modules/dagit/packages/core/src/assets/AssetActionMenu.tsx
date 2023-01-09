@@ -1,7 +1,7 @@
 import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {AssetTableFragmentFragment} from '../graphql/graphql';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
@@ -18,7 +18,9 @@ interface Props {
 
 export const AssetActionMenu: React.FC<Props> = (props) => {
   const {repoAddress, asset, onWipe} = props;
-  const {canWipeAssets, canLaunchPipelineExecution} = usePermissions();
+  const {canWipeAssets, canLaunchPipelineExecution} = usePermissionsForLocation(
+    repoAddress?.location,
+  );
   const {path} = asset.key;
 
   const {onClick, loading, launchpadElement} = useMaterializationAction();

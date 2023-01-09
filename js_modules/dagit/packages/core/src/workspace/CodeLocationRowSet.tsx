@@ -12,7 +12,7 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {WorkspaceDisplayMetadataFragment} from '../graphql/graphql';
 import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
 import {
@@ -202,7 +202,7 @@ const ReloadButton: React.FC<{
   location: string;
 }> = (props) => {
   const {location} = props;
-  const {canReloadRepositoryLocation} = usePermissions();
+  const {canReloadRepositoryLocation} = usePermissionsForLocation(location);
 
   if (!canReloadRepositoryLocation.enabled) {
     return (
