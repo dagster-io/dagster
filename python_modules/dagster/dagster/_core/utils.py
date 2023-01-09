@@ -69,13 +69,9 @@ def coerce_valid_log_level(log_level: Union[str, int]) -> int:
 
 
 def toposort(data: Mapping[T, Iterable[T]]) -> List[List[T]]:
-    try:
-        # Workaround a bug in older versions of toposort that choke on frozenset
-        data = {k: set(v) if isinstance(v, frozenset) else v for k, v in data.items()}
-        return [sorted(list(level)) for level in _toposort(data)]  # type: ignore  # T should implement comparison
-    except Exception as e:
-        print(e)
-        raise e
+    # Workaround a bug in older versions of toposort that choke on frozenset
+    data = {k: set(v) if isinstance(v, frozenset) else v for k, v in data.items()}
+    return [sorted(list(level)) for level in _toposort(data)]  # type: ignore  # T should implement comparison
 
 
 def toposort_flatten(data: Mapping[T, Iterable[T]]) -> List[T]:
