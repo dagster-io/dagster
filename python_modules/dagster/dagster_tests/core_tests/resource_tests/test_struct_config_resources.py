@@ -418,8 +418,6 @@ def test_nested_resources():
 
 
 def test_nested_resources_multiuse():
-    out_txt = []
-
     class AWSCredentialsResource(Resource):
         username: str
         password: str
@@ -460,8 +458,6 @@ def test_nested_resources_multiuse():
 
 
 def test_nested_resources_runtime_config():
-    out_txt = []
-
     class AWSCredentialsResource(Resource):
         username: str
         password: str
