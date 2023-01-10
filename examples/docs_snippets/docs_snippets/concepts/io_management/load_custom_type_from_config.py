@@ -3,7 +3,6 @@ from typing import Dict, Union
 
 from dagster import (
     DagsterTypeLoaderContext,
-    In,
     dagster_type_loader,
     job,
     op,
@@ -32,8 +31,8 @@ class Apple:
         self.cultivar = cultivar
 
 
-@op(ins={"input_apple": In(Apple)})
-def my_op(context, input_apple):
+@op
+def my_op(context, input_apple: Apple):
     context.log.info(f"input apple diameter: {input_apple.diameter}")
 
 
