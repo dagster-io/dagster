@@ -1,7 +1,9 @@
 import datetime
 from collections import defaultdict
+from typing import List, NamedTuple, Optional
 
 import mock
+import pendulum
 import pytest
 from dagster import (
     AssetKey,
@@ -16,6 +18,10 @@ from dagster import (
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_layer import build_asset_selection_job
+from dagster._core.definitions.materialize import materialize_to_memory
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.event_api import EventRecordsFilter
+from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
@@ -93,7 +99,7 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
         ),
     ],
 )
-def test_caching_instance_queryer(
+def test_calculate_data_time_unpartitioned(
     ignore_asset_tags, relative_to, runs_to_expected_data_times_index
 ):
     r"""
@@ -136,16 +142,6 @@ def test_caching_instance_queryer(
     all_assets = [a, bcd, e, f]
 
     asset_graph = AssetGraph.from_assets(all_assets)
-
-    @repository
-    def my_repo():
-        return [all_assets]
-
-    def _get_root_keys(key):
-        upstream_keys = asset_graph.get_parents(key)
-        if not upstream_keys:
-            return {key}
-        return set().union(*(_get_root_keys(upstream_key) for upstream_key in upstream_keys))
 
     with DagsterInstance.ephemeral() as instance:
         # mapping from asset key to a mapping of materialization timestamp to run index
@@ -210,3 +206,121 @@ def test_caching_instance_queryer(
                         AssetKey(k): materialization_times_index[AssetKey(k)][v]
                         for k, v in expected_data_times.items()
                     }
+
+
+@asset(partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"))
+def partitioned_asset():
+    pass
+
+
+@asset(non_argument_deps={AssetKey("partitioned_asset")})
+def unpartitioned_asset():
+    pass
+
+
+@repository
+def partition_repo():
+    return [partitioned_asset, unpartitioned_asset]
+
+
+def _materialize_partitions(instance, partitions):
+    for partition in partitions:
+        result = materialize_to_memory(
+            assets=[partitioned_asset],
+            instance=instance,
+            partition_key=partition,
+        )
+        assert result.success
+
+
+def _get_record(instance):
+    result = materialize_to_memory(
+        assets=[unpartitioned_asset, *partitioned_asset.to_source_assets()],
+        instance=instance,
+    )
+    assert result.success
+    return list(
+        instance.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=AssetKey("unpartitioned_asset"),
+            ),
+            ascending=False,
+            limit=1,
+        )
+    )[0]
+
+
+class PartitionedDataTimeScenario(NamedTuple):
+    before_partitions: List[str]
+    after_partitions: List[str]
+    expected_time: Optional[datetime.datetime]
+
+
+scenarios = {
+    "empty": PartitionedDataTimeScenario(
+        before_partitions=[],
+        after_partitions=[],
+        expected_time=None,
+    ),
+    "first_missing": PartitionedDataTimeScenario(
+        before_partitions=["2023-01-02", "2023-01-03"],
+        after_partitions=[],
+        expected_time=None,
+    ),
+    "some_filled": PartitionedDataTimeScenario(
+        before_partitions=["2023-01-01", "2023-01-02", "2023-01-03"],
+        after_partitions=[],
+        expected_time=datetime.datetime(2023, 1, 4, tzinfo=datetime.timezone.utc),
+    ),
+    "middle_missing": PartitionedDataTimeScenario(
+        # 2023-01-04 is missing
+        before_partitions=["2023-01-01", "2023-01-02", "2023-01-03", "2023-01-05", "2023-01-06"],
+        after_partitions=[],
+        expected_time=datetime.datetime(2023, 1, 4, tzinfo=datetime.timezone.utc),
+    ),
+    "new_duplicate_partitions": PartitionedDataTimeScenario(
+        before_partitions=["2023-01-01", "2023-01-02", "2023-01-03", "2023-01-04"],
+        after_partitions=["2023-01-01", "2023-01-02", "2023-01-03", "2023-01-03"],
+        expected_time=datetime.datetime(2023, 1, 5, tzinfo=datetime.timezone.utc),
+    ),
+    "new_duplicate_partitions2": PartitionedDataTimeScenario(
+        before_partitions=["2023-01-01", "2023-01-02"],
+        after_partitions=["2023-01-01", "2023-01-01", "2023-01-01", "2023-01-01"],
+        expected_time=datetime.datetime(2023, 1, 3, tzinfo=datetime.timezone.utc),
+    ),
+    "net_new_partitions": PartitionedDataTimeScenario(
+        before_partitions=["2023-01-01", "2023-01-02", "2023-01-03"],
+        after_partitions=["2023-01-04", "2023-01-05", "2023-01-06"],
+        expected_time=datetime.datetime(2023, 1, 4, tzinfo=datetime.timezone.utc),
+    ),
+    "net_new_partitions2": PartitionedDataTimeScenario(
+        before_partitions=["2023-01-01", "2023-01-02", "2023-01-03", "2023-01-04"],
+        after_partitions=[
+            "2023-01-01",
+            "2023-01-01",
+            "2023-01-01",
+            "2023-01-06",
+            "2023-01-06",
+            "2023-01-06",
+        ],
+        expected_time=datetime.datetime(2023, 1, 5, tzinfo=datetime.timezone.utc),
+    ),
+    "net_new_partitions_with_middle_missing": PartitionedDataTimeScenario(
+        before_partitions=["2023-01-01", "2023-01-02", "2023-01-03", "2023-01-05", "2023-01-06"],
+        after_partitions=["2023-01-04", "2023-01-04"],
+        expected_time=datetime.datetime(2023, 1, 4, tzinfo=datetime.timezone.utc),
+    ),
+}
+
+
+@pytest.mark.parametrize("scenario", list(scenarios.values()), ids=list(scenarios.keys()))
+def test_partitioned_data_time(scenario):
+    with DagsterInstance.ephemeral() as instance, pendulum.test(create_pendulum_time(2023, 1, 7)):
+        _materialize_partitions(instance, scenario.before_partitions)
+        record = _get_record(instance=instance)
+        _materialize_partitions(instance, scenario.after_partitions)
+        data_time_queryer = CachingInstanceQueryer(instance)
+        assert data_time_queryer.get_used_data_times_for_record(
+            asset_graph=partition_repo.asset_graph, record=record
+        ) == {AssetKey("partitioned_asset"): scenario.expected_time}

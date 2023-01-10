@@ -22,6 +22,7 @@ from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._utils.backcompat import (
     ExperimentalWarning,
@@ -187,9 +188,16 @@ class AssetsDefinition(ResourceAddable):
 
         for key, freshness_policy in (freshness_policies_by_key or {}).items():
             check.param_invariant(
-                not (freshness_policy and self._partitions_def),
+                not (
+                    freshness_policy
+                    and self._partitions_def is not None
+                    and not isinstance(self._partitions_def, TimeWindowPartitionsDefinition)
+                ),
                 "freshness_policies_by_key",
-                "FreshnessPolicies are currently unsupported for partitioned assets.",
+                (
+                    "FreshnessPolicies are currently unsupported for assets with partitions of type"
+                    f" {type(self._partitions_def)}."
+                ),
             )
 
         self._freshness_policies_by_key = check.opt_mapping_param(
