@@ -44,7 +44,7 @@ class EventLogCursorType(Enum):
 
 
 class EventLogCursor(NamedTuple):
-    """Representation of an event record cursor, keeping track of the log query state"""
+    """Representation of an event record cursor, keeping track of the log query state."""
 
     cursor_type: EventLogCursorType
     value: int
@@ -208,7 +208,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def delete_events(self, run_id: str):
-        """Remove events for a given run id"""
+        """Remove events for a given run id."""
 
     @abstractmethod
     def upgrade(self):
@@ -245,7 +245,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         """Explicit lifecycle management."""
 
     def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
-        """Allows for optimizing database connection / use in the context of a long lived dagit process
+        """Allows for optimizing database connection / use in the context of a long lived dagit process.
         """
 
     @abstractmethod
@@ -266,11 +266,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         dagster_event_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
     ) -> Mapping[int, EventLogEntry]:
-        """Get event records across all runs. Only supported for non sharded sql storage"""
+        """Get event records across all runs. Only supported for non sharded sql storage."""
         raise NotImplementedError()
 
     def get_maximum_record_id(self) -> Optional[int]:
-        """Get the current greatest record id in the event log. Only supported for non sharded sql storage
+        """Get the current greatest record id in the event log. Only supported for non sharded sql storage.
         """
         raise NotImplementedError()
 
@@ -353,7 +353,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def wipe_asset(self, asset_key: AssetKey):
-        """Remove asset index history from event log for given asset_key"""
+        """Remove asset index history from event log for given asset_key."""
 
     @abstractmethod
     def get_materialization_count_by_partition(
@@ -366,5 +366,5 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
 
     @property
     def is_run_sharded(self):
-        """Indicates that the EventLogStoarge is sharded"""
+        """Indicates that the EventLogStoarge is sharded."""
         return False

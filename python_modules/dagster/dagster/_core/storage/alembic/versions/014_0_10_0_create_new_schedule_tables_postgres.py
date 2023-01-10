@@ -1,4 +1,4 @@
-"""0.10.0 create new schedule tables
+"""0.10.0 create new schedule tables.
 
 Revision ID: 493871843165
 Revises: 942138e33bf9

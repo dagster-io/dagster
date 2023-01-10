@@ -317,7 +317,7 @@ def all_daemons_healthy(
     heartbeat_tolerance_seconds=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
 ):
     """
-    True if all required daemons have had a recent heartbeat with no errors
+    True if all required daemons have had a recent heartbeat with no errors.
     """
     statuses_by_type = get_daemon_statuses(
         instance,

@@ -1,4 +1,4 @@
-"""add run status index
+"""add run status index.
 
 Revision ID: 521d4caca7ad
 Revises: 3e71cf573ba6

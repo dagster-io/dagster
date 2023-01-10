@@ -1,4 +1,4 @@
-"""add_asset_event_tags_table
+"""add_asset_event_tags_table.
 
 Revision ID: 958a9495162d
 Revises: a00dd8d936a1

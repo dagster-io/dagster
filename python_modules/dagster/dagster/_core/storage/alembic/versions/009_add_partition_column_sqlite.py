@@ -1,4 +1,4 @@
-"""add partition column
+"""add partition column.
 
 Revision ID: 9483999bad92
 Revises: 3e0770016702

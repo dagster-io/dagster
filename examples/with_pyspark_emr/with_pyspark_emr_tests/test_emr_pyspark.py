@@ -1,4 +1,4 @@
-"""Launching in EMR is prohibitively time consuming, so we just verify that the plan compiles"""
+"""Launching in EMR is prohibitively time consuming, so we just verify that the plan compiles."""
 import os
 
 from dagster._core.execution.api import create_execution_plan

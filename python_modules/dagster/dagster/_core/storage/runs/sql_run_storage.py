@@ -85,7 +85,7 @@ class SnapshotType(Enum):
 
 
 class SqlRunStorage(RunStorage):  # pylint: disable=no-init
-    """Base class for SQL based run storages"""
+    """Base class for SQL based run storages."""
 
     @abstractmethod
     def connect(self):
@@ -219,7 +219,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         order_by: Optional[str],
         ascending: Optional[bool],
     ):
-        """Helper function to deal with cursor/limit pagination args"""
+        """Helper function to deal with cursor/limit pagination args."""
         if cursor:
             cursor_query = db.select([RunsTable.c.id]).where(RunsTable.c.run_id == cursor)
             query = query.where(RunsTable.c.id < cursor_query)

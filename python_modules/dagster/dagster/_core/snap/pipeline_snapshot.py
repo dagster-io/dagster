@@ -105,7 +105,7 @@ def _pipeline_snapshot_from_storage(
     v4:
         - add kwargs so that if future versions add new args, this version of deserialization will
         be able to ignore them. previously, new args would be passed to old versions and cause
-        deserialization errors
+        deserialization errors.
     """
     if graph_def_name is None:
         graph_def_name = name

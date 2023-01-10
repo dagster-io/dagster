@@ -34,7 +34,7 @@ from .system import StepExecutionContext
 
 
 class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
-    """Base class for solid context implemented by SolidExecutionContext and DagstermillExecutionContext
+    """Base class for solid context implemented by SolidExecutionContext and DagstermillExecutionContext.
     """
 
     @abstractmethod
@@ -123,18 +123,18 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def pipeline_run(self) -> DagsterRun:
-        """PipelineRun: The current pipeline run"""
+        """PipelineRun: The current pipeline run."""
         return self._step_execution_context.pipeline_run
 
     @property
     def run(self) -> DagsterRun:
-        """DagsterRun: The current run"""
+        """DagsterRun: The current run."""
         return cast(DagsterRun, self.pipeline_run)
 
     @public  # type: ignore
     @property
     def instance(self) -> DagsterInstance:
-        """DagsterInstance: The current Dagster instance"""
+        """DagsterInstance: The current Dagster instance."""
         return self._step_execution_context.instance
 
     @public  # type: ignore
@@ -271,7 +271,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public  # type: ignore
     @property
     def has_partition_key(self) -> bool:
-        """Whether the current run is a partitioned run"""
+        """Whether the current run is a partitioned run."""
         return self._step_execution_context.has_partition_key
 
     @public  # type: ignore

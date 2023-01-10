@@ -1,5 +1,5 @@
 """As an open source project, we collect usage statistics to inform development priorities.
-For more information, check out the docs at https://docs.dagster.io/install#telemetry'
+For more information, check out the docs at https://docs.dagster.io/install#telemetry'.
 
 To see the logs we send, inspect $DAGSTER_HOME/logs/ if $DAGSTER_HOME is set or ~/.dagster/logs/
 
@@ -214,7 +214,7 @@ def _dagster_home_if_set():
 def get_or_create_dir_from_dagster_home(target_dir):
     """
     If $DAGSTER_HOME is set, return $DAGSTER_HOME/<target_dir>/
-    Otherwise, return ~/.dagster/<target_dir>/
+    Otherwise, return ~/.dagster/<target_dir>/.
 
     The 'logs' directory is used to cache logs before upload
 

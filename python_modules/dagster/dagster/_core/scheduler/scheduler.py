@@ -19,7 +19,7 @@ from dagster._utils import mkdir_p
 
 
 class DagsterSchedulerError(DagsterError):
-    """Base class for all Dagster Scheduler errors"""
+    """Base class for all Dagster Scheduler errors."""
 
 
 class DagsterScheduleDoesNotExist(DagsterSchedulerError):
@@ -64,7 +64,7 @@ class Scheduler(abc.ABC):
         self, instance: DagsterInstance, external_schedule: ExternalSchedule
     ) -> InstigatorState:
         """
-        Updates the status of the given schedule to `InstigatorStatus.RUNNING` in schedule storage,
+        Updates the status of the given schedule to `InstigatorStatus.RUNNING` in schedule storage,.
 
         This should not be overridden by subclasses.
 
@@ -111,7 +111,7 @@ class Scheduler(abc.ABC):
         external_schedule: Optional[ExternalSchedule],
     ) -> InstigatorState:
         """
-        Updates the status of the given schedule to `InstigatorStatus.STOPPED` in schedule storage,
+        Updates the status of the given schedule to `InstigatorStatus.STOPPED` in schedule storage,.
 
         This should not be overridden by subclasses.
 
@@ -154,11 +154,11 @@ class Scheduler(abc.ABC):
 
     @abc.abstractmethod
     def debug_info(self):
-        """Returns debug information about the scheduler"""
+        """Returns debug information about the scheduler."""
 
     @abc.abstractmethod
     def get_logs_path(self, instance, schedule_origin_id):
-        """Get path to store logs for schedule
+        """Get path to store logs for schedule.
 
         Args:
             schedule_origin_id (string): The id of the schedule target to retrieve the log path for

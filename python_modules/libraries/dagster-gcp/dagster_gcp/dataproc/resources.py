@@ -123,7 +123,7 @@ class DataprocResource:
     def _iter_and_sleep_until_ready(
         callable_fn, max_wait_time_sec=TWENTY_MINUTES, iter_time=DEFAULT_ITER_TIME_SEC
     ):
-        """Iterates and sleeps until callable_fn returns true"""
+        """Iterates and sleeps until callable_fn returns true."""
         # Wait for cluster ready state
         ready, curr_iter = False, 0
         max_iter = max_wait_time_sec / iter_time

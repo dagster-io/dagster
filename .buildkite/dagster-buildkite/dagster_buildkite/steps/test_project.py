@@ -25,7 +25,7 @@ build_test_project_for: Set[AvailablePythonVersion] = set()
 
 def build_test_project_steps() -> List[GroupStep]:
     """This set of tasks builds and pushes Docker images, which are used by the dagster-airflow and
-    the dagster-k8s tests
+    the dagster-k8s tests.
     """
     steps: List[BuildkiteLeafStep] = []
 

@@ -150,7 +150,7 @@ class Constraint:
 
 class ConstraintWithMetadata:
     """
-    This class defines a base constraint over pandas DFs with organized metadata
+    This class defines a base constraint over pandas DFs with organized metadata.
 
     Args:
         description (str): description of the constraint
@@ -215,7 +215,7 @@ class ConstraintWithMetadata:
 
 class MultiConstraintWithMetadata(ConstraintWithMetadata):
     """
-    Use this class if you have multiple constraints to check over the entire dataframe
+    Use this class if you have multiple constraints to check over the entire dataframe.
 
     Args:
         description (str): description of the constraint
@@ -458,8 +458,9 @@ class ColumnAggregateConstraintWithMetadata(ConstraintWithMetadata):
 
 class ColumnConstraintWithMetadata(ConstraintWithMetadata):
     """
-    This class is useful for constructing single constraints that
-    you want to apply to multiple columns of your dataframe
+    This class is useful for constructing single constraints that you want to apply to multiple
+    columns of your dataframe.
+
     The main difference from the base class in terms of construction is that now, your validation_fns should operate on
     individual values.
 
@@ -514,8 +515,8 @@ class MultiColumnConstraintWithMetadata(ColumnConstraintWithMetadata):
     """
     This class is useful for constructing more complicated relationships between columns
     and expectations -- i.e. you want some validations on column A, others on column B, etc.
-    This lets you package up the metadata neatly,
-    and also allows for cases like 'fail if any one of these constraints fails but still run all of them'
+    This lets you package up the metadata neatly, and also allows for cases like 'fail if any one of
+    these constraints fails but still run all of them'.
 
     Args:
         description (str): description of the overall set of validations
@@ -633,7 +634,8 @@ class MultiAggregateConstraintWithMetadata(MultiColumnConstraintWithMetadata):
 
 def non_null_validation(x):
     """
-    validates that a particular value in a column is not null
+    Validates that a particular value in a column is not null.
+
     Usage:
         pass this as a column validator to
         :py:class:'~dagster_pandas.constraints.ColumnConstraintWithMetadata'
@@ -646,8 +648,9 @@ def non_null_validation(x):
 
 def all_unique_validator(column, ignore_missing_vals=False):
     """
-    validates that all values in an iterable are unique
-    Returns duplicated values as metadata
+    Validates that all values in an iterable are unique.
+
+    Returns duplicated values as metadata.
 
     Usage:
         As a validation function for a
@@ -684,14 +687,15 @@ def all_unique_validator(column, ignore_missing_vals=False):
 
 def nonnull(func):
     """
-    decorator for column validation functions to make them error on nulls
+    Decorator for column validation functions to make them error on nulls.
+
     Usage:
         pass decorated functions as column validators to
         :py:class:'~dagster_pandas.constraints.ColumnConstraintWithMetadata'
         or :py:class:'~dagster_pandas.constraints.MultiColumnConstraintWithMetadata'
     Args:
         func (Callable[[Any], Tuple[bool, dict[str, Union[dict,list, str, set]]]]]):
-            the column validator you want to error on nulls
+            the column validator you want to error on nulls.
     """
 
     @wraps(func)
@@ -707,11 +711,12 @@ def nonnull(func):
 
 def column_range_validation_factory(minim=None, maxim=None, ignore_missing_vals=False):
     """
-    factory for validators testing if column values are within a range
+    Factory for validators testing if column values are within a range.
+
     Args:
         minim(Optional[Comparable]): the low end of the range
         maxim(Optional[Comparable]): the high end of the range
-        ignore_missing_vals(Optional[bool]): whether to ignore nulls
+        ignore_missing_vals(Optional[bool]): whether to ignore nulls.
 
     Returns: a validation function for this constraint
     Usage:
@@ -769,10 +774,11 @@ def column_range_validation_factory(minim=None, maxim=None, ignore_missing_vals=
 
 def categorical_column_validator_factory(categories, ignore_missing_vals=False):
     """
-    factory for validators testing if all values are in some set
+    Factory for validators testing if all values are in some set.
+
     Args:
         categories(Union[Sequence, set]): the set of allowed values
-        ignore_missing_vals(Optional[bool]): whether to ignore nulls
+        ignore_missing_vals(Optional[bool]): whether to ignore nulls.
 
     Returns: a validation function for this constraint
 
@@ -823,7 +829,8 @@ def categorical_column_validator_factory(categories, ignore_missing_vals=False):
 
 def dtype_in_set_validation_factory(datatypes, ignore_missing_vals=False):
     """
-    factory for testing if the dtype of a val falls within some allowed set
+    Factory for testing if the dtype of a val falls within some allowed set.
+
     Args:
         datatypes(Union[set[type], type]): which datatype/datatypes are allowed
         ignore_missing_vals(Optional[bool]): whether to ignore nulls

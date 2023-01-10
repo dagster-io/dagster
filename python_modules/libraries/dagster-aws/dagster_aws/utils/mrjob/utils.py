@@ -42,12 +42,12 @@ _AWS_MAX_TRIES = 20  # this takes about a day before we run out of tries
 
 
 def _client_error_code(ex):
-    """Get the error code for the given ClientError"""
+    """Get the error code for the given ClientError."""
     return ex.response.get("Error", {}).get("Code", "")
 
 
 def _client_error_status(ex):
-    """Get the HTTP status for the given ClientError"""
+    """Get the HTTP status for the given ClientError."""
     resp = ex.response
     # sometimes status code is in ResponseMetadata, not Error
     return resp.get("Error", {}).get("HTTPStatusCode") or resp.get("ResponseMetadata", {}).get(

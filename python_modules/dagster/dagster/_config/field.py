@@ -361,7 +361,7 @@ class Field:
     @public  # type: ignore
     @property
     def default_provided(self) -> bool:
-        """Was a default value provided
+        """Was a default value provided.
 
         Returns:
             bool: Yes or no

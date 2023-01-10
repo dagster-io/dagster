@@ -19,7 +19,7 @@ class DagsterHook(BaseHook):
 
     @staticmethod
     def get_ui_field_behaviour() -> Mapping[str, Any]:
-        """Returns custom field behaviour"""
+        """Returns custom field behaviour."""
         return {
             "hidden_fields": ["port", "schema", "extra"],
             "relabeling": {

@@ -45,7 +45,7 @@ TDaemonGenerator = Generator[Union[None, SerializableErrorInfo], None, None]
 
 
 class DagsterSensorDaemonError(DagsterError):
-    """Error when running the SensorDaemon"""
+    """Error when running the SensorDaemon."""
 
 
 class SkippedSensorRun(
@@ -57,7 +57,7 @@ class SkippedSensorRun(
         ],
     )
 ):
-    """Placeholder for runs that are skipped during the run_key idempotence check"""
+    """Placeholder for runs that are skipped during the run_key idempotence check."""
 
 
 class SensorLaunchContext:

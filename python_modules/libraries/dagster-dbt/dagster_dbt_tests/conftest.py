@@ -98,7 +98,7 @@ def dbt_build(
 
 @pytest.fixture(scope="session")
 def dbt_python_sources(conn_string):
-    """Create sample users/events table sources"""
+    """Create sample users/events table sources."""
     conn = None
     try:
         conn = psycopg2.connect(conn_string)

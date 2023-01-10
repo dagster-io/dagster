@@ -833,7 +833,8 @@ def make_dagster_solid_from_airflow_task(
 
 def dagster_get_template_context(task_instance, task, execution_date):
     """
-    Modified from /airflow/models/taskinstance.py to not reference Airflow DB
+    Modified from /airflow/models/taskinstance.py to not reference Airflow DB.
+
     (1) Removes the following block, which queries DB, removes dagrun instances, recycles run_id
     if hasattr(task, 'dag'):
         if task.dag.params:

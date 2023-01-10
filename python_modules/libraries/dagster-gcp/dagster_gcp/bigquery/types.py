@@ -94,7 +94,7 @@ def _is_valid_dataset(config_value):
 
 def _is_valid_table(config_value):
     """Tables must be of form "project.dataset.table" or "dataset.table" with optional
-    date-partition suffix
+    date-partition suffix.
     """
     return re.match(
         r"^"

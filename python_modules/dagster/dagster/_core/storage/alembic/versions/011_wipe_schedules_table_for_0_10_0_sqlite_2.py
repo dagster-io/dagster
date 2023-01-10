@@ -1,4 +1,4 @@
-"""wipe schedules table for 0.10.0
+"""wipe schedules table for 0.10.0.
 
 Revision ID: 140198fdfe65
 Revises: b22f16781a7c
