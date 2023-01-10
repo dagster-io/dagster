@@ -301,7 +301,6 @@ def repository(
             @repository
             def complex_repository():
                 return ComplexRepositoryData('some_directory')
-
     """
     if definitions_fn is not None:
         check.invariant(description is None)

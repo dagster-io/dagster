@@ -207,7 +207,7 @@ def local_file_manager(init_context):
             def files_pipeline():
                 read_files(write_files())
 
-    Or to specify the file directory:
+        Or to specify the file directory:
 
         .. code-block:: python
 
