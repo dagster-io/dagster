@@ -6,9 +6,6 @@ import tempfile
 
 import pytest
 from botocore.exceptions import ClientError
-from dagster_aws.s3 import S3ComputeLogManager
-from dagster_tests.core_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
-
 from dagster import DagsterEventType, job, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher import DefaultRunLauncher
@@ -19,6 +16,8 @@ from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import environ
+from dagster_aws.s3 import S3ComputeLogManager
+from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"

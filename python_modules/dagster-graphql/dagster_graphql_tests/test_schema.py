@@ -87,9 +87,10 @@ def test_schema_types_have_descriptions(runner):
         for enum_value in graphql_type.get("enumValues", [])
         if not enum_value["description"]
     ]
-    assert (
-        not enum_violations
-    ), f"Descriptions must be included in the GraphQL enum values. Violating types: {enum_violations}."
+    assert not enum_violations, (
+        "Descriptions must be included in the GraphQL enum values. Violating types:"
+        f" {enum_violations}."
+    )
 
 
 @pytest.mark.parametrize("operation_type", ["queryType", "mutationType", "subscriptionType"])
@@ -115,15 +116,17 @@ def test_schema_operation_fields_have_descriptions(runner, operation_type):
     )
     operation_type_root = json.loads(result.output)["data"]["__schema"][operation_type]
 
-    assert operation_type_root[
-        "description"
-    ], f"Operation root '{operation_type_root['name']}' for '{operation_type}' must have a description."
+    assert operation_type_root["description"], (
+        f"Operation root '{operation_type_root['name']}' for '{operation_type}' must have a"
+        " description."
+    )
 
     violations = [
         operation_field_type["name"]
         for operation_field_type in operation_type_root["fields"]
         if not operation_field_type["description"]
     ]
-    assert (
-        not violations
-    ), f"Descriptions must be included in the GraphQL '{operation_type}' fields. Violating types: {violations}."
+    assert not violations, (
+        f"Descriptions must be included in the GraphQL '{operation_type}' fields. Violating types:"
+        f" {violations}."
+    )

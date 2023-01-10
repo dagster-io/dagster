@@ -1,21 +1,24 @@
+import os
+import tempfile
+
 import pytest
 import yaml
+from dagster._config import process_config, resolve_to_config_type
+from dagster._core.instance.config import retention_config_schema
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.run_coordinator import QueuedRunCoordinator
+from dagster._core.test_utils import environ
 from dagster_aws.s3.compute_log_manager import S3ComputeLogManager
 from dagster_azure.blob.compute_log_manager import AzureBlobComputeLogManager
 from dagster_gcp.gcs.compute_log_manager import GCSComputeLogManager
+from dagster_k8s import K8sRunLauncher
 from kubernetes.client import models
 from schema.charts.dagster.subschema.compute_log_manager import (
     AzureBlobComputeLogManager as AzureBlobComputeLogManagerModel,
-)
-from schema.charts.dagster.subschema.compute_log_manager import (
     ComputeLogManager,
     ComputeLogManagerConfig,
     ComputeLogManagerType,
-)
-from schema.charts.dagster.subschema.compute_log_manager import (
     GCSComputeLogManager as GCSComputeLogManagerModel,
-)
-from schema.charts.dagster.subschema.compute_log_manager import (
     S3ComputeLogManager as S3ComputeLogManagerModel,
 )
 from schema.charts.dagster.subschema.daemon import (
@@ -33,6 +36,7 @@ from schema.charts.dagster.subschema.retention import Retention, TickRetention, 
 from schema.charts.dagster.subschema.run_launcher import (
     CeleryK8sRunLauncherConfig,
     K8sRunLauncherConfig,
+    RunK8sConfig,
     RunLauncher,
     RunLauncherConfig,
     RunLauncherType,
@@ -40,9 +44,6 @@ from schema.charts.dagster.subschema.run_launcher import (
 from schema.charts.dagster.subschema.telemetry import Telemetry
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.utils.helm_template import HelmTemplate
-
-from dagster._core.instance.config import retention_config_schema
-from dagster._core.run_coordinator import QueuedRunCoordinator
 
 
 def to_camel_case(s: str) -> str:
@@ -171,7 +172,7 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
     assert run_launcher_config["config"]["volumes"] == volumes
     assert run_launcher_config["config"]["labels"] == labels
 
-    assert not "fail_pod_on_run_failure" in run_launcher_config["config"]
+    assert "fail_pod_on_run_failure" not in run_launcher_config["config"]
 
 
 def test_k8s_run_launcher_fail_pod_on_run_failure(template: HelmTemplate):
@@ -229,8 +230,24 @@ def test_k8s_run_launcher_resources(template: HelmTemplate):
     assert run_launcher_config["config"]["resources"] == resources
 
 
-def test_k8s_run_launcher_scheduler_name(template: HelmTemplate):
+def _check_valid_run_launcher_yaml(dagster_config):
+    with environ(
+        {
+            "DAGSTER_PG_PASSWORD": "hunter12",
+        }
+    ):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with open(os.path.join(temp_dir, "dagster.yaml"), "w", encoding="utf8") as fd:
+                yaml.dump(dagster_config, fd, default_flow_style=False)
+                run_launcher_data = InstanceRef.from_dir(temp_dir).run_launcher_data
+                process_result = process_config(
+                    resolve_to_config_type(K8sRunLauncher.config_type()),
+                    run_launcher_data.config_dict,
+                )
+                assert process_result.success, str(process_result.errors)
 
+
+def test_k8s_run_launcher_scheduler_name(template: HelmTemplate):
     helm_values = DagsterHelmValues.construct(
         runLauncher=RunLauncher.construct(
             type=RunLauncherType.K8S,
@@ -250,9 +267,96 @@ def test_k8s_run_launcher_scheduler_name(template: HelmTemplate):
     )
     configmaps = template.render(helm_values)
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    _check_valid_run_launcher_yaml(instance)
+
     run_launcher_config = instance["run_launcher"]
 
-    assert run_launcher_config["config"]["schedulerName"] == "my-scheduler"
+    assert run_launcher_config["config"]["scheduler_name"] == "my-scheduler"
+
+
+def test_k8s_run_launcher_security_context(template: HelmTemplate):
+    sacred_rites_of_debugging = {"capabilities": {"add": ["SYS_PTRACE"]}}
+    helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.K8S,
+            config=RunLauncherConfig.construct(
+                k8sRunLauncher=K8sRunLauncherConfig.construct(
+                    imagePullPolicy="Always",
+                    loadInclusterConfig=True,
+                    envConfigMaps=[],
+                    envSecrets=[],
+                    envVars=[],
+                    volumeMounts=[],
+                    volumes=[],
+                    securityContext=sacred_rites_of_debugging,
+                )
+            ),
+        )
+    )
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    _check_valid_run_launcher_yaml(instance)
+
+    run_launcher_config = instance["run_launcher"]
+
+    assert run_launcher_config["config"]["security_context"] == sacred_rites_of_debugging
+
+
+def test_k8s_run_launcher_raw_k8s_config(template: HelmTemplate):
+    container_config = {
+        "resources": {
+            "requests": {"cpu": "250m", "memory": "64Mi"},
+            "limits": {"cpu": "500m", "memory": "2560Mi"},
+        }
+    }
+
+    pod_template_spec_metadata = {"namespace": "my_pod_namespace"}
+
+    pod_spec_config = {"dns_policy": "value"}
+
+    job_metadata = {"namespace": "my_job_value"}
+
+    job_spec_config = {"backoff_limit": 120}
+
+    helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.K8S,
+            config=RunLauncherConfig.construct(
+                k8sRunLauncher=K8sRunLauncherConfig.construct(
+                    imagePullPolicy="Always",
+                    loadInclusterConfig=True,
+                    envConfigMaps=[],
+                    envSecrets=[],
+                    envVars=[],
+                    volumeMounts=[],
+                    volumes=[],
+                    runK8sConfig=RunK8sConfig(
+                        containerConfig=container_config,
+                        podSpecConfig=pod_spec_config,
+                        podTemplateSpecMetadata=pod_template_spec_metadata,
+                        jobMetadata=job_metadata,
+                        jobSpecConfig=job_spec_config,
+                    ),
+                )
+            ),
+        )
+    )
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    _check_valid_run_launcher_yaml(instance)
+
+    run_launcher_config = instance["run_launcher"]
+
+    assert run_launcher_config["config"]["run_k8s_config"] == {
+        "container_config": container_config,
+        "pod_spec_config": pod_spec_config,
+        "pod_template_spec_metadata": pod_template_spec_metadata,
+        "job_metadata": job_metadata,
+        "job_spec_config": job_spec_config,
+    }
 
 
 def test_celery_k8s_run_launcher_config(template: HelmTemplate):
@@ -330,7 +434,7 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
 
     assert run_launcher_config["config"]["service_account_name"] == "release-name-dagster"
 
-    assert not "fail_pod_on_run_failure" in run_launcher_config["config"]
+    assert "fail_pod_on_run_failure" not in run_launcher_config["config"]
 
     helm_values_with_image_pull_policy = DagsterHelmValues.construct(
         runLauncher=RunLauncher.construct(
@@ -380,6 +484,7 @@ def test_queued_run_coordinator_config(
 ):
     tag_concurrency_limits = [TagConcurrencyLimit(key="key", value="value", limit=10)]
     dequeue_interval_seconds = 50
+    dequeue_num_workers = 8
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(
             runCoordinator=RunCoordinator.construct(
@@ -390,6 +495,8 @@ def test_queued_run_coordinator_config(
                         maxConcurrentRuns=max_concurrent_runs,
                         tagConcurrencyLimits=tag_concurrency_limits,
                         dequeueIntervalSeconds=dequeue_interval_seconds,
+                        dequeueUseThreads=True,
+                        dequeueNumWorkers=dequeue_num_workers,
                     )
                 ),
             )
@@ -410,6 +517,9 @@ def test_queued_run_coordinator_config(
 
         assert run_coordinator_config["max_concurrent_runs"] == max_concurrent_runs
         assert run_coordinator_config["dequeue_interval_seconds"] == dequeue_interval_seconds
+
+        assert run_coordinator_config["dequeue_use_threads"]
+        assert run_coordinator_config["dequeue_num_workers"] == dequeue_num_workers
 
         assert len(run_coordinator_config["tag_concurrency_limits"]) == len(tag_concurrency_limits)
         assert run_coordinator_config["tag_concurrency_limits"] == [
@@ -552,6 +662,8 @@ def test_s3_compute_log_manager(template: HelmTemplate):
     endpoint_url = "endpoint.com"
     skip_empty_files = True
     upload_interval = 30
+    upload_extra_args = {"ACL": "public-read"}
+
     helm_values = DagsterHelmValues.construct(
         computeLogManager=ComputeLogManager.construct(
             type=ComputeLogManagerType.S3,
@@ -566,6 +678,7 @@ def test_s3_compute_log_manager(template: HelmTemplate):
                     endpointUrl=endpoint_url,
                     skipEmptyFiles=skip_empty_files,
                     uploadInterval=upload_interval,
+                    uploadExtraArgs=upload_extra_args,
                 )
             ),
         )
@@ -587,6 +700,7 @@ def test_s3_compute_log_manager(template: HelmTemplate):
         "endpoint_url": endpoint_url,
         "skip_empty_files": skip_empty_files,
         "upload_interval": upload_interval,
+        "upload_extra_args": upload_extra_args,
     }
 
     # Test all config fields in configurable class
@@ -697,7 +811,16 @@ def test_compute_log_manager_has_schema(json_schema_model, compute_log_manager_c
 )
 def test_run_coordinator_has_schema(json_schema_model, run_coordinator_class):
     json_schema_fields = json_schema_model.schema()["properties"].keys()
-    run_coordinator_fields = set(map(to_camel_case, run_coordinator_class.config_type().keys()))
+    run_coordinator_fields = set(
+        map(
+            to_camel_case,
+            {
+                key
+                for key in run_coordinator_class.config_type().keys()
+                if key not in {"user_code_failure_retry_delay", "max_user_code_failure_retries"}
+            },
+        )
+    )
 
     assert json_schema_fields == run_coordinator_fields
 

@@ -9,14 +9,13 @@ from pathlib import Path
 import docker
 import pytest
 import requests
-from dagster_graphql import DagsterGraphQLClient
-
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._utils import (
     file_relative_path,
     library_version_from_core_version,
     parse_package_version,
 )
+from dagster_graphql import DagsterGraphQLClient
 
 DAGSTER_CURRENT_BRANCH = "current_branch"
 MAX_TIMEOUT_SECONDS = 20
@@ -51,8 +50,8 @@ def assert_run_success(client, run_id):
             raise Exception("Timed out waiting for launched run to complete")
 
         status = client.get_run_status(run_id)
-        assert status and status != PipelineRunStatus.FAILURE
-        if status == PipelineRunStatus.SUCCESS:
+        assert status and status != DagsterRunStatus.FAILURE
+        if status == DagsterRunStatus.SUCCESS:
             break
 
         time.sleep(1)
@@ -99,7 +98,6 @@ def docker_service_up(docker_compose_file, build_args=None):
         try:
             yield  # buildkite pipeline handles the service
         finally:
-
             # collect logs from the containers and upload to buildkite
             client = docker.client.from_env()
             containers = client.containers.list()

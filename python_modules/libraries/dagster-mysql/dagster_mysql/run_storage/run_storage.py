@@ -1,9 +1,7 @@
 from typing import Mapping
 
-import sqlalchemy as db
-from packaging.version import parse
-
 import dagster._check as check
+import sqlalchemy as db
 from dagster._core.storage.config import mysql_config
 from dagster._core.storage.runs import (
     DaemonHeartbeatsTable,
@@ -20,6 +18,7 @@ from dagster._core.storage.sql import (
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster._utils import utc_datetime_from_timestamp
+from packaging.version import parse
 
 from ..utils import (
     create_mysql_connection,
@@ -30,6 +29,7 @@ from ..utils import (
 )
 
 MINIMUM_MYSQL_BUCKET_VERSION = "8.0.0"
+MINIMUM_MYSQL_INTERSECT_VERSION = "8.0.31"
 
 
 class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
@@ -155,6 +155,10 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
             return False
 
         return parse(self._mysql_version) >= parse(MINIMUM_MYSQL_BUCKET_VERSION)
+
+    @property
+    def supports_intersect(self):
+        return parse(self._mysql_version) >= parse(MINIMUM_MYSQL_INTERSECT_VERSION)
 
     def add_daemon_heartbeat(self, daemon_heartbeat):
         with self.connect() as conn:

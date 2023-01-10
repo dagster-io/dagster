@@ -1,19 +1,18 @@
 from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequence, cast
 
-import kubernetes
-
 import dagster._check as check
+import kubernetes
 from dagster._config import process_config
 from dagster._core.container_context import process_shared_container_context_config
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.utils import parse_env_var
-from dagster._utils import make_readonly_value, merge_dicts
+from dagster._utils import frozentags, make_readonly_value
 
 if TYPE_CHECKING:
     from . import K8sRunLauncher
 
-from .job import DagsterK8sJobConfig
+from .job import DagsterK8sJobConfig, UserDefinedDagsterK8sConfig, get_user_defined_k8s_config
 from .models import k8s_snake_case_dict
 
 
@@ -37,13 +36,17 @@ class K8sContainerContext(
             ("namespace", Optional[str]),
             ("resources", Mapping[str, Any]),
             ("scheduler_name", Optional[str]),
+            ("security_context", Mapping[str, Any]),
+            ("server_k8s_config", Mapping[str, Any]),
+            ("run_k8s_config", Mapping[str, Any]),
         ],
     )
 ):
     """Encapsulates configuration that can be applied to a K8s job running Dagster code.
     Can be persisted on a PipelineRun at run submission time based on metadata from the
     code location and then included in the job's configuration at run launch time or step
-    launch time."""
+    launch time.
+    """
 
     def __new__(
         cls,
@@ -59,6 +62,9 @@ class K8sContainerContext(
         namespace: Optional[str] = None,
         resources: Optional[Mapping[str, Any]] = None,
         scheduler_name: Optional[str] = None,
+        security_context: Optional[Mapping[str, Any]] = None,
+        server_k8s_config: Optional[Mapping[str, Any]] = None,
+        run_k8s_config: Optional[Mapping[str, Any]] = None,
     ):
         return super(K8sContainerContext, cls).__new__(
             cls,
@@ -80,7 +86,22 @@ class K8sContainerContext(
             namespace=check.opt_str_param(namespace, "namespace"),
             resources=check.opt_mapping_param(resources, "resources"),
             scheduler_name=check.opt_str_param(scheduler_name, "scheduler_name"),
+            security_context=check.opt_mapping_param(security_context, "security_context"),
+            server_k8s_config=UserDefinedDagsterK8sConfig(
+                **check.opt_mapping_param(server_k8s_config, "server_k8s_config")
+            ).to_dict(),
+            run_k8s_config=UserDefinedDagsterK8sConfig(
+                **check.opt_mapping_param(run_k8s_config, "run_k8s_config")
+            ).to_dict(),
         )
+
+    def _merge_k8s_config(
+        self, first_config: Mapping[str, Any], second_config: Mapping[str, Any]
+    ) -> Mapping[str, Any]:
+        # Keys are always the same and initialized in constructor
+        assert set(first_config) == set(second_config)
+
+        return {key: {**first_config[key], **second_config[key]} for key in first_config}
 
     def merge(self, other: "K8sContainerContext") -> "K8sContainerContext":
         # Lists of attributes that can be combined are combined, scalar values are replaced
@@ -100,10 +121,17 @@ class K8sContainerContext(
             env_vars=_dedupe_list([*other.env_vars, *self.env_vars]),
             volume_mounts=_dedupe_list([*other.volume_mounts, *self.volume_mounts]),
             volumes=_dedupe_list([*other.volumes, *self.volumes]),
-            labels=merge_dicts(other.labels, self.labels),
+            labels={**self.labels, **other.labels},
             namespace=other.namespace if other.namespace else self.namespace,
             resources=other.resources if other.resources else self.resources,
             scheduler_name=other.scheduler_name if other.scheduler_name else self.scheduler_name,
+            security_context=(
+                other.security_context if other.security_context else self.security_context
+            ),
+            server_k8s_config=self._merge_k8s_config(
+                self.server_k8s_config, other.server_k8s_config
+            ),
+            run_k8s_config=self._merge_k8s_config(self.run_k8s_config, other.run_k8s_config),
         )
 
     def get_environment_dict(self) -> Mapping[str, str]:
@@ -112,7 +140,7 @@ class K8sContainerContext(
 
     @staticmethod
     def create_for_run(
-        pipeline_run: PipelineRun, run_launcher: Optional["K8sRunLauncher"]
+        pipeline_run: DagsterRun, run_launcher: Optional["K8sRunLauncher"]
     ) -> "K8sContainerContext":
         context = K8sContainerContext()
 
@@ -131,19 +159,28 @@ class K8sContainerContext(
                     namespace=run_launcher.job_namespace,
                     resources=run_launcher.resources,
                     scheduler_name=run_launcher.scheduler_name,
+                    security_context=run_launcher.security_context,
+                    run_k8s_config=run_launcher.run_k8s_config,
                 )
             )
 
-        run_container_context = (
-            pipeline_run.pipeline_code_origin.repository_origin.container_context
-            if pipeline_run.pipeline_code_origin
-            else None
+        if pipeline_run.pipeline_code_origin:
+            run_container_context = (
+                pipeline_run.pipeline_code_origin.repository_origin.container_context
+            )
+
+            if run_container_context:
+                context = context.merge(
+                    K8sContainerContext.create_from_config(run_container_context)
+                )
+
+        user_defined_k8s_config = get_user_defined_k8s_config(frozentags(pipeline_run.tags))
+
+        context = context.merge(
+            K8sContainerContext(run_k8s_config=user_defined_k8s_config.to_dict())
         )
 
-        if not run_container_context:
-            return context
-
-        return context.merge(K8sContainerContext.create_from_config(run_container_context))
+        return context
 
     @staticmethod
     def create_from_config(run_container_context) -> "K8sContainerContext":
@@ -188,6 +225,9 @@ class K8sContainerContext(
                 namespace=processed_context_value.get("namespace"),
                 resources=processed_context_value.get("resources"),
                 scheduler_name=processed_context_value.get("scheduler_name"),
+                security_context=processed_context_value.get("security_context"),
+                server_k8s_config=processed_context_value.get("server_k8s_config"),
+                run_k8s_config=processed_context_value.get("run_k8s_config"),
             )
         )
 
@@ -208,4 +248,11 @@ class K8sContainerContext(
             labels=self.labels,
             resources=self.resources,
             scheduler_name=self.scheduler_name,
+            security_context=self.security_context,
         )
+
+    def get_run_user_defined_k8s_config(self) -> UserDefinedDagsterK8sConfig:
+        return UserDefinedDagsterK8sConfig(**self.run_k8s_config)
+
+    def get_server_user_defined_k8s_config(self) -> UserDefinedDagsterK8sConfig:
+        return UserDefinedDagsterK8sConfig(**self.server_k8s_config)

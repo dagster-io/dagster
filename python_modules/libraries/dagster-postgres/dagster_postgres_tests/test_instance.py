@@ -4,11 +4,10 @@ from urllib.parse import unquote, urlparse
 import pytest
 import sqlalchemy as db
 import yaml
-from dagster_postgres.utils import get_conn, get_conn_string
-
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.test_utils import instance_for_test
 from dagster._utils.test.postgres_instance import TestPostgresInstance
+from dagster_postgres.utils import get_conn, get_conn_string
 
 
 def full_pg_config(hostname):
@@ -150,6 +149,20 @@ def params_specified_pg_config(hostname):
     )
 
 
+def schema_specified_pg_config(hostname):
+    return f"""
+      storage:
+        postgres:
+          postgres_db:
+            username: test
+            password: test
+            hostname: {hostname}
+            db_name: test
+            params:
+              options: -c search_path=other_schema
+    """
+
+
 def test_load_instance(hostname):
     with instance_for_test(overrides=yaml.safe_load(full_pg_config(hostname))):
         pass
@@ -282,3 +295,26 @@ def test_conn_str():
     assert unquote(parsed.password) == password
     assert parsed.hostname == hostname
     assert parsed.scheme == custom_scheme
+
+
+def test_configured_other_schema(hostname):
+    with db.create_engine(
+        get_conn_string(
+            username="test",
+            password="test",
+            db_name="test",
+            hostname=hostname,
+        )
+    ).connect() as conn:
+        conn.execute("create schema other_schema;")
+
+    with instance_for_test(
+        overrides=yaml.safe_load(schema_specified_pg_config(hostname))
+    ) as instance:
+        instance.get_runs()
+        instance.all_asset_keys()
+        instance.all_instigator_state()
+        instance.optimize_for_dagit(statement_timeout=100, pool_recycle=100)
+        instance.get_runs()
+        instance.all_asset_keys()
+        instance.all_instigator_state()

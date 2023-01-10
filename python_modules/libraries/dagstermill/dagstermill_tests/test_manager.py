@@ -7,19 +7,21 @@ import threading
 
 import dagstermill
 import pytest
-from dagstermill import DagstermillError
-from dagstermill.manager import Manager
-
-from dagster import AssetMaterialization, ResourceDefinition
-from dagster import _check as check
+from dagster import (
+    AssetMaterialization,
+    ResourceDefinition,
+    _check as check,
+)
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
 from dagster._legacy import ModeDefinition
 from dagster._serdes import pack_value
 from dagster._utils import safe_tempfile_path
+from dagstermill import DagstermillError
+from dagstermill.manager import Manager
 
 
 @contextlib.contextmanager
@@ -43,13 +45,13 @@ def in_job_manager(
             ).to_dict()
 
         pipeline_run_dict = pack_value(
-            PipelineRun(
+            DagsterRun(
                 pipeline_name=pipeline_name,
                 run_id=run_id,
                 mode=mode or "default",
                 run_config=None,
                 step_keys_to_execute=None,
-                status=PipelineRunStatus.NOT_STARTED,
+                status=DagsterRunStatus.NOT_STARTED,
             )
         )
 
@@ -127,7 +129,7 @@ def test_yield_unserializable_result():
 def test_in_job_manager_bad_solid():
     with pytest.raises(
         check.CheckError,
-        match=("hello_world_job has no op named foobar"),
+        match="hello_world_job has no op named foobar",
     ):
         with in_job_manager(solid_handle=NodeHandle("foobar", None)) as _manager:
             pass

@@ -5,10 +5,11 @@ import * as React from 'react';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {InstigationType} from '../graphql/graphql';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {UnloadableSchedules} from '../instigation/Unloadable';
-import {InstigationType} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -16,7 +17,6 @@ import {SCHEDULES_ROOT_QUERY} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
 import {SchedulesNextTicks} from './SchedulesNextTicks';
 import {SchedulesTable} from './SchedulesTable';
-import {SchedulesRootQuery, SchedulesRootQueryVariables} from './types/SchedulesRootQuery';
 
 export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
@@ -24,18 +24,14 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
 
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const queryResult = useQuery<SchedulesRootQuery, SchedulesRootQueryVariables>(
-    SCHEDULES_ROOT_QUERY,
-    {
-      variables: {
-        repositorySelector,
-        instigationType: InstigationType.SCHEDULE,
-      },
-      fetchPolicy: 'cache-and-network',
-      partialRefetch: true,
-      notifyOnNetworkStatusChange: true,
+  const queryResult = useQuery(SCHEDULES_ROOT_QUERY, {
+    variables: {
+      repositorySelector,
+      instigationType: InstigationType.SCHEDULE,
     },
-  );
+    partialRefetch: true,
+    notifyOnNetworkStatusChange: true,
+  });
 
   useQueryRefreshAtInterval(queryResult, 50 * 1000);
 
@@ -44,6 +40,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
       {(result) => {
         const {repositoryOrError, unloadableInstigationStatesOrError, instance} = result;
         let schedulesSection = null;
+        const repoName = repoAddressAsHumanString(repoAddress);
 
         if (repositoryOrError.__typename === 'PythonError') {
           schedulesSection = <PythonErrorInfo error={repositoryOrError} />;
@@ -51,8 +48,8 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
           schedulesSection = (
             <NonIdealState
               icon="error"
-              title="Repository not found"
-              description="Could not load this repository."
+              title="Definitions not found"
+              description={`Could not load ${repoName}.`}
             />
           );
         } else if (!repositoryOrError.schedules.length) {
@@ -62,7 +59,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
               title="No schedules found"
               description={
                 <p>
-                  This repository does not have any schedules defined. Visit the{' '}
+                  {repoName} does not have any schedules defined. Visit the{' '}
                   <a href="https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules">
                     scheduler documentation
                   </a>{' '}

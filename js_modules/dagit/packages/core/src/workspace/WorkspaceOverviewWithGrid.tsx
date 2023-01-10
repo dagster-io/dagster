@@ -1,125 +1,107 @@
-import {
-  Box,
-  Colors,
-  Page,
-  PageHeader,
-  Heading,
-  Icon,
-  NonIdealState,
-  Spinner,
-  Tag,
-} from '@dagster-io/ui';
+import {Box, Colors, Page, PageHeader, Heading, Icon, NonIdealState, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {InstanceTabs} from '../instance/InstanceTabs';
 
+import {RepositoryCountTags} from './RepositoryCountTags';
 import {DagsterRepoOption, useRepositoryOptions} from './WorkspaceContext';
-import {buildRepoAddress} from './buildRepoAddress';
-import {repoAddressAsString} from './repoAddressAsString';
+import {buildRepoAddress, DUNDER_REPO_NAME} from './buildRepoAddress';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {workspacePath} from './workspacePath';
 
 export const WorkspaceOverviewWithGrid = () => {
-  const {loading, error, options} = useRepositoryOptions();
-
-  const content = () => {
-    if (loading) {
-      return (
-        <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
-            <Spinner purpose="section" />
-            <div style={{color: Colors.Gray600}}>Loading workspace…</div>
-          </Box>
-        </Box>
-      );
-    }
-
-    if (error) {
-      return (
-        <Box padding={{vertical: 64}}>
-          <NonIdealState
-            icon="error"
-            title="Error loading repositories"
-            description="Could not load repositories in this workspace."
-          />
-        </Box>
-      );
-    }
-
-    if (!options.length) {
-      return (
-        <Box padding={{vertical: 64}}>
-          <NonIdealState
-            icon="folder"
-            title="No repositories"
-            description="When you add a repository to this workspace, it will appear here."
-          />
-        </Box>
-      );
-    }
-
-    return (
-      <CardGrid>
-        {options.map((option) => {
-          const repoAddress = buildRepoAddress(
-            option.repository.name,
-            option.repositoryLocation.name,
-          );
-          return <RepositoryGridItem key={repoAddressAsString(repoAddress)} repo={option} />;
-        })}
-      </CardGrid>
-    );
-  };
-
   return (
     <Page>
-      <PageHeader title={<Heading>Deployment</Heading>} tabs={<InstanceTabs tab="workspace" />} />
-      {content()}
+      <PageHeader title={<Heading>Deployment</Heading>} tabs={<InstanceTabs tab="definitions" />} />
+      <WorkspaceOverviewGrid />
     </Page>
+  );
+};
+
+export const WorkspaceOverviewGrid = () => {
+  const {loading, error, options} = useRepositoryOptions();
+
+  if (loading) {
+    return (
+      <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
+          <Spinner purpose="section" />
+          <div style={{color: Colors.Gray600}}>Loading workspace…</div>
+        </Box>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box padding={{vertical: 64}}>
+        <NonIdealState
+          icon="error"
+          title="Error loading definitions"
+          description="Could not load definitions in this workspace."
+        />
+      </Box>
+    );
+  }
+
+  if (!options.length) {
+    return (
+      <Box padding={{vertical: 64}}>
+        <NonIdealState
+          icon="folder"
+          title="No definitions"
+          description="When you add a definition to this workspace, it will appear here."
+        />
+      </Box>
+    );
+  }
+
+  return (
+    <CardGrid>
+      {options.map((option) => {
+        const repoAddress = buildRepoAddress(
+          option.repository.name,
+          option.repositoryLocation.name,
+        );
+        return <RepositoryGridItem key={repoAddressAsHumanString(repoAddress)} repo={option} />;
+      })}
+    </CardGrid>
   );
 };
 
 const RepositoryGridItem: React.FC<{repo: DagsterRepoOption}> = React.memo(({repo}) => {
   const repoName = repo.repository.name;
   const repoLocation = repo.repositoryLocation.name;
-  const assetCount = repo.repository.assetGroups.length;
-  const jobCount = repo.repository.pipelines.filter(({name}) => !isHiddenAssetGroupJob(name))
-    .length;
-  const scheduleCount = repo.repository.schedules.length;
-  const sensorCount = repo.repository.sensors.length;
 
   return (
-    <CardLink to={workspacePath(repoName, repoLocation)}>
-      <Card>
-        <Box
-          flex={{direction: 'column', gap: 8}}
-          padding={{bottom: 12}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        >
-          <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 8}}>
-            <Icon name="folder" style={{marginTop: 1}} />
-            <RepoName>{repoName}</RepoName>
-          </Box>
-          <RepoLocation>{`@${repoLocation}`}</RepoLocation>
+    <Card>
+      <Box
+        flex={{direction: 'column', gap: 8}}
+        padding={{bottom: 12}}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      >
+        <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 8}}>
+          <Icon name="folder" style={{marginTop: 1}} />
+          <CardLink to={workspacePath(repoName, repoLocation)}>
+            <RepoName>{repoName === DUNDER_REPO_NAME ? repoLocation : repoName}</RepoName>
+          </CardLink>
         </Box>
-        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}} padding={{top: 12}}>
-          <Tag icon="asset">{assetCount}</Tag>
-          <Tag icon="job">{jobCount}</Tag>
-          <Tag icon="schedule">{scheduleCount}</Tag>
-          <Tag icon="sensors">{sensorCount}</Tag>
-        </Box>
-      </Card>
-    </CardLink>
+        {repoName === DUNDER_REPO_NAME ? null : <RepoLocation>{`@${repoLocation}`}</RepoLocation>}
+      </Box>
+      <Box padding={{top: 12}}>
+        <RepositoryCountTags
+          repo={repo.repository}
+          repoAddress={buildRepoAddress(repoName, repoLocation)}
+        />
+      </Box>
+    </Card>
   );
 });
 
 const CardLink = styled(Link)`
   color: ${Colors.Dark};
-  text-decoration: none;
-  border-radius: 12px;
-
   :hover,
   :active {
     color: ${Colors.Dark};

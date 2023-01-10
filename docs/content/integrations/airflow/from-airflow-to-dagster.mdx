@@ -1,0 +1,213 @@
+---
+title: "Learning Dagster from Airlfow"
+description: How to get started with Dagster from an Airflow background
+---
+
+# Learning Dagster from Airflow
+
+In this tutorial, we'll help you make the switch from Airflow to Dagster. Here, we review an Airflow DAG and show how the same functionality can be achieved in Dagster.
+
+---
+
+## Comparing an Airflow DAG to Dagster
+
+In this tutorial, we'll rewrite an [Airflow DAG](https://airflow.apache.org/docs/apache-airflow/stable/tutorial/fundamentals.html) as a Dagster [job](/concepts/ops-jobs-graphs/jobs). Let's start with a basic Airflow DAG:
+
+```python file=/integrations/airflow/dags/tutorial.py
+from datetime import datetime, timedelta
+from textwrap import dedent
+
+from airflow import DAG
+from airflow.operators.bash import BashOperator
+
+with DAG(
+    "tutorial",
+    default_args={
+        "retries": 1,
+    },
+    description="A simple tutorial DAG",
+    schedule=timedelta(days=1),
+    start_date=datetime(2021, 1, 1),
+    catchup=False,
+    tags=["example"],
+) as dag:
+    t1 = BashOperator(
+        task_id="print_date",
+        bash_command="date",
+    )
+
+    t2 = BashOperator(
+        task_id="sleep",
+        bash_command="sleep 5",
+        retries=3,
+    )
+
+    templated_command = dedent(
+        """
+    {% for i in range(5) %}
+        echo "{{ ds }}"
+        echo "{{ macros.ds_add(ds, 7)}}"
+    {% endfor %}
+    """
+    )
+
+    t3 = BashOperator(
+        task_id="templated",
+        bash_command=templated_command,
+    )
+
+    t1 >> [t2, t3]
+```
+
+To rewrite this DAG in Dagster, we'll break it down into three parts:
+
+1. Define the computations: the ops - in Airflow, the operators
+2. Define the graph: the job - in Airflow, the DAG
+3. Define the schedule - In Airflow, the schedule (how simple!)
+
+A Dagster [job](/concepts/ops-jobs-graphs/jobs) is made up of a [graph](/concepts/ops-jobs-graphs/graphs) of [ops](/concepts/ops-jobs-graphs/ops). This should feel familiar if you've used the Airflow Task API. With ops, the focus is on writing a graph with Python functions as nodes and data dependencies in between them as edges.
+
+---
+
+## Step 1: Defining the ops
+
+In Dagster, the minimum unit of computation is an op. This directly corresponds to an operator in Airflow. Here, we map the the operators of our example Airflow DAG `t1`, `t2`, and `t3` to their respective Dagster ops.
+
+```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_ops endbefore=end_ops
+@op
+def print_date(context) -> datetime:
+    ds = datetime.now()
+    context.log.info(ds)
+    return ds
+
+
+@op(retry_policy=RetryPolicy(max_retries=3), ins={"start": In(Nothing)})
+def sleep():
+    time.sleep(5)
+
+
+@op
+def templated(context, ds: datetime):
+    for _i in range(5):
+        context.log.info(ds)
+        context.log.info(ds - timedelta(days=7))
+```
+
+Which would yield the following graph of computations in Dagit, Dagster's web-based UI. We'll spin up Dagit later in the tutorial, but wanted to demonstrate:
+
+<center>
+  <Image
+    alt="Screenshot of the dagster UI, showing the newly created graph of tutorial Ops"
+    src="/images/integrations/airflow/airflow_tutorial_rewrite_ops.png"
+    width={2200}
+    height={1300}
+  />
+</center>
+
+### Op-level retries
+
+In the tutorial DAG, the `t2` operator allowed for three retries. To configure the same behavior in Dagster, you can use [op-level retry policies](/concepts/ops-jobs-graphs/op-retries).
+
+---
+
+## Step 2: Define the job
+
+In Dagster, the computations defined in ops are composed in jobs, which define the sequence and dependency structure of the computations you want to execute. This directly corresponds to a DAG in Airflow. Here, we compose the op's `print_date`, `sleep` and `templated` to match the dependency structure defined by the Airflow operators `t1`, `t2`, and `t3`.
+
+```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_job endbefore=end_job
+@job(tags={"dagster/max_retries": 1, "dag_name": "example"})
+def tutorial_job():
+    ds = print_date()
+    sleep(ds)
+    templated(ds)
+```
+
+### Job-level retries
+
+Job-level retries are managed by the [run launcher](/deployment/run-retries). Once enabled in your `dagster.yaml` file, you can define the retry count for the job.
+
+---
+
+## Step 3: Define the schedule
+
+In Dagster, schedules can be defined for jobs, which determine the cadence at which a job is triggered to be executed. Below we define a schedule that will run the `tutorial_job` daily:
+
+```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_schedule endbefore=end_schedule
+schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
+```
+
+---
+
+## Step 4: Run Dagster locally
+
+In order to run our newly defined Dagster job we'll need to add it and the schedule to our project's [Definitions](/concepts/code-locations#defining-code-locations).
+
+```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_repo endbefore=end_repo
+defs = Definitions(
+    jobs=[tutorial_job],
+    schedules=[schedule],
+)
+```
+
+We can now load this file with Dagit, the interactive web-UI for Dagster:
+
+```bash
+dagit -f <your_dagster_file>.py
+```
+
+---
+
+## Completed code example
+
+That's it! By now, your code should look like this:
+
+```python file=/integrations/airflow/tutorial_rewrite_complete.py startafter=start_example endbefore=end_example
+import time
+from datetime import datetime, timedelta
+
+from dagster import (
+    Definitions,
+    In,
+    Nothing,
+    RetryPolicy,
+    ScheduleDefinition,
+    job,
+    op,
+    schedule,
+)
+
+
+@op
+def print_date(context) -> datetime:
+    ds = datetime.now()
+    context.log.info(ds)
+    return ds
+
+
+@op(retry_policy=RetryPolicy(max_retries=3), ins={"start": In(Nothing)})
+def sleep():
+    time.sleep(5)
+
+
+@op
+def templated(context, ds: datetime):
+    for _i in range(5):
+        context.log.info(ds)
+        context.log.info(ds - timedelta(days=7))
+
+
+@job(tags={"dagster/max_retries": 1, "dag_name": "example"})
+def tutorial_job():
+    ds = print_date()
+    sleep(ds)
+    templated(ds)
+
+
+schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
+
+
+defs = Definitions(
+    jobs=[tutorial_job],
+    schedules=[schedule],
+)
+```

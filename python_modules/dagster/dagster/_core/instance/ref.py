@@ -56,7 +56,12 @@ def configurable_secrets_loader_data(
 
 def configurable_storage_data(
     config_field: Mapping[str, Any], defaults: Mapping[str, Optional[ConfigurableClassData]]
-) -> Sequence[ConfigurableClassData]:
+) -> Sequence[Optional[ConfigurableClassData]]:
+    storage_data: ConfigurableClassData
+    run_storage_data: Optional[ConfigurableClassData]
+    event_storage_data: Optional[ConfigurableClassData]
+    schedule_storage_data: Optional[ConfigurableClassData]
+
     if not config_field:
         storage_data = check.not_none(defaults.get("storage"))
         run_storage_data = check.not_none(defaults.get("run_storage"))
@@ -111,28 +116,37 @@ def configurable_storage_data(
         )
 
     elif "sqlite" in config_field:
-        base_dir = check.str_elem(config_field["sqlite"], "base_dir")
+        base_dir = config_field["sqlite"]["base_dir"]
         storage_data = ConfigurableClassData(
             "dagster._core.storage.sqlite_storage",
             "DagsterSqliteStorage",
             yaml.dump({"base_dir": base_dir}, default_flow_style=False),
         )
-        run_storage_data = ConfigurableClassData(
-            "dagster._core.storage.runs",
-            "SqliteRunStorage",
-            yaml.dump({"base_dir": _runs_directory(base_dir)}, default_flow_style=False),
-        )
-        event_storage_data = ConfigurableClassData(
-            "dagster._core.storage.event_log",
-            "SqliteEventLogStorage",
-            yaml.dump({"base_dir": _event_logs_directory(base_dir)}, default_flow_style=False),
-        )
-        schedule_storage_data = ConfigurableClassData(
-            "dagster._core.storage.schedules",
-            "SqliteScheduleStorage",
-            yaml.dump({"base_dir": _schedule_directory(base_dir)}, default_flow_style=False),
-        )
 
+        # Back-compat fo the legacy storage field only works if the base_dir is a string
+        # (env var doesn't work since each storage has a different value for the base_dir field)
+        if isinstance(base_dir, str):
+            run_storage_data = ConfigurableClassData(
+                "dagster._core.storage.runs",
+                "SqliteRunStorage",
+                yaml.dump({"base_dir": _runs_directory(base_dir)}, default_flow_style=False),
+            )
+
+            event_storage_data = ConfigurableClassData(
+                "dagster._core.storage.event_log",
+                "SqliteEventLogStorage",
+                yaml.dump({"base_dir": _event_logs_directory(base_dir)}, default_flow_style=False),
+            )
+
+            schedule_storage_data = ConfigurableClassData(
+                "dagster._core.storage.schedules",
+                "SqliteScheduleStorage",
+                yaml.dump({"base_dir": _schedule_directory(base_dir)}, default_flow_style=False),
+            )
+        else:
+            run_storage_data = None
+            event_storage_data = None
+            schedule_storage_data = None
     else:
         storage_data = configurable_class_data(config_field["custom"])
         storage_config_yaml = yaml.dump(
@@ -170,9 +184,9 @@ class InstanceRef(
             # Required for backwards compatibility, but going forward will be unused by new versions
             # of DagsterInstance, which instead will instead grab the constituent storages from the
             # unified `storage_data`, if it is populated.
-            ("run_storage_data", ConfigurableClassData),
-            ("event_storage_data", ConfigurableClassData),
-            ("schedule_storage_data", ConfigurableClassData),
+            ("run_storage_data", Optional[ConfigurableClassData]),
+            ("event_storage_data", Optional[ConfigurableClassData]),
+            ("schedule_storage_data", Optional[ConfigurableClassData]),
             ("custom_instance_class_data", Optional[ConfigurableClassData]),
             # unified storage field
             ("storage_data", Optional[ConfigurableClassData]),
@@ -193,9 +207,9 @@ class InstanceRef(
         run_coordinator_data: Optional[ConfigurableClassData],
         run_launcher_data: Optional[ConfigurableClassData],
         settings: Mapping[str, object],
-        run_storage_data: ConfigurableClassData,
-        event_storage_data: ConfigurableClassData,
-        schedule_storage_data: ConfigurableClassData,
+        run_storage_data: Optional[ConfigurableClassData],
+        event_storage_data: Optional[ConfigurableClassData],
+        schedule_storage_data: Optional[ConfigurableClassData],
         custom_instance_class_data: Optional[ConfigurableClassData] = None,
         storage_data: Optional[ConfigurableClassData] = None,
         secrets_loader_data: Optional[ConfigurableClassData] = None,
@@ -218,13 +232,13 @@ class InstanceRef(
                 run_launcher_data, "run_launcher_data", ConfigurableClassData
             ),
             settings=check.opt_mapping_param(settings, "settings", key_type=str),
-            run_storage_data=check.inst_param(
+            run_storage_data=check.opt_inst_param(
                 run_storage_data, "run_storage_data", ConfigurableClassData
             ),
-            event_storage_data=check.inst_param(
+            event_storage_data=check.opt_inst_param(
                 event_storage_data, "event_storage_data", ConfigurableClassData
             ),
-            schedule_storage_data=check.inst_param(
+            schedule_storage_data=check.opt_inst_param(
                 schedule_storage_data, "schedule_storage_data", ConfigurableClassData
             ),
             custom_instance_class_data=check.opt_inst_param(
@@ -444,11 +458,11 @@ class InstanceRef(
 
     @property
     def run_storage(self):
-        return self.run_storage_data.rehydrate()
+        return self.run_storage_data.rehydrate() if self.run_storage_data else None
 
     @property
     def event_storage(self):
-        return self.event_storage_data.rehydrate()
+        return self.event_storage_data.rehydrate() if self.event_storage_data else None
 
     @property
     def schedule_storage(self):

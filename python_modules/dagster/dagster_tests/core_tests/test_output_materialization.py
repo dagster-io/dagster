@@ -1,7 +1,6 @@
 import json
 
 import pytest
-
 from dagster import (
     AssetMaterialization,
     DagsterEventType,
@@ -159,7 +158,10 @@ def test_no_outputs_one_input_config_schema():
         )
 
     assert len(exc_context.value.errors) == 1
-    exp_msg = 'Error 1: Received unexpected config entry "outputs" at path root:solids:take_input_return_nothing'
+    exp_msg = (
+        'Error 1: Received unexpected config entry "outputs" at path'
+        " root:solids:take_input_return_nothing"
+    )
     assert exp_msg in exc_context.value.message
 
 
@@ -185,7 +187,7 @@ def test_basic_materialization_event():
         )
 
         assert result.success
-        solid_result = result.result_for_solid("return_one")
+        solid_result = result.result_for_node("return_one")
         step_events = solid_result.step_events_by_kind[StepKind.COMPUTE]
         mat_event = list(
             filter(
@@ -222,7 +224,6 @@ def test_basic_string_json_materialization():
 
 
 def test_basic_int_and_string_json_materialization():
-
     pipeline = multiple_output_pipeline()
 
     with get_temp_file_names(2) as file_tuple:
@@ -258,7 +259,6 @@ def read_file_contents(path):
 
 
 def test_basic_int_and_string_json_multiple_materialization():
-
     pipeline = multiple_output_pipeline()
 
     with get_temp_file_names(4) as file_tuple:
@@ -360,7 +360,7 @@ def test_basic_yield_multiple_materializations():
     assert result.success
 
     event_types = [event.event_type_value for event in result.event_list]
-    assert 2 == (
+    assert (
         sum(
             [
                 True
@@ -368,6 +368,7 @@ def test_basic_yield_multiple_materializations():
                 if event_type == DagsterEventType.ASSET_MATERIALIZATION.value
             ]
         )
+        == 2
     )
 
 

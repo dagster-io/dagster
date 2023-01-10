@@ -4,7 +4,6 @@ import sys
 import time
 
 import pytest
-
 from dagster import (
     Failure,
     Field,
@@ -16,7 +15,8 @@ from dagster import (
     reconstructable,
 )
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
-from dagster._core.events import DagsterEventType
+from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
@@ -41,11 +41,13 @@ from .retry_jobs import (
 def test_diamond_simple_execution():
     result = execute_pipeline(define_diamond_pipeline())
     assert result.success
-    assert result.result_for_solid("adder").output_value() == 11
+    assert result.result_for_node("adder").output_value() == 11
 
 
-def compute_event(result, solid_name):
-    return result.result_for_solid(solid_name).compute_step_events[0]
+def compute_event(result: PipelineExecutionResult, solid_name: str) -> DagsterEvent:
+    node_result = result.result_for_node(solid_name)
+    assert isinstance(node_result, OpExecutionResult)
+    return node_result.compute_step_events[0]
 
 
 def test_diamond_multi_execution():
@@ -60,7 +62,7 @@ def test_diamond_multi_execution():
         )
         assert result.success
 
-        assert result.result_for_solid("adder").output_value() == 11
+        assert result.result_for_node("adder").output_value() == 11
 
 
 def test_explicit_spawn():
@@ -75,7 +77,7 @@ def test_explicit_spawn():
         )
         assert result.success
 
-        assert result.result_for_solid("adder").output_value() == 11
+        assert result.result_for_node("adder").output_value() == 11
 
 
 @pytest.mark.skipif(os.name == "nt", reason="No forkserver on windows")
@@ -91,7 +93,7 @@ def test_forkserver_execution():
         )
         assert result.success
 
-        assert result.result_for_solid("adder").output_value() == 11
+        assert result.result_for_node("adder").output_value() == 11
 
 
 @pytest.mark.skipif(os.name == "nt", reason="No forkserver on windows")
@@ -111,7 +113,7 @@ def test_forkserver_preload():
         )
         assert result.success
 
-        assert result.result_for_solid("adder").output_value() == 11
+        assert result.result_for_node("adder").output_value() == 11
 
 
 def define_diamond_pipeline():
@@ -205,7 +207,10 @@ def test_mem_storage_error_pipeline_multiprocess():
     with instance_for_test() as instance:
         with pytest.raises(
             DagsterUnmetExecutorRequirementsError,
-            match="your pipeline includes solid outputs that will not be stored somewhere where other processes can retrieve them.",
+            match=(
+                "your pipeline includes solid outputs that will not be stored somewhere where other"
+                " processes can retrieve them."
+            ),
         ):
             execute_pipeline(
                 reconstructable(define_in_mem_pipeline),
@@ -257,7 +262,7 @@ def test_solid_selection():
 
         assert result.success
 
-        assert result.result_for_solid("adder").output_value() == 2
+        assert result.result_for_node("adder").output_value() == 2
 
 
 def define_subdag_pipeline():
@@ -345,7 +350,7 @@ def test_ephemeral_event_log():
         )
         assert result.success
 
-        assert result.result_for_solid("adder").output_value() == 11
+        assert result.result_for_node("adder").output_value() == 11
 
 
 @solid(
@@ -413,7 +418,7 @@ def test_failure_multiprocessing():
             raise_on_error=False,
         )
         assert not result.success
-        failure_data = result.result_for_solid("throw").failure_data
+        failure_data = result.result_for_node("throw").failure_data
         assert failure_data
         assert failure_data.error.cls_name == "Failure"
 
@@ -450,7 +455,7 @@ def test_crash_multiprocessing():
             raise_on_error=False,
         )
         assert not result.success
-        failure_data = result.result_for_solid("sys_exit").failure_data
+        failure_data = result.result_for_node("sys_exit").failure_data
         assert failure_data
         assert failure_data.error.cls_name == "ChildProcessCrashException"
 
@@ -504,7 +509,7 @@ def test_crash_hard_multiprocessing():
             raise_on_error=False,
         )
         assert not result.success
-        failure_data = result.result_for_solid("segfault_solid").failure_data
+        failure_data = result.result_for_node("segfault_solid").failure_data
         assert failure_data
         assert failure_data.error.cls_name == "ChildProcessCrashException"
 

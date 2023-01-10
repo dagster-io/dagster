@@ -16,6 +16,7 @@ from typing import (
 import dagster._check as check
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import format_docstring_for_description
+from dagster._core.definitions.resource_output import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster._seven import funcsigs
@@ -27,13 +28,13 @@ from ...decorator_utils import (
     positional_arg_name_list,
 )
 from ..inference import infer_input_props, infer_output_props
-from ..input import InputDefinition
-from ..output import OutputDefinition
+from ..input import In, InputDefinition
+from ..op_definition import OpDefinition
+from ..output import Out, OutputDefinition
 from ..policy import RetryPolicy
-from ..solid_definition import SolidDefinition
 
 
-class DecoratedSolidFunction(NamedTuple):
+class DecoratedOpFunction(NamedTuple):
     """Wrapper around the decorated solid function to provide commonly used util methods"""
 
     decorated_fn: Callable[..., Any]
@@ -46,10 +47,33 @@ class DecoratedSolidFunction(NamedTuple):
     def _get_function_params(self) -> Sequence[funcsigs.Parameter]:
         return get_function_params(self.decorated_fn)
 
+    def has_config_arg(self) -> bool:
+        for param in get_function_params(self.decorated_fn):
+            if param.name == "config":
+                return True
+
+        return False
+
+    def get_config_arg(self) -> funcsigs.Parameter:
+        for param in get_function_params(self.decorated_fn):
+            if param.name == "config":
+                return param
+
+        check.failed("Requested config arg on function that does not have one")
+
+    def get_resource_args(self) -> Sequence[funcsigs.Parameter]:
+        return get_resource_args(self.decorated_fn)
+
     def positional_inputs(self) -> Sequence[str]:
         params = self._get_function_params()
         input_args = params[1:] if self.has_context_arg() else params
-        return positional_arg_name_list(input_args)
+        resource_arg_names = [arg.name for arg in self.get_resource_args()]
+        input_args_filtered = [
+            input_arg
+            for input_arg in input_args
+            if input_arg.name != "config" and input_arg.name not in resource_arg_names
+        ]
+        return positional_arg_name_list(input_args_filtered)
 
     def has_var_kwargs(self) -> bool:
         params = self._get_function_params()
@@ -62,7 +86,7 @@ class DecoratedSolidFunction(NamedTuple):
         return infer_output_props(self.decorated_fn).annotation
 
 
-class NoContextDecoratedSolidFunction(DecoratedSolidFunction):
+class NoContextDecoratedOpFunction(DecoratedOpFunction):
     """Wrapper around a decorated solid function, when the decorator does not permit a context
     parameter (such as lambda_solid).
     """
@@ -106,7 +130,7 @@ class _Solid:
         # config will be checked within SolidDefinition
         self.config_schema = config_schema
 
-    def __call__(self, fn: Callable[..., Any]) -> SolidDefinition:
+    def __call__(self, fn: Callable[..., Any]) -> OpDefinition:
         check.callable_param(fn, "fn")
 
         if not self.name:
@@ -121,9 +145,9 @@ class _Solid:
             output_defs = self.output_defs
 
         compute_fn = (
-            DecoratedSolidFunction(decorated_fn=fn)
+            DecoratedOpFunction(decorated_fn=fn)
             if self.decorator_takes_context
-            else NoContextDecoratedSolidFunction(decorated_fn=fn)
+            else NoContextDecoratedOpFunction(decorated_fn=fn)
         )
 
         resolved_input_defs = resolve_checked_solid_fn_inputs(
@@ -134,14 +158,27 @@ class _Solid:
             exclude_nothing=True,
         )
 
-        solid_def = SolidDefinition(
+        arg_resource_keys = {arg.name for arg in compute_fn.get_resource_args()}
+        decorator_resource_keys = set(self.required_resource_keys or [])
+        check.param_invariant(
+            len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
+            (
+                "Cannot specify resource requirements in both @op decorator and as arguments to the"
+                " decorated function"
+            ),
+        )
+        resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
+
+        solid_def = OpDefinition(
             name=self.name,
-            input_defs=resolved_input_defs,
-            output_defs=output_defs,
+            ins={
+                input_def.name: In.from_definition(input_def) for input_def in resolved_input_defs
+            },
+            outs={output_def.name: Out.from_definition(output_def) for output_def in output_defs},
             compute_fn=compute_fn,
             config_schema=self.config_schema,
             description=self.description or format_docstring_for_description(fn),
-            required_resource_keys=self.required_resource_keys,
+            required_resource_keys=resolved_resource_keys,
             tags=self.tags,
             version=self.version,
             retry_policy=self.retry_policy,
@@ -151,7 +188,7 @@ class _Solid:
 
 
 @overload
-def solid(name: Callable[..., Any]) -> SolidDefinition:
+def solid(name: Callable[..., Any]) -> OpDefinition:
     ...
 
 
@@ -166,7 +203,7 @@ def solid(
     tags: Optional[Mapping[str, Any]] = ...,
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
-) -> Union[_Solid, SolidDefinition]:
+) -> Union[_Solid, OpDefinition]:
     ...
 
 
@@ -180,7 +217,7 @@ def solid(
     tags: Optional[Mapping[str, Any]] = None,
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
-) -> Union[_Solid, SolidDefinition]:
+) -> Union[_Solid, OpDefinition]:
     """Create a solid with the specified parameters from the decorated function.
 
     This shortcut simplifies the core :class:`SolidDefinition` API by exploding arguments into
@@ -232,7 +269,6 @@ def solid(
 
 
     Examples:
-
         .. code-block:: python
 
             @solid
@@ -309,7 +345,7 @@ def solid(
 def resolve_checked_solid_fn_inputs(
     decorator_name: str,
     fn_name: str,
-    compute_fn: DecoratedSolidFunction,
+    compute_fn: DecoratedOpFunction,
     explicit_input_defs: Sequence[InputDefinition],
     exclude_nothing: bool,
 ) -> Sequence[InputDefinition]:
@@ -327,7 +363,7 @@ def resolve_checked_solid_fn_inputs(
         exclude_nothing (bool): True if Nothing type inputs should be excluded from compute_fn
             arguments.
     """
-
+    explicit_names = set()
     if exclude_nothing:
         explicit_names = set(
             inp.name
@@ -346,6 +382,17 @@ def resolve_checked_solid_fn_inputs(
     params = get_function_params(compute_fn.decorated_fn)
 
     input_args = params[1:] if compute_fn.has_context_arg() else params
+
+    # filter out config arg
+    resource_arg_names = {arg.name for arg in compute_fn.get_resource_args()}
+    explicit_names = explicit_names - resource_arg_names
+
+    if compute_fn.has_config_arg() or resource_arg_names:
+        new_input_args = []
+        for input_arg in input_args:
+            if input_arg.name != "config" and input_arg.name not in resource_arg_names:
+                new_input_args.append(input_arg)
+        input_args = new_input_args
 
     # Validate input arguments
     used_inputs = set()
@@ -367,9 +414,9 @@ def resolve_checked_solid_fn_inputs(
             if param.name not in explicit_names:
                 if param.name in nothing_names:
                     raise DagsterInvalidDefinitionError(
-                        f"{decorator_name} '{fn_name}' decorated function has parameter '{param.name}' that is "
-                        "one of the input_defs of type 'Nothing' which should not be included since "
-                        "no data will be passed for it. "
+                        f"{decorator_name} '{fn_name}' decorated function has parameter"
+                        f" '{param.name}' that is one of the input_defs of type 'Nothing' which"
+                        " should not be included since no data will be passed for it. "
                     )
                 else:
                     inputs_to_infer.add(param.name)
@@ -411,9 +458,10 @@ def resolve_checked_solid_fn_inputs(
         for in_def in inferred_input_defs:
             if in_def.dagster_type.is_nothing:
                 raise DagsterInvalidDefinitionError(
-                    f"Input parameter {in_def.name} is annotated with {in_def.dagster_type.display_name} "
-                    "which is a type that represents passing no data. This type must be used "
-                    f"via In() and no parameter should be included in the {decorator_name} decorated function."
+                    f"Input parameter {in_def.name} is annotated with"
+                    f" {in_def.dagster_type.display_name} which is a type that represents passing"
+                    " no data. This type must be used via In() and no parameter should be included"
+                    f" in the {decorator_name} decorated function."
                 )
 
     input_defs.extend(inferred_input_defs)
@@ -432,7 +480,7 @@ def lambda_solid(
     description: Optional[str] = None,
     input_defs: Optional[Sequence[InputDefinition]] = None,
     output_def: Optional[OutputDefinition] = None,
-) -> Union[_Solid, SolidDefinition]:
+) -> Union[_Solid, OpDefinition]:
     """Create a simple solid from the decorated function.
 
     This shortcut allows the creation of simple solids that do not require
@@ -459,7 +507,6 @@ def lambda_solid(
             :class:`OutputDefinition() <OutputDefinition>`.
 
     Examples:
-
     .. code-block:: python
 
         @lambda_solid

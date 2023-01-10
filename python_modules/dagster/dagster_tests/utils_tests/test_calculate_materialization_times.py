@@ -1,13 +1,14 @@
 import datetime
 from collections import defaultdict
 
+import mock
 import pytest
-
 from dagster import (
     AssetKey,
     AssetOut,
     AssetSelection,
     DagsterEventType,
+    DagsterInstance,
     Output,
     asset,
     multi_asset,
@@ -15,10 +16,10 @@ from dagster import (
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_layer import build_asset_selection_job
-from dagster._core.test_utils import instance_for_test
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
+@pytest.mark.parametrize("ignore_asset_tags", [True, False])
 @pytest.mark.parametrize(
     ["relative_to", "runs_to_expected_data_times_index"],
     [
@@ -92,8 +93,10 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
         ),
     ],
 )
-def test_caching_instance_queryer(relative_to, runs_to_expected_data_times_index):
-    """
+def test_caching_instance_queryer(
+    ignore_asset_tags, relative_to, runs_to_expected_data_times_index
+):
+    r"""
     A = B = D = F
      \\  //
        C = E
@@ -144,8 +147,7 @@ def test_caching_instance_queryer(relative_to, runs_to_expected_data_times_index
             return {key}
         return set().union(*(_get_root_keys(upstream_key) for upstream_key in upstream_keys))
 
-    with instance_for_test() as instance:
-
+    with DagsterInstance.ephemeral() as instance:
         # mapping from asset key to a mapping of materialization timestamp to run index
         materialization_times_index = defaultdict(dict)
 
@@ -187,11 +189,23 @@ def test_caching_instance_queryer(relative_to, runs_to_expected_data_times_index
                         relevant_upstream_keys = {AssetKey(ak)}
                     else:
                         relevant_upstream_keys = {AssetKey(u) for u in relative_to}
-                    upstream_data_times = data_time_queryer.get_used_data_times_for_record(
-                        asset_graph=asset_graph,
-                        record=latest_asset_record,
-                        upstream_keys=relevant_upstream_keys,
-                    )
+                    if ignore_asset_tags:
+                        # simulate an environment where materialization tags were not populated
+                        with mock.patch(
+                            "dagster.AssetMaterialization.tags", new_callable=mock.PropertyMock
+                        ) as tags_property:
+                            tags_property.return_value = None
+                            upstream_data_times = data_time_queryer.get_used_data_times_for_record(
+                                asset_graph=asset_graph,
+                                record=latest_asset_record,
+                                upstream_keys=relevant_upstream_keys,
+                            )
+                    else:
+                        upstream_data_times = data_time_queryer.get_used_data_times_for_record(
+                            asset_graph=asset_graph,
+                            record=latest_asset_record,
+                            upstream_keys=relevant_upstream_keys,
+                        )
                     assert upstream_data_times == {
                         AssetKey(k): materialization_times_index[AssetKey(k)][v]
                         for k, v in expected_data_times.items()

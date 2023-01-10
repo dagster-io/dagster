@@ -99,8 +99,10 @@ CLI_COMMON_OPTIONS_CONFIG_SCHEMA = {
     ),
     "json_log_format": Field(
         config=bool,
-        description="When True, dbt will invoked with the `--log-format json` flag, allowing "
-        "Dagster to parse the log messages and emit simpler log messages to the event log.",
+        description=(
+            "When True, dbt will invoked with the `--log-format json` flag, allowing "
+            "Dagster to parse the log messages and emit simpler log messages to the event log."
+        ),
         default_value=True,
     ),
     "capture_logs": Field(

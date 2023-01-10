@@ -1,17 +1,17 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {graphql} from '../graphql';
 
 import {Graph, VirtualizedGraphTable} from './VirtualizedGraphTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
-import {WorkspaceGraphsQuery, WorkspaceGraphsQueryVariables} from './types/WorkspaceGraphsQuery';
 
 export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
@@ -19,14 +19,11 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
   const [searchValue, setSearchValue] = React.useState('');
   const selector = repoAddressToSelector(repoAddress);
 
-  const queryResultOverview = useQuery<WorkspaceGraphsQuery, WorkspaceGraphsQueryVariables>(
-    WROSKPACE_GRAPHS_QUERY,
-    {
-      fetchPolicy: 'network-only',
-      notifyOnNetworkStatusChange: true,
-      variables: {selector},
-    },
-  );
+  const queryResultOverview = useQuery(WORSKPACE_GRAPHS_QUERY, {
+    fetchPolicy: 'network-only',
+    notifyOnNetworkStatusChange: true,
+    variables: {selector},
+  });
   const {data, loading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
@@ -81,6 +78,8 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
       );
     }
 
+    const repoName = repoAddressAsHumanString(repoAddress);
+
     if (!filteredBySearch.length) {
       if (anySearch) {
         return (
@@ -90,7 +89,7 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
               title="No matching graphs"
               description={
                 <div>
-                  No graphs matching <strong>{searchValue}</strong> were found in this repository
+                  No graphs matching <strong>{searchValue}</strong> were found in {repoName}
                 </div>
               }
             />
@@ -103,7 +102,7 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
           <NonIdealState
             icon="search"
             title="No graphs"
-            description="No graphs were found in this repository"
+            description={`No graphs were found in ${repoName}`}
           />
         </Box>
       );
@@ -140,7 +139,7 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
   );
 };
 
-const WROSKPACE_GRAPHS_QUERY = gql`
+const WORSKPACE_GRAPHS_QUERY = graphql(`
   query WorkspaceGraphsQuery($selector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $selector) {
       ... on Repository {
@@ -174,6 +173,4 @@ const WROSKPACE_GRAPHS_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);

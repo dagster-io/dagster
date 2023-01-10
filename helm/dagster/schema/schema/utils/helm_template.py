@@ -8,12 +8,12 @@ from pprint import pprint
 from tempfile import NamedTemporaryFile, mkstemp
 from typing import Any, Dict, List, Optional, Union
 
+import dagster._check as check
 import yaml
 from kubernetes.client.api_client import ApiClient
+
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
-
-import dagster._check as check
 
 
 def git_repo_root():
@@ -31,7 +31,7 @@ class HelmTemplate:
 
     def render(
         self,
-        values: Union[DagsterHelmValues, DagsterUserDeploymentsHelmValues] = None,
+        values: Optional[Union[DagsterHelmValues, DagsterUserDeploymentsHelmValues]] = None,
         values_dict: Optional[Dict[str, Any]] = None,
         chart_version: Optional[str] = None,
     ) -> List[Any]:

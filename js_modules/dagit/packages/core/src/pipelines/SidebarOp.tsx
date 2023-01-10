@@ -1,21 +1,17 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {graphql} from '../graphql';
+import {SidebarOpFragmentFragment} from '../graphql/graphql';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {LoadingSpinner} from '../ui/Loading';
 import {RepoAddress} from '../workspace/types';
 
 import {ExplorerPath} from './PipelinePathUtils';
-import {SidebarOpDefinition, SIDEBAR_OP_DEFINITION_FRAGMENT} from './SidebarOpDefinition';
+import {SidebarOpDefinition} from './SidebarOpDefinition';
 import {SidebarOpExecutionGraphs} from './SidebarOpExecutionGraphs';
-import {SidebarOpInvocation, SIDEBAR_OP_INVOCATION_FRAGMENT} from './SidebarOpInvocation';
-import {SidebarGraphOpQuery, SidebarGraphOpQueryVariables} from './types/SidebarGraphOpQuery';
-import {SidebarOpFragment} from './types/SidebarOpFragment';
-import {
-  SidebarPipelineOpQuery,
-  SidebarPipelineOpQueryVariables,
-} from './types/SidebarPipelineOpQuery';
+import {SidebarOpInvocation} from './SidebarOpInvocation';
 
 interface SidebarOpProps {
   handleID: string;
@@ -35,41 +31,33 @@ const useSidebarOpQuery = (
   isGraph: boolean,
   repoAddress?: RepoAddress,
 ) => {
-  const pipelineResult = useQuery<SidebarPipelineOpQuery, SidebarPipelineOpQueryVariables>(
-    SIDEBAR_PIPELINE_OP_QUERY,
-    {
-      variables: {
-        selector: {
-          repositoryName: repoAddress?.name || '',
-          repositoryLocationName: repoAddress?.location || '',
-          pipelineName: name,
-        },
-        handleID,
+  const pipelineResult = useQuery(SIDEBAR_PIPELINE_OP_QUERY, {
+    variables: {
+      selector: {
+        repositoryName: repoAddress?.name || '',
+        repositoryLocationName: repoAddress?.location || '',
+        pipelineName: name,
       },
-      fetchPolicy: 'cache-and-network',
-      skip: isGraph,
+      handleID,
     },
-  );
+    skip: isGraph,
+  });
 
-  const graphResult = useQuery<SidebarGraphOpQuery, SidebarGraphOpQueryVariables>(
-    SIDEBAR_GRAPH_OP_QUERY,
-    {
-      variables: {
-        selector: {
-          repositoryName: repoAddress?.name || '',
-          repositoryLocationName: repoAddress?.location || '',
-          graphName: name,
-        },
-        handleID,
+  const graphResult = useQuery(SIDEBAR_GRAPH_OP_QUERY, {
+    variables: {
+      selector: {
+        repositoryName: repoAddress?.name || '',
+        repositoryLocationName: repoAddress?.location || '',
+        graphName: name,
       },
-      fetchPolicy: 'cache-and-network',
-      skip: !isGraph,
+      handleID,
     },
-  );
+    skip: !isGraph,
+  });
 
   if (isGraph) {
     const {error, data, loading} = graphResult;
-    const solidContainer: SidebarOpFragment | undefined =
+    const solidContainer: SidebarOpFragmentFragment | undefined =
       data?.graphOrError.__typename === 'Graph' ? data.graphOrError : undefined;
     return {
       error,
@@ -79,7 +67,7 @@ const useSidebarOpQuery = (
   }
 
   const {error, data, loading} = pipelineResult;
-  const solidContainer: SidebarOpFragment | undefined =
+  const solidContainer: SidebarOpFragmentFragment | undefined =
     data?.pipelineOrError.__typename === 'Pipeline' ? data.pipelineOrError : undefined;
   return {
     error,
@@ -156,7 +144,7 @@ export const SidebarOp: React.FC<SidebarOpProps> = ({
   );
 };
 
-const SIDEBAR_OP_FRAGMENT = gql`
+export const SIDEBAR_OP_FRAGMENT = graphql(`
   fragment SidebarOpFragment on SolidContainer {
     id
     name
@@ -171,11 +159,9 @@ const SIDEBAR_OP_FRAGMENT = gql`
       }
     }
   }
-  ${SIDEBAR_OP_INVOCATION_FRAGMENT}
-  ${SIDEBAR_OP_DEFINITION_FRAGMENT}
-`;
+`);
 
-const SIDEBAR_PIPELINE_OP_QUERY = gql`
+const SIDEBAR_PIPELINE_OP_QUERY = graphql(`
   query SidebarPipelineOpQuery($selector: PipelineSelector!, $handleID: String!) {
     pipelineOrError(params: $selector) {
       __typename
@@ -185,10 +171,9 @@ const SIDEBAR_PIPELINE_OP_QUERY = gql`
       }
     }
   }
-  ${SIDEBAR_OP_FRAGMENT}
-`;
+`);
 
-const SIDEBAR_GRAPH_OP_QUERY = gql`
+const SIDEBAR_GRAPH_OP_QUERY = graphql(`
   query SidebarGraphOpQuery($selector: GraphSelector!, $handleID: String!) {
     graphOrError(selector: $selector) {
       __typename
@@ -198,5 +183,4 @@ const SIDEBAR_GRAPH_OP_QUERY = gql`
       }
     }
   }
-  ${SIDEBAR_OP_FRAGMENT}
-`;
+`);

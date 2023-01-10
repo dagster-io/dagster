@@ -5,12 +5,12 @@ import styled from 'styled-components/macro';
 
 import {AssetNode} from '../asset-graph/AssetNode';
 import {LiveData, toGraphId} from '../asset-graph/Utils';
-import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
+import {AssetNodeForGraphQueryFragment} from '../graphql/graphql';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
 export const AssetNodeList: React.FC<{
-  items: AssetGraphQuery_assetNodes[] | null;
+  items: AssetNodeForGraphQueryFragment[] | null;
   liveDataByNode: LiveData;
 }> = ({items, liveDataByNode}) => {
   const history = useHistory();
@@ -35,7 +35,6 @@ export const AssetNodeList: React.FC<{
         >
           <AssetNode
             definition={asset}
-            inAssetCatalog
             selected={false}
             liveData={liveDataByNode[toGraphId(asset.assetKey)]}
           />
@@ -46,7 +45,7 @@ export const AssetNodeList: React.FC<{
 };
 
 const Container = styled(Box)`
-  height: 144px;
+  height: 154px;
   overflow-x: auto;
   width: 100%;
   white-space: nowrap;

@@ -1,9 +1,10 @@
-from typing import Any, Dict, NamedTuple, Optional, Union
+from typing import Any, Dict, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
+from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.events import DagsterEvent
+from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.utils import coerce_valid_log_level
 from dagster._serdes.serdes import (
     DefaultNamedTupleSerializer,
@@ -143,13 +144,48 @@ class EventLogEntry(
         """
         Return the message from the structured DagsterEvent if present, fallback to user_message
         """
-
         if self.is_dagster_event:
             msg = self.get_dagster_event().message
             if msg is not None:
                 return msg
 
         return self.user_message
+
+    @property
+    def asset_materialization(self) -> Optional[AssetMaterialization]:
+        if (
+            self.dagster_event
+            and self.dagster_event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION
+        ):
+            materialization = self.dagster_event.step_materialization_data.materialization
+            if isinstance(materialization, AssetMaterialization):
+                return materialization
+
+        return None
+
+    @property
+    def asset_observation(self) -> Optional[AssetObservation]:
+        if (
+            self.dagster_event
+            and self.dagster_event.event_type_value == DagsterEventType.ASSET_OBSERVATION
+        ):
+            observation = self.dagster_event.asset_observation_data.asset_observation
+            if isinstance(observation, AssetObservation):
+                return observation
+
+        return None
+
+    @property
+    def tags(self) -> Optional[Mapping[str, str]]:
+        materialization = self.asset_materialization
+        if materialization:
+            return materialization.tags
+
+        observation = self.asset_observation
+        if observation:
+            return observation.tags
+
+        return None
 
 
 def construct_event_record(logger_message: StructuredLoggerMessage) -> EventLogEntry:

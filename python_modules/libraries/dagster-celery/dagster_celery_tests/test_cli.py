@@ -2,11 +2,10 @@
 
 import time
 
-from click.testing import CliRunner
-from dagster_celery.cli import main
-
 import dagster._check as check
+from click.testing import CliRunner
 from dagster._utils import file_relative_path
+from dagster_celery.cli import main
 
 
 def start_worker(name, config_yaml=None, args=None, exit_code=0, exception_str=""):
@@ -38,7 +37,7 @@ def check_for_worker(name, args=None, present=True):
     assert result.exit_code == 0, str(result.exception)
     retry_count = 0
     while retry_count < 10 and (
-        not "{name}@".format(name=name) in result.output
+        "{name}@".format(name=name) not in result.output
         if present
         else "{name}@".format(name=name) in result.output
     ):

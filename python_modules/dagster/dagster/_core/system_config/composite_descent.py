@@ -4,27 +4,27 @@ import dagster._check as check
 from dagster._config import EvaluateValueResult, process_config
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_config import define_solid_dictionary_cls
-from dagster._core.definitions.solid_definition import SolidDefinition
 from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
     user_code_error_boundary,
 )
-from dagster._core.system_config.objects import SolidConfig
+from dagster._core.system_config.objects import OpConfig
 from dagster._utils.merger import merge_dicts
 
 
-class SolidConfigEntry(
-    NamedTuple("_SolidConfigEntry", [("handle", NodeHandle), ("solid_config", SolidConfig)])
+class OpConfigEntry(
+    NamedTuple("_SolidConfigEntry", [("handle", NodeHandle), ("solid_config", OpConfig)])
 ):
-    def __new__(cls, handle: NodeHandle, solid_config: SolidConfig):
-        return super(SolidConfigEntry, cls).__new__(
+    def __new__(cls, handle: NodeHandle, solid_config: OpConfig):
+        return super(OpConfigEntry, cls).__new__(
             cls,
             check.inst_param(handle, "handle", NodeHandle),
-            check.inst_param(solid_config, "solid_config", SolidConfig),
+            check.inst_param(solid_config, "solid_config", OpConfig),
         )
 
 
@@ -75,7 +75,6 @@ def composite_descent(pipeline_def, solids_config, resource_defs):
             SolidConfig objects. It includes an entry for solids at every level of the
             composite tree - i.e. not just leaf solids, but composite solids as well
     """
-
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     check.dict_param(solids_config, "solids_config")
     check.dict_param(resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition)
@@ -116,16 +115,14 @@ def _composite_descent(
 
     This process unrolls recursively as you descend down the tree.
     """
-
     for solid in parent_stack.current_container.solids:
-
         current_stack = parent_stack.descend(solid)
         current_handle = current_stack.handle
 
         current_solid_config = solids_config_dict.get(solid.name, {})
 
         # the base case
-        if isinstance(solid.definition, SolidDefinition):
+        if isinstance(solid.definition, OpDefinition):
             config_mapped_solid_config = solid.definition.apply_config_mapping(
                 {"config": current_solid_config.get("config")}
             )
@@ -139,14 +136,14 @@ def _composite_descent(
             complete_config_object = merge_dicts(
                 current_solid_config, config_mapped_solid_config.value
             )
-            yield SolidConfigEntry(current_handle, SolidConfig.from_dict(complete_config_object))
+            yield OpConfigEntry(current_handle, OpConfig.from_dict(complete_config_object))
             continue
 
         graph_def = check.inst(solid.definition, GraphDefinition)
 
-        yield SolidConfigEntry(
+        yield OpConfigEntry(
             current_handle,
-            SolidConfig.from_dict(
+            OpConfig.from_dict(
                 {
                     "inputs": current_solid_config.get("inputs"),
                     "outputs": current_solid_config.get("outputs"),
@@ -302,9 +299,8 @@ def _get_error_lambda(current_stack):
 
 
 def _get_top_level_error_lambda(pipeline_def):
-    return lambda: (
-        f"The config mapping function on top-level graph {pipeline_def.graph.name} in job "
-        f"{pipeline_def.name} has thrown an unexpected error during its execution."
+    return (
+        lambda: f"The config mapping function on top-level graph {pipeline_def.graph.name} in job {pipeline_def.name} has thrown an unexpected error during its execution."
     )
 
 

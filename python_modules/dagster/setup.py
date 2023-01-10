@@ -20,7 +20,7 @@ def get_description() -> str:
 def get_version() -> str:
     version: Dict[str, str] = {}
     with open(Path(__file__).parent / "dagster/version.py", encoding="utf8") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
+        exec(fp.read(), version)
 
     return version["__version__"]
 
@@ -43,6 +43,7 @@ setup(
         "YouTube": "https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q",
         "Slack": "https://dagster.io/slack",
         "Blog": "https://dagster.io/blog",
+        "Newsletter": "https://dagster.io/newsletter-signup",
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
@@ -85,8 +86,8 @@ setup(
         "requests",
         "setuptools",
         "tabulate",
+        "tomli",
         "tqdm",
-        "typing_compat",
         "typing_extensions>=4.0.1",
         "sqlalchemy>=1.0",
         "toposort>=1.0",
@@ -96,12 +97,12 @@ setup(
         'pywin32 != 226; platform_system=="Windows"',
         "docstring-parser",
         "universal_pathlib",
+        "pydantic",
     ],
     extras_require={
         "docker": ["docker"],
         "test": [
             "buildkite-test-collector ; python_version>='3.8'",
-            "coverage==5.3",
             "docker",
             "grpcio-tools>=1.32.0,<1.44.0",  # related to above grpcio pins
             "mock==3.0.5",
@@ -118,17 +119,12 @@ setup(
             "snapshottest==0.6.0",
             "tox==3.25.0",
             "yamllint",
-            "astroid",  # let pylint determine the version
-            "pylint==2.13.7",
         ],
         "black": [
-            "black[jupyter]==22.3.0",
-        ],
-        "isort": [
-            "isort==5.10.1",
+            "black[jupyter]==22.12.0",
         ],
         "mypy": [
-            "mypy==0.950",
+            "mypy==0.991",
             "types-backports",  # version will be resolved against backports
             "types-certifi",  # version will be resolved against certifi
             "types-chardet",  # chardet is a 2+-order dependency of some Dagster libs
@@ -148,6 +144,9 @@ setup(
             "types-tabulate",  # version will be resolved against tabulate
             "types-tzlocal",  # version will be resolved against tzlocal
             "types-toml",  # version will be resolved against toml
+        ],
+        "ruff": [
+            "ruff==0.0.212",
         ],
     },
     entry_points={

@@ -174,7 +174,10 @@ def create_field_substitution_collision_error(
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.FIELD_ALIAS_COLLISION,
-        message=f"Received both field '{name}' and field '{aliased_name}' in config. Please use one or the other.",
+        message=(
+            f"Received both field '{name}' and field '{aliased_name}' in config. Please use one or"
+            " the other."
+        ),
         error_data=FieldAliasCollisionErrorData(field_name=name, aliased_field_name=aliased_name),
     )
 
@@ -245,12 +248,15 @@ def create_field_not_defined_error(context: ContextData, received_field: str) ->
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.FIELD_NOT_DEFINED,
-        message='Received unexpected config entry "{received}" {path_msg}. Expected: "{type_name}".'.format(
-            path_msg=get_friendly_path_msg(context.stack),
-            type_name=print_config_type_key_to_string(
-                context.config_schema_snapshot, context.config_type_key, with_lines=False
-            ),
-            received=received_field,
+        message=(
+            'Received unexpected config entry "{received}" {path_msg}. Expected: "{type_name}".'
+            .format(
+                path_msg=get_friendly_path_msg(context.stack),
+                type_name=print_config_type_key_to_string(
+                    context.config_schema_snapshot, context.config_type_key, with_lines=False
+                ),
+                received=received_field,
+            )
         ),
         error_data=FieldNotDefinedErrorData(field_name=received_field),
     )
@@ -304,7 +310,8 @@ def create_missing_required_field_error(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD,
         message=(
-            'Missing required config entry "{expected}" {path_msg}. Sample config for missing entry: {minimal_config}'
+            'Missing required config entry "{expected}" {path_msg}. Sample config for missing'
+            " entry: {minimal_config}"
         ).format(
             expected=expected_field,
             path_msg=get_friendly_path_msg(context.stack),
@@ -332,16 +339,19 @@ def create_missing_required_fields_error(
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS,
-        message="Missing required config entries {missing_fields} {path_msg}. Sample config for missing entries: {minimal_config}".format(
-            missing_fields=missing_fields,
-            path_msg=get_friendly_path_msg(context.stack),
-            minimal_config={
-                field_snap.name: minimal_config_for_type_snap(
-                    context.config_schema_snapshot,
-                    context.config_schema_snapshot.get_config_snap(field_snap.type_key),
-                )
-                for field_snap in missing_field_snaps
-            },
+        message=(
+            "Missing required config entries {missing_fields} {path_msg}. Sample config for missing"
+            " entries: {minimal_config}".format(
+                missing_fields=missing_fields,
+                path_msg=get_friendly_path_msg(context.stack),
+                minimal_config={
+                    field_snap.name: minimal_config_for_type_snap(
+                        context.config_schema_snapshot,
+                        context.config_schema_snapshot.get_config_snap(field_snap.type_key),
+                    )
+                    for field_snap in missing_field_snaps
+                },
+            )
         ),
         error_data=MissingFieldsErrorData(
             field_names=missing_fields, field_snaps=missing_field_snaps
@@ -355,12 +365,14 @@ def create_scalar_error(context: ContextData, config_value: object) -> Evaluatio
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-        message='Invalid scalar {path_msg}. Value "{config_value}" of type '
-        '"{type}" is not valid for expected type "{type_name}".'.format(
-            path_msg=get_friendly_path_msg(context.stack),
-            type_name=context.config_type_snap.given_name,
-            config_value=config_value,
-            type=type(config_value),
+        message=(
+            'Invalid scalar {path_msg}. Value "{config_value}" of type '
+            '"{type}" is not valid for expected type "{type_name}".'.format(
+                path_msg=get_friendly_path_msg(context.stack),
+                type_name=context.config_type_snap.given_name,
+                config_value=config_value,
+                type=type(config_value),
+            )
         ),
         error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
     )
@@ -468,10 +480,12 @@ def create_failed_post_processing_error(
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.FAILED_POST_PROCESSING,
-        message="Post processing {path_msg} of original value {original_value} failed:\n{error}".format(
-            path_msg=get_friendly_path_msg(context.stack),
-            original_value=original_value,
-            error=error_data.to_string(),
+        message=(
+            "Post processing {path_msg} of original value {original_value} failed:\n{error}".format(
+                path_msg=get_friendly_path_msg(context.stack),
+                original_value=original_value,
+                error=error_data.to_string(),
+            )
         ),
         error_data=error_data,
     )

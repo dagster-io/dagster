@@ -2,6 +2,11 @@ import os
 import time
 
 import pytest
+from dagster._core.definitions.events import AssetKey
+from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.test_utils import poll_for_finished_run
+from dagster._utils.merger import merge_dicts
+from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
     find_local_test_image,
@@ -12,16 +17,19 @@ from dagster_test.test_project import (
     get_test_project_workspace_and_external_pipeline,
 )
 
-from dagster._core.storage.pipeline_run import PipelineRunStatus
-from dagster._core.test_utils import poll_for_finished_run
-from dagster._utils.merger import merge_dicts
-from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
-
 from . import IS_BUILDKITE, docker_postgres_instance
 
 
-@pytest.mark.parametrize("from_pending_repository", [True, False])
-def test_image_on_pipeline(aws_env, from_pending_repository):
+@pytest.mark.parametrize(
+    "from_pending_repository, asset_selection",
+    [
+        (False, None),
+        (True, None),
+        (True, {AssetKey("foo"), AssetKey("bar")}),
+    ],
+)
+def test_image_on_pipeline(monkeypatch, aws_env, from_pending_repository, asset_selection):
+    monkeypatch.setenv("IN_EXTERNAL_PROCESS", "yes")
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
@@ -89,6 +97,7 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
                 external_pipeline_origin=external_pipeline.get_external_origin(),
                 pipeline_code_origin=external_pipeline.get_python_origin(),
                 repository_load_data=repository_load_data,
+                asset_selection=frozenset(asset_selection) if asset_selection else None,
             )
 
             instance.launch_run(run.run_id, workspace)
@@ -98,7 +107,7 @@ def test_image_on_pipeline(aws_env, from_pending_repository):
             for log in instance.all_logs(run.run_id):
                 print(log)  # pylint: disable=print-call
 
-            assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
+            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
 
 def test_container_context_on_pipeline(aws_env):
@@ -172,7 +181,7 @@ def test_container_context_on_pipeline(aws_env):
             for log in instance.all_logs(run.run_id):
                 print(log)  # pylint: disable=print-call
 
-            assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
+            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
 
 def test_recovery(aws_env):
@@ -238,9 +247,9 @@ def test_recovery(aws_env):
             start_time = time.time()
             while time.time() - start_time < 60:
                 run = instance.get_run_by_id(run.run_id)
-                if run.status == PipelineRunStatus.STARTED:
+                if run.status == DagsterRunStatus.STARTED:
                     break
-                assert run.status == PipelineRunStatus.STARTING
+                assert run.status == DagsterRunStatus.STARTING
                 time.sleep(1)
 
             time.sleep(3)
@@ -253,4 +262,4 @@ def test_recovery(aws_env):
 
             for log in instance.all_logs(run.run_id):
                 print(str(log) + "\n")  # pylint: disable=print-call
-            assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
+            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS

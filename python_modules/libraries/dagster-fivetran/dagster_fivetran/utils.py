@@ -1,11 +1,11 @@
 from typing import Any, Dict, Iterator, Mapping, Optional, Sequence
 
-from dagster_fivetran.types import FivetranOutput
-
 import dagster._check as check
 from dagster import AssetMaterialization, MetadataValue
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+
+from dagster_fivetran.types import FivetranOutput
 
 
 def get_fivetran_connector_url(connector_details: Mapping[str, Any]) -> str:

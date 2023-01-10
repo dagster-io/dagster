@@ -7,14 +7,19 @@ from contextlib import contextmanager
 from typing import Any, Dict, List, Mapping, Optional, cast
 
 import requests
-from dagster_airbyte.types import AirbyteOutput
-from requests.exceptions import RequestException
-
-from dagster import Failure, Field, StringSource
-from dagster import _check as check
-from dagster import get_dagster_logger, resource
+from dagster import (
+    Failure,
+    Field,
+    StringSource,
+    _check as check,
+    get_dagster_logger,
+    resource,
+)
 from dagster._config.field_utils import Permissive
 from dagster._utils.merger import deep_merge_dicts
+from requests.exceptions import RequestException
+
+from dagster_airbyte.types import AirbyteOutput
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 
@@ -45,6 +50,7 @@ class AirbyteResource:
         request_additional_params: Optional[Mapping[str, Any]] = None,
         log: logging.Logger = get_dagster_logger(),
         forward_logs: bool = True,
+        cancel_sync_on_run_termination: bool = True,
         username: Optional[str] = None,
         password: Optional[str] = None,
     ):
@@ -65,6 +71,8 @@ class AirbyteResource:
 
         self._username = username
         self._password = password
+
+        self._cancel_sync_on_run_termination = cancel_sync_on_run_termination
 
     @property
     def api_base_url(self) -> str:
@@ -117,7 +125,7 @@ class AirbyteResource:
         Returns:
             Optional[Dict[str, Any]]: Parsed json data from the response to this request
         """
-
+        url = self.api_base_url + endpoint
         headers = {"accept": "application/json"}
 
         num_retries = 0
@@ -127,7 +135,7 @@ class AirbyteResource:
                     **deep_merge_dicts(  # type: ignore
                         dict(
                             method="POST",
-                            url=self.api_base_url + endpoint,
+                            url=url,
                             headers=headers,
                             json=data,
                             timeout=self._request_timeout,
@@ -149,7 +157,7 @@ class AirbyteResource:
                 num_retries += 1
                 time.sleep(self._request_retry_delay)
 
-        raise Failure("Exceeded max number of retries.")
+        raise Failure(f"Max retries ({self._request_max_retries}) exceeded with url: {url}.")
 
     def cancel_job(self, job_id: int):
         self.make_request(endpoint="/jobs/cancel", data={"id": job_id})
@@ -297,7 +305,8 @@ class AirbyteResource:
             while True:
                 if poll_timeout and start + poll_timeout < time.monotonic():
                     raise Failure(
-                        f"Timeout: Airbyte job {job_id} is not ready after the timeout {poll_timeout} seconds"
+                        f"Timeout: Airbyte job {job_id} is not ready after the timeout"
+                        f" {poll_timeout} seconds"
                     )
                 time.sleep(poll_interval)
                 job_details = self.get_job_status(connection_id, job_id)
@@ -334,7 +343,10 @@ class AirbyteResource:
         finally:
             # if Airbyte sync has not completed, make sure to cancel it so that it doesn't outlive
             # the python process
-            if state not in (AirbyteState.SUCCEEDED, AirbyteState.ERROR, AirbyteState.CANCELLED):
+            if (
+                state not in (AirbyteState.SUCCEEDED, AirbyteState.ERROR, AirbyteState.CANCELLED)
+                and self._cancel_sync_on_run_termination
+            ):
                 self.cancel_job(job_id)
 
         return AirbyteOutput(job_details=job_details, connection_details=connection_details)
@@ -370,8 +382,10 @@ class AirbyteResource:
         "request_max_retries": Field(
             int,
             default_value=3,
-            description="The maximum number of times requests to the Airbyte API should be retried "
-            "before failing.",
+            description=(
+                "The maximum number of times requests to the Airbyte API should be retried "
+                "before failing."
+            ),
         ),
         "request_retry_delay": Field(
             float,
@@ -381,16 +395,34 @@ class AirbyteResource:
         "request_timeout": Field(
             int,
             default_value=15,
-            description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
+            description=(
+                "Time (in seconds) after which the requests to Airbyte are declared timed out."
+            ),
         ),
         "request_additional_params": Field(
             Permissive(),
-            description="Any additional kwargs to pass to the requests library when making requests to Airbyte.",
+            description=(
+                "Any additional kwargs to pass to the requests library when making requests to"
+                " Airbyte."
+            ),
         ),
         "forward_logs": Field(
             bool,
             default_value=True,
-            description="Whether to forward Airbyte logs to the compute log, can be expensive for long-running syncs.",
+            description=(
+                "Whether to forward Airbyte logs to the compute log, can be expensive for"
+                " long-running syncs."
+            ),
+        ),
+        "cancel_sync_on_run_termination": Field(
+            bool,
+            default_value=True,
+            description=(
+                "Whether to cancel a sync in Airbyte if the Dagster runner is terminated. This may"
+                " be useful to disable if using Airbyte sources that cannot be cancelled and"
+                " resumed easily, or if your Dagster deployment may experience runner interruptions"
+                " that do not impact your Airbyte deployment."
+            ),
         ),
     },
     description="This resource helps manage Airbyte connectors",
@@ -439,6 +471,7 @@ def airbyte_resource(context) -> AirbyteResource:
         request_additional_params=context.resource_config["request_additional_params"],
         log=context.log,
         forward_logs=context.resource_config["forward_logs"],
+        cancel_sync_on_run_termination=context.resource_config["cancel_sync_on_run_termination"],
         username=context.resource_config.get("username"),
         password=context.resource_config.get("password"),
     )

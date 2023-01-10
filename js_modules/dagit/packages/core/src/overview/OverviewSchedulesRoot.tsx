@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -14,24 +14,22 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
+import {graphql} from '../graphql';
+import {OverviewSchedulesQueryQuery} from '../graphql/graphql';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
-import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSchedules} from '../instigation/Unloadable';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {OverviewScheduleTable} from './OverviewSchedulesTable';
 import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
-import {OverviewSchedulesQuery} from './types/OverviewSchedulesQuery';
-import {UnloadableSchedulesQuery} from './types/UnloadableSchedulesQuery';
 import {visibleRepoKeys} from './visibleRepoKeys';
 
 export const OverviewSchedulesRoot = () => {
@@ -41,7 +39,7 @@ export const OverviewSchedulesRoot = () => {
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
 
-  const queryResultOverview = useQuery<OverviewSchedulesQuery>(OVERVIEW_SCHEDULES_QUERY, {
+  const queryResultOverview = useQuery(OVERVIEW_SCHEDULES_QUERY, {
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true,
   });
@@ -52,7 +50,7 @@ export const OverviewSchedulesRoot = () => {
   const repoBuckets = React.useMemo(() => {
     const visibleKeys = visibleRepoKeys(visibleRepos);
     return buildBuckets(data).filter(({repoAddress}) =>
-      visibleKeys.has(repoAddressAsString(repoAddress)),
+      visibleKeys.has(repoAddressAsHumanString(repoAddress)),
     );
   }, [data, visibleRepos]);
 
@@ -94,12 +92,12 @@ export const OverviewSchedulesRoot = () => {
                 anyReposHidden ? (
                   <div>
                     No schedules matching <strong>{searchValue}</strong> were found in the selected
-                    repositories
+                    code locations
                   </div>
                 ) : (
                   <div>
-                    No schedules matching <strong>{searchValue}</strong> were found in this
-                    workspace
+                    No schedules matching <strong>{searchValue}</strong> were found in your
+                    definitions
                   </div>
                 )
               }
@@ -115,8 +113,8 @@ export const OverviewSchedulesRoot = () => {
             title="No schedules"
             description={
               anyReposHidden
-                ? 'No schedules were found in the selected repositories'
-                : 'No schedules were found in this workspace'
+                ? 'No schedules were found in the selected code locations'
+                : 'No schedules were found in your definitions'
             }
           />
         </Box>
@@ -193,8 +191,8 @@ const UnloadableSchedulesAlert: React.FC<{
             <Box flex={{direction: 'column', gap: 12, alignItems: 'flex-start'}}>
               <div>
                 Schedules were previously started but now cannot be loaded. They may be part of a
-                different workspace or from a schedule or repository that no longer exists in code.
-                You can turn them off, but you cannot turn them back on.
+                code locations that no longer exist. You can turn them off, but you cannot turn them
+                back on.
               </div>
               <Button onClick={() => setIsOpen(true)}>
                 {count === 1 ? 'View unloadable schedule' : 'View unloadable schedules'}
@@ -222,7 +220,7 @@ const UnloadableSchedulesAlert: React.FC<{
 };
 
 const UnloadableScheduleDialog: React.FC = () => {
-  const {data} = useQuery<UnloadableSchedulesQuery>(UNLOADABLE_SCHEDULES_QUERY);
+  const {data} = useQuery(UNLOADABLE_SCHEDULES_QUERY);
   if (!data) {
     return <Spinner purpose="section" />;
   }
@@ -244,7 +242,7 @@ type RepoBucket = {
   schedules: string[];
 };
 
-const buildBuckets = (data?: OverviewSchedulesQuery): RepoBucket[] => {
+const buildBuckets = (data?: OverviewSchedulesQueryQuery): RepoBucket[] => {
   if (data?.workspaceOrError.__typename !== 'Workspace') {
     return [];
   }
@@ -275,7 +273,7 @@ const buildBuckets = (data?: OverviewSchedulesQuery): RepoBucket[] => {
   return sortRepoBuckets(buckets);
 };
 
-const OVERVIEW_SCHEDULES_QUERY = gql`
+const OVERVIEW_SCHEDULES_QUERY = graphql(`
   query OverviewSchedulesQuery {
     workspaceOrError {
       ... on Workspace {
@@ -312,12 +310,9 @@ const OVERVIEW_SCHEDULES_QUERY = gql`
       ...InstanceHealthFragment
     }
   }
+`);
 
-  ${PYTHON_ERROR_FRAGMENT}
-  ${INSTANCE_HEALTH_FRAGMENT}
-`;
-
-const UNLOADABLE_SCHEDULES_QUERY = gql`
+const UNLOADABLE_SCHEDULES_QUERY = graphql(`
   query UnloadableSchedulesQuery {
     unloadableInstigationStatesOrError(instigationType: SCHEDULE) {
       ... on InstigationStates {
@@ -329,7 +324,4 @@ const UNLOADABLE_SCHEDULES_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-
-  ${INSTIGATION_STATE_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);

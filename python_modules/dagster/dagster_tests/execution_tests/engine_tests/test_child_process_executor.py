@@ -3,7 +3,6 @@ import os
 import time
 
 import pytest
-
 from dagster._core.executor.child_process_executor import (
     ChildProcessCommand,
     ChildProcessCrashException,

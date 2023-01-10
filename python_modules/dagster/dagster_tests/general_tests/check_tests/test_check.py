@@ -5,9 +5,8 @@ import sys
 from collections import defaultdict
 from contextlib import contextmanager
 
-import pytest
-
 import dagster._check as check
+import pytest
 from dagster._check import (
     CheckError,
     ElementCheckError,
@@ -385,15 +384,19 @@ def test_two_dim_dict():
 
     with raises_with_message(
         CheckError,
-        "Value in dict mismatches expected type for key int_value. Expected value "
-        "of type <class 'dict'>. Got value 2 of type <class 'int'>.",
+        (
+            "Value in dict mismatches expected type for key int_value. Expected value "
+            "of type <class 'dict'>. Got value 2 of type <class 'int'>."
+        ),
     ):
         check.two_dim_dict_param({"int_value": 2}, "foo")
 
     with raises_with_message(
         CheckError,
-        "Value in dict mismatches expected type for key level_two_value_mismatch. "
-        "Expected value of type <class 'str'>. Got value 2 of type <class 'int'>.",
+        (
+            "Value in dict mismatches expected type for key level_two_value_mismatch. "
+            "Expected value of type <class 'str'>. Got value 2 of type <class 'int'>."
+        ),
     ):
         check.two_dim_dict_param(
             {"level_one_key": {"level_two_value_mismatch": 2}}, "foo", value_type=str
@@ -1107,7 +1110,6 @@ def test_sequence_param():
 
 
 def test_opt_sequence_param():
-
     assert check.opt_sequence_param([], "sequence_param") == []
     assert check.opt_sequence_param(tuple(), "sequence_param") == tuple()
 
@@ -1125,7 +1127,6 @@ def test_opt_sequence_param():
 
 
 def test_opt_nullable_sequence_param():
-
     assert check.opt_nullable_sequence_param([], "sequence_param") == []
     assert check.opt_nullable_sequence_param(tuple(), "sequence_param") == tuple()
 
@@ -1302,7 +1303,15 @@ def test_opt_tuple_param():
         check.opt_tuple_param((3, "a"), "something", of_shape=(str, int))
 
     with pytest.raises(CheckError):
-        check.is_tuple((3, 4), of_shape=(int, int), of_type=int)
+        check.opt_tuple_param((3, 4), "something", of_shape=(int, int), of_type=int)
+
+
+def test_opt_nullable_tuple_param():
+    assert check.opt_nullable_tuple_param((1, 2), "something")
+    assert check.opt_nullable_tuple_param(None, "something") is None
+
+    with pytest.raises(CheckError):
+        check.opt_nullable_tuple_param([3, 4], "something", of_shape=(int, int), of_type=int)
 
 
 def test_is_tuple():

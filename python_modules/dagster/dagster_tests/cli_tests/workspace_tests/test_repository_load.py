@@ -1,14 +1,15 @@
 import click
 import pytest
 from click.testing import CliRunner
-
 from dagster._cli.workspace.cli_target import (
     get_external_repository_from_kwargs,
+    get_workspace_from_kwargs,
     repository_target_argument,
 )
 from dagster._core.host_representation import ExternalRepository
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
+from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import file_relative_path
 
 
@@ -31,6 +32,26 @@ def load_repository_via_cli_runner(cli_args, repo_assert_fn=None):
     return result
 
 
+def load_workspace_via_cli_runner(cli_args, workspace_assert_fn=None):
+    @click.command(name="test_workspace_command")
+    @repository_target_argument
+    def command(**kwargs):
+        with get_workspace_from_kwargs(
+            DagsterInstance.get(),
+            version="",
+            kwargs=kwargs,
+        ) as workspace:
+            assert isinstance(workspace, WorkspaceRequestContext)
+            if workspace_assert_fn:
+                workspace_assert_fn(workspace)
+
+    with instance_for_test():
+        runner = CliRunner()
+        result = runner.invoke(command, cli_args)
+
+    return result
+
+
 def successfully_load_repository_via_cli(cli_args, repo_assert_fn=None):
     def wrapped_repo_assert(external_repo):
         assert isinstance(external_repo, ExternalRepository)
@@ -45,6 +66,72 @@ def successfully_load_repository_via_cli(cli_args, repo_assert_fn=None):
 PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE = file_relative_path(
     __file__, "hello_world_in_file/python_file_with_named_location_workspace.yaml"
 )
+
+
+def test_multiple_module_load():
+    MODULE_ONE = "dagster._utils.test.hello_world_repository"
+    MODULE_TWO = "dagster._utils.test.hello_world_defs"
+
+    executed = {}
+
+    def wrapped_workspace_assert(workspace_context):
+        assert isinstance(workspace_context, WorkspaceRequestContext)
+        assert workspace_context.get_repository_location(MODULE_ONE)
+        assert workspace_context.get_repository_location(MODULE_TWO)
+        executed["yes"] = True
+
+    result = load_workspace_via_cli_runner(
+        ["-m", MODULE_ONE, "-m", MODULE_TWO],
+        wrapped_workspace_assert,
+    )
+
+    assert executed["yes"]
+    assert result.exit_code == 0
+
+
+def test_multiple_module_load_with_attribute():
+    MODULE_ONE = "dagster._utils.test.hello_world_repository"
+    MODULE_TWO = "dagster._utils.test.hello_world_defs"
+
+    result = load_workspace_via_cli_runner(
+        ["-m", MODULE_ONE, "-m", MODULE_TWO, "-a", "defs"],  # does not accept attribute
+    )
+
+    assert "If you are specifying multiple modules you cannot specify an attribute" in result.stdout
+    assert result.exit_code != 0
+
+
+def test_multiple_file_load():
+    FILE_ONE = file_relative_path(__file__, "hello_world_in_file/hello_world_repository.py")
+    FILE_TWO = file_relative_path(__file__, "definitions_test_cases/defs_file.py")
+
+    executed = {}
+
+    def wrapped_workspace_assert(workspace_context):
+        assert isinstance(workspace_context, WorkspaceRequestContext)
+        assert workspace_context.get_repository_location("hello_world_repository.py")
+        assert workspace_context.get_repository_location("defs_file.py")
+        executed["yes"] = True
+
+    result = load_workspace_via_cli_runner(
+        ["-f", FILE_ONE, "-f", FILE_TWO],
+        wrapped_workspace_assert,
+    )
+
+    assert result.exit_code == 0
+    assert executed["yes"]
+
+
+def test_multiple_file_load_with_attribute():
+    FILE_ONE = file_relative_path(__file__, "hello_world_in_file/hello_world_repository.py")
+    FILE_TWO = file_relative_path(__file__, "definitions_test_cases/defs_file.py")
+
+    result = load_workspace_via_cli_runner(
+        ["-f", FILE_ONE, "-f", FILE_TWO, "-a", "defs"],
+    )
+
+    assert "If you are specifying multiple files you cannot specify an attribute" in result.stdout
+    assert result.exit_code != 0
 
 
 @pytest.mark.parametrize(

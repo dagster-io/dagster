@@ -1,18 +1,17 @@
-import {gql} from '@apollo/client';
 import {Colors, ConfigTypeSchema, Icon, IconWrapper, Box} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
+import {graphql} from '../graphql';
+import {SidebarResourcesSectionFragmentFragment} from '../graphql/graphql';
 
 import {Description} from './Description';
 import {SectionHeader, SectionItemContainer} from './SidebarComponents';
-import {SidebarResourcesSectionFragment} from './types/SidebarResourcesSectionFragment';
 
 const NO_DESCRIPTION = '';
 
 export const SidebarResourcesSection: React.FC<{
-  mode: SidebarResourcesSectionFragment;
+  mode: SidebarResourcesSectionFragmentFragment;
   showModeName?: boolean;
 }> = ({mode, showModeName}) => {
   return (
@@ -44,7 +43,7 @@ export const SidebarResourcesSection: React.FC<{
   );
 };
 
-export const SIDEBAR_RESOURCES_SECTION_FRAGMENT = gql`
+export const SIDEBAR_RESOURCES_SECTION_FRAGMENT = graphql(`
   fragment SidebarResourcesSectionFragment on Mode {
     id
     name
@@ -74,9 +73,7 @@ export const SIDEBAR_RESOURCES_SECTION_FRAGMENT = gql`
       }
     }
   }
-
-  ${CONFIG_TYPE_SCHEMA_FRAGMENT}
-`;
+`);
 
 const ContextResourceHeader = styled(SectionHeader)`
   font-size: 16px;

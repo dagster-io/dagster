@@ -10,8 +10,10 @@ from typing import Generator, Generic, TypeVar, Union
 
 import pendulum
 
-from dagster import DagsterInstance
-from dagster import _check as check
+from dagster import (
+    DagsterInstance,
+    _check as check,
+)
 from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 from dagster._core.telemetry import DAEMON_ALIVE, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
@@ -84,7 +86,8 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
                             self._errors.appendleft((result, pendulum.now("UTC")))
                     except StopIteration:
                         self._logger.error(
-                            "Daemon loop finished without raising an error - daemon loops should run forever until they are interrupted."
+                            "Daemon loop finished without raising an error - daemon loops should"
+                            " run forever until they are interrupted."
                         )
                         break
                     except Exception:
@@ -148,10 +151,12 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
             and last_stored_heartbeat.daemon_id != daemon_uuid
         ):
             self._logger.error(
-                "Another %s daemon is still sending heartbeats. You likely have multiple "
-                "daemon processes running at once, which is not supported. "
-                "Last heartbeat daemon id: %s, "
-                "Current daemon_id: %s",
+                (
+                    "Another %s daemon is still sending heartbeats. You likely have multiple "
+                    "daemon processes running at once, which is not supported. "
+                    "Last heartbeat daemon id: %s, "
+                    "Current daemon_id: %s"
+                ),
                 daemon_type,
                 last_stored_heartbeat.daemon_id,
                 daemon_uuid,

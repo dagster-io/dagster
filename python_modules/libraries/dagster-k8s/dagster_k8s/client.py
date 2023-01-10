@@ -5,10 +5,12 @@ from enum import Enum
 from typing import Optional
 
 import kubernetes
-
-from dagster import DagsterInstance
-from dagster import _check as check
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster import (
+    DagsterInstance,
+    _check as check,
+)
+from dagster._core.storage.pipeline_run import DagsterRunStatus
+from kubernetes.client.models import V1JobStatus
 
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day
 DEFAULT_WAIT_BETWEEN_ATTEMPTS = 10.0  # 10 seconds
@@ -136,13 +138,13 @@ class DagsterKubernetesClient:
         self.timer = timer
 
     @staticmethod
-    def production_client():
+    def production_client(batch_api_override=None):
         return DagsterKubernetesClient(
-            kubernetes.client.BatchV1Api(),
-            kubernetes.client.CoreV1Api(),
-            logging.info,
-            time.sleep,
-            time.time,
+            batch_api=batch_api_override or kubernetes.client.BatchV1Api(),
+            core_api=kubernetes.client.CoreV1Api(),
+            logger=logging.info,
+            sleeper=time.sleep,
+            timer=time.time,
         )
 
     ### Job operations ###
@@ -179,8 +181,7 @@ class DagsterKubernetesClient:
         while not job:
             if wait_timeout and (self.timer() - start > wait_timeout):
                 raise DagsterK8sTimeoutError(
-                    "Timed out while waiting for job {job_name}"
-                    " to launch".format(job_name=job_name)
+                    "Timed out while waiting for job {job_name} to launch".format(job_name=job_name)
                 )
 
             # Get all jobs in the namespace and find the matching job
@@ -191,9 +192,8 @@ class DagsterKubernetesClient:
                 if jobs.items:
                     check.invariant(
                         len(jobs.items) == 1,
-                        'There should only be one k8s job with name "{}", but got multiple jobs:" {}'.format(
-                            job_name, jobs.items
-                        ),
+                        'There should only be one k8s job with name "{}", but got multiple'
+                        ' jobs:" {}'.format(job_name, jobs.items),
                     )
                     return jobs.items[0]
                 else:
@@ -223,8 +223,9 @@ class DagsterKubernetesClient:
         while True:
             if wait_timeout and (self.timer() - start > wait_timeout):
                 raise DagsterK8sTimeoutError(
-                    "Timed out while waiting for job {job_name}"
-                    " to have pods".format(job_name=job_name)
+                    "Timed out while waiting for job {job_name} to have pods".format(
+                        job_name=job_name
+                    )
                 )
 
             pod_list = k8s_api_retry(_get_pods, max_retries=3, timeout=wait_time_between_attempts)
@@ -309,20 +310,17 @@ class DagsterKubernetesClient:
         while True:
             if wait_timeout and (self.timer() - start_time > wait_timeout):
                 raise DagsterK8sTimeoutError(
-                    "Timed out while waiting for job {job_name}"
-                    " to complete".format(job_name=job_name)
+                    "Timed out while waiting for job {job_name} to complete".format(
+                        job_name=job_name
+                    )
                 )
 
             # Reads the status of the specified job. Returns a V1Job object that
             # we need to read the status off of.
-            status = None
-
-            def _get_job_status():
-                job = self.batch_api.read_namespaced_job_status(job_name, namespace=namespace)
-                return job.status
-
-            status = k8s_api_retry(
-                _get_job_status, max_retries=3, timeout=wait_time_between_attempts
+            status = self.get_job_status(
+                job_name=job_name,
+                namespace=namespace,
+                wait_time_between_attempts=wait_time_between_attempts,
             )
 
             # status.succeeded represents the number of pods which reached phase Succeeded.
@@ -344,10 +342,22 @@ class DagsterKubernetesClient:
                     raise DagsterK8sPipelineStatusException()
 
                 pipeline_run_status = pipeline_run.status
-                if pipeline_run_status != PipelineRunStatus.STARTED:
+                if pipeline_run_status != DagsterRunStatus.STARTED:
                     raise DagsterK8sPipelineStatusException()
 
             self.sleeper(wait_time_between_attempts)
+
+    def get_job_status(
+        self,
+        job_name: str,
+        namespace: str,
+        wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+    ) -> V1JobStatus:
+        def _get_job_status():
+            job = self.batch_api.read_namespaced_job_status(job_name, namespace=namespace)
+            return job.status
+
+        return k8s_api_retry(_get_job_status, max_retries=3, timeout=wait_time_between_attempts)
 
     def delete_job(
         self,
@@ -468,7 +478,6 @@ class DagsterKubernetesClient:
         start = start_time or self.timer()
 
         while True:
-
             pods = self.core_api.list_namespaced_pod(
                 namespace=namespace, field_selector="metadata.name=%s" % pod_name
             ).items
@@ -522,8 +531,8 @@ class DagsterKubernetesClient:
                     continue
                 if state.waiting.reason == KubernetesWaitingReasons.CreateContainerConfigError:
                     self.logger(
-                        'Pod "%s" is waiting due to a CreateContainerConfigError with message "%s" - trying again to see if it recovers'
-                        % (pod_name, state.waiting.message)
+                        'Pod "%s" is waiting due to a CreateContainerConfigError with message "%s"'
+                        " - trying again to see if it recovers" % (pod_name, state.waiting.message)
                     )
                     self.sleeper(wait_time_between_attempts)
                     continue

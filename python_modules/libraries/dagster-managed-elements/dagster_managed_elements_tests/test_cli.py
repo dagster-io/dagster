@@ -1,8 +1,7 @@
 import pytest
 from click.testing import CliRunner
-from dagster_managed_elements.cli import main
-
 from dagster._utils import file_relative_path
+from dagster_managed_elements.cli import main
 
 TEST_ROOT_DIR = file_relative_path(__file__, ".")
 
@@ -12,7 +11,6 @@ TEST_ROOT_DIR = file_relative_path(__file__, ".")
     ["check", "apply"],
 )
 def test_commands(command):
-
     runner = CliRunner()
 
     is_check = command == "check"
@@ -22,13 +20,13 @@ def test_commands(command):
 
     check_result = runner.invoke(main, [command, "-m", "example_empty_module", "-d", TEST_ROOT_DIR])
     assert check_result.exit_code == 0
-    assert "Found 0 managed elements" in check_result.output
+    assert "Found 0 reconcilers" in check_result.output
 
     check_result = runner.invoke(
         main, [command, "-m", "example_module_in_sync_reconciler", "-d", TEST_ROOT_DIR]
     )
     assert check_result.exit_code == 0
-    assert "Found 1 managed elements" in check_result.output
+    assert "Found 1 reconcilers" in check_result.output
     assert (
         "+ " not in check_result.output
         and "- " not in check_result.output
@@ -39,7 +37,7 @@ def test_commands(command):
         main, [command, "-m", "example_module_out_of_sync_reconciler", "-d", TEST_ROOT_DIR]
     )
     assert check_result.exit_code == 0
-    assert "Found 1 managed elements" in check_result.output
+    assert "Found 1 reconcilers" in check_result.output
 
     # Just make sure we see an addition or deletion in the output,
     # we don't really care about the contents, that's tested in the diff tests
@@ -54,7 +52,7 @@ def test_commands(command):
         main, [command, "-m", "example_module_many_out_of_sync_reconcilers", "-d", TEST_ROOT_DIR]
     )
     assert check_result.exit_code == 0
-    assert "Found 2 managed elements" in check_result.output
+    assert "Found 2 reconcilers" in check_result.output
     assert (
         "+ " in check_result.output
         and "- " in check_result.output
@@ -73,7 +71,7 @@ def test_commands(command):
         ],
     )
     assert check_result.exit_code == 0
-    assert "Found 1 managed elements" in check_result.output
+    assert "Found 1 reconcilers" in check_result.output
     assert (
         "+" in check_result.output
         and "-" not in check_result.output
@@ -92,7 +90,7 @@ def test_commands(command):
         ],
     )
     assert check_result.exit_code == 0
-    assert "Found 2 managed elements" in check_result.output
+    assert "Found 2 reconcilers" in check_result.output
     assert (
         "+ " in check_result.output
         and "- " in check_result.output
@@ -111,7 +109,7 @@ def test_commands(command):
         ],
     )
     assert check_result.exit_code == 0
-    assert "Found 1 managed elements" in check_result.output
+    assert "Found 1 reconcilers" in check_result.output
     assert (
         "+ " not in check_result.output
         and "- " not in check_result.output

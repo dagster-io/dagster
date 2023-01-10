@@ -18,38 +18,33 @@ import {useHistory} from 'react-router-dom';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {AssetKey} from '../assets/types';
+import {
+  ConfigPartitionSelectionQueryQuery,
+  ConfigPartitionSelectionQueryQueryVariables,
+  LaunchBackfillParams,
+  LaunchPartitionBackfillMutation,
+  LaunchPartitionBackfillMutationVariables,
+  PartitionDefinitionForLaunchAssetFragment,
+} from '../graphql/graphql';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
-import {
-  LaunchPartitionBackfill,
-  LaunchPartitionBackfillVariables,
-} from '../instance/types/LaunchPartitionBackfill';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
-import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
-import {
-  ConfigPartitionSelectionQuery,
-  ConfigPartitionSelectionQueryVariables,
-} from '../launchpad/types/ConfigPartitionSelectionQuery';
-import {assembleIntoSpans, stringForSpan} from '../partitions/PartitionRangeInput';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {PartitionRangeWizard} from '../partitions/PartitionRangeWizard';
 import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
 import {showBackfillErrorToast, showBackfillSuccessToast} from '../partitions/PartitionsBackfill';
+import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation';
 import {RepoAddress} from '../workspace/types';
 
 import {executionParamsForAssetJob} from './LaunchAssetExecutionButton';
 import {explodePartitionKeysInRanges, mergedAssetHealth} from './MultipartitioningSupport';
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
-import {
-  LaunchAssetExecutionAssetNodeFragment_partitionDefinition,
-  LaunchAssetExecutionAssetNodeFragment_partitionKeysByDimension,
-} from './types/LaunchAssetExecutionAssetNodeFragment';
 import {usePartitionDimensionRanges} from './usePartitionDimensionRanges';
 import {PartitionHealthDimensionRange, usePartitionHealthData} from './usePartitionHealthData';
 import {usePartitionNameForPipeline} from './usePartitionNameForPipeline';
-
 interface Props {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -58,8 +53,7 @@ interface Props {
   assets: {
     assetKey: AssetKey;
     opNames: string[];
-    partitionKeysByDimension: LaunchAssetExecutionAssetNodeFragment_partitionKeysByDimension[];
-    partitionDefinition: LaunchAssetExecutionAssetNodeFragment_partitionDefinition | null;
+    partitionDefinition: PartitionDefinitionForLaunchAssetFragment | null;
   }[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
 }
@@ -99,28 +93,43 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   assetJobName,
   upstreamAssetKeys,
 }) => {
-  const {canLaunchPartitionBackfill} = usePermissions();
-  const [previewCount, setPreviewCount] = React.useState(0);
-  const [launching, setLaunching] = React.useState(false);
-
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
+
+  const {canLaunchPartitionBackfill} = usePermissions();
+  const [launching, setLaunching] = React.useState(false);
+  const [previewCount, setPreviewCount] = React.useState(0);
+  const morePreviewsCount = partitionedAssets.length - previewCount;
+
   const assetHealth = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
   const mergedHealth = React.useMemo(() => mergedAssetHealth(assetHealth), [assetHealth]);
 
-  const [ranges, setRanges] = usePartitionDimensionRanges(
-    mergedHealth,
-    partitionedAssets[0].partitionKeysByDimension.map((d) => d.name),
-  );
+  const knownDimensions = partitionedAssets[0].partitionDefinition?.dimensionTypes || [];
+  const [ranges, setRanges] = usePartitionDimensionRanges({
+    knownDimensionNames: knownDimensions.map((d) => d.name),
+    modifyQueryString: false,
+    assetHealth: mergedHealth,
+  });
 
   const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
     PartitionState.MISSING,
-    PartitionState.SUCCESS_MISSING,
   ]);
 
   const allInRanges = React.useMemo(
-    () => explodePartitionKeysInRanges(ranges, mergedHealth.stateForKey),
+    () =>
+      explodePartitionKeysInRanges(ranges, (dimensionKeys: string[]) => {
+        // Note: If the merged asset health for a given partition is "partial", we want
+        // to group it into "missing" within the backfill UI. We don't have a fine-grained
+        // way to run just the missing assets within the partition.
+        //
+        // The alternative would be to offer a "Partial" checkbox alongside "Missing",
+        // but defining missing as "missing for /any/ asset I've selected" is simpler.
+        //
+        const state = mergedHealth.stateForKey(dimensionKeys);
+        return state === PartitionState.SUCCESS_MISSING ? PartitionState.MISSING : state;
+      }),
     [ranges, mergedHealth],
   );
+
   const allSelected = React.useMemo(
     () => allInRanges.filter((key) => stateFilters.includes(key.state)),
     [allInRanges, stateFilters],
@@ -128,6 +137,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   const client = useApolloClient();
   const history = useHistory();
+  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
   // Find the partition set name. This seems like a bit of a hack, unclear
@@ -148,8 +158,8 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
     if (allSelected.length === 1) {
       const {data: tagAndConfigData} = await client.query<
-        ConfigPartitionSelectionQuery,
-        ConfigPartitionSelectionQueryVariables
+        ConfigPartitionSelectionQueryQuery,
+        ConfigPartitionSelectionQueryQueryVariables
       >({
         query: CONFIG_PARTITION_SELECTION_QUERY,
         fetchPolicy: 'network-only',
@@ -206,24 +216,30 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       );
 
       setLaunching(false);
-      if (result?.launchPipelineExecution.__typename === 'LaunchRunSuccess') {
+      if (result?.__typename === 'LaunchRunSuccess') {
         setOpen(false);
       }
     } else {
+      const selectorUnlessGraph:
+        | LaunchBackfillParams['selector']
+        | undefined = !isHiddenAssetGroupJob(assetJobName)
+        ? {
+            partitionSetName: partitionSet.name,
+            repositorySelector: {
+              repositoryLocationName: repoAddress.location,
+              repositoryName: repoAddress.name,
+            },
+          }
+        : undefined;
+
       const {data: launchBackfillData} = await client.mutate<
-        LaunchPartitionBackfill,
-        LaunchPartitionBackfillVariables
+        LaunchPartitionBackfillMutation,
+        LaunchPartitionBackfillMutationVariables
       >({
         mutation: LAUNCH_PARTITION_BACKFILL_MUTATION,
         variables: {
           backfillParams: {
-            selector: {
-              partitionSetName: partitionSet.name,
-              repositorySelector: {
-                repositoryLocationName: repoAddress.location,
-                repositoryName: repoAddress.name,
-              },
-            },
+            selector: selectorUnlessGraph,
             assetSelection: assets.map((a) => ({path: a.assetKey.path})),
             partitionNames: allSelected.map((k) => k.partitionKey),
             fromFailure: false,
@@ -256,7 +272,11 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
               key={range.dimension.name}
               partitionKeys={range.dimension.partitionKeys}
               partitionStateForKey={(dimensionKey) =>
-                mergedHealth.stateForSingleDimension(idx, dimensionKey)
+                mergedHealth.stateForSingleDimension(
+                  idx,
+                  dimensionKey,
+                  ranges.length === 2 ? ranges[1 - idx].selected : undefined,
+                )
               }
               selected={range.selected}
               setSelected={(selected) =>
@@ -268,45 +288,54 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           ))}
           <PartitionStateCheckboxes
             partitionKeysForCounts={allInRanges}
-            allowed={[
-              PartitionState.MISSING,
-              PartitionState.SUCCESS_MISSING,
-              PartitionState.SUCCESS,
-            ]}
+            allowed={[PartitionState.MISSING, PartitionState.SUCCESS]}
             value={stateFilters}
             onChange={setStateFilters}
           />
         </Box>
-        <Box
-          flex={{direction: 'column', gap: 8}}
-          border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-          style={{marginTop: 16, overflowY: 'auto', overflowX: 'visible', maxHeight: '50vh'}}
-        >
-          {partitionedAssets.slice(0, previewCount).map((a) => (
-            <PartitionHealthSummary
-              assetKey={a.assetKey}
-              showAssetKey
-              key={displayNameForAssetKey(a.assetKey)}
-              data={assetHealth}
-              selected={allSelected}
-            />
-          ))}
-          {partitionedAssets.length === 1 ? (
-            <span />
-          ) : previewCount === 0 ? (
-            <Box margin={{vertical: 8}}>
-              <ButtonLink onClick={() => setPreviewCount(5)}>
-                Show per-asset partition health
-              </ButtonLink>
-            </Box>
-          ) : previewCount < partitionedAssets.length ? (
-            <Box margin={{vertical: 8}}>
-              <ButtonLink onClick={() => setPreviewCount(partitionedAssets.length)}>
-                Show {partitionedAssets.length - previewCount} more previews
-              </ButtonLink>
-            </Box>
-          ) : undefined}
-        </Box>
+
+        {previewCount > 0 && (
+          <Box
+            margin={{top: 16}}
+            flex={{direction: 'column', gap: 8}}
+            padding={{vertical: 16, horizontal: 20}}
+            border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+            background={Colors.Gray100}
+            style={{
+              marginLeft: -20,
+              marginRight: -20,
+              overflowY: 'auto',
+              overflowX: 'visible',
+              maxHeight: '35vh',
+            }}
+          >
+            {partitionedAssets.slice(0, previewCount).map((a) => (
+              <PartitionHealthSummary
+                key={displayNameForAssetKey(a.assetKey)}
+                assetKey={a.assetKey}
+                showAssetKey
+                data={assetHealth}
+                ranges={ranges}
+              />
+            ))}
+            {morePreviewsCount > 0 && (
+              <Box margin={{vertical: 8}}>
+                <ButtonLink onClick={() => setPreviewCount(partitionedAssets.length)}>
+                  Show {morePreviewsCount} more {morePreviewsCount > 1 ? 'previews' : 'preview'}
+                </ButtonLink>
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {previewCount === 0 && partitionedAssets.length > 1 && (
+          <Box margin={{top: 16, bottom: 8}}>
+            <ButtonLink onClick={() => setPreviewCount(5)}>
+              Show per-asset partition health
+            </ButtonLink>
+          </Box>
+        )}
+
         <UpstreamUnavailableWarning
           upstreamAssetKeys={upstreamAssetKeys}
           ranges={ranges}
@@ -353,8 +382,11 @@ const UpstreamUnavailableWarning: React.FC<{
   // unavailable partitions in the multi-dimensional case and our "two range inputs" won't
   // allow us to remove missing individual pairs.
   const upstreamAssetHealth = usePartitionHealthData(upstreamAssetKeys);
+  if (upstreamAssetHealth.length === 0) {
+    return <span />;
+  }
+
   const upstreamUnavailable = (singleDimensionKey: string) =>
-    upstreamAssetHealth.length > 0 &&
     upstreamAssetHealth.some((a) => {
       // If the key is not undefined, it's present in the partition key space of the asset
       return a.stateForKey([singleDimensionKey]) === PartitionState.MISSING;

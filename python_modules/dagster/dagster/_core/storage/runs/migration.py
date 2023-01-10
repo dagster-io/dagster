@@ -6,15 +6,16 @@ from tqdm import tqdm
 import dagster._check as check
 from dagster._serdes import deserialize_as
 
-from ...execution.backfill import PartitionBackfill
-from ...execution.bulk_actions import BulkActionType
-from ..pipeline_run import PipelineRun, PipelineRunStatus
+from ...execution.job_backfill import PartitionBackfill
+from ..pipeline_run import DagsterRun, DagsterRunStatus
 from ..runs.base import RunStorage
-from ..runs.schema import BulkActionsTable, RunTagsTable, RunsTable
+from ..runs.schema import BulkActionsTable, RunsTable, RunTagsTable
 from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, REPOSITORY_LABEL_TAG
 
 RUN_PARTITIONS = "run_partitions"
-RUN_START_END = "run_start_end_overwritten"  # was run_start_end, but renamed to overwrite bad timestamps written
+RUN_START_END = (  # was run_start_end, but renamed to overwrite bad timestamps written
+    "run_start_end_overwritten"
+)
 RUN_REPO_LABEL_TAGS = "run_repo_label_tags"
 BULK_ACTION_TYPES = "bulk_action_types"
 
@@ -32,10 +33,10 @@ OPTIONAL_DATA_MIGRATIONS = {
 CHUNK_SIZE = 100
 
 UNSTARTED_RUN_STATUSES = {
-    PipelineRunStatus.QUEUED,
-    PipelineRunStatus.NOT_STARTED,
-    PipelineRunStatus.MANAGED,
-    PipelineRunStatus.STARTING,
+    DagsterRunStatus.QUEUED,
+    DagsterRunStatus.NOT_STARTED,
+    DagsterRunStatus.MANAGED,
+    DagsterRunStatus.STARTING,
 }
 
 
@@ -106,7 +107,6 @@ def migrate_run_start_end(storage, print_fn=None):
     """
     Utility method that updates the start and end times of historical runs using the completed event log.
     """
-
     if print_fn:
         print_fn("Querying run and event log storage.")
 
@@ -187,12 +187,12 @@ def migrate_run_repo_tags(run_storage: RunStorage, print_fn=None):
 
             has_more = len(rows) >= CHUNK_SIZE
             for row in rows:
-                run = deserialize_as(row[0], PipelineRun)
+                run = deserialize_as(row[0], DagsterRun)
                 cursor = row[1]
                 write_repo_tag(conn, run)
 
 
-def write_repo_tag(conn, run: PipelineRun):
+def write_repo_tag(conn, run: DagsterRun):
     if not run.external_pipeline_origin:
         # nothing to do
         return
@@ -248,7 +248,7 @@ def migrate_bulk_actions(run_storage: RunStorage, print_fn=None):
                     BulkActionsTable.update()
                     .values(
                         selector_id=backfill.selector_id,
-                        action_type=BulkActionType.PARTITION_BACKFILL.value,
+                        action_type=backfill.bulk_action_type.value,
                     )
                     .where(BulkActionsTable.c.id == storage_id)
                 )

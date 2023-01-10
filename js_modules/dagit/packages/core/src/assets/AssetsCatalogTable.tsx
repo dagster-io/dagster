@@ -1,69 +1,50 @@
-import {gql, QueryResult, useQuery} from '@apollo/client';
-import {
-  Box,
-  CursorPaginationControls,
-  CursorPaginationProps,
-  TextInput,
-  Suggest,
-  MenuItem,
-  Icon,
-  ButtonGroup,
-} from '@dagster-io/ui';
+import {QueryResult, useQuery} from '@apollo/client';
+import {Box, TextInput, Suggest, MenuItem, Icon, ButtonGroup} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
-import styled from 'styled-components/macro';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
-import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {graphql} from '../graphql';
+import {
+  AssetCatalogGroupTableNodeFragment,
+  AssetCatalogGroupTableQueryQuery,
+  AssetCatalogTableQueryQuery,
+  AssetGroupSelector,
+  AssetTableFragmentFragment,
+  PythonErrorFragmentFragment,
+} from '../graphql/graphql';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {AssetGroupSelector} from '../types/globalTypes';
 import {ClearButton} from '../ui/ClearButton';
 import {LoadingSpinner} from '../ui/Loading';
-import {StickyTableContainer} from '../ui/StickyTableContainer';
-import {buildRepoPath} from '../workspace/buildRepoAddress';
+import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
-import {AssetTable, ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTable';
+import {AssetTable} from './AssetTable';
 import {AssetsEmptyState} from './AssetsEmptyState';
-import {AssetKey} from './types';
-import {
-  AssetCatalogGroupTableQuery,
-  AssetCatalogGroupTableQueryVariables,
-  AssetCatalogGroupTableQuery_assetNodes,
-} from './types/AssetCatalogGroupTableQuery';
-import {
-  AssetCatalogTableQuery,
-  AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes,
-} from './types/AssetCatalogTableQuery';
-import {AssetTableFragment} from './types/AssetTableFragment';
 import {useAssetSearch} from './useAssetSearch';
 import {AssetViewType, useAssetView} from './useAssetView';
 
-const PAGE_SIZE = 50;
-
-type Asset = AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes;
+type Asset = AssetTableFragmentFragment;
 
 function useAllAssets(
   groupSelector?: AssetGroupSelector,
 ): {
-  query: QueryResult;
-  assets: AssetTableFragment[] | undefined;
-  error: PythonErrorFragment | undefined;
+  query:
+    | QueryResult<AssetCatalogTableQueryQuery, any>
+    | QueryResult<AssetCatalogGroupTableQueryQuery, any>;
+  assets: Asset[] | undefined;
+  error: PythonErrorFragmentFragment | undefined;
 } {
-  const assetsQuery = useQuery<AssetCatalogTableQuery>(ASSET_CATALOG_TABLE_QUERY, {
+  const assetsQuery = useQuery(ASSET_CATALOG_TABLE_QUERY, {
     skip: !!groupSelector,
     notifyOnNetworkStatusChange: true,
   });
-  const groupQuery = useQuery<AssetCatalogGroupTableQuery, AssetCatalogGroupTableQueryVariables>(
-    ASSET_CATALOG_GROUP_TABLE_QUERY,
-    {
-      skip: !groupSelector,
-      variables: {group: groupSelector},
-      notifyOnNetworkStatusChange: true,
-    },
-  );
+  const groupQuery = useQuery(ASSET_CATALOG_GROUP_TABLE_QUERY, {
+    skip: !groupSelector,
+    variables: {group: groupSelector},
+    notifyOnNetworkStatusChange: true,
+  });
 
   return React.useMemo(() => {
     if (groupSelector) {
@@ -73,14 +54,14 @@ function useAllAssets(
         error: undefined,
         assets: assetNodes?.map(definitionToAssetTableFragment),
       };
-    } else {
-      const assetsOrError = assetsQuery.data?.assetsOrError;
-      return {
-        query: assetsQuery,
-        error: assetsOrError?.__typename === 'PythonError' ? assetsOrError : undefined,
-        assets: assetsOrError?.__typename === 'AssetConnection' ? assetsOrError.nodes : undefined,
-      };
     }
+
+    const assetsOrError = assetsQuery.data?.assetsOrError;
+    return {
+      query: assetsQuery,
+      error: assetsOrError?.__typename === 'PythonError' ? assetsOrError : undefined,
+      assets: assetsOrError?.__typename === 'AssetConnection' ? assetsOrError.nodes : undefined,
+    };
   }, [assetsQuery, groupQuery, groupSelector]);
 }
 
@@ -96,7 +77,6 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
   groupSelector,
 }) => {
   const [view, setView] = useAssetView();
-  const [cursor, setCursor] = useQueryPersistedState<string | undefined>({queryKey: 'cursor'});
   const [search, setSearch] = useQueryPersistedState<string | undefined>({queryKey: 'q'});
   const [searchGroup, setSearchGroup] = useQueryPersistedState<AssetGroupSelector | null>({
     queryKey: 'g',
@@ -118,23 +98,12 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
     [pathMatches, searchGroup],
   );
 
-  const {displayPathForAsset, displayed, nextCursor, prevCursor} =
+  const {displayPathForAsset, displayed} =
     view === 'flat'
-      ? buildFlatProps(filtered, prefixPath, cursor)
-      : buildNamespaceProps(filtered, prefixPath, cursor);
+      ? buildFlatProps(filtered, prefixPath)
+      : buildNamespaceProps(filtered, prefixPath);
 
-  const displayedKeys = React.useMemo(
-    () => displayed.map<AssetKey>((a) => ({path: a.key.path})),
-    [displayed],
-  );
-  const {liveDataByNode, liveDataRefreshState, runWatchers} = useLiveDataForAssetKeys(
-    displayedKeys,
-  );
-
-  const refreshState = useMergedRefresh(
-    useQueryRefreshAtInterval(query, FIFTEEN_SECONDS),
-    liveDataRefreshState,
-  );
+  const refreshState = useQueryRefreshAtInterval(query, FIFTEEN_SECONDS);
 
   React.useEffect(() => {
     if (view !== 'directory' && prefixPath.length) {
@@ -145,9 +114,11 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
   if (error) {
     return <PythonErrorInfo error={error} />;
   }
+
   if (!assets) {
     return <LoadingSpinner purpose="page" />;
   }
+
   if (!assets.length) {
     return (
       <Box padding={{vertical: 64}}>
@@ -156,66 +127,47 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
     );
   }
 
-  const paginationProps: CursorPaginationProps = {
-    hasPrevCursor: !!prevCursor,
-    hasNextCursor: !!nextCursor,
-    popCursor: () => setCursor(prevCursor),
-    advanceCursor: () => setCursor(nextCursor),
-    reset: () => {
-      setCursor(undefined);
-    },
-  };
-
   return (
-    <Wrapper>
-      {runWatchers}
-      {/* 48px allows for the toolbar to be sticky as well */}
-      <StickyTableContainer $top={48}>
-        <AssetTable
-          view={view}
-          assets={displayed}
-          liveDataByNode={liveDataByNode}
-          actionBarComponents={
-            <>
-              <ButtonGroup<AssetViewType>
-                activeItems={new Set([view])}
-                buttons={[
-                  {id: 'flat', icon: 'view_list', tooltip: 'List view'},
-                  {id: 'directory', icon: 'folder', tooltip: 'Folder view'},
-                ]}
-                onClick={(view) => {
-                  setView(view);
-                  if (view === 'flat' && prefixPath.length) {
-                    setPrefixPath([]);
-                  }
-                }}
-              />
-              <TextInput
-                value={search || ''}
-                style={{width: '30vw', minWidth: 150, maxWidth: 400}}
-                placeholder={
-                  prefixPath.length
-                    ? `Filter asset keys in ${prefixPath.join('/')}…`
-                    : `Filter asset keys…`
-                }
-                onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
-              />
-              {!groupSelector ? (
-                <AssetGroupSuggest assets={assets} value={searchGroup} onChange={setSearchGroup} />
-              ) : undefined}
-            </>
-          }
-          refreshState={refreshState}
-          prefixPath={prefixPath || []}
-          displayPathForAsset={displayPathForAsset}
-          maxDisplayCount={PAGE_SIZE}
-          requery={(_) => [{query: ASSET_CATALOG_TABLE_QUERY}]}
-        />
-      </StickyTableContainer>
-      <Box padding={{bottom: 64}}>
-        <CursorPaginationControls {...paginationProps} />
-      </Box>
-    </Wrapper>
+    <AssetTable
+      view={view}
+      assets={displayed}
+      actionBarComponents={
+        <>
+          <ButtonGroup<AssetViewType>
+            activeItems={new Set([view])}
+            buttons={[
+              {id: 'flat', icon: 'view_list', tooltip: 'List view'},
+              {id: 'directory', icon: 'folder', tooltip: 'Folder view'},
+            ]}
+            onClick={(view) => {
+              setView(view);
+              if (view === 'flat' && prefixPath.length) {
+                setPrefixPath([]);
+              }
+            }}
+          />
+          <TextInput
+            value={search || ''}
+            style={{width: '30vw', minWidth: 150, maxWidth: 400}}
+            placeholder={
+              prefixPath.length
+                ? `Filter asset keys in ${prefixPath.join('/')}…`
+                : `Filter asset keys…`
+            }
+            onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
+          />
+          {!groupSelector ? (
+            <AssetGroupSuggest assets={assets} value={searchGroup} onChange={setSearchGroup} />
+          ) : undefined}
+        </>
+      }
+      refreshState={refreshState}
+      prefixPath={prefixPath || []}
+      searchPath={searchPath}
+      searchGroup={searchGroup}
+      displayPathForAsset={displayPathForAsset}
+      requery={(_) => [{query: ASSET_CATALOG_TABLE_QUERY}]}
+    />
   );
 };
 
@@ -271,7 +223,10 @@ const AssetGroupSuggest: React.FC<{
               {assetGroup.groupName}
               {repoContextNeeded[assetGroup.groupName] ? (
                 <span style={{opacity: 0.5, paddingLeft: 4}}>
-                  {buildRepoPath(assetGroup.repositoryName, assetGroup.repositoryLocationName)}
+                  {buildRepoPathForHuman(
+                    assetGroup.repositoryName,
+                    assetGroup.repositoryLocationName,
+                  )}
                 </span>
               ) : undefined}
             </>
@@ -283,18 +238,8 @@ const AssetGroupSuggest: React.FC<{
     />
   );
 };
-const Wrapper = styled.div`
-  flex: 1 1;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  position: relative;
-  z-index: 0;
-`;
 
-const ASSET_CATALOG_TABLE_QUERY = gql`
+const ASSET_CATALOG_TABLE_QUERY = graphql(`
   query AssetCatalogTableQuery {
     assetsOrError {
       __typename
@@ -307,30 +252,29 @@ const ASSET_CATALOG_TABLE_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-  ${PYTHON_ERROR_FRAGMENT}
-  ${ASSET_TABLE_FRAGMENT}
-`;
+`);
 
-const ASSET_CATALOG_GROUP_TABLE_QUERY = gql`
+const ASSET_CATALOG_GROUP_TABLE_QUERY = graphql(`
   query AssetCatalogGroupTableQuery($group: AssetGroupSelector) {
     assetNodes(group: $group) {
       id
-      assetKey {
-        path
-      }
-      ...AssetTableDefinitionFragment
+      ...AssetCatalogGroupTableNode
     }
   }
-  ${ASSET_TABLE_DEFINITION_FRAGMENT}
-`;
+
+  fragment AssetCatalogGroupTableNode on AssetNode {
+    id
+    assetKey {
+      path
+    }
+    ...AssetTableDefinitionFragment
+  }
+`);
 
 // When we load the AssetCatalogTable for a particular asset group, we retrieve `assetNodes`,
 // not `assets`. To narrow the scope of this difference we coerce the nodes to look like
 // AssetCatalogTableQuery results.
-//
-function definitionToAssetTableFragment(
-  definition: AssetCatalogGroupTableQuery_assetNodes,
-): AssetTableFragment {
+function definitionToAssetTableFragment(definition: AssetCatalogGroupTableNodeFragment): Asset {
   return {__typename: 'Asset', id: definition.id, key: definition.assetKey, definition};
 }
 
@@ -344,21 +288,14 @@ function buildAssetGroupSelector(a: Asset) {
     : null;
 }
 
-function buildFlatProps(assets: Asset[], prefixPath: string[], cursor: string | undefined) {
-  const cursorValue = (asset: Asset) => JSON.stringify([...prefixPath, ...asset.key.path]);
-  const cursorIndex = cursor ? assets.findIndex((ns) => cursor <= cursorValue(ns)) : 0;
-  const prevPageIndex = Math.max(0, cursorIndex - PAGE_SIZE);
-  const nextPageIndex = cursorIndex + PAGE_SIZE;
-
+function buildFlatProps(assets: Asset[], _: string[]) {
   return {
-    displayed: assets.slice(cursorIndex, cursorIndex + PAGE_SIZE),
+    displayed: assets,
     displayPathForAsset: (asset: Asset) => asset.key.path,
-    prevCursor: cursorIndex > 0 ? cursorValue(assets[prevPageIndex]) : undefined,
-    nextCursor: nextPageIndex < assets.length ? cursorValue(assets[nextPageIndex]) : undefined,
   };
 }
 
-function buildNamespaceProps(assets: Asset[], prefixPath: string[], cursor: string | undefined) {
+function buildNamespaceProps(assets: Asset[], prefixPath: string[]) {
   // Return all assets from the next PAGE_SIZE namespaces - the AssetTable component will later
   // group them by namespace
 
@@ -377,33 +314,11 @@ function buildNamespaceProps(assets: Asset[], prefixPath: string[], cursor: stri
     .map((x) => JSON.parse(x))
     .sort();
 
-  const cursorValue = (ns: string[]) => JSON.stringify([...prefixPath, ...ns]);
-  const cursorIndex = cursor ? namespaces.findIndex((ns) => cursor <= cursorValue(ns)) : 0;
-
-  if (cursorIndex === -1) {
-    return {
-      displayPathForAsset: namespaceForAsset,
-      displayed: [],
-      prevCursor: undefined,
-      nextCursor: undefined,
-    };
-  }
-
-  const namespaceSlice = namespaces.slice(cursorIndex, cursorIndex + PAGE_SIZE);
-
-  const prevPageIndex = Math.max(0, cursorIndex - PAGE_SIZE);
-  const prevCursor = cursorIndex !== 0 ? cursorValue(namespaces[prevPageIndex]) : undefined;
-  const nextPageIndex = cursorIndex + PAGE_SIZE;
-  const nextCursor =
-    namespaces.length > nextPageIndex ? cursorValue(namespaces[nextPageIndex]) : undefined;
-
   return {
-    nextCursor,
-    prevCursor,
     displayPathForAsset: namespaceForAsset,
     displayed: filterAssetsByNamespace(
       assetsWithPathPrefix,
-      namespaceSlice.map((ns) => [...prefixPath, ...ns]),
+      namespaces.map((ns) => [...prefixPath, ...ns]),
     ),
   };
 }

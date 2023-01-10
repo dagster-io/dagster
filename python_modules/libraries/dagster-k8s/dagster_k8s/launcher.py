@@ -1,29 +1,27 @@
 import sys
-from typing import Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 import kubernetes
-
-from dagster import Field, MetadataEntry, StringSource
-from dagster import _check as check
+from dagster import (
+    Field,
+    MetadataEntry,
+    StringSource,
+    _check as check,
+)
 from dagster._cli.api import ExecuteRunArgs
 from dagster._core.events import EngineEventData
 from dagster._core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
 from dagster._core.launcher.base import CheckRunHealthResult, WorkerStatus
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._grpc.types import ResumeRunArgs
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import frozentags, merge_dicts
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.merger import merge_dicts
 
+from .client import DagsterKubernetesClient
 from .container_context import K8sContainerContext
-from .job import (
-    DagsterK8sJobConfig,
-    construct_dagster_k8s_job,
-    get_job_name_from_run_id,
-    get_user_defined_k8s_config,
-)
-from .utils import delete_job
+from .job import DagsterK8sJobConfig, construct_dagster_k8s_job, get_job_name_from_run_id
 
 
 class K8sRunLauncher(RunLauncher, ConfigurableClass):
@@ -70,6 +68,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         fail_pod_on_run_failure=None,
         resources=None,
         scheduler_name=None,
+        security_context=None,
+        run_k8s_config=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
@@ -86,7 +86,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             check.opt_str_param(kubeconfig_file, "kubeconfig_file")
             kubernetes.config.load_kube_config(kubeconfig_file)
 
-        self._fixed_batch_api = k8s_client_batch_api
+        self._api_client = DagsterKubernetesClient.production_client(
+            batch_api_override=k8s_client_batch_api
+        )
 
         self._job_config = None
         self._job_image = check.opt_str_param(job_image, "job_image")
@@ -109,13 +111,16 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._env_vars = check.opt_list_param(env_vars, "env_vars", of_type=str)
         self._volume_mounts = check.opt_list_param(volume_mounts, "volume_mounts")
         self._volumes = check.opt_list_param(volumes, "volumes")
-        self._labels = check.opt_dict_param(labels, "labels", key_type=str, value_type=str)
+        self._labels: Mapping[str, str] = check.opt_mapping_param(
+            labels, "labels", key_type=str, value_type=str
+        )
         self._fail_pod_on_run_failure = check.opt_bool_param(
             fail_pod_on_run_failure, "fail_pod_on_run_failure"
         )
-        self._resources = check.opt_dict_param(resources, "resources")
+        self._resources: Mapping[str, Any] = check.opt_mapping_param(resources, "resources")
         self._scheduler_name = check.opt_str_param(scheduler_name, "scheduler_name")
-
+        self._security_context = check.opt_dict_param(security_context, "security_context")
+        self._run_k8s_config = check.opt_dict_param(run_k8s_config, "run_k8s_config")
         super().__init__()
 
     @property
@@ -155,8 +160,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return self._resources
 
     @property
-    def scheduler_name(self) -> str:
+    def scheduler_name(self) -> Optional[str]:
         return self._scheduler_name
+
+    @property
+    def security_context(self) -> Mapping[str, Any]:
+        return self._security_context
 
     @property
     def env_vars(self) -> Sequence[str]:
@@ -167,12 +176,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return self._labels
 
     @property
-    def fail_pod_on_run_failure(self) -> Optional[bool]:
-        return self._fail_pod_on_run_failure
+    def run_k8s_config(self) -> Mapping[str, str]:
+        return self._run_k8s_config
 
     @property
-    def _batch_api(self):
-        return self._fixed_batch_api if self._fixed_batch_api else kubernetes.client.BatchV1Api()
+    def fail_pod_on_run_failure(self) -> Optional[bool]:
+        return self._fail_pod_on_run_failure
 
     @classmethod
     def config_type(cls):
@@ -194,7 +203,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def get_container_context_for_run(self, pipeline_run: PipelineRun) -> K8sContainerContext:
+    def get_container_context_for_run(self, pipeline_run: DagsterRun) -> K8sContainerContext:
         return K8sContainerContext.create_for_run(pipeline_run, self)
 
     def _launch_k8s_job_with_args(self, job_name, args, run):
@@ -203,7 +212,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         pod_name = job_name
 
         pipeline_origin = run.pipeline_code_origin
-        user_defined_k8s_config = get_user_defined_k8s_config(frozentags(run.tags))
+        user_defined_k8s_config = container_context.get_run_user_defined_k8s_config()
         repository_origin = pipeline_origin.repository_origin
 
         job_config = container_context.get_k8s_job_config(
@@ -226,6 +235,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 "dagster/job": pipeline_origin.pipeline_name,
                 "dagster/run-id": run.run_id,
             },
+            env_vars=[
+                {
+                    "name": "DAGSTER_RUN_JOB_NAME",
+                    "value": pipeline_origin.pipeline_name,
+                }
+            ],
         )
 
         self._instance.report_engine_event(
@@ -241,7 +256,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             cls=self.__class__,
         )
 
-        self._batch_api.create_namespaced_job(body=job, namespace=container_context.namespace)
+        self._api_client.batch_api.create_namespaced_job(
+            body=job, namespace=container_context.namespace
+        )
         self._instance.report_engine_event(
             "Kubernetes run worker job created",
             run,
@@ -289,7 +306,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         pipeline_run = self._instance.get_run_by_id(run_id)
         if not pipeline_run:
             return False
-        if pipeline_run.status != PipelineRunStatus.STARTED:
+        if pipeline_run.status != DagsterRunStatus.STARTED:
             return False
         return True
 
@@ -318,7 +335,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         )
 
         try:
-            termination_result = delete_job(
+            termination_result = self._api_client.delete_job(
                 job_name=job_name, namespace=container_context.namespace
             )
             if termination_result:
@@ -350,22 +367,23 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def supports_check_run_worker_health(self):
         return True
 
-    def check_run_worker_health(self, run: PipelineRun):
+    def check_run_worker_health(self, run: DagsterRun):
         container_context = self.get_container_context_for_run(run)
 
         job_name = get_job_name_from_run_id(
             run.run_id, resume_attempt_number=self._instance.count_resume_run_attempts(run.run_id)
         )
         try:
-            job = self._batch_api.read_namespaced_job(
-                namespace=container_context.namespace, name=job_name
+            status = self._api_client.get_job_status(
+                namespace=container_context.namespace,
+                job_name=job_name,
             )
         except Exception:
             return CheckRunHealthResult(
                 WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
             )
-        if job.status.failed:
+        if status.failed:
             return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
-        if job.status.succeeded:
+        if status.succeeded:
             return CheckRunHealthResult(WorkerStatus.SUCCESS)
         return CheckRunHealthResult(WorkerStatus.RUNNING)

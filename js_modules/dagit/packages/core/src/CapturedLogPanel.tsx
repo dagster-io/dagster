@@ -1,14 +1,12 @@
-import {gql, useQuery, useSubscription} from '@apollo/client';
+import {useQuery, useSubscription} from '@apollo/client';
 import {Box, Colors, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {RawLogContent} from './RawLogContent';
 import {AppContext} from './app/AppContext';
-import {
-  CapturedLogsSubscription,
-  CapturedLogsSubscriptionVariables,
-  CapturedLogsSubscription_capturedLogs,
-} from './types/CapturedLogsSubscription';
+import {WebSocketContext} from './app/WebSocketProvider';
+import {graphql} from './graphql';
+import {CapturedLogFragment, CapturedLogsQueryQuery} from './graphql/graphql';
 
 interface CapturedLogProps {
   logKey: string[];
@@ -51,73 +49,6 @@ export const CapturedOrExternalLogPanel: React.FC<CapturedOrExternalLogPanelProp
   },
 );
 
-export const CapturedLogPanel: React.FC<CapturedLogProps> = React.memo(
-  ({logKey, visibleIOType, onSetDownloadUrl}) => {
-    const {rootServerURI} = React.useContext(AppContext);
-    const [state, dispatch] = React.useReducer(reducer, initialState);
-
-    const logKeyString = JSON.stringify(logKey);
-    React.useEffect(() => {
-      dispatch({type: 'reset'});
-    }, [logKeyString]);
-
-    const queryResult = useQuery(CAPTURED_LOGS_METADATA_QUERY, {
-      variables: {logKey},
-      fetchPolicy: 'cache-and-network',
-    });
-
-    React.useEffect(() => {
-      if (queryResult.data) {
-        dispatch({type: 'metadata', metadata: queryResult.data.capturedLogsMetadata});
-      }
-    }, [queryResult.data]);
-
-    const {
-      isLoading,
-      stdout,
-      stderr,
-      stdoutLocation,
-      stderrLocation,
-      stderrDownloadUrl,
-      stdoutDownloadUrl,
-    } = state;
-
-    React.useEffect(() => {
-      const visibleDownloadUrl = visibleIOType === 'stdout' ? stdoutDownloadUrl : stderrDownloadUrl;
-      if (!onSetDownloadUrl || !visibleDownloadUrl) {
-        return;
-      }
-      if (visibleDownloadUrl.startsWith('/')) {
-        onSetDownloadUrl(rootServerURI + visibleDownloadUrl);
-      } else {
-        onSetDownloadUrl(visibleDownloadUrl);
-      }
-    }, [onSetDownloadUrl, visibleIOType, stderrDownloadUrl, stdoutDownloadUrl, rootServerURI]);
-
-    const onLogData = React.useCallback((logData: CapturedLogsSubscription_capturedLogs) => {
-      dispatch({type: 'update', logData});
-    }, []);
-
-    return (
-      <div style={{flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column'}}>
-        <CapturedLogSubscription logKey={logKey} onLogData={onLogData} />
-        <RawLogContent
-          logData={stdout}
-          isLoading={isLoading}
-          location={stdoutLocation}
-          isVisible={visibleIOType === 'stdout'}
-        />
-        <RawLogContent
-          logData={stderr}
-          isLoading={isLoading}
-          location={stderrLocation}
-          isVisible={visibleIOType === 'stderr'}
-        />
-      </div>
-    );
-  },
-);
-
 export const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 
 const slice = (s: string) =>
@@ -145,7 +76,7 @@ interface State {
 }
 
 type Action =
-  | {type: 'update'; logData: CapturedLogsSubscription_capturedLogs}
+  | {type: 'update'; logData: CapturedLogFragment}
   | {type: 'metadata'; metadata: any}
   | {type: 'reset'};
 
@@ -182,41 +113,35 @@ const initialState: State = {
 
 const CapturedLogSubscription: React.FC<{
   logKey: string[];
-  onLogData: (logData: CapturedLogsSubscription_capturedLogs) => void;
+  onLogData: (logData: CapturedLogFragment) => void;
 }> = React.memo(({logKey, onLogData}) => {
-  // const counter = React.useRef(0);
-  // const logKeyStr = JSON.stringify(logKey);
-  // React.useEffect(() => {
-  //   console.log(`Subscribed to ${logKeyStr}`);
-  //   return () => console.log(`Unsubscribed from ${logKeyStr} after ${counter.current} messages`);
-  // }, [logKeyStr]);
-
-  useSubscription<CapturedLogsSubscription, CapturedLogsSubscriptionVariables>(
-    CAPTURED_LOGS_SUBSCRIPTION,
-    {
-      fetchPolicy: 'no-cache',
-      variables: {logKey},
-      onSubscriptionData: ({subscriptionData}) => {
-        if (subscriptionData.data?.capturedLogs) {
-          onLogData(subscriptionData.data.capturedLogs);
-        }
-      },
+  useSubscription(CAPTURED_LOGS_SUBSCRIPTION, {
+    fetchPolicy: 'no-cache',
+    variables: {logKey},
+    onSubscriptionData: ({subscriptionData}) => {
+      if (subscriptionData.data?.capturedLogs) {
+        onLogData(subscriptionData.data.capturedLogs);
+      }
     },
-  );
+  });
   return null;
 });
 
-const CAPTURED_LOGS_SUBSCRIPTION = gql`
+const CAPTURED_LOGS_SUBSCRIPTION = graphql(`
   subscription CapturedLogsSubscription($logKey: [String!]!, $cursor: String) {
     capturedLogs(logKey: $logKey, cursor: $cursor) {
-      stdout
-      stderr
-      cursor
+      ...CapturedLog
     }
   }
-`;
 
-const CAPTURED_LOGS_METADATA_QUERY = gql`
+  fragment CapturedLog on CapturedLogs {
+    stdout
+    stderr
+    cursor
+  }
+`);
+
+const CAPTURED_LOGS_METADATA_QUERY = graphql(`
   query CapturedLogsMetadataQuery($logKey: [String!]!) {
     capturedLogsMetadata(logKey: $logKey) {
       stdoutDownloadUrl
@@ -225,4 +150,128 @@ const CAPTURED_LOGS_METADATA_QUERY = gql`
       stderrLocation
     }
   }
-`;
+`);
+
+const QUERY_LOG_LIMIT = 100000;
+const POLL_INTERVAL = 5000;
+
+const CapturedLogsSubscriptionProvider = ({
+  logKey,
+  children,
+}: {
+  logKey: string[];
+  children: (result: State) => React.ReactChild;
+}) => {
+  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const logKeyString = JSON.stringify(logKey);
+  React.useEffect(() => {
+    dispatch({type: 'reset'});
+  }, [logKeyString]);
+
+  const onLogData = React.useCallback((logData: CapturedLogFragment) => {
+    dispatch({type: 'update', logData});
+  }, []);
+  return (
+    <>
+      <CapturedLogSubscription logKey={logKey} onLogData={onLogData} />
+      {children(state)}
+    </>
+  );
+};
+
+const CapturedLogsQueryProvider = ({
+  logKey,
+  children,
+}: {
+  logKey: string[];
+  children: (result: State) => React.ReactChild;
+}) => {
+  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const logKeyString = JSON.stringify(logKey);
+  React.useEffect(() => {
+    dispatch({type: 'reset'});
+  }, [logKeyString]);
+  const {cursor} = state;
+
+  const {stopPolling, startPolling} = useQuery(CAPTURED_LOGS_QUERY, {
+    notifyOnNetworkStatusChange: true,
+    variables: {logKey, cursor, limit: QUERY_LOG_LIMIT},
+    pollInterval: POLL_INTERVAL,
+    onCompleted: (data: CapturedLogsQueryQuery) => {
+      // We have to stop polling in order to update the `after` value.
+      stopPolling();
+      dispatch({type: 'update', logData: data.capturedLogs});
+      startPolling(POLL_INTERVAL);
+    },
+  });
+
+  return <>{children(state)}</>;
+};
+
+const CAPTURED_LOGS_QUERY = graphql(`
+  query CapturedLogsQuery($logKey: [String!]!, $cursor: String, $limit: Int) {
+    capturedLogs(logKey: $logKey, cursor: $cursor, limit: $limit) {
+      stdout
+      stderr
+      cursor
+    }
+  }
+`);
+
+export const CapturedLogPanel: React.FC<CapturedLogProps> = React.memo(
+  ({logKey, visibleIOType, onSetDownloadUrl}) => {
+    const {rootServerURI} = React.useContext(AppContext);
+    const {availability, disabled} = React.useContext(WebSocketContext);
+    const queryResult = useQuery(CAPTURED_LOGS_METADATA_QUERY, {
+      variables: {logKey},
+    });
+
+    React.useEffect(() => {
+      if (!onSetDownloadUrl || !queryResult.data) {
+        return;
+      }
+      const visibleDownloadUrl =
+        visibleIOType === 'stdout'
+          ? queryResult.data.capturedLogsMetadata.stdoutDownloadUrl
+          : queryResult.data.capturedLogsMetadata.stderrDownloadUrl;
+
+      if (!visibleDownloadUrl) {
+        return;
+      }
+      if (visibleDownloadUrl.startsWith('/')) {
+        onSetDownloadUrl(rootServerURI + visibleDownloadUrl);
+      } else {
+        onSetDownloadUrl(visibleDownloadUrl);
+      }
+    }, [onSetDownloadUrl, visibleIOType, rootServerURI, queryResult.data]);
+
+    const stdoutLocation = queryResult.data?.capturedLogsMetadata.stdoutLocation || undefined;
+    const stderrLocation = queryResult.data?.capturedLogsMetadata.stderrLocation || undefined;
+    const websocketsUnavailabile = availability === 'unavailable' || disabled;
+    const Component = websocketsUnavailabile
+      ? CapturedLogsQueryProvider
+      : CapturedLogsSubscriptionProvider;
+    return (
+      <div style={{flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column'}}>
+        <Component logKey={logKey}>
+          {(_state: State) => (
+            <>
+              <RawLogContent
+                logData={_state.stdout}
+                isLoading={_state.isLoading}
+                location={stdoutLocation}
+                isVisible={visibleIOType === 'stdout'}
+              />
+              <RawLogContent
+                logData={_state.stderr}
+                isLoading={_state.isLoading}
+                location={stderrLocation}
+                isVisible={visibleIOType === 'stderr'}
+              />
+            </>
+          )}
+        </Component>
+      </div>
+    );
+  },
+);

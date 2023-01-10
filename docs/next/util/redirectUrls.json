@@ -147,10 +147,14 @@
 
   {
     "source": "/overview/repositories-workspaces/workspaces",
-    "destination": "/concepts/repositories-workspaces/workspaces",
+    "destination": "/concepts/code-locations/workspace-files",
     "statusCode": 302
   },
-
+  {
+    "source": "/concepts/repositories-workspaces/workspaces",
+    "destination": "/concepts/code-locations/workspace-files",
+    "statusCode": 302
+  },
   {
     "source": "/overview/logging/logging",
     "destination": "/concepts/logging/loggers",
@@ -460,27 +464,27 @@
   },
   {
     "source": "/tutorial/intro-tutorial/single-op-job",
-    "destination": "/tutorial/ops-jobs/single-op-job",
+    "destination": "/guides/dagster/intro-to-ops-jobs/single-op-job",
     "statusCode": 302
   },
   {
     "source": "/tutorial/intro-tutorial/single-solid-pipeline",
-    "destination": "/tutorial/ops-jobs/single-op-job",
+    "destination": "/guides/dagster/intro-to-ops-jobs/single-op-job",
     "statusCode": 302
   },
   {
     "source": "/tutorial/intro-tutorial/connecting-ops",
-    "destination": "/tutorial/ops-jobs/connecting-ops",
+    "destination": "/guides/dagster/intro-to-ops-jobs/connecting-ops",
     "statusCode": 302
   },
   {
     "source": "/tutorial/intro-tutorial/connecting-solids",
-    "destination": "/tutorial/ops-jobs/connecting-ops",
+    "destination": "/guides/dagster/intro-to-ops-jobs/connecting-ops",
     "statusCode": 302
   },
   {
     "source": "/tutorial/intro-tutorial/testable",
-    "destination": "/tutorial/ops-jobs/testable",
+    "destination": "/guides/dagster/intro-to-ops-jobs/testable",
     "statusCode": 302
   },
   {
@@ -586,6 +590,36 @@
   {
     "source": "/dagster-cloud/developing-testing/environment-variables",
     "destination": "/dagster-cloud/developing-testing/environment-variables-and-secrets",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment",
+    "destination": "/dagster-cloud/getting-started",
+    "statusCode": 302
+  },
+  {
+    "source": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment",
+    "destination": "/dagster-cloud/getting-started",
+    "statusCode": 302
+  },
+  {
+    "source": "/tutorial/assets",
+    "destination": "/tutorial",
+    "statusCode": 302
+  },
+  {
+    "source": "/tutorial/ops-jobs/connecting-ops",
+    "destination": "/guides/dagster/intro-to-ops-jobs/connecting-ops",
+    "statusCode": 302
+  },
+  {
+    "source": "/tutorial/ops-jobs/single-op-job",
+    "destination": "/guides/dagster/intro-to-ops-jobs/single-op-job",
+    "statusCode": 302
+  },
+  {
+    "source": "/tutorial/ops-jobs/testable",
+    "destination": "/guides/dagster/intro-to-ops-jobs/testable",
     "statusCode": 302
   }
 ]

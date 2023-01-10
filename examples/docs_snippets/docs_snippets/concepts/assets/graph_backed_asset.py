@@ -1,20 +1,12 @@
 # isort: skip_file
-# pylint: disable=reimported
 from dagster import (
     AssetKey,
     load_assets_from_current_module,
-    AssetsDefinition,
-    with_resources,
-    GraphOut,
     Out,
     Output,
-    ResourceDefinition,
     AssetSelection,
-    asset,
     define_asset_job,
-    graph,
-    op,
-    repository,
+    Definitions,
 )
 from mock import MagicMock
 
@@ -25,7 +17,7 @@ def create_db_connection():
 
 # start example
 import pandas as pd
-from dagster import AssetsDefinition, asset, graph, op
+from dagster import AssetsDefinition, graph, op
 
 
 @op(required_resource_keys={"slack"})
@@ -150,15 +142,13 @@ explicit_deps_job = define_asset_job(
 )
 
 
-@repository
-def my_repo():
-    return [
+defs = Definitions(
+    assets=load_assets_from_current_module(),
+    jobs=[
         basic_deps_job,
         store_slack_files,
         second_basic_deps_job,
         explicit_deps_job,
-        *with_resources(
-            load_assets_from_current_module(),
-            {"slack": ResourceDefinition.hardcoded_resource(slack_mock)},
-        ),
-    ]
+    ],
+    resources={"slack": slack_mock},
+)

@@ -13,6 +13,7 @@ from ...definitions.resource_definition import IContainsGenerator, Resources
 from ...errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
 from ...log_manager import DagsterLogManager
 from ..plan.step import ExecutionStep
+from ..plan.utils import RetryRequestedFromPolicy
 from .system import StepExecutionContext
 
 
@@ -27,8 +28,8 @@ def _check_property_on_test_context(
     context: "HookContext", attr_str: str, user_facing_name: str, param_on_builder: str
 ):
     """Check if attribute is not None on context. If none, error, and point user in direction of
-    how to specify the parameter on the context object."""
-
+    how to specify the parameter on the context object.
+    """
     value = getattr(context, attr_str)
     if value is None:
         raise DagsterInvalidPropertyError(
@@ -148,7 +149,12 @@ class HookContext:
     @public  # type: ignore
     @property
     def op_exception(self):
-        return self._step_execution_context.step_exception
+        exc = self._step_execution_context.step_exception
+
+        if isinstance(exc, RetryRequestedFromPolicy):
+            return exc.__cause__
+
+        return exc
 
     @property
     def solid_output_values(self) -> Mapping[str, Union[Any, Mapping[str, Any]]]:
@@ -407,7 +413,6 @@ def build_hook_context(
             with build_hook_context(resources={"foo": context_manager_resource}) as context:
                 hook_to_invoke(context)
     """
-
     op = check.opt_inst_param(op, "op", (OpDefinition, PendingNodeInvocation))
 
     return UnboundHookContext(

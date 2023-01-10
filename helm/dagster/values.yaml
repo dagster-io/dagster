@@ -207,12 +207,14 @@ computeLogManager:
   #     secretKey: ~
   #     localDir: ~
   #     prefix: ~
+  #     uploadInterval: ~
   ##  Uncomment this configuration if the GCSComputeLogManager is selected
   #   gcsComputeLogManager:
   #     bucket: ~
   #     localDir: ~
   #     prefix: ~
   #     jsonCredentialsEnvvar: ~
+  #     uploadInterval: ~
   ##  Uncomment this configuration if the S3ComputeLogManager is selected
   #   s3ComputeLogManager:
   #     bucket: ~
@@ -223,6 +225,8 @@ computeLogManager:
   #     verifyCertPath: ~
   #     endpointUrl: ~
   #     skipEmptyFiles: ~
+  #     uploadInterval: ~
+  #     uploadExtraArgs: {}
   ##  Uncomment this configuration if the CustomComputeLogManager is selected.
   ##  Using this setting requires a custom Dagit image that defines the user specified
   ##  compute log manager in an installed python module.
@@ -541,6 +545,32 @@ runLauncher:
 
       # Whether the launched Kubernetes Jobs and Pods should fail if the Dagster run fails.
       failPodOnRunFailure: false
+
+      # Security settings for the container. See
+      # https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container
+      securityContext: ~
+
+      # Raw k8s configuration for the Kubernetes Job and Pod created for the run.
+      # See: https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
+      #
+      # Example:
+      # runK8sConfig:
+      #   containerConfig: # raw config for the pod's main container
+      #     resources:
+      #       cpu: 100m
+      #       memory: 128Mi
+      #   podTemplateSpecMetadata: # raw config for the pod's metadata
+      #     annotations:
+      #       mykey: myvalue
+      #   podSpecConfig: # raw config for the spec of the launched's pod
+      #     nodeSelector:
+      #       disktype: ssd
+      #   jobSpecConfig: # raw config for the kubernetes job's spec
+      #     ttlSecondsAfterFinished: 7200
+      #   jobMetadata: # raw config for the kubernetes job's metadata
+      #     annotations:
+      #       mykey: myvalue
+      runK8sConfig: {}
 
     # This configuration will only be used if the CeleryK8sRunLauncher is selected
     celeryK8sRunLauncher:
@@ -1020,6 +1050,8 @@ dagsterDaemon:
         maxConcurrentRuns: ~
         tagConcurrencyLimits: []
         dequeueIntervalSeconds: ~
+        dequeueUseThreads: ~
+        dequeueNumWorkers: ~
 
     ##  Uncomment this configuration if the CustomRunCoordinator is selected.
     ##  Using this setting requires a custom Daemon image that defines the user specified
@@ -1029,18 +1061,19 @@ dagsterDaemon:
     #     class: ~
     #     config: {}
 
-  # Experimental feature to add fault tolerance to Dagster runs. The new Monitoring Daemon will
-  # perform health checks on run workers. If a run doesn't start within the timeout, it will be
-  # marked as failed. If a run had started but then the run worker crashed, the daemon will attempt
-  # to resume the run with a new run worker.
+  # Enables monitoring of run worker pods. If a run doesn't start within the timeout, it will be
+  # marked as failed. If a run had started but then the run worker crashed, the monitoring daemon
+  # will either fail the run or attempt to resume the run with a new run worker.
   runMonitoring:
     enabled: false
     # Timeout for runs to start (avoids runs hanging in STARTED)
     startTimeoutSeconds: 180
     # How often to check on in progress runs
     pollIntervalSeconds: 120
-    # Max number of times to attempt to resume a run with a new run worker. Defaults to 3 if the the
-    # run launcher supports resuming runs, otherwise defaults to 0.
+    # [Experimental] Max number of times to attempt to resume a run with a new run worker instead
+    # of failing the run if the run worker has crashed. Only works for runs using the
+    # `k8s_job_executor` to run each op in its own Kubernetes job. If this value is set to nil,
+    # defaults to 3 if using the K8sRunLauncher, otherwise defaults to 0.
     maxResumeRunAttempts: ~
 
   runRetries:

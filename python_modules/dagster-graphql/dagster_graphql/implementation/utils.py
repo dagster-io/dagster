@@ -22,14 +22,13 @@ from typing import (
     cast,
 )
 
-from graphene import ResolveInfo
-from typing_extensions import ParamSpec, TypeAlias
-
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.host_representation import GraphSelector, PipelineSelector
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
+from graphene import ResolveInfo
+from typing_extensions import ParamSpec, TypeAlias
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.errors import GraphenePythonError
@@ -39,6 +38,31 @@ T = TypeVar("T")
 
 GrapheneResolverFn: TypeAlias = Callable[..., object]
 T_Callable = TypeVar("T_Callable", bound=Callable)
+
+
+def assert_permission_for_location(graphene_info: ResolveInfo, permission: str, location_name: str):
+    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
+
+    context = cast(BaseWorkspaceRequestContext, graphene_info.context)
+    if not context.has_permission_for_location(permission, location_name):
+        raise UserFacingGraphQLError(GrapheneUnauthorizedError())
+
+
+def require_permission_check(permission: str) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
+    def decorator(fn: GrapheneResolverFn) -> GrapheneResolverFn:
+        def _fn(
+            self, graphene_info, *args: P.args, **kwargs: P.kwargs
+        ):  # pylint: disable=unused-argument
+            result = fn(self, graphene_info, *args, **kwargs)
+
+            if not graphene_info.context.was_permission_checked(permission):
+                raise Exception(f"Permission {permission} was never checked during the request")
+
+            return result
+
+        return _fn
+
+    return decorator
 
 
 def check_permission(permission: str) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
@@ -95,7 +119,7 @@ class ErrorCapture:
             ErrorCapture.observer.reset(token)
 
 
-def capture_error(fn):
+def capture_error(fn: T_Callable) -> T_Callable:
     def _fn(*args, **kwargs):
         try:
             return fn(*args, **kwargs)
@@ -105,7 +129,7 @@ def capture_error(fn):
             ErrorCapture.observer.get()(exc)
             return ErrorCapture.on_exception(sys.exc_info())  # type: ignore
 
-    return _fn
+    return cast(T_Callable, _fn)
 
 
 class UserFacingGraphQLError(Exception):
@@ -125,7 +149,7 @@ def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> PipelineSelector:
         repository_name=data["repositoryName"],
         pipeline_name=data.get("pipelineName") or data.get("jobName"),  # type: ignore
         solid_selection=data.get("solidSelection"),
-        asset_selection=[
+        asset_selection=[  # type: ignore
             check.not_none(AssetKey.from_graphql_input(asset_key)) for asset_key in asset_selection
         ]
         if asset_selection
@@ -166,7 +190,7 @@ class ExecutionParams(
         return super(ExecutionParams, cls).__new__(
             cls,
             selector=check.inst_param(selector, "selector", PipelineSelector),
-            run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
+            run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
             mode=check.opt_str_param(mode, "mode"),
             execution_metadata=check.inst_param(
                 execution_metadata, "execution_metadata", ExecutionMetadata

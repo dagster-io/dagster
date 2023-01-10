@@ -16,7 +16,6 @@ class DbtRpcOutput(DbtOutput):
     """
 
     def __init__(self, response: requests.Response):
-
         self._response = response
         self._response_dict = response.json()
 

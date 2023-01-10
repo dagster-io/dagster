@@ -1,9 +1,10 @@
-import {gql, useMutation} from '@apollo/client';
+import {useMutation} from '@apollo/client';
 import {Checkbox, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {usePermissions} from '../app/Permissions';
-import {InstigationStatus} from '../types/globalTypes';
+import {graphql} from '../graphql';
+import {InstigationStatus, SensorSwitchFragmentFragment} from '../graphql/graphql';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -12,13 +13,10 @@ import {
   START_SENSOR_MUTATION,
   STOP_SENSOR_MUTATION,
 } from './SensorMutations';
-import {SensorSwitchFragment} from './types/SensorSwitchFragment';
-import {StartSensor, StartSensorVariables} from './types/StartSensor';
-import {StopSensor, StopSensorVariables} from './types/StopSensor';
 
 interface Props {
   repoAddress: RepoAddress;
-  sensor: SensorSwitchFragment;
+  sensor: SensorSwitchFragmentFragment;
   size?: 'small' | 'large';
 }
 
@@ -33,16 +31,12 @@ export const SensorSwitch: React.FC<Props> = (props) => {
     sensorName: name,
   };
 
-  const [startSensor, {loading: toggleOnInFlight}] = useMutation<StartSensor, StartSensorVariables>(
-    START_SENSOR_MUTATION,
-    {onCompleted: displaySensorMutationErrors},
-  );
-  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor, StopSensorVariables>(
-    STOP_SENSOR_MUTATION,
-    {
-      onCompleted: displaySensorMutationErrors,
-    },
-  );
+  const [startSensor, {loading: toggleOnInFlight}] = useMutation(START_SENSOR_MUTATION, {
+    onCompleted: displaySensorMutationErrors,
+  });
+  const [stopSensor, {loading: toggleOffInFlight}] = useMutation(STOP_SENSOR_MUTATION, {
+    onCompleted: displaySensorMutationErrors,
+  });
 
   const onChangeSwitch = () => {
     if (status === InstigationStatus.RUNNING) {
@@ -92,7 +86,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
   );
 };
 
-export const SENSOR_SWITCH_FRAGMENT = gql`
+export const SENSOR_SWITCH_FRAGMENT = graphql(`
   fragment SensorSwitchFragment on Sensor {
     id
     jobOriginId
@@ -103,4 +97,4 @@ export const SENSOR_SWITCH_FRAGMENT = gql`
       status
     }
   }
-`;
+`);

@@ -11,19 +11,19 @@ import {AssetNodeLink} from '../asset-graph/ForeignNode';
 import {GraphData, LiveData, toGraphId} from '../asset-graph/Utils';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
+import {AssetNodeDefinitionFragmentFragment} from '../graphql/graphql';
 import {getJSONForKey} from '../hooks/useStateWithStorage';
 
 import {AssetViewParams} from './AssetView';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey} from './types';
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 const LINEAGE_GRAPH_ZOOM_LEVEL = 'lineageGraphZoomLevel';
 
 export type AssetLineageScope = 'neighbors' | 'upstream' | 'downstream';
 
 export const AssetNodeLineageGraph: React.FC<{
-  assetNode: AssetNodeDefinitionFragment;
+  assetNode: AssetNodeDefinitionFragmentFragment;
   assetGraphData: GraphData;
   liveDataByNode: LiveData;
   params: AssetViewParams;
@@ -104,6 +104,7 @@ export const AssetNodeLineageGraph: React.FC<{
                 ) : scale < MINIMAL_SCALE ? (
                   <AssetNodeMinimal
                     definition={graphNode.definition}
+                    liveData={liveDataByNode[graphNode.id]}
                     selected={graphNode.id === assetGraphId}
                   />
                 ) : (

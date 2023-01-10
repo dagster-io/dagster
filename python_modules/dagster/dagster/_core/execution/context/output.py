@@ -26,7 +26,7 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
 from dagster._core.execution.plan.utils import build_resources_for_manager
 
 if TYPE_CHECKING:
@@ -104,7 +104,7 @@ class OutputContext:
     _cm_scope_entered: Optional[bool]
     _events: List["DagsterEvent"]
     _user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]]
-    _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]]
+    _metadata_entries: Optional[Sequence[MetadataEntry]]
 
     def __init__(
         self,
@@ -154,7 +154,7 @@ class OutputContext:
             self._resources = resources
         else:
             self._resources_cm = build_resources(
-                check.opt_dict_param(resources, "resources", key_type=str)
+                check.opt_mapping_param(resources, "resources", key_type=str)
             )
             self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
             self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
@@ -330,7 +330,8 @@ class OutputContext:
         result = self.step_context.pipeline_def.asset_layer.partitions_def_for_asset(asset_key)
         if result is None:
             raise DagsterInvariantViolationError(
-                f"Attempting to access partitions def for asset {asset_key}, but it is not partitioned"
+                f"Attempting to access partitions def for asset {asset_key}, but it is not"
+                " partitioned"
             )
 
         return result
@@ -494,7 +495,6 @@ class OutputContext:
         Returns:
             Sequence[str, ...]: A list of identifiers, i.e. run id, step key, and output name
         """
-
         warnings.warn(
             "`OutputContext.get_run_scoped_output_identifier` is deprecated. Use "
             "`OutputContext.get_identifier` instead."
@@ -547,8 +547,10 @@ class OutputContext:
         if version is not None:
             check.invariant(
                 self.mapping_key is None,
-                f"Mapping key and version both provided for output '{name}' of step '{step_key}'. "
-                "Dynamic mapping is not supported when using versioning.",
+                (
+                    f"Mapping key and version both provided for output '{name}' of step"
+                    f" '{step_key}'. Dynamic mapping is not supported when using versioning."
+                ),
             )
             identifier = ["versioned_outputs", version, step_key, name]
         else:
@@ -597,7 +599,6 @@ class OutputContext:
             event (Union[AssetMaterialization, Materialization, AssetObservation]): The event to log.
 
         Examples:
-
         .. code-block:: python
 
             from dagster import IOManager, AssetMaterialization
@@ -630,7 +631,6 @@ class OutputContext:
 
         If consume_events has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
         """
-
         events = self._events
         self._events = []
         yield from events
@@ -661,7 +661,6 @@ class OutputContext:
                 materializations = [event for event in all_user_events if isinstance(event, AssetMaterialization)]
                 ...
         """
-
         return self._user_events
 
     @public
@@ -674,7 +673,6 @@ class OutputContext:
             metadata (Mapping[str, RawMetadataValue]): A metadata dictionary to log
 
         Examples:
-
         .. code-block:: python
 
             from dagster import IOManager
@@ -685,7 +683,15 @@ class OutputContext:
         """
         from dagster._core.definitions.metadata import normalize_metadata
 
-        self._metadata_entries = normalize_metadata(metadata, [])
+        prior_metadata_entries = self._metadata_entries or []
+
+        overlapping_labels = {entry.label for entry in prior_metadata_entries} & metadata.keys()
+        if overlapping_labels:
+            raise DagsterInvalidMetadata(
+                f"Tried to add metadata for key(s) that already have metadata: {overlapping_labels}"
+            )
+
+        self._metadata_entries = [*prior_metadata_entries, *normalize_metadata(metadata, [])]
 
     def get_logged_metadata_entries(
         self,
@@ -722,7 +728,6 @@ def get_output_context(
         run_id (str): The run ID of the run that produced the output, not necessarily the run that
             the context will be used in.
     """
-
     step = execution_plan.get_step_by_key(step_output_handle.step_key)
     # get config
     solid_config = resolved_run_config.solids[step.solid_handle.to_string()]
@@ -747,9 +752,11 @@ def get_output_context(
     if step_context:
         check.invariant(
             not resources,
-            "Expected either resources or step context to be set, but "
-            "received both. If step context is provided, resources for IO manager will be "
-            "retrieved off of that.",
+            (
+                "Expected either resources or step context to be set, but "
+                "received both. If step context is provided, resources for IO manager will be "
+                "retrieved off of that."
+            ),
         )
         resources = build_resources_for_manager(io_manager_key, step_context)
 
@@ -833,7 +840,6 @@ def build_output_context(
         partition_key: Optional[str]: String value representing partition key to execute with.
 
     Examples:
-
         .. code-block:: python
 
             build_output_context()

@@ -1,5 +1,4 @@
 import graphene
-
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.pipeline_run import RunsFilter
 
@@ -33,7 +32,7 @@ def tick_specific_data_from_dagster_tick(graphene_info, tick):
         return GrapheneScheduleTickSuccessData(run=None)
     elif tick.status == TickStatus.FAILURE:
         error = tick.error
-        return GrapheneScheduleTickFailureData(error=error)
+        return GrapheneScheduleTickFailureData(error=GraphenePythonError(error))
 
 
 class GrapheneScheduleTickSpecificData(graphene.Union):

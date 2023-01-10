@@ -39,7 +39,7 @@ from dagster._core.host_representation.external_data import (
     ExternalSensorExecutionErrorData,
 )
 from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
-from dagster._core.host_representation.handle import PipelineHandle, RepositoryHandle
+from dagster._core.host_representation.handle import JobHandle, RepositoryHandle
 from dagster._core.host_representation.origin import (
     GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
@@ -57,10 +57,10 @@ from dagster._grpc.impl import (
     get_partition_set_execution_param_data,
     get_partition_tags,
 )
-from dagster._grpc.types import GetCurrentImageResult
+from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
 from dagster._serdes import deserialize_as
 from dagster._seven.compat.pendulum import PendulumDateTime
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .selector import PipelineSelector
 
@@ -130,7 +130,8 @@ class RepositoryLocation(AbstractContextManager):
         """Return the ExternalPipeline for a specific pipeline. Subclasses only
         need to implement get_subset_external_pipeline_result to handle the case where
         a solid selection is specified, which requires access to the underlying PipelineDefinition
-        to generate the subsetted pipeline snapshot."""
+        to generate the subsetted pipeline snapshot.
+        """
         if not selector.solid_selection and not selector.asset_selection:
             return self.get_repository(selector.repository_name).get_full_external_job(
                 selector.pipeline_name
@@ -142,7 +143,8 @@ class RepositoryLocation(AbstractContextManager):
         external_data = subset_result.external_pipeline_data
         if external_data is None:
             check.failed(
-                f"Failed to fetch subset data, success: {subset_result.success} error: {subset_result.error}"
+                f"Failed to fetch subset data, success: {subset_result.success} error:"
+                f" {subset_result.error}"
             )
 
         return ExternalPipeline(external_data, repo_handle)
@@ -153,7 +155,8 @@ class RepositoryLocation(AbstractContextManager):
     ) -> ExternalPipelineSubsetResult:
         """Returns a snapshot about an ExternalPipeline with a solid selection, which requires
         access to the underlying PipelineDefinition. Callsites should likely use
-        `get_external_pipeline` instead."""
+        `get_external_pipeline` instead.
+        """
 
     @abstractmethod
     def get_external_partition_config(
@@ -349,9 +352,8 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.inst_param(selector, "selector", PipelineSelector)
         check.invariant(
             selector.location_name == self.name,
-            "PipelineSelector location_name mismatch, got {selector.location_name} expected {self.name}".format(
-                self=self, selector=selector
-            ),
+            "PipelineSelector location_name mismatch, got {selector.location_name} expected"
+            " {self.name}".format(self=self, selector=selector),
         )
 
         from dagster._grpc.impl import get_external_pipeline_subset_result
@@ -669,6 +671,9 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             GetCurrentImageResult,
         ).current_image
 
+    def get_current_runs(self) -> Sequence[str]:
+        return deserialize_as(self.client.get_current_runs(), GetCurrentRunsResult).current_runs
+
     def cleanup(self) -> None:
         if self._heartbeat_shutdown_event:
             self._heartbeat_shutdown_event.set()
@@ -735,16 +740,15 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         check.inst_param(selector, "selector", PipelineSelector)
         check.invariant(
             selector.location_name == self.name,
-            "PipelineSelector location_name mismatch, got {selector.location_name} expected {self.name}".format(
-                self=self, selector=selector
-            ),
+            "PipelineSelector location_name mismatch, got {selector.location_name} expected"
+            " {self.name}".format(self=self, selector=selector),
         )
 
         external_repository = self.get_repository(selector.repository_name)
-        pipeline_handle = PipelineHandle(selector.pipeline_name, external_repository.handle)
+        job_handle = JobHandle(selector.pipeline_name, external_repository.handle)
         return sync_get_external_pipeline_subset_grpc(
             self.client,
-            pipeline_handle.get_external_origin(),
+            job_handle.get_external_origin(),
             selector.solid_selection,
             selector.asset_selection,
         )

@@ -1,7 +1,7 @@
 import pytest
-from with_great_expectations.ge_demo import payroll_data
-
 from dagster._utils import file_relative_path
+from with_great_expectations import defs
+from with_great_expectations.ge_demo import payroll_data
 
 
 def test_pipeline_success():
@@ -22,7 +22,7 @@ def test_pipeline_failure():
                         }
                     }
                 },
-                "solids": {
+                "ops": {
                     "read_in_datafile": {
                         "inputs": {
                             "csv_path": {
@@ -35,3 +35,7 @@ def test_pipeline_failure():
                 },
             }
         )
+
+
+def test_defs_can_load():
+    assert defs.get_job_def("payroll_data")

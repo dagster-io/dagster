@@ -6,7 +6,6 @@ from contextlib import ExitStack, contextmanager
 
 import pendulum
 import pytest
-
 from dagster import (
     Any,
     AssetKey,
@@ -37,7 +36,7 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS
-from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
@@ -50,7 +49,7 @@ from dagster._core.workspace.load_target import EmptyWorkspaceTarget, GrpcServer
 from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import EphemeralDagsterGrpcClient
 from dagster._grpc.server import open_server_process
-from dagster._legacy import daily_schedule, hourly_schedule, pipeline, solid
+from dagster._legacy import daily_schedule, hourly_schedule
 from dagster._scheduler.scheduler import launch_scheduled_runs
 from dagster._seven import wait_for_process
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
@@ -119,34 +118,34 @@ def evaluate_schedules(
     wait_for_futures(futures, timeout=timeout)
 
 
-@solid(config_schema={"partition_time": str})
-def the_solid(context):
-    return "Ran at this partition date: {}".format(context.solid_config["partition_time"])
+@op(config_schema={"partition_time": str})
+def the_op(context):
+    return "Ran at this partition date: {}".format(context.op_config["partition_time"])
 
 
-@pipeline
-def the_pipeline():
-    the_solid()
+@job
+def the_job():
+    the_op()
 
 
 def _solid_config(date):
     return {
-        "solids": {"the_solid": {"config": {"partition_time": date.isoformat()}}},
+        "solids": {"the_op": {"config": {"partition_time": date.isoformat()}}},
     }
 
 
-@daily_schedule(pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="UTC")
+@daily_schedule(pipeline_name="the_job", start_date=_COUPLE_DAYS_AGO, execution_timezone="UTC")
 def simple_schedule(date):
     return _solid_config(date)
 
 
-@daily_schedule(pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO)
+@daily_schedule(pipeline_name="the_job", start_date=_COUPLE_DAYS_AGO)
 def daily_schedule_without_timezone(date):
     return _solid_config(date)
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline",
+    pipeline_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="US/Central",
 )
@@ -155,7 +154,7 @@ def daily_central_time_schedule(date):
 
 
 @schedule(
-    job_name="the_pipeline",
+    job_name="the_job",
     cron_schedule="*/5 * * * *",
     execution_timezone="US/Central",
 )
@@ -164,7 +163,7 @@ def partitionless_schedule(context):
 
 
 @schedule(
-    job_name="the_pipeline",
+    job_name="the_job",
     cron_schedule=["0 0 * * 4", "0 0 * * 5", "0 0,12 * * 5"],
     execution_timezone="UTC",
 )
@@ -174,7 +173,7 @@ def union_schedule(context):
 
 # Schedule that runs on a different day in Central Time vs UTC
 @daily_schedule(
-    pipeline_name="the_pipeline",
+    pipeline_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_time=datetime.time(hour=23, minute=0),
     execution_timezone="US/Central",
@@ -184,7 +183,7 @@ def daily_late_schedule(date):
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline",
+    pipeline_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_time=datetime.time(hour=2, minute=30),
     execution_timezone="US/Central",
@@ -194,7 +193,7 @@ def daily_dst_transition_schedule_skipped_time(date):
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline",
+    pipeline_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_time=datetime.time(hour=1, minute=30),
     execution_timezone="US/Central",
@@ -204,7 +203,7 @@ def daily_dst_transition_schedule_doubled_time(date):
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline",
+    pipeline_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="US/Eastern",
 )
@@ -213,7 +212,7 @@ def daily_eastern_time_schedule(date):
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline",
+    pipeline_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     end_date=datetime.datetime(year=2019, month=3, day=1),
     execution_timezone="UTC",
@@ -224,7 +223,7 @@ def simple_temporary_schedule(date):
 
 # forgot date arg
 @daily_schedule(  # type: ignore
-    pipeline_name="the_pipeline",
+    pipeline_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="UTC",
 )
@@ -237,7 +236,7 @@ NUM_CALLS = {"sync": 0, "async": 0}
 
 def get_passes_on_retry_schedule(key):
     @daily_schedule(  # type: ignore
-        pipeline_name="the_pipeline",
+        pipeline_name="the_job",
         start_date=_COUPLE_DAYS_AGO,
         execution_timezone="UTC",
         name=f"passes_on_retry_schedule_{key}",
@@ -252,7 +251,7 @@ def get_passes_on_retry_schedule(key):
 
 
 @hourly_schedule(
-    pipeline_name="the_pipeline",
+    pipeline_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="UTC",
 )
@@ -261,7 +260,7 @@ def simple_hourly_schedule(date):
 
 
 @hourly_schedule(
-    pipeline_name="the_pipeline",
+    pipeline_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="US/Central",
 )
@@ -270,7 +269,7 @@ def hourly_central_time_schedule(date):
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline",
+    pipeline_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     should_execute=_throw,
     execution_timezone="UTC",
@@ -280,7 +279,7 @@ def bad_should_execute_schedule(date):
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline",
+    pipeline_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     should_execute=_throw_on_odd_day,
     execution_timezone="UTC",
@@ -290,7 +289,7 @@ def bad_should_execute_schedule_on_odd_days(date):
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline",
+    pipeline_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     should_execute=_never,
     execution_timezone="UTC",
@@ -300,7 +299,7 @@ def skip_schedule(date):
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline",
+    pipeline_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="UTC",
 )
@@ -309,7 +308,7 @@ def wrong_config_schedule(_date):
 
 
 @schedule(
-    job_name="the_pipeline",
+    job_name="the_job",
     cron_schedule="0 0 * * *",
     execution_timezone="UTC",
 )
@@ -330,14 +329,14 @@ def define_multi_run_schedule():
     return ScheduleDefinition(
         name="multi_run_schedule",
         cron_schedule="0 0 * * *",
-        job_name="the_pipeline",
+        job_name="the_job",
         execution_timezone="UTC",
         execution_fn=gen_runs,
     )
 
 
 @schedule(
-    job_name="the_pipeline",
+    job_name="the_job",
     cron_schedule="0 0 * * *",
     execution_timezone="UTC",
 )
@@ -366,7 +365,7 @@ def define_multi_run_schedule_with_missing_run_key():
     return ScheduleDefinition(
         name="multi_run_schedule_with_missing_run_key",
         cron_schedule="0 0 * * *",
-        job_name="the_pipeline",
+        job_name="the_job",
         execution_timezone="UTC",
         execution_fn=gen_runs,
     )
@@ -375,23 +374,23 @@ def define_multi_run_schedule_with_missing_run_key():
 @repository
 def the_other_repo():
     return [
-        the_pipeline,
+        the_job,
         multi_run_list_schedule,
     ]
 
 
-@solid(config_schema=Field(Any))
-def config_solid(_):
+@op(config_schema=Field(Any))
+def config_op(_):
     return 1
 
 
-@pipeline
-def config_pipeline():
-    config_solid()
+@job
+def config_job():
+    config_op()
 
 
 @daily_schedule(
-    pipeline_name="config_pipeline",
+    pipeline_name="config_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="UTC",
 )
@@ -403,7 +402,7 @@ def large_schedule(_):
 
     return {
         "solids": {
-            "config_solid": {
+            "config_op": {
                 "config": {
                     "foo": {
                         _random_string(10): _random_string(20) for i in range(REQUEST_CONFIG_COUNT)
@@ -414,18 +413,18 @@ def large_schedule(_):
     }
 
 
-@solid
+@op
 def start(_, x):
     return x
 
 
-@solid
+@op
 def end(_, x=1):
     return x
 
 
-@pipeline
-def two_step_pipeline():
+@job
+def two_step_job():
     end(start())
 
 
@@ -466,8 +465,8 @@ def asset_selection_schedule():
 @repository
 def the_repo():
     return [
-        the_pipeline,
-        config_pipeline,
+        the_job,
+        config_job,
         simple_schedule,
         simple_temporary_schedule,
         simple_hourly_schedule,
@@ -491,7 +490,7 @@ def the_repo():
         partitionless_schedule,
         union_schedule,
         large_schedule,
-        two_step_pipeline,
+        two_step_job,
         default_config_schedule,
         empty_schedule,
         [asset1, asset2],
@@ -500,7 +499,7 @@ def the_repo():
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline",
+    pipeline_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="UTC",
     default_status=DefaultScheduleStatus.RUNNING,
@@ -510,7 +509,7 @@ def always_running_schedule(date):
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline",
+    pipeline_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="UTC",
     default_status=DefaultScheduleStatus.STOPPED,
@@ -522,7 +521,7 @@ def never_running_schedule(date):
 @repository
 def the_status_in_code_repo():
     return [
-        the_pipeline,
+        the_job,
         always_running_schedule,
         never_running_schedule,
     ]
@@ -584,7 +583,7 @@ def validate_run_started(
         if partition_time:
             assert run.run_config == _solid_config(partition_time)
     else:
-        assert run.status == PipelineRunStatus.FAILURE
+        assert run.status == DagsterRunStatus.FAILURE
 
 
 def wait_for_all_runs_to_start(instance, timeout=10):
@@ -595,7 +594,7 @@ def wait_for_all_runs_to_start(instance, timeout=10):
         time.sleep(0.5)
 
         not_started_runs = [
-            run for run in instance.get_runs() if run.status == PipelineRunStatus.NOT_STARTED
+            run for run in instance.get_runs() if run.status == DagsterRunStatus.NOT_STARTED
         ]
 
         if len(not_started_runs) == 0:
@@ -672,7 +671,6 @@ def test_simple_schedule(instance, workspace_context, external_repo, executor):
 
     freeze_datetime = freeze_datetime.add(days=2)
     with pendulum.test(freeze_datetime):
-
         # Traveling two more days in the future before running results in two new ticks
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 3
@@ -1062,7 +1060,10 @@ def test_bad_should_execute(instance, workspace_context, external_repo, executor
             initial_datetime,
             TickStatus.FAILURE,
             [run.run_id for run in instance.get_runs()],
-            "Error occurred during the execution of should_execute for schedule bad_should_execute_schedule",
+            (
+                "Error occurred during the execution of should_execute for schedule"
+                " bad_should_execute_schedule"
+            ),
             expected_failure_count=1,
         )
 
@@ -1227,7 +1228,8 @@ def test_bad_schedules_mixed_with_good_schedule(
         assert bad_ticks[0].status == TickStatus.FAILURE
 
         assert (
-            "Error occurred during the execution of should_execute for schedule bad_should_execute_schedule"
+            "Error occurred during the execution of should_execute for schedule"
+            " bad_should_execute_schedule"
             in bad_ticks[0].error.message
         )
 
@@ -1347,7 +1349,8 @@ def test_bad_load_repository(instance, workspace_context, external_repo, caplog,
         assert len(ticks) == 0
 
         assert (
-            "Could not find repository invalid_repo_name in location test_location to run schedule simple_schedule"
+            "Could not find repository invalid_repo_name in location test_location to run schedule"
+            " simple_schedule"
             in caplog.text
         )
 
@@ -1473,7 +1476,8 @@ def test_load_repository_location_not_in_workspace(
         assert len(ticks) == 0
 
         assert (
-            "Schedule simple_schedule was started from a location missing_location that can no longer be found in the workspace"
+            "Schedule simple_schedule was started from a location missing_location that can no"
+            " longer be found in the workspace"
             in caplog.text
         )
 
@@ -1831,7 +1835,6 @@ def test_multi_runs(instance, workspace_context, external_repo, executor):
 
     freeze_datetime = freeze_datetime.add(days=1)
     with pendulum.test(freeze_datetime):
-
         # Traveling one more day in the future before running results in a tick
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 4
@@ -1902,7 +1905,6 @@ def test_multi_run_list(instance, workspace_context, external_repo, executor):
 
     freeze_datetime = freeze_datetime.add(days=1)
     with pendulum.test(freeze_datetime):
-
         # Traveling one more day in the future before running results in a tick
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 4
@@ -1935,8 +1937,10 @@ def test_multi_runs_missing_run_key(instance, workspace_context, external_repo, 
             freeze_datetime,
             TickStatus.FAILURE,
             [],
-            "Error occurred during the execution function for schedule "
-            "multi_run_schedule_with_missing_run_key",
+            (
+                "Error occurred during the execution function for schedule "
+                "multi_run_schedule_with_missing_run_key"
+            ),
             expected_failure_count=1,
         )
 
@@ -2062,7 +2066,10 @@ def test_grpc_server_down(instance, executor):
                 initial_datetime,
                 TickStatus.FAILURE,
                 [],
-                "Unable to reach the user code server for schedule simple_schedule. Schedule will resume execution once the server is available.",
+                (
+                    "Unable to reach the user code server for schedule simple_schedule. Schedule"
+                    " will resume execution once the server is available."
+                ),
                 expected_failure_count=0,
             )
 
@@ -2329,7 +2336,6 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
         workspace_load_target=workspace_load_target(attribute=None),  # load all repos
         instance=instance,
     ) as full_workspace_context:
-
         with pendulum.test(freeze_datetime):
             full_location = next(
                 iter(
@@ -2345,7 +2351,9 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
             status_in_code_repo = full_location.get_repository("the_status_in_code_repo")
             running_sched = status_in_code_repo.get_external_schedule("always_running_schedule")
             instance.stop_schedule(
-                running_sched.get_external_origin_id(), running_sched.selector_id, running_sched
+                running_sched.get_external_origin_id(),
+                running_sched.selector_id,
+                running_sched,
             )
 
             external_schedule = external_repo.get_external_schedule("multi_run_list_schedule")

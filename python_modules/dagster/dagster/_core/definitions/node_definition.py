@@ -26,13 +26,13 @@ if TYPE_CHECKING:
     from .dependency import NodeHandle
     from .graph_definition import GraphDefinition
     from .input import InputDefinition
+    from .op_definition import OpDefinition
     from .output import OutputDefinition
-    from .solid_definition import SolidDefinition
+
 
 # base class for SolidDefinition and GraphDefinition
 # represents that this is embedable within a graph
 class NodeDefinition(NamedConfigurableDefinition):
-
     _name: str
     _description: Optional[str]
     _tags: Mapping[str, str]
@@ -156,7 +156,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         ...
 
     @abstractmethod
-    def iterate_solid_defs(self) -> Iterable["SolidDefinition"]:
+    def iterate_solid_defs(self) -> Iterable["OpDefinition"]:
         ...
 
     @abstractmethod
@@ -168,7 +168,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         ...
 
     @abstractmethod
-    def resolve_output_to_origin_op_def(self, output_name: str) -> "SolidDefinition":
+    def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition":
         ...
 
     @abstractmethod
@@ -259,13 +259,13 @@ class NodeDefinition(NamedConfigurableDefinition):
 
         check.failed(f"{self.name} is not a GraphDefinition")
 
-    def ensure_solid_def(self) -> "SolidDefinition":
-        from .solid_definition import SolidDefinition
+    def ensure_op_def(self) -> "OpDefinition":
+        from .op_definition import OpDefinition
 
-        if isinstance(self, SolidDefinition):
+        if isinstance(self, OpDefinition):
             return self
 
-        check.failed(f"{self.name} is not a SolidDefinition")
+        check.failed(f"{self.name} is not an OpDefinition")
 
     @abstractmethod
     def get_inputs_must_be_resolved_top_level(

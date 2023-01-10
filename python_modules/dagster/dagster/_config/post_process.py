@@ -88,7 +88,7 @@ def _post_process(context: TraversalContext, config_value: Any) -> EvaluateValue
 def _recurse_in_to_scalar_union(
     context: TraversalContext, config_value: Any
 ) -> EvaluateValueResult[Any]:
-    if isinstance(config_value, dict) or isinstance(config_value, list):
+    if isinstance(config_value, (dict, list)):
         return _recursively_process_config(
             context.for_new_config_type(context.config_type.non_scalar_type), config_value  # type: ignore
         )
@@ -135,9 +135,11 @@ def _recurse_in_to_shape(
 
     fields = context.config_type.fields  # type: ignore
 
-    field_aliases = getattr(context.config_type, "field_aliases", None)
-    field_aliases = check.opt_dict_param(
-        field_aliases, "field_aliases", key_type=str, value_type=str
+    field_aliases: Dict[str, str] = check.opt_dict_param(
+        getattr(context.config_type, "field_aliases", None),
+        "field_aliases",
+        key_type=str,
+        value_type=str,
     )
 
     incoming_fields = config_value.keys()

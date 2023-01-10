@@ -17,14 +17,17 @@ import threading
 from collections import OrderedDict
 from datetime import timezone
 from enum import Enum
+from signal import Signals
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     ContextManager,
+    Dict,
     Generator,
     Generic,
     Iterator,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -35,16 +38,12 @@ from typing import (
     cast,
     overload,
 )
-from warnings import warn
 
 import packaging.version
 from typing_extensions import Literal
 
 import dagster._check as check
 import dagster._seven as seven
-
-from .merger import merge_dicts
-from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
 if sys.version_info > (3,):
     from pathlib import Path  # pylint: disable=import-error
@@ -54,8 +53,10 @@ else:
 if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent
 
+K = TypeVar("K")
 T = TypeVar("T")
 U = TypeVar("U")
+V = TypeVar("V")
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)
 
@@ -63,6 +64,7 @@ PICKLE_PROTOCOL = 4
 
 
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
+
 
 # Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
 # version). 16 is from the 0.16.0 that library versions stayed on when core went to 1.0.0.
@@ -76,9 +78,7 @@ def library_version_from_core_version(core_version: str) -> str:
 
 def parse_package_version(version_str: str) -> packaging.version.Version:
     parsed_version = packaging.version.parse(version_str)
-    assert isinstance(
-        parsed_version, packaging.version.Version
-    ), f"Found LegacyVersion: {version_str}"
+    assert isinstance(parsed_version, packaging.version.Version)
     return parsed_version
 
 
@@ -94,12 +94,6 @@ def convert_dagster_submodule_name(name: str, mode: Literal["private", "public"]
         return re.sub(r"^dagster._", "dagster.", name)
     else:
         check.failed("`mode` must be 'private' or 'public'")
-
-
-def make_email_on_run_failure_sensor(*args, **kwargs):
-    from .alert import make_email_on_run_failure_sensor  # pylint: disable=redefined-outer-name
-
-    return make_email_on_run_failure_sensor(*args, **kwargs)
 
 
 def file_relative_path(dunderfile: str, relative_path: str) -> str:
@@ -120,7 +114,6 @@ def file_relative_path(dunderfile: str, relative_path: str) -> str:
         file_relative_path(__file__, 'path/relative/to/file')
 
     """
-
     check.str_param(dunderfile, "dunderfile")
     check.str_param(relative_path, "relative_path")
 
@@ -176,7 +169,7 @@ def pushd(path: str) -> Iterator[str]:
 
 
 def safe_isfile(path: str) -> bool:
-    """ "Backport of Python 3.8 os.path.isfile behavior.
+    """Backport of Python 3.8 os.path.isfile behavior.
 
     This is intended to backport https://docs.python.org/dev/whatsnew/3.8.html#os-path. I'm not
     sure that there are other ways to provoke this behavior on Unix other than the null byte,
@@ -264,7 +257,22 @@ class frozenlist(list):
         return hash(tuple(self))
 
 
-def make_readonly_value(value):
+@overload
+def make_readonly_value(value: List[T]) -> Sequence[T]:  # type: ignore
+    ...
+
+
+@overload
+def make_readonly_value(value: Dict[T, U]) -> Mapping[T, U]:  # type: ignore
+    ...
+
+
+@overload
+def make_readonly_value(value: T) -> T:
+    ...
+
+
+def make_readonly_value(value: Any) -> Any:
     if isinstance(value, list):
         return frozenlist(list(map(make_readonly_value, value)))
     elif isinstance(value, dict):
@@ -438,7 +446,7 @@ def start_termination_thread(termination_event):
 # Executes the next() function within an instance of the supplied context manager class
 # (leaving the context before yielding each result)
 def iterate_with_context(
-    context_fn: Callable[[], ContextManager], iterator: Iterator[T]
+    context_fn: Callable[[], ContextManager[Any]], iterator: Iterator[T]
 ) -> Iterator[T]:
     while True:
         # Allow interrupts during user code so that we can terminate slow/hanging steps
@@ -457,7 +465,7 @@ def datetime_as_float(dt):
 
 
 # hashable frozen string to string dict
-class frozentags(frozendict):
+class frozentags(frozendict, Mapping[str, str]):
     def __init__(self, *args, **kwargs):
         super(frozentags, self).__init__(*args, **kwargs)
         check.dict_param(self, "self", key_type=str, value_type=str)
@@ -569,7 +577,7 @@ def find_free_port() -> int:
 
 
 @contextlib.contextmanager
-def alter_sys_path(to_add: Sequence[str], to_remove: Sequence[str]) -> Generator[None, None, None]:
+def alter_sys_path(to_add: Sequence[str], to_remove: Sequence[str]) -> Iterator[None]:
     to_restore = [path for path in sys.path]
 
     # remove paths
@@ -588,7 +596,7 @@ def alter_sys_path(to_add: Sequence[str], to_remove: Sequence[str]) -> Generator
 
 
 @contextlib.contextmanager
-def restore_sys_modules():
+def restore_sys_modules() -> Iterator[None]:
     sys_modules = {k: v for k, v in sys.modules.items()}
     try:
         yield
@@ -598,7 +606,7 @@ def restore_sys_modules():
             del sys.modules[key]
 
 
-def process_is_alive(pid):
+def process_is_alive(pid: int) -> bool:
     if seven.IS_WINDOWS:
         import psutil  # pylint: disable=import-error
 
@@ -659,3 +667,26 @@ def traced(func: T_Callable) -> T_Callable:
         return func(*args, **kwargs)
 
     return cast(T_Callable, inner)
+
+
+def get_run_crash_explanation(prefix: str, exit_code: int):
+    # As per https://docs.python.org/3/library/subprocess.html#subprocess.CompletedProcess.returncode
+    # negative exit code means a posix signal
+    if exit_code < 0 and -exit_code in [signal.value for signal in Signals]:
+        posix_signal = -exit_code
+        signal_str = Signals(posix_signal).name
+        exit_clause = f"was terminated by signal {posix_signal} ({signal_str})."
+        if posix_signal == Signals.SIGKILL:
+            exit_clause = (
+                exit_clause
+                + " This usually indicates that the process was"
+                " killed by the operating system due to running out of"
+                " memory. Possible solutions include increasing the"
+                " amount of memory available to the run, reducing"
+                " the amount of memory used by the ops in the run, or"
+                " configuring the executor to run fewer ops concurrently."
+            )
+    else:
+        exit_clause = f"unexpectedly exited with code {exit_code}."
+
+    return prefix + " " + exit_clause

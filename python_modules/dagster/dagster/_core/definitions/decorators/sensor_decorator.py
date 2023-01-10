@@ -1,11 +1,10 @@
 import inspect
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Callable, Optional, Sequence
+from typing import Callable, Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.errors import DagsterInvariantViolationError
 
 from ...errors import DagsterInvariantViolationError
 from ..asset_sensor_definition import AssetSensorDefinition
@@ -23,9 +22,6 @@ from ..sensor_definition import (
     SkipReason,
 )
 from ..target import ExecutableDefinition
-
-if TYPE_CHECKING:
-    from ...events.log import EventLogEntry
 
 
 def sensor(
@@ -130,7 +126,6 @@ def asset_sensor(
 
 
     Example:
-
         .. code-block:: python
 
             from dagster import AssetKey, EventLogEntry, SensorEvaluationContext, asset_sensor
@@ -151,7 +146,6 @@ def asset_sensor(
                     },
                 )
     """
-
     check.opt_str_param(name, "name")
 
     def inner(fn: AssetMaterializationFunction) -> AssetSensorDefinition:
@@ -237,7 +231,6 @@ def multi_asset_sensor(
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
     """
-
     check.opt_str_param(name, "name")
 
     def inner(fn: MultiAssetMaterializationFunction) -> MultiAssetSensorDefinition:

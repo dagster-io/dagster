@@ -3,13 +3,13 @@ import os
 import duckdb
 import pandas as pd
 import pytest
-from dagster_duckdb.io_manager import build_duckdb_io_manager
-from dagster_duckdb_pyspark import DuckDBPySparkTypeHandler
-from pyspark.sql import DataFrame as SparkDF
-from pyspark.sql import SparkSession
-
 from dagster import DailyPartitionsDefinition, Out, asset, graph, materialize, op
 from dagster._check import CheckError
+from dagster_duckdb_pyspark import duckdb_pyspark_io_manager
+from pyspark.sql import (
+    DataFrame as SparkDF,
+    SparkSession,
+)
 
 
 @op(out=Out(metadata={"schema": "a_df"}))
@@ -30,9 +30,8 @@ def make_df():
 
 
 def test_duckdb_io_manager_with_ops(tmp_path):
-    duckdb_io_manager = build_duckdb_io_manager([DuckDBPySparkTypeHandler()])
     resource_defs = {
-        "io_manager": duckdb_io_manager.configured(
+        "io_manager": duckdb_pyspark_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
@@ -68,9 +67,8 @@ def b_plus_one(b_df: SparkDF) -> SparkDF:
 
 
 def test_duckdb_io_manager_with_assets(tmp_path):
-    duckdb_io_manager = build_duckdb_io_manager([DuckDBPySparkTypeHandler()])
     resource_defs = {
-        "io_manager": duckdb_io_manager.configured(
+        "io_manager": duckdb_pyspark_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
@@ -102,9 +100,8 @@ def not_supported():
 
 
 def test_not_supported_type(tmp_path):
-    duckdb_io_manager = build_duckdb_io_manager([DuckDBPySparkTypeHandler()])
     resource_defs = {
-        "io_manager": duckdb_io_manager.configured(
+        "io_manager": duckdb_pyspark_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
@@ -140,10 +137,11 @@ def daily_partitioned(context) -> SparkDF:
 
 
 def test_partitioned_asset(tmp_path):
-    duckdb_io_manager = build_duckdb_io_manager([DuckDBPySparkTypeHandler()]).configured(
-        {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-    )
-    resource_defs = {"io_manager": duckdb_io_manager}
+    resource_defs = {
+        "io_manager": duckdb_pyspark_io_manager.configured(
+            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+        )
+    }
 
     materialize(
         [daily_partitioned],

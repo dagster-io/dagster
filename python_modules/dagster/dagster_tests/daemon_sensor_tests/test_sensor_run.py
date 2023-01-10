@@ -3,20 +3,18 @@ import string
 import sys
 import tempfile
 import time
-import warnings
 from contextlib import ExitStack, contextmanager
 
 import pendulum
 import pytest
-
 from dagster import (
     Any,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
     AssetSelection,
+    CodeLocationSelector,
     DagsterRunStatus,
-    ExperimentalWarning,
     Field,
     HourlyPartitionsDefinition,
     JobSelector,
@@ -34,12 +32,8 @@ from dagster import (
     repository,
     run_failure_sensor,
 )
-from dagster._core.definitions.instigation_logger import get_instigation_log_records
-from dagster._core.log_manager import DAGSTER_META_KEY
-
-warnings.filterwarnings("ignore", category=ExperimentalWarning)
-
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
+from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.run_status_sensor_definition import run_status_sensor
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, RunRequest, SkipReason
@@ -47,6 +41,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_pipeline
 from dagster._core.host_representation import ExternalInstigatorOrigin, ExternalRepositoryOrigin
 from dagster._core.instance import DagsterInstance
+from dagster._core.log_manager import DAGSTER_META_KEY
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import (
@@ -60,7 +55,7 @@ from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iter
 from dagster._legacy import pipeline, solid
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
-from .conftest import workspace_load_target
+from .conftest import create_workspace_load_target
 
 
 @asset
@@ -499,6 +494,14 @@ def logging_sensor(context):
     return SkipReason()
 
 
+@run_status_sensor(
+    monitor_all_repositories=True,
+    run_status=DagsterRunStatus.SUCCESS,
+)
+def logging_status_sensor(context):
+    context.log.info(f"run succeeded: {context.dagster_run.run_id}")
+
+
 @repository
 def the_repo():
     return [
@@ -546,6 +549,7 @@ def the_repo():
         asset_selection_sensor,
         targets_asset_selection_sensor,
         logging_sensor,
+        logging_status_sensor,
     ]
 
 
@@ -837,7 +841,7 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
     ]
     while True:
         if time.time() - start_time > timeout:
-            raise Exception("Timed out waiting for runs to start")
+            raise Exception("Timed out waiting for runs to finish")
         time.sleep(0.5)
 
         not_finished_runs = [
@@ -988,7 +992,8 @@ def test_bad_load_sensor_repository(caplog, executor, instance, workspace_contex
         assert len(ticks) == 0
 
         assert (
-            "Could not find repository invalid_repo_name in location test_location to run sensor simple_sensor"
+            "Could not find repository invalid_repo_name in location test_location to run sensor"
+            " simple_sensor"
             in caplog.text
         )
 
@@ -1073,7 +1078,8 @@ def test_error_sensor(caplog, executor, instance, workspace_context, external_re
 
         assert (
             "Error occurred during the execution of evaluation_fn for sensor error_sensor"
-        ) in caplog.text
+            in caplog.text
+        )
 
         # Tick updated the sensor's last tick time, but not its cursor (due to the failure)
         state = instance.get_instigator_state(
@@ -1127,7 +1133,7 @@ def test_wrong_config_sensor(caplog, executor, instance, workspace_context, exte
             "Error in config for pipeline",
         )
 
-        assert ("Error in config for pipeline") in caplog.text
+        assert "Error in config for pipeline" in caplog.text
 
     freeze_datetime = freeze_datetime.add(seconds=60)
     caplog.clear()
@@ -1150,7 +1156,7 @@ def test_wrong_config_sensor(caplog, executor, instance, workspace_context, exte
             "Error in config for pipeline",
         )
 
-        assert ("Error in config for pipeline") in caplog.text
+        assert "Error in config for pipeline" in caplog.text
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
@@ -1201,7 +1207,8 @@ def test_launch_failure(caplog, executor, workspace_context, external_repo):
 
             assert (
                 "Run {run_id} created successfully but failed to launch:".format(run_id=run.run_id)
-            ) in caplog.text
+                in caplog.text
+            )
 
             assert "The entire purpose of this is to throw on launch" in caplog.text
 
@@ -1222,7 +1229,6 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
     )
 
     with pendulum.test(freeze_datetime):
-
         external_sensor = external_repo.get_external_sensor("run_key_sensor")
         instance.add_instigator_state(
             InstigatorState(
@@ -1274,7 +1280,8 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
         assert not ticks[0].run_ids
 
         assert (
-            'Skipping 1 run for sensor run_key_sensor already completed with run keys: ["only_once"]'
+            "Skipping 1 run for sensor run_key_sensor already completed with run keys:"
+            ' ["only_once"]'
             in caplog.text
         )
 
@@ -1311,7 +1318,7 @@ def instance_with_sensors_no_run_bucketing():
         with instance_for_test(
             overrides={
                 "run_storage": {
-                    "module": "dagster_tests.core_tests.storage_tests.test_run_storage",
+                    "module": "dagster_tests.storage_tests.test_run_storage",
                     "class": "NonBucketQuerySqliteRunStorage",
                     "config": {"base_dir": temp_dir},
                 },
@@ -1342,7 +1349,6 @@ def test_launch_once_unbatched(caplog, executor, workspace_context, external_rep
         no_bucket_workspace_context = workspace_context.copy_for_test_instance(instance)
 
         with pendulum.test(freeze_datetime):
-
             external_sensor = external_repo.get_external_sensor("run_key_sensor")
             instance.add_instigator_state(
                 InstigatorState(
@@ -1390,7 +1396,8 @@ def test_launch_once_unbatched(caplog, executor, workspace_context, external_rep
                 TickStatus.SKIPPED,
             )
             assert (
-                'Skipping 1 run for sensor run_key_sensor already completed with run keys: ["only_once"]'
+                "Skipping 1 run for sensor run_key_sensor already completed with run keys:"
+                ' ["only_once"]'
                 in caplog.text
             )
 
@@ -1487,7 +1494,6 @@ def test_custom_interval_sensor_with_offset(
     monkeypatch.setattr(time, "sleep", fake_sleep)
 
     with pendulum.test(freeze_datetime):
-
         # 60 second custom interval
         external_sensor = external_repo.get_external_sensor("custom_interval_sensor")
 
@@ -1824,7 +1830,6 @@ def test_asset_sensor(executor, instance, workspace_context, external_repo):
 
         freeze_datetime = freeze_datetime.add(seconds=60)
     with pendulum.test(freeze_datetime):
-
         # should generate the foo asset
         execute_pipeline(foo_pipeline, instance=instance)
 
@@ -1867,7 +1872,6 @@ def test_asset_job_sensor(executor, instance, workspace_context, external_repo):
 
         freeze_datetime = freeze_datetime.add(seconds=60)
     with pendulum.test(freeze_datetime):
-
         # should generate the foo asset
         execute_pipeline(foo_pipeline, instance=instance)
 
@@ -1916,7 +1920,6 @@ def test_asset_sensor_not_triggered_on_observation(
 
         freeze_datetime = freeze_datetime.add(seconds=60)
     with pendulum.test(freeze_datetime):
-
         # should generate the foo asset
         execute_pipeline(foo_pipeline, instance=instance)
 
@@ -1961,7 +1964,6 @@ def test_multi_asset_sensor(executor, instance, workspace_context, external_repo
 
         freeze_datetime = freeze_datetime.add(seconds=60)
     with pendulum.test(freeze_datetime):
-
         # should generate asset_a
         materialize([asset_a], instance=instance)
 
@@ -1982,7 +1984,6 @@ def test_multi_asset_sensor(executor, instance, workspace_context, external_repo
         freeze_datetime = freeze_datetime.add(seconds=60)
 
     with pendulum.test(freeze_datetime):
-
         # should generate asset_b
         materialize([asset_b], instance=instance)
 
@@ -2053,7 +2054,6 @@ def test_multi_asset_sensor_w_many_events(executor, instance, workspace_context,
 
         freeze_datetime = freeze_datetime.add(seconds=60)
     with pendulum.test(freeze_datetime):
-
         # should generate asset_a
         materialize([asset_a], instance=instance)
 
@@ -2073,7 +2073,6 @@ def test_multi_asset_sensor_w_many_events(executor, instance, workspace_context,
         freeze_datetime = freeze_datetime.add(seconds=60)
 
     with pendulum.test(freeze_datetime):
-
         # should generate asset_a
         materialize([asset_a], instance=instance)
 
@@ -2122,7 +2121,6 @@ def test_multi_asset_sensor_w_no_cursor_update(
 
         freeze_datetime = freeze_datetime.add(seconds=60)
     with pendulum.test(freeze_datetime):
-
         # should generate asset_a
         materialize([asset_a], instance=instance)
 
@@ -2242,7 +2240,6 @@ def test_multi_job_sensor(executor, instance, workspace_context, external_repo):
 
         freeze_datetime = freeze_datetime.add(seconds=60)
     with pendulum.test(freeze_datetime):
-
         # should fire the asset sensor
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(job_sensor.get_external_origin_id(), job_sensor.selector_id)
@@ -2350,7 +2347,7 @@ def test_status_in_code_sensor(executor, instance):
         "US/Central",
     )
     with create_test_daemon_workspace_context(
-        workspace_load_target(attribute="the_status_in_code_repo"),
+        create_workspace_load_target(attribute="the_status_in_code_repo"),
         instance=instance,
     ) as workspace_context:
         external_repo = next(
@@ -2358,7 +2355,6 @@ def test_status_in_code_sensor(executor, instance):
         ).repository_location.get_repository("the_status_in_code_repo")
 
         with pendulum.test(freeze_datetime):
-
             running_sensor = external_repo.get_external_sensor("always_running_sensor")
             not_running_sensor = external_repo.get_external_sensor("never_running_sensor")
 
@@ -2599,7 +2595,7 @@ def test_repository_namespacing(executor):
         instance = exit_stack.enter_context(instance_for_test())
         full_workspace_context = exit_stack.enter_context(
             create_test_daemon_workspace_context(
-                workspace_load_target(attribute=None),  # load all repos
+                create_workspace_load_target(attribute=None),  # load all repos
                 instance=instance,
             )
         )
@@ -2698,3 +2694,19 @@ def test_sensor_logging(executor, instance, workspace_context, external_repo):
     record = records[0]
     assert record[DAGSTER_META_KEY]["orig_message"] == "hello hello"
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
+
+
+def test_code_location_construction():
+    # this just gets code coverage in in the run status sensor definition constructor
+    @run_status_sensor(
+        monitored_jobs=[
+            CodeLocationSelector(
+                location_name="test_location",
+            )
+        ],
+        run_status=DagsterRunStatus.SUCCESS,
+    )
+    def cross_code_location_sensor(context):
+        raise Exception("never executed")
+
+    assert cross_code_location_sensor

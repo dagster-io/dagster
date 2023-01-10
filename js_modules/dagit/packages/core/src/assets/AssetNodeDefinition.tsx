@@ -1,17 +1,19 @@
-import {gql} from '@apollo/client';
 import {Body, Box, Caption, Colors, ConfigTypeSchema, Icon, Mono, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
   LiveData,
   toGraphId,
 } from '../asset-graph/Utils';
-import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
+import {graphql} from '../graphql';
+import {
+  AssetNodeDefinitionFragmentFragment,
+  AssetNodeForGraphQueryFragment,
+} from '../graphql/graphql';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Version} from '../versions/Version';
@@ -19,23 +21,19 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
-import {
-  AssetMetadataTable,
-  ASSET_NODE_OP_METADATA_FRAGMENT,
-  metadataForAssetNode,
-} from './AssetMetadata';
+import {AssetMetadataTable, metadataForAssetNode} from './AssetMetadata';
 import {AssetNodeList} from './AssetNodeList';
 import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
+import {DependsOnSelfBanner} from './DependsOnSelfBanner';
 
 export const AssetNodeDefinition: React.FC<{
-  assetNode: AssetNodeDefinitionFragment;
-  upstream: AssetGraphQuery_assetNodes[] | null;
-  downstream: AssetGraphQuery_assetNodes[] | null;
+  assetNode: AssetNodeDefinitionFragmentFragment;
+  upstream: AssetNodeForGraphQueryFragment[] | null;
+  downstream: AssetNodeForGraphQueryFragment[] | null;
   liveDataByNode: LiveData;
-}> = ({assetNode, upstream, downstream, liveDataByNode}) => {
+  dependsOnSelf: boolean;
+}> = ({assetNode, upstream, downstream, liveDataByNode, dependsOnSelf}) => {
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
   const liveDataForNode = liveDataByNode[toGraphId(assetNode.assetKey)];
 
@@ -117,6 +115,7 @@ export const AssetNodeDefinition: React.FC<{
               </Box>
             </Link>
           </Box>
+          {dependsOnSelf && <DependsOnSelfBanner />}
           <AssetNodeList items={upstream} liveDataByNode={liveDataByNode} />
           <Box
             padding={{vertical: 16, horizontal: 24}}
@@ -196,7 +195,7 @@ export const AssetNodeDefinition: React.FC<{
 };
 
 const DefinitionLocation: React.FC<{
-  assetNode: AssetNodeDefinitionFragment;
+  assetNode: AssetNodeDefinitionFragmentFragment;
   repoAddress: RepoAddress;
 }> = ({assetNode, repoAddress}) => (
   <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}} style={{lineHeight: 0}}>
@@ -220,7 +219,7 @@ const DefinitionLocation: React.FC<{
 );
 
 const OpNamesDisplay = (props: {
-  assetNode: AssetNodeDefinitionFragment;
+  assetNode: AssetNodeDefinitionFragmentFragment;
   repoAddress: RepoAddress;
 }) => {
   const {assetNode, repoAddress} = props;
@@ -264,7 +263,7 @@ const OpNamesDisplay = (props: {
   );
 };
 
-export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
+export const ASSET_NODE_DEFINITION_FRAGMENT = graphql(`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
     ...AssetNodeConfigFragment
@@ -287,7 +286,4 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     ...AssetNodeFragment
     ...AssetNodeOpMetadataFragment
   }
-  ${ASSET_NODE_CONFIG_FRAGMENT}
-  ${ASSET_NODE_FRAGMENT}
-  ${ASSET_NODE_OP_METADATA_FRAGMENT}
-`;
+`);

@@ -78,14 +78,14 @@ IO managers are [resources](/concepts/resources), which means users can supply d
 
 By default, materializing an asset named `my_asset` will pickle it to a local file named `my_asset`. The directory that file lives underneath is determined by the rules in <PyObject object="fs_io_manager" />.
 
-[IO managers](/concepts/io-management/io-managers) enable fully overriding this behavior and storing asset contents in any way you wish - e.g. writing them as tables in a database or as objects in a cloud object store. You can use one of Dagster's [built-in IO managers](#built-in-io-managers), or you can write your own.
+[IO managers](/concepts/io-management/io-managers) enable fully overriding this behavior and storing asset contents in any way you wish - e.g. writing them as tables in a database or as objects in a cloud object store such as s3. You can use one of Dagster's [built-in IO managers](#built-in-io-managers), or you can write your own.
 
-To apply an IO manager to a set of assets, you can use <PyObject object="with_resources" />:
+To apply an IO manager to a set of assets, you can use <PyObject object="Definitions" />:
 
 ```python file=/concepts/assets/asset_io_manager.py startafter=start_marker endbefore=end_marker
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
-from dagster import asset, repository, with_resources
+from dagster import Definitions, asset
 
 
 @asset
@@ -98,14 +98,10 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 
 
-@repository
-def my_repository():
-    return [
-        *with_resources(
-            [upstream_asset, downstream_asset],
-            resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_resource},
-        )
-    ]
+defs = Definitions(
+    assets=[upstream_asset, downstream_asset],
+    resources={"io_manager": s3_pickle_io_manager, "s3": s3_resource},
+)
 ```
 
 This example also includes `"s3": s3_resource` because the <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" /> depends on an S3 resource.
@@ -119,7 +115,7 @@ Different assets can have different IO managers:
 ```python file=/concepts/assets/asset_different_io_managers.py startafter=start_marker endbefore=end_marker
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
-from dagster import asset, fs_io_manager, repository, with_resources
+from dagster import Definitions, asset, fs_io_manager
 
 
 @asset(io_manager_key="s3_io_manager")
@@ -132,18 +128,14 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 
 
-@repository
-def my_repository():
-    return [
-        *with_resources(
-            [upstream_asset, downstream_asset],
-            resource_defs={
-                "s3_io_manager": s3_pickle_io_manager,
-                "s3": s3_resource,
-                "fs_io_manager": fs_io_manager,
-            },
-        )
-    ]
+defs = Definitions(
+    assets=[upstream_asset, downstream_asset],
+    resources={
+        "s3_io_manager": s3_pickle_io_manager,
+        "s3": s3_resource,
+        "fs_io_manager": fs_io_manager,
+    },
+)
 ```
 
 When `upstream_asset` is materialized, the value `[1, 2, 3]` will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a file on the local filesystem.
@@ -171,7 +163,7 @@ import os
 
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
-from dagster import asset, fs_io_manager, repository, with_resources
+from dagster import Definitions, asset, fs_io_manager
 
 
 @asset
@@ -184,18 +176,15 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 
 
-@repository
-def my_repository():
-    resources_by_env = {
-        "prod": {"io_manager": s3_pickle_io_manager, "s3": s3_resource},
-        "local": {"io_manager": fs_io_manager},
-    }
-    return [
-        *with_resources(
-            [upstream_asset, downstream_asset],
-            resource_defs=resources_by_env[os.getenv("ENV", "local")],
-        ),
-    ]
+resources_by_env = {
+    "prod": {"io_manager": s3_pickle_io_manager, "s3": s3_resource},
+    "local": {"io_manager": fs_io_manager},
+}
+
+defs = Definitions(
+    assets=[upstream_asset, downstream_asset],
+    resources=resources_by_env[os.getenv("ENV", "local")],
+)
 ```
 
 ### Asset input IO managers
@@ -227,16 +216,12 @@ def third_asset(first_asset, second_asset):
     return pd.concat([first_asset, second_asset, pd.Series([7, 8])])
 
 
-@repository
-def my_repository():
-    return [
-        *with_resources(
-            [first_asset, second_asset, third_asset],
-            resource_defs={
-                "pandas_series": pandas_series_io_manager,
-            },
-        )
-    ]
+defs = Definitions(
+    assets=[first_asset, second_asset, third_asset],
+    resources={
+        "pandas_series": pandas_series_io_manager,
+    },
+)
 ```
 
 ## Using IO managers with non-asset jobs
@@ -752,17 +737,13 @@ def downstream_asset(upstream):
     return upstream.shape
 
 
-@repository
-def my_repository():
-    return [
-        *with_resources(
-            [upstream_asset, downstream_asset],
-            resource_defs={
-                "pandas_manager": pandas_asset_io_manager,
-                "numpy_manager": numpy_asset_io_manager,
-            },
-        )
-    ]
+defs = Definitions(
+    assets=[upstream_asset, downstream_asset],
+    resources={
+        "pandas_manager": pandas_asset_io_manager,
+        "numpy_manager": numpy_asset_io_manager,
+    },
+)
 ```
 
 ## Testing an IO manager

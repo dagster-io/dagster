@@ -1,12 +1,12 @@
 import time
-from typing import Callable, Generator, Mapping, Optional, Sequence, Tuple, TypeVar
-
-T = TypeVar("T")
+from typing import Callable, Generator, Mapping, Optional, Sequence, Tuple, Type, TypeVar
 
 import dagster._check as check
 
+T = TypeVar("T")
 
-def backoff_delay_generator():
+
+def backoff_delay_generator() -> Generator[float, None, None]:
     i = 0.1
     while True:
         yield i
@@ -18,11 +18,11 @@ BACKOFF_MAX_RETRIES = 4
 
 def backoff(
     fn: Callable[..., T],
-    retry_on: Tuple[object, ...],
+    retry_on: Tuple[Type[BaseException], ...],
     args: Optional[Sequence[object]] = None,
     kwargs: Optional[Mapping[str, object]] = None,
     max_retries: int = BACKOFF_MAX_RETRIES,
-    delay_generator: Generator = backoff_delay_generator(),
+    delay_generator: Generator[float, None, None] = backoff_delay_generator(),
 ) -> T:
     """Straightforward backoff implementation.
 

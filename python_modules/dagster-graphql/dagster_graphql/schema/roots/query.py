@@ -1,10 +1,7 @@
-from typing import Dict, List
-
-import graphene
-from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
-from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
+from typing import Any, Dict, Sequence
 
 import dagster._check as check
+import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.host_representation import (
@@ -15,7 +12,15 @@ from dagster._core.host_representation import (
 )
 from dagster._core.scheduler.instigation import InstigatorType
 
-from ...implementation.external import fetch_repositories, fetch_repository, fetch_workspace
+from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
+from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
+
+from ...implementation.external import (
+    fetch_location_statuses,
+    fetch_repositories,
+    fetch_repository,
+    fetch_workspace,
+)
 from ...implementation.fetch_assets import (
     get_asset,
     get_asset_node,
@@ -73,6 +78,7 @@ from ..external import (
     GrapheneRepositoriesOrError,
     GrapheneRepositoryConnection,
     GrapheneRepositoryOrError,
+    GrapheneWorkspaceLocationStatusEntriesOrError,
     GrapheneWorkspaceOrError,
 )
 from ..inputs import (
@@ -92,7 +98,11 @@ from ..instigation import (
     GrapheneInstigationStatesOrError,
     GrapheneInstigationType,
 )
-from ..logs.compute_logs import GrapheneCapturedLogsMetadata
+from ..logs.compute_logs import (
+    GrapheneCapturedLogs,
+    GrapheneCapturedLogsMetadata,
+    from_captured_log_data,
+)
 from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
 from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
@@ -110,7 +120,7 @@ from ..runs import (
 from ..schedules import GrapheneScheduleOrError, GrapheneSchedulerOrError, GrapheneSchedulesOrError
 from ..sensors import GrapheneSensorOrError, GrapheneSensorsOrError
 from ..tags import GraphenePipelineTagAndValues
-from ..util import non_null_list
+from ..util import HasContext, non_null_list
 from .assets import GrapheneAssetOrError, GrapheneAssetsOrError
 from .execution_plan import GrapheneExecutionPlanOrError
 from .pipeline import GrapheneGraphOrError, GraphenePipelineOrError
@@ -144,6 +154,11 @@ class GrapheneDagitQuery(graphene.ObjectType):
         description="Retrieve the workspace and its locations.",
     )
 
+    locationStatusesOrError = graphene.Field(
+        graphene.NonNull(GrapheneWorkspaceLocationStatusEntriesOrError),
+        description="Retrieve location status for workspace locations",
+    )
+
     pipelineOrError = graphene.Field(
         graphene.NonNull(GraphenePipelineOrError),
         params=graphene.NonNull(GraphenePipelineSelector),
@@ -154,7 +169,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
         graphene.NonNull(GraphenePipelineSnapshotOrError),
         snapshotId=graphene.String(),
         activePipelineSelector=graphene.Argument(GraphenePipelineSelector),
-        description="Retrieve a job snapshot by its id or location name, repository name, and job name.",
+        description=(
+            "Retrieve a job snapshot by its id or location name, repository name, and job name."
+        ),
     )
 
     graphOrError = graphene.Field(
@@ -194,26 +211,37 @@ class GrapheneDagitQuery(graphene.ObjectType):
     instigationStateOrError = graphene.Field(
         graphene.NonNull(GrapheneInstigationStateOrError),
         instigationSelector=graphene.NonNull(GrapheneInstigationSelector),
-        description="Retrieve the state for a schedule or sensor by its location name, repository name, and schedule/sensor name.",
+        description=(
+            "Retrieve the state for a schedule or sensor by its location name, repository name, and"
+            " schedule/sensor name."
+        ),
     )
 
     unloadableInstigationStatesOrError = graphene.Field(
         graphene.NonNull(GrapheneInstigationStatesOrError),
         instigationType=graphene.Argument(GrapheneInstigationType),
-        description="Retrieve the running schedules and sensors that are missing from the workspace.",
+        description=(
+            "Retrieve the running schedules and sensors that are missing from the workspace."
+        ),
     )
 
     partitionSetsOrError = graphene.Field(
         graphene.NonNull(GraphenePartitionSetsOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
         pipelineName=graphene.NonNull(graphene.String),
-        description="Retrieve the partition sets for a job by its location name, repository name, and job name.",
+        description=(
+            "Retrieve the partition sets for a job by its location name, repository name, and job"
+            " name."
+        ),
     )
     partitionSetOrError = graphene.Field(
         graphene.NonNull(GraphenePartitionSetOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
         partitionSetName=graphene.String(),
-        description="Retrieve a partition set by its location name, repository name, and partition set name.",
+        description=(
+            "Retrieve a partition set by its location name, repository name, and partition set"
+            " name."
+        ),
     )
 
     pipelineRunsOrError = graphene.Field(
@@ -313,7 +341,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
         pipeline=graphene.Argument(GraphenePipelineSelector),
         assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
         loadMaterializations=graphene.Boolean(default_value=False),
-        description="Retrieve asset nodes after applying a filter on asset group, job, and asset keys.",
+        description=(
+            "Retrieve asset nodes after applying a filter on asset group, job, and asset keys."
+        ),
     )
 
     assetNodeOrError = graphene.Field(
@@ -325,8 +355,12 @@ class GrapheneDagitQuery(graphene.ObjectType):
     assetNodeDefinitionCollisions = graphene.Field(
         non_null_list(GrapheneAssetNodeDefinitionCollision),
         assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
-        description="Retrieve a list of asset keys where two or more repos provide an asset definition. Note: Assets should "
-        + "not be defined in more than one repository - this query is used to present warnings and errors in Dagit.",
+        description=(
+            "Retrieve a list of asset keys where two or more repos provide an asset definition."
+            " Note: Assets should "
+        )
+        + "not be defined in more than one repository - this query is used to present warnings and"
+        " errors in Dagit.",
     )
 
     partitionBackfillOrError = graphene.Field(
@@ -367,6 +401,13 @@ class GrapheneDagitQuery(graphene.ObjectType):
         logKey=graphene.Argument(non_null_list(graphene.String)),
         description="Retrieve the captured log metadata for a given log key.",
     )
+    capturedLogs = graphene.Field(
+        graphene.NonNull(GrapheneCapturedLogs),
+        logKey=graphene.Argument(non_null_list(graphene.String)),
+        cursor=graphene.Argument(graphene.String),
+        limit=graphene.Argument(graphene.Int),
+        description="Captured logs are the stdout/stderr logs for a given log key",
+    )
 
     def resolve_repositoriesOrError(self, graphene_info, **kwargs):
         if kwargs.get("repositorySelector"):
@@ -388,6 +429,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_workspaceOrError(self, graphene_info):
         return fetch_workspace(graphene_info.context)
+
+    def resolve_locationStatusesOrError(self, graphene_info):
+        return fetch_location_statuses(graphene_info.context)
 
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         snapshot_id_arg = kwargs.get("snapshotId")
@@ -650,16 +694,17 @@ class GrapheneDagitQuery(graphene.ObjectType):
         permissions = graphene_info.context.permissions
         return [GraphenePermission(permission, value) for permission, value in permissions.items()]
 
-    def resolve_assetsLatestInfo(self, graphene_info, **kwargs):
+    def resolve_assetsLatestInfo(self, graphene_info: HasContext, **kwargs: Any):
         asset_keys = set(
-            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys")
+            AssetKey.from_graphql_input(asset_key)
+            for asset_key in check.not_none(kwargs.get("assetKeys"))  # type: ignore
         )
 
         results = get_asset_nodes(graphene_info)
 
         # Filter down to requested asset keys
         # Build mapping of asset key to the step keys required to generate the asset
-        step_keys_by_asset: Dict[AssetKey, List[str]] = {
+        step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {  # type: ignore
             node.external_asset_node.asset_key: node.external_asset_node.op_names
             for node in results
             if node.assetKey in asset_keys
@@ -672,3 +717,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_capturedLogsMetadata(self, graphene_info, logKey):
         return get_captured_log_metadata(graphene_info, logKey)
+
+    def resolve_capturedLogs(self, graphene_info, logKey, cursor=None, limit=None):
+        log_data = graphene_info.context.instance.compute_log_manager.get_log_data(
+            logKey, cursor=cursor, max_bytes=limit
+        )
+        return from_captured_log_data(log_data)

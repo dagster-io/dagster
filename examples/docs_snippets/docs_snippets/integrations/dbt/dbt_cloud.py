@@ -35,23 +35,36 @@ def scope_load_assets_from_dbt_cloud_job():
     # end_load_assets_from_dbt_cloud_job
 
 
-def scope_schedule_dbt_cloud_assets():
-    dbt_cloud_assets = []
+def scope_schedule_dbt_cloud_assets(dbt_cloud_assets):
     # start_schedule_dbt_cloud_assets
-    from dagster import ScheduleDefinition, define_asset_job, repository, AssetSelection
+    from dagster import (
+        ScheduleDefinition,
+        define_asset_job,
+        AssetSelection,
+        Definitions,
+    )
 
-    # Materialize all assets in the repository
+    # Materialize all assets
     run_everything_job = define_asset_job("run_everything_job", AssetSelection.all())
 
-    @repository
-    def my_repo():
-        return [
-            # Use the dbt_cloud_assets defined in Step 2
-            dbt_cloud_assets,
+    # Materialize only the staging assets
+    run_staging_job = define_asset_job(
+        "run_staging_job", AssetSelection.groups("staging")
+    )
+
+    defs = Definitions(
+        # Use the dbt_cloud_assets defined in Step 2
+        assets=[dbt_cloud_assets],
+        schedules=[
             ScheduleDefinition(
                 job=run_everything_job,
                 cron_schedule="@daily",
             ),
-        ]
+            ScheduleDefinition(
+                job=run_staging_job,
+                cron_schedule="@hourly",
+            ),
+        ],
+    )
 
     # end_schedule_dbt_cloud_assets

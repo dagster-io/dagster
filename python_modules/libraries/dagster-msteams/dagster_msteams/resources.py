@@ -1,6 +1,6 @@
-from dagster_msteams.client import TeamsClient
-
 from dagster import Bool, Field, Float, StringSource, resource
+
+from dagster_msteams.client import TeamsClient
 
 
 @resource(
@@ -27,35 +27,29 @@ def msteams_resource(context):
     By configuring this resource, you can post messages to MS Teams from any Dagster solid:
 
     Examples:
+        .. code-block:: python
 
-    .. code-block:: python
+            import os
 
-        import os
-
-        from dagster import ModeDefinition, execute_pipeline
-        from dagster._legacy import pipeline, solid
-        from dagster_msteams import Card, msteams_resource
+            from dagster import op, job
+            from dagster_msteams import Card, msteams_resource
 
 
-        @solid(required_resource_keys={"msteams"})
-        def teams_solid(context):
-            card = Card()
-            card.add_attachment(text_message="Hello There !!")
-            context.resources.msteams.post_message(payload=card.payload)
+            @op(required_resource_keys={"msteams"})
+            def teams_op(context):
+                card = Card()
+                card.add_attachment(text_message="Hello There !!")
+                context.resources.msteams.post_message(payload=card.payload)
 
 
-        @pipeline(
-            mode_defs=[ModeDefinition(resource_defs={"msteams": msteams_resource})],
-        )
-        def teams_pipeline():
-            teams_solid()
+            @job(resource_defs={"msteams": msteams_resource})
+            def teams_job():
+                teams_op()
 
 
-        execute_pipeline(
-            teams_pipeline,
-            {"resources": {"msteams": {"config": {"hook_url": os.getenv("TEAMS_WEBHOOK_URL")}}}},
-        )
-
+            teams_job.execute_in_process(
+                {"resources": {"msteams": {"config": {"hook_url": os.getenv("TEAMS_WEBHOOK_URL")}}}}
+            )
     """
     return TeamsClient(
         hook_url=context.resource_config.get("hook_url"),

@@ -1,21 +1,18 @@
-import {gql} from '@apollo/client';
 import {Box, ConfigTypeSchema} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {gqlTypePredicate} from '../app/Util';
 import {dagsterTypeKind} from '../dagstertype/DagsterType';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {graphql} from '../graphql';
+import {TypeExplorerFragmentFragment} from '../graphql/graphql';
 import {TableSchema} from '../metadata/TableSchema';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
 
-import {CONFIG_TYPE_SCHEMA_FRAGMENT} from './ConfigTypeSchema';
-import {TypeExplorerFragment} from './types/TypeExplorerFragment';
-
 interface ITypeExplorerProps {
   isGraph: boolean;
-  type: TypeExplorerFragment;
+  type: TypeExplorerFragmentFragment;
 }
 
 export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
@@ -67,7 +64,7 @@ export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
   );
 };
 
-export const TYPE_EXPLORER_FRAGMENT = gql`
+export const TYPE_EXPLORER_FRAGMENT = graphql(`
   fragment TypeExplorerFragment on DagsterType {
     name
     description
@@ -87,6 +84,4 @@ export const TYPE_EXPLORER_FRAGMENT = gql`
       }
     }
   }
-  ${METADATA_ENTRY_FRAGMENT}
-  ${CONFIG_TYPE_SCHEMA_FRAGMENT}
-`;
+`);

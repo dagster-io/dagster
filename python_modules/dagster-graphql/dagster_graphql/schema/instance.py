@@ -1,8 +1,7 @@
 import sys
 
-import graphene
-
 import dagster._check as check
+import graphene
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher.base import RunLauncher
 from dagster._core.storage.captured_log_manager import CapturedLogManager

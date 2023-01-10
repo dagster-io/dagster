@@ -1,11 +1,9 @@
-import {gql, RefetchQueriesFunction, useMutation} from '@apollo/client';
+import {RefetchQueriesFunction, useMutation} from '@apollo/client';
 import {Button, DialogBody, DialogFooter, Dialog, Group} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
-
-import {AssetWipeMutation, AssetWipeMutationVariables} from './types/AssetWipeMutation';
+import {graphql} from '../graphql';
 
 interface AssetKey {
   path: string[];
@@ -18,13 +16,10 @@ export const AssetWipeDialog: React.FC<{
   onComplete: (assetKeys: AssetKey[]) => void;
   requery?: RefetchQueriesFunction;
 }> = ({assetKeys, isOpen, onClose, onComplete, requery}) => {
-  const [requestWipe] = useMutation<AssetWipeMutation, AssetWipeMutationVariables>(
-    ASSET_WIPE_MUTATION,
-    {
-      variables: {assetKeys: assetKeys.map((key) => ({path: key.path || []}))},
-      refetchQueries: requery,
-    },
-  );
+  const [requestWipe] = useMutation(ASSET_WIPE_MUTATION, {
+    variables: {assetKeys: assetKeys.map((key) => ({path: key.path || []}))},
+    refetchQueries: requery,
+  });
 
   const wipe = async () => {
     if (!assetKeys.length) {
@@ -51,8 +46,7 @@ export const AssetWipeDialog: React.FC<{
           </ul>
           <div>
             Assets defined only by their historical materializations will disappear from the Asset
-            Catalog. Software-defined assets will remain unless their definition is also deleted
-            from the repository.
+            Catalog. Software-defined assets will remain unless their definition is also deleted.
           </div>
           <strong>This action cannot be undone.</strong>
         </Group>
@@ -69,7 +63,7 @@ export const AssetWipeDialog: React.FC<{
   );
 };
 
-const ASSET_WIPE_MUTATION = gql`
+const ASSET_WIPE_MUTATION = graphql(`
   mutation AssetWipeMutation($assetKeys: [AssetKeyInput!]!) {
     wipeAssets(assetKeys: $assetKeys) {
       ... on AssetWipeSuccess {
@@ -80,6 +74,4 @@ const ASSET_WIPE_MUTATION = gql`
       ...PythonErrorFragment
     }
   }
-
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);

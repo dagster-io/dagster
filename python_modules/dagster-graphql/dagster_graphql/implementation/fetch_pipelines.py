@@ -1,7 +1,6 @@
-from graphene import ResolveInfo
-
 import dagster._check as check
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
+from graphene import ResolveInfo
 
 from .external import get_external_pipeline_or_raise, get_full_external_pipeline_or_raise
 from .utils import PipelineSelector, UserFacingGraphQLError, capture_error
@@ -48,17 +47,19 @@ def get_pipeline_or_error(graphene_info, selector):
 
 def get_pipeline_or_raise(graphene_info, selector):
     """Returns a Pipeline or raises a UserFacingGraphQLError if one cannot be retrieved
-    from the selector, e.g., the pipeline is not present in the loaded repository."""
+    from the selector, e.g., the pipeline is not present in the loaded repository.
+    """
     return get_pipeline_from_selector(graphene_info, selector)
 
 
 def get_pipeline_reference_or_raise(graphene_info, pipeline_run):
     """Returns a PipelineReference or raises a UserFacingGraphQLError if a pipeline
     reference cannot be retrieved based on the run, e.g, a UserFacingGraphQLError that wraps an
-    InvalidSubsetError."""
+    InvalidSubsetError.
+    """
     from ..schema.pipelines.pipeline_ref import GrapheneUnknownPipeline
 
-    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     solid_selection = (
         list(pipeline_run.solids_to_execute) if pipeline_run.solids_to_execute else None
     )

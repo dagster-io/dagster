@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
-
 snapshots = Snapshot()
 
 snapshots['test_create_execution_plan_with_dep 1'] = '''{
@@ -21,7 +20,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "2c112622b04a96d4234e28c68255845947d4c047",
+  "pipeline_snapshot_id": "f75661b82259b1378e2c059f0fe9993b93829558",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "op_one",
@@ -155,7 +154,7 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "26031b75270b933a1e23b3ba1d51a2f656ecfb06",
+  "pipeline_snapshot_id": "86087d07c532ad431cd2fda8a2506157d0680933",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "noop_op"
@@ -218,7 +217,7 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "27b36f3f2ee86db47a1d775af6623978f08057ae",
+  "pipeline_snapshot_id": "b857057c66aa4c23d8f49ea630be742c1283b5f7",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "noop_op"
@@ -281,7 +280,7 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
   ]
 }'''
 
-snapshots['test_create_with_composite 1'] = '''{
+snapshots['test_create_with_graph 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "executor_name": "multi_or_in_process_executor",
@@ -295,7 +294,7 @@ snapshots['test_create_with_composite 1'] = '''{
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "f0f5868a704d2383fb5c1b87f636dec04664d7b1",
+  "pipeline_snapshot_id": "fab36b9d8cde94f28a2003eac11d03ea450d0043",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "comp_1.return_one",

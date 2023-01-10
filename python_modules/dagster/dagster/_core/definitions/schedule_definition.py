@@ -24,7 +24,8 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import ensure_gen, merge_dicts
+from dagster._utils import ensure_gen
+from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import is_valid_cron_schedule
 
 from ..decorator_utils import get_function_params
@@ -37,7 +38,7 @@ from ..errors import (
 )
 from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
-from ..storage.pipeline_run import PipelineRun
+from ..storage.pipeline_run import DagsterRun
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
@@ -205,7 +206,8 @@ class ScheduleEvaluationContext:
 
 class DecoratedScheduleFunction(NamedTuple):
     """Wrapper around the decorated schedule function.  Keeps track of both to better support the
-    optimal return value for direct invocation of the evaluation function"""
+    optimal return value for direct invocation of the evaluation function
+    """
 
     decorated_fn: RawScheduleEvaluationFunction
     wrapped_fn: Callable[[ScheduleEvaluationContext], RunRequestIterator]
@@ -233,14 +235,12 @@ def build_schedule_context(
             the run config is computed.
 
     Examples:
-
         .. code-block:: python
 
             context = build_schedule_context(instance)
             daily_schedule.evaluate_tick(context)
 
     """
-
     check.opt_inst_param(instance, "instance", DagsterInstance)
     return ScheduleEvaluationContext(
         instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
@@ -345,7 +345,6 @@ class ScheduleDefinition:
         job: Optional[ExecutableDefinition] = None,
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     ):
-
         self._cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence))
         if not isinstance(self._cron_schedule, str):
             check.sequence_param(self._cron_schedule, "cron_schedule", of_type=str)  # type: ignore
@@ -394,7 +393,6 @@ class ScheduleDefinition:
                 self._execution_fn = check.opt_callable_param(execution_fn, "execution_fn")
             self._run_config_fn = None
         else:
-
             if run_config_fn and run_config:
                 raise DagsterInvalidDefinitionError(
                     "Attempted to provide both run_config_fn and run_config as arguments"
@@ -572,11 +570,11 @@ class ScheduleDefinition:
 
         Args:
             context (ScheduleEvaluationContext): The context with which to evaluate this schedule.
+
         Returns:
             ScheduleExecutionData: Contains list of run requests, or skip message if present.
 
         """
-
         check.inst_param(context, "context", ScheduleEvaluationContext)
         execution_fn: Callable[[ScheduleEvaluationContext], "ScheduleEvaluationFunctionReturn"]
         if isinstance(self._execution_fn, DecoratedScheduleFunction):
@@ -609,7 +607,10 @@ class ScheduleDefinition:
             result = cast(List[RunRequest], check.is_list(result, of_type=RunRequest))  # type: ignore
             check.invariant(
                 not any(not request.run_key for request in result),  # type: ignore
-                "Schedules that return multiple RunRequests must specify a run_key in each RunRequest",
+                (
+                    "Schedules that return multiple RunRequests must specify a run_key in each"
+                    " RunRequest"
+                ),
             )
             run_requests = result  # type: ignore
             skip_message = None
@@ -619,7 +620,7 @@ class ScheduleDefinition:
             RunRequest(
                 run_key=request.run_key,
                 run_config=request.run_config,
-                tags=merge_dicts(request.tags, PipelineRun.tags_for_schedule(self)),
+                tags=merge_dicts(request.tags, DagsterRun.tags_for_schedule(self)),
                 asset_selection=request.asset_selection,
             )
             for request in run_requests

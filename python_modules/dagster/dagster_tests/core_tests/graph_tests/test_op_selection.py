@@ -1,9 +1,8 @@
-# type: ignore[return-value]
+# mypy: disable-error-code=return-value
 from datetime import datetime
 from typing import List
 
 import pytest
-
 from dagster import (
     AssetKey,
     ConfigMapping,
@@ -722,7 +721,11 @@ def test_op_selection_nested_unsatisfied_input_values():
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Attempted to invoke execute_in_process for 'the_top_level_graph' without specifying an input_value for input 'x', but downstream input x of op 'the_graph.ingest' has no other way of being loaded.",
+        match=(
+            "Attempted to invoke execute_in_process for 'the_top_level_graph' without specifying an"
+            " input_value for input 'x', but downstream input x of op 'the_graph.ingest' has no"
+            " other way of being loaded."
+        ),
     ):
         the_job.execute_in_process()
 

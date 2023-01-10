@@ -21,8 +21,10 @@ S3_SESSION_CONFIG = {
     ),
     "max_attempts": Field(
         int,
-        description="This provides Boto3's retry handler with a value of maximum retry attempts, "
-        "where the initial call counts toward the max_attempts value that you provide",
+        description=(
+            "This provides Boto3's retry handler with a value of maximum retry attempts, "
+            "where the initial call counts toward the max_attempts value that you provide"
+        ),
         is_required=False,
         default_value=5,
     ),
@@ -43,7 +45,6 @@ def s3_resource(context):
     The returned resource object is an S3 client, an instance of `botocore.client.S3`.
 
     Example:
-
         .. code-block:: python
 
             from dagster import build_op_context, job, op

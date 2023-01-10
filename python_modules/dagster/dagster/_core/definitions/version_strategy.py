@@ -8,11 +8,11 @@ from dagster._annotations import public
 if TYPE_CHECKING:
     from .op_definition import OpDefinition
     from .resource_definition import ResourceDefinition
-    from .solid_definition import SolidDefinition
 
 
 class OpVersionContext(NamedTuple):
     """Provides execution-time information for computing the version for an op.
+
     Attributes:
         op_def (OpDefinition): The definition of the op to compute a version for.
         op_config (Any): The parsed config to be passed to the op during execution.
@@ -22,15 +22,12 @@ class OpVersionContext(NamedTuple):
     op_config: Any
 
     @property
-    def solid_def(self) -> "SolidDefinition":
+    def solid_def(self) -> "OpDefinition":
         return self.op_def
 
     @property
     def solid_config(self) -> Any:
         return self.op_config
-
-
-SolidVersionContext = OpVersionContext
 
 
 class ResourceVersionContext(NamedTuple):

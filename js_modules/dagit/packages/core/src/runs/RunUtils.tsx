@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {History} from 'history';
 import qs from 'qs';
 import * as React from 'react';
@@ -6,18 +5,22 @@ import * as React from 'react';
 import {Mono} from '../../../ui/src';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetKey} from '../assets/types';
-import {ExecutionParams, RunStatus} from '../types/globalTypes';
+import {graphql} from '../graphql';
+import {
+  ExecutionParams,
+  LaunchPipelineExecutionMutation,
+  RunFragmentFragment,
+  RunStatus,
+  RunTableRunFragmentFragment,
+  RunTimeFragmentFragment,
+} from '../graphql/graphql';
 
 import {DagsterTag} from './RunTag';
 import {StepSelection} from './StepSelection';
 import {TimeElapsed} from './TimeElapsed';
-import {LaunchPipelineExecution_launchPipelineExecution} from './types/LaunchPipelineExecution';
-import {RunFragment} from './types/RunFragment';
-import {RunTableRunFragment} from './types/RunTableRunFragment';
-import {RunTimeFragment} from './types/RunTimeFragment';
 
 export function titleForRun(run: {runId: string}) {
   return run.runId.split('-').shift();
@@ -64,7 +67,7 @@ export type LaunchBehavior = 'open' | 'open-in-new-tab' | 'toast';
 
 export function handleLaunchResult(
   pipelineName: string,
-  result: void | null | LaunchPipelineExecution_launchPipelineExecution,
+  result: void | null | LaunchPipelineExecutionMutation['launchPipelineExecution'],
   history: History<unknown>,
   options: {behavior: LaunchBehavior; preserveQuerystring?: boolean},
 ) {
@@ -118,7 +121,7 @@ export function handleLaunchResult(
   }
 }
 
-function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment) {
+function getBaseExecutionMetadata(run: RunFragmentFragment | RunTableRunFragmentFragment) {
   const hiddenTagKeys: string[] = [DagsterTag.IsResumeRetry, DagsterTag.StepSelection];
 
   return {
@@ -153,7 +156,7 @@ export type ReExecutionStyle =
   | {type: 'selection'; selection: StepSelection};
 
 export function getReexecutionVariables(input: {
-  run: (RunFragment | RunTableRunFragment) & {runConfigYaml: string};
+  run: (RunFragmentFragment | RunTableRunFragmentFragment) & {runConfigYaml: string};
   style: ReExecutionStyle;
   repositoryLocationName: string;
   repositoryName: string;
@@ -197,7 +200,7 @@ export function getReexecutionVariables(input: {
   return {executionParams};
 }
 
-export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
+export const LAUNCH_PIPELINE_EXECUTION_MUTATION = graphql(`
   mutation LaunchPipelineExecution($executionParams: ExecutionParams!) {
     launchPipelineExecution(executionParams: $executionParams) {
       __typename
@@ -222,11 +225,9 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
       ...PythonErrorFragment
     }
   }
+`);
 
-  ${PYTHON_ERROR_FRAGMENT}
-`;
-
-export const DELETE_MUTATION = gql`
+export const DELETE_MUTATION = graphql(`
   mutation Delete($runId: String!) {
     deletePipelineRun(runId: $runId) {
       __typename
@@ -239,11 +240,9 @@ export const DELETE_MUTATION = gql`
       }
     }
   }
+`);
 
-  ${PYTHON_ERROR_FRAGMENT}
-`;
-
-export const TERMINATE_MUTATION = gql`
+export const TERMINATE_MUTATION = graphql(`
   mutation Terminate($runId: String!, $terminatePolicy: TerminateRunPolicy) {
     terminatePipelineExecution(runId: $runId, terminatePolicy: $terminatePolicy) {
       __typename
@@ -266,11 +265,9 @@ export const TERMINATE_MUTATION = gql`
       ...PythonErrorFragment
     }
   }
+`);
 
-  ${PYTHON_ERROR_FRAGMENT}
-`;
-
-export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
+export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = graphql(`
   mutation LaunchPipelineReexecution(
     $executionParams: ExecutionParams
     $reexecutionParams: ReexecutionParams
@@ -303,12 +300,10 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
       ...PythonErrorFragment
     }
   }
-
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);
 
 interface RunTimeProps {
-  run: RunTimeFragment;
+  run: RunTimeFragmentFragment;
 }
 
 export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
@@ -346,7 +341,7 @@ export const RunStateSummary: React.FC<RunTimeProps> = React.memo(({run}) => {
   );
 });
 
-export const RUN_TIME_FRAGMENT = gql`
+export const RUN_TIME_FRAGMENT = graphql(`
   fragment RunTimeFragment on Run {
     id
     runId
@@ -355,4 +350,4 @@ export const RUN_TIME_FRAGMENT = gql`
     endTime
     updateTime
   }
-`;
+`);

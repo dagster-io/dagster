@@ -1,8 +1,5 @@
 from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
-from dagster_msteams.card import Card
-from dagster_msteams.client import TeamsClient
-
 from dagster import DefaultSensorStatus
 from dagster._core.definitions import GraphDefinition, PipelineDefinition
 from dagster._core.definitions.run_status_sensor_definition import (
@@ -10,6 +7,9 @@ from dagster._core.definitions.run_status_sensor_definition import (
     run_failure_sensor,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+
+from dagster_msteams.card import Card
+from dagster_msteams.client import TeamsClient
 
 if TYPE_CHECKING:
     from dagster._core.host_representation.selector import JobSelector, RepositorySelector
@@ -73,7 +73,6 @@ def make_teams_on_run_failure_sensor(
             monitored_jobs or job_selection. Defaults to False.
 
     Examples:
-
         .. code-block:: python
 
             teams_on_run_failure = make_teams_on_run_failure_sensor(
@@ -100,7 +99,6 @@ def make_teams_on_run_failure_sensor(
 
 
     """
-
     teams_client = TeamsClient(
         hook_url=hook_url,
         http_proxy=http_proxy,
@@ -116,7 +114,6 @@ def make_teams_on_run_failure_sensor(
         monitor_all_repositories=monitor_all_repositories,
     )
     def teams_on_run_failure(context: RunFailureSensorContext):
-
         text = message_fn(context)
         if dagit_base_url:
             text += "<a href='{base_url}/instance/runs/{run_id}'>View in Dagit</a>".format(

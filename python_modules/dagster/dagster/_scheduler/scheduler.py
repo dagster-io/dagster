@@ -30,14 +30,14 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._seven.compat.pendulum import to_timezone
-from dagster._utils import merge_dicts
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import default_date_format_string
+from dagster._utils.merger import merge_dicts
 
 
 class _ScheduleLaunchContext:
@@ -96,8 +96,15 @@ class _ScheduleLaunchContext:
             )
 
 
-MIN_INTERVAL_LOOP_TIME = 5
+SECONDS_IN_MINUTE = 60
 VERBOSE_LOGS_INTERVAL = 60
+
+
+def _get_next_scheduler_iteration_time(start_time):
+    # Wait until at least the next minute to run again, since the minimum granularity
+    # for a cron schedule is every minute
+    last_minute_time = start_time - (start_time % SECONDS_IN_MINUTE)
+    return last_minute_time + SECONDS_IN_MINUTE
 
 
 def execute_scheduler_iteration_loop(
@@ -141,15 +148,19 @@ def execute_scheduler_iteration_loop(
                 max_tick_retries=max_tick_retries,
                 log_verbose_checks=verbose_logs_iteration,
             )
+            yield
             end_time = pendulum.now("UTC").timestamp()
 
             if verbose_logs_iteration:
                 last_verbose_time = end_time
 
-            loop_duration = end_time - start_time
-            sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
-            time.sleep(sleep_time)
-            yield
+            next_minute_time = _get_next_scheduler_iteration_time(start_time)
+
+            if next_minute_time > end_time:
+                # Sleep until the beginning of the next minute, plus a small epsilon to
+                # be sure that we're past the start of the minute
+                time.sleep(next_minute_time - end_time + 0.001)
+                yield
 
 
 def launch_scheduled_runs(
@@ -198,7 +209,8 @@ def launch_scheduled_runs(
         elif location_entry.load_error:
             if log_verbose_checks:
                 logger.warning(
-                    f"Could not load location {location_entry.origin.location_name} to check for schedules due to the following error: {location_entry.load_error}"
+                    f"Could not load location {location_entry.origin.location_name} to check for"
+                    f" schedules due to the following error: {location_entry.load_error}"
                 )
             error_locations.add(location_entry.origin.location_name)
 
@@ -257,9 +269,11 @@ def launch_scheduled_runs(
                 )
             else:
                 logger.warning(
-                    f"Could not find schedule {schedule_name} in repository {repo_name}. If this "
-                    "schedule no longer exists, you can turn it off in the Dagit UI from the "
-                    "Status tab.",
+                    (
+                        f"Could not find schedule {schedule_name} in repository {repo_name}. If"
+                        " this schedule no longer exists, you can turn it off in the Dagit UI from"
+                        " the Status tab."
+                    ),
                 )
 
     if not schedules:
@@ -341,7 +355,8 @@ def launch_scheduled_runs(
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             logger.error(
-                f"Scheduler caught an error for schedule {external_schedule.name} : {error_info.to_string()}"
+                f"Scheduler caught an error for schedule {external_schedule.name} :"
+                f" {error_info.to_string()}"
             )
         yield error_info
 
@@ -396,7 +411,6 @@ def launch_scheduled_runs_for_schedule_iterator(
     instance = workspace_process_context.instance
 
     with schedule_state_lock:
-
         instigator_origin_id = external_schedule.get_external_origin_id()
         ticks = instance.get_ticks(instigator_origin_id, external_schedule.selector_id, limit=1)
         latest_tick: Optional[InstigatorTick] = ticks[0] if ticks else None
@@ -506,7 +520,8 @@ def launch_scheduled_runs_for_schedule_iterator(
                 if isinstance(e, DagsterUserCodeUnreachableError):
                     try:
                         raise DagsterSchedulerError(
-                            f"Unable to reach the user code server for schedule {schedule_name}. Schedule will resume execution once the server is available."
+                            f"Unable to reach the user code server for schedule {schedule_name}."
+                            " Schedule will resume execution once the server is available."
                         ) from e
                     except:
                         error_data = serializable_error_info_from_exc_info(sys.exc_info())
@@ -599,20 +614,22 @@ def _schedule_runs_at_time(
 
         run = _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request)
         if run:
-            if run.status != PipelineRunStatus.NOT_STARTED:
+            if run.status != DagsterRunStatus.NOT_STARTED:
                 # A run already exists and was launched for this time period,
                 # but the scheduler must have crashed or errored before the tick could be put
                 # into a SUCCESS state
 
                 logger.info(
-                    f"Run {run.run_id} already completed for this execution of {external_schedule.name}"
+                    f"Run {run.run_id} already completed for this execution of"
+                    f" {external_schedule.name}"
                 )
                 tick_context.add_run_info(run_id=run.run_id, run_key=run_request.run_key)
                 yield None
                 continue
             else:
                 logger.info(
-                    f"Run {run.run_id} already created for this execution of {external_schedule.name}"
+                    f"Run {run.run_id} already created for this execution of"
+                    f" {external_schedule.name}"
                 )
         else:
             run = _create_scheduler_run(
@@ -626,14 +643,15 @@ def _schedule_runs_at_time(
 
         _check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
 
-        if run.status != PipelineRunStatus.FAILURE:
+        if run.status != DagsterRunStatus.FAILURE:
             try:
                 instance.submit_run(run.run_id, workspace_process_context.create_request_context())
                 logger.info(f"Completed scheduled launch of run {run.run_id} for {schedule_name}")
             except Exception:
                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
                 logger.error(
-                    f"Run {run.run_id} created successfully but failed to launch: {str(serializable_error_info_from_exc_info(sys.exc_info()))}"
+                    f"Run {run.run_id} created successfully but failed to launch:"
+                    f" {str(serializable_error_info_from_exc_info(sys.exc_info()))}"
                 )
                 yield error_info
 
@@ -653,7 +671,7 @@ def _get_existing_run_for_request(
     run_request: RunRequest,
 ):
     tags = merge_dicts(
-        PipelineRun.tags_for_schedule(external_schedule),
+        DagsterRun.tags_for_schedule(external_schedule),
         {
             SCHEDULED_EXECUTION_TIME_TAG: to_timezone(schedule_time, "UTC").isoformat(),
         },
@@ -732,7 +750,7 @@ def _create_scheduler_run(
         solids_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=None,
         solid_selection=external_pipeline.solid_selection,
-        status=PipelineRunStatus.NOT_STARTED,
+        status=DagsterRunStatus.NOT_STARTED,
         root_run_id=None,
         parent_run_id=None,
         tags=tags,

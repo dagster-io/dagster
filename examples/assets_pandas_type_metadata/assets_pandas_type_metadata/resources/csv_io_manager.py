@@ -2,7 +2,6 @@ import os
 import textwrap
 
 import pandas as pd
-
 from dagster import (
     AssetKey,
     MemoizableIOManager,

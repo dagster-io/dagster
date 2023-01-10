@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
-import {buildRepoPath} from '../workspace/buildRepoAddress';
+import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
 import {MINIMAL_SCALE, GROUPS_ONLY_SCALE} from './AssetGraphExplorer';
@@ -50,9 +50,12 @@ export const AssetGroupNode: React.FC<{group: GroupLayout; scale: number}> = ({g
               </Link>
               {repositoryDisambiguationRequired && (
                 <GroupRepoName style={{marginBottom: '0.5em'}}>
-                  {withMiddleTruncation(buildRepoPath(repositoryName, repositoryLocationName), {
-                    maxLength: 45,
-                  })}
+                  {withMiddleTruncation(
+                    buildRepoPathForHuman(repositoryName, repositoryLocationName),
+                    {
+                      maxLength: 45,
+                    },
+                  )}
                 </GroupRepoName>
               )}
             </Box>
@@ -82,9 +85,12 @@ export const AssetGroupNode: React.FC<{group: GroupLayout; scale: number}> = ({g
             {groupName}
             {repositoryDisambiguationRequired && (
               <GroupRepoName>
-                {withMiddleTruncation(buildRepoPath(repositoryName, repositoryLocationName), {
-                  maxLength: 45,
-                })}
+                {withMiddleTruncation(
+                  buildRepoPathForHuman(repositoryName, repositoryLocationName),
+                  {
+                    maxLength: 45,
+                  },
+                )}
               </GroupRepoName>
             )}
           </Box>

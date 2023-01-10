@@ -5,22 +5,23 @@ import * as React from 'react';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {usePermissions} from '../app/Permissions';
 import {
+  InstigationStateFragmentFragment,
+  InstigationStatus,
+  InstigationType,
+} from '../graphql/graphql';
+import {
   displayScheduleMutationErrors,
   STOP_SCHEDULE_MUTATION,
 } from '../schedules/ScheduleMutations';
 import {humanCronString} from '../schedules/humanCronString';
-import {StopSchedule, StopScheduleVariables} from '../schedules/types/StopSchedule';
 import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from '../sensors/SensorMutations';
-import {StopSensor, StopSensorVariables} from '../sensors/types/StopSensor';
-import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {InstigatorSelectorInformation} from '../workspace/RepositoryInformation';
 
 import {TickTag} from './InstigationTick';
 import {InstigatedRunStatus} from './InstigationUtils';
-import {InstigationStateFragment} from './types/InstigationStateFragment';
 
 export const UnloadableSensors: React.FC<{
-  sensorStates: InstigationStateFragment[];
+  sensorStates: InstigationStateFragmentFragment[];
   showSubheading?: boolean;
 }> = ({sensorStates, showSubheading = true}) => {
   if (!sensorStates.length) {
@@ -52,7 +53,7 @@ export const UnloadableSensors: React.FC<{
 };
 
 export const UnloadableSchedules: React.FC<{
-  scheduleStates: InstigationStateFragment[];
+  scheduleStates: InstigationStateFragmentFragment[];
   showSubheading?: boolean;
 }> = ({scheduleStates, showSubheading = true}) => {
   if (!scheduleStates.length) {
@@ -96,8 +97,8 @@ const UnloadableSensorInfo = () => (
     description={
       <div>
         The following sensors were previously started but now cannot be loaded. They may be part of
-        a different workspace or from a sensor or repository that no longer exists in code. You can
-        turn them off, but you cannot turn them back on since they can’t be loaded.
+        a different workspace or from a sensor or code location that no longer exists in code. You
+        can turn them off, but you cannot turn them back on since they can’t be loaded.
       </div>
     }
   />
@@ -114,23 +115,20 @@ const UnloadableScheduleInfo = () => (
     description={
       <div>
         The following schedules were previously started but now cannot be loaded. They may be part
-        of a different workspace or from a schedule or repository that no longer exists in code. You
-        can turn them off, but you cannot turn them back on since they can’t be loaded.
+        of a different workspace or from a schedule or code location that no longer exists in code.
+        You can turn them off, but you cannot turn them back on since they can’t be loaded.
       </div>
     }
   />
 );
 
-const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) => {
+const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragmentFragment}) => {
   const {id, selectorId, name, status, ticks} = sensorState;
   const {canStopSensor} = usePermissions();
 
-  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor, StopSensorVariables>(
-    STOP_SENSOR_MUTATION,
-    {
-      onCompleted: displaySensorMutationErrors,
-    },
-  );
+  const [stopSensor, {loading: toggleOffInFlight}] = useMutation(STOP_SENSOR_MUTATION, {
+    onCompleted: displaySensorMutationErrors,
+  });
   const confirm = useConfirmation();
 
   const onChangeSwitch = async () => {
@@ -191,13 +189,10 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
 };
 
 const ScheduleStateRow: React.FC<{
-  scheduleState: InstigationStateFragment;
+  scheduleState: InstigationStateFragmentFragment;
 }> = ({scheduleState}) => {
   const {canStopRunningSchedule} = usePermissions();
-  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<
-    StopSchedule,
-    StopScheduleVariables
-  >(STOP_SCHEDULE_MUTATION, {
+  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation(STOP_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,
   });
   const confirm = useConfirmation();

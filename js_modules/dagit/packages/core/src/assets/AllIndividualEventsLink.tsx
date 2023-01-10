@@ -11,13 +11,17 @@ import {
   Table,
   Mono,
 } from '@dagster-io/ui';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {
+  AssetMaterializationFragmentFragment,
+  AssetObservationFragmentFragment,
+} from '../graphql/graphql';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
@@ -27,8 +31,6 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
 import {AssetEventGroup} from './groupByPartition';
-import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
-import {AssetObservationFragment} from './types/AssetObservationFragment';
 
 export const AssetEventsTable: React.FC<{
   hasPartitions: boolean;
@@ -132,9 +134,9 @@ const MetadataEntriesRow: React.FC<{
                             <Link to={`/runs/${obs.runId}?timestamp=${obs.timestamp}`}>
                               <Mono>{titleForRun({runId: obs.runId})}</Mono>
                             </Link>
-                            {` (${moment(Number(obs.timestamp)).from(
-                              Number(timestamp),
-                              true,
+                            {` (${dayjs(obs.timestamp).from(
+                              timestamp,
+                              true, // withoutSuffix
                             )} later)`}
                           </span>
                         </Box>
@@ -277,7 +279,7 @@ const DetailsTable = styled.table`
 interface PredecessorDialogProps {
   hasLineage: boolean;
   hasPartitions: boolean;
-  events: (AssetMaterializationFragment | AssetObservationFragment)[];
+  events: (AssetMaterializationFragmentFragment | AssetObservationFragmentFragment)[];
 }
 
 export const AllIndividualEventsLink: React.FC<PredecessorDialogProps> = ({

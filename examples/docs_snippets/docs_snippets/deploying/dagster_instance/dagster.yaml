@@ -195,6 +195,14 @@ run_coordinator:
         limit:
           env: DAGSTER_BACKFILL_CONCURRENCY_LIMIT
 
+# for higher dequeue throughput, threading can be enabled:
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    dequeue_use_threads: true
+    dequeue_num_workers: 8
+
 # end_marker_run_coordinator_queued
 
 # start_marker_compute_log_storage_local
@@ -324,7 +332,7 @@ telemetry:
 
 # start_marker_code_servers
 
-# Configures how long Dagster waits for repositories
+# Configures how long Dagster waits for code locations
 # to load before timing out.
 code_servers:
   local_startup_timeout: 120

@@ -1,16 +1,31 @@
 import {Tooltip, Tag} from '@dagster-io/ui';
-import moment from 'moment';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
-import {AssetGraphLiveQuery_assetNodes_freshnessPolicy} from '../asset-graph/types/AssetGraphLiveQuery';
+import {AssetNodeLiveFreshnessPolicyFragment} from '../graphql/graphql';
 import {humanCronString} from '../schedules/humanCronString';
 
 const STALE_OVERDUE_MSG = `A materialization incorporating more recent upstream data is overdue.`;
 const STALE_UNMATERIALIZED_MSG = `This asset has never been materialized.`;
 
-export const isAssetLate = (liveData?: LiveDataForNode) =>
-  liveData?.freshnessInfo && (liveData?.freshnessInfo.currentMinutesLate || 0) > 0;
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
+
+type LiveDataWithMinutesLate = LiveDataForNode & {
+  freshnessInfo: NonNullable<LiveDataForNode['freshnessInfo']> & {currentMinutesLate: number};
+};
+
+export function isAssetLate(liveData?: LiveDataForNode): liveData is LiveDataWithMinutesLate {
+  return (
+    (liveData?.freshnessInfo && (liveData?.freshnessInfo.currentMinutesLate || 0) > 0) || false
+  );
+}
+
+export const humanizedLateString = (minLate: number) =>
+  `${dayjs.duration(minLate, 'minutes').humanize(false)} late`;
 
 export const CurrentMinutesLateTag: React.FC<{
   liveData: LiveDataForNode;
@@ -20,7 +35,7 @@ export const CurrentMinutesLateTag: React.FC<{
   const description = policyOnHover ? freshnessPolicyDescription(freshnessPolicy) : '';
 
   if (!freshnessInfo) {
-    return <span />;
+    return null;
   }
 
   if (freshnessInfo.currentMinutesLate === null) {
@@ -38,38 +53,31 @@ export const CurrentMinutesLateTag: React.FC<{
   if (freshnessInfo.currentMinutesLate === 0) {
     return description ? (
       <Tooltip content={freshnessPolicyDescription(freshnessPolicy)}>
-        <Tag intent="success" icon="check_circle">
-          On time
-        </Tag>
+        <Tag intent="success" icon="check_circle" />
       </Tooltip>
     ) : (
-      <Tag intent="success" icon="check_circle">
-        On time
-      </Tag>
+      <Tag intent="success" icon="check_circle" />
     );
   }
 
   return (
     <Tooltip content={<div style={{maxWidth: 400}}>{`${STALE_OVERDUE_MSG} ${description}`}</div>}>
       <Tag intent="danger" icon="warning">
-        {moment
-          .duration(freshnessInfo.currentMinutesLate, 'minute')
-          .humanize(false, {m: 120, h: 48})}
-        {' late'}
+        {humanizedLateString(freshnessInfo.currentMinutesLate)}
       </Tag>
     </Tooltip>
   );
 };
 
 export const freshnessPolicyDescription = (
-  freshnessPolicy: AssetGraphLiveQuery_assetNodes_freshnessPolicy | null,
+  freshnessPolicy: AssetNodeLiveFreshnessPolicyFragment | null,
 ) => {
   if (!freshnessPolicy) {
     return '';
   }
 
   const {cronSchedule, maximumLagMinutes} = freshnessPolicy;
-
+  const nbsp = '\xa0';
   const cronDesc = cronSchedule ? humanCronString(cronSchedule, 'UTC').replace(/^At /, '') : '';
   const lagDesc =
     maximumLagMinutes % 30 === 0
@@ -77,8 +85,8 @@ export const freshnessPolicyDescription = (
       : `${maximumLagMinutes} min`;
 
   if (cronDesc) {
-    return `By ${cronDesc}, this asset should incorporate all data up to ${lagDesc} before that time.`;
+    return `By ${cronDesc}, this asset should incorporate all data up to ${lagDesc} before that${nbsp}time.`;
   } else {
-    return `At any point in time, this asset should incorporate all data up to ${lagDesc} before that time.`;
+    return `At any point in time, this asset should incorporate all data up to ${lagDesc} before that${nbsp}time.`;
   }
 };

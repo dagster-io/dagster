@@ -1,6 +1,8 @@
 import copy
 import itertools
 import re
+import threading
+import time
 import uuid
 from collections import defaultdict
 from operator import itemgetter
@@ -58,6 +60,36 @@ class StubbedEcsError(Exception):
     pass
 
 
+class ThreadsafeStubbedEcs:
+    def __init__(self, region_name):
+        storage = StubStorage()
+        self.stubs = defaultdict(
+            lambda: StubbedEcs(
+                # Hack: Build the client from the Session because we monkeypatch
+                # boto3.client elsewhere to return an instance of this class and
+                # we want to avoid infinite recursion errors.
+                boto3.Session().client("ecs", region_name=region_name),
+                storage=storage,
+            )
+        )
+
+    def __getattr__(self, name):
+        thread = threading.current_thread().name
+        return getattr(self.stubs[thread], name)
+
+
+class StubStorage:
+    def __init__(self):
+        self.tasks = defaultdict(list)
+        self.task_definitions = defaultdict(list)
+        self.tags = defaultdict(list)
+        self.account_settings = {}
+        self.default_account_settings = {"taskLongArnFormat": "enabled"}
+
+        self.register_task_definition_locks = defaultdict(threading.Lock)
+        # self.register_task_definition_locks["concurrent"].acquire(blocking=False)
+
+
 class StubbedEcs:
     """
     A class that stubs ECS responses using botocore's Stubber:
@@ -79,16 +111,12 @@ class StubbedEcs:
     https://boto3.amazonaws.com/v1/documentation/api/latest/guide/events.html
     """
 
-    def __init__(self, boto3_client):
+    def __init__(self, boto3_client, storage=StubStorage()):
         self.client = boto3_client
         self.stubber = Stubber(self.client)
         self.meta = self.client.meta
+        self.storage = storage
 
-        self.tasks = defaultdict(list)
-        self.task_definitions = defaultdict(list)
-        self.tags = defaultdict(list)
-        self.account_settings = {}
-        self.default_account_settings = {"taskLongArnFormat": "enabled"}
         self.stub_count = 0
 
     @stubbed
@@ -103,7 +131,7 @@ class StubbedEcs:
             # We received an ARN
             family = family.split("/")[-1]
 
-        task_definitions = self.task_definitions.get(family, [])
+        task_definitions = self.storage.task_definitions.get(family, [])
 
         if revision:
             # Match the exact revision
@@ -144,7 +172,7 @@ class StubbedEcs:
                 # We received just a task ID, not a full ARN
                 arns[i] = self._arn("task", f"{cluster}/{arn}")
 
-        tasks = [task for task in self.tasks[cluster] if task["taskArn"] in arns]
+        tasks = [task for task in self.storage.tasks[cluster] if task["taskArn"] in arns]
 
         self.stubber.add_response(
             method="describe_tasks",
@@ -160,11 +188,11 @@ class StubbedEcs:
         """
         if kwargs.get("effectiveSettings"):
             account_settings = {
-                **self.default_account_settings,
-                **self.account_settings,
+                **self.storage.default_account_settings,
+                **self.storage.account_settings,
             }
         else:
-            account_settings = self.account_settings
+            account_settings = self.storage.account_settings
 
         account_settings = [
             {
@@ -191,7 +219,7 @@ class StubbedEcs:
         if self._task_exists(arn) and self._long_arn_enabled():
             self.stubber.add_response(
                 method="list_tags_for_resource",
-                service_response={"tags": self.tags.get(arn, [])},
+                service_response={"tags": self.storage.tags.get(arn, [])},
                 expected_params={**kwargs},
             )
         else:
@@ -204,7 +232,9 @@ class StubbedEcs:
     def list_task_definitions(self, **kwargs):
         arns = [
             task_definition["taskDefinitionArn"]
-            for task_definition in itertools.chain.from_iterable(self.task_definitions.values())
+            for task_definition in itertools.chain.from_iterable(
+                self.storage.task_definitions.values()
+            )
         ]
 
         self.stubber.add_response(
@@ -223,7 +253,7 @@ class StubbedEcs:
         cluster = self._cluster(kwargs.get("cluster"))
         family = kwargs.get("family")
 
-        tasks = self.tasks[cluster]
+        tasks = self.storage.tasks[cluster]
         if family:
             tasks = [
                 task
@@ -246,7 +276,7 @@ class StubbedEcs:
     def put_account_setting(self, **kwargs):
         name = kwargs.get("name")
         value = kwargs.get("value")
-        self.account_settings[name] = value
+        self.storage.account_settings[name] = value
 
         self.stubber.add_response(
             method="put_account_setting",
@@ -259,48 +289,65 @@ class StubbedEcs:
     @stubbed
     def register_task_definition(self, **kwargs):
         family = kwargs.get("family")
-        # Family must be <= 255 characters. Alphanumeric, dash, and underscore only.
-        if len(family) > 255 or not re.match(r"^[\w\-]+$", family):
+        # The ECS API raises an error if you make too many concurrent requests to
+        # this endpoint so we've added this locking mechanism to our stub to make
+        # it possible to test concurrent operations.
+        if not self.storage.register_task_definition_locks[family].acquire(blocking=False):
             self.stubber.add_client_error(
-                method="register_task_definition", expected_params={**kwargs}
-            )
-
-        # Revisions are 1 indexed
-        revision = len(self.task_definitions[family]) + 1
-        arn = self._task_definition_arn(family, revision)
-
-        memory = kwargs.get("memory")
-        cpu = kwargs.get("cpu")
-
-        # Container definitions default to empty secret lists
-        container_definitions = kwargs.get("containerDefinitions", [])
-
-        new_container_definitions = []
-        for container_definition in container_definitions:
-            new_container_definitions.append(
-                {**container_definition, "secrets": container_definition.get("secrets", [])}
-            )
-
-        kwargs["containerDefinitions"] = new_container_definitions
-
-        if self._valid_cpu_and_memory(cpu=cpu, memory=memory):
-            task_definition = {
-                "family": family,
-                "revision": revision,
-                "taskDefinitionArn": arn,
-                **kwargs,
-            }
-
-            self.task_definitions[family].append(task_definition)
-            self.stubber.add_response(
                 method="register_task_definition",
-                service_response={"taskDefinition": task_definition},
+                service_message=(
+                    "Too many concurrent attempts to create a new revision of the specified family."
+                ),
                 expected_params={**kwargs},
             )
         else:
-            self.stubber.add_client_error(
-                method="register_task_definition", expected_params={**kwargs}
-            )
+            # Sleep for long enough that we hit the lock
+            time.sleep(0.2)
+            # Family must be <= 255 characters. Alphanumeric, dash, and underscore only.
+            if len(family) > 255 or not re.match(r"^[\w\-]+$", family):
+                self.stubber.add_client_error(
+                    method="register_task_definition", expected_params={**kwargs}
+                )
+
+            # Revisions are 1 indexed
+            revision = len(self.storage.task_definitions[family]) + 1
+            arn = self._task_definition_arn(family, revision)
+
+            memory = kwargs.get("memory")
+            cpu = kwargs.get("cpu")
+
+            # Container definitions default to empty secret lists
+            container_definitions = kwargs.get("containerDefinitions", [])
+
+            new_container_definitions = []
+            for container_definition in container_definitions:
+                new_container_definitions.append(
+                    {**container_definition, "secrets": container_definition.get("secrets", [])}
+                )
+
+            kwargs["containerDefinitions"] = new_container_definitions
+
+            if self._valid_cpu_and_memory(cpu=cpu, memory=memory):
+                task_definition = {
+                    "family": family,
+                    "revision": revision,
+                    "taskDefinitionArn": arn,
+                    **kwargs,
+                }
+
+                self.storage.task_definitions[family].append(task_definition)
+                # self.stubber.activate()
+                self.stubber.add_response(
+                    method="register_task_definition",
+                    service_response={"taskDefinition": task_definition},
+                    expected_params={**kwargs},
+                )
+            else:
+                self.stubber.add_client_error(
+                    method="register_task_definition", expected_params={**kwargs}
+                )
+
+            self.storage.register_task_definition_locks[family].release()
 
         return self.client.register_task_definition(**kwargs)
 
@@ -359,8 +406,12 @@ class StubbedEcs:
             cluster = self._cluster(kwargs.get("cluster"))
             count = kwargs.get("count", 1)
             tasks = []
+            tags = kwargs.get("tags")
             for _ in range(count):
                 arn = self._task_arn(cluster)
+                if tags and self._long_arn_enabled():
+                    self.storage.tags[arn] = tags
+
                 task = {
                     "attachments": [],
                     "clusterArn": self._cluster_arn(cluster),
@@ -412,7 +463,7 @@ class StubbedEcs:
                 expected_params={**kwargs},
             )
 
-            self.tasks[cluster] += tasks
+            self.storage.tasks[cluster] += tasks
         except (StubbedEcsError, ClientError):
             self.stubber.add_client_error(method="run_task", expected_params={**kwargs})
 
@@ -426,9 +477,9 @@ class StubbedEcs:
 
         if tasks:
             stopped_task = tasks[0]
-            self.tasks[cluster].remove(tasks[0])
+            self.storage.tasks[cluster].remove(tasks[0])
             stopped_task["lastStatus"] = "STOPPED"
-            self.tasks[cluster].append(stopped_task)
+            self.storage.tasks[cluster].append(stopped_task)
             self.stubber.add_response(
                 method="stop_task",
                 service_response={"task": stopped_task},
@@ -453,14 +504,14 @@ class StubbedEcs:
                 service_response={},
                 expected_params={**kwargs},
             )
-            self.tags[arn] = tags
+            self.storage.tags[arn] = tags
         else:
             self.stubber.add_client_error(method="tag_resource", expected_params={**kwargs})
 
         return self.client.tag_resource(**kwargs)
 
     def _task_exists(self, arn):
-        for task in itertools.chain.from_iterable(self.tasks.values()):
+        for task in itertools.chain.from_iterable(self.storage.tasks.values()):
             if task["taskArn"] == arn:
                 return True
 

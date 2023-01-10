@@ -95,8 +95,10 @@ def _make_key(args, kwds, fasttypes={int, str}):  # pylint: disable=dangerous-de
     """
     check.invariant(
         not args,
-        "@cached_method does not support non-keyword arguments, because doing so would enable "
-        "functionally identical sets of arguments to correpond to different cache keys.",
+        (
+            "@cached_method does not support non-keyword arguments, because doing so would enable "
+            "functionally identical sets of arguments to correpond to different cache keys."
+        ),
     )
     key = tuple()
     if kwds:

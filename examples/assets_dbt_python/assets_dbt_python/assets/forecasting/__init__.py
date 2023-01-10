@@ -2,9 +2,8 @@ from typing import Any, Tuple
 
 import numpy as np
 import pandas as pd
-from scipy import optimize
-
 from dagster import AssetIn, asset
+from scipy import optimize
 
 
 def model_func(x, a, b):

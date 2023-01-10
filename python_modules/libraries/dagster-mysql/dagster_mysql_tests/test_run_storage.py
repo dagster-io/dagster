@@ -1,9 +1,10 @@
+from urllib.parse import urlparse
+
 import pytest
 import yaml
-from dagster_mysql.run_storage import MySQLRunStorage
-from dagster_tests.core_tests.storage_tests.utils.run_storage import TestRunStorage
-
 from dagster._core.test_utils import environ, instance_for_test
+from dagster_mysql.run_storage import MySQLRunStorage
+from dagster_tests.storage_tests.utils.run_storage import TestRunStorage
 
 TestRunStorage.__test__ = False
 
@@ -17,15 +18,22 @@ class TestMySQLRunStorage(TestRunStorage):
         assert storage
         return storage
 
-    def test_load_from_config(self, hostname):
+    def test_load_from_config(self, conn_string):
+        parse_result = urlparse(conn_string)
+        hostname = parse_result.hostname  # can be custom set in the BK env
+        port = (
+            parse_result.port
+        )  # can be different, based on the backcompat mysql version or latest mysql version
+
         url_cfg = """
           run_storage:
             module: dagster_mysql.run_storage
             class: MySQLRunStorage
             config:
-              mysql_url: mysql+mysqlconnector://test:test@{hostname}:3306/test
+              mysql_url: mysql+mysqlconnector://test:test@{hostname}:{port}/test
         """.format(
-            hostname=hostname
+            hostname=hostname,
+            port=port,
         )
 
         explicit_cfg = """
@@ -38,8 +46,10 @@ class TestMySQLRunStorage(TestRunStorage):
                 password: test
                 hostname: {hostname}
                 db_name: test
+                port: {port}
         """.format(
-            hostname=hostname
+            hostname=hostname,
+            port=port,
         )
 
         with environ({"TEST_MYSQL_PASSWORD": "test"}):
@@ -54,8 +64,9 @@ class TestMySQLRunStorage(TestRunStorage):
                     env: TEST_MYSQL_PASSWORD
                   hostname: {hostname}
                   db_name: test
+                  port: {port}
             """.format(
-                hostname=hostname
+                hostname=hostname, port=port
             )
 
             # pylint: disable=protected-access

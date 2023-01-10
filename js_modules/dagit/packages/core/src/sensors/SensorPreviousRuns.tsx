@@ -1,38 +1,30 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, Colors, Group, NonIdealState, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
+import {graphql} from '../graphql';
+import {SensorFragmentFragment} from '../graphql/graphql';
+import {RunTable} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {RepoAddress} from '../workspace/types';
-
-import {
-  PreviousRunsForSensorQuery,
-  PreviousRunsForSensorQueryVariables,
-} from './types/PreviousRunsForSensorQuery';
-import {SensorFragment} from './types/SensorFragment';
 
 const RUNS_LIMIT = 20;
 
 export const SensorPreviousRuns: React.FC<{
-  sensor: SensorFragment;
+  sensor: SensorFragmentFragment;
   repoAddress: RepoAddress;
   tabs?: React.ReactElement;
   highlightedIds?: string[];
 }> = ({sensor, highlightedIds, tabs}) => {
-  const {data} = useQuery<PreviousRunsForSensorQuery, PreviousRunsForSensorQueryVariables>(
-    PREVIOUS_RUNS_FOR_SENSOR_QUERY,
-    {
-      fetchPolicy: 'cache-and-network',
-      variables: {
-        limit: RUNS_LIMIT,
-        filter: {
-          pipelineName: sensor.targets?.length === 1 ? sensor.targets[0].pipelineName : undefined,
-          tags: [{key: DagsterTag.SensorName, value: sensor.name}],
-        },
+  const {data} = useQuery(PREVIOUS_RUNS_FOR_SENSOR_QUERY, {
+    variables: {
+      limit: RUNS_LIMIT,
+      filter: {
+        pipelineName: sensor.targets?.length === 1 ? sensor.targets[0].pipelineName : undefined,
+        tags: [{key: DagsterTag.SensorName, value: sensor.name}],
       },
     },
-  );
+  });
 
   if (!data || data.pipelineRunsOrError.__typename !== 'Runs') {
     return null;
@@ -43,7 +35,7 @@ export const SensorPreviousRuns: React.FC<{
 };
 
 export const NoTargetSensorPreviousRuns: React.FC<{
-  sensor: SensorFragment;
+  sensor: SensorFragmentFragment;
   repoAddress: RepoAddress;
   highlightedIds: string[];
 }> = () => {
@@ -69,7 +61,7 @@ export const NoTargetSensorPreviousRuns: React.FC<{
   );
 };
 
-const PREVIOUS_RUNS_FOR_SENSOR_QUERY = gql`
+const PREVIOUS_RUNS_FOR_SENSOR_QUERY = graphql(`
   query PreviousRunsForSensorQuery($filter: RunsFilter, $limit: Int) {
     pipelineRunsOrError(filter: $filter, limit: $limit) {
       __typename
@@ -83,5 +75,4 @@ const PREVIOUS_RUNS_FOR_SENSOR_QUERY = gql`
       }
     }
   }
-  ${RUN_TABLE_RUN_FRAGMENT}
-`;
+`);

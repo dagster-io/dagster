@@ -1,4 +1,5 @@
 import copy
+import hashlib
 import inspect
 import json
 from abc import ABC, abstractmethod
@@ -14,6 +15,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Set,
     TypeVar,
     Union,
     cast,
@@ -29,7 +31,8 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.target import ExecutableDefinition
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
-from dagster._utils import frozenlist, merge_dicts
+from dagster._utils import frozenlist
+from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import schedule_execution_time_iterator
 
 from ..decorator_utils import get_function_params
@@ -41,7 +44,7 @@ from ..errors import (
     ScheduleExecutionError,
     user_code_error_boundary,
 )
-from ..storage.pipeline_run import PipelineRun
+from ..storage.pipeline_run import DagsterRun
 from .config import ConfigMapping
 from .mode import DEFAULT_MODE_NAME
 from .run_request import RunRequest, SkipReason
@@ -156,7 +159,6 @@ def schedule_partition_range(
 
     partitions: List[Partition[datetime]] = []
     for next_time in schedule_execution_time_iterator(_start.timestamp(), cron_schedule, tz):
-
         partition_time = execution_time_to_partition_fn(next_time)
 
         if partition_time.timestamp() > end_timestamp:
@@ -214,11 +216,19 @@ class PartitionsDefinition(ABC, Generic[T]):
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
         return [partition.name for partition in self.get_partitions(current_time)]
 
-    def get_last_partition_key(self, current_time: Optional[datetime] = None) -> str:
-        return self.get_partitions(current_time)[-1].name
+    def get_last_partition_key(self, current_time: Optional[datetime] = None) -> Optional[str]:
+        partitions = self.get_partitions(current_time)
+        if partitions:
+            return partitions[-1].name
+        else:
+            return None
 
-    def get_first_partition_key(self, current_time: Optional[datetime] = None) -> str:
-        return self.get_partitions(current_time)[0].name
+    def get_first_partition_key(self, current_time: Optional[datetime] = None) -> Optional[str]:
+        partitions = self.get_partitions(current_time)
+        if partitions:
+            return partitions[0].name
+        else:
+            return None
 
     def get_default_partition_mapping(self):
         from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
@@ -247,10 +257,14 @@ class PartitionsDefinition(ABC, Generic[T]):
         ]
 
     def empty_subset(self) -> "PartitionsSubset":
-        return DefaultPartitionsSubset(self, [])
+        return DefaultPartitionsSubset(self, set())
 
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return DefaultPartitionsSubset.from_serialized(self, serialized)
+
+    @property
+    def serializable_unique_identifier(self) -> str:
+        return hashlib.sha1(json.dumps(self.get_partition_keys()).encode("utf-8")).hexdigest()
 
 
 class StaticPartitionsDefinition(
@@ -316,8 +330,7 @@ class ScheduleTimeBasedPartitionsDefinition(
         if end is not None:
             check.invariant(
                 start <= end,
-                f'Selected date range start "{start}" '
-                f'is after date range end "{end}"'.format(
+                f'Selected date range start "{start}" is after date range end "{end}"'.format(
                     start=start.strftime(fmt) if fmt is not None else start,
                     end=cast(datetime, end).strftime(fmt) if fmt is not None else end,
                 ),
@@ -331,15 +344,19 @@ class ScheduleTimeBasedPartitionsDefinition(
             execution_day = execution_day if execution_day is not None else 0
             check.invariant(
                 execution_day is not None and 0 <= execution_day <= 6,
-                f'Execution day "{execution_day}" must be between 0 and 6 for '
-                f'schedule type "{schedule_type}"',
+                (
+                    f'Execution day "{execution_day}" must be between 0 and 6 for '
+                    f'schedule type "{schedule_type}"'
+                ),
             )
         elif schedule_type is ScheduleType.MONTHLY:
             execution_day = execution_day if execution_day is not None else 1
             check.invariant(
                 execution_day is not None and 1 <= execution_day <= 31,
-                f'Execution day "{execution_day}" must be between 1 and 31 for '
-                f'schedule type "{schedule_type}"',
+                (
+                    f'Execution day "{execution_day}" must be between 1 and 31 for '
+                    f'schedule type "{schedule_type}"'
+                ),
             )
 
         return super(ScheduleTimeBasedPartitionsDefinition, cls).__new__(
@@ -592,7 +609,7 @@ class PartitionSetDefinition(Generic[T]):
         user_tags = validate_tags(
             self._user_defined_tags_fn_for_partition(partition), allow_reserved_tags=False  # type: ignore
         )
-        tags = merge_dicts(user_tags, PipelineRun.tags_for_partition_set(self, partition))
+        tags = merge_dicts(user_tags, DagsterRun.tags_for_partition_set(self, partition))
 
         return tags
 
@@ -654,7 +671,6 @@ class PartitionSetDefinition(Generic[T]):
             PartitionScheduleDefinition: The generated PartitionScheduleDefinition for the partition
                 selector
         """
-
         check.str_param(schedule_name, "schedule_name")
         check.str_param(cron_schedule, "cron_schedule")
         check.opt_callable_param(should_execute, "should_execute")
@@ -892,8 +908,10 @@ class PartitionedConfig(Generic[T]):
         if isinstance(config, PartitionedConfig):
             check.invariant(
                 config.partitions_def == partitions_def,
-                "Can't supply a PartitionedConfig for 'config' with a different "
-                "PartitionsDefinition than supplied for 'partitions_def'.",
+                (
+                    "Can't supply a PartitionedConfig for 'config' with a different "
+                    "PartitionsDefinition than supplied for 'partitions_def'."
+                ),
             )
             return config
         else:
@@ -916,10 +934,9 @@ def static_partitioned_config(
 ) -> Callable[[Callable[[str], Mapping[str, Any]]], PartitionedConfig]:
     """Creates a static partitioned config for a job.
 
-    The provided partition_keys returns a static list of strings identifying the set of partitions,
-    given an optional datetime argument (representing the current time).  The list of partitions
-    is static, so while the run config returned by the decorated function may change over time, the
-    list of valid partition keys does not.
+    The provided partition_keys is a static list of strings identifying the set of partitions. The
+    list of partitions is static, so while the run config returned by the decorated function may
+    change over time, the list of valid partition keys does not.
 
     This has performance advantages over `dynamic_partitioned_config` in terms of loading different
     partition views in Dagit.
@@ -1006,9 +1023,9 @@ def cron_schedule_from_schedule_type_and_offsets(
     elif schedule_type is ScheduleType.DAILY:
         return f"{minute_offset} {hour_offset} * * *"
     elif schedule_type is ScheduleType.WEEKLY:
-        return f"{minute_offset} {hour_offset} * * {day_offset if day_offset != None else 0}"
+        return f"{minute_offset} {hour_offset} * * {day_offset if day_offset is not None else 0}"
     elif schedule_type is ScheduleType.MONTHLY:
-        return f"{minute_offset} {hour_offset} {day_offset if day_offset != None else 1} * *"
+        return f"{minute_offset} {hour_offset} {day_offset if day_offset is not None else 1} * *"
     else:
         check.assert_never(schedule_type)
 
@@ -1023,16 +1040,46 @@ class PartitionsSubset(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_partition_key_ranges(
+        self, current_time: Optional[datetime] = None
+    ) -> Sequence[PartitionKeyRange]:
+        raise NotImplementedError()
+
+    @abstractmethod
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset":
+        raise NotImplementedError()
+
+    @abstractmethod
+    def with_partition_key_range(
+        self, partition_key_range: PartitionKeyRange
+    ) -> "PartitionsSubset":
         raise NotImplementedError()
 
     @abstractmethod
     def serialize(self) -> str:
         raise NotImplementedError()
 
+    @property
+    @abstractmethod
+    def partitions_def(self) -> PartitionsDefinition:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def __len__(self) -> int:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def __contains__(self, value) -> bool:
+        raise NotImplementedError()
+
 
 class DefaultPartitionsSubset(PartitionsSubset):
-    def __init__(self, partitions_def: PartitionsDefinition, subset=None):
+    def __init__(self, partitions_def: PartitionsDefinition, subset: Optional[Set[str]] = None):
+        check.opt_set_param(subset, "subset")
         self._partitions_def = partitions_def
         self._subset = subset or set()
 
@@ -1041,11 +1088,60 @@ class DefaultPartitionsSubset(PartitionsSubset):
     ) -> Iterable[str]:
         return set(self._partitions_def.get_partition_keys()) - self._subset
 
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
+        return self._subset
+
+    def get_partition_key_ranges(
+        self, current_time: Optional[datetime] = None
+    ) -> Sequence[PartitionKeyRange]:
+        partition_keys = self._partitions_def.get_partition_keys(current_time)
+        cur_range_start = None
+        cur_range_end = None
+        result = []
+        for partition_key in partition_keys:
+            if partition_key in self._subset:
+                if cur_range_start is None:
+                    cur_range_start = partition_key
+                cur_range_end = partition_key
+            else:
+                if cur_range_start is not None and cur_range_end is not None:
+                    result.append(PartitionKeyRange(cur_range_start, cur_range_end))
+                cur_range_start = cur_range_end = None
+
+        if cur_range_start is not None and cur_range_end is not None:
+            result.append(PartitionKeyRange(cur_range_start, cur_range_end))
+
+        return result
+
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "DefaultPartitionsSubset":
         return DefaultPartitionsSubset(self._partitions_def, self._subset | set(partition_keys))
 
+    def with_partition_key_range(
+        self, partition_key_range: PartitionKeyRange
+    ) -> "PartitionsSubset":
+        return self.with_partition_keys(
+            self._partitions_def.get_partition_keys_in_range(partition_key_range)
+        )
+
     def serialize(self) -> str:
         return json.dumps(list(self._subset))
+
+    @property
+    def partitions_def(self) -> PartitionsDefinition:
+        return self._partitions_def
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, DefaultPartitionsSubset)
+            and self._partitions_def == other._partitions_def
+            and self._subset == other._subset
+        )
+
+    def __len__(self) -> int:
+        return len(self._subset)
+
+    def __contains__(self, value) -> bool:
+        return value in self._subset
 
     @staticmethod
     def from_serialized(
@@ -1053,4 +1149,9 @@ class DefaultPartitionsSubset(PartitionsSubset):
     ) -> "DefaultPartitionsSubset":
         return DefaultPartitionsSubset(
             subset=set(json.loads(serialized)), partitions_def=partitions_def
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f"DefaultPartitionsSubset(subset={self._subset}, partitions_def={self._partitions_def})"
         )

@@ -3,12 +3,11 @@ import time
 from typing import Any
 from unittest import mock
 
-from dagster_graphql.test.utils import execute_dagster_graphql
-
 from dagster import file_relative_path
 from dagster._core.host_representation import ManagedGrpcPythonEnvRepositoryLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load import location_origins_from_yaml_paths
+from dagster_graphql.test.utils import execute_dagster_graphql
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
@@ -41,6 +40,26 @@ query {
             value
           }
           updatedTimestamp
+        }
+      }
+      ... on PythonError {
+          message
+          stack
+      }
+    }
+}
+"""
+
+LOCATION_STATUS_QUERY = """
+query {
+   locationStatusesOrError {
+      __typename
+      ... on WorkspaceLocationStatusEntries {
+        entries {
+          __typename
+          id
+          loadStatus
+          updateTimestamp
         }
       }
       ... on PythonError {
@@ -125,3 +144,48 @@ class TestLoadWorkspace(BaseTestSuite):
                     or "module_name" in metadata_dict
                     or "package_name" in metadata_dict
                 )
+
+    def test_load_location_statuses(self, graphql_context):
+        original_origins = location_origins_from_yaml_paths(
+            [file_relative_path(__file__, "multi_location.yaml")]
+        )
+        with mock.patch(
+            "dagster._core.workspace.load_target.location_origins_from_yaml_paths",
+        ) as origins_mock:
+            # Add an error origin
+            original_origins.append(
+                ManagedGrpcPythonEnvRepositoryLocationOrigin(
+                    location_name="error_location",
+                    loadable_target_origin=LoadableTargetOrigin(
+                        python_file="made_up_file.py", executable_path=sys.executable
+                    ),
+                )
+            )
+
+            origins_mock.return_value = original_origins
+
+            reload_timestamp = time.time()
+
+            new_context = graphql_context.reload_workspace()
+
+            result = execute_dagster_graphql(new_context, LOCATION_STATUS_QUERY)
+
+            assert result
+            assert result.data
+            assert result.data["locationStatusesOrError"]
+            assert (
+                result.data["locationStatusesOrError"]["__typename"]
+                == "WorkspaceLocationStatusEntries"
+            ), str(result.data)
+
+            nodes = result.data["locationStatusesOrError"]["entries"]
+
+            assert len(nodes) == 3
+
+            assert all(
+                [node["__typename"] == "WorkspaceLocationStatusEntry" for node in nodes]
+            ), str(nodes)
+
+            for node in nodes:
+                assert node["loadStatus"] == "LOADED"
+                assert float(node["updateTimestamp"]) > reload_timestamp

@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Table} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -7,17 +7,14 @@ import styled from 'styled-components/macro';
 import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {graphql} from '../graphql';
 import {RepositoryLink} from '../nav/RepositoryLink';
 
-import {repoAddressAsString} from './repoAddressAsString';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
-import {
-  RepositoryAssetsListQuery,
-  RepositoryAssetsListQueryVariables,
-} from './types/RepositoryAssetsListQuery';
 
-const REPOSITORY_ASSETS_LIST_QUERY = gql`
+const REPOSITORY_ASSETS_LIST_QUERY = graphql(`
   query RepositoryAssetsListQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       __typename
@@ -45,7 +42,7 @@ const REPOSITORY_ASSETS_LIST_QUERY = gql`
       }
     }
   }
-`;
+`);
 
 interface Props {
   repoAddress: RepoAddress;
@@ -57,11 +54,7 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
   const {repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const {data, error, loading} = useQuery<
-    RepositoryAssetsListQuery,
-    RepositoryAssetsListQueryVariables
-  >(REPOSITORY_ASSETS_LIST_QUERY, {
-    fetchPolicy: 'cache-and-network',
+  const {data, error, loading} = useQuery(REPOSITORY_ASSETS_LIST_QUERY, {
     variables: {repositorySelector},
   });
 
@@ -78,13 +71,15 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
     return null;
   }
 
+  const repoName = repoAddressAsHumanString(repoAddress);
+
   if (error || !assetsForTable) {
     return (
       <Box padding={{vertical: 64}}>
         <NonIdealState
           icon="error"
           title="Unable to load graphs"
-          description={`Could not load graphs for ${repoAddressAsString(repoAddress)}`}
+          description={`Could not load graphs for ${repoName}`}
         />
       </Box>
     );
@@ -96,7 +91,7 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
         <NonIdealState
           icon="error"
           title="No assets found"
-          description={`No @asset definitions for ${repoAddressAsString(repoAddress)}`}
+          description={`No @asset definitions for ${repoName}`}
         />
       </Box>
     );

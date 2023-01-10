@@ -6,9 +6,15 @@ from typing import Any, Dict, List, Mapping, Optional
 
 import boto3
 from botocore.exceptions import ClientError
-
-from dagster import Array, Field, Noneable, Permissive, ScalarUnion, StringSource
-from dagster import _check as check
+from dagster import (
+    Array,
+    Field,
+    Noneable,
+    Permissive,
+    ScalarUnion,
+    StringSource,
+    _check as check,
+)
 from dagster._core.events import EngineEventData, MetadataEntry
 from dagster._core.launcher.base import (
     CheckRunHealthResult,
@@ -16,9 +22,10 @@ from dagster._core.launcher.base import (
     RunLauncher,
     WorkerStatus,
 )
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._grpc.types import ExecuteRunArgs
 from dagster._serdes import ConfigurableClass
+from dagster._utils.backoff import backoff
 
 from ..secretsmanager import get_secrets_from_arns
 from .container_context import SHARED_ECS_SCHEMA, EcsContainerContext
@@ -59,6 +66,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         include_sidecars=False,
         use_current_ecs_task_config: bool = True,
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
+        run_resources: Optional[Dict[str, str]] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -73,13 +81,17 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         elif task_definition and "env" in task_definition:
             check.invariant(
                 len(task_definition) == 1,
-                "If `task_definition` is set to a dictionary with `env`, `env` must be the only key.",
+                (
+                    "If `task_definition` is set to a dictionary with `env`, `env` must be the only"
+                    " key."
+                ),
             )
             env_var = task_definition["env"]
             self.task_definition = os.getenv(env_var)
             if not self.task_definition:
                 raise Exception(
-                    f"You have attempted to fetch the environment variable {env_var} which is not set."
+                    f"You have attempted to fetch the environment variable {env_var} which is not"
+                    " set."
                 )
         else:
             self.task_definition_dict = task_definition
@@ -92,9 +104,11 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         if self.secrets and all(isinstance(secret, str) for secret in self.secrets):
             warnings.warn(
-                "Setting secrets as a list of ARNs is deprecated. "
-                "Secrets should instead follow the same structure as the ECS API: "
-                "https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html",
+                (
+                    "Setting secrets as a list of ARNs is deprecated. "
+                    "Secrets should instead follow the same structure as the ECS API: "
+                    "https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html"
+                ),
                 DeprecationWarning,
             )
             self.secrets = [
@@ -115,8 +129,10 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             ]
             check.invariant(
                 container_name in container_names,
-                f"Cannot override container '{container_name}' in task definition "
-                f"'{self.task_definition}' because the container is not defined.",
+                (
+                    f"Cannot override container '{container_name}' in task definition "
+                    f"'{self.task_definition}' because the container is not defined."
+                ),
             )
             self.task_definition = task_definition["taskDefinition"]["taskDefinitionArn"]
 
@@ -124,7 +140,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             use_current_ecs_task_config, "use_current_ecs_task_config"
         )
 
-        self.run_task_kwargs = check.opt_dict_param(run_task_kwargs, "run_task_kwargs")
+        self.run_task_kwargs = check.opt_mapping_param(run_task_kwargs, "run_task_kwargs")
         if run_task_kwargs:
             check.invariant(
                 "taskDefinition" not in run_task_kwargs,
@@ -143,6 +159,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 check.invariant(
                     key in expected_keys, f"Found an unexpected key {key} in run_task_kwargs"
                 )
+
+        self.run_resources = check.opt_mapping_param(run_resources, "run_resources")
 
         self._current_task_metadata = None
         self._current_task = None
@@ -166,16 +184,20 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                         "env": Field(
                             str,
                             is_required=False,
-                            description="Backwards-compatibility for when task_definition was a StringSource."
-                            "Can be used to source the task_definition scalar from an environment variable.",
+                            description=(
+                                "Backwards-compatibility for when task_definition was a"
+                                " StringSource.Can be used to source the task_definition scalar"
+                                " from an environment variable."
+                            ),
                         ),
                     },
                 ),
                 is_required=False,
                 description=(
-                    "Either the short name of an existing task definition to use when launching new tasks, "
-                    "or a dictionary configuration to use when creating a task definition for the run."
-                    "If neither is provided, the task definition will be created based on the current task's task definition."
+                    "Either the short name of an existing task definition to use when launching new"
+                    " tasks, or a dictionary configuration to use when creating a task definition"
+                    " for the run.If neither is provided, the task definition will be created based"
+                    " on the current task's task definition."
                 ),
             ),
             "container_name": Field(
@@ -240,10 +262,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     }
                 ),
                 is_required=False,
-                description="Additional arguments to include while running the task. See "
-                "https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.run_task "
-                "for the available parameters. The overrides and taskDefinition arguments will always "
-                "be set by the run launcher.",
+                description=(
+                    "Additional arguments to include while running the task. See"
+                    " https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.run_task"
+                    " for the available parameters. The overrides and taskDefinition arguments will"
+                    " always be set by the run launcher."
+                ),
             ),
             **SHARED_ECS_SCHEMA,
         }
@@ -252,19 +276,15 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return EcsRunLauncher(inst_data=inst_data, **config_value)
 
-    def _set_ecs_tags(self, run_id, task_arn):
-        try:
-            tags = [{"key": "dagster/run_id", "value": run_id}]
-            self.ecs.tag_resource(resourceArn=task_arn, tags=tags)
-        except ClientError:
-            pass
-
     def _set_run_tags(self, run_id: str, cluster: str, task_arn: str):
         tags = {
             "ecs/task_arn": task_arn,
             "ecs/cluster": cluster,
         }
         self._instance.add_run_tags(run_id, tags)
+
+    def build_ecs_tags_for_run_task(self, run):
+        return [{"key": "dagster/run_id", "value": run.run_id}]
 
     def _get_run_tags(self, run_id):
         run = self._instance.get_run_by_id(run_id)
@@ -277,7 +297,6 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         return Tags(arn, cluster, cpu, memory)
 
     def launch_run(self, context: LaunchRunContext) -> None:
-
         """
         Launch a run in an ECS task.
         """
@@ -312,7 +331,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         # Set cpu or memory overrides
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
-        cpu_and_memory_overrides = self.get_cpu_and_memory_overrides(run)
+        cpu_and_memory_overrides = self.get_cpu_and_memory_overrides(container_context, run)
 
         task_overrides = self._get_task_overrides(run)
 
@@ -331,12 +350,14 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             **cpu_and_memory_overrides,
             **task_overrides,
         }
+        run_task_kwargs["tags"] = [
+            *run_task_kwargs.get("tags", []),
+            *self.build_ecs_tags_for_run_task(run),
+        ]
 
         # Run a task using the same network configuration as this processes's
         # task.
-        response = self.ecs.run_task(
-            **run_task_kwargs,
-        )
+        response = self.ecs.run_task(**run_task_kwargs)
 
         tasks = response["tasks"]
 
@@ -353,11 +374,10 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         arn = tasks[0]["taskArn"]
         cluster_arn = tasks[0]["clusterArn"]
         self._set_run_tags(run.run_id, cluster=cluster_arn, task_arn=arn)
-        self._set_ecs_tags(run.run_id, task_arn=arn)
         self.report_launch_events(run, arn, cluster_arn)
 
     def report_launch_events(
-        self, run: PipelineRun, arn: Optional[str] = None, cluster: Optional[str] = None
+        self, run: DagsterRun, arn: Optional[str] = None, cluster: Optional[str] = None
     ):
         # Extracted method to allow for subclasses to customize the launch reporting behavior
 
@@ -375,19 +395,22 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             cls=self.__class__,
         )
 
-    def get_cpu_and_memory_overrides(self, run: PipelineRun) -> Mapping[str, str]:
+    def get_cpu_and_memory_overrides(
+        self, container_context: EcsContainerContext, run: DagsterRun
+    ) -> Mapping[str, str]:
         overrides = {}
 
-        cpu = run.tags.get("ecs/cpu")
-        memory = run.tags.get("ecs/memory")
+        cpu = run.tags.get("ecs/cpu", container_context.run_resources.get("cpu"))
+        memory = run.tags.get("ecs/memory", container_context.run_resources.get("memory"))
 
         if cpu:
             overrides["cpu"] = cpu
         if memory:
             overrides["memory"] = memory
+
         return overrides
 
-    def _get_task_overrides(self, run: PipelineRun) -> Mapping[str, Any]:
+    def _get_task_overrides(self, run: DagsterRun) -> Mapping[str, Any]:
         overrides = run.tags.get("ecs/task_overrides")
         if overrides:
             return json.loads(overrides)
@@ -411,12 +434,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def _get_current_task_metadata(self):
-        if self._current_task_metadata == None:
+        if self._current_task_metadata is None:
             self._current_task_metadata = get_current_ecs_task_metadata()
         return self._current_task_metadata
 
     def _get_current_task(self):
-        if self._current_task == None:
+        if self._current_task is None:
             current_task_metadata = self._get_current_task_metadata()
             self._current_task = get_current_ecs_task(
                 self.ecs, current_task_metadata.task_arn, current_task_metadata.cluster
@@ -438,6 +461,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         definition if needed.
         """
         environment = self._environment(container_context)
+        environment.append({"name": "DAGSTER_RUN_JOB_NAME", "value": run.job_name})
+
         secrets = self._secrets(container_context)
 
         if container_context.task_definition_arn:
@@ -490,11 +515,18 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     self._get_container_name(container_context),
                 )
 
-            if not self._reuse_task_definition(
-                task_definition_config,
-                self._get_container_name(container_context),
-            ):
-                self.ecs.register_task_definition(**task_definition_dict)
+            container_name = self._get_container_name(container_context)
+
+            backoff(
+                self._reuse_or_register_task_definition,
+                retry_on=(Exception,),
+                kwargs={
+                    "desired_task_definition_config": task_definition_config,
+                    "container_name": container_name,
+                    "task_definition_dict": task_definition_dict,
+                },
+                max_retries=5,
+            )
 
             task_definition = family
 
@@ -532,6 +564,15 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             container_name=container_name,
         )
 
+    def _reuse_or_register_task_definition(
+        self,
+        desired_task_definition_config: DagsterEcsTaskDefinitionConfig,
+        container_name: str,
+        task_definition_dict: dict,
+    ):
+        if not self._reuse_task_definition(desired_task_definition_config, container_name):
+            self.ecs.register_task_definition(**task_definition_dict)
+
     def _environment(self, container_context):
         return [
             {"name": key, "value": value}
@@ -548,8 +589,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
     def supports_check_run_worker_health(self):
         return True
 
-    def check_run_worker_health(self, run: PipelineRun):
-
+    def check_run_worker_health(self, run: DagsterRun):
         tags = self._get_run_tags(run.run_id)
 
         if not (tags.arn and tags.cluster):
@@ -564,7 +604,6 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         if t.get("lastStatus") in RUNNING_STATUSES:
             return CheckRunHealthResult(WorkerStatus.RUNNING)
         elif t.get("lastStatus") in STOPPED_STATUSES:
-
             failed_containers = []
             for c in t.get("containers"):
                 if c.get("exitCode") != 0:
@@ -576,9 +615,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     container_str = "Container"
                 return CheckRunHealthResult(
                     WorkerStatus.FAILED,
-                    f"ECS task failed. Stop code: {t.get('stopCode')}. Stop reason: {t.get('stoppedReason')}. "
-                    f"{container_str} {[c.get('name') for c in failed_containers]} failed. "
-                    f"Check the logs for task {t.get('taskArn')} for details.",
+                    (
+                        f"ECS task failed. Stop code: {t.get('stopCode')}. Stop reason:"
+                        f" {t.get('stoppedReason')}."
+                        f" {container_str} {[c.get('name') for c in failed_containers]} failed."
+                        f" Check the logs for task {t.get('taskArn')} for details."
+                    ),
                 )
 
             return CheckRunHealthResult(WorkerStatus.SUCCESS)

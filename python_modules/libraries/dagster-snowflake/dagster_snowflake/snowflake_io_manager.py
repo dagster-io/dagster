@@ -1,7 +1,5 @@
 from typing import Sequence
 
-from snowflake.connector import ProgrammingError
-
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
 from dagster._core.storage.db_io_manager import (
     DbClient,
@@ -10,6 +8,7 @@ from dagster._core.storage.db_io_manager import (
     TablePartition,
     TableSlice,
 )
+from snowflake.connector import ProgrammingError
 
 from .resources import SnowflakeConnection
 
@@ -28,7 +27,6 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
         IOManagerDefinition
 
     Examples:
-
         .. code-block:: python
 
             from dagster_snowflake import build_snowflake_io_manager
@@ -85,7 +83,9 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
             "database": Field(StringSource, description="Name of the database to use."),
             "account": Field(
                 StringSource,
-                description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
+                description=(
+                    "Your Snowflake account name. For more details, see  https://bit.ly/2FBL320."
+                ),
             ),
             "user": Field(StringSource, description="User login name."),
             "password": Field(StringSource, description="User password.", is_required=False),
@@ -107,11 +107,13 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
             ),
         }
     )
-    def snowflake_io_manager():
+    def snowflake_io_manager(init_context):
         return DbIOManager(
             type_handlers=type_handlers,
             db_client=SnowflakeDbClient(),
             io_manager_name="SnowflakeIOManager",
+            database=init_context.resource_config["database"],
+            schema=init_context.resource_config.get("schema"),
         )
 
     return snowflake_io_manager
@@ -139,7 +141,8 @@ class SnowflakeDbClient(DbClient):
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
         if table_slice.partition:
             return (
-                f"SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}\n"
+                f"SELECT {col_str} FROM"
+                f" {table_slice.database}.{table_slice.schema}.{table_slice.table}\n"
                 + _time_window_where_clause(table_slice.partition)
             )
         else:

@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -14,24 +14,22 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
+import {graphql} from '../graphql';
+import {OverviewSensorsQueryQuery} from '../graphql/graphql';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
-import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSensors} from '../instigation/Unloadable';
 import {SensorInfo} from '../sensors/SensorInfo';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {OverviewSensorTable} from './OverviewSensorsTable';
 import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
-import {OverviewSensorsQuery} from './types/OverviewSensorsQuery';
-import {UnloadableSensorsQuery} from './types/UnloadableSensorsQuery';
 import {visibleRepoKeys} from './visibleRepoKeys';
 
 export const OverviewSensorsRoot = () => {
@@ -41,7 +39,7 @@ export const OverviewSensorsRoot = () => {
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
 
-  const queryResultOverview = useQuery<OverviewSensorsQuery>(OVERVIEW_SENSORS_QUERY, {
+  const queryResultOverview = useQuery(OVERVIEW_SENSORS_QUERY, {
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true,
   });
@@ -52,7 +50,7 @@ export const OverviewSensorsRoot = () => {
   const repoBuckets = React.useMemo(() => {
     const visibleKeys = visibleRepoKeys(visibleRepos);
     return buildBuckets(data).filter(({repoAddress}) =>
-      visibleKeys.has(repoAddressAsString(repoAddress)),
+      visibleKeys.has(repoAddressAsHumanString(repoAddress)),
     );
   }, [data, visibleRepos]);
 
@@ -94,11 +92,12 @@ export const OverviewSensorsRoot = () => {
                 anyReposHidden ? (
                   <div>
                     No sensors matching <strong>{searchValue}</strong> were found in the selected
-                    repositories
+                    code locations
                   </div>
                 ) : (
                   <div>
-                    No sensors matching <strong>{searchValue}</strong> were found in this workspace
+                    No sensors matching <strong>{searchValue}</strong> were found in your
+                    definitions
                   </div>
                 )
               }
@@ -114,8 +113,8 @@ export const OverviewSensorsRoot = () => {
             title="No sensors"
             description={
               anyReposHidden
-                ? 'No sensors were found in the selected repositories'
-                : 'No sensors were found in this workspace'
+                ? 'No sensors were found in the selected code locations'
+                : 'No sensors were found in your definitions'
             }
           />
         </Box>
@@ -190,9 +189,9 @@ const UnloadableSensorsAlert: React.FC<{
           description={
             <Box flex={{direction: 'column', gap: 12, alignItems: 'flex-start'}}>
               <div>
-                Sensors were previously started but now cannot be loaded. They may be part of a
-                different workspace or from a sensor or repository that no longer exists in code.
-                You can turn them off, but you cannot turn them back on.
+                Sensors were previously started but now cannot be loaded. They may be part of a code
+                location that no longer exists. You can turn them off, but you cannot turn them back
+                on.
               </div>
               <Button onClick={() => setIsOpen(true)}>
                 {count === 1 ? 'View unloadable sensor' : 'View unloadable sensors'}
@@ -220,7 +219,7 @@ const UnloadableSensorsAlert: React.FC<{
 };
 
 const UnloadableSensorDialog: React.FC = () => {
-  const {data} = useQuery<UnloadableSensorsQuery>(UNLOADABLE_SENSORS_QUERY);
+  const {data} = useQuery(UNLOADABLE_SENSORS_QUERY);
   if (!data) {
     return <Spinner purpose="section" />;
   }
@@ -242,7 +241,7 @@ type RepoBucket = {
   sensors: string[];
 };
 
-const buildBuckets = (data?: OverviewSensorsQuery): RepoBucket[] => {
+const buildBuckets = (data?: OverviewSensorsQueryQuery): RepoBucket[] => {
   if (data?.workspaceOrError.__typename !== 'Workspace') {
     return [];
   }
@@ -273,7 +272,7 @@ const buildBuckets = (data?: OverviewSensorsQuery): RepoBucket[] => {
   return sortRepoBuckets(buckets);
 };
 
-const OVERVIEW_SENSORS_QUERY = gql`
+const OVERVIEW_SENSORS_QUERY = graphql(`
   query OverviewSensorsQuery {
     workspaceOrError {
       ... on Workspace {
@@ -310,12 +309,9 @@ const OVERVIEW_SENSORS_QUERY = gql`
       ...InstanceHealthFragment
     }
   }
+`);
 
-  ${PYTHON_ERROR_FRAGMENT}
-  ${INSTANCE_HEALTH_FRAGMENT}
-`;
-
-const UNLOADABLE_SENSORS_QUERY = gql`
+const UNLOADABLE_SENSORS_QUERY = graphql(`
   query UnloadableSensorsQuery {
     unloadableInstigationStatesOrError(instigationType: SENSOR) {
       ... on InstigationStates {
@@ -327,7 +323,4 @@ const UNLOADABLE_SENSORS_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-
-  ${INSTIGATION_STATE_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);

@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -20,18 +20,26 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
-import {GraphData, LiveDataForNode, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
+import {
+  GraphData,
+  LiveDataForNode,
+  nodeDependsOnSelf,
+  toGraphId,
+  tokenForAssetKey,
+} from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {StaleTag} from '../assets/StaleTag';
+import {graphql} from '../graphql';
+import {AssetViewDefinitionNodeFragment} from '../graphql/graphql';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetEvents} from './AssetEvents';
-import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
-import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
+import {AssetNodeDefinition} from './AssetNodeDefinition';
+import {AssetNodeInstigatorTag} from './AssetNodeInstigatorTag';
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {AssetLineageScope} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
@@ -40,11 +48,6 @@ import {AssetPlots} from './AssetPlots';
 import {CurrentMinutesLateTag} from './CurrentMinutesLateTag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
-import {
-  AssetViewDefinitionQuery,
-  AssetViewDefinitionQueryVariables,
-  AssetViewDefinitionQuery_assetOrError_Asset_definition,
-} from './types/AssetViewDefinitionQuery';
 
 interface Props {
   assetKey: AssetKey;
@@ -79,6 +82,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   });
 
   const {upstream, downstream} = useNeighborsFromGraph(visibleAssetGraph.assetGraphData, assetKey);
+  const node = visibleAssetGraph.assetGraphData?.nodes[toGraphId(assetKey)];
 
   // Observe the live state of the visible assets. Note: We use the "last materialization"
   // provided by this hook to trigger resets of the datasets inside the Activity / Plots tabs
@@ -108,6 +112,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         assetNode={definition}
         upstream={upstream}
         downstream={downstream}
+        dependsOnSelf={node ? nodeDependsOnSelf(node) : false}
         liveDataByNode={liveDataByNode}
       />
     );
@@ -221,7 +226,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           ) : selectedTab === 'partitions' ? (
             <AssetPartitions
               assetKey={assetKey}
-              assetPartitionNames={definition?.partitionKeysByDimension.map((k) => k.name)}
+              assetPartitionDimensions={definition?.partitionKeysByDimension.map((k) => k.name)}
               assetLastMaterializedAt={lastMaterializedAt}
               params={params}
               paramsTimeWindowOnly={!!params.asOf}
@@ -258,7 +263,7 @@ const AssetNoDefinitionState = () => (
   <Box padding={{vertical: 32}}>
     <NonIdealState
       title="No definition"
-      description="This asset doesn't have a software definition in any of your loaded repositories."
+      description="This asset doesn't have a software definition in any of your code locations."
       icon="materialization"
     />
   </Box>
@@ -316,13 +321,10 @@ function useNeighborsFromGraph(graphData: GraphData | null, assetKey: AssetKey) 
 }
 
 const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
-  const result = useQuery<AssetViewDefinitionQuery, AssetViewDefinitionQueryVariables>(
-    ASSET_VIEW_DEFINITION_QUERY,
-    {
-      variables: {assetKey: {path: assetKey.path}},
-      notifyOnNetworkStatusChange: true,
-    },
-  );
+  const result = useQuery(ASSET_VIEW_DEFINITION_QUERY, {
+    variables: {assetKey: {path: assetKey.path}},
+    notifyOnNetworkStatusChange: true,
+  });
   const {assetOrError} = result.data || result.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
   return {
@@ -332,7 +334,7 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
   };
 };
 
-const ASSET_VIEW_DEFINITION_QUERY = gql`
+const ASSET_VIEW_DEFINITION_QUERY = graphql(`
   query AssetViewDefinitionQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
@@ -345,32 +347,35 @@ const ASSET_VIEW_DEFINITION_QUERY = gql`
         }
         definition {
           id
-          groupName
-          partitionDefinition {
-            __typename
-            description
-          }
-          partitionKeysByDimension {
-            name
-          }
-          repository {
-            id
-            name
-            location {
-              id
-              name
-            }
-          }
-
-          ...AssetNodeInstigatorsFragment
-          ...AssetNodeDefinitionFragment
+          ...AssetViewDefinitionNode
         }
       }
     }
   }
-  ${ASSET_NODE_INSTIGATORS_FRAGMENT}
-  ${ASSET_NODE_DEFINITION_FRAGMENT}
-`;
+
+  fragment AssetViewDefinitionNode on AssetNode {
+    id
+    groupName
+    partitionDefinition {
+      __typename
+      description
+    }
+    partitionKeysByDimension {
+      name
+    }
+    repository {
+      id
+      name
+      location {
+        id
+        name
+      }
+    }
+
+    ...AssetNodeInstigatorsFragment
+    ...AssetNodeDefinitionFragment
+  }
+`);
 
 const HistoricalViewAlert: React.FC<{
   asOf: string | undefined;
@@ -407,7 +412,7 @@ const HistoricalViewAlert: React.FC<{
 );
 
 const AssetViewPageHeaderTags: React.FC<{
-  definition: AssetViewDefinitionQuery_assetOrError_Asset_definition | null;
+  definition: AssetViewDefinitionNodeFragment | null;
   liveData?: LiveDataForNode;
   onShowUpstream: () => void;
 }> = ({definition, liveData, onShowUpstream}) => {

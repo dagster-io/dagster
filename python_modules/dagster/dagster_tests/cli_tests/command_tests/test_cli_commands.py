@@ -7,7 +7,6 @@ from contextlib import contextmanager
 import mock
 import pytest
 from click.testing import CliRunner
-
 from dagster import (
     Out,
     Output,
@@ -45,7 +44,8 @@ from dagster._legacy import (
     pipeline,
     solid,
 )
-from dagster._utils import file_relative_path, merge_dicts
+from dagster._utils import file_relative_path
+from dagster._utils.merger import merge_dicts
 from dagster.version import __version__
 
 
@@ -482,7 +482,7 @@ def non_existant_python_origin_target_args():
     return {
         "workspace": None,
         "job_name": "foo",
-        "python_file": file_relative_path(__file__, "made_up_file.py"),
+        "python_file": (file_relative_path(__file__, "made_up_file.py"),),
         "module_name": None,
         "attribute": "bar",
     }
@@ -496,14 +496,14 @@ def valid_job_python_origin_target_args():
         {
             "workspace": None,
             "job_name": job_name,
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
             "module_name": None,
             "attribute": "bar",
         },
         {
             "workspace": None,
             "job_name": job_name,
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
             "module_name": None,
             "attribute": "bar",
             "working_directory": os.path.dirname(__file__),
@@ -512,14 +512,14 @@ def valid_job_python_origin_target_args():
             "workspace": None,
             "job_name": job_name,
             "python_file": None,
-            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
             "attribute": "bar",
         },
         {
             "workspace": None,
             "job_name": job_name,
             "python_file": None,
-            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
             "attribute": "bar",
             "working_directory": os.path.dirname(__file__),
         },
@@ -542,7 +542,7 @@ def valid_job_python_origin_target_args():
             "workspace": None,
             "job_name": None,
             "python_file": None,
-            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
             "attribute": job_fn_name,
         },
         {
@@ -555,14 +555,14 @@ def valid_job_python_origin_target_args():
         {
             "workspace": None,
             "job_name": None,
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
             "module_name": None,
             "attribute": job_def_name,
         },
         {
             "workspace": None,
             "job_name": None,
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
             "module_name": None,
             "attribute": job_def_name,
             "working_directory": os.path.dirname(__file__),
@@ -570,7 +570,7 @@ def valid_job_python_origin_target_args():
         {
             "workspace": None,
             "job_name": None,
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
             "module_name": None,
             "attribute": job_fn_name,
         },

@@ -1,15 +1,15 @@
 import time
+from urllib.parse import urlparse
 
 import pytest
 import yaml
+from dagster._core.storage.event_log.base import EventLogCursor
+from dagster._core.test_utils import instance_for_test
 from dagster_mysql.event_log import MySQLEventLogStorage
-from dagster_tests.core_tests.storage_tests.utils.event_log_storage import (
+from dagster_tests.storage_tests.utils.event_log_storage import (
     TestEventLogStorage,
     create_test_event_log_record,
 )
-
-from dagster._core.storage.event_log.base import EventLogCursor
-from dagster._core.test_utils import instance_for_test
 
 
 class TestMySQLEventLogStorage(TestEventLogStorage):
@@ -81,15 +81,21 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
         assert [int(evt.message) for evt in watched_1] == [2, 3, 4]
         assert [int(evt.message) for evt in watched_2] == [4, 5]
 
-    def test_load_from_config(self, hostname):
+    def test_load_from_config(self, conn_string):
+        parse_result = urlparse(conn_string)
+        hostname = parse_result.hostname  # can be custom set in the BK env
+        port = (
+            parse_result.port
+        )  # can be different, based on the backcompat mysql version or latest mysql version
+
         url_cfg = """
         event_log_storage:
             module: dagster_mysql.event_log
             class: MySQLEventLogStorage
             config:
-                mysql_url: mysql+mysqlconnector://test:test@{hostname}:3306/test
+                mysql_url: mysql+mysqlconnector://test:test@{hostname}:{port}/test
         """.format(
-            hostname=hostname
+            hostname=hostname, port=port
         )
 
         explicit_cfg = """
@@ -101,9 +107,10 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
                     username: test
                     password: test
                     hostname: {hostname}
+                    port: {port}
                     db_name: test
         """.format(
-            hostname=hostname
+            hostname=hostname, port=port
         )
 
         # pylint: disable=protected-access

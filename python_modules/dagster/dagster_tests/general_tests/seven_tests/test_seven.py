@@ -5,7 +5,6 @@ import tempfile
 from functools import update_wrapper
 
 import pytest
-
 from dagster import DagsterType, _seven
 from dagster._core.types.dagster_type import ListType
 from dagster._seven import is_subclass
@@ -14,7 +13,7 @@ from dagster._utils import file_relative_path
 
 def test_is_ascii():
     assert _seven.is_ascii("Hello!")
-    assert not _seven.is_ascii("您好！")
+    assert not _seven.is_ascii("您好!")
 
 
 def test_import_module_from_path():

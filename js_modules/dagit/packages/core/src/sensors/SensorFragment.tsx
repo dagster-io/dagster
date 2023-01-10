@@ -1,8 +1,6 @@
-import {gql} from '@apollo/client';
+import {graphql} from '../graphql';
 
-import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
-
-export const SENSOR_FRAGMENT = gql`
+export const SENSOR_FRAGMENT = graphql(`
   fragment SensorFragment on Sensor {
     id
     jobOriginId
@@ -27,5 +25,4 @@ export const SENSOR_FRAGMENT = gql`
       }
     }
   }
-  ${INSTIGATION_STATE_FRAGMENT}
-`;
+`);

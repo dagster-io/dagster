@@ -1,5 +1,10 @@
 import pytest
-from dagster_test.toys.asset_lineage import asset_lineage_job
+from dagster import DagsterResourceFunctionError, DagsterTypeCheckDidNotPass, multiprocess_executor
+from dagster._core.definitions.assets_job import get_base_asset_jobs
+from dagster._core.events import DagsterEventType
+from dagster._core.storage.fs_io_manager import fs_io_manager
+from dagster._utils import file_relative_path
+from dagster._utils.temp_file import get_temp_dir
 from dagster_test.toys.branches import branch
 from dagster_test.toys.composition import composition_job
 from dagster_test.toys.dynamic import dynamic
@@ -23,13 +28,6 @@ from dagster_test.toys.software_defined_assets import software_defined_assets
 from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor import (
     test_step_delegating_executor,
 )
-
-from dagster import DagsterResourceFunctionError, DagsterTypeCheckDidNotPass, multiprocess_executor
-from dagster._core.definitions.assets_job import get_base_asset_jobs
-from dagster._core.events import DagsterEventType
-from dagster._core.storage.fs_io_manager import fs_io_manager
-from dagster._utils import file_relative_path
-from dagster._utils.temp_file import get_temp_dir
 
 
 @pytest.fixture(name="executor_def", params=[multiprocess_executor, test_step_delegating_executor])
@@ -78,7 +76,7 @@ def test_many_events_subset_job(executor_def):
 
 def test_sleepy_job(executor_def):
     assert (
-        lambda: sleepy.to_job(
+        lambda: sleepy.to_job(  # type: ignore
             config={
                 "ops": {"giver": {"config": [2, 2, 2, 2]}},
             },
@@ -254,24 +252,6 @@ def test_composition_job():
 
     assert result.success
     assert result.output_for_node("div_four") == 7.0 / 4.0
-
-
-def test_asset_lineage_job():
-    assert asset_lineage_job.execute_in_process(
-        run_config={
-            "solids": {
-                "download_data": {"outputs": {"result": {"partitions": ["2020-01-01"]}}},
-                "split_action_types": {
-                    "outputs": {
-                        "comments": {"partitions": ["2020-01-01"]},
-                        "reviews": {"partitions": ["2020-01-01"]},
-                    }
-                },
-                "top_10_comments": {"outputs": {"result": {"partitions": ["2020-01-01"]}}},
-                "top_10_reviews": {"outputs": {"result": {"partitions": ["2020-01-01"]}}},
-            }
-        },
-    ).success
 
 
 def test_retry_job(executor_def):

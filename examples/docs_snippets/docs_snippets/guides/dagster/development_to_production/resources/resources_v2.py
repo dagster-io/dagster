@@ -1,7 +1,5 @@
 from typing import Any, Dict, Optional
 
-from dagster import resource
-
 # start_mock
 # resources.py
 
@@ -31,11 +29,6 @@ class StubHNClient:
     @property
     def item_field_names(self):
         return ["id", "type", "title", "by"]
-
-
-@resource
-def stub_hn_client():
-    return StubHNClient()
 
 
 # end_mock

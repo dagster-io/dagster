@@ -1,12 +1,12 @@
 import {assertUnreachable} from '../app/Util';
 import {
-  ConfigEditorRunConfigSchemaFragment_allConfigTypes,
-  ConfigEditorRunConfigSchemaFragment,
-} from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
+  AllConfigTypesForEditorFragment,
+  ConfigEditorRunConfigSchemaFragmentFragment,
+} from '../graphql/graphql';
 
 export const scaffoldType = (
   configTypeKey: string,
-  typeLookup: {[key: string]: ConfigEditorRunConfigSchemaFragment_allConfigTypes},
+  typeLookup: {[key: string]: AllConfigTypesForEditorFragment},
 ): any => {
   const type = typeLookup[configTypeKey];
 
@@ -58,10 +58,8 @@ export const scaffoldType = (
   }
 };
 
-export const createTypeLookup = (
-  allConfigTypes: ConfigEditorRunConfigSchemaFragment_allConfigTypes[],
-) => {
-  const typeLookup: {[key: string]: ConfigEditorRunConfigSchemaFragment_allConfigTypes} = {};
+export const createTypeLookup = (allConfigTypes: AllConfigTypesForEditorFragment[]) => {
+  const typeLookup: {[key: string]: AllConfigTypesForEditorFragment} = {};
   for (const type of allConfigTypes) {
     typeLookup[type.key] = type;
   }
@@ -69,7 +67,9 @@ export const createTypeLookup = (
   return typeLookup;
 };
 
-export const scaffoldPipelineConfig = (configSchema: ConfigEditorRunConfigSchemaFragment) => {
+export const scaffoldPipelineConfig = (
+  configSchema: ConfigEditorRunConfigSchemaFragmentFragment,
+) => {
   const {allConfigTypes, rootConfigType} = configSchema;
   const typeLookup = createTypeLookup(allConfigTypes);
   const config = scaffoldType(rootConfigType.key, typeLookup);

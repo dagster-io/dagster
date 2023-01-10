@@ -1,15 +1,43 @@
-# NOTE: This is special isort/black config file just for docs_snippets. It's needed because we use a
-# different line length in docs_snippets to ensure readability of code blocks in the browser. Unless
-# otherwise noted, it should simply copy (except `line-length`) all of the isort/black options from
-# the root pyproject.toml (consult that file for explanations of options). This is necessary because
-# unfortunately there is no inheritance functionality for isort/black config.
+# NOTE: This is special config file just for docs_snippets. It's needed because we use a different
+# line length in docs_snippets to ensure readability of code blocks in the browser. Unless otherwise
+# noted, it should simply copy (except `line-length`) all of the black options from the root
+# pyproject.toml (consult that file for explanations of options). This is necessary because
+# unfortunately there is no inheritance functionality for black config.
 
 [tool.black]
 line-length = 88
-required-version = "22.3.0"
-target-version = ['py36', 'py37', 'py38', 'py39', 'py310']
+preview = true
+required-version = "22.12.0"
+target-version = ['py37', 'py38', 'py39', 'py310', 'py311']
 
-[tool.isort]
-known_first_party = ['dagster']
-profile = 'black'  # sets line-length to 88
-case_sensitive = true
+[tool.ruff]
+
+# Extend root configuration.
+extend = "../../pyproject.toml"
+
+# Match black. Note that this also checks comment line length, but black does not format comments.
+line-length = 88
+
+# Use extend-ignore so that we ignore all the same codes ignored in root.
+extend-ignore = [
+
+  # (Unused import): When the same symbol is imported in multiple blocks, the
+  # last import takes precedence for python. This causes Ruff to think an
+  # import in an earlier block is unused and report F401.
+  "F401",
+
+  # (Redefinition): This happens frequently in docs_snippets when we import the same symbol in multiple
+  # snippets within the same file.
+  "F811",
+
+  # (local variable assigned but never used): This happens a lot in docs snippets for didactic
+  # purposes.
+  "F841",
+
+]
+
+[tool.ruff.isort]
+
+# Ensures ruff classifies imports from `dagster` as first-party. Keeps snippet imports relatively
+# compressed.
+known-first-party = ["dagster"]

@@ -25,9 +25,9 @@ from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils import ensure_single_item
 
 
-class SolidConfig(
+class OpConfig(
     NamedTuple(
-        "_SolidConfig",
+        "_OpConfig",
         [
             ("config", object),
             ("inputs", Mapping[str, object]),
@@ -36,7 +36,7 @@ class SolidConfig(
     )
 ):
     def __new__(cls, config, inputs: Mapping[str, object], outputs: "OutputsConfig"):
-        return super(SolidConfig, cls).__new__(
+        return super(OpConfig, cls).__new__(
             cls,
             config,
             check.opt_mapping_param(inputs, "inputs", key_type=str),
@@ -44,10 +44,10 @@ class SolidConfig(
         )
 
     @staticmethod
-    def from_dict(config: Mapping[str, Any]) -> "SolidConfig":
+    def from_dict(config: Mapping[str, Any]) -> "OpConfig":
         check.mapping_param(config, "config", key_type=str)
 
-        return SolidConfig(
+        return OpConfig(
             config=config.get("config"),
             inputs=config.get("inputs") or {},
             outputs=OutputsConfig(config.get("outputs")),
@@ -99,7 +99,7 @@ class ResolvedRunConfig(
     NamedTuple(
         "_ResolvedRunConfig",
         [
-            ("solids", Mapping[str, SolidConfig]),
+            ("solids", Mapping[str, OpConfig]),
             ("execution", "ExecutionConfig"),
             ("resources", Mapping[str, ResourceConfig]),
             ("loggers", Mapping[str, Mapping[str, object]]),
@@ -111,7 +111,7 @@ class ResolvedRunConfig(
 ):
     def __new__(
         cls,
-        solids: Optional[Mapping[str, SolidConfig]] = None,
+        solids: Optional[Mapping[str, OpConfig]] = None,
         execution: Optional["ExecutionConfig"] = None,
         resources: Optional[Mapping[str, ResourceConfig]] = None,
         loggers: Optional[Mapping[str, Mapping[str, object]]] = None,
@@ -130,7 +130,7 @@ class ResolvedRunConfig(
 
         return super(ResolvedRunConfig, cls).__new__(
             cls,
-            solids=check.opt_mapping_param(solids, "solids", key_type=str, value_type=SolidConfig),
+            solids=check.opt_mapping_param(solids, "solids", key_type=str, value_type=OpConfig),
             execution=execution,
             resources=resources,
             loggers=check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=Mapping),
@@ -226,7 +226,6 @@ class ResolvedRunConfig(
         )
 
     def to_dict(self) -> Mapping[str, Mapping[str, object]]:
-
         env_dict: Dict[str, Mapping[str, object]] = {}
 
         solid_configs: Dict[str, object] = {}
@@ -276,8 +275,8 @@ def config_map_resources(
 ) -> Mapping[str, ResourceConfig]:
     """This function executes the config mappings for resources with respect to ConfigurableDefinition.
     It iterates over resource_defs and looks up the corresponding config because resources need to
-    be mapped regardless of whether they receive config from run_config."""
-
+    be mapped regardless of whether they receive config from run_config.
+    """
     config_mapped_resource_configs = {}
     for resource_key, resource_def in resource_defs.items():
         resource_config = resource_configs.get(resource_key, {})
@@ -353,8 +352,8 @@ def config_map_objects(
     """This function executes the config mappings for executors definitions with respect to
     ConfigurableDefinition. It calls the ensure_single_item macro on the incoming config and then
     applies config mapping to the result and the first executor_def with the same name on
-    the mode_def."""
-
+    the mode_def.
+    """
     config = config_value.get(keyed_by)
 
     check.opt_mapping_param(config, "config", key_type=str)

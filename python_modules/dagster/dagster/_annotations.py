@@ -99,7 +99,6 @@ def experimental(obj: T_Annotatable, *, decorator: bool = False) -> T_Annotatabl
         return obj  # type: ignore
 
     elif inspect.isfunction(target):
-
         warning_fn = experimental_decorator_warning if decorator else experimental_fn_warning
 
         @wraps(target)
@@ -110,7 +109,6 @@ def experimental(obj: T_Annotatable, *, decorator: bool = False) -> T_Annotatabl
         return cast(T_Annotatable, inner)
 
     elif inspect.isclass(target):
-
         undecorated_init = target.__init__
 
         def __init__(self, *args, **kwargs):

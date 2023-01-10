@@ -3,11 +3,10 @@ from collections import defaultdict
 from enum import Enum
 from typing import Mapping, Sequence
 
+from dagster import Failure, RetryRequested
+from dagster._core.execution.context.compute import OpExecutionContext
 from requests import Response
 from requests.exceptions import RequestException
-
-from dagster import Failure, RetryRequested
-from dagster._core.execution.context.compute import SolidExecutionContext
 
 
 def fmt_rpc_logs(logs: Sequence[Mapping[str, str]]) -> Mapping[int, str]:
@@ -21,7 +20,7 @@ def fmt_rpc_logs(logs: Sequence[Mapping[str, str]]) -> Mapping[int, str]:
     return {level: "\n".join(logs) for level, logs in d.items()}
 
 
-def log_rpc(context: SolidExecutionContext, logs: Sequence[Mapping]) -> None:
+def log_rpc(context: OpExecutionContext, logs: Sequence[Mapping]) -> None:
     if len(logs) > 0:
         logs_fmt = fmt_rpc_logs(logs)
         for level, logs_str in logs_fmt.items():
@@ -37,7 +36,7 @@ class DBTErrors(Enum):
     rpc_timeout_error = 10008
 
 
-def raise_for_rpc_error(context: SolidExecutionContext, resp: Response) -> None:
+def raise_for_rpc_error(context: OpExecutionContext, resp: Response) -> None:
     error = resp.json().get("error")
     if error is not None:
         if error["code"] in [
@@ -82,5 +81,6 @@ def raise_for_rpc_error(context: SolidExecutionContext, resp: Response) -> None:
 
 def is_fatal_code(e: RequestException) -> bool:
     """Helper function to determine if a Requests reponse status code
-    is a "fatal" status code. If it is, we will not request a solid retry."""
+    is a "fatal" status code. If it is, we will not request a solid retry.
+    """
     return 400 <= e.response.status_code < 500 and e.response.status_code != 429

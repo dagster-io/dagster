@@ -1,18 +1,19 @@
 import csv
 from collections import OrderedDict
 
-from dagster_graphql.schema.roots.mutation import execution_params_from_graphql
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
-
 from dagster import (
     AssetMaterialization,
     DependencyDefinition,
+    In,
+    OpDefinition,
     PythonObjectDagsterType,
     dagster_type_loader,
     dagster_type_materializer,
     repository,
 )
-from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, SolidDefinition
+from dagster._legacy import OutputDefinition, PipelineDefinition
+from dagster_graphql.schema.roots.mutation import execution_params_from_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from .production_query import PRODUCTION_QUERY
 
@@ -145,10 +146,10 @@ def define_circular_dependency_pipeline():
     return PipelineDefinition(
         name="circular_dependency_pipeline",
         solid_defs=[
-            SolidDefinition(
+            OpDefinition(
                 name="csolid",
-                input_defs=[InputDefinition("num", PoorMansDataFrame)],
-                output_defs=[OutputDefinition(PoorMansDataFrame)],
+                ins={"num": In("num", PoorMansDataFrame)},
+                outs={"result": OutputDefinition(PoorMansDataFrame)},
                 compute_fn=lambda *_args: None,
             )
         ],

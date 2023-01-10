@@ -8,6 +8,7 @@ from dagster import (
 
 status_reporting_job = None
 
+
 # start
 @run_status_sensor(
     run_status=DagsterRunStatus.SUCCESS,

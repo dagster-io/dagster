@@ -29,7 +29,6 @@ class DispatchingLogHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord):
         """For any received record, add metadata, and have handlers handle it"""
-
         try:
             self._should_capture = False
             for logger in self._downstream_loggers:

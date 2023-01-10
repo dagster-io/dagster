@@ -1,41 +1,36 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, Colors, ConfigTypeSchema, Icon, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from '../assets/AssetDefinedInMultipleReposNotice';
-import {
-  AssetMetadataTable,
-  ASSET_NODE_OP_METADATA_FRAGMENT,
-  metadataForAssetNode,
-} from '../assets/AssetMetadata';
+import {AssetMetadataTable, metadataForAssetNode} from '../assets/AssetMetadata';
 import {AssetSidebarActivitySummary} from '../assets/AssetSidebarActivitySummary';
+import {DependsOnSelfBanner} from '../assets/DependsOnSelfBanner';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
 import {usePartitionHealthData} from '../assets/usePartitionHealthData';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
-import {DagsterTypeFragment} from '../dagstertype/types/DagsterTypeFragment';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {graphql} from '../graphql';
+import {DagsterTypeFragmentFragment} from '../graphql/graphql';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {pluginForMetadata} from '../plugins';
 import {Version} from '../versions/Version';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {LiveDataForNode, displayNameForAssetKey} from './Utils';
-import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetQuery';
+import {LiveDataForNode, displayNameForAssetKey, GraphNode, nodeDependsOnSelf} from './Utils';
 
 export const SidebarAssetInfo: React.FC<{
-  assetKey: AssetKey;
+  assetNode: GraphNode;
   liveData: LiveDataForNode;
-}> = ({assetKey, liveData}) => {
+}> = ({assetNode, liveData}) => {
+  const assetKey = assetNode.assetKey;
   const partitionHealthData = usePartitionHealthData([assetKey]);
-  const {data} = useQuery<SidebarAssetQuery, SidebarAssetQueryVariables>(SIDEBAR_ASSET_QUERY, {
+  const {data} = useQuery(SIDEBAR_ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
-    fetchPolicy: 'cache-and-network',
   });
 
   const {lastMaterialization} = liveData || {};
@@ -76,6 +71,8 @@ export const SidebarAssetInfo: React.FC<{
       />
 
       <div style={{borderBottom: `2px solid ${Colors.Gray300}`}} />
+
+      {nodeDependsOnSelf(assetNode) && <DependsOnSelfBanner />}
 
       {(asset.description || OpMetadataPlugin?.SidebarComponent || !hasAssetMetadata) && (
         <SidebarSection title="Description">
@@ -130,7 +127,7 @@ export const SidebarAssetInfo: React.FC<{
 };
 
 const TypeSidebarSection: React.FC<{
-  assetType: DagsterTypeFragment;
+  assetType: DagsterTypeFragmentFragment;
 }> = ({assetType}) => {
   return (
     <SidebarSection title="Type">
@@ -176,7 +173,7 @@ const AssetCatalogLink = styled(Link)`
   white-space: nowrap;
 `;
 
-export const SIDEBAR_ASSET_FRAGMENT = gql`
+export const SIDEBAR_ASSET_FRAGMENT = graphql(`
   fragment SidebarAssetFragment on AssetNode {
     id
     description
@@ -210,12 +207,9 @@ export const SIDEBAR_ASSET_FRAGMENT = gql`
 
     ...AssetNodeOpMetadataFragment
   }
-  ${ASSET_NODE_CONFIG_FRAGMENT}
-  ${ASSET_NODE_OP_METADATA_FRAGMENT}
-  ${METADATA_ENTRY_FRAGMENT}
-`;
+`);
 
-const SIDEBAR_ASSET_QUERY = gql`
+const SIDEBAR_ASSET_QUERY = graphql(`
   query SidebarAssetQuery($assetKey: AssetKeyInput!) {
     assetNodeOrError(assetKey: $assetKey) {
       __typename
@@ -225,5 +219,4 @@ const SIDEBAR_ASSET_QUERY = gql`
       }
     }
   }
-  ${SIDEBAR_ASSET_FRAGMENT}
-`;
+`);

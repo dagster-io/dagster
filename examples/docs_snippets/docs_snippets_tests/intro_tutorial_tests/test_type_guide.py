@@ -29,7 +29,7 @@ def test_basic_even_type():
     # start_test_basic_even_type
     EvenDagsterType = DagsterType(
         name="EvenDagsterType",
-        type_check_fn=lambda _, value: isinstance(value, int) and value % 2 is 0,
+        type_check_fn=lambda _, value: isinstance(value, int) and value % 2 == 0,
     )
     # end_test_basic_even_type
 
@@ -55,7 +55,7 @@ def test_basic_even_type():
 def test_basic_even_type_no_annotations():
     EvenDagsterType = DagsterType(
         name="EvenDagsterType",
-        type_check_fn=lambda _, value: isinstance(value, int) and value % 2 is 0,
+        type_check_fn=lambda _, value: isinstance(value, int) and value % 2 == 0,
     )
 
     # start_test_basic_even_type_no_annotations
@@ -82,7 +82,7 @@ def test_python_object_dagster_type():
     # start_object_type
     class EvenType:
         def __init__(self, num):
-            assert num % 2 is 0
+            assert num % 2 == 0
             self.num = num
 
     EvenDagsterType = PythonObjectDagsterType(EvenType, name="EvenDagsterType")
@@ -106,7 +106,7 @@ def test_even_type_loader():
     # start_type_loader
     class EvenType:
         def __init__(self, num):
-            assert num % 2 is 0
+            assert num % 2 == 0
             self.num = num
 
     @dagster_type_loader(int)
@@ -145,7 +145,7 @@ def test_even_type_loader():
 def test_even_type_materialization_config():
     class EvenType:
         def __init__(self, num):
-            assert num % 2 is 0
+            assert num % 2 == 0
             self.num = num
 
     @dagster_type_materializer({"path": str})
@@ -186,7 +186,7 @@ def test_mypy_compliance():
     # start_mypy
     class EvenType:
         def __init__(self, num):
-            assert num % 2 is 0
+            assert num % 2 == 0
             self.num = num
 
     if typing.TYPE_CHECKING:
@@ -217,7 +217,7 @@ def test_nothing_type():
 
     result = execute_pipeline(nothing_pipeline)
     assert result.success
-    assert result.output_for_solid("after_cleanup") == "worked"
+    assert result.output_for_node("after_cleanup") == "worked"
 
 
 def test_nothing_fanin_actually_test():
@@ -294,7 +294,7 @@ def test_usable_as_dagster_type():
     @usable_as_dagster_type
     class EvenType:
         def __init__(self, num):
-            assert num % 2 is 0
+            assert num % 2 == 0
             self.num = num
 
     # end_usable_as
@@ -309,7 +309,7 @@ def test_make_usable_as_dagster_type():
     # start_make_usable
     class EvenType:
         def __init__(self, num):
-            assert num % 2 is 0
+            assert num % 2 == 0
             self.num = num
 
     EvenDagsterType = PythonObjectDagsterType(

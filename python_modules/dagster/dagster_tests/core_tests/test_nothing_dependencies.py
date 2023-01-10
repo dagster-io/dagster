@@ -1,7 +1,6 @@
 from collections import defaultdict
 
 import pytest
-
 from dagster import (
     AssetMaterialization,
     DagsterInvalidDefinitionError,
@@ -70,7 +69,6 @@ def _define_nothing_dep_pipeline():
 
 
 def test_valid_nothing_dependencies():
-
     result = _define_nothing_dep_pipeline().execute_in_process()
 
     assert result.success
@@ -318,7 +316,10 @@ def test_nothing_infer():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"must be used via In\(\) and no parameter should be included in the @op decorated function",
+        match=(
+            r"must be used via In\(\) and no parameter should be included in the @op decorated"
+            r" function"
+        ),
     ):
 
         @op

@@ -63,10 +63,7 @@ class _Pipeline:
         if not self.name:
             self.name = fn.__name__
 
-        from dagster._core.definitions.decorators.composite_solid_decorator import (
-            do_composition,
-            get_validated_config_mapping,
-        )
+        from ..composition import do_composition, get_validated_config_mapping
 
         config_mapping = get_validated_config_mapping(
             self.name, self.config_schema, self.config_fn, decorator_name="pipeline"
@@ -183,7 +180,6 @@ def pipeline(
             pipeline. Providing a VersionStrategy will enable memoization on the pipeline.
 
     Example:
-
         .. code-block:: python
 
             @solid(output_defs=[OutputDefinition(int, "two"), OutputDefinition(int, "four")])
@@ -208,7 +204,6 @@ def pipeline(
                 add_one(two)
                 mult_two(four)
     """
-
     if input_defs is not None:
         experimental_arg_warning("input_defs", "pipeline")
 

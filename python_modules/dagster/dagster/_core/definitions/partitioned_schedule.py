@@ -28,7 +28,10 @@ def build_schedule_from_partitioned_job(
     """
     check.invariant(
         not (day_of_week and day_of_month),
-        "Cannot provide both day_of_month and day_of_week parameter to build_schedule_from_partitioned_job.",
+        (
+            "Cannot provide both day_of_month and day_of_week parameter to"
+            " build_schedule_from_partitioned_job."
+        ),
     )
     partitions_def = job.partitions_def
     if partitions_def is None:
@@ -53,12 +56,10 @@ def build_schedule_from_partitioned_job(
         description=check.opt_str_param(description, "description"),
     )
     def schedule_def(context):
-        partition_keys = partitions_def.get_partition_keys(context.scheduled_execution_time)
-        if len(partition_keys) == 0:
-            return SkipReason("The job's PartitionsDefinition has no partitions")
-
         # Run for the latest partition. Prior partitions will have been handled by prior ticks.
-        partition_key = partition_keys[-1]
+        partition_key = partitions_def.get_last_partition_key(context.scheduled_execution_time)
+        if partition_key is None:
+            return SkipReason("The job's PartitionsDefinition has no partitions")
 
         yield job.run_request_for_partition(
             partition_key=partition_key, run_key=partition_key, tags=tags

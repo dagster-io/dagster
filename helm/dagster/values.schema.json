@@ -1425,6 +1425,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "uploadExtraArgs": {
+                    "title": "Uploadextraargs",
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -1894,6 +1905,68 @@
             "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
+        "RunK8sConfig": {
+            "title": "RunK8sConfig",
+            "type": "object",
+            "properties": {
+                "containerConfig": {
+                    "title": "Containerconfig",
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "podSpecConfig": {
+                    "title": "Podspecconfig",
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "podTemplateSpecMetadata": {
+                    "title": "Podtemplatespecmetadata",
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "jobSpecConfig": {
+                    "title": "Jobspecconfig",
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "jobMetadata": {
+                    "title": "Jobmetadata",
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "additionalProperties": false
+        },
         "K8sRunLauncherConfig": {
             "title": "K8sRunLauncherConfig",
             "type": "object",
@@ -2014,6 +2087,28 @@
                     "anyOf": [
                         {
                             "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "securityContext": {
+                    "title": "SecurityContext",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/SecurityContext"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "runK8sConfig": {
+                    "title": "RunK8sConfig",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/RunK8sConfig"
                         },
                         {
                             "type": "null"
@@ -2276,6 +2371,31 @@
                         },
                         {
                             "$ref": "#/definitions/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "dequeueNumWorkers": {
+                    "title": "Dequeuenumworkers",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/definitions/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "dequeueUseThreads": {
+                    "title": "Dequeueusethreads",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
                         },
                         {
                             "type": "null"

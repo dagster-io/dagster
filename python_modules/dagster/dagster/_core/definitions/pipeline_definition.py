@@ -17,7 +17,6 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.solid_definition import NodeDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidSubsetError,
@@ -25,29 +24,31 @@ from dagster._core.errors import (
 )
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.utils import str_format_set
-from dagster._utils import frozentags, merge_dicts
+from dagster._utils import frozentags
 from dagster._utils.backcompat import experimental_class_warning
+from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer
 from .dependency import (
     DependencyDefinition,
     DependencyStructure,
     DynamicCollectDependencyDefinition,
+    GraphNode,
     IDependencyDefinition,
     MultiDependencyDefinition,
     Node,
     NodeHandle,
     NodeInvocation,
-    SolidOutputHandle,
+    NodeOutput,
 )
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue, normalize_metadata
 from .mode import ModeDefinition
 from .node_definition import NodeDefinition
+from .op_definition import OpDefinition
 from .preset import PresetDefinition
 from .resource_requirement import ensure_requirements_satisfied
-from .solid_definition import SolidDefinition
 from .utils import validate_tags
 from .version_strategy import VersionStrategy
 
@@ -110,7 +111,6 @@ class PipelineDefinition:
         _parent_pipeline_def (INTERNAL ONLY): Used for tracking pipelines created using solid subsets.
 
     Examples:
-
         .. code-block:: python
 
             @solid
@@ -595,7 +595,7 @@ class PipelineDefinition:
 
         if solid.retry_policy:
             return solid.retry_policy
-        elif isinstance(definition, SolidDefinition) and definition.retry_policy:
+        elif isinstance(definition, OpDefinition) and definition.retry_policy:
             return definition.retry_policy
 
         # could be expanded to look in composite_solid / graph containers
@@ -604,7 +604,6 @@ class PipelineDefinition:
 
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PipelineDefinition":
         """Apply a set of hooks to all solid instances within the pipeline."""
-
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
         pipeline_def = PipelineDefinition(
@@ -632,8 +631,8 @@ class PipelineDefinition:
             )
         else:
             msg = (
-                f"Attempted to call pipeline '{self.name}' directly. Pipelines should be invoked by "
-                "using an execution API function (e.g. `execute_pipeline`)."
+                f"Attempted to call pipeline '{self.name}' directly. Pipelines should be invoked by"
+                " using an execution API function (e.g. `execute_pipeline`)."
             )
         raise DagsterInvariantViolationError(msg)
 
@@ -686,7 +685,6 @@ def _get_pipeline_subset_def(
     Build a pipeline which is a subset of another pipeline.
     Only includes the solids which are in solids_to_execute.
     """
-
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     check.set_param(solids_to_execute, "solids_to_execute", of_type=str)
     graph = pipeline_def.graph
@@ -711,35 +709,35 @@ def _get_pipeline_subset_def(
         Dict[str, IDependencyDefinition],
     ] = {_dep_key_of(solid): {} for solid in solids}
 
-    for solid in solids:
-        for input_handle in solid.input_handles():
-            if graph.dependency_structure.has_direct_dep(input_handle):
-                output_handle = pipeline_def.dependency_structure.get_direct_dep(input_handle)
-                if output_handle.solid.name in solids_to_execute:
-                    deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
-                        solid=output_handle.solid.name, output=output_handle.output_def.name
+    for node in solids:
+        for node_input in node.inputs():
+            if graph.dependency_structure.has_direct_dep(node_input):
+                node_output = pipeline_def.dependency_structure.get_direct_dep(node_input)
+                if node_output.node.name in solids_to_execute:
+                    deps[_dep_key_of(node)][node_input.input_def.name] = DependencyDefinition(
+                        node=node_output.node.name, output=node_output.output_def.name
                     )
-            elif graph.dependency_structure.has_dynamic_fan_in_dep(input_handle):
-                output_handle = graph.dependency_structure.get_dynamic_fan_in_dep(input_handle)
-                if output_handle.solid.name in solids_to_execute:
-                    deps[_dep_key_of(solid)][
-                        input_handle.input_def.name
+            elif graph.dependency_structure.has_dynamic_fan_in_dep(node_input):
+                node_output = graph.dependency_structure.get_dynamic_fan_in_dep(node_input)
+                if node_output.node.name in solids_to_execute:
+                    deps[_dep_key_of(node)][
+                        node_input.input_def.name
                     ] = DynamicCollectDependencyDefinition(
-                        solid_name=output_handle.solid.name,
-                        output_name=output_handle.output_def.name,
+                        solid_name=node_output.node.name,
+                        output_name=node_output.output_def.name,
                     )
-            elif graph.dependency_structure.has_fan_in_deps(input_handle):
-                output_handles = cast(
-                    Sequence[SolidOutputHandle],
-                    graph.dependency_structure.get_fan_in_deps(input_handle),
+            elif graph.dependency_structure.has_fan_in_deps(node_input):
+                outputs = cast(
+                    Sequence[NodeOutput],
+                    graph.dependency_structure.get_fan_in_deps(node_input),
                 )
-                deps[_dep_key_of(solid)][input_handle.input_def.name] = MultiDependencyDefinition(
+                deps[_dep_key_of(node)][node_input.input_def.name] = MultiDependencyDefinition(
                     [
                         DependencyDefinition(
-                            solid=output_handle.solid.name, output=output_handle.output_def.name
+                            node=node_output.node.name, output=node_output.output_def.name
                         )
-                        for output_handle in output_handles
-                        if output_handle.solid.name in solids_to_execute
+                        for node_output in outputs
+                        if node_output.node.name in solids_to_execute
                     ]
                 )
             # else input is unconnected
@@ -761,15 +759,16 @@ def _get_pipeline_subset_def(
         # input cannot be loaded from config. Instead of throwing a DagsterInvalidDefinitionError,
         # we re-raise a DagsterInvalidSubsetError.
         raise DagsterInvalidSubsetError(
-            f"The attempted subset {str_format_set(solids_to_execute)} for {pipeline_def.target_type} "
-            f"{pipeline_def.name} results in an invalid {pipeline_def.target_type}"
+            f"The attempted subset {str_format_set(solids_to_execute)} for"
+            f" {pipeline_def.target_type} {pipeline_def.name} results in an invalid"
+            f" {pipeline_def.target_type}"
         ) from exc
 
 
 def _iterate_all_nodes(root_node_dict: Mapping[str, Node]) -> Iterator[Node]:
     for node in root_node_dict.values():
         yield node
-        if node.is_graph:
+        if isinstance(node, GraphNode):
             yield from _iterate_all_nodes(node.definition.ensure_graph_def().node_dict)
 
 

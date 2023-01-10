@@ -1,9 +1,5 @@
-import os
-import sys
-
 import click
 
-from .._core.instance import DagsterInstance
 from ..version import __version__
 from .api import api_cli
 from .asset import asset_cli
@@ -35,7 +31,7 @@ def create_dagster_cli():
     )
     @click.version_option(__version__, "--version", "-v")
     def group():
-        "CLI tools for working with Dagster."
+        """CLI tools for working with Dagster."""
 
     return group
 

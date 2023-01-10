@@ -120,7 +120,6 @@ class DagsterDaemonController(AbstractContextManager):
         error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
         handler: str = "default",
     ):
-
         self._daemon_uuid = str(uuid.uuid4())
 
         self._daemons = {}
@@ -221,7 +220,8 @@ class DagsterDaemonController(AbstractContextManager):
 
         if failed_daemons:
             self._logger.error(
-                f"Stopping dagster-daemon process since the following threads are no longer running: {failed_daemons}"
+                "Stopping dagster-daemon process since the following threads are no longer"
+                f" running: {failed_daemons}"
             )
             raise Exception("Stopped dagster-daemon process due to threads no longer running")
 
@@ -234,7 +234,8 @@ class DagsterDaemonController(AbstractContextManager):
 
         if failed_daemons:
             self._logger.error(
-                f"Stopping dagster-daemon process since the following threads are no longer sending heartbeats: {failed_daemons}"
+                "Stopping dagster-daemon process since the following threads are no longer sending"
+                f" heartbeats: {failed_daemons}"
             )
             raise Exception("Stopped dagster-daemon process due to thread heartbeat failure")
 
@@ -318,7 +319,6 @@ def all_daemons_healthy(
     """
     True if all required daemons have had a recent heartbeat with no errors
     """
-
     statuses_by_type = get_daemon_statuses(
         instance,
         daemon_types=instance.get_required_daemon_types(),
@@ -339,7 +339,6 @@ def all_daemons_live(
     """
     True if all required daemons have had a recent heartbeat, regardless of if it contained errors.
     """
-
     statuses_by_type = get_daemon_statuses(
         instance,
         daemon_types=instance.get_required_daemon_types(),

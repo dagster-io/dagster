@@ -8,10 +8,15 @@ from base64 import standard_b64encode as b64
 from typing import Any, Dict, Mapping, Optional, Sequence, cast
 
 import requests
-
-from dagster import Failure, Field, IntSource, RetryRequested, StringSource
-from dagster import _check as check
-from dagster import resource
+from dagster import (
+    Failure,
+    Field,
+    IntSource,
+    RetryRequested,
+    StringSource,
+    _check as check,
+    resource,
+)
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.utils import coerce_valid_log_level
 
@@ -181,7 +186,6 @@ class DbtRpcResource(DbtResource):
         Returns:
             Response: the HTTP response from the dbt RPC server.
         """
-
         explicit_params = dict(models=models, exclude=exclude)
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="list", params=params)
@@ -268,7 +272,6 @@ class DbtRpcResource(DbtResource):
         Returns:
             Response: the HTTP response from the dbt RPC server.
         """
-
         explicit_params = dict(models=models, exclude=exclude)
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="compile", params=params)
@@ -530,8 +533,8 @@ class DbtRpcSyncResource(DbtRpcResource):
 
     def _get_result(self, data: Optional[str] = None) -> DbtRpcOutput:
         """Sends a request to the dbt RPC server and continuously polls for the status of a request
-        until the state is ``success``."""
-
+        until the state is ``success``.
+        """
         out = super()._get_result(data)
         request_token: str = check.not_none(out.result.get("request_token"))
 
@@ -589,19 +592,15 @@ def dbt_rpc_resource(context) -> DbtRpcResource:
     <https://docs.dagster.io/concepts/configuration/configured>`_ method.
 
     Examples:
+        .. code-block:: python
 
-    Examples:
+            from dagster_dbt import dbt_rpc_resource
 
-    .. code-block:: python
+            custom_dbt_rpc_resource = dbt_rpc_resource.configured({"host": "80.80.80.80","port": 8080,})
 
-        from dagster_dbt import dbt_rpc_resource
-
-        custom_dbt_rpc_resource = dbt_rpc_resource.configured({"host": "80.80.80.80","port": 8080,})
-
-        @job(resource_defs={"dbt_rpc": custom_dbt_rpc_sync_resource})
-        def dbt_rpc_job():
-            # Run ops with `required_resource_keys={"dbt_rpc", ...}`.
-
+            @job(resource_defs={"dbt_rpc": custom_dbt_rpc_sync_resource})
+            def dbt_rpc_job():
+                # Run ops with `required_resource_keys={"dbt_rpc", ...}`.
     """
     return DbtRpcResource(
         host=context.resource_config["host"], port=context.resource_config["port"]
@@ -626,17 +625,15 @@ def dbt_rpc_sync_resource(
     <https://docs.dagster.io/concepts/configuration/configured>`_ method.
 
     Examples:
+        .. code-block:: python
 
-    .. code-block:: python
+            from dagster_dbt import dbt_rpc_sync_resource
 
-        from dagster_dbt import dbt_rpc_sync_resource
+            custom_sync_dbt_rpc_resource = dbt_rpc_sync_resource.configured({"host": "80.80.80.80","port": 8080,})
 
-        custom_sync_dbt_rpc_resource = dbt_rpc_sync_resource.configured({"host": "80.80.80.80","port": 8080,})
-
-        @job(resource_defs={"dbt_rpc": custom_dbt_rpc_sync_resource})
-        def dbt_rpc_sync_job():
-            # Run ops with `required_resource_keys={"dbt_rpc", ...}`.
-
+            @job(resource_defs={"dbt_rpc": custom_dbt_rpc_sync_resource})
+            def dbt_rpc_sync_job():
+                # Run ops with `required_resource_keys={"dbt_rpc", ...}`.
     """
     return DbtRpcSyncResource(
         host=context.resource_config["host"],

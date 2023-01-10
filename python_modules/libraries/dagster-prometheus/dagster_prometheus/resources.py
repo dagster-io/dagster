@@ -1,9 +1,10 @@
 import prometheus_client
+from dagster import (
+    Field,
+    _check as check,
+    resource,
+)
 from prometheus_client.exposition import default_handler
-
-from dagster import Field
-from dagster import _check as check
-from dagster import resource
 
 
 class PrometheusResource:
@@ -44,7 +45,8 @@ class PrometheusResource:
                 'content' is the data which should be used to form the HTTP
                 Message Body.
         This overwrites all metrics with the same job and grouping_key.
-        This uses the PUT HTTP method."""
+        This uses the PUT HTTP method.
+        """
         prometheus_client.push_to_gateway(
             gateway=self.gateway,
             job=job,
@@ -67,7 +69,8 @@ class PrometheusResource:
                 See the 'prometheus_client.push_to_gateway' documentation
                 for implementation requirements.
         This replaces metrics with the same name, job and grouping_key.
-        This uses the POST HTTP method."""
+        This uses the POST HTTP method.
+        """
         prometheus_client.pushadd_to_gateway(
             gateway=self.gateway,
             job=job,
@@ -89,7 +92,8 @@ class PrometheusResource:
                 See the 'prometheus_client.push_to_gateway' documentation
                 for implementation requirements.
         This deletes metrics with the given job and grouping_key.
-        This uses the DELETE HTTP method."""
+        This uses the DELETE HTTP method.
+        """
         prometheus_client.delete_from_gateway(
             gateway=self.gateway,
             job=job,
@@ -103,16 +107,19 @@ class PrometheusResource:
     {
         "gateway": Field(
             str,
-            description="the url for your push gateway. Either of the form "
-            "'http://pushgateway.local', or 'pushgateway.local'. "
-            "Scheme defaults to 'http' if none is provided",
+            description=(
+                "the url for your push gateway. Either of the form "
+                "'http://pushgateway.local', or 'pushgateway.local'. "
+                "Scheme defaults to 'http' if none is provided"
+            ),
         ),
         "timeout": Field(
             int,
             default_value=30,
             is_required=False,
-            description="is how long delete will attempt to connect before giving up. "
-            "Defaults to 30s.",
+            description=(
+                "is how long delete will attempt to connect before giving up. Defaults to 30s."
+            ),
         ),
     },
     description="""This resource is for sending metrics to a Prometheus Pushgateway.""",

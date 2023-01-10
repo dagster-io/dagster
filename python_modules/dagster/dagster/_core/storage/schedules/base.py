@@ -140,7 +140,11 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """Call this method to run any optional data migrations for optimized reads"""
 
     def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
-        """Allows for optimizing database connection / use in the context of a long lived dagit process"""
+        """Allows for optimizing database connection / use in the context of a long lived dagit process
+        """
 
     def alembic_version(self):
         return None
+
+    def dispose(self):
+        """Explicit lifecycle management."""

@@ -1,14 +1,18 @@
 from typing import AbstractSet, Any, Mapping, Optional, cast
 
-from dagster import DagsterRun, JobDefinition, OpDefinition
-from dagster import _check as check
+from dagster import (
+    DagsterRun,
+    JobDefinition,
+    OpDefinition,
+    _check as check,
+)
 from dagster._annotations import public
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.execution.context.compute import AbstractComputeExecutionContext
 from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._legacy import PipelineDefinition, PipelineRun, SolidDefinition
+from dagster._legacy import PipelineDefinition
 from dagster._utils.backcompat import deprecation_warning
 
 
@@ -131,7 +135,8 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     @property
     def resources(self) -> Any:
         """collections.namedtuple: A dynamically-created type whose properties allow access to
-        resources."""
+        resources.
+        """
         return self._pipeline_context.scoped_resources_builder.build(
             required_resource_keys=self._resource_keys_to_init,
         )
@@ -143,7 +148,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         return cast(DagsterRun, self._pipeline_context.pipeline_run)
 
     @property
-    def pipeline_run(self) -> PipelineRun:
+    def pipeline_run(self) -> DagsterRun:
         deprecation_warning(
             "DagstermillExecutionContext.pipeline_run",
             "0.17.0",
@@ -170,7 +175,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         return cast(OpDefinition, self._pipeline_def.solid_def_named(self.solid_name))
 
     @property
-    def solid_def(self) -> SolidDefinition:
+    def solid_def(self) -> OpDefinition:
         """:class:`dagster.SolidDefinition`: The solid definition for the context.
 
         In interactive contexts, this may be a dagstermill-specific shim, depending whether a
@@ -181,7 +186,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
             "0.17.0",
             "use the 'op_def' property instead.",
         )
-        return cast(SolidDefinition, self._pipeline_def.solid_def_named(self.solid_name))
+        return cast(OpDefinition, self._pipeline_def.solid_def_named(self.solid_name))
 
     @property
     def solid(self) -> Node:
@@ -201,7 +206,8 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     @property
     def op_config(self) -> Any:
         """collections.namedtuple: A dynamically-created type whose properties allow access to
-        op-specific config."""
+        op-specific config.
+        """
         if self._solid_config:
             return self._solid_config
 
@@ -211,7 +217,8 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     @property
     def solid_config(self) -> Any:
         """collections.namedtuple: A dynamically-created type whose properties allow access to
-        solid-specific config."""
+        solid-specific config.
+        """
         deprecation_warning(
             "DagstermillExecutionContext.solid_config",
             "0.17.0",

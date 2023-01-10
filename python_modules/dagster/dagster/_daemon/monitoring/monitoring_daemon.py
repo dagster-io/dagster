@@ -2,14 +2,16 @@ import logging
 import sys
 import time
 
-from dagster import DagsterInstance
-from dagster import _check as check
+from dagster import (
+    DagsterInstance,
+    _check as check,
+)
 from dagster._core.events import DagsterEventType
 from dagster._core.launcher import WorkerStatus
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
-    PipelineRun,
-    PipelineRunStatus,
+    DagsterRun,
+    DagsterRunStatus,
     RunsFilter,
 )
 from dagster._core.workspace.context import IWorkspace, IWorkspaceProcessContext
@@ -19,7 +21,7 @@ RESUME_RUN_LOG_MESSAGE = "Launching a new run worker to resume run"
 
 
 def monitor_starting_run(instance: DagsterInstance, run, logger):
-    check.invariant(run.status == PipelineRunStatus.STARTING)
+    check.invariant(run.status == DagsterRunStatus.STARTING)
     run_stats = instance.get_run_stats(run.run_id)
 
     launch_time = check.not_none(
@@ -27,9 +29,9 @@ def monitor_starting_run(instance: DagsterInstance, run, logger):
     )
     if time.time() - launch_time >= instance.run_monitoring_start_timeout_seconds:
         msg = (
-            f"Run {run.run_id} has been running for {time.time() - launch_time} seconds, "
-            f"which is longer than the timeout of {instance.run_monitoring_start_timeout_seconds} seconds to start. "
-            "Marking run failed"
+            f"Run {run.run_id} has been running for {time.time() - launch_time} seconds, which is"
+            f" longer than the timeout of {instance.run_monitoring_start_timeout_seconds} seconds"
+            " to start. Marking run failed"
         )
         logger.info(msg)
         instance.report_run_failed(run, msg)
@@ -45,10 +47,10 @@ def count_resume_run_attempts(instance: DagsterInstance, run_id: str):
 def monitor_started_run(
     instance: DagsterInstance,
     workspace: IWorkspace,
-    run: PipelineRun,
+    run: DagsterRun,
     logger: logging.Logger,
 ):
-    check.invariant(run.status == PipelineRunStatus.STARTED)
+    check.invariant(run.status == DagsterRunStatus.STARTED)
     check_health_result = instance.run_launcher.check_run_worker_health(run)
     if check_health_result.status not in [WorkerStatus.RUNNING, WorkerStatus.SUCCESS]:
         num_prev_attempts = count_resume_run_attempts(instance, run.run_id)
@@ -56,7 +58,7 @@ def monitor_started_run(
         status_changed = run.status != recheck_run.status
         if status_changed:
             msg = (
-                f"Detected run status changed during monitoring loop: "
+                "Detected run status changed during monitoring loop: "
                 f"{run.status} -> {recheck_run.status}, disregarding for now"
             )
             logger.info(msg)
@@ -77,14 +79,14 @@ def monitor_started_run(
         else:
             if instance.run_launcher.supports_resume_run:
                 msg = (
-                    f"Detected run worker status {check_health_result}. Marking run {run.run_id} as "
-                    "failed, because it has surpassed the configured maximum attempts to resume the "
-                    f"run: {instance.run_monitoring_max_resume_run_attempts}."
+                    f"Detected run worker status {check_health_result}. Marking run {run.run_id} as"
+                    " failed, because it has surpassed the configured maximum attempts to resume"
+                    f" the run: {instance.run_monitoring_max_resume_run_attempts}."
                 )
             else:
                 msg = (
-                    f"Detected run worker status {check_health_result}. Marking run {run.run_id} as "
-                    "failed."
+                    f"Detected run worker status {check_health_result}. Marking run {run.run_id} as"
+                    " failed."
                 )
             logger.info(msg)
             instance.report_run_failed(run, msg)
@@ -112,19 +114,18 @@ def execute_monitoring_iteration(
         try:
             logger.info(f"Checking run {run.run_id}")
 
-            if run.status == PipelineRunStatus.STARTING:
+            if run.status == DagsterRunStatus.STARTING:
                 monitor_starting_run(instance, run, logger)
-            elif run.status == PipelineRunStatus.STARTED:
-
+            elif run.status == DagsterRunStatus.STARTED:
                 monitor_started_run(instance, workspace, run, logger)
-            elif run.status == PipelineRunStatus.CANCELING:
+            elif run.status == DagsterRunStatus.CANCELING:
                 # TODO: implement canceling timeouts
                 pass
             else:
                 check.invariant(False, f"Unexpected run status: {run.status}")
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            logger.error(f"Hit error while monitoring run {run.run_id}: " f"{str(error_info)}")
+            logger.error(f"Hit error while monitoring run {run.run_id}: {str(error_info)}")
             yield error_info
         else:
             yield

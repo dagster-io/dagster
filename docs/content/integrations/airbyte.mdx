@@ -53,7 +53,7 @@ from dagster_airbyte import airbyte_resource
 airbyte_instance = airbyte_resource.configured(
     {
         "host": "localhost",
-        "port": 8000,
+        "port": "8000",
         # If using basic auth, include username and password:
         "username": "airbyte",
         "password": {"env": "AIRBYTE_PASSWORD"},
@@ -198,7 +198,7 @@ In this case, we have an Airbyte connection which is storing data in the `starga
 
 ```python startafter=start_add_downstream_assets endbefore=end_add_downstream_assets file=/integrations/airbyte/airbyte.py dedent=4
 import json
-from dagster import asset, repository, with_resources
+from dagster import asset, Definitions
 from dagster_airbyte import load_assets_from_airbyte_instance
 
 airbyte_assets = load_assets_from_airbyte_instance(
@@ -211,14 +211,10 @@ def stargazers_file(stargazers):
     with open("stargazers.json", "w", encoding="utf8") as f:
         f.write(json.dumps(stargazers, indent=2))
 
-@repository
-def my_repo():
-    return [
-        with_resources(
-            [airbyte_assets, stargazers_file],
-            {"snowflake_io_manager": snowflake_io_manager},
-        )
-    ]
+defs = Definitions(
+    assets=[airbyte_assets, stargazers_file],
+    resources={"snowflake_io_manager": snowflake_io_manager},
+)
 ```
 
 ---
@@ -228,9 +224,14 @@ def my_repo():
 Once you have Airbyte assets, you can define a job that runs some or all of these assets on a schedule, triggering the underlying Airbyte sync.
 
 ```python startafter=start_schedule_assets endbefore=end_schedule_assets file=/integrations/airbyte/airbyte.py dedent=4
-from dagster import ScheduleDefinition, define_asset_job, repository, AssetSelection
+from dagster import (
+    ScheduleDefinition,
+    define_asset_job,
+    AssetSelection,
+    Definitions,
+)
 
-# materialize all assets in the repository
+# materialize all assets
 run_everything_job = define_asset_job("run_everything", selection="*")
 
 # only run my_airbyte_connection and downstream assets
@@ -238,10 +239,9 @@ my_etl_job = define_asset_job(
     "my_etl_job", AssetSelection.groups("my_airbyte_connection").downstream()
 )
 
-@repository
-def my_repo():
-    return [
-        airbyte_assets,
+defs = Definitions(
+    assets=[airbyte_assets],
+    schedules=[
         ScheduleDefinition(
             job=my_etl_job,
             cron_schedule="@daily",
@@ -250,7 +250,8 @@ def my_repo():
             job=run_everything_job,
             cron_schedule="@weekly",
         ),
-    ]
+    ],
+)
 ```
 
 Refer to the [Schedule documentation](/concepts/partitions-schedules-sensors/schedules#running-the-scheduler) for more info on running jobs on a schedule.
@@ -274,9 +275,29 @@ If you have questions on using Airbyte with Dagster, we'd love to hear from you:
   </a>
 </p>
 
-### Related material
+---
 
-- [`dagster-airbyte` API reference](/\_apidocs/libraries/dagster-airbyte)
-- [Software-defined assets](/concepts/assets/software-defined-assets)
-- [Resources](/concepts/resources)
-- [Scheduling Dagster jobs](/concepts/partitions-schedules-sensors/schedules#running-the-scheduler)
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    href="/\_apidocs/libraries/dagster-airbyte"
+    title="dagster-airbyte API reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/guides/dagster/airbyte-ingestion-as-code"
+    title="Airbyte ingestion as code"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/assets/software-defined-assets"
+    title="Software-defined assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/resources"
+    title="Resources"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/schedules#running-the-scheduler"
+    title="Scheduling Dagster jobs"
+  ></ArticleListItem>
+</ArticleList>

@@ -1,14 +1,35 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    DefaultDict,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 import dagster._check as check
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
-from .dependency import DependencyStructure, IDependencyDefinition, Node, NodeInvocation
+from .dependency import (
+    DependencyDefinition,
+    DependencyStructure,
+    GraphNode,
+    IDependencyDefinition,
+    Node,
+    NodeInvocation,
+    OpNode,
+)
 
 if TYPE_CHECKING:
     from .graph_definition import GraphDefinition
-    from .solid_definition import NodeDefinition
+    from .node_definition import NodeDefinition
 
 
 def validate_dependency_dict(
@@ -26,59 +47,55 @@ def validate_dependency_dict(
 
     if not isinstance(dependencies, dict):
         raise DagsterInvalidDefinitionError(
-            prelude
-            + "Received value {val} of type {type} at the top level.".format(
-                val=dependencies, type=type(dependencies)
-            )
+            prelude + "Received value {dependencies} of type {type(dependencies)} at the top level."
         )
 
     for key, dep_dict in dependencies.items():
-        if not (isinstance(key, str) or isinstance(key, NodeInvocation)):
+        if not isinstance(key, (str, NodeInvocation)):
             raise DagsterInvalidDefinitionError(
-                prelude + "Expected str or NodeInvocation key in the top level dict. "
-                "Received value {val} of type {type}".format(val=key, type=type(key))
+                prelude
+                + "Expected str or NodeInvocation key in the top level dict. "
+                "Received value {key} of type {type(key)}"
             )
         if not isinstance(dep_dict, dict):
             if isinstance(dep_dict, IDependencyDefinition):
                 raise DagsterInvalidDefinitionError(
                     prelude
-                    + "Received a IDependencyDefinition one layer too high under key {key}. "
+                    + f"Received a IDependencyDefinition one layer too high under key {key}. "
                     "The DependencyDefinition should be moved in to a dict keyed on "
-                    "input name.".format(key=key)
+                    "input name."
                 )
             else:
                 raise DagsterInvalidDefinitionError(
-                    prelude + "Under key {key} received value {val} of type {type}. "
-                    "Expected dict[str, DependencyDefinition]".format(
-                        key=key, val=dep_dict, type=type(dep_dict)
-                    )
+                    prelude
+                    + f"Under key {key} received value {dep_dict} of type {type(dep_dict)}. "
+                    "Expected dict[str, DependencyDefinition]"
                 )
 
         for input_key, dep in dep_dict.items():
             if not isinstance(input_key, str):
                 raise DagsterInvalidDefinitionError(
-                    prelude + f"Received non-string key in the inner dict for key {key}. "
+                    prelude
+                    + f"Received non-string key in the inner dict for key {key}. "
                     f"Unexpected inner dict key type: {type(input_key)}"
                 )
             if not isinstance(dep, IDependencyDefinition):
                 raise DagsterInvalidDefinitionError(
                     prelude
-                    + 'Expected IDependencyDefinition for solid "{key}" input "{input_key}". '
-                    "Received value {val} of type {type}.".format(
-                        key=key, input_key=input_key, val=dep, type=type(dep)
-                    )
+                    + f'Expected IDependencyDefinition for node "{key}" input "{input_key}". '
+                    f"Received value {dep} of type {type(dep)}."
                 )
 
     return dependencies
 
 
 def create_execution_structure(
-    solid_defs: Sequence["NodeDefinition"],
+    node_defs: Sequence["NodeDefinition"],
     dependencies_dict: Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]],
     graph_definition: "GraphDefinition",
 ) -> Tuple[DependencyStructure, Mapping[str, Node]]:
     """This builder takes the dependencies dictionary specified during creation of the
-    PipelineDefinition object and builds (1) the execution structure and (2) a solid dependency
+    PipelineDefinition object and builds (1) the execution structure and (2) a node dependency
     dictionary.
 
     For example, for the following dependencies:
@@ -107,7 +124,7 @@ def create_execution_structure(
 
     This will create:
 
-    pipeline_solid_dict = {
+    node_dict = {
         'giver': <dagster._core.definitions.dependency.Solid object>,
         'sleeper_1': <dagster._core.definitions.dependency.Solid object>,
         'sleeper_2': <dagster._core.definitions.dependency.Solid object>,
@@ -119,25 +136,24 @@ def create_execution_structure(
     as well as a dagster._core.definitions.dependency.DependencyStructure object.
     """
     from .graph_definition import GraphDefinition
-    from .solid_definition import NodeDefinition
+    from .node_definition import NodeDefinition
 
-    check.sequence_param(solid_defs, "solid_defs", of_type=NodeDefinition)
+    check.sequence_param(node_defs, "node_defs", of_type=NodeDefinition)
     check.mapping_param(
         dependencies_dict,
         "dependencies_dict",
         key_type=(str, NodeInvocation),
         value_type=dict,
     )
-    # graph_definition is none in the context of a pipeline
     check.inst_param(graph_definition, "graph_definition", GraphDefinition)
 
     # Same as dep_dict but with NodeInvocation replaced by alias string
-    aliased_dependencies_dict = {}
+    aliased_dependencies_dict: Dict[str, Mapping[str, IDependencyDefinition]] = {}
 
     # Keep track of solid name -> all aliases used and alias -> name
-    name_to_aliases = defaultdict(set)
-    alias_to_solid_instance = {}
-    alias_to_name = {}
+    name_to_aliases: DefaultDict[str, Set[str]] = defaultdict(set)
+    alias_to_solid_instance: Dict[str, NodeInvocation] = {}
+    alias_to_name: Dict[str, str] = {}
 
     for solid_key, input_dep_dict in dependencies_dict.items():
         # We allow deps of the form dependencies={'foo': DependencyDefinition('bar')}
@@ -152,115 +168,123 @@ def create_execution_structure(
         alias_to_name[alias] = solid_key.name
         aliased_dependencies_dict[alias] = input_dep_dict
 
-    pipeline_solid_dict = _build_pipeline_solid_dict(
-        solid_defs, name_to_aliases, alias_to_solid_instance, graph_definition
+    node_dict = _build_graph_node_dict(
+        node_defs, name_to_aliases, alias_to_solid_instance, graph_definition
     )
 
-    _validate_dependencies(aliased_dependencies_dict, pipeline_solid_dict, alias_to_name)
+    _validate_dependencies(aliased_dependencies_dict, node_dict, alias_to_name)
 
     dependency_structure = DependencyStructure.from_definitions(
-        pipeline_solid_dict, aliased_dependencies_dict
+        node_dict, aliased_dependencies_dict
     )
 
-    return dependency_structure, pipeline_solid_dict
+    return dependency_structure, node_dict
 
 
-def _build_pipeline_solid_dict(
-    solid_defs: Sequence["NodeDefinition"],
+def _build_graph_node_dict(
+    node_defs: Sequence["NodeDefinition"],
     name_to_aliases: Mapping[str, Set[str]],
-    alias_to_solid_instance: Mapping[str, NodeInvocation],
+    alias_to_node_invocation: Mapping[str, NodeInvocation],
     graph_definition,
 ) -> Mapping[str, Node]:
-    pipeline_solids = []
-    for solid_def in solid_defs:
-        uses_of_solid = name_to_aliases.get(solid_def.name, {solid_def.name})
+    from .graph_definition import GraphDefinition
 
-        for alias in uses_of_solid:
-            solid_instance = alias_to_solid_instance.get(alias)
+    nodes: List[Node] = []
+    for node_def in node_defs:
+        uses_of_node = name_to_aliases.get(node_def.name, {node_def.name})
 
-            solid_instance_tags = solid_instance.tags if solid_instance else {}
-            hook_defs = solid_instance.hook_defs if solid_instance else frozenset()
-            retry_policy = solid_instance.retry_policy if solid_instance else None
-            pipeline_solids.append(
-                Node(
+        for alias in uses_of_node:
+            node_invocation = alias_to_node_invocation.get(alias)
+
+            node_invocation_tags = node_invocation.tags if node_invocation else {}
+            hook_defs = node_invocation.hook_defs if node_invocation else frozenset()
+            retry_policy = node_invocation.retry_policy if node_invocation else None
+            node: Node
+            if isinstance(node_def, GraphDefinition):
+                node = GraphNode(
                     name=alias,
-                    definition=solid_def,
+                    definition=node_def,
                     graph_definition=graph_definition,
-                    tags=solid_instance_tags,
+                    tags=node_invocation_tags,
                     hook_defs=hook_defs,
                     retry_policy=retry_policy,
                 )
-            )
+            elif isinstance(node_def, OpDefinition):
+                node = OpNode(
+                    name=alias,
+                    definition=node_def,
+                    graph_definition=graph_definition,
+                    tags=node_invocation_tags,
+                    hook_defs=hook_defs,
+                    retry_policy=retry_policy,
+                )
+            else:
+                check.failed(f"Unexpected node_def type {node_def}")
+            nodes.append(node)
 
-    return {ps.name: ps for ps in pipeline_solids}
+    return {node.name: node for node in nodes}
 
 
-def _validate_dependencies(dependencies, solid_dict, alias_to_name):
-    for from_solid, dep_by_input in dependencies.items():
+def _validate_dependencies(
+    dependencies: Mapping[str, Mapping[str, IDependencyDefinition]],
+    node_dict: Mapping[str, Node],
+    alias_to_name: Mapping[str, str],
+) -> None:
+    for from_node, dep_by_input in dependencies.items():
         for from_input, dep_def in dep_by_input.items():
-            for dep in dep_def.get_solid_dependencies():
-
-                if from_solid == dep.solid:
+            dep_def = cast(DependencyDefinition, dep_def)
+            for dep in dep_def.get_node_dependencies():
+                if from_node == dep.node:
                     raise DagsterInvalidDefinitionError(
-                        (
-                            "Invalid dependencies: circular reference detected in node "
-                            '"{from_solid}" input "{from_input}"'
-                        ).format(from_solid=from_solid, from_input=from_input)
+                        "Invalid dependencies: circular reference detected in node "
+                        f'"{from_node}" input "{from_input}"'
                     )
 
-                if not from_solid in solid_dict:
-                    aliased_solid = alias_to_name.get(from_solid)
-                    if aliased_solid == from_solid:
+                if from_node not in node_dict:
+                    aliased_node = alias_to_name.get(from_node)
+                    if aliased_node == from_node:
                         raise DagsterInvalidDefinitionError(
-                            'Invalid dependencies: node "{solid}" in dependency dictionary not '
-                            "found in node list".format(solid=from_solid)
+                            f'Invalid dependencies: node "{from_node}" in dependency dictionary not'
+                            " found in node list"
                         )
                     else:
                         raise DagsterInvalidDefinitionError(
-                            (
-                                'Invalid dependencies: node "{aliased_solid}" (aliased by '
-                                '"{from_solid}" in dependency dictionary) not found in node list'
-                            ).format(aliased_solid=aliased_solid, from_solid=from_solid)
+                            f'Invalid dependencies: node "{aliased_node}" (aliased by '
+                            f'"{from_node}" in dependency dictionary) not found in node list'
                         )
-                if not solid_dict[from_solid].definition.has_input(from_input):
+                if not node_dict[from_node].definition.has_input(from_input):
                     from .graph_definition import GraphDefinition
 
-                    input_list = solid_dict[from_solid].definition.input_dict.keys()
+                    input_list = node_dict[from_node].definition.input_dict.keys()
                     node_type = (
                         "graph"
-                        if isinstance(solid_dict[from_solid].definition, GraphDefinition)
-                        else "solid"
+                        if isinstance(node_dict[from_node].definition, GraphDefinition)
+                        else "op"
                     )
                     raise DagsterInvalidDefinitionError(
-                        'Invalid dependencies: {node_type} "{from_solid}" does not have input '
-                        '"{from_input}". '.format(
-                            node_type=node_type, from_solid=from_solid, from_input=from_input
-                        )
-                        + "Available inputs: {input_list}".format(input_list=list(input_list))
+                        f'Invalid dependencies: {node_type} "{from_node}" does not have input '
+                        f'"{from_input}". Available inputs: {list(input_list)}'
                     )
 
-                if not dep.solid in solid_dict:
+                if dep.node not in node_dict:
                     raise DagsterInvalidDefinitionError(
-                        'Invalid dependencies: node "{dep.solid}" not found in node list. '
-                        'Listed as dependency for node "{from_solid}" input "{from_input}" '.format(
-                            dep=dep, from_solid=from_solid, from_input=from_input
-                        )
+                        f'Invalid dependencies: node "{dep.node}" not found in node list. '
+                        f'Listed as dependency for node "{from_node}" input "{from_input}" '
                     )
 
-                if not solid_dict[dep.solid].definition.has_output(dep.output):
+                if not node_dict[dep.node].definition.has_output(dep.output):
                     raise DagsterInvalidDefinitionError(
-                        'Invalid dependencies: node "{dep.solid}" does not have output '
-                        '"{dep.output}". Listed as dependency for node "{from_solid} input '
-                        '"{from_input}"'.format(
-                            dep=dep, from_solid=from_solid, from_input=from_input
-                        )
+                        f'Invalid dependencies: node "{dep.node}" does not have output '
+                        f'"{dep.output}". Listed as dependency for node "{from_node} input '
+                        f'"{from_input}"'
                     )
 
-                input_def = solid_dict[from_solid].definition.input_def_named(from_input)
+                input_def = node_dict[from_node].definition.input_def_named(from_input)
 
                 if dep_def.is_fan_in() and not input_def.dagster_type.supports_fan_in:
                     raise DagsterInvalidDefinitionError(
-                        f'Invalid dependencies: for node "{dep.solid}" input "{input_def.name}", the '
-                        f'DagsterType "{input_def.dagster_type.display_name}" does not support fanning in '
-                        "(MultiDependencyDefinition). Use the List type, since fanning in will result in a list."
+                        f'Invalid dependencies: for node "{dep.node}" input "{input_def.name}", the'
+                        f' DagsterType "{input_def.dagster_type.display_name}" does not support'
+                        " fanning in (MultiDependencyDefinition). Use the List type, since fanning"
+                        " in will result in a list."
                     )

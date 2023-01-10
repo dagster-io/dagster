@@ -14,7 +14,7 @@ def get_version() -> str:
 
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
-pin = "" if ver == "0+dev" else f"=={ver}"
+pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-airflow",
     version=ver,
@@ -34,11 +34,9 @@ setup(
     packages=find_packages(exclude=["dagster_airflow_tests*"]),
     install_requires=[
         f"dagster{pin}",
-        "docker",
-        "python-dateutil>=2.8.0",
+        "docker>=5.0.3,<6.0.0",
         "lazy_object_proxy",
-        # https://issues.apache.org/jira/browse/AIRFLOW-6854
-        'typing_extensions; python_version>="3.8"',
+        "pendulum",
     ],
     project_urls={
         # airflow will embed a link this in the providers page UI
@@ -46,21 +44,25 @@ setup(
     },
     extras_require={
         "kubernetes": ["kubernetes>=3.0.0", "cryptography>=2.0.0"],
-        "test": [
-            # Airflow should be provided by the end user, not us. For example, GCP Cloud
-            # Composer ships a fork of Airflow; we don't want to override it with our install.
-            # See https://github.com/dagster-io/dagster/issues/2701
-            "apache-airflow==1.10.10",
-            # https://github.com/dagster-io/dagster/issues/3858
-            "sqlalchemy>=1.0,<1.4.0",
-            "marshmallow-sqlalchemy<0.26.0",
-            "boto3==1.9.*",
-            "kubernetes==10.0.1",
-            # New WTForms release breaks the version of airflow used by tests
-            "WTForms<3.0.0",
+        "test_airflow_2": [
+            "apache-airflow>=2.0.0,<3.0.0",
+            "boto3>=1.26.7",
+            "kubernetes>=10.0.1",
+            "apache-airflow-providers-docker>=3.2.0,<4",
+            "apache-airflow-providers-apache-spark>=3.0.0,<4",
+        ],
+        "test_airflow_1": [
+            "apache-airflow>=1.0.0,<2.0.0",
+            "boto3>=1.26.7",
+            "kubernetes>=10.0.1",
             # pinned based on certain incompatible versions of Jinja2, which is itself pinned
             # by apache-airflow==1.10.10
             "markupsafe<=2.0.1",
+            # New WTForms release breaks the version of airflow used by tests
+            "WTForms<3.0.0",
+            # https://github.com/dagster-io/dagster/issues/3858
+            "sqlalchemy>=1.0,<1.4.0",
+            "marshmallow-sqlalchemy<0.26.0",
         ],
     },
     entry_points={

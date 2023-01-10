@@ -2,10 +2,10 @@ import {Box, Button, Colors, Icon, Menu, Popover, Table, Tag, Tooltip} from '@da
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {ScheduleFragmentFragment, InstigationStatus, InstigationType} from '../graphql/graphql';
 import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
@@ -15,10 +15,9 @@ import {SchedulePartitionStatus} from './SchedulePartitionStatus';
 import {ScheduleSwitch} from './ScheduleSwitch';
 import {TimestampDisplay} from './TimestampDisplay';
 import {humanCronString} from './humanCronString';
-import {ScheduleFragment} from './types/ScheduleFragment';
 
 export const SchedulesTable: React.FC<{
-  schedules: ScheduleFragment[];
+  schedules: ScheduleFragmentFragment[];
   repoAddress: RepoAddress;
 }> = ({repoAddress, schedules}) => {
   const lastTick = 'Status of the last tick: One of `Started`, `Skipped`, `Requested`, `Failed`';
@@ -123,7 +122,7 @@ export const errorDisplay = (status: InstigationStatus, runningScheduleCount: nu
 };
 
 const ScheduleRow: React.FC<{
-  schedule: ScheduleFragment;
+  schedule: ScheduleFragmentFragment;
   repoAddress: RepoAddress;
 }> = (props) => {
   const {repoAddress, schedule} = props;

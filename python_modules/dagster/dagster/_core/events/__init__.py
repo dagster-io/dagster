@@ -32,22 +32,15 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.errors import DagsterError, HookExecutionError
-from dagster._core.execution.context.hook import HookContext
-from dagster._core.execution.context.system import (
-    IPlanContext,
-    IStepContext,
-    PlanExecutionContext,
-    PlanOrchestrationContext,
-    StepExecutionContext,
-)
+from dagster._core.errors import HookExecutionError
+from dagster._core.execution.context.system import IPlanContext, IStepContext, StepExecutionContext
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepFailureData, StepRetryData, StepSuccessData
 from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.captured_log_manager import CapturedLogContext
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._serdes import (
     DefaultNamedTupleSerializer,
     WhitelistMap,
@@ -61,7 +54,7 @@ from dagster._utils.timing import format_duration
 if TYPE_CHECKING:
     from dagster._core.definitions.events import ObjectStoreOperation
     from dagster._core.execution.plan.plan import ExecutionPlan
-    from dagster._core.execution.plan.step import ExecutionStep, StepKind
+    from dagster._core.execution.plan.step import StepKind
 
 EventSpecificData = Union[
     StepOutputData,
@@ -223,13 +216,13 @@ MARKER_EVENTS = {
 
 
 EVENT_TYPE_TO_PIPELINE_RUN_STATUS = {
-    DagsterEventType.RUN_START: PipelineRunStatus.STARTED,
-    DagsterEventType.RUN_SUCCESS: PipelineRunStatus.SUCCESS,
-    DagsterEventType.RUN_FAILURE: PipelineRunStatus.FAILURE,
-    DagsterEventType.RUN_ENQUEUED: PipelineRunStatus.QUEUED,
-    DagsterEventType.RUN_STARTING: PipelineRunStatus.STARTING,
-    DagsterEventType.RUN_CANCELING: PipelineRunStatus.CANCELING,
-    DagsterEventType.RUN_CANCELED: PipelineRunStatus.CANCELED,
+    DagsterEventType.RUN_START: DagsterRunStatus.STARTED,
+    DagsterEventType.RUN_SUCCESS: DagsterRunStatus.SUCCESS,
+    DagsterEventType.RUN_FAILURE: DagsterRunStatus.FAILURE,
+    DagsterEventType.RUN_ENQUEUED: DagsterRunStatus.QUEUED,
+    DagsterEventType.RUN_STARTING: DagsterRunStatus.STARTING,
+    DagsterEventType.RUN_CANCELING: DagsterRunStatus.CANCELING,
+    DagsterEventType.RUN_CANCELED: DagsterRunStatus.CANCELED,
 }
 
 PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN_STATUS.items()}
@@ -251,14 +244,16 @@ def _assert_type(
     )
     check.invariant(
         actual_type in _expected_type,
-        f"{method} only callable when event_type is {','.join([t.value for t in _expected_type])}, called on {actual_type}",
+        (
+            f"{method} only callable when event_type is"
+            f" {','.join([t.value for t in _expected_type])}, called on {actual_type}"
+        ),
     )
 
 
 def _validate_event_specific_data(
     event_type: DagsterEventType, event_specific_data: Optional["EventSpecificData"]
 ) -> Optional["EventSpecificData"]:
-
     if event_type == DagsterEventType.STEP_OUTPUT:
         check.inst_param(event_specific_data, "event_specific_data", StepOutputData)
     elif event_type == DagsterEventType.STEP_FAILURE:
@@ -347,7 +342,8 @@ class DagsterEventSerializer(DefaultNamedTupleSerializer):
             )
         except Exception:
             new_message = (
-                f"Could not deserialize event of type {event_type_value}. This event may have been written by a newer version of Dagster."
+                f"Could not deserialize event of type {event_type_value}. This event may have been"
+                " written by a newer version of Dagster."
                 + (f' Original message: "{message}"' if message else "")
             )
             return DagsterEvent(
@@ -402,7 +398,6 @@ class DagsterEvent(
         event_specific_data: Optional["EventSpecificData"] = None,
         message: Optional[str] = None,
     ) -> "DagsterEvent":
-
         event = DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
             pipeline_name=step_context.pipeline_name,
@@ -453,7 +448,6 @@ class DagsterEvent(
         message: Optional[str] = None,
         event_specific_data: Optional["EngineEventData"] = None,
     ) -> "DagsterEvent":
-
         event = DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
             pipeline_name=pipeline_name,
@@ -505,6 +499,10 @@ class DagsterEvent(
             check.opt_int_param(pid, "pid"),
             check.opt_str_param(step_key, "step_key"),
         )
+
+    @property
+    def node_handle(self) -> Optional[NodeHandle]:
+        return self.solid_handle
 
     @property
     def solid_name(self) -> str:
@@ -764,7 +762,6 @@ class DagsterEvent(
     def step_output_event(
         step_context: StepExecutionContext, step_output_data: StepOutputData
     ) -> "DagsterEvent":
-
         output_def = step_context.solid.output_def_named(
             step_output_data.step_output_handle.output_name
         )
@@ -773,19 +770,24 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_OUTPUT,
             step_context=step_context,
             event_specific_data=step_output_data,
-            message='Yielded output "{output_name}"{mapping_clause} of type "{output_type}".{type_check_clause}'.format(
-                output_name=step_output_data.step_output_handle.output_name,
-                output_type=output_def.dagster_type.display_name,
-                type_check_clause=(
-                    " Warning! Type check failed."
-                    if not step_output_data.type_check_data.success
-                    else " (Type check passed)."
+            message=(
+                'Yielded output "{output_name}"{mapping_clause} of type'
+                ' "{output_type}".{type_check_clause}'.format(
+                    output_name=step_output_data.step_output_handle.output_name,
+                    output_type=output_def.dagster_type.display_name,
+                    type_check_clause=(
+                        " Warning! Type check failed."
+                        if not step_output_data.type_check_data.success
+                        else " (Type check passed)."
+                    )
+                    if step_output_data.type_check_data
+                    else " (No type check).",
+                    mapping_clause=(
+                        f' mapping key "{step_output_data.step_output_handle.mapping_key}"'
+                    )
+                    if step_output_data.step_output_handle.mapping_key
+                    else "",
                 )
-                if step_output_data.type_check_data
-                else " (No type check).",
-                mapping_clause=f' mapping key "{step_output_data.step_output_handle.mapping_key}"'
-                if step_output_data.step_output_handle.mapping_key
-                else "",
             ),
         )
 
@@ -813,11 +815,13 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_UP_FOR_RETRY,
             step_context=step_context,
             event_specific_data=step_retry_data,
-            message='Execution of step "{step_key}" failed and has requested a retry{wait_str}.'.format(
-                step_key=step_context.step.key,
-                wait_str=" in {n} seconds".format(n=step_retry_data.seconds_to_wait)
-                if step_retry_data.seconds_to_wait
-                else "",
+            message=(
+                'Execution of step "{step_key}" failed and has requested a retry{wait_str}.'.format(
+                    step_key=step_context.step.key,
+                    wait_str=" in {n} seconds".format(n=step_retry_data.seconds_to_wait)
+                    if step_retry_data.seconds_to_wait
+                    else "",
+                )
             ),
         )
 
@@ -1052,7 +1056,6 @@ class DagsterEvent(
         log_manager: DagsterLogManager,
         resource_keys: AbstractSet[str],
     ) -> "DagsterEvent":
-
         return DagsterEvent.from_resource(
             DagsterEventType.RESOURCE_INIT_STARTED,
             pipeline_name=pipeline_name,
@@ -1072,7 +1075,6 @@ class DagsterEvent(
         resource_instances: Mapping[str, Any],
         resource_init_times: Mapping[str, str],
     ) -> "DagsterEvent":
-
         metadata_entries = []
         for key in resource_instances.keys():
             metadata_entries.extend(
@@ -1107,7 +1109,6 @@ class DagsterEvent(
         resource_keys: AbstractSet[str],
         error: SerializableErrorInfo,
     ) -> "DagsterEvent":
-
         return DagsterEvent.from_resource(
             DagsterEventType.RESOURCE_INIT_FAILURE,
             pipeline_name=pipeline_name,
@@ -1129,7 +1130,6 @@ class DagsterEvent(
         resource_keys: AbstractSet[str],
         error: SerializableErrorInfo,
     ) -> "DagsterEvent":
-
         return DagsterEvent.from_resource(
             DagsterEventType.ENGINE_EVENT,
             pipeline_name=pipeline_name,
@@ -1169,7 +1169,6 @@ class DagsterEvent(
     def object_store_operation(
         step_context: IStepContext, object_store_operation_result: "ObjectStoreOperation"
     ) -> "DagsterEvent":
-
         object_store_name = (
             "{object_store_name} ".format(
                 object_store_name=object_store_operation_result.object_store_name
@@ -1274,10 +1273,9 @@ class DagsterEvent(
         message_override: Optional[str] = None,
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     ) -> "DagsterEvent":
-
         message = f'Loaded input "{input_name}" using input manager "{manager_key}"'
         if upstream_output_name:
-            message += f', from output "{upstream_output_name}" of step ' f'"{upstream_step_key}"'
+            message += f', from output "{upstream_output_name}" of step "{upstream_step_key}"'
 
         return DagsterEvent.from_step(
             event_type=DagsterEventType.LOADED_INPUT,
@@ -1762,6 +1760,7 @@ class ComputeLogsCaptureData(
 #      |   Events    |      |  Operations |      |   Failures  |
 #      |             |      |             |      |             |
 ###################################################################################################
+
 
 # Keep these around to prevent issues like https://github.com/dagster-io/dagster/issues/3533
 @whitelist_for_serdes

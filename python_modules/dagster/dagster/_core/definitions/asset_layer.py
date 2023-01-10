@@ -19,15 +19,13 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
-from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._utils.backcompat import ExperimentalWarning
 
 from ..errors import DagsterInvalidSubsetError
 from .config import ConfigMapping
-from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle, SolidOutputHandle
+from .dependency import NodeHandle, NodeInputHandle, NodeOutput, NodeOutputHandle
 from .events import AssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
@@ -37,7 +35,8 @@ from .resource_definition import ResourceDefinition
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.resolved_asset_defs import ResolvedAssetDependencies
+    from dagster._core.definitions.partition_mapping import PartitionMapping
+    from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
     from dagster._core.execution.context.output import OutputContext
 
     from .partition import PartitionedConfig, PartitionsDefinition
@@ -51,6 +50,7 @@ class AssetOutputInfo(
             ("partitions_fn", Callable[["OutputContext"], Optional[AbstractSet[str]]]),
             ("partitions_def", Optional["PartitionsDefinition"]),
             ("is_required", bool),
+            ("code_version", Optional[str]),
         ],
     )
 ):
@@ -63,6 +63,7 @@ class AssetOutputInfo(
             for this asset.
         partitions_def (PartitionsDefinition, optional): Defines the set of valid partitions
             for this asset.
+        code_version (Optional[str], optional): The version of the code that generates this asset.
     """
 
     def __new__(
@@ -71,6 +72,7 @@ class AssetOutputInfo(
         partitions_fn: Optional[Callable[["OutputContext"], Optional[AbstractSet[str]]]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         is_required: bool = True,
+        code_version: Optional[str] = None,
     ):
         return super().__new__(
             cls,
@@ -78,6 +80,7 @@ class AssetOutputInfo(
             partitions_fn=check.opt_callable_param(partitions_fn, "partitions_fn", lambda _: None),
             partitions_def=partitions_def,
             is_required=is_required,
+            code_version=code_version,
         )
 
 
@@ -104,11 +107,13 @@ def _resolve_input_to_destinations(
     return all_destinations
 
 
-def _resolve_output_to_destinations(output_name, node_def, handle) -> Sequence[NodeInputHandle]:
-    node_input_handles: List[NodeInputHandle] = []
+def _resolve_output_to_destinations(
+    output_name: str, node_def: NodeDefinition, handle: NodeHandle
+) -> Sequence[NodeInputHandle]:
+    all_destinations: List[NodeInputHandle] = []
     if not isinstance(node_def, GraphDefinition):
         # must be in the op definition
-        return node_input_handles
+        return all_destinations
 
     for mapping in node_def.output_mappings:
         if mapping.graph_output_name != output_name:
@@ -116,7 +121,7 @@ def _resolve_output_to_destinations(output_name, node_def, handle) -> Sequence[N
         output_pointer = mapping.maps_from
         output_node = node_def.solid_named(output_pointer.solid_name)
 
-        node_input_handles.extend(
+        all_destinations.extend(
             _resolve_output_to_destinations(
                 output_pointer.output_name,
                 output_node.definition,
@@ -126,27 +131,27 @@ def _resolve_output_to_destinations(output_name, node_def, handle) -> Sequence[N
 
         output_def = output_node.definition.output_def_named(output_pointer.output_name)
         downstream_input_handles = (
-            node_def.dependency_structure.output_to_downstream_inputs_for_solid(
+            node_def.dependency_structure.output_to_downstream_inputs_for_node(
                 output_pointer.solid_name
-            ).get(SolidOutputHandle(output_node, output_def), [])
+            ).get(NodeOutput(output_node, output_def), [])
         )
         for input_handle in downstream_input_handles:
-            node_input_handles.append(
+            all_destinations.append(
                 NodeInputHandle(
                     NodeHandle(input_handle.solid_name, parent=handle), input_handle.input_name
                 )
             )
 
-    return node_input_handles
+    return all_destinations
 
 
 def _build_graph_dependencies(
     graph_def: GraphDefinition,
-    parent_handle: Union[NodeHandle, None],
+    parent_handle: Optional[NodeHandle],
     outputs_by_graph_handle: Dict[NodeHandle, Mapping[str, NodeOutputHandle]],
     non_asset_inputs_by_node_handle: Dict[NodeHandle, Sequence[NodeOutputHandle]],
     assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
-):
+) -> None:
     """
     Scans through every node in the graph, making a recursive call when a node is a graph.
 
@@ -179,11 +184,11 @@ def _build_graph_dependencies(
             }
         non_asset_inputs_by_node_handle[curr_node_handle] = [
             NodeOutputHandle(
-                NodeHandle(output_handle.solid_name, parent=parent_handle),
-                output_handle.output_def.name,
+                NodeHandle(node_output.node_name, parent=parent_handle),
+                node_output.output_def.name,
             )
-            for output_handle in dep_struct.all_upstream_outputs_from_solid(sub_node_name)
-            if NodeHandle(output_handle.solid.name, parent=parent_handle)
+            for node_output in dep_struct.all_upstream_outputs_from_node(sub_node_name)
+            if NodeHandle(node_output.node.name, parent=parent_handle)
             not in assets_defs_by_node_handle
         ]
 
@@ -201,7 +206,6 @@ def _get_dependency_node_output_handles(
     belong in the same graph-backed asset node.
 
     Arguments:
-
     outputs_by_graph_handle: A mapping of every graph node handle to a dictionary with each out
         name as a key and a NodeOutputHandle containing the op output name and op node handle
     non_asset_inputs_by_node_handle: A mapping of all node handles to all upstream node handles
@@ -256,7 +260,7 @@ def _get_dependency_node_output_handles(
 
 def get_dep_node_handles_of_graph_backed_asset(
     graph_def: GraphDefinition, assets_def: "AssetsDefinition"
-):
+) -> Mapping[AssetKey, Set[NodeHandle]]:
     """
     Given a graph-backed asset with graph_def, return a mapping of asset keys outputted by the graph
     to a list of node handles within graph_def that are the dependencies of the asset.
@@ -290,7 +294,6 @@ def asset_key_to_dep_node_handles(
     2. A mapping of each asset key to a list of node output handles that are upstream dependencies of the asset.
 
     Arguments:
-
     graph_def: The graph definition of the job, where each top level node is an asset.
     assets_defs_by_node_handle: A mapping of each node handle to the asset definition for that node.
     """
@@ -421,6 +424,7 @@ def _asset_mappings_for_node(
                     key=output_key,
                     partitions_fn=output_def.get_asset_partitions,
                     partitions_def=output_def.asset_partitions_def,
+                    code_version=output_def.code_version,
                 )
                 # assume output depends on all inputs
                 asset_deps[output_key] = input_asset_keys
@@ -469,6 +473,7 @@ class AssetLayer:
     _asset_defs_by_key: Mapping[AssetKey, "AssetsDefinition"]
     _asset_defs_by_node_handle: Mapping[NodeHandle, Set["AssetsDefinition"]]
     _io_manager_keys_by_asset_key: Mapping[AssetKey, str]
+    _partition_mappings_by_asset_dep: Mapping[Tuple[NodeHandle, AssetKey], "PartitionMapping"]
 
     def __init__(
         self,
@@ -484,6 +489,9 @@ class AssetLayer:
         node_output_handles_to_dep_asset_keys: Optional[
             Mapping[NodeOutputHandle, Set[AssetKey]]
         ] = None,
+        partition_mappings_by_asset_dep: Optional[
+            Mapping[Tuple[NodeHandle, AssetKey], "PartitionMapping"]
+        ] = None,
     ):
         from dagster._core.definitions import SourceAsset
 
@@ -493,7 +501,7 @@ class AssetLayer:
             key_type=NodeInputHandle,
             value_type=AssetKey,
         )
-        self._asset_info_by_node_output_handle = check.opt_dict_param(
+        self._asset_info_by_node_output_handle = check.opt_mapping_param(
             asset_info_by_node_output_handle,
             "asset_info_by_node_output_handle",
             key_type=NodeOutputHandle,
@@ -535,12 +543,14 @@ class AssetLayer:
 
         # Used to store the asset key dependencies of op node handles within graph backed assets
         # See AssetLayer.downstream_dep_assets for more information
-        self._node_output_handle_to_dep_asset_keys = check.opt_dict_param(
+        self._node_output_handle_to_dep_asset_keys = check.opt_mapping_param(
             node_output_handles_to_dep_asset_keys,
             "node_output_handles_to_dep_asset_keys",
             key_type=NodeOutputHandle,
             value_type=set,
         )
+
+        self._partition_mappings_by_asset_dep = partition_mappings_by_asset_dep or {}
 
     @staticmethod
     def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
@@ -583,6 +593,7 @@ class AssetLayer:
         io_manager_by_asset: Dict[AssetKey, str] = {
             source_asset.key: source_asset.get_io_manager_key() for source_asset in source_assets
         }
+        partition_mappings_by_asset_dep: Dict[Tuple[NodeHandle, AssetKey], "PartitionMapping"] = {}
 
         (
             dep_node_handles_by_asset_key,
@@ -606,6 +617,12 @@ class AssetLayer:
                 )
                 for node_input_handle in node_input_handles:
                     asset_key_by_input[node_input_handle] = resolved_asset_key
+
+                partition_mapping = assets_def.get_partition_mapping_for_input(input_name)
+                if partition_mapping is not None:
+                    partition_mappings_by_asset_dep[
+                        (node_handle, resolved_asset_key)
+                    ] = partition_mapping
 
             for output_name, asset_key in assets_def.node_keys_by_output_name.items():
                 # resolve graph output to the op output it comes from
@@ -633,6 +650,7 @@ class AssetLayer:
                     partitions_fn=partitions_fn if assets_def.partitions_def else None,
                     partitions_def=assets_def.partitions_def,
                     is_required=asset_key in assets_def.keys,
+                    code_version=inner_output_def.code_version,
                 )
                 io_manager_by_asset[asset_key] = inner_output_def.io_manager_key
 
@@ -659,6 +677,7 @@ class AssetLayer:
             source_asset_defs=source_assets,
             io_manager_keys_by_asset_key=io_manager_by_asset,
             node_output_handles_to_dep_asset_keys=node_output_handles_to_dep_asset_keys,
+            partition_mappings_by_asset_dep=partition_mappings_by_asset_dep,
         )
 
     @property
@@ -699,6 +718,15 @@ class AssetLayer:
     def assets_def_for_asset(self, asset_key: AssetKey) -> "AssetsDefinition":
         return self._assets_defs_by_key[asset_key]
 
+    def node_output_handle_for_asset(self, asset_key: AssetKey) -> NodeOutputHandle:
+        matching_handles = [
+            handle
+            for handle, asset_info in self._asset_info_by_node_output_handle.items()
+            if asset_info.key == asset_key
+        ]
+        check.invariant(len(matching_handles) == 1)
+        return matching_handles[0]
+
     def assets_def_for_node(self, node_handle: NodeHandle) -> Optional["AssetsDefinition"]:
         return self._assets_defs_by_node_handle.get(node_handle)
 
@@ -721,10 +749,10 @@ class AssetLayer:
         assets_def = self.assets_defs_by_key.get(asset_key)
         return False if assets_def is None else isinstance(assets_def.node_def, GraphDefinition)
 
-    def op_version_for_asset(self, asset_key: AssetKey) -> Optional[str]:
+    def code_version_for_asset(self, asset_key: AssetKey) -> Optional[str]:
         assets_def = self.assets_defs_by_key.get(asset_key)
-        if assets_def is not None and isinstance(assets_def.node_def, OpDefinition):
-            return assets_def.node_def.version
+        if assets_def is not None:
+            return assets_def.code_versions_by_key[asset_key]
         else:
             return None
 
@@ -775,6 +803,11 @@ class AssetLayer:
                 return source_asset.partitions_def
 
         return None
+
+    def partition_mapping_for_node_input(
+        self, node_handle: NodeHandle, upstream_asset_key: AssetKey
+    ) -> Optional["PartitionMapping"]:
+        return self._partition_mappings_by_asset_dep.get((node_handle.root, upstream_asset_key))
 
     def downstream_dep_assets(self, node_handle: NodeHandle, output_name: str) -> Set[AssetKey]:
         """
@@ -843,9 +876,11 @@ def build_asset_selection_job(
         for asset in included_assets:
             check.invariant(
                 asset.partitions_def == partitions_def or asset.partitions_def is None,
-                f"Assets defined for node '{asset.node_def.name}' have a partitions_def of "
-                f"{asset.partitions_def}, but job '{name}' has non-matching partitions_def of "
-                f"{partitions_def}.",
+                (
+                    f"Assets defined for node '{asset.node_def.name}' have a partitions_def of "
+                    f"{asset.partitions_def}, but job '{name}' has non-matching partitions_def of "
+                    f"{partitions_def}."
+                ),
             )
 
     # We should disallow simultaneous selection of assets and source assets (but for

@@ -152,6 +152,7 @@ def get_client(context):
 
 # end_resource_dep_op
 
+
 # start_resource_dep_job
 @job(resource_defs={"credentials": credentials, "client": client})
 def connect():
@@ -199,6 +200,7 @@ def db_connection():
 
 
 # end_cm_resource
+
 
 # pylint: disable=unused-variable
 # start_cm_resource_op
@@ -268,6 +270,19 @@ def foo_resource():
 
 
 # start_asset_provide_resource
+from dagster import Definitions
+
+
+defs = Definitions(
+    assets=[asset_requires_resource],
+    resources={"foo": foo_resource},
+)
+
+# end_asset_provide_resource
+
+
+# start_asset_provide_resource_using_repository
+
 from dagster import repository, with_resources
 
 
@@ -281,4 +296,4 @@ def repo():
     ]
 
 
-# end_asset_provide_resource
+# end_asset_provide_resource_using_repository

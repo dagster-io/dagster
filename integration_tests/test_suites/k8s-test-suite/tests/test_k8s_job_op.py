@@ -1,17 +1,16 @@
 import kubernetes
 import pytest
-from dagster_k8s import execute_k8s_job, k8s_job_op
-from dagster_k8s.client import DagsterK8sError
-from dagster_k8s.job import get_k8s_job_name
-from dagster_k8s.utils import get_pod_names_in_job, retrieve_pod_logs
-
 from dagster import job, op
+from dagster_k8s import execute_k8s_job, k8s_job_op
+from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient
+from dagster_k8s.job import get_k8s_job_name
 
 
 def _get_pod_logs(cluster_provider, job_name, namespace):
     kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
-    pod_names = get_pod_names_in_job(job_name, namespace=namespace)
-    return retrieve_pod_logs(pod_names[0], namespace=namespace)
+    api_client = DagsterKubernetesClient.production_client()
+    pod_names = api_client.get_pod_names_in_job(job_name, namespace=namespace)
+    return api_client.retrieve_pod_logs(pod_names[0], namespace=namespace)
 
 
 @pytest.mark.default

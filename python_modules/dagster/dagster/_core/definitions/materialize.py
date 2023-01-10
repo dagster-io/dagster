@@ -2,8 +2,8 @@ import warnings
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
-from dagster._utils import merge_dicts
 from dagster._utils.backcompat import ExperimentalWarning
+from dagster._utils.merger import merge_dicts
 
 from ..errors import DagsterInvariantViolationError
 from ..instance import DagsterInstance
@@ -26,6 +26,7 @@ def materialize(
     resources: Optional[Mapping[str, object]] = None,
     partition_key: Optional[str] = None,
     raise_on_error: bool = True,
+    tags: Optional[Mapping[str, str]] = None,
 ) -> "ExecuteInProcessResult":
     """
     Executes a single-threaded, in-process run which materializes provided assets.
@@ -43,6 +44,7 @@ def materialize(
         partition_key: (Optional[str])
             The string partition key that specifies the run config to execute. Can only be used
             to select run config for assets with partitioned config.
+        tags (Optional[Mapping[str, str]]): Tags for the run.
 
     Returns:
         ExecuteInProcessResult: The result of the execution.
@@ -75,6 +77,7 @@ def materialize(
             instance=instance,
             partition_key=partition_key,
             raise_on_error=raise_on_error,
+            tags=tags,
         )
 
 
@@ -85,6 +88,7 @@ def materialize_to_memory(
     resources: Optional[Mapping[str, object]] = None,
     partition_key: Optional[str] = None,
     raise_on_error: bool = True,
+    tags: Optional[Mapping[str, str]] = None,
 ) -> "ExecuteInProcessResult":
     """
     Executes a single-threaded, in-process run which materializes provided assets in memory.
@@ -104,6 +108,8 @@ def materialize_to_memory(
         partition_key: (Optional[str])
             The string partition key that specifies the run config to execute. Can only be used
             to select run config for assets with partitioned config.
+        tags (Optional[Mapping[str, str]]): Tags for the run.
+
     Returns:
         ExecuteInProcessResult: The result of the execution.
     """
@@ -148,6 +154,7 @@ def materialize_to_memory(
             instance=instance,
             partition_key=partition_key,
             raise_on_error=raise_on_error,
+            tags=tags,
         )
 
 

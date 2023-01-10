@@ -9,6 +9,7 @@ from typing import (
     Dict,
     FrozenSet,
     Iterable,
+    List,
     Mapping,
     MutableSet,
     NamedTuple,
@@ -79,7 +80,7 @@ class AssetSelectionData(
     NamedTuple(
         "_AssetSelectionData",
         [
-            ("asset_selection", FrozenSet[AssetKey]),
+            ("asset_selection", AbstractSet[AssetKey]),
             ("parent_job_def", "JobDefinition"),
         ],
     )
@@ -92,7 +93,7 @@ class AssetSelectionData(
             pipeline snapshot lineage.
     """
 
-    def __new__(cls, asset_selection: FrozenSet[AssetKey], parent_job_def: "JobDefinition"):
+    def __new__(cls, asset_selection: AbstractSet[AssetKey], parent_job_def: "JobDefinition"):
         from dagster._core.definitions.job_definition import JobDefinition
 
         return super(AssetSelectionData, cls).__new__(
@@ -126,7 +127,7 @@ def generate_asset_dep_graph(
 
 
 def generate_dep_graph(pipeline_def: "PipelineDefinition") -> DependencyGraph:
-    """'pipeline to dependency graph. It currently only supports top-level solids.
+    """Pipeline to dependency graph. It currently only supports top-level solids.
 
     Args:
         pipeline (PipelineDefinition): The pipeline to execute.
@@ -159,13 +160,13 @@ def generate_dep_graph(pipeline_def: "PipelineDefinition") -> DependencyGraph:
     graph: Dict[str, Dict[str, MutableSet[str]]] = {"upstream": {}, "downstream": {}}
     for item_name in item_names:
         graph["upstream"][item_name] = set()
-        upstream_dep = dependency_structure.input_to_upstream_outputs_for_solid(item_name)
+        upstream_dep = dependency_structure.input_to_upstream_outputs_for_node(item_name)
         for upstreams in upstream_dep.values():
             for up in upstreams:
-                graph["upstream"][item_name].add(up.solid_name)
+                graph["upstream"][item_name].add(up.node_name)
 
         graph["downstream"][item_name] = set()
-        downstream_dep = dependency_structure.output_to_downstream_inputs_for_solid(item_name)
+        downstream_dep = dependency_structure.output_to_downstream_inputs_for_node(item_name)
         for downstreams in downstream_dep.values():
             for down in downstreams:
                 graph["downstream"][item_name].add(down.solid_name)
@@ -184,7 +185,7 @@ class Traverser:
     def _fetch_items(self, item_name: T, depth: int, direction: Direction) -> AbstractSet[T]:
         dep_graph = self.graph[direction]
         stack = deque([item_name])
-        result = set()
+        result: Set[T] = set()
         curr_depth = 0
         while stack:
             # stop when reach the given depth
@@ -194,7 +195,8 @@ class Traverser:
             while stack and curr_level_len > 0:
                 curr_item = stack.popleft()
                 curr_level_len -= 1
-                for item in dep_graph.get(curr_item, set()):
+                empty_set: Set[str] = set()
+                for item in dep_graph.get(curr_item, empty_set):
                     if item not in result:
                         stack.append(item)
                         result.add(item)
@@ -231,9 +233,10 @@ def fetch_sinks(graph: DependencyGraph, within_selection: AbstractSet[T]) -> Abs
     It can have other dependencies outside of the selection.
     """
     traverser = Traverser(graph)
-    sinks = set()
+    sinks: Set[T] = set()
     for item in within_selection:
-        if len(traverser.fetch_downstream(item, depth=MAX_NUM) & within_selection) == 0:
+        downstream = traverser.fetch_downstream(item, depth=MAX_NUM) & within_selection
+        if len(downstream) == 0 or downstream == {item}:
             sinks.add(item)
     return sinks
 
@@ -246,7 +249,8 @@ def fetch_sources(graph: DependencyGraph, within_selection: AbstractSet[T]) -> A
     traverser = Traverser(graph)
     sources = set()
     for item in within_selection:
-        if len(traverser.fetch_upstream(item, depth=MAX_NUM) & within_selection) == 0:
+        upstream = traverser.fetch_upstream(item, depth=MAX_NUM) & within_selection
+        if len(upstream) == 0 or upstream == {item}:
             sources.add(item)
     return sources
 
@@ -280,7 +284,7 @@ def parse_clause(clause: str) -> Optional[Tuple[int, str, int]]:
 
     token_matching = re.compile(r"^(\*?\+*)?([./\w\d\[\]?_-]+)(\+*\*?)?$").search(clause.strip())
     # return None if query is invalid
-    parts = token_matching.groups() if token_matching is not None else []
+    parts: Sequence[str] = token_matching.groups() if token_matching is not None else []
     if len(parts) != 3:
         return None
 
@@ -292,7 +296,7 @@ def parse_clause(clause: str) -> Optional[Tuple[int, str, int]]:
 
 
 def parse_items_from_selection(selection: Sequence[str]) -> Sequence[str]:
-    items = []
+    items: List[str] = []
     for clause in selection:
         parts = parse_clause(clause)
         if parts is None:
@@ -330,7 +334,7 @@ def clause_to_subset(
     if item not in graph["upstream"]:
         return []
 
-    subset_list = []
+    subset_list: List[T] = []
     traverser = Traverser(graph=graph)
     subset_list.append(item)
     # traverse graph to get up/downsteam items
@@ -372,7 +376,7 @@ def parse_op_selection(job_def: "JobDefinition", op_selection: Sequence[str]) ->
         => {"top_level_op_1": LeafNodeSelection, "top_level_op_2": LeafNodeSelection}
     """
     if any(["." in item for item in op_selection]):
-        resolved_op_selection_dict: Dict = {}
+        resolved_op_selection_dict: Dict[str, Any] = {}
         for item in op_selection:
             convert_dot_seperated_string_to_dict(resolved_op_selection_dict, splits=item.split("."))
         return resolved_op_selection_dict
@@ -472,7 +476,10 @@ def parse_step_selection(
     invalid_keys = [key for key in step_keys if key not in step_deps]
     if invalid_keys:
         raise DagsterExecutionStepNotFoundError(
-            f"Step selection refers to unknown step{'s' if len(invalid_keys)> 1 else ''}: {', '.join(invalid_keys)}",
+            (
+                f"Step selection refers to unknown step{'s' if len(invalid_keys)> 1 else ''}:"
+                f" {', '.join(invalid_keys)}"
+            ),
             step_keys=invalid_keys,
         )
 

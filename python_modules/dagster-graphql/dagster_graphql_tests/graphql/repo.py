@@ -10,21 +10,14 @@ from contextlib import contextmanager
 from copy import deepcopy
 from typing import List, Tuple
 
-from dagster_graphql.test.utils import (
-    define_out_of_process_context,
-    infer_pipeline_selector,
-    main_repo_location_name,
-    main_repo_name,
-)
-
 from dagster import (
     Any,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
     AssetOut,
-    AssetSelection,
     AssetsDefinition,
+    AssetSelection,
     Bool,
     DagsterInstance,
     DefaultScheduleStatus,
@@ -35,9 +28,9 @@ from dagster import (
     ExpectationResult,
     Field,
     HourlyPartitionsDefinition,
+    Int,
     IOManager,
     IOManagerDefinition,
-    Int,
     Map,
     MetadataEntry,
     Noneable,
@@ -56,9 +49,7 @@ from dagster import (
     TableConstraints,
     TableRecord,
     TableSchema,
-)
-from dagster import _check as check
-from dagster import (
+    _check as check,
     asset,
     dagster_type_loader,
     dagster_type_materializer,
@@ -84,7 +75,7 @@ from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster._core.log_manager import coerce_valid_log_level
 from dagster._core.storage.fs_io_manager import fs_io_manager
-from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.test_utils import default_mode_def_for_test, today_at_midnight
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -95,12 +86,11 @@ from dagster._legacy import (
     InputDefinition,
     Materialization,
     ModeDefinition,
+    OpExecutionContext,
     OutputDefinition,
     PartitionSetDefinition,
     PresetDefinition,
-    SolidExecutionContext,
     build_assets_job,
-    composite_solid,
     daily_schedule,
     hourly_schedule,
     lambda_solid,
@@ -111,6 +101,12 @@ from dagster._legacy import (
 )
 from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, segfault
+from dagster_graphql.test.utils import (
+    define_out_of_process_context,
+    infer_pipeline_selector,
+    main_repo_location_name,
+    main_repo_name,
+)
 
 LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 
@@ -543,7 +539,10 @@ def naughty_programmer_pipeline():
     def throw_a_thing():
         try:
             try:
-                raise Exception("bad programmer, bad")
+                try:
+                    raise Exception("The inner sanctum")
+                except:
+                    raise Exception("bad programmer, bad")
             except Exception as e:
                 raise Exception("Outer exception") from e
         except Exception as e:
@@ -696,15 +695,15 @@ def composites_pipeline():
     def div_two(num):
         return num / 2
 
-    @composite_solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @graph(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
     def add_two(num):
         return add_one.alias("adder_2")(add_one.alias("adder_1")(num))
 
-    @composite_solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @graph(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
     def add_four(num):
         return add_two.alias("adder_2")(add_two.alias("adder_1")(num))
 
-    @composite_solid
+    @graph
     def div_four(num):
         return div_two.alias("div_2")(div_two.alias("div_1")(num))
 
@@ -804,7 +803,7 @@ def eventually_successful():
     @solid(
         required_resource_keys={"retry_count"},
     )
-    def fail(context: SolidExecutionContext, depth: int) -> int:
+    def fail(context: OpExecutionContext, depth: int) -> int:
         if context.resources.retry_count <= depth:
             raise Exception("fail")
 
@@ -1068,7 +1067,7 @@ def last_empty_partition(context, partition_set_def):
     for partition in reversed(partitions):
         filters = RunsFilter.for_partition(partition_set_def, partition)
         matching = context.instance.get_runs(filters)
-        if not any(run.status == PipelineRunStatus.SUCCESS for run in matching):
+        if not any(run.status == DagsterRunStatus.SUCCESS for run in matching):
             selected = partition
             break
     return selected
@@ -1179,7 +1178,7 @@ def define_schedules():
     @daily_schedule(
         pipeline_name="no_config_pipeline",
         start_date=today_at_midnight().subtract(days=1),
-        should_execute=lambda _: asdf,  # pylint: disable=undefined-variable
+        should_execute=lambda _: asdf,  # noqa: F821
     )
     def should_execute_error_schedule(_date):
         return {}
@@ -1187,7 +1186,7 @@ def define_schedules():
     @daily_schedule(
         pipeline_name="no_config_pipeline",
         start_date=today_at_midnight().subtract(days=1),
-        tags_fn_for_date=lambda _: asdf,  # pylint: disable=undefined-variable
+        tags_fn_for_date=lambda _: asdf,  # noqa: F821
     )
     def tags_error_schedule(_date):
         return {}
@@ -1197,7 +1196,7 @@ def define_schedules():
         start_date=today_at_midnight().subtract(days=1),
     )
     def run_config_error_schedule(_date):
-        return asdf  # pylint: disable=undefined-variable
+        return asdf  # noqa: F821
 
     @daily_schedule(
         pipeline_name="no_config_pipeline",
@@ -1299,6 +1298,10 @@ def define_sensors():
         )
 
     @sensor(job_name="no_config_pipeline")
+    def always_error_sensor(_):
+        raise Exception("OOPS")
+
+    @sensor(job_name="no_config_pipeline")
     def once_no_config_sensor(_):
         return RunRequest(
             run_key="once",
@@ -1335,6 +1338,7 @@ def define_sensors():
 
     return [
         always_no_config_sensor,
+        always_error_sensor,
         once_no_config_sensor,
         never_no_config_sensor,
         multi_no_config_sensor,
@@ -1678,31 +1682,31 @@ failure_assets_job = build_assets_job(
 
 @asset
 def foo(context):
-    assert context.pipeline_def.asset_selection_data != None
+    assert context.pipeline_def.asset_selection_data is not None
     return 5
 
 
 @asset
 def bar(context):
-    assert context.pipeline_def.asset_selection_data != None
+    assert context.pipeline_def.asset_selection_data is not None
     return 10
 
 
 @asset
 def foo_bar(context, foo, bar):
-    assert context.pipeline_def.asset_selection_data != None
+    assert context.pipeline_def.asset_selection_data is not None
     return foo + bar
 
 
 @asset
 def baz(context, foo_bar):
-    assert context.pipeline_def.asset_selection_data != None
+    assert context.pipeline_def.asset_selection_data is not None
     return foo_bar
 
 
 @asset
 def unconnected(context):
-    assert context.pipeline_def.asset_selection_data != None
+    assert context.pipeline_def.asset_selection_data is not None
 
 
 asset_group_job = AssetGroup([foo, bar, foo_bar, baz, unconnected]).build_job("foo_job")

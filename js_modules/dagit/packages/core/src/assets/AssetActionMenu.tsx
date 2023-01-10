@@ -2,18 +2,18 @@ import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-
 import * as React from 'react';
 
 import {usePermissions} from '../app/Permissions';
+import {AssetTableFragmentFragment} from '../graphql/graphql';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {useMaterializationAction} from './LaunchAssetExecutionButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {AssetTableFragment} from './types/AssetTableFragment';
 
 interface Props {
   repoAddress: RepoAddress | null;
-  asset: AssetTableFragment;
-  onWipe?: (assets: AssetTableFragment[]) => void;
+  asset: AssetTableFragmentFragment;
+  onWipe?: (assets: AssetTableFragmentFragment[]) => void;
 }
 
 export const AssetActionMenu: React.FC<Props> = (props) => {
@@ -29,7 +29,12 @@ export const AssetActionMenu: React.FC<Props> = (props) => {
         position="bottom-right"
         content={
           <Menu>
-            <Tooltip content="Shift+click to add configuration" placement="left" display="block">
+            <Tooltip
+              content="Shift+click to add configuration"
+              placement="left"
+              display="block"
+              useDisabledButtonTooltipFix
+            >
               <MenuItem
                 text="Materialize"
                 icon={loading ? <Spinner purpose="body-text" /> : 'materialization'}

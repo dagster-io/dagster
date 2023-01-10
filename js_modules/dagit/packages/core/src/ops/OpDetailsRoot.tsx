@@ -1,18 +1,15 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {
-  SidebarOpDefinition,
-  SIDEBAR_OP_DEFINITION_FRAGMENT,
-} from '../pipelines/SidebarOpDefinition';
+import {graphql} from '../graphql';
+import {SidebarOpDefinition} from '../pipelines/SidebarOpDefinition';
 import {SidebarOpInvocationInfo} from '../pipelines/SidebarOpHelpers';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {OpCard, OP_CARD_SOLID_DEFINITION_FRAGMENT} from './OpCard';
-import {UsedSolidDetailsQuery, UsedSolidDetailsQueryVariables} from './types/UsedSolidDetailsQuery';
+import {OpCard} from './OpCard';
 
 interface UsedSolidDetailsProps {
   name: string;
@@ -24,15 +21,12 @@ export const UsedSolidDetails: React.FC<UsedSolidDetailsProps> = (props) => {
   const {name, onClickInvocation, repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const queryResult = useQuery<UsedSolidDetailsQuery, UsedSolidDetailsQueryVariables>(
-    USED_SOLID_DETAILS_QUERY,
-    {
-      variables: {
-        name,
-        repositorySelector,
-      },
+  const queryResult = useQuery(USED_SOLID_DETAILS_QUERY, {
+    variables: {
+      name,
+      repositorySelector,
     },
-  );
+  });
 
   return (
     <Loading queryResult={queryResult}>
@@ -62,7 +56,7 @@ export const UsedSolidDetails: React.FC<UsedSolidDetailsProps> = (props) => {
   );
 };
 
-const USED_SOLID_DETAILS_QUERY = gql`
+const USED_SOLID_DETAILS_QUERY = graphql(`
   query UsedSolidDetailsQuery($name: String!, $repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {
@@ -87,10 +81,7 @@ const USED_SOLID_DETAILS_QUERY = gql`
       }
     }
   }
-
-  ${OP_CARD_SOLID_DEFINITION_FRAGMENT}
-  ${SIDEBAR_OP_DEFINITION_FRAGMENT}
-`;
+`);
 
 export const OpDetailScrollContainer = styled.div`
   overflow: scroll;

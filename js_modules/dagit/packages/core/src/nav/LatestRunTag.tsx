@@ -1,19 +1,18 @@
-import {useQuery, gql} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, Colors, StyledTable, Tag, Tooltip} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
+import {graphql} from '../graphql';
+import {RunStatus} from '../graphql/graphql';
 import {timingStringForStatus} from '../runs/RunDetails';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
-import {RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {RunTime} from '../runs/RunUtils';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {RunStatus} from '../types/globalTypes';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-
-import {LatestRunTagQuery, LatestRunTagQueryVariables} from './types/LatestRunTagQuery';
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
@@ -21,23 +20,20 @@ export const LatestRunTag: React.FC<{pipelineName: string; repoAddress: RepoAddr
   pipelineName,
   repoAddress,
 }) => {
-  const lastRunQuery = useQuery<LatestRunTagQuery, LatestRunTagQueryVariables>(
-    LATEST_RUN_TAG_QUERY,
-    {
-      variables: {
-        runsFilter: {
-          pipelineName,
-          tags: [
-            {
-              key: DagsterTag.RepositoryLabelTag,
-              value: repoAddressAsString(repoAddress),
-            },
-          ],
-        },
+  const lastRunQuery = useQuery(LATEST_RUN_TAG_QUERY, {
+    variables: {
+      runsFilter: {
+        pipelineName,
+        tags: [
+          {
+            key: DagsterTag.RepositoryLabelTag,
+            value: repoAddressAsTag(repoAddress),
+          },
+        ],
       },
-      notifyOnNetworkStatusChange: true,
     },
-  );
+    notifyOnNetworkStatusChange: true,
+  });
 
   useQueryRefreshAtInterval(lastRunQuery, FIFTEEN_SECONDS);
 
@@ -114,7 +110,7 @@ export const LatestRunTag: React.FC<{pipelineName: string; repoAddress: RepoAddr
   );
 };
 
-const LATEST_RUN_TAG_QUERY = gql`
+const LATEST_RUN_TAG_QUERY = graphql(`
   query LatestRunTagQuery($runsFilter: RunsFilter) {
     pipelineRunsOrError(filter: $runsFilter, limit: 1) {
       ... on PipelineRuns {
@@ -126,5 +122,4 @@ const LATEST_RUN_TAG_QUERY = gql`
       }
     }
   }
-  ${RUN_TIME_FRAGMENT}
-`;
+`);

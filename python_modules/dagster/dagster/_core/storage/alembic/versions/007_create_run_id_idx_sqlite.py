@@ -22,7 +22,7 @@ def upgrade():
     has_tables = inspector.get_table_names()
     if "event_logs" in has_tables:
         indices = [x.get("name") for x in inspector.get_indexes("event_logs")]
-        if not "idx_run_id" in indices:
+        if "idx_run_id" not in indices:
             op.create_index("idx_run_id", "event_logs", ["run_id"], unique=False)
 
 

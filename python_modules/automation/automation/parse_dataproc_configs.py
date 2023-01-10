@@ -79,7 +79,7 @@ class Field:
             with printer.with_indent():
                 printer.line("fields={")
                 with printer.with_indent():
-                    for (k, v) in self.fields.items():
+                    for k, v in self.fields.items():
                         # We need to skip "output" fields which are API responses, not queries
                         if "Output only" in v.description:
                             continue

@@ -3,17 +3,17 @@ import os
 
 import mock
 from click.testing import CliRunner
-from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_pipeline_handle
-
 from dagster import DagsterEventType, job, op, reconstructable
 from dagster._cli import api
 from dagster._cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryState
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot
-from dagster._core.host_representation import PipelineHandle
+from dagster._core.host_representation import JobHandle
 from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
 from dagster._serdes import serialize_dagster_namedtuple
+
+from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_job_handle
 
 
 def runner_execute_run(runner, cli_args):
@@ -46,19 +46,19 @@ def test_execute_run():
             }
         }
     ) as instance:
-        with get_foo_pipeline_handle(instance) as pipeline_handle:
+        with get_foo_job_handle(instance) as job_handle:
             runner = CliRunner()
 
             run = create_run_for_test(
                 instance,
                 pipeline_name="foo",
                 run_id="new_run",
-                pipeline_code_origin=pipeline_handle.get_python_origin(),
+                pipeline_code_origin=job_handle.get_python_origin(),
             )
 
             input_json = serialize_dagster_namedtuple(
                 ExecuteRunArgs(
-                    pipeline_origin=pipeline_handle.get_python_origin(),
+                    pipeline_origin=job_handle.get_python_origin(),
                     pipeline_run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                 )
@@ -174,19 +174,19 @@ def test_execute_run_fail_pipeline():
         }
     ) as instance:
         with get_bar_repo_handle(instance) as repo_handle:
-            pipeline_handle = PipelineHandle("fail", repo_handle)
+            job_handle = JobHandle("fail", repo_handle)
             runner = CliRunner()
 
             run = create_run_for_test(
                 instance,
                 pipeline_name="foo",
                 run_id="new_run",
-                pipeline_code_origin=pipeline_handle.get_python_origin(),
+                pipeline_code_origin=job_handle.get_python_origin(),
             )
 
             input_json = serialize_dagster_namedtuple(
                 ExecuteRunArgs(
-                    pipeline_origin=pipeline_handle.get_python_origin(),
+                    pipeline_origin=job_handle.get_python_origin(),
                     pipeline_run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                 )
@@ -204,12 +204,12 @@ def test_execute_run_fail_pipeline():
                 instance,
                 pipeline_name="foo",
                 run_id="new_run_raise_on_error",
-                pipeline_code_origin=pipeline_handle.get_python_origin(),
+                pipeline_code_origin=job_handle.get_python_origin(),
             )
 
             input_json_raise_on_failure = serialize_dagster_namedtuple(
                 ExecuteRunArgs(
-                    pipeline_origin=pipeline_handle.get_python_origin(),
+                    pipeline_origin=job_handle.get_python_origin(),
                     pipeline_run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                     set_exit_code_on_failure=True,
@@ -233,7 +233,7 @@ def test_execute_run_fail_pipeline():
 
                 input_json_raise_on_failure = serialize_dagster_namedtuple(
                     ExecuteRunArgs(
-                        pipeline_origin=pipeline_handle.get_python_origin(),
+                        pipeline_origin=job_handle.get_python_origin(),
                         pipeline_run_id=run.run_id,
                         instance_ref=instance.get_ref(),
                         set_exit_code_on_failure=True,
@@ -254,12 +254,12 @@ def test_execute_run_cannot_load():
             }
         }
     ) as instance:
-        with get_foo_pipeline_handle(instance) as pipeline_handle:
+        with get_foo_job_handle(instance) as job_handle:
             runner = CliRunner()
 
             input_json = serialize_dagster_namedtuple(
                 ExecuteRunArgs(
-                    pipeline_origin=pipeline_handle.get_python_origin(),
+                    pipeline_origin=job_handle.get_python_origin(),
                     pipeline_run_id="FOOBAR",
                     instance_ref=instance.get_ref(),
                 )
@@ -307,18 +307,18 @@ def test_execute_step():
             }
         }
     ) as instance:
-        with get_foo_pipeline_handle(instance) as pipeline_handle:
+        with get_foo_job_handle(instance) as job_handle:
             runner = CliRunner()
 
             run = create_run_for_test(
                 instance,
                 pipeline_name="foo",
                 run_id="new_run",
-                pipeline_code_origin=pipeline_handle.get_python_origin(),
+                pipeline_code_origin=job_handle.get_python_origin(),
             )
 
             args = ExecuteStepArgs(
-                pipeline_origin=pipeline_handle.get_python_origin(),
+                pipeline_origin=job_handle.get_python_origin(),
                 pipeline_run_id=run.run_id,
                 step_keys_to_execute=None,
                 instance_ref=instance.get_ref(),
@@ -332,6 +332,67 @@ def test_execute_step():
         assert "STEP_SUCCESS" in result.stdout
 
 
+def test_execute_step_with_secrets_loader():
+    recon_job = reconstructable(needs_env_var_job)
+    runner = CliRunner()
+
+    # Restore original env after test
+    with environ({"FOO": None}):
+        with instance_for_test(
+            overrides={
+                "compute_logs": {
+                    "module": "dagster._core.storage.noop_compute_log_manager",
+                    "class": "NoOpComputeLogManager",
+                },
+                "python_logs": {
+                    "dagster_handler_config": {
+                        "handlers": {
+                            # Importing this handler fails if REQUIRED_LOGGER_ENV_VAR not set
+                            "testHandler": {
+                                "class": (
+                                    "dagster_tests.cli_tests.fake_python_logger_module.FakeHandler"
+                                ),
+                                "level": "INFO",
+                            },
+                        }
+                    }
+                },
+                "secrets": {
+                    "custom": {
+                        "module": "dagster._core.test_utils",
+                        "class": "TestSecretsLoader",
+                        "config": {
+                            "env_vars": {
+                                "FOO": "BAR",
+                                "REQUIRED_LOGGER_ENV_VAR": "LOGGER_ENV_VAR_VALUE",
+                            }
+                        },
+                    }
+                },
+            }
+        ) as instance:
+            run = create_run_for_test(
+                instance,
+                pipeline_name="needs_env_var_job",
+                run_id="new_run",
+                pipeline_code_origin=recon_job.get_python_origin(),
+            )
+
+            args = ExecuteStepArgs(
+                pipeline_origin=recon_job.get_python_origin(),
+                pipeline_run_id=run.run_id,
+                step_keys_to_execute=None,
+                instance_ref=instance.get_ref(),
+            )
+
+            result = runner_execute_step(
+                runner,
+                args.get_command_args()[3:],
+            )
+
+            assert "STEP_SUCCESS" in result.stdout
+
+
 def test_execute_step_with_env():
     with instance_for_test(
         overrides={
@@ -341,18 +402,18 @@ def test_execute_step_with_env():
             }
         }
     ) as instance:
-        with get_foo_pipeline_handle(instance) as pipeline_handle:
+        with get_foo_job_handle(instance) as job_handle:
             runner = CliRunner()
 
             run = create_run_for_test(
                 instance,
                 pipeline_name="foo",
                 run_id="new_run",
-                pipeline_code_origin=pipeline_handle.get_python_origin(),
+                pipeline_code_origin=job_handle.get_python_origin(),
             )
 
             args = ExecuteStepArgs(
-                pipeline_origin=pipeline_handle.get_python_origin(),
+                pipeline_origin=job_handle.get_python_origin(),
                 pipeline_run_id=run.run_id,
                 step_keys_to_execute=None,
                 instance_ref=instance.get_ref(),
@@ -376,18 +437,18 @@ def test_execute_step_non_compressed():
             }
         }
     ) as instance:
-        with get_foo_pipeline_handle(instance) as pipeline_handle:
+        with get_foo_job_handle(instance) as job_handle:
             runner = CliRunner()
 
             run = create_run_for_test(
                 instance,
                 pipeline_name="foo",
                 run_id="new_run",
-                pipeline_code_origin=pipeline_handle.get_python_origin(),
+                pipeline_code_origin=job_handle.get_python_origin(),
             )
 
             args = ExecuteStepArgs(
-                pipeline_origin=pipeline_handle.get_python_origin(),
+                pipeline_origin=job_handle.get_python_origin(),
                 pipeline_run_id=run.run_id,
                 step_keys_to_execute=None,
                 instance_ref=instance.get_ref(),
@@ -399,7 +460,6 @@ def test_execute_step_non_compressed():
 
 
 def test_execute_step_1():
-
     with instance_for_test(
         overrides={
             "compute_logs": {
@@ -408,20 +468,20 @@ def test_execute_step_1():
             }
         }
     ) as instance:
-        with get_foo_pipeline_handle(instance) as pipeline_handle:
+        with get_foo_job_handle(instance) as job_handle:
             runner = CliRunner()
 
             run = create_run_for_test(
                 instance,
                 pipeline_name="foo",
                 run_id="new_run",
-                pipeline_code_origin=pipeline_handle.get_python_origin(),
+                pipeline_code_origin=job_handle.get_python_origin(),
             )
 
             result = runner_execute_step(
                 runner,
                 ExecuteStepArgs(
-                    pipeline_origin=pipeline_handle.get_python_origin(),
+                    pipeline_origin=job_handle.get_python_origin(),
                     pipeline_run_id=run.run_id,
                     step_keys_to_execute=None,
                     instance_ref=instance.get_ref(),
@@ -442,14 +502,14 @@ def test_execute_step_verify_step():
             }
         }
     ) as instance:
-        with get_foo_pipeline_handle(instance) as pipeline_handle:
+        with get_foo_job_handle(instance) as job_handle:
             runner = CliRunner()
 
             run = create_run_for_test(
                 instance,
                 pipeline_name="foo",
                 run_id="new_run",
-                pipeline_code_origin=pipeline_handle.get_python_origin(),
+                pipeline_code_origin=job_handle.get_python_origin(),
             )
 
             # Check that verify succeeds for step that has hasn't been fun (case 3)
@@ -478,7 +538,7 @@ def test_execute_step_verify_step():
             runner_execute_step(
                 runner,
                 ExecuteStepArgs(
-                    pipeline_origin=pipeline_handle.get_python_origin(),
+                    pipeline_origin=job_handle.get_python_origin(),
                     pipeline_run_id=run.run_id,
                     step_keys_to_execute=None,
                     instance_ref=instance.get_ref(),
@@ -500,7 +560,7 @@ def test_execute_step_verify_step_framework_error(mock_verify_step):
             }
         }
     ) as instance:
-        with get_foo_pipeline_handle(instance) as pipeline_handle:
+        with get_foo_job_handle(instance) as job_handle:
             runner = CliRunner()
 
             mock_verify_step.side_effect = Exception("Unexpected framework error text")
@@ -509,13 +569,13 @@ def test_execute_step_verify_step_framework_error(mock_verify_step):
                 instance,
                 pipeline_name="foo",
                 run_id="new_run",
-                pipeline_code_origin=pipeline_handle.get_python_origin(),
+                pipeline_code_origin=job_handle.get_python_origin(),
             )
 
             result = runner.invoke(
                 api.execute_step_command,
                 ExecuteStepArgs(
-                    pipeline_origin=pipeline_handle.get_python_origin(),
+                    pipeline_origin=job_handle.get_python_origin(),
                     pipeline_run_id=run.run_id,
                     step_keys_to_execute=["fake_step"],
                     instance_ref=instance.get_ref(),
@@ -537,7 +597,8 @@ def test_execute_step_verify_step_framework_error(mock_verify_step):
             log_entry = logs[0]
             assert (
                 log_entry.message
-                == "An exception was thrown during step execution that is likely a framework error, rather than an error in user code."
+                == "An exception was thrown during step execution that is likely a framework error,"
+                " rather than an error in user code."
             )
             assert log_entry.step_key == "fake_step"
 

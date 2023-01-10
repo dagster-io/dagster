@@ -1,33 +1,31 @@
-import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
+import {ApolloQueryResult, useQuery} from '@apollo/client';
 import sortBy from 'lodash/sortBy';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {graphql} from '../graphql';
+import {
+  PythonErrorFragmentFragment,
+  RootWorkspaceQueryQuery,
+  WorkspaceLocationFragment,
+  WorkspaceLocationNodeFragment,
+  WorkspaceRepositoryFragment,
+  WorkspaceScheduleFragment,
+  WorkspaceSensorFragment,
+  PipelineSelector,
+} from '../graphql/graphql';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {PipelineSelector} from '../types/globalTypes';
 
-import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
 import {buildRepoAddress} from './buildRepoAddress';
 import {findRepoContainingPipeline} from './findRepoContainingPipeline';
 import {RepoAddress} from './types';
-import {
-  RootWorkspaceQuery,
-  RootWorkspaceQuery_workspaceOrError_PythonError,
-  RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries,
-  RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation,
-  RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories,
-  RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors,
-  RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules,
-} from './types/RootWorkspaceQuery';
 
-type Repository = RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories;
-type RepositoryLocation = RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation;
-type RepositoryError = RootWorkspaceQuery_workspaceOrError_PythonError;
+type Repository = WorkspaceRepositoryFragment;
+type RepositoryLocation = WorkspaceLocationFragment;
 
-export type WorkspaceRepositorySensor = RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors;
-export type WorkspaceRepositorySchedule = RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules;
-export type WorkspaceRepositoryLocationNode = RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries;
+export type WorkspaceRepositorySensor = WorkspaceSensorFragment;
+export type WorkspaceRepositorySchedule = WorkspaceScheduleFragment;
+export type WorkspaceRepositoryLocationNode = WorkspaceLocationNodeFragment;
 
 export interface DagsterRepoOption {
   repositoryLocation: RepositoryLocation;
@@ -35,13 +33,13 @@ export interface DagsterRepoOption {
 }
 
 export type WorkspaceState = {
-  error: RepositoryError | null;
+  error: PythonErrorFragmentFragment | null;
   loading: boolean;
   locationEntries: WorkspaceRepositoryLocationNode[];
   allRepos: DagsterRepoOption[];
   visibleRepos: DagsterRepoOption[];
 
-  refetch: () => Promise<ApolloQueryResult<RootWorkspaceQuery>>;
+  refetch: () => Promise<ApolloQueryResult<RootWorkspaceQueryQuery>>;
   toggleVisible: (repoAddresses: RepoAddress[]) => void;
 };
 
@@ -51,85 +49,110 @@ export const WorkspaceContext = React.createContext<WorkspaceState>(
 
 export const HIDDEN_REPO_KEYS = 'dagit.hidden-repo-keys';
 
-const ROOT_WORKSPACE_QUERY = gql`
+const ROOT_WORKSPACE_QUERY = graphql(`
   query RootWorkspaceQuery {
     workspaceOrError {
-      __typename
       ... on Workspace {
         locationEntries {
-          __typename
           id
-          name
-          loadStatus
-          displayMetadata {
-            key
-            value
-          }
-          updatedTimestamp
-          locationOrLoadError {
-            ... on RepositoryLocation {
-              id
-              isReloadSupported
-              serverId
-              name
-              repositories {
-                id
-                name
-                pipelines {
-                  id
-                  name
-                  isJob
-                  isAssetJob
-                  pipelineSnapshotId
-                }
-                schedules {
-                  id
-                  cronSchedule
-                  executionTimezone
-                  mode
-                  name
-                  pipelineName
-                  scheduleState {
-                    id
-                    selectorId
-                    status
-                  }
-                }
-                sensors {
-                  id
-                  jobOriginId
-                  name
-                  targets {
-                    mode
-                    pipelineName
-                  }
-                  sensorState {
-                    id
-                    selectorId
-                    status
-                  }
-                }
-                partitionSets {
-                  id
-                  mode
-                  pipelineName
-                }
-                assetGroups {
-                  groupName
-                }
-                ...RepositoryInfoFragment
-              }
-            }
-            ...PythonErrorFragment
-          }
+          ...WorkspaceLocationNode
         }
       }
       ...PythonErrorFragment
     }
   }
-  ${PYTHON_ERROR_FRAGMENT}
-  ${REPOSITORY_INFO_FRAGMENT}
-`;
+
+  fragment WorkspaceLocationNode on WorkspaceLocationEntry {
+    id
+    name
+    loadStatus
+    displayMetadata {
+      ...WorkspaceDisplayMetadata
+    }
+    updatedTimestamp
+    locationOrLoadError {
+      ... on RepositoryLocation {
+        id
+        ...WorkspaceLocation
+      }
+      ...PythonErrorFragment
+    }
+  }
+
+  fragment WorkspaceDisplayMetadata on RepositoryMetadata {
+    key
+    value
+  }
+
+  fragment WorkspaceLocation on RepositoryLocation {
+    id
+    isReloadSupported
+    serverId
+    name
+    repositories {
+      id
+      ...WorkspaceRepository
+    }
+  }
+
+  fragment WorkspaceRepository on Repository {
+    id
+    name
+    pipelines {
+      id
+      name
+      isJob
+      isAssetJob
+      pipelineSnapshotId
+    }
+    schedules {
+      id
+      ...WorkspaceSchedule
+    }
+    sensors {
+      id
+      ...WorkspaceSensor
+    }
+    partitionSets {
+      id
+      mode
+      pipelineName
+    }
+    assetGroups {
+      groupName
+    }
+    ...RepositoryInfoFragment
+  }
+
+  fragment WorkspaceSchedule on Schedule {
+    id
+    cronSchedule
+    executionTimezone
+    mode
+    name
+    pipelineName
+    scheduleState {
+      id
+      selectorId
+      status
+    }
+  }
+
+  fragment WorkspaceSensor on Sensor {
+    id
+    jobOriginId
+    name
+    targets {
+      mode
+      pipelineName
+    }
+    sensorState {
+      id
+      selectorId
+      status
+    }
+  }
+`);
 
 /**
  * A hook that supplies the current workspace state of Dagit, including the current
@@ -137,10 +160,7 @@ const ROOT_WORKSPACE_QUERY = gql`
  * in the workspace, and loading/error state for the relevant query.
  */
 const useWorkspaceState = (): WorkspaceState => {
-  const {data, loading, refetch} = useQuery<RootWorkspaceQuery>(ROOT_WORKSPACE_QUERY, {
-    fetchPolicy: 'cache-and-network',
-  });
-
+  const {data, loading, refetch} = useQuery(ROOT_WORKSPACE_QUERY);
   const workspaceOrError = data?.workspaceOrError;
 
   const locationEntries = React.useMemo(

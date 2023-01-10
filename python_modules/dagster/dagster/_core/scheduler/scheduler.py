@@ -73,7 +73,6 @@ class Scheduler(abc.ABC):
             external_schedule (ExternalSchedule): The schedule to start
 
         """
-
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
@@ -119,7 +118,6 @@ class Scheduler(abc.ABC):
         Args:
             schedule_origin_id (string): The id of the schedule target to stop running.
         """
-
         check.str_param(schedule_origin_id, "schedule_origin_id")
         check.opt_inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
@@ -212,7 +210,9 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
                 IntSource,
                 default_value=0,
                 is_required=False,
-                description="For each schedule tick that raises an error, how many times to retry that tick",
+                description=(
+                    "For each schedule tick that raises an error, how many times to retry that tick"
+                ),
             ),
         }
 

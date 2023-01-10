@@ -14,7 +14,7 @@ from dagster._core.execution.resources_init import resource_initialization_manag
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.system_config.objects import ResourceConfig, config_map_resources
 
 from .api import ephemeral_instance_if_missing
@@ -43,7 +43,7 @@ def build_resources(
     resources: Mapping[str, Any],
     instance: Optional[DagsterInstance] = None,
     resource_config: Optional[Mapping[str, Any]] = None,
-    pipeline_run: Optional[PipelineRun] = None,
+    pipeline_run: Optional[DagsterRun] = None,
     log_manager: Optional[DagsterLogManager] = None,
 ) -> Generator[Resources, None, None]:
     """Context manager that yields resources using provided resource definitions and run config.
@@ -69,21 +69,19 @@ def build_resources(
             initialization. Defaults to system log manager.
 
     Examples:
+        .. code-block:: python
 
-    .. code-block:: python
+            from dagster import resource, build_resources
 
-        from dagster import resource, build_resources
+            @resource
+            def the_resource():
+                return "foo"
 
-        @resource
-        def the_resource():
-            return "foo"
-
-        with build_resources(resources={"from_def": the_resource, "from_val": "bar"}) as resources:
-            assert resources.from_def == "foo"
-            assert resources.from_val == "bar"
+            with build_resources(resources={"from_def": the_resource, "from_val": "bar"}) as resources:
+                assert resources.from_def == "foo"
+                assert resources.from_val == "bar"
 
     """
-
     resources = check.mapping_param(resources, "resource_defs", key_type=str)
     instance = check.opt_inst_param(instance, "instance", DagsterInstance)
     resource_config = check.opt_mapping_param(resource_config, "resource_config", key_type=str)

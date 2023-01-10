@@ -5,7 +5,7 @@ from typing import Callable, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.instance import MayHaveInstanceWeakref
-from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import DagsterRun
 
 MAX_BYTES_FILE_READ = 33554432  # 32 MB
 MAX_BYTES_CHUNK_READ = 4194304  # 4 MB
@@ -45,7 +45,8 @@ class ComputeLogFileData(
 
 class ComputeLogManager(ABC, MayHaveInstanceWeakref):
     """Abstract base class for storing unstructured compute logs (stdout/stderr) from the compute
-    steps of pipeline solids."""
+    steps of pipeline solids.
+    """
 
     @contextmanager
     def watch(self, pipeline_run, step_key=None):
@@ -56,7 +57,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
             pipeline_run (PipelineRun): The pipeline run config
             step_key (Optional[String]): The step_key for a compute step
         """
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+        check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
         check.opt_str_param(step_key, "step_key")
 
         if not self.enabled(pipeline_run, step_key):

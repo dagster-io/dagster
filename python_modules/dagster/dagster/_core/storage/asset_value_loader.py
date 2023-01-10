@@ -7,14 +7,16 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.job_definition import (
     default_job_io_manager_with_fs_io_manager_schema,
 )
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.build_resources import build_resources, get_mapped_resource_config
 from dagster._core.execution.context.input import build_input_context
 from dagster._core.execution.context.output import build_output_context
-from dagster._core.instance import DagsterInstance, is_dagster_home_set
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.config import is_dagster_home_set
 from dagster._core.types.dagster_type import resolve_dagster_type
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .io_manager import IOManager
 
@@ -51,7 +53,7 @@ class AssetValueLoader:
                     instance=self._instance,
                 )
             )
-            ._asdict()
+            ._asdict()  # type: ignore
             .items()
         ):
             self._resource_instance_cache[built_resource_key] = built_resource
@@ -109,6 +111,11 @@ class AssetValueLoader:
             resources=self._resource_instance_cache,
             resource_config=io_manager_config[io_manager_key].config,
             partition_key=partition_key,
+            asset_partition_key_range=PartitionKeyRange(partition_key, partition_key)
+            if partition_key is not None
+            else None,
+            asset_partitions_def=assets_def.partitions_def,
+            instance=self._instance,
         )
 
         return io_manager.load_input(input_context)

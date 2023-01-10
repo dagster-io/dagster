@@ -2,10 +2,8 @@ import os
 import sys
 
 import pytest
-
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import repository_def_from_pointer
 from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 from dagster._core.errors import DagsterImportError
@@ -66,8 +64,9 @@ def test_double_pipeline():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         loadable_targets_from_python_file(double_pipeline_path)
 
-    assert str(exc_info.value) == (
-        'No repository and more than one pipeline found in "double_pipeline". '
+    assert (
+        str(exc_info.value)
+        == 'No repository and more than one pipeline found in "double_pipeline". '
         "If you load a file or module directly it must have only one pipeline "
         "in scope. Found pipelines defined in variables or decorated "
         "functions: ['pipe_one', 'pipe_two']."
@@ -95,8 +94,9 @@ def test_double_graph():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         loadable_targets_from_python_file(double_pipeline_path)
 
-    assert str(exc_info.value) == (
-        'More than one graph found in "double_graph". '
+    assert (
+        str(exc_info.value)
+        == 'More than one graph found in "double_graph". '
         "If you load a file or module directly and it has no repositories, jobs, or "
         "pipelines in scope, it must have no more than one graph in scope. "
         "Found graphs defined in variables or decorated functions: ['graph_one', 'graph_two']."
@@ -123,8 +123,9 @@ def test_double_asset_group():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         loadable_targets_from_python_file(path)
 
-    assert str(exc_info.value) == (
-        'More than one asset group found in "double_asset_group". '
+    assert (
+        str(exc_info.value)
+        == 'More than one asset group found in "double_asset_group". '
         "If you load a file or module directly and it has no repositories, jobs, "
         "pipeline, or graphs in scope, it must have no more than one asset group in scope. "
         "Found asset groups defined in variables: ['ac1', 'ac2']."
@@ -152,7 +153,8 @@ def test_no_loadable_targets():
 
     assert (
         str(exc_info.value)
-        == 'No repositories, jobs, pipelines, graphs, asset groups, or asset definitions found in "nada".'
+        == "No repositories, jobs, pipelines, graphs, asset groups, or asset definitions found in"
+        ' "nada".'
     )
 
 
@@ -216,13 +218,13 @@ def test_single_defs_in_file():
     assert isinstance(repo_def, RepositoryDefinition)
 
 
-def test_single_def_wrong_variable():
-    dagster_defs_path = file_relative_path(__file__, "single_defs_wrong_name.py")
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match="Found Definitions object at wrong_name. This object must be at a top-level variable named 'defs'.",
-    ):
-        loadable_targets_from_python_file(dagster_defs_path)
+def test_single_def_any_name():
+    dagster_defs_path = file_relative_path(__file__, "single_defs_any_name.py")
+    loadable_targets = loadable_targets_from_python_file(dagster_defs_path)
+
+    assert len(loadable_targets) == 1
+    symbol = loadable_targets[0].attribute
+    assert symbol == "not_defs"
 
 
 def test_double_defs_in_file():

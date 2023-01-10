@@ -7,6 +7,7 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
 )
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.output import Out
@@ -26,6 +27,8 @@ class AssetOut(
             ("is_required", PublicAttr[bool]),
             ("dagster_type", PublicAttr[Union[DagsterType, Type[NoValueSentinel]]]),
             ("group_name", PublicAttr[Optional[str]]),
+            ("code_version", PublicAttr[Optional[str]]),
+            ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
         ],
     )
 ):
@@ -52,6 +55,9 @@ class AssetOut(
             into the table.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If
             not provided, the name "default" is used.
+        code_version (Optional[str]): The version of the code that generates this asset.
+        freshness_policy (Optional[FreshnessPolicy]): A policy which indicates how up to date this
+            asset is intended to be.
     """
 
     def __new__(
@@ -64,6 +70,8 @@ class AssetOut(
         io_manager_key: Optional[str] = None,
         metadata: Optional[MetadataUserInput] = None,
         group_name: Optional[str] = None,
+        code_version: Optional[str] = None,
+        freshness_policy: Optional[FreshnessPolicy] = None,
     ):
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
@@ -80,8 +88,12 @@ class AssetOut(
             io_manager_key=check.opt_str_param(
                 io_manager_key, "io_manager_key", default=DEFAULT_IO_MANAGER_KEY
             ),
-            metadata=check.opt_dict_param(metadata, "metadata", key_type=str),
+            metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
             group_name=check.opt_str_param(group_name, "group_name"),
+            code_version=check.opt_str_param(code_version, "code_version"),
+            freshness_policy=check.opt_inst_param(
+                freshness_policy, "freshness_policy", FreshnessPolicy
+            ),
         )
 
     def to_out(self) -> Out:
@@ -91,4 +103,5 @@ class AssetOut(
             metadata=self.metadata,
             is_required=self.is_required,
             io_manager_key=self.io_manager_key,
+            code_version=self.code_version,
         )

@@ -11,7 +11,6 @@ from ..output import GraphOut, OutputDefinition
 
 
 class _Graph:
-
     name: Optional[str]
     description: Optional[str]
     input_defs: Sequence[InputDefinition]
@@ -67,7 +66,7 @@ class _Graph:
             check.dict_param(self.out, "out", key_type=str, value_type=GraphOut)
             output_defs = [out.to_definition(name=name) for name, out in self.out.items()]
 
-        from dagster._core.definitions.decorators.composite_solid_decorator import do_composition
+        from dagster._core.definitions.composition import do_composition
 
         (
             input_mappings,

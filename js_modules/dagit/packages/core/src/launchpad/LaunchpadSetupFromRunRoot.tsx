@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import * as React from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
@@ -8,7 +8,7 @@ import {
   useExecutionSessionStorage,
 } from '../app/ExecutionSessionStorage';
 import {usePermissions} from '../app/Permissions';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {graphql} from '../graphql';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -17,7 +17,6 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {LaunchpadSessionError} from './LaunchpadSessionError';
 import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
-import {ConfigForRunQuery, ConfigForRunQueryVariables} from './types/ConfigForRunQuery';
 
 export const LaunchpadSetupFromRunRoot: React.FC<{repoAddress: RepoAddress}> = (props) => {
   const {repoAddress} = props;
@@ -29,7 +28,7 @@ export const LaunchpadSetupFromRunRoot: React.FC<{repoAddress: RepoAddress}> = (
   }>();
 
   if (!canLaunchPipelineExecution.enabled) {
-    return <Redirect to={`/workspace/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
+    return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
   }
   return (
     <LaunchpadSetupFromRunAllowedRoot
@@ -64,10 +63,9 @@ const LaunchpadSetupFromRunAllowedRoot: React.FC<Props> = (props) => {
 
   const [storageData, onSave] = useExecutionSessionStorage(repoAddress, pipelineName);
 
-  const {data, loading} = useQuery<ConfigForRunQuery, ConfigForRunQueryVariables>(
-    CONFIG_FOR_RUN_QUERY,
-    {variables: {runId}},
-  );
+  const {data, loading} = useQuery(CONFIG_FOR_RUN_QUERY, {
+    variables: {runId},
+  });
   const runOrError = data?.runOrError;
   const run = runOrError?.__typename === 'Run' ? runOrError : null;
 
@@ -130,7 +128,7 @@ const LaunchpadSetupFromRunAllowedRoot: React.FC<Props> = (props) => {
   );
 };
 
-const CONFIG_FOR_RUN_QUERY = gql`
+const CONFIG_FOR_RUN_QUERY = graphql(`
   query ConfigForRunQuery($runId: ID!) {
     runOrError(runId: $runId) {
       ... on Run {
@@ -142,5 +140,4 @@ const CONFIG_FOR_RUN_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);

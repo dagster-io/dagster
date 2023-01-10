@@ -21,7 +21,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
-from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -70,7 +70,8 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def __init__(self, base_dir, inst_data=None):
         """Note that idempotent initialization of the SQLite database is done on a per-run_id
-        basis in the body of connect, since each run is stored in a separate database."""
+        basis in the body of connect, since each run is stored in a separate database.
+        """
         self._base_dir = os.path.abspath(check.str_param(base_dir, "base_dir"))
         mkdir_p(self._base_dir)
 
@@ -151,7 +152,6 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         while True:
             try:
-
                 with engine.connect() as connection:
                     db_revision, head_revision = check_alembic_revision(alembic_config, connection)
 
@@ -172,8 +172,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     "table asset_keys already exists" in err_msg
                     or "table secondary_indexes already exists" in err_msg
                     or "table event_logs already exists" in err_msg
-                    or "database is locked" in err_msg
+                    or "table asset_event_tags already exists" in err_msg
                     or "table alembic_version already exists" in err_msg
+                    or "database is locked" in err_msg
                     or "UNIQUE constraint failed: alembic_version.version_num" in err_msg
                 ):
                     raise
@@ -182,8 +183,10 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     raise
                 else:
                     logging.info(
-                        "SqliteEventLogStorage._initdb: Encountered apparent concurrent init, "
-                        "retrying (%s retries left). Exception: %s",
+                        (
+                            "SqliteEventLogStorage._initdb: Encountered apparent concurrent init, "
+                            "retrying (%s retries left). Exception: %s"
+                        ),
                         retry_limit,
                         err_msg,
                     )
@@ -198,7 +201,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             conn_string = self.conn_string_for_shard(shard)
             engine = create_engine(conn_string, poolclass=NullPool)
 
-            if not shard in self._initialized_dbs:
+            if shard not in self._initialized_dbs:
                 self._initdb(engine)
                 self._initialized_dbs.add(shard)
 
@@ -234,7 +237,10 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if event.is_dagster_event and event.dagster_event.asset_key:
             check.invariant(
                 event.dagster_event_type in ASSET_EVENTS,
-                "Can only store asset materializations, materialization_planned, and observations in index database",
+                (
+                    "Can only store asset materializations, materialization_planned, and"
+                    " observations in index database"
+                ),
             )
 
             event_id = None
@@ -282,7 +288,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         else:
             asset_details = None
 
-        if event_records_filter.after_cursor != None and not isinstance(
+        if event_records_filter.after_cursor is not None and not isinstance(
             event_records_filter.after_cursor, RunShardedEventsCursor
         ):
             raise Exception(
@@ -445,9 +451,9 @@ class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
                 logging.exception("Exception in callback for event watch on run %s.", self._run_id)
 
             if (
-                status == PipelineRunStatus.SUCCESS
-                or status == PipelineRunStatus.FAILURE
-                or status == PipelineRunStatus.CANCELED
+                status == DagsterRunStatus.SUCCESS
+                or status == DagsterRunStatus.FAILURE
+                or status == DagsterRunStatus.CANCELED
             ):
                 self._event_log_storage.end_watch(self._run_id, self._cb)
 

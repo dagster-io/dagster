@@ -2,7 +2,6 @@ import sys
 from contextlib import contextmanager
 
 import pytest
-
 from dagster import repository
 from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._core.errors import DagsterUserCodeProcessError
@@ -126,7 +125,7 @@ def test_defer_snapshots(instance):
 
         external_repository_data = deserialize_as(ser_repo_data, ExternalRepositoryData)
 
-        assert len(external_repository_data.external_job_refs) == 4
+        assert len(external_repository_data.external_job_refs) == 5
         assert external_repository_data.external_pipeline_datas is None
 
         repo = ExternalRepository(
@@ -135,7 +134,7 @@ def test_defer_snapshots(instance):
             ref_to_data_fn=_ref_to_data,
         )
         jobs = repo.get_all_external_jobs()
-        assert len(jobs) == 4
+        assert len(jobs) == 5
         assert _state.get("cnt", 0) == 0
 
         job = jobs[0]

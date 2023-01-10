@@ -31,7 +31,7 @@ EXPOSE 3000
 ENTRYPOINT ["dagit", "-h", "0.0.0.0", "-p", "3000"]
 ```
 
-You'll also need to include a `workspace.yaml` file in the same directory as the Dockerfile to configure your [workspace](/concepts/repositories-workspaces/workspaces):
+You'll also need to include a [workspace file (`workspace.yaml`)](/concepts/code-locations/workspace-files) file in the same directory as the Dockerfile to configure your code location server:
 
 ```yaml file=/deploying/docker/workspace.yaml
 load_from:
@@ -39,7 +39,7 @@ load_from:
   - python_file: repo.py
 ```
 
-as well as a `dagster.yaml` file to configure your [Dagster instance](/deployment/dagster-instance):
+As well as a `dagster.yaml` file to configure your [Dagster instance](/deployment/dagster-instance):
 
 ```yaml file=/deploying/docker/dagster.yaml
 storage:
@@ -69,7 +69,7 @@ local_artifact_storage:
     base_dir: "/opt/dagster/local/"
 ```
 
-In cases where you're using environment variables to configure the instance, you should ensure these environment variables are exposed in the running Dagit container.
+In cases where you're using environment variables to configure the instance, you should ensure these environment variables are exposed in the container running Dagit.
 
 Dagit servers expose a health check endpoint at `/dagit_info`, which returns a JSON response like:
 
@@ -81,9 +81,17 @@ Dagit servers expose a health check endpoint at `/dagit_info`, which returns a J
 }
 ```
 
+---
+
 ## Multi-container Docker deployment
 
-More advanced dagster deployments will require deploying more than one container. For example, if you are using [dagster-daemon](/deployment/dagster-daemon) to run schedules and sensors or manage a queue of runs, you'll likely want a separate container running the `dagster-daemon` service. This service must have access to your `dagster.yaml` and `workspace.yaml` files, just like the Dagit container. You can also configure your [workspace](/concepts/repositories-workspaces/workspaces) so that your code can be updated and deployed separately in its own container running a gRPC server, without needing to redeploy the other dagster services. To enable this setup, include a container exposing a gRPC server at a port, and add that port in your `workspace.yaml` file.
+More advanced Dagster deployments will require deploying more than one container. For example, if you are using the [Dagster daemon](/deployment/dagster-daemon) to run schedules and sensors or manage a queue of runs, you'll likely want a separate container running the `dagster-daemon` service.
+
+This service must have access to your `dagster.yaml` and `workspace.yaml` files, just like the Dagit container. You can also configure your code location server (gRPC server) so that your code can be updated and deployed separately in its own container, without needing to redeploy the other Dagster services. To enable this setup, include a container exposing a gRPC server at a port and add that port in your `workspace.yaml` file.
+
+In this passage you have a "code location server" "running a gRPC server" which isn't really right.
+
+I think in this context it is right to say the code location IS a grpc server.
 
 For example, your user code container might have the following Dockerfile:
 
@@ -122,7 +130,7 @@ EXPOSE 4000
 CMD ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-f", "repo.py"]
 ```
 
-and your workspace might look like:
+And your code location server might look like:
 
 ```yaml file=/deploying/docker/workspace_grpc.yaml
 load_from:
@@ -133,13 +141,15 @@ load_from:
       location_name: "example_user_code"
 ```
 
-When you update your code, you can rebuild and restart your user code container without needing to redeploy other parts of the system. Dagit will automatically notice that a new server has been redeployed and prompt you to refresh your workspace.
+When you update your code, you can rebuild and restart your user code container without needing to redeploy other parts of the system. Dagit will automatically notice that a new server has been redeployed and prompt you to refresh.
 
-When you add or remove a user code container, you can also remove the corresponding entry from your `workspace.yaml` file. If this file is mounted on the dagit and dagster-daemon containers as a volume, you can pick up the changes in Dagit by reloading the workspace from the Deployment tab. The dagster-daemon container will automatically pick up the changes by periodically reloading the workspace from the `workspace.yaml` file.
+When you add or remove a user code container, you can also remove the corresponding entry from your `workspace.yaml` file. If this file is mounted on the Dagit and Dagster daemon containers as a volume, you can pick up the changes in Dagit by reloading from the **Deployment** tab. The Dagster daemon container will automatically pick up the changes by periodically reloading the `workspace.yaml` file.
+
+---
 
 ## Launching runs in containers
 
-To launch each run its own container, you can add the <PyObject module="dagster_docker" object="DockerRunLauncher" /> to your `dagster.yaml` file:
+To launch each run in its own container, you can add the <PyObject module="dagster_docker" object="DockerRunLauncher" /> to your `dagster.yaml` file:
 
 ```yaml file=/deploying/docker/run_launcher.yaml
 run_launcher:
@@ -152,15 +162,17 @@ run_launcher:
       - DAGSTER_POSTGRES_DB
 ```
 
-This launcher will start each run in a new container, using whatever image that you set in the `DAGSTER_CURRENT_IMAGE` environment variable in your user code container (which will usually be the same image as the user code container itself)
+This launcher will start each run in a new container, using whatever image set in the `DAGSTER_CURRENT_IMAGE` environment variable in your user code container. This will usually be the same image as the user code container itself.
 
-Any container that launches runs (usually the `dagster-daemon` container if you are maintaining a [run queue](/deployment/run-coordinator#queuedruncoordinator) or launching runs from schedules or sensors) must have permissions to create Docker containers in order to use this run launcher (mounting `/var/run/docker.sock` as a volume is one way to give it these permissions).
+Any container that launches runs - usually the `dagster-daemon` container if you're maintaining a [run queue](/deployment/run-coordinator#queuedruncoordinator) or launching runs from schedules or sensors - must have permissions to create Docker containers in order to use this run launcher. Mounting `/var/run/docker.sock` as a volume is one way to give it these permissions.
+
+---
 
 ## Mounting volumes
 
 You can mount your code in your user code container so that you don't have to rebuild your container whenever your code changes. Even if you're using volume mounts, you still need to restart the container whenever your code changes.
 
-If you are mounting your code as a volume in your user code container and using `DockerRunLauncher` to launch each run in a new container, you must specify your volume mounts in the `DockerRunLauncher` config as well. For example:
+If you're mounting your code as a volume in your user code container and using `DockerRunLauncher` to launch each run in a new container, you must specify your volume mounts in the `DockerRunLauncher` config as well. For example:
 
 ```yaml file=/deploying/docker/run_launcher_volumes.yaml
 run_launcher:
@@ -176,10 +188,21 @@ run_launcher:
         - /absolute/path/to/local/repo.py:/opt/dagster/app/
 ```
 
-## Example
+---
+
+## Docker compose example
 
 <CodeReferenceLink filePath="examples/deploy_docker" />
 
-This example demonstrates a Dagster deployment using `docker-compose` that includes a Dagit container for loading and launching jobs, a `dagster-daemon` container for managing a run queue and submitting runs from schedules and sensors, a Postgres container for persistent storage, and a container with user code. The Dagster instance uses <PyObject module="dagster_docker" object="DockerRunLauncher" /> to launch each run in its own container.
+This example demonstrates a Dagster deployment using `docker-compose` that includes:
 
-To start the deployment, run `docker-compose up`.
+- A Dagit container for loading and launching jobs
+- A `dagster-daemon` container for managing a run queue and submitting runs from schedules and sensors
+- A Postgres container for persistent storage
+- A container with user code. The Dagster instance uses <PyObject module="dagster_docker" object="DockerRunLauncher" /> to launch each run in its own container.
+
+To start the deployment, run:
+
+```shell
+docker-compose up
+```

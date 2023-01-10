@@ -7,6 +7,7 @@ import {Colors} from './Colors';
 import {Icon} from './Icon';
 import {MiddleTruncate} from './MiddleTruncate';
 import {Slider} from './Slider';
+import {Tag} from './Tag';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -41,6 +42,49 @@ export const Simple = () => {
         <MiddleTruncate text="Hello world" />
       </div>
     </>
+  );
+};
+
+export const FlexboxContainerUsage = () => {
+  return (
+    <Box>
+      {[
+        'asset1',
+        'example',
+        'test1234',
+        'example_1',
+        'helloworld',
+        'example_12',
+        'example_123',
+        'otherstring',
+        'example_1234',
+        'variable_width',
+      ].map((text) => (
+        <Box key={text} style={{maxWidth: '100%'}} flex={{direction: 'row', gap: 8}}>
+          <Box>
+            <Icon name="asset_non_sda" />
+          </Box>
+          <a style={{overflow: 'hidden'}} href="#/">
+            <MiddleTruncate text={text} />
+          </a>
+        </Box>
+      ))}
+    </Box>
+  );
+};
+export const TagUsage = () => {
+  return (
+    <Tag icon="job">
+      <span>
+        Job in{' '}
+        <Box
+          flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}}
+          style={{maxWidth: 100}}
+        >
+          <MiddleTruncate text="repo@longrepolocation.py" />
+        </Box>
+      </span>
+    </Tag>
   );
 };
 

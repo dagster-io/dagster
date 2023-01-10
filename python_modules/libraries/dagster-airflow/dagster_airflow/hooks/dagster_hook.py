@@ -8,12 +8,10 @@ from airflow import __version__ as airflow_version
 from airflow.exceptions import AirflowException
 from airflow.hooks.base_hook import BaseHook
 from airflow.models import Connection
-
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 
 
 class DagsterHook(BaseHook):
-
     conn_name_attr = "dagster_conn_id"
     default_conn_name = "dagster_default"
     conn_type = "dagster"
@@ -152,7 +150,7 @@ fragment PythonErrorFragment on PythonError {
         """
         variables = {
             "executionParams": {
-                "runConfigData": json.dumps({} if run_config == None else run_config),
+                "runConfigData": json.dumps({} if run_config is None else run_config),
                 "selector": {
                     "repositoryName": repository_name,
                     "repositoryLocationName": repostitory_location_name,
@@ -174,7 +172,8 @@ fragment PythonErrorFragment on PythonError {
             return run["id"]
         else:
             raise AirflowException(
-                f'Error launching run: {response_json["data"]["launchPipelineExecution"]["message"]}'
+                "Error launching run:"
+                f' {response_json["data"]["launchPipelineExecution"]["message"]}'
             )
 
     def wait_for_run(
@@ -213,9 +212,9 @@ fragment PythonErrorFragment on PythonError {
         headers = {"Dagster-Cloud-Api-Token": self.user_token if self.user_token else ""}
         status = ""
         while status not in [
-            PipelineRunStatus.SUCCESS.value,
-            PipelineRunStatus.FAILURE.value,
-            PipelineRunStatus.CANCELED.value,
+            DagsterRunStatus.SUCCESS.value,
+            DagsterRunStatus.FAILURE.value,
+            DagsterRunStatus.CANCELED.value,
         ]:
             response = requests.post(
                 url=self.url, json={"query": query, "variables": variables}, headers=headers
@@ -230,11 +229,11 @@ fragment PythonErrorFragment on PythonError {
                     f'Error fetching run status: {response_json["data"]["runOrError"]["message"]}'
                 )
 
-            if status == PipelineRunStatus.SUCCESS.value:
+            if status == DagsterRunStatus.SUCCESS.value:
                 logging.info(f"Run {run_id} completed successfully")
-            elif status == PipelineRunStatus.FAILURE.value:
+            elif status == DagsterRunStatus.FAILURE.value:
                 raise AirflowException(f"Run {run_id} failed")
-            elif status == PipelineRunStatus.CANCELED.value:
+            elif status == DagsterRunStatus.CANCELED.value:
                 raise AirflowException(f"Run {run_id} was cancelled")
             time.sleep(5)
 
@@ -294,5 +293,6 @@ fragment PythonErrorFragment on PythonError {
             != "TerminateRunSuccess"
         ):
             raise AirflowException(
-                f'Error terminating run: {response_json["data"]["terminatePipelineExecution"]["message"]}'
+                "Error terminating run:"
+                f' {response_json["data"]["terminatePipelineExecution"]["message"]}'
             )

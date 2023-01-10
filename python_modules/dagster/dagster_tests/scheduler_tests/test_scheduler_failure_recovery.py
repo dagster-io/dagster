@@ -2,10 +2,9 @@ import multiprocessing
 
 import pendulum
 import pytest
-
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import TickStatus
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
@@ -174,7 +173,7 @@ def test_failure_recovery_after_run_created(
             # Run was created, but hasn't launched yet
             assert run.tags[SCHEDULED_EXECUTION_TIME_TAG] == frozen_datetime.isoformat()
             assert run.tags[PARTITION_NAME_TAG] == "2019-02-26"
-            assert run.status == PipelineRunStatus.NOT_STARTED
+            assert run.status == DagsterRunStatus.NOT_STARTED
         else:
             # The run was created and launched - running again should do nothing other than
             # moving the tick to success state.
@@ -195,7 +194,6 @@ def test_failure_recovery_after_run_created(
 
     frozen_datetime = frozen_datetime.add(minutes=5)
     with pendulum.test(frozen_datetime):
-
         # Running again just launches the existing run and marks the tick as success
         scheduler_process = spawn_ctx.Process(
             target=_test_launch_scheduled_runs_in_subprocess,

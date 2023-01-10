@@ -54,7 +54,6 @@ def is_config_scalar_valid(config_type_snap: ConfigTypeSnap, config_value: objec
 
 
 def validate_config(config_schema: object, config_value: T) -> EvaluateValueResult[T]:
-
     config_type = resolve_to_config_type(config_schema)
     config_type = check.inst(cast(ConfigType, config_type), ConfigType)
 
@@ -127,7 +126,7 @@ def _validate_scalar_union_config(
     check.param_invariant(context.config_type_snap.kind == ConfigTypeKind.SCALAR_UNION, "context")
     check.not_none_param(config_value, "config_value")
 
-    if isinstance(config_value, dict) or isinstance(config_value, list):
+    if isinstance(config_value, (dict, list)):
         return _validate_config(
             context.for_new_config_type_key(context.config_type_snap.non_scalar_type_key),
             cast(T, config_value),
@@ -263,7 +262,7 @@ def _validate_shape_config(
     field_errors = []
     field_snaps = check.not_none(context.config_type_snap.fields)
     for field_snap in field_snaps:
-        name = field_snap.name
+        name = check.not_none(field_snap.name)
         aliased_name = field_aliases.get(name)
         if aliased_name is not None and aliased_name in config_value and name in config_value:
             field_errors.append(
@@ -366,7 +365,6 @@ def _compute_missing_fields_error(
     missing_fields: List[str] = []
 
     for field_snap in field_snaps:
-
         field_alias = field_aliases.get(cast(str, field_snap.name))
         if field_snap.is_required and field_snap.name not in incoming_fields:
             if field_alias is None or field_alias not in incoming_fields:

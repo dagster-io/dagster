@@ -1,21 +1,21 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, Colors, Heading, NonIdealState, PageHeader, Spinner, TextInput} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {graphql} from '../graphql';
+import {OverviewJobsQueryQuery} from '../graphql/graphql';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {OverviewJobsTable} from './OverviewJobsTable';
 import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
-import {OverviewJobsQuery} from './types/OverviewJobsQuery';
 import {visibleRepoKeys} from './visibleRepoKeys';
 
 export const OverviewJobsRoot = () => {
@@ -26,7 +26,7 @@ export const OverviewJobsRoot = () => {
 
   const repoCount = allRepos.length;
 
-  const queryResultOverview = useQuery<OverviewJobsQuery>(OVERVIEW_JOBS_QUERY, {
+  const queryResultOverview = useQuery(OVERVIEW_JOBS_QUERY, {
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true,
   });
@@ -38,7 +38,7 @@ export const OverviewJobsRoot = () => {
   const repoBuckets = React.useMemo(() => {
     const visibleKeys = visibleRepoKeys(visibleRepos);
     return buildBuckets(data).filter(({repoAddress}) =>
-      visibleKeys.has(repoAddressAsString(repoAddress)),
+      visibleKeys.has(repoAddressAsHumanString(repoAddress)),
     );
   }, [data, visibleRepos]);
 
@@ -79,12 +79,12 @@ export const OverviewJobsRoot = () => {
               description={
                 anyReposHidden ? (
                   <div>
-                    No jobs matching <strong>{searchValue}</strong> were found in the selected
-                    repositories
+                    No jobs matching <strong>{searchValue}</strong> were found in the selected code
+                    locations
                   </div>
                 ) : (
                   <div>
-                    No jobs matching <strong>{searchValue}</strong> were found in this workspace
+                    No jobs matching <strong>{searchValue}</strong> were found in your definitions
                   </div>
                 )
               }
@@ -100,8 +100,8 @@ export const OverviewJobsRoot = () => {
             title="No jobs"
             description={
               anyReposHidden
-                ? 'No jobs were found in the selected repositories'
-                : 'No jobs were found in this workspace'
+                ? 'No jobs were found in the selected code locations'
+                : 'No jobs were found in your definitions'
             }
           />
         </Box>
@@ -149,7 +149,7 @@ type RepoBucket = {
   }[];
 };
 
-const buildBuckets = (data?: OverviewJobsQuery): RepoBucket[] => {
+const buildBuckets = (data?: OverviewJobsQueryQuery): RepoBucket[] => {
   if (data?.workspaceOrError.__typename !== 'Workspace') {
     return [];
   }
@@ -186,7 +186,7 @@ const buildBuckets = (data?: OverviewJobsQuery): RepoBucket[] => {
   return sortRepoBuckets(buckets);
 };
 
-export const OVERVIEW_JOBS_QUERY = gql`
+export const OVERVIEW_JOBS_QUERY = graphql(`
   query OverviewJobsQuery {
     workspaceOrError {
       ... on Workspace {
@@ -213,6 +213,4 @@ export const OVERVIEW_JOBS_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);

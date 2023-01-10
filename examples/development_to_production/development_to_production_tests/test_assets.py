@@ -1,13 +1,12 @@
 import pandas as pd
-from development_to_production.assets import comments, items, stories
-from development_to_production.resources import StubHNClient, stub_hn_client
-
 from dagster import build_op_context
+from development_to_production.assets import comments, items, stories
+from development_to_production.resources import StubHNClient
 
 
 def test_items():
     context = build_op_context(
-        resources={"hn_client": stub_hn_client}, op_config={"N": StubHNClient().fetch_max_item_id()}
+        resources={"hn_client": StubHNClient()}, op_config={"N": StubHNClient().fetch_max_item_id()}
     )
     hn_dataset = items(context)
     assert isinstance(hn_dataset, pd.DataFrame)

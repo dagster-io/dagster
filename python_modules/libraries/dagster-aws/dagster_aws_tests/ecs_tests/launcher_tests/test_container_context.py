@@ -1,10 +1,9 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-from dagster_aws.ecs.container_context import EcsContainerContext
-
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.test_utils import environ
+from dagster_aws.ecs.container_context import EcsContainerContext
 
 
 @pytest.fixture
@@ -84,6 +83,15 @@ def test_merge(
     assert merged.secrets_tags == ["other_secret_tag", "dagster"]
 
     assert merged.container_name == "bar"
+
+    assert merged.run_resources == {
+        "cpu": "256",
+        "memory": "8192",
+    }
+    assert merged.server_resources == {
+        "cpu": "2048",
+        "memory": "4096",
+    }
 
     with pytest.raises(
         Exception, match="Tried to load environment variable OTHER_FOO_ENV_VAR, but it was not set"

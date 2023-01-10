@@ -15,7 +15,9 @@ def is_list_of_dicts(_, value):
 SimpleDataFrame = DagsterType(
     name="SimpleDataFrame",
     type_check_fn=is_list_of_dicts,
-    description="A naive representation of a data frame, e.g., as returned by csv.DictReader.",
+    description=(
+        "A naive representation of a data frame, e.g., as returned by csv.DictReader."
+    ),
 )
 # end_custom_types_marker_0
 

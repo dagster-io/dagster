@@ -11,7 +11,7 @@ from .generate import _should_skip_file
 # Currently we only download from 'master' branch
 DEFAULT_GITHUB_URL = "https://codeload.github.com/dagster-io/dagster/tar.gz/master"
 # Examples aren't that can't be downloaded from the dagster project CLI
-EXAMPLES_TO_IGNORE = ["docs_snippets"]
+EXAMPLES_TO_IGNORE = ["docs_snippets", "experimental"]
 # Hardcoded list of available examples. The list is tested against the examples folder in this mono
 # repo to make sure it's up-to-date.
 AVAILABLE_EXAMPLES = [
@@ -20,7 +20,10 @@ AVAILABLE_EXAMPLES = [
     "assets_pandas_pyspark",
     "assets_pandas_type_metadata",
     "assets_smoke_test",
+    "quickstart_aws",
     "quickstart_etl",
+    "quickstart_gcp",
+    "quickstart_snowflake",
     "tutorial_dbt_dagster",
     "tutorial_notebook_assets",
     "deploy_docker",

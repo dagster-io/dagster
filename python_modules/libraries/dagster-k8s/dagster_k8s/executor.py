@@ -1,15 +1,18 @@
 from typing import Iterator, List, Optional, cast
 
 import kubernetes
-from dagster_k8s.launcher import K8sRunLauncher
-
-from dagster import Field, IntSource, StringSource
-from dagster import _check as check
-from dagster import executor
+from dagster import (
+    Field,
+    IntSource,
+    StringSource,
+    _check as check,
+    executor,
+)
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.events import DagsterEvent, EngineEventData, MetadataEntry
 from dagster._core.execution.retries import RetryMode, get_retries_config
+from dagster._core.execution.tags import get_tag_concurrency_limits_config
 from dagster._core.executor.base import Executor
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating import (
@@ -18,8 +21,12 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
     StepHandlerContext,
 )
-from dagster._utils import frozentags, merge_dicts
+from dagster._utils import frozentags
+from dagster._utils.merger import merge_dicts
 
+from dagster_k8s.launcher import K8sRunLauncher
+
+from .client import DagsterKubernetesClient
 from .container_context import K8sContainerContext
 from .job import (
     DagsterK8sJobConfig,
@@ -27,7 +34,6 @@ from .job import (
     get_k8s_job_name,
     get_user_defined_k8s_config,
 )
-from .utils import delete_job
 
 
 @executor(
@@ -40,9 +46,12 @@ from .utils import delete_job
             "max_concurrent": Field(
                 IntSource,
                 is_required=False,
-                description="Limit on the number of pods that will run concurrently within the scope "
-                "of a Dagster run. Note that this limit is per run, not global.",
+                description=(
+                    "Limit on the number of pods that will run concurrently within the scope "
+                    "of a Dagster run. Note that this limit is per run, not global."
+                ),
             ),
+            "tag_concurrency_limits": get_tag_concurrency_limits_config(),
         },
     ),
     requirements=multiple_process_executor_requirements(),
@@ -84,12 +93,13 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
     Configuration set using `tags` on a `@job` will only apply to the `run` level. For configuration
     to apply at each `step` it must be set using `tags` for each `@op`.
     """
-
     run_launcher = init_context.instance.run_launcher
     if not isinstance(run_launcher, K8sRunLauncher):
         raise DagsterUnmetExecutorRequirementsError(
-            "This engine is only compatible with a K8sRunLauncher; configure the "
-            "K8sRunLauncher on your instance to use it.",
+            (
+                "This engine is only compatible with a K8sRunLauncher; configure the "
+                "K8sRunLauncher on your instance to use it."
+            ),
         )
 
     exc_cfg = init_context.executor_config
@@ -118,6 +128,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         ),
         retries=RetryMode.from_config(exc_cfg["retries"]),  # type: ignore
         max_concurrent=check.opt_int_elem(exc_cfg, "max_concurrent"),
+        tag_concurrency_limits=check.opt_list_elem(exc_cfg, "tag_concurrency_limits"),
         should_verify_step=True,
     )
 
@@ -142,8 +153,6 @@ class K8sStepHandler(StepHandler):
             container_context, "container_context", K8sContainerContext
         )
 
-        self._fixed_k8s_client_batch_api = k8s_client_batch_api
-
         if load_incluster_config:
             check.invariant(
                 kubeconfig_file is None,
@@ -154,6 +163,10 @@ class K8sStepHandler(StepHandler):
             check.opt_str_param(kubeconfig_file, "kubeconfig_file")
             kubernetes.config.load_kube_config(kubeconfig_file)
 
+        self._api_client = DagsterKubernetesClient.production_client(
+            batch_api_override=k8s_client_batch_api
+        )
+
     def _get_container_context(self, step_handler_context: StepHandlerContext):
         run_target = K8sContainerContext.create_for_run(
             step_handler_context.pipeline_run,
@@ -161,12 +174,14 @@ class K8sStepHandler(StepHandler):
         )
         return run_target.merge(self._executor_container_context)
 
-    @property
-    def _batch_api(self):
-        return self._fixed_k8s_client_batch_api or kubernetes.client.BatchV1Api()
+    def _get_k8s_step_job_name(self, step_handler_context: StepHandlerContext):
+        if (
+            step_handler_context.execute_step_args.step_keys_to_execute is None
+            or len(step_handler_context.execute_step_args.step_keys_to_execute) != 1
+        ):
+            check.failed("Expected step_keys_to_execute to contain single entry")
 
-    def _get_k8s_step_job_name(self, step_handler_context):
-        step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
+        step_key = next(iter(step_handler_context.execute_step_args.step_keys_to_execute))
 
         name_key = get_k8s_job_name(
             step_handler_context.execute_step_args.pipeline_run_id,
@@ -224,7 +239,14 @@ class K8sStepHandler(StepHandler):
                 "dagster/op": step_key,
                 "dagster/run-id": step_handler_context.execute_step_args.pipeline_run_id,
             },
-            env_vars=step_handler_context.execute_step_args.get_command_env(),
+            env_vars=[
+                *step_handler_context.execute_step_args.get_command_env(),
+                {
+                    "name": "DAGSTER_RUN_JOB_NAME",
+                    "value": step_handler_context.pipeline_run.pipeline_name,
+                },
+                {"name": "DAGSTER_RUN_STEP_KEY", "value": step_key},
+            ],
         )
 
         yield DagsterEvent.step_worker_starting(
@@ -235,7 +257,9 @@ class K8sStepHandler(StepHandler):
             ],
         )
 
-        self._batch_api.create_namespaced_job(body=job, namespace=container_context.namespace)
+        self._api_client.batch_api.create_namespaced_job(
+            body=job, namespace=container_context.namespace
+        )
 
     def check_step_health(self, step_handler_context: StepHandlerContext) -> CheckStepHealthResult:
         step_keys_to_execute = cast(
@@ -248,10 +272,11 @@ class K8sStepHandler(StepHandler):
 
         container_context = self._get_container_context(step_handler_context)
 
-        job = self._batch_api.read_namespaced_job(
-            namespace=container_context.namespace, name=job_name
+        status = self._api_client.get_job_status(
+            namespace=container_context.namespace,
+            job_name=job_name,
         )
-        if job.status.failed:
+        if status.failed:
             return CheckStepHealthResult.unhealthy(
                 reason=f"Discovered failed Kubernetes job {job_name} for step {step_key}.",
             )
@@ -274,4 +299,4 @@ class K8sStepHandler(StepHandler):
             event_specific_data=EngineEventData(),
         )
 
-        delete_job(job_name=job_name, namespace=container_context.namespace)
+        self._api_client.delete_job(job_name=job_name, namespace=container_context.namespace)

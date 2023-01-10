@@ -1,7 +1,6 @@
+import dagster._check as check
 import pendulum
 import sqlalchemy as db
-
-import dagster._check as check
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
 from dagster._core.storage.schedules.schema import InstigatorsTable
@@ -85,11 +84,17 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
     def optimize_for_dagit(self, statement_timeout, pool_recycle):
         # When running in dagit, hold an open connection and set statement_timeout
+        existing_options = self._engine.url.query.get("options")
+        timeout_option = pg_statement_timeout(statement_timeout)
+        if existing_options:
+            options = f"{timeout_option} {existing_options}"
+        else:
+            options = timeout_option
         self._engine = create_engine(
             self.postgres_url,
             isolation_level="AUTOCOMMIT",
             pool_size=1,
-            connect_args={"options": pg_statement_timeout(statement_timeout)},
+            connect_args={"options": options},
             pool_recycle=pool_recycle,
         )
 

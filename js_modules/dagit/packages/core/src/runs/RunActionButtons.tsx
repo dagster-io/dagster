@@ -4,8 +4,10 @@ import * as React from 'react';
 import {SharedToaster} from '../app/DomUtils';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {usePermissions} from '../app/Permissions';
+import {RunFragmentFragment} from '../graphql/graphql';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
-import {buildRepoPath} from '../workspace/buildRepoAddress';
+import {buildRepoAddress, buildRepoPathForHuman} from '../workspace/buildRepoAddress';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
 import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
@@ -14,17 +16,16 @@ import {DagsterTag} from './RunTag';
 import {ReExecutionStyle} from './RunUtils';
 import {StepSelection} from './StepSelection';
 import {TerminationDialog, TerminationState} from './TerminationDialog';
-import {RunFragment} from './types/RunFragment';
 
 interface RunActionButtonsProps {
-  run: RunFragment;
+  run: RunFragmentFragment;
   selection: StepSelection;
   graph: GraphQueryItem[];
   metadata: IRunMetadataDict;
   onLaunch: (style: ReExecutionStyle) => Promise<void>;
 }
 
-export const CancelRunButton: React.FC<{run: RunFragment}> = ({run}) => {
+export const CancelRunButton: React.FC<{run: RunFragmentFragment}> = ({run}) => {
   const {id: runId, canTerminate} = run;
   const [showDialog, setShowDialog] = React.useState<boolean>(false);
   const closeDialog = React.useCallback(() => setShowDialog(false), []);
@@ -84,7 +85,7 @@ function stepSelectionWithState(selection: StepSelection, metadata: IRunMetadata
 }
 
 function stepSelectionFromRunTags(
-  run: RunFragment,
+  run: RunFragmentFragment,
   graph: GraphQueryItem[],
   metadata: IRunMetadataDict,
 ) {
@@ -98,8 +99,8 @@ function stepSelectionFromRunTags(
   );
 }
 
-export const canRunAllSteps = (run: RunFragment) => doneStatuses.has(run.status);
-export const canRunFromFailure = (run: RunFragment) =>
+export const canRunAllSteps = (run: RunFragmentFragment) => doneStatuses.has(run.status);
+export const canRunFromFailure = (run: RunFragmentFragment) =>
   run.executionPlan && failedStatuses.has(run.status);
 
 export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
@@ -250,7 +251,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
 };
 
 function usePipelineAvailabilityErrorForRun(
-  run: RunFragment | null | undefined,
+  run: RunFragmentFragment | null | undefined,
 ): null | {tooltip?: string | JSX.Element; icon?: IconName; disabled: boolean} {
   const repoMatch = useRepositoryForRun(run);
 
@@ -283,25 +284,32 @@ function usePipelineAvailabilityErrorForRun(
       // Only the repo is a match.
       return {
         icon: 'warning',
-        tooltip: `The workspace version of "${run.pipelineName}" may be different than the one used for the original run.`,
+        tooltip: `The loaded version of "${run.pipelineName}" may be different than the one used for the original run.`,
         disabled: false,
       };
     }
 
     if (matchType === 'snapshot-only') {
       // Only the snapshot ID matched, but not the repo.
+      const originRepoName = run.repositoryOrigin
+        ? repoAddressAsHumanString(
+            buildRepoAddress(
+              run.repositoryOrigin.repositoryName,
+              run.repositoryOrigin.repositoryLocationName,
+            ),
+          )
+        : null;
+
       return {
         icon: 'warning',
         tooltip: (
           <Group direction="column" spacing={4}>
-            <div>{`The original run loaded "${run.pipelineName}" from a different repository.`}</div>
-            {run.repositoryOrigin ? (
+            <div>{`The original run loaded "${run.pipelineName}" from ${
+              originRepoName || 'a different code location'
+            }.`}</div>
+            {originRepoName ? (
               <div>
-                Original repository:{' '}
-                <strong>
-                  {run.repositoryOrigin.repositoryName}@
-                  {run.repositoryOrigin.repositoryLocationName}
-                </strong>
+                Original definition in: <strong>{originRepoName}</strong>
               </div>
             ) : null}
           </Group>
@@ -325,9 +333,9 @@ function usePipelineAvailabilityErrorForRun(
 
   const tooltip = (
     <Group direction="column" spacing={8}>
-      <div>{`"${run.pipelineName}" is not available in the current workspace.`}</div>
+      <div>{`"${run.pipelineName}" is not available in the your definitions.`}</div>
       {repoForRun && repoLocationForRun ? (
-        <div>{`Load repository ${buildRepoPath(
+        <div>{`Load definitions for ${buildRepoPathForHuman(
           repoForRun,
           repoLocationForRun,
         )} and try again.`}</div>

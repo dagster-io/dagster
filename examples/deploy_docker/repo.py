@@ -1,6 +1,5 @@
-from dagster_docker import docker_executor
-
 from dagster import fs_io_manager, graph, op, repository, schedule
+from dagster_docker import docker_executor
 
 
 @op

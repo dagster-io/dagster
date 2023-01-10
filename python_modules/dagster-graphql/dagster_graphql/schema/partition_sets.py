@@ -1,15 +1,5 @@
-import graphene
-from dagster_graphql.implementation.fetch_partition_sets import (
-    get_partition_by_name,
-    get_partition_config,
-    get_partition_set_partition_runs,
-    get_partition_set_partition_statuses,
-    get_partition_tags,
-    get_partitions,
-)
-from dagster_graphql.implementation.fetch_runs import get_runs
-
 import dagster._check as check
+import graphene
 from dagster._core.host_representation import ExternalPartitionSet, RepositoryHandle
 from dagster._core.host_representation.external_data import (
     ExternalMultiPartitionsDefinitionData,
@@ -19,7 +9,17 @@ from dagster._core.host_representation.external_data import (
 )
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
+
+from dagster_graphql.implementation.fetch_partition_sets import (
+    get_partition_by_name,
+    get_partition_config,
+    get_partition_set_partition_runs,
+    get_partition_set_partition_statuses,
+    get_partition_tags,
+    get_partitions,
+)
+from dagster_graphql.implementation.fetch_runs import get_runs
 
 from .backfill import GraphenePartitionBackfill
 from .errors import (
@@ -259,7 +259,9 @@ class GraphenePartitionSet(graphene.ObjectType):
             for backfill in graphene_info.context.instance.get_backfills(
                 cursor=kwargs.get("cursor"),
             )
-            if backfill.partition_set_origin.partition_set_name == self._external_partition_set.name
+            if backfill.partition_set_origin
+            and backfill.partition_set_origin.partition_set_name
+            == self._external_partition_set.name
             and backfill.partition_set_origin.external_repository_origin.repository_name
             == self._external_repository_handle.repository_name
         ]
@@ -340,7 +342,15 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                 for dim in partition_def_data.external_partition_dimension_definitions
             ]
             if isinstance(partition_def_data, ExternalMultiPartitionsDefinitionData)
-            else [],
+            else [
+                GrapheneDimensionDefinitionType(
+                    name="default",
+                    description="",
+                    type=GraphenePartitionDefinitionType.from_partition_def_data(
+                        partition_def_data
+                    ),
+                )
+            ],
         )
 
 

@@ -22,7 +22,6 @@ def _create_command_list(
     command: str,
     flags_dict: Mapping[str, Any],
 ) -> Sequence[str]:
-
     prefix = [executable]
     if warn_error:
         prefix += ["--warn-error"]
@@ -63,7 +62,7 @@ def execute_cli(
 ) -> DbtCliOutput:
     """Executes a command on the dbt CLI in a subprocess."""
     try:
-        import dbt  # pylint: disable=unused-import
+        import dbt  # noqa: F401
     except ImportError as e:
         raise check.CheckError(
             "You must have `dbt-core` installed in order to execute dbt CLI commands."

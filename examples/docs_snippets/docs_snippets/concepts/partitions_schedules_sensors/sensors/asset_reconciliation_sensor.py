@@ -1,25 +1,43 @@
-from dagster import AssetSelection, build_asset_reconciliation_sensor, repository
+from dagster import (
+    AssetSelection,
+    Definitions,
+    asset,
+    build_asset_reconciliation_sensor,
+)
 
-asset_a = None
 
-asset_b = None
+@asset
+def asset1():
+    pass
 
-asset_c = None
+
+@asset
+def asset2():
+    pass
+
+
+@asset
+def asset3():
+    pass
+
+
+@asset
+def asset4():
+    pass
+
 
 # start_asset_reconciliation_sensor
 
 
-@repository
-def repository_1():
-    return [
-        asset_a,
-        asset_b,
-        asset_c,
+defs = Definitions(
+    assets=[asset1, asset2, asset3, asset4],
+    sensors=[
         build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(asset_b, asset_c),
+            asset_selection=AssetSelection.assets(asset1, asset3, asset4),
             name="asset_reconciliation_sensor",
         ),
-    ]
+    ],
+)
 
 
 # end_asset_reconciliation_sensor

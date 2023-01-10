@@ -8,17 +8,19 @@ from typing import Any, Mapping, Optional, Sequence, Set, Union, cast
 
 import nbformat
 import papermill
-from papermill.engines import papermill_engines
-from papermill.iorw import load_notebook_node, write_ipynb
-
-from dagster import In, OpDefinition, Out, Output
-from dagster import _check as check
-from dagster import _seven
+from dagster import (
+    In,
+    OpDefinition,
+    Out,
+    Output,
+    _check as check,
+    _seven,
+)
 from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.utils import validate_tags
-from dagster._core.execution.context.compute import SolidExecutionContext
+from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.input import build_input_context
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.execution.plan.outputs import StepOutputHandle
@@ -26,11 +28,20 @@ from dagster._serdes import pack_value
 from dagster._seven import get_system_temp_directory
 from dagster._utils import mkdir_p, safe_tempfile_path
 from dagster._utils.error import serializable_error_info_from_exc_info
+from papermill.engines import papermill_engines
+from papermill.iorw import load_notebook_node, write_ipynb
 
 from .compat import ExecutionError
 from .engine import DagstermillEngine
 from .errors import DagstermillError
 from .translator import DagsterTranslator
+
+
+def _clean_path_for_windows(notebook_path: str) -> str:
+    """In windows, the notebook cant render in dagit unless the C: prefix is removed.
+    os.path.splitdrive will split the path into (drive, tail), so just return the tail
+    """
+    return os.path.splitdrive(notebook_path)[1]
 
 
 # https://github.com/nteract/papermill/blob/17d4bbb3960c30c263bca835e48baf34322a3530/papermill/parameterize.py
@@ -81,10 +92,8 @@ def replace_parameters(context, nb, parameters):
     else:
         # Inject to the top of the notebook, presumably first cell includes dagstermill import
         context.log.debug(
-            (
-                "Executing notebook with no tagged parameters cell: injecting boilerplate in first "
-                "cell."
-            )
+            "Executing notebook with no tagged parameters cell: injecting boilerplate in first "
+            "cell."
         )
         before = []
         after = nb.cells
@@ -152,6 +161,7 @@ def _dm_compute(
     output_notebook_name=None,
     asset_key_prefix=None,
     output_notebook=None,
+    save_notebook_on_failure=False,
 ):
     check.str_param(name, "name")
     check.str_param(notebook_path, "notebook_path")
@@ -160,7 +170,7 @@ def _dm_compute(
     check.opt_str_param(output_notebook, "output_notebook")
 
     def _t_fn(step_context, inputs):
-        check.inst_param(step_context, "step_context", SolidExecutionContext)
+        check.inst_param(step_context, "step_context", OpExecutionContext)
         check.param_invariant(
             isinstance(step_context.run_config, dict),
             "context",
@@ -171,7 +181,6 @@ def _dm_compute(
 
         with tempfile.TemporaryDirectory() as output_notebook_dir:
             with safe_tempfile_path() as output_log_path:
-
                 prefix = str(uuid.uuid4())
                 parameterized_notebook_path = os.path.join(
                     output_notebook_dir, f"{prefix}-inter.ipynb"
@@ -215,8 +224,20 @@ def _dm_compute(
                         ex.ename == "RetryRequested" or ex.ename == "Failure"
                     ):
                         step_execution_context.log.warn(
-                            f"Encountered raised {ex.ename} in notebook. Use dagstermill.yield_event "
-                            "with RetryRequested or Failure to trigger their behavior."
+                            f"Encountered raised {ex.ename} in notebook. Use"
+                            " dagstermill.yield_event with RetryRequested or Failure to trigger"
+                            " their behavior."
+                        )
+
+                    if save_notebook_on_failure:
+                        storage_dir = step_context.instance.storage_directory()
+                        storage_path = os.path.join(storage_dir, f"{prefix}-out.ipynb")
+                        with open(storage_path, "wb") as dest_file_obj:
+                            with open(executed_notebook_path, "rb") as obj:
+                                dest_file_obj.write(obj.read())
+
+                        step_execution_context.log.info(
+                            f"Failed notebook written to {storage_path}"
                         )
 
                     raise
@@ -258,12 +279,14 @@ def _dm_compute(
                     # if file manager writing errors, e.g. file manager is not provided, we throw a warning
                     # and fall back to the previously stored temp executed notebook.
                     step_context.log.warning(
-                        "Error when attempting to materialize executed notebook using file manager: "
-                        f"{str(serializable_error_info_from_exc_info(sys.exc_info()))}"
-                        f"\nNow falling back to local: notebook execution was temporarily materialized at {executed_notebook_path}"
-                        "\nIf you have supplied a file manager and expect to use it for materializing the "
-                        'notebook, please include "file_manager" in the `required_resource_keys` argument '
-                        f"to `{dagster_factory_name}`"
+                        "Error when attempting to materialize executed notebook using file"
+                        " manager:"
+                        f" {str(serializable_error_info_from_exc_info(sys.exc_info()))}\nNow"
+                        " falling back to local: notebook execution was temporarily materialized"
+                        f" at {executed_notebook_path}\nIf you have supplied a file manager and"
+                        " expect to use it for materializing the notebook, please include"
+                        ' "file_manager" in the `required_resource_keys` argument to'
+                        f" `{dagster_factory_name}`"
                     )
 
                 if output_notebook is not None:
@@ -319,6 +342,7 @@ def define_dagstermill_op(
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
     io_manager_key: Optional[str] = None,
+    save_notebook_on_failure: bool = False,
 ):
     """Wrap a Jupyter notebook in a op.
 
@@ -343,12 +367,17 @@ def define_dagstermill_op(
         io_manager_key (Optional[str]): If using output_notebook_name, you can additionally provide
             a string key for the IO manager used to store the output notebook.
             If not provided, the default key output_notebook_io_manager will be used.
+        save_notebook_on_failure (bool): If True and the notebook fails during execution, the failed notebook will be
+            written to the Dagster storage directory. The location of the file will be printed in the Dagster logs.
+            Defaults to False.
 
     Returns:
         :py:class:`~dagster.OpDefinition`
     """
     check.str_param(name, "name")
     check.str_param(notebook_path, "notebook_path")
+    check.bool_param(save_notebook_on_failure, "save_notebook_on_failure")
+
     required_resource_keys = set(
         check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
     )
@@ -377,13 +406,19 @@ def define_dagstermill_op(
     if tags is not None:
         check.invariant(
             "notebook_path" not in tags,
-            "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key is reserved for use by Dagster",
+            (
+                "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key"
+                " is reserved for use by Dagster"
+            ),
         )
         check.invariant(
             "kind" not in tags,
-            "user-defined op tags contains the `kind` key, but the `kind` key is reserved for use by Dagster",
+            (
+                "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
+                " use by Dagster"
+            ),
         )
-    default_tags = {"notebook_path": notebook_path, "kind": "ipynb"}
+    default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}
 
     return OpDefinition(
         name=name,
@@ -393,6 +428,7 @@ def define_dagstermill_op(
             notebook_path,
             output_notebook_name,
             asset_key_prefix=asset_key_prefix,
+            save_notebook_on_failure=save_notebook_on_failure,
         ),
         ins=ins,
         outs=outs,

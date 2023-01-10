@@ -14,7 +14,7 @@ def get_version() -> str:
 
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
-pin = "" if ver == "0+dev" else f"=={ver}"
+pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-fivetran",
     version=ver,
@@ -34,4 +34,9 @@ setup(
     packages=find_packages(exclude=["dagster_fivetran_tests*"]),
     install_requires=[f"dagster{pin}"],
     zip_safe=False,
+    entry_points={
+        "console_scripts": [
+            "dagster-fivetran = dagster_fivetran.cli:main",
+        ]
+    },
 )

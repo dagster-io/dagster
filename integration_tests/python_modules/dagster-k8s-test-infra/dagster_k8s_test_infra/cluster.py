@@ -6,15 +6,11 @@ import time
 from collections import namedtuple
 from contextlib import contextmanager
 
+import dagster._check as check
 import docker
 import kubernetes
 import psycopg2
 import pytest
-from dagster_k8s.utils import wait_for_pod
-from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage, PostgresScheduleStorage
-from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
-
-import dagster._check as check
 from dagster._cli.debug import export_run
 from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.instance.ref import InstanceRef
@@ -24,6 +20,9 @@ from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.test_utils import ExplodingRunLauncher, environ
 from dagster._utils import find_free_port
+from dagster_k8s.client import DagsterKubernetesClient
+from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage, PostgresScheduleStorage
+from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 from .integration_utils import IS_BUILDKITE, check_output
 
@@ -70,8 +69,8 @@ def define_cluster_provider_fixture(additional_kind_images=None):
                         client = docker.from_env()
                         client.images.get(docker_image)
                         print(  # pylint: disable=print-call
-                            "Found existing image tagged {image}, skipping image build. To rebuild, first run: "
-                            "docker rmi {image}".format(image=docker_image)
+                            "Found existing image tagged {image}, skipping image build. To rebuild,"
+                            " first run: docker rmi {image}".format(image=docker_image)
                         )
                     except docker.errors.ImageNotFound:
                         build_and_tag_test_image(docker_image)
@@ -116,7 +115,7 @@ def local_port_forward_postgres(namespace):
     )
     forward_port = find_free_port()
 
-    wait_for_pod(postgres_pod_name, namespace=namespace)
+    DagsterKubernetesClient.production_client().wait_for_pod(postgres_pod_name, namespace=namespace)
 
     p = None
     try:
@@ -283,10 +282,8 @@ def helm_postgres_url(helm_namespace):
 
 @pytest.fixture(scope="function")
 def dagster_instance(helm_postgres_url):  # pylint: disable=redefined-outer-name
-
     with tempfile.TemporaryDirectory() as tempdir:
         with environ({"DAGSTER_HOME": tempdir}):
-
             with DagsterInstance(
                 instance_type=InstanceType.PERSISTENT,
                 local_artifact_storage=LocalArtifactStorage(tempdir),

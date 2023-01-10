@@ -1,4 +1,4 @@
-import {BaseTag, Box, Colors, Icon, IconWrapper, StyledTag} from '@dagster-io/ui';
+import {BaseTag, Box, Colors, Icon, IconWrapper, MiddleTruncate, StyledTag} from '@dagster-io/ui';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -11,8 +11,8 @@ import {LeftNavItemType} from '../nav/LeftNavItemType';
 import {getAssetGroupItemsForOption, getJobItemsForOption} from '../nav/getLeftNavItemsForOption';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {buildRepoAddress, DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
+import {repoAddressAsHumanString, repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
 
@@ -32,7 +32,7 @@ export const SectionedLeftNav = () => {
 
   const onToggle = React.useCallback(
     (repoAddress: RepoAddress) => {
-      const key = repoAddressAsString(repoAddress);
+      const key = repoAddressAsURLString(repoAddress);
       setExpandedKeys((current) => {
         let nextExpandedKeys = [...(current || [])];
         if (nextExpandedKeys.includes(key)) {
@@ -45,6 +45,17 @@ export const SectionedLeftNav = () => {
     },
     [setExpandedKeys],
   );
+
+  const visibleReposAndKeys = React.useMemo(() => {
+    return visibleRepos.map((repo) => {
+      const repoAddress = buildRepoAddress(repo.repository.name, repo.repositoryLocation.name);
+      return {
+        repo,
+        repoAddress,
+        key: repoAddressAsHumanString(repoAddress),
+      };
+    });
+  }, [visibleRepos]);
 
   const duplicateRepoNames = React.useMemo(() => {
     const uniques = new Set<string>();
@@ -62,55 +73,45 @@ export const SectionedLeftNav = () => {
 
   // Sort repositories alphabetically, then move empty repos to the bottom.
   const sortedRepos = React.useMemo(() => {
-    const alphaSorted = [...visibleRepos].sort((a, b) =>
-      a.repository.name.toLocaleLowerCase().localeCompare(b.repository.name.toLocaleLowerCase()),
+    const alphaSorted = [...visibleReposAndKeys].sort((a, b) =>
+      a.key.toLocaleLowerCase().localeCompare(b.key.toLocaleLowerCase()),
     );
     const reposWithJobs = [];
     const reposWithoutJobs = [];
-    for (const repo of alphaSorted) {
-      const jobs = repo.repository.pipelines;
+    for (const repoWithKey of alphaSorted) {
+      const jobs = repoWithKey.repo.repository.pipelines;
       if (jobs.length > 0 && jobs.some((job) => !isHiddenAssetGroupJob(job.name))) {
-        reposWithJobs.push(repo);
+        reposWithJobs.push(repoWithKey);
       } else {
-        reposWithoutJobs.push(repo);
+        reposWithoutJobs.push(repoWithKey);
       }
     }
     return [...reposWithJobs, ...reposWithoutJobs];
-  }, [visibleRepos]);
+  }, [visibleReposAndKeys]);
 
   if (loading) {
     return <div style={{flex: 1}} />;
   }
 
   return (
-    <>
-      <Box
-        flex={{direction: 'row', alignItems: 'center', gap: 8}}
-        padding={{horizontal: 24, bottom: 12}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
-        <span style={{fontSize: '16px', fontWeight: 500}}>Workspace</span>
-      </Box>
-      <Container>
-        {sortedRepos.map((repo) => {
-          const repoName = repo.repository.name;
-          const repoAddress = buildRepoAddress(repoName, repo.repositoryLocation.name);
-          const addressAsString = repoAddressAsString(repoAddress);
-          return (
-            <Section
-              key={addressAsString}
-              onToggle={onToggle}
-              option={repo}
-              repoAddress={repoAddress}
-              expanded={sortedRepos.length === 1 || expandedKeys.includes(addressAsString)}
-              collapsible={sortedRepos.length > 1}
-              showRepoLocation={duplicateRepoNames.has(repoName)}
-              match={match?.repoAddress === repoAddress ? match : null}
-            />
-          );
-        })}
-      </Container>
-    </>
+    <Container>
+      {sortedRepos.map(({repo, repoAddress, key}) => {
+        const {name} = repoAddress;
+        const addressAsString = repoAddressAsURLString(repoAddress);
+        return (
+          <Section
+            key={key}
+            onToggle={onToggle}
+            option={repo}
+            repoAddress={repoAddress}
+            expanded={sortedRepos.length === 1 || expandedKeys.includes(addressAsString)}
+            collapsible={sortedRepos.length > 1}
+            showRepoLocation={duplicateRepoNames.has(name) && name !== DUNDER_REPO_NAME}
+            match={match?.repoAddress === repoAddress ? match : null}
+          />
+        );
+      })}
+    </Container>
   );
 };
 
@@ -190,17 +191,12 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
             <Icon name="folder_open" size={16} />
           </Box>
           <RepoNameContainer>
-            <Box flex={{direction: 'column'}} style={{flex: 1, minWidth: 0}}>
-              <RepoName style={{fontWeight: 500}} data-tooltip={option.repository.name}>
-                {option.repository.name}
-              </RepoName>
-              {showRepoLocation ? (
-                <RepoLocation data-tooltip={`@${option.repositoryLocation.name}`} $disabled={empty}>
-                  @{option.repositoryLocation.name}
-                </RepoLocation>
-              ) : null}
-            </Box>
-
+            <RepoName
+              data-tooltip={repoAddressAsHumanString(repoAddress)}
+              data-tooltip-style={CodeLocationTooltipStyles}
+            >
+              <MiddleTruncate text={repoAddressAsHumanString(repoAddress)} showTitle={false} />
+            </RepoName>
             {/* Wrapper div to prevent tag from stretching vertically */}
             <div>
               <BaseTag
@@ -223,6 +219,19 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
   );
 });
 
+const CodeLocationTooltipStyles = JSON.stringify({
+  background: Colors.Gray100,
+  filter: `brightness(97%)`,
+  color: Colors.Gray900,
+  fontWeight: 500,
+  border: 'none',
+  borderRadius: 7,
+  overflow: 'hidden',
+  fontSize: 14,
+  padding: '5px 10px',
+  transform: 'translate(-10px,-5px)',
+} as React.CSSProperties);
+
 type PathMatch = {
   repoPath: string;
   pipelinePath?: string;
@@ -231,8 +240,8 @@ type PathMatch = {
 
 const usePathMatch = () => {
   const match = useRouteMatch<PathMatch>([
-    '/workspace/:repoPath/(jobs|pipelines)/:pipelinePath',
-    '/workspace/:repoPath/asset-groups/:groupName',
+    '/locations/:repoPath/(jobs|pipelines)/:pipelinePath',
+    '/locations/:repoPath/asset-groups/:groupName',
   ]);
   const {groupName, repoPath, pipelinePath} = match?.params || {};
 
@@ -352,15 +361,5 @@ const RepoNameContainer = styled.div`
 const RepoName = styled.div`
   font-weight: 500;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-`;
-
-const RepoLocation = styled.div<{$disabled: boolean}>`
-  color: ${({$disabled}) => ($disabled ? Colors.Gray400 : Colors.Gray700)};
-  font-size: 12px;
-  margin-top: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 `;

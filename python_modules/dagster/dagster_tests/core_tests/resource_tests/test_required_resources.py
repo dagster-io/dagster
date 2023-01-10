@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import (
     AssetMaterialization,
     DagsterType,
@@ -17,9 +16,10 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster._core.definitions.configurable import configured
+from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster._core.types.dagster_type import create_any_type
-from dagster._legacy import CompositeSolidDefinition, OutputDefinition
+from dagster._legacy import OutputDefinition
 
 
 def get_resource_init_pipeline(resources_initted):
@@ -452,9 +452,9 @@ def define_composite_materialization_pipeline(
     def output_op(_context):
         return "hello"
 
-    wrap_solid = CompositeSolidDefinition(
+    wrap_solid = GraphDefinition(
         name="wrap_solid",
-        solid_defs=[output_op],
+        node_defs=[output_op],
         output_mappings=[OutputDefinition(CustomDagsterType).mapping_from("output_op")],
     )
 
@@ -732,7 +732,10 @@ def test_root_input_manager_missing_fails():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="input manager with key 'missing_root_input_manager' required by input 'root_input' of op 'requires_missing_root_input_manager' was not provided",
+        match=(
+            "input manager with key 'missing_root_input_manager' required by input 'root_input' of"
+            " op 'requires_missing_root_input_manager' was not provided"
+        ),
     ):
 
         @job
@@ -747,7 +750,10 @@ def test_io_manager_missing_fails():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="io manager with key 'missing_io_manager' required by output 'result' of op 'requires_missing_io_manager'' was not provided",
+        match=(
+            "io manager with key 'missing_io_manager' required by output 'result' of op"
+            " 'requires_missing_io_manager'' was not provided"
+        ),
     ):
 
         @job

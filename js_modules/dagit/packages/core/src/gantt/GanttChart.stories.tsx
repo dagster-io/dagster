@@ -2,10 +2,9 @@ import {CustomTooltipProvider} from '@dagster-io/ui';
 import {Meta} from '@storybook/react/types-6-0';
 import React, {useState} from 'react';
 
+import {RunMetadataProviderMessageFragmentFragment, RunStatus} from '../graphql/graphql';
 import {extractMetadataFromLogs} from '../runs/RunMetadataProvider';
-import {RunMetadataProviderMessageFragment} from '../runs/types/RunMetadataProviderMessageFragment';
 import {StorybookProvider} from '../testing/StorybookProvider';
-import {RunStatus} from '../types/globalTypes';
 
 import {IGanttNode} from './Constants';
 import {GanttChart, GanttChartLoadingState} from './GanttChart';
@@ -82,7 +81,7 @@ const GRAPH: IGanttNode[] = [
   },
 ];
 
-const LOGS: RunMetadataProviderMessageFragment[] = [
+const LOGS: RunMetadataProviderMessageFragmentFragment[] = [
   {
     message: '',
     timestamp: '0',
@@ -192,6 +191,22 @@ const LOGS: RunMetadataProviderMessageFragment[] = [
     timestamp: '0',
     stepKey: 'B_very_long_step_name',
     __typename: 'ExecutionStepSuccessEvent',
+  },
+  {
+    message: 'Starting initialization of resources [io_manager].',
+    timestamp: '0',
+    markerStart: `c-resource-1`,
+    markerEnd: null,
+    stepKey: 'C',
+    __typename: 'ResourceInitStartedEvent',
+  },
+  {
+    message: 'Finished initialization of resources [io_manager].',
+    timestamp: '0',
+    markerStart: null,
+    markerEnd: `c-resource-1`,
+    stepKey: 'C',
+    __typename: 'ResourceInitSuccessEvent',
   },
   {
     message: 'Started execution of step "C".',

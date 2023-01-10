@@ -21,7 +21,6 @@ def is_running_in_test():
 
 @contextmanager
 def uploading_logging_thread():
-
     stop_event = threading.Event()
     logging_thread = threading.Thread(
         target=upload_logs, args=([stop_event]), name="telemetry-upload"
@@ -36,7 +35,6 @@ def uploading_logging_thread():
 
 def upload_logs(stop_event, raise_errors=False):
     """Upload logs to telemetry server every hour, or when log directory size is > 10MB"""
-
     # We add a sanity check to ensure that no logs are uploaded in our
     # buildkite/azure testing pipelines. The check is present at upload to
     # allow for testing of logs being correctly written.
@@ -90,7 +88,6 @@ def upload_logs(stop_event, raise_errors=False):
 
 def _upload_logs(dagster_log_dir, log_size, dagster_log_queue_dir, raise_errors):
     """Send POST request to telemetry server with the contents of $DAGSTER_HOME/logs/ directory"""
-
     try:
         # lazy import for perf
         import requests

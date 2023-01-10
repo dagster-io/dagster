@@ -1,8 +1,7 @@
 from typing import Mapping
 
-import sqlalchemy as db
-
 import dagster._check as check
+import sqlalchemy as db
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.runs import (
     DaemonHeartbeatsTable,
@@ -96,11 +95,17 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
     def optimize_for_dagit(self, statement_timeout, pool_recycle):
         # When running in dagit, hold 1 open connection and set statement_timeout
+        existing_options = self._engine.url.query.get("options")
+        timeout_option = pg_statement_timeout(statement_timeout)
+        if existing_options:
+            options = f"{timeout_option} {existing_options}"
+        else:
+            options = timeout_option
         self._engine = create_engine(
             self.postgres_url,
             isolation_level="AUTOCOMMIT",
             pool_size=1,
-            connect_args={"options": pg_statement_timeout(statement_timeout)},
+            connect_args={"options": options},
             pool_recycle=pool_recycle,
         )
 
@@ -152,7 +157,6 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
     def add_daemon_heartbeat(self, daemon_heartbeat):
         with self.connect() as conn:
-
             # insert or update if already present, using postgres specific on_conflict
             conn.execute(
                 db.dialects.postgresql.insert(DaemonHeartbeatsTable)

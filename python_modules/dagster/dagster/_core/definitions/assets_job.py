@@ -8,8 +8,8 @@ import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import AssetSelectionData
-from dagster._utils import merge_dicts
 from dagster._utils.backcompat import ExperimentalWarning
+from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer
 from .assets import AssetsDefinition
@@ -113,7 +113,6 @@ def build_assets_job(
         description (Optional[str]): A description of the job.
 
     Examples:
-
         .. code-block:: python
 
             @asset
@@ -234,7 +233,6 @@ def build_source_asset_observation_job(
         description (Optional[str]): A description of the job.
 
     Examples:
-
         .. code-block:: python
 
             @asset
@@ -388,6 +386,11 @@ def build_node_deps(
             upstream_asset_key = resolved_asset_deps.get_resolved_asset_key_for_input(
                 assets_def, input_name
             )
+
+            # ignore self-deps
+            if upstream_asset_key in assets_def.keys:
+                continue
+
             if upstream_asset_key in node_alias_and_output_by_asset_key:
                 upstream_node_alias, upstream_output_name = node_alias_and_output_by_asset_key[
                     upstream_asset_key
@@ -510,7 +513,8 @@ def _ensure_resources_dont_conflict(
     source_assets: Sequence[SourceAsset],
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> None:
-    """Ensures that resources between assets, source assets, and provided resource dictionary do not conflict."""
+    """Ensures that resources between assets, source assets, and provided resource dictionary do not conflict.
+    """
     resource_defs_from_assets = {}
     all_assets: Sequence[Union[AssetsDefinition, SourceAsset]] = [*assets, *source_assets]
     for asset in all_assets:
@@ -547,7 +551,6 @@ def check_resources_satisfy_requirements(
 
     Note that resources provided on assets cannot satisfy resource requirements provided on other assets.
     """
-
     _ensure_resources_dont_conflict(assets, source_assets, resource_defs)
 
     all_assets: Sequence[Union[AssetsDefinition, SourceAsset]] = [*assets, *source_assets]
@@ -562,7 +565,6 @@ def get_all_resource_defs(
     source_assets: Sequence[SourceAsset],
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> Mapping[str, ResourceDefinition]:
-
     # Ensures that no resource keys conflict, and each asset has its resource requirements satisfied.
     check_resources_satisfy_requirements(assets, source_assets, resource_defs)
 

@@ -49,6 +49,7 @@ class GrpcServerEndpoint(
 
 T = TypeVar("T")
 
+
 # Daemons in different threads can use a shared GrpcServerRegistry to ensure that
 # a single GrpcServerProcess is created for each origin
 class GrpcServerRegistry(AbstractContextManager, Generic[T]):
@@ -114,7 +115,6 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
         # How long to wait for the server to start up and receive connections before timing out
         startup_timeout,
     ):
-
         self.instance = instance
 
         # ProcessRegistryEntry map of servers being currently returned, keyed by origin ID
@@ -124,7 +124,10 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
 
         check.invariant(
             heartbeat_ttl > reload_interval,
-            "Heartbeat TTL must be larger than reload interval, or processes could die due to TTL failure before they are reloaded",
+            (
+                "Heartbeat TTL must be larger than reload interval, or processes could die due to"
+                " TTL failure before they are reloaded"
+            ),
         )
 
         self._reload_interval = check.int_param(reload_interval, "reload_interval")
@@ -198,10 +201,11 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
         loadable_target_origin = self._get_loadable_target_origin(repository_location_origin)
         if not loadable_target_origin:
             raise Exception(
-                f"No Python file/module information available for location {repository_location_origin.location_name}"
+                "No Python file/module information available for location"
+                f" {repository_location_origin.location_name}"
             )
 
-        if not origin_id in self._active_entries:
+        if origin_id not in self._active_entries:
             refresh_server = True
         else:
             active_entry = self._active_entries[origin_id]
@@ -274,7 +278,7 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
                 dead_process_indexes = []
                 for index in range(len(self._all_processes)):
                     process = self._all_processes[index]
-                    if not process.server_process.poll() is None:
+                    if process.server_process.poll() is not None:
                         dead_process_indexes.append(index)
 
                 for index in reversed(dead_process_indexes):

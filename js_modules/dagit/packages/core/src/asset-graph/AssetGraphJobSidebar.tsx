@@ -1,32 +1,20 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {graphql} from '../graphql';
+import {PipelineSelector} from '../graphql/graphql';
 import {NonIdealPipelineQueryResult} from '../pipelines/NonIdealPipelineQueryResult';
-import {
-  SidebarContainerOverview,
-  SIDEBAR_ROOT_CONTAINER_FRAGMENT,
-} from '../pipelines/SidebarContainerOverview';
-import {PipelineSelector} from '../types/globalTypes';
+import {SidebarContainerOverview} from '../pipelines/SidebarContainerOverview';
 import {Loading} from '../ui/Loading';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-
-import {
-  AssetGraphSidebarQuery,
-  AssetGraphSidebarQueryVariables,
-} from './types/AssetGraphSidebarQuery';
 
 export const AssetGraphJobSidebar: React.FC<{
   pipelineSelector: PipelineSelector;
 }> = ({pipelineSelector}) => {
-  const queryResult = useQuery<AssetGraphSidebarQuery, AssetGraphSidebarQueryVariables>(
-    ASSET_GRAPH_JOB_SIDEBAR,
-    {
-      fetchPolicy: 'cache-and-network',
-      partialRefetch: true,
-      variables: {pipelineSelector},
-    },
-  );
+  const queryResult = useQuery(ASSET_GRAPH_JOB_SIDEBAR, {
+    partialRefetch: true,
+    variables: {pipelineSelector},
+  });
 
   const {repositoryName, repositoryLocationName} = pipelineSelector;
   const repoAddress = buildRepoAddress(repositoryName, repositoryLocationName);
@@ -35,7 +23,13 @@ export const AssetGraphJobSidebar: React.FC<{
     <Loading queryResult={queryResult}>
       {({pipelineSnapshotOrError}) => {
         if (pipelineSnapshotOrError.__typename !== 'PipelineSnapshot') {
-          return <NonIdealPipelineQueryResult isGraph result={pipelineSnapshotOrError} />;
+          return (
+            <NonIdealPipelineQueryResult
+              isGraph
+              result={pipelineSnapshotOrError}
+              repoAddress={repoAddress}
+            />
+          );
         }
         return (
           <SidebarContainerOverview container={pipelineSnapshotOrError} repoAddress={repoAddress} />
@@ -45,7 +39,7 @@ export const AssetGraphJobSidebar: React.FC<{
   );
 };
 
-const ASSET_GRAPH_JOB_SIDEBAR = gql`
+const ASSET_GRAPH_JOB_SIDEBAR = graphql(`
   query AssetGraphSidebarQuery($pipelineSelector: PipelineSelector!) {
     pipelineSnapshotOrError(activePipelineSelector: $pipelineSelector) {
       ... on PipelineSnapshot {
@@ -61,6 +55,4 @@ const ASSET_GRAPH_JOB_SIDEBAR = gql`
       ...PythonErrorFragment
     }
   }
-  ${SIDEBAR_ROOT_CONTAINER_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);

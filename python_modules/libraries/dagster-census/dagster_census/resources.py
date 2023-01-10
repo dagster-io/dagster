@@ -5,10 +5,9 @@ import time
 from typing import Any, Mapping, Optional
 
 import requests
+from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
-
-from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource
 
 from .types import CensusOutput
 
@@ -47,7 +46,9 @@ class CensusResource:
     def api_base_url(self) -> str:
         return f"https://{CENSUS_API_BASE}/{CENSUS_VERSION}"
 
-    def make_request(self, method: str, endpoint: str, data: str = None) -> Mapping[str, Any]:
+    def make_request(
+        self, method: str, endpoint: str, data: Optional[str] = None
+    ) -> Mapping[str, Any]:
         """
         Creates and sends a request to the desired Census API endpoint.
 
@@ -59,6 +60,7 @@ class CensusResource:
         Returns:
             Dict[str, Any]: JSON data from the response to this request
         """
+        url = f"{self.api_base_url}/{endpoint}"
         headers = {
             "User-Agent": f"dagster-census/{__version__}",
             "Content-Type": "application/json;version=2",
@@ -69,7 +71,7 @@ class CensusResource:
             try:
                 response = requests.request(
                     method=method,
-                    url=f"{self.api_base_url}/{endpoint}",
+                    url=url,
                     headers=headers,
                     auth=HTTPBasicAuth("bearer", self._api_key),
                     data=data,
@@ -83,7 +85,7 @@ class CensusResource:
                 num_retries += 1
                 time.sleep(self._request_retry_delay)
 
-        raise Failure("Exceeded max number of retries.")
+        raise Failure(f"Max retries ({self._request_max_retries}) exceeded with url: {url}.")
 
     def get_sync(self, sync_id: int) -> Mapping[str, Any]:
         """
@@ -159,7 +161,8 @@ class CensusResource:
             response_dict = self.get_sync_run(sync_run_id)
             if "data" not in response_dict.keys():
                 raise ValueError(
-                    f"Getting status of sync failed, please visit Census Logs at {log_url} to see more."
+                    f"Getting status of sync failed, please visit Census Logs at {log_url} to see"
+                    " more."
                 )
 
             sync_id = response_dict["data"]["sync_id"]
@@ -174,7 +177,8 @@ class CensusResource:
                 seconds=poll_timeout
             ):
                 raise Failure(
-                    f"Sync for sync '{sync_id}' timed out after {datetime.datetime.now() - poll_start}."
+                    f"Sync for sync '{sync_id}' timed out after"
+                    f" {datetime.datetime.now() - poll_start}."
                 )
 
             break
@@ -254,8 +258,10 @@ class CensusResource:
         "request_max_retries": Field(
             int,
             default_value=3,
-            description="The maximum number of times requests to the Census API should be retried "
-            "before failing.",
+            description=(
+                "The maximum number of times requests to the Census API should be retried "
+                "before failing."
+            ),
         ),
         "request_retry_delay": Field(
             float,

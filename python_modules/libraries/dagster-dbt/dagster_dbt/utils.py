@@ -1,9 +1,14 @@
 from typing import Any, Callable, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
 
 import dateutil
-
-from dagster import AssetKey, AssetMaterialization, AssetObservation, MetadataValue, Output
-from dagster import _check as check
+from dagster import (
+    AssetKey,
+    AssetMaterialization,
+    AssetObservation,
+    MetadataValue,
+    Output,
+    _check as check,
+)
 from dagster._core.definitions.metadata import RawMetadataValue
 
 from .types import DbtOutput
@@ -119,7 +124,6 @@ def result_to_events(
     node_resource_type = _resource_type(unique_id)
 
     if node_resource_type in ASSET_RESOURCE_TYPES and status == "success":
-
         if generate_asset_outputs:
             yield Output(
                 value=None,
@@ -159,14 +163,12 @@ def generate_events(
     node_info_to_asset_key: Optional[Callable[[Mapping[str, Any]], AssetKey]] = None,
     manifest_json: Optional[Mapping[str, Any]] = None,
 ) -> Iterator[Union[AssetMaterialization, AssetObservation]]:
-
     """
     This function yields :py:class:`dagster.AssetMaterialization` events for each model updated by
     a dbt command, and :py:class:`dagster.AssetObservation` events for each test run.
 
     Information parsed from a :py:class:`~DbtOutput` object.
     """
-
     for result in dbt_output.result["results"]:
         for event in result_to_events(
             result,
@@ -195,28 +197,27 @@ def generate_materializations(
     `dbt_rpc_sync_resource`, which will wait for execution to complete.
 
     Examples:
+        .. code-block:: python
 
-    .. code-block:: python
+            from dagster import op, Output
+            from dagster_dbt.utils import generate_materializations
+            from dagster_dbt import dbt_cli_resource, dbt_rpc_sync_resource
 
-        from dagster import op, Output
-        from dagster_dbt.utils import generate_materializations
-        from dagster_dbt import dbt_cli_resource, dbt_rpc_sync_resource
+            @op(required_resource_keys={"dbt"})
+            def my_custom_dbt_run(context):
+                dbt_output = context.resources.dbt.run()
+                for materialization in generate_materializations(dbt_output):
+                    # you can modify the materialization object to add extra metadata, if desired
+                    yield materialization
+                yield Output(my_dbt_output)
 
-        @op(required_resource_keys={"dbt"})
-        def my_custom_dbt_run(context):
-            dbt_output = context.resources.dbt.run()
-            for materialization in generate_materializations(dbt_output):
-                # you can modify the materialization object to add extra metadata, if desired
-                yield materialization
-            yield Output(my_dbt_output)
+            @job(resource_defs={{"dbt":dbt_cli_resource}})
+            def my_dbt_cli_job():
+                my_custom_dbt_run()
 
-        @job(resource_defs={{"dbt":dbt_cli_resource}})
-        def my_dbt_cli_job():
-            my_custom_dbt_run()
-
-        @job(resource_defs={{"dbt":dbt_rpc_sync_resource}})
-        def my_dbt_rpc_job():
-            my_custom_dbt_run()
+            @job(resource_defs={{"dbt":dbt_rpc_sync_resource}})
+            def my_dbt_rpc_job():
+                my_custom_dbt_run()
     """
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 

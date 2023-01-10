@@ -1,6 +1,5 @@
-from pandas import DataFrame
-
 from dagster import SourceAsset, TableSchema, asset
+from pandas import DataFrame
 
 raw_country_populations = SourceAsset(
     "raw_country_populations",
@@ -23,7 +22,11 @@ raw_country_populations = SourceAsset(
 def country_populations(raw_country_populations) -> DataFrame:
     country_populations = raw_country_populations.copy()
     country_populations["change"] = (
-        country_populations["change"].str.rstrip("%").str.replace("−", "-").astype("float") / 100.0
+        country_populations["change"]
+        .str.rstrip("%")
+        .str.replace("−", "-")  # noqa: RUF001
+        .astype("float")
+        / 100.0
     )
     return country_populations
 

@@ -7,6 +7,9 @@ import time
 
 import docker
 import pytest
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.test_utils import environ, poll_for_finished_run, poll_for_step_start
+from dagster._utils.yaml_utils import merge_yamls
 from dagster_docker.docker_run_launcher import DOCKER_CONTAINER_ID_TAG, DOCKER_IMAGE_TAG
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
@@ -17,10 +20,6 @@ from dagster_test.test_project import (
     get_test_project_recon_pipeline,
     get_test_project_workspace_and_external_pipeline,
 )
-
-from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster._core.test_utils import environ, poll_for_finished_run, poll_for_step_start
-from dagster._utils.yaml_utils import merge_yamls
 
 from . import IS_BUILDKITE, docker_postgres_instance
 
@@ -57,7 +56,6 @@ def test_launch_docker_no_network(aws_env):
         with get_test_project_workspace_and_external_pipeline(
             instance, "demo_pipeline_s3", container_image=docker_image
         ) as (workspace, orig_pipeline):
-
             external_pipeline = ReOriginatedExternalPipelineForTest(
                 orig_pipeline,
                 container_image=docker_image,
@@ -79,7 +77,7 @@ def test_launch_docker_no_network(aws_env):
 
             run = instance.get_run_by_id(run.run_id)
 
-            assert run.status == PipelineRunStatus.STARTING
+            assert run.status == DagsterRunStatus.STARTING
             assert run.tags[DOCKER_IMAGE_TAG] == docker_image
             client = docker.client.from_env()
 
@@ -141,7 +139,6 @@ def test_launch_docker_image_on_pipeline_config(aws_env):
             with get_test_project_workspace_and_external_pipeline(
                 instance, "demo_pipeline_s3", container_image=docker_image
             ) as (workspace, orig_pipeline):
-
                 external_pipeline = ReOriginatedExternalPipelineForTest(
                     orig_pipeline,
                     container_image=docker_image,
@@ -158,7 +155,7 @@ def test_launch_docker_image_on_pipeline_config(aws_env):
 
                 run = instance.get_run_by_id(run.run_id)
 
-                assert run.status == PipelineRunStatus.SUCCESS
+                assert run.status == DagsterRunStatus.SUCCESS
 
                 assert run.tags[DOCKER_IMAGE_TAG] == docker_image
 
@@ -228,7 +225,7 @@ def test_terminate_launched_docker_run(aws_env):
 
             terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
             terminated_pipeline_run = instance.get_run_by_id(run_id)
-            assert terminated_pipeline_run.status == PipelineRunStatus.CANCELED
+            assert terminated_pipeline_run.status == DagsterRunStatus.CANCELED
 
             run_logs = instance.all_logs(run_id)
 
@@ -355,8 +352,8 @@ def test_cant_combine_network_and_networks(aws_env):
                     "config": launcher_config,
                 }
             }
-        ):
-            pass
+        ) as instance:
+            print(instance.run_launcher)  # pylint: disable=print-call
 
 
 def test_terminate(aws_env):
@@ -417,14 +414,14 @@ def _test_launch(
             if not terminate:
                 poll_for_finished_run(instance, run.run_id, timeout=60)
 
-                assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
+                assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
             else:
                 start_time = time.time()
 
                 filters = RunsFilter(
                     run_ids=[run.run_id],
                     statuses=[
-                        PipelineRunStatus.STARTED,
+                        DagsterRunStatus.STARTED,
                     ],
                 )
 
@@ -441,4 +438,4 @@ def _test_launch(
                 assert launcher.terminate(run.run_id)
 
                 poll_for_finished_run(instance, run.run_id, timeout=60)
-                assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.CANCELED
+                assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.CANCELED

@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="project_fully_featured",
-    version="0+dev",
+    version="1!0+dev",
     author="Elementl",
     author_email="hello@elementl.com",
     classifiers=[
@@ -26,7 +26,7 @@ setup(
         "dbt-core",
         "dbt-duckdb",
         "dbt-snowflake",
-        "duckdb!=0.3.3",  # missing wheels
+        "duckdb!=0.3.3, <= 6.0.0",  # missing wheels
         "mock",
         # DataFrames were not written to Snowflake, causing errors
         "pandas<1.4.0",

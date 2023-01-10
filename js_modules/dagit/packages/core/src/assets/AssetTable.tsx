@@ -1,64 +1,53 @@
-import {gql, RefetchQueriesFunction} from '@apollo/client';
+import {RefetchQueriesFunction} from '@apollo/client';
 import {
   Box,
   Button,
-  Checkbox,
   Colors,
   Icon,
   MenuItem,
   Menu,
   Popover,
-  Table,
-  Mono,
   Tooltip,
+  Checkbox,
+  NonIdealState,
 } from '@dagster-io/ui';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
-import {AssetLatestRunWithNotices, AssetRunLink} from '../asset-graph/AssetRunLinking';
-import {LiveData, toGraphId} from '../asset-graph/Utils';
-import {StaleTag} from '../assets/StaleTag';
+import {AssetGroupSelector, AssetTableFragmentFragment} from '../graphql/graphql';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
-import {RepositoryLink} from '../nav/RepositoryLink';
-import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {AnchorButton} from '../ui/AnchorButton';
-import {markdownToPlaintext} from '../ui/markdownToPlaintext';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
+import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
 
-import {AssetActionMenu} from './AssetActionMenu';
-import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {AssetTableFragment as Asset} from './types/AssetTableFragment';
 import {AssetViewType} from './useAssetView';
 
+type Asset = AssetTableFragmentFragment;
 type AssetKey = {path: string[]};
 
-export const AssetTable = ({
-  view,
-  assets,
-  actionBarComponents,
-  refreshState,
-  liveDataByNode,
-  prefixPath,
-  displayPathForAsset,
-  maxDisplayCount,
-  requery,
-}: {
+interface Props {
   view: AssetViewType;
   assets: Asset[];
   refreshState: QueryRefreshState;
   actionBarComponents: React.ReactNode;
-  liveDataByNode: LiveData;
   prefixPath: string[];
   displayPathForAsset: (asset: Asset) => string[];
-  maxDisplayCount?: number;
   requery?: RefetchQueriesFunction;
+  searchPath: string;
+  searchGroup: AssetGroupSelector | null;
+}
+
+export const AssetTable: React.FC<Props> = ({
+  assets,
+  actionBarComponents,
+  refreshState,
+  prefixPath,
+  displayPathForAsset,
+  requery,
+  searchPath,
+  searchGroup,
+  view,
 }) => {
   const [toWipe, setToWipe] = React.useState<AssetKey[] | undefined>();
 
@@ -79,7 +68,7 @@ export const AssetTable = ({
   const checkedAssets: Asset[] = [];
   const checkedPathsOnscreen: string[] = [];
 
-  const pageDisplayPathKeys = Object.keys(groupedByFirstComponent).sort().slice(0, maxDisplayCount);
+  const pageDisplayPathKeys = Object.keys(groupedByFirstComponent).sort();
   pageDisplayPathKeys.forEach((pathKey) => {
     if (checkedPaths.has(pathKey)) {
       checkedPathsOnscreen.push(pathKey);
@@ -87,81 +76,114 @@ export const AssetTable = ({
     }
   });
 
-  return (
-    <Box flex={{direction: 'column'}}>
-      <Box
-        background={Colors.White}
-        flex={{alignItems: 'center', gap: 12}}
-        padding={{vertical: 8, left: 24, right: 12}}
-        style={{position: 'sticky', top: 0, zIndex: 1}}
-      >
-        {actionBarComponents}
-        <div style={{flex: 1}} />
-        <QueryRefreshCountdown refreshState={refreshState} />
-
-        <Box flex={{alignItems: 'center', gap: 8}}>
-          {checkedAssets.some((c) => !c.definition) ? (
-            <Tooltip content="One or more selected assets are not software-defined and cannot be launched directly.">
-              <Button intent="primary" icon={<Icon name="materialization" />} disabled>
-                {checkedAssets.length > 1 ? `Materialize (${checkedAssets.length})` : 'Materialize'}
-              </Button>
-            </Tooltip>
-          ) : (
-            <LaunchAssetExecutionButton
-              scope={{selected: checkedAssets.map((a) => ({...a.definition!, assetKey: a.key}))}}
+  const content = () => {
+    if (!assets.length) {
+      if (searchPath) {
+        return (
+          <Box padding={{top: 64}}>
+            <NonIdealState
+              icon="search"
+              title="No matching assets"
+              description={
+                searchGroup ? (
+                  <div>
+                    No assets matching <strong>{searchPath}</strong> were found in{' '}
+                    <strong>{searchGroup.groupName}</strong>
+                  </div>
+                ) : (
+                  <div>
+                    No assets matching <strong>{searchPath}</strong> were found
+                  </div>
+                )
+              }
             />
-          )}
-          <MoreActionsDropdown selected={checkedAssets} clearSelection={() => onToggleAll(false)} />
+          </Box>
+        );
+      }
+
+      return (
+        <Box padding={{top: 20}}>
+          <NonIdealState
+            icon="search"
+            title="No assets"
+            description={
+              searchGroup ? (
+                <div>
+                  No assets were found in <strong>{searchGroup.groupName}</strong>
+                </div>
+              ) : (
+                'No assets were found'
+              )
+            }
+          />
         </Box>
-      </Box>
-      <Table>
-        <thead>
-          <tr>
-            <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
-              <Checkbox
-                indeterminate={
-                  checkedPathsOnscreen.length > 0 &&
-                  checkedPathsOnscreen.length !== pageDisplayPathKeys.length
-                }
-                checked={
-                  checkedPathsOnscreen.length > 0 &&
-                  checkedPathsOnscreen.length === pageDisplayPathKeys.length
-                }
-                onChange={(e) => {
-                  if (e.target instanceof HTMLInputElement) {
-                    onToggleAll(checkedPathsOnscreen.length !== pageDisplayPathKeys.length);
-                  }
-                }}
+      );
+    }
+
+    return (
+      <VirtualizedAssetTable
+        headerCheckbox={
+          <Checkbox
+            indeterminate={
+              checkedPathsOnscreen.length > 0 &&
+              checkedPathsOnscreen.length !== pageDisplayPathKeys.length
+            }
+            checked={
+              checkedPathsOnscreen.length > 0 &&
+              checkedPathsOnscreen.length === pageDisplayPathKeys.length
+            }
+            onChange={(e) => {
+              if (e.target instanceof HTMLInputElement) {
+                onToggleAll(checkedPathsOnscreen.length !== pageDisplayPathKeys.length);
+              }
+            }}
+          />
+        }
+        prefixPath={prefixPath}
+        groups={groupedByFirstComponent}
+        checkedPaths={checkedPaths}
+        onToggleFactory={onToggleFactory}
+        showRepoColumn
+        view={view}
+        onWipe={(assets: Asset[]) => setToWipe(assets.map((asset) => asset.key))}
+      />
+    );
+  };
+
+  return (
+    <>
+      <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
+        <Box
+          background={Colors.White}
+          flex={{alignItems: 'center', gap: 12}}
+          padding={{vertical: 8, left: 24, right: 12}}
+          style={{position: 'sticky', top: 0, zIndex: 1}}
+        >
+          {actionBarComponents}
+          <div style={{flex: 1}} />
+          <QueryRefreshCountdown refreshState={refreshState} />
+          <Box flex={{alignItems: 'center', gap: 8}}>
+            {checkedAssets.some((c) => !c.definition) ? (
+              <Tooltip content="One or more selected assets are not software-defined and cannot be launched directly.">
+                <Button intent="primary" icon={<Icon name="materialization" />} disabled>
+                  {checkedAssets.length > 1
+                    ? `Materialize (${checkedAssets.length.toLocaleString()})`
+                    : 'Materialize'}
+                </Button>
+              </Tooltip>
+            ) : (
+              <LaunchAssetExecutionButton
+                scope={{selected: checkedAssets.map((a) => ({...a.definition!, assetKey: a.key}))}}
               />
-            </th>
-            <th>{view === 'directory' ? 'Asset Key Prefix' : 'Asset Key'}</th>
-            <th style={{width: 340}}>Defined in</th>
-            <th style={{width: 265}}>Materialized</th>
-            <th style={{width: 215}}>Latest run</th>
-            <th style={{width: 80}}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pageDisplayPathKeys.length ? (
-            pageDisplayPathKeys.map((pathStr, idx) => {
-              return (
-                <AssetEntryRow
-                  key={idx}
-                  prefixPath={prefixPath}
-                  path={JSON.parse(pathStr)}
-                  assets={groupedByFirstComponent[pathStr] || []}
-                  liveDataByNode={liveDataByNode}
-                  isSelected={checkedPaths.has(pathStr)}
-                  onToggleChecked={onToggleFactory(pathStr)}
-                  onWipe={(assets: Asset[]) => setToWipe(assets.map((asset) => asset.key))}
-                />
-              );
-            })
-          ) : (
-            <AssetEmptyRow />
-          )}
-        </tbody>
-      </Table>
+            )}
+            <MoreActionsDropdown
+              selected={checkedAssets}
+              clearSelection={() => onToggleAll(false)}
+            />
+          </Box>
+        </Box>
+        {content()}
+      </Box>
       <AssetWipeDialog
         assetKeys={toWipe || []}
         isOpen={!!toWipe}
@@ -169,136 +191,9 @@ export const AssetTable = ({
         onComplete={() => setToWipe(undefined)}
         requery={requery}
       />
-    </Box>
+    </>
   );
 };
-
-const AssetEmptyRow = () => {
-  return (
-    <tr>
-      <td colSpan={6}>
-        <Box flex={{justifyContent: 'center', alignItems: 'center'}}>
-          <Box margin={{left: 8}}>No assets to display</Box>
-        </Box>
-      </td>
-    </tr>
-  );
-};
-
-const AssetEntryRow: React.FC<{
-  prefixPath: string[];
-  path: string[];
-  isSelected: boolean;
-  onToggleChecked: (values: {checked: boolean; shiftKey: boolean}) => void;
-  assets: Asset[];
-  liveDataByNode: LiveData;
-  onWipe: (assets: Asset[]) => void;
-}> = React.memo(
-  ({prefixPath, path, assets, isSelected, onToggleChecked, onWipe, liveDataByNode}) => {
-    const fullPath = [...prefixPath, ...path];
-    const linkUrl = assetDetailsPathForKey({path: fullPath});
-
-    const isGroup = assets.length > 1 || fullPath.join('/') !== assets[0].key.path.join('/');
-    const asset = !isGroup ? assets[0] : null;
-
-    const onChange = (e: React.FormEvent<HTMLInputElement>) => {
-      if (e.target instanceof HTMLInputElement) {
-        const {checked} = e.target;
-        const shiftKey =
-          e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
-        onToggleChecked({checked, shiftKey});
-      }
-    };
-
-    const liveData = asset && liveDataByNode[toGraphId(asset.key)];
-    const repoAddress = asset?.definition
-      ? buildRepoAddress(
-          asset.definition.repository.name,
-          asset.definition.repository.location.name,
-        )
-      : null;
-
-    return (
-      <tr>
-        <td style={{paddingRight: 8}}>
-          <Checkbox checked={isSelected} onChange={onChange} />
-        </td>
-        <td>
-          <AssetLink
-            path={path}
-            url={linkUrl}
-            isGroup={isGroup}
-            icon={isGroup ? 'folder' : asset?.definition ? 'asset' : 'asset_non_sda'}
-          />
-          <Description>
-            {asset?.definition &&
-              asset.definition.description &&
-              markdownToPlaintext(asset.definition.description).split('\n')[0]}
-          </Description>
-        </td>
-        <td>
-          {repoAddress && (
-            <Box flex={{direction: 'column', gap: 4}}>
-              <RepositoryLink showIcon showRefresh={false} repoAddress={repoAddress} />
-              {asset?.definition && asset?.definition.groupName ? (
-                <Link
-                  to={workspacePathFromAddress(
-                    repoAddress,
-                    `/asset-groups/${asset.definition.groupName}`,
-                  )}
-                >
-                  <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                    <Icon color={Colors.Gray400} name="asset_group" /> {asset.definition.groupName}
-                  </Box>
-                </Link>
-              ) : undefined}
-            </Box>
-          )}
-        </td>
-        <td>
-          {liveData ? (
-            <Box flex={{gap: 8, alignItems: 'center', justifyContent: 'space-between'}}>
-              {liveData.lastMaterialization ? (
-                <Mono style={{flex: 1}}>
-                  <AssetRunLink
-                    runId={liveData.lastMaterialization.runId}
-                    event={{
-                      stepKey: liveData.stepKey,
-                      timestamp: liveData.lastMaterialization.timestamp,
-                    }}
-                  >
-                    <TimestampDisplay
-                      timestamp={Number(liveData.lastMaterialization.timestamp) / 1000}
-                      timeFormat={{showSeconds: false, showTimezone: false}}
-                    />
-                  </AssetRunLink>
-                </Mono>
-              ) : (
-                <span>–</span>
-              )}
-              <StaleTag liveData={liveData} />
-            </Box>
-          ) : undefined}
-        </td>
-        <td>
-          {liveData && (
-            <AssetLatestRunWithNotices liveData={liveData} includeFreshness includeRunStatus />
-          )}
-        </td>
-        <td>
-          {asset ? (
-            <Box flex={{gap: 8, alignItems: 'center'}}>
-              <AnchorButton to={assetDetailsPathForKey({path})}>View details</AnchorButton>
-              <AssetActionMenu repoAddress={repoAddress} asset={asset} onWipe={onWipe} />
-            </Box>
-          ) : (
-            <span />
-          )}
-        </td>
-      </tr>
-    );
-  },
-);
 
 const MoreActionsDropdown: React.FC<{
   selected: Asset[];
@@ -345,43 +240,3 @@ const MoreActionsDropdown: React.FC<{
     </>
   );
 });
-
-export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
-  fragment AssetTableDefinitionFragment on AssetNode {
-    id
-    groupName
-    isSource
-    partitionDefinition {
-      description
-    }
-    description
-    repository {
-      id
-      name
-      location {
-        id
-        name
-      }
-    }
-  }
-`;
-
-export const ASSET_TABLE_FRAGMENT = gql`
-  fragment AssetTableFragment on Asset {
-    __typename
-    id
-    key {
-      path
-    }
-    definition {
-      id
-      ...AssetTableDefinitionFragment
-    }
-  }
-  ${ASSET_TABLE_DEFINITION_FRAGMENT}
-`;
-
-const Description = styled.div`
-  color: ${Colors.Gray800};
-  font-size: 14px;
-`;

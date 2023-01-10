@@ -3,21 +3,20 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {AssetLink} from '../assets/AssetLink';
+import {InstigationType, SensorFragmentFragment} from '../graphql/graphql';
 import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {InstigationType} from '../types/globalTypes';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {humanizeSensorInterval} from './SensorDetails';
 import {SensorSwitch} from './SensorSwitch';
-import {SensorFragment} from './types/SensorFragment';
 
 export const SensorsTable: React.FC<{
   repoAddress: RepoAddress;
-  sensors: SensorFragment[];
+  sensors: SensorFragmentFragment[];
 }> = ({repoAddress, sensors}) => {
   const lastTick = 'Status of the last tick: One of `Started`, `Skipped`, `Requested`, `Failed`';
   const lastRun = 'The status of the last run requested by this sensor';
@@ -58,7 +57,7 @@ export const SensorsTable: React.FC<{
 
 const SensorRow: React.FC<{
   repoAddress: RepoAddress;
-  sensor: SensorFragment;
+  sensor: SensorFragmentFragment;
 }> = ({repoAddress, sensor}) => {
   const repo = useRepository(repoAddress);
   const {name, sensorState} = sensor;

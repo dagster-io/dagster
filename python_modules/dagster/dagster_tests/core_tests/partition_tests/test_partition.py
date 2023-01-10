@@ -3,7 +3,6 @@ from typing import Callable, Optional, Sequence
 
 import pendulum
 import pytest
-
 from dagster import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -799,13 +798,27 @@ def test_static_partition_keys_in_range():
         )
 
 
+def test_unique_identifier():
+    assert (
+        StaticPartitionsDefinition(["a", "b", "c"]).serializable_unique_identifier
+        != StaticPartitionsDefinition(["a", "b"]).serializable_unique_identifier
+    )
+    assert (
+        StaticPartitionsDefinition(["a", "b", "c"]).serializable_unique_identifier
+        == StaticPartitionsDefinition(["a", "b", "c"]).serializable_unique_identifier
+    )
+
+
 def test_static_partitions_subset():
     partitions = StaticPartitionsDefinition(["foo", "bar", "baz", "qux"])
     subset = partitions.empty_subset()
+    assert len(subset) == 0
+    assert "bar" not in subset
     with_some_partitions = subset.with_partition_keys(["foo", "bar"])
     assert with_some_partitions.get_partition_keys_not_in_subset() == {"baz", "qux"}
     serialized = with_some_partitions.serialize()
-    assert partitions.deserialize_subset(serialized).get_partition_keys_not_in_subset() == {
-        "baz",
-        "qux",
-    }
+    deserialized = partitions.deserialize_subset(serialized)
+    assert deserialized.get_partition_keys_not_in_subset() == {"baz", "qux"}
+    assert len(with_some_partitions) == 2
+    assert len(deserialized) == 2
+    assert "bar" in with_some_partitions

@@ -1,17 +1,17 @@
 import ast
 from contextlib import contextmanager
 
-from airflow.exceptions import AirflowException, AirflowSkipException
-from dagster_airflow.vendor.docker_operator import DockerOperator
-from docker import APIClient, from_env
-
 import dagster._check as check
 import dagster._seven as seven
+from airflow.exceptions import AirflowException, AirflowSkipException
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.plan import should_skip_step
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, DagsterInstance
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
+from docker import APIClient, from_env
+
+from dagster_airflow.vendor.docker_operator import DockerOperator
 
 from .util import check_events_for_failures, check_events_for_skips, get_aws_environment
 
@@ -36,7 +36,7 @@ class DagsterDockerOperator(DockerOperator):
         be mapped to tmp_dir. If not provided defaults to using the standard system temp directory.
     """
 
-    def __init__(self, dagster_operator_parameters, *args):
+    def __init__(self, dagster_operator_parameters, *args, **kwargs):
         kwargs = dagster_operator_parameters.op_kwargs
         tmp_dir = kwargs.pop("tmp_dir", DOCKER_TEMPDIR)
         host_tmp_dir = kwargs.pop("host_tmp_dir", seven.get_system_temp_directory())
@@ -69,17 +69,15 @@ class DagsterDockerOperator(DockerOperator):
 
         if "environment" not in kwargs:
             kwargs["environment"] = get_aws_environment()
-
         super(DagsterDockerOperator, self).__init__(
+            *args,
             task_id=dagster_operator_parameters.task_id,
             dag=dagster_operator_parameters.dag,
             tmp_dir=tmp_dir,
-            host_tmp_dir=host_tmp_dir,
             xcom_push=True,
             # We do this because log lines won't necessarily be emitted in order (!) -- so we can't
             # just check the last log line to see if it's JSON.
             xcom_all=True,
-            *args,
             **kwargs,
         )
 
@@ -99,8 +97,8 @@ class DagsterDockerOperator(DockerOperator):
 
         if self.force_pull or len(self.cli.images(name=self.image)) == 0:
             self.log.info("Pulling docker image %s", self.image)
-            for l in self.cli.pull(self.image, stream=True):
-                output = seven.json.loads(l.decode("utf-8").strip())
+            for ln in self.cli.pull(self.image, stream=True):
+                output = seven.json.loads(ln.decode("utf-8").strip())
                 if "status" in output:
                     self.log.info("%s", output["status"])
 

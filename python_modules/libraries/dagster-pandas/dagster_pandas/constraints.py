@@ -4,11 +4,14 @@ from datetime import datetime
 from functools import wraps
 
 import pandas as pd
-from pandas import DataFrame
-
-from dagster import DagsterType, MetadataEntry, TypeCheck
-from dagster import _check as check
+from dagster import (
+    DagsterType,
+    MetadataEntry,
+    TypeCheck,
+    _check as check,
+)
 from dagster._utils.backcompat import experimental_class_warning
+from pandas import DataFrame
 
 
 class ConstraintViolationException(Exception):
@@ -104,10 +107,13 @@ class ColumnConstraintViolationException(ConstraintViolationException):
         super(ColumnConstraintViolationException, self).__init__(self.construct_message())
 
     def construct_message(self):
-        base_message = 'Violated "{constraint_name}" for column "{column_name}" - {constraint_description}'.format(
-            constraint_name=self.constraint_name,
-            constraint_description=self.constraint_description,
-            column_name=self.column_name,
+        base_message = (
+            'Violated "{constraint_name}" for column "{column_name}" - {constraint_description}'
+            .format(
+                constraint_name=self.constraint_name,
+                constraint_description=self.constraint_description,
+                column_name=self.column_name,
+            )
         )
         if self.offending_rows is not None:
             base_message += "The offending (index, row values) are the following: {}".format(
@@ -146,7 +152,7 @@ class ConstraintWithMetadata:
     """
     This class defines a base constraint over pandas DFs with organized metadata
 
-    args:
+    Args:
         description (str): description of the constraint
         validation_fn (Callable[[DataFrame], Tuple[bool, dict[str, Union[dict,list, str, set]]]]:
                     the validation function to run over inputted data
@@ -211,7 +217,7 @@ class MultiConstraintWithMetadata(ConstraintWithMetadata):
     """
     Use this class if you have multiple constraints to check over the entire dataframe
 
-    args:
+    Args:
         description (str): description of the constraint
         validation_fn_arr(List[Callable[[DataFrame], Tuple[bool, dict[str, Union[dict,list, str, set]]]]]):
                     a list of the validation functions to run over inputted data
@@ -235,7 +241,6 @@ class MultiConstraintWithMetadata(ConstraintWithMetadata):
         validation_fn_arr = check.list_param(validation_fn_arr, "validation_fn_arr")
 
         def validation_fn(data, *args, **kwargs):
-
             results = [f(data, *args, **kwargs) for f in validation_fn_arr]
             truthparam = all(item[0] for item in results)
             metadict = defaultdict(dict)
@@ -337,8 +342,11 @@ class StrictColumnsConstraint(DataFrameConstraint):
             if self.strict_column_list != columns_received:
                 raise DataFrameConstraintViolationException(
                     constraint_name=self.name,
-                    constraint_description="Expected the following ordering of columns {expected}. Received: {received}".format(
-                        expected=self.strict_column_list, received=columns_received
+                    constraint_description=(
+                        "Expected the following ordering of columns {expected}. Received:"
+                        " {received}".format(
+                            expected=self.strict_column_list, received=columns_received
+                        )
                     ),
                 )
         for column in columns_received:
@@ -382,10 +390,12 @@ class RowCountConstraint(DataFrameConstraint):
         ):
             raise DataFrameConstraintViolationException(
                 constraint_name=self.name,
-                constraint_description="Expected {expected} +- {tolerance} rows. Got {received}".format(
-                    expected=self.num_allowed_rows,
-                    tolerance=self.error_tolerance,
-                    received=len(dataframe),
+                constraint_description=(
+                    "Expected {expected} +- {tolerance} rows. Got {received}".format(
+                        expected=self.num_allowed_rows,
+                        tolerance=self.error_tolerance,
+                        received=len(dataframe),
+                    )
                 ),
             )
 
@@ -397,7 +407,8 @@ def apply_ignore_missing_data_to_mask(mask, column):
 class ColumnAggregateConstraintWithMetadata(ConstraintWithMetadata):
     """
     Similar to the base class, but now your validation functions should take in columns (pd.Series) not Dataframes.
-    args:
+
+    Args:
         description (str): description of the constraint
         validation_fn (Callable[[pd.Series], Tuple[bool, dict[str, Union[dict,list, str, set]]]]:
                     the validation function to run over inputted data
@@ -423,7 +434,7 @@ class ColumnAggregateConstraintWithMetadata(ConstraintWithMetadata):
             res = self.validation_fn(relevant_data[column])
             if not res[0]:
                 offending_columns.add(column)
-                if not res[1].get("actual") is None:
+                if res[1].get("actual") is not None:
                     offending_values[column] = [x.item() for x in res[1].get("actual").to_numpy()]
                 else:
                     offending_values[column] = [x.item() for x in relevant_data[column].to_numpy()]
@@ -451,7 +462,8 @@ class ColumnConstraintWithMetadata(ConstraintWithMetadata):
     you want to apply to multiple columns of your dataframe
     The main difference from the base class in terms of construction is that now, your validation_fns should operate on
     individual values.
-    args:
+
+    Args:
         description (str): description of the constraint
         validation_fn (Callable[[Any], Tuple[bool, dict[str, Union[dict,list, str, set]]]]:
                     the validation function to run over inputted data
@@ -793,7 +805,6 @@ def categorical_column_validator_factory(categories, ignore_missing_vals=False):
             metadata['actual'] == {'foo': {'categorical_validation_fn': [7]}}
 
     """
-
     categories = set(categories)
 
     def categorical_validation_fn(x):
@@ -955,8 +966,10 @@ class ColumnDTypeInSetConstraint(ColumnConstraint):
         if str(received_dtypes) not in self.expected_dtype_set:
             raise ColumnConstraintViolationException(
                 constraint_name=self.name,
-                constraint_description="{base_error_message}. DTypes received: {received_dtypes}".format(
-                    base_error_message=self.error_description, received_dtypes=received_dtypes
+                constraint_description=(
+                    "{base_error_message}. DTypes received: {received_dtypes}".format(
+                        base_error_message=self.error_description, received_dtypes=received_dtypes
+                    )
                 ),
                 column_name=column_name,
             )

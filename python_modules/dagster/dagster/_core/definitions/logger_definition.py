@@ -101,7 +101,9 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
         return self._description
 
     def copy_for_configured(
-        self, description: Optional[str], config_schema: Any, _
+        self,
+        description: Optional[str],
+        config_schema: Any,
     ) -> "LoggerDefinition":
         return LoggerDefinition(
             config_schema=config_schema,
@@ -186,7 +188,10 @@ def build_init_logger_context(
 
     check.invariant(
         not (pipeline_def and job_def),
-        "In build_init_logger_context, you may only specify one of the pipeline_def and job_def parameters, not both.",
+        (
+            "In build_init_logger_context, you may only specify one of the pipeline_def and job_def"
+            " parameters, not both."
+        ),
     )
 
     return UnboundInitLoggerContext(

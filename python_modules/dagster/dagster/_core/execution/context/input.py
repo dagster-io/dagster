@@ -1,18 +1,29 @@
-from typing import TYPE_CHECKING, Any, Iterator, List, Mapping, Optional, Sequence, Union, cast
+from datetime import datetime
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey, AssetObservation
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
+from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindow,
-    TimeWindowPartitionsDefinition,
-)
+from dagster._core.definitions.time_window_partitions import TimeWindow, TimeWindowPartitionsSubset
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.instance import DagsterInstance
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import PartitionsDefinition, SolidDefinition
+    from dagster._core.definitions import PartitionsDefinition
     from dagster._core.definitions.op_definition import OpDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.events import DagsterEvent
@@ -69,9 +80,10 @@ class InputContext:
 
     def __init__(
         self,
+        *,
         name: Optional[str] = None,
         job_name: Optional[str] = None,
-        solid_def: Optional["SolidDefinition"] = None,
+        solid_def: Optional["OpDefinition"] = None,
         config: Optional[Any] = None,
         metadata: Optional[Mapping[str, Any]] = None,
         upstream_output: Optional["OutputContext"] = None,
@@ -83,6 +95,9 @@ class InputContext:
         op_def: Optional["OpDefinition"] = None,
         asset_key: Optional[AssetKey] = None,
         partition_key: Optional[str] = None,
+        asset_partitions_subset: Optional[PartitionsSubset] = None,
+        asset_partitions_def: Optional["PartitionsDefinition"] = None,
+        instance: Optional[DagsterInstance] = None,
     ):
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
@@ -106,12 +121,15 @@ class InputContext:
         else:
             self._partition_key = partition_key
 
+        self._asset_partitions_subset = asset_partitions_subset
+        self._asset_partitions_def = asset_partitions_def
+
         if isinstance(resources, Resources):
             self._resources_cm = None
             self._resources = resources
         else:
             self._resources_cm = build_resources(
-                check.opt_dict_param(resources, "resources", key_type=str)
+                check.opt_mapping_param(resources, "resources", key_type=str)
             )
             self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
             self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
@@ -120,6 +138,7 @@ class InputContext:
         self._events: List["DagsterEvent"] = []
         self._observations: List[AssetObservation] = []
         self._metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]] = []
+        self._instance = instance
 
     def __enter__(self):
         if self._resources_cm:
@@ -134,11 +153,21 @@ class InputContext:
         if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
             self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
 
+    @property
+    def instance(self) -> DagsterInstance:
+        if self._instance is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access instance, "
+                "but it was not provided when constructing the InputContext"
+            )
+        return self._instance
+
     @public  # type: ignore
     @property
     def has_input_name(self) -> bool:
         """If we're the InputContext is being used to load the result of a run from outside the run,
-        then it won't have an input name."""
+        then it won't have an input name.
+        """
         return self._name is not None
 
     @public  # type: ignore
@@ -166,7 +195,7 @@ class InputContext:
         return self.job_name
 
     @property
-    def solid_def(self) -> "SolidDefinition":
+    def solid_def(self) -> "OpDefinition":
         if self._solid_def is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access solid_def, "
@@ -266,14 +295,19 @@ class InputContext:
     @property
     def asset_partitions_def(self) -> "PartitionsDefinition":
         """The PartitionsDefinition on the upstream asset corresponding to this input."""
-        asset_key = self.asset_key
-        result = self.step_context.pipeline_def.asset_layer.partitions_def_for_asset(asset_key)
-        if result is None:
-            raise DagsterInvariantViolationError(
-                f"Attempting to access partitions def for asset {asset_key}, but it is not partitioned"
-            )
+        if self._asset_partitions_def is None:
+            if self.asset_key:
+                raise DagsterInvariantViolationError(
+                    f"Attempting to access partitions def for asset {self.asset_key}, but it is not"
+                    " partitioned"
+                )
+            else:
+                raise DagsterInvariantViolationError(
+                    "Attempting to access partitions def for asset, but input does not correspond"
+                    " to an asset"
+                )
 
-        return result
+        return self._asset_partitions_def
 
     @property
     def step_context(self) -> "StepExecutionContext":
@@ -308,10 +342,7 @@ class InputContext:
     @public  # type: ignore
     @property
     def has_asset_partitions(self) -> bool:
-        if self._step_context is not None:
-            return self._step_context.has_asset_partitions_for_input(self.name)
-        else:
-            return False
+        return self._asset_partitions_subset is not None
 
     @public  # type: ignore
     @property
@@ -321,7 +352,19 @@ class InputContext:
         Raises an error if the input asset has no partitioning, or if the run covers a partition
         range for the input asset.
         """
-        return self.step_context.asset_partition_key_for_input(self.name)
+        subset = self._asset_partitions_subset
+
+        if subset is None:
+            check.failed("The input does not correspond to a partitioned asset.")
+
+        partition_keys = list(subset.get_partition_keys())
+        if len(partition_keys) == 1:
+            return partition_keys[0]
+        else:
+            check.failed(
+                f"Tried to access partition key for asset '{self.asset_key}', "
+                f"but the number of input partitions != 1: '{subset}'."
+            )
 
     @public  # type: ignore
     @property
@@ -330,7 +373,23 @@ class InputContext:
 
         Raises an error if the input asset has no partitioning.
         """
-        return self.step_context.asset_partition_key_range_for_input(self.name)
+        subset = self._asset_partitions_subset
+
+        if subset is None:
+            check.failed(
+                "Tried to access asset_partition_key_range, but the asset is not partitioned.",
+            )
+
+        partition_key_ranges = subset.get_partition_key_ranges()
+        if len(partition_key_ranges) != 1:
+            check.failed(
+                (
+                    "Tried to access asset_partition_key_range, but there are "
+                    f"({len(partition_key_ranges)}) key ranges associated with this input."
+                ),
+            )
+
+        return partition_key_ranges[0]
 
     @public  # type: ignore
     @property
@@ -339,7 +398,12 @@ class InputContext:
 
         Raises an error if the input asset has no partitioning.
         """
-        return self.asset_partitions_def.get_partition_keys_in_range(self.asset_partition_key_range)
+        if self._asset_partitions_subset is None:
+            check.failed(
+                "Tried to access asset_partition_keys, but the asset is not partitioned.",
+            )
+
+        return list(self._asset_partitions_subset.get_partition_keys())
 
     @public  # type: ignore
     @property
@@ -350,30 +414,31 @@ class InputContext:
         - The input asset has no partitioning.
         - The input asset is not partitioned with a TimeWindowPartitionsDefinition.
         """
-        if self.upstream_output is None:
-            check.failed("InputContext needs upstream_output to get asset_partitions_time_window")
+        subset = self._asset_partitions_subset
 
-        if self.upstream_output.asset_info is None:
-            raise ValueError(
-                "Tried to get asset partitions for an output that does not correspond to a "
-                "partitioned asset."
+        if subset is None:
+            check.failed(
+                "Tried to access asset_partitions_time_window, but the asset is not partitioned.",
             )
 
-        asset_info = self.upstream_output.asset_info
-
-        if not isinstance(asset_info.partitions_def, TimeWindowPartitionsDefinition):
-            raise ValueError(
-                "Tried to get asset partitions for an input that correponds to a partitioned "
-                "asset that is not partitioned with a TimeWindowPartitionsDefinition."
+        if not isinstance(subset, TimeWindowPartitionsSubset):
+            check.failed(
+                (
+                    "Tried to access asset_partitions_time_window, but the asset is not partitioned"
+                    " with time windows."
+                ),
             )
 
-        partitions_def: TimeWindowPartitionsDefinition = asset_info.partitions_def
+        time_windows = subset.included_time_windows
+        if len(time_windows) != 1:
+            check.failed(
+                (
+                    "Tried to access asset_partition_key_range, but there are "
+                    f"({len(time_windows)}) partitions associated with this input."
+                ),
+            )
 
-        partition_key_range = self.asset_partition_key_range
-        return TimeWindow(
-            partitions_def.time_window_for_partition_key(partition_key_range.start).start,
-            partitions_def.time_window_for_partition_key(partition_key_range.end).end,
-        )
+        return time_windows[0]
 
     @public
     def get_identifier(self) -> Sequence[str]:
@@ -397,7 +462,7 @@ class InputContext:
         """
         if self.upstream_output is None:
             raise DagsterInvariantViolationError(
-                "InputContext.upstream_output not defined. " "Cannot compute an identifier"
+                "InputContext.upstream_output not defined. Cannot compute an identifier"
             )
 
         return self.upstream_output.get_identifier()
@@ -417,7 +482,6 @@ class InputContext:
 
         If consume_events has not yet been called, this will yield all logged events since the call to `handle_input`. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
         """
-
         events = self._events
         self._events = []
         yield from events
@@ -495,6 +559,9 @@ def build_input_context(
     step_context: Optional["StepExecutionContext"] = None,
     asset_key: Optional["AssetKey"] = None,
     partition_key: Optional[str] = None,
+    asset_partition_key_range: Optional[PartitionKeyRange] = None,
+    asset_partitions_def: Optional["PartitionsDefinition"] = None,
+    instance: Optional[DagsterInstance] = None,
 ) -> "InputContext":
     """Builds input context from provided parameters.
 
@@ -520,9 +587,11 @@ def build_input_context(
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
         step_context (Optional[StepExecutionContext]): For internal use.
         partition_key (Optional[str]): String value representing partition key to execute with.
+        asset_partition_key_range (Optional[str]): The range of asset partition keys to load.
+        asset_partitions_def: Optional[PartitionsDefinition]: The PartitionsDefinition of the asset
+            being loaded.
 
     Examples:
-
         .. code-block:: python
 
             build_input_context()
@@ -530,7 +599,7 @@ def build_input_context(
             with build_input_context(resources={"foo": context_manager_resource}) as context:
                 do_something
     """
-    from dagster._core.definitions import OpDefinition
+    from dagster._core.definitions import OpDefinition, PartitionsDefinition
     from dagster._core.execution.context.output import OutputContext
     from dagster._core.execution.context.system import StepExecutionContext
     from dagster._core.execution.context_creation_pipeline import initialize_console_manager
@@ -546,6 +615,20 @@ def build_input_context(
     step_context = check.opt_inst_param(step_context, "step_context", StepExecutionContext)
     asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)
     partition_key = check.opt_str_param(partition_key, "partition_key")
+    asset_partition_key_range = check.opt_inst_param(
+        asset_partition_key_range, "asset_partition_key_range", PartitionKeyRange
+    )
+    asset_partitions_def = check.opt_inst_param(
+        asset_partitions_def, "asset_partitions_def", PartitionsDefinition
+    )
+    if asset_partitions_def and asset_partition_key_range:
+        asset_partitions_subset = asset_partitions_def.empty_subset().with_partition_key_range(
+            asset_partition_key_range
+        )
+    elif asset_partition_key_range:
+        asset_partitions_subset = KeyRangeNoPartitionsDefPartitionsSubset(asset_partition_key_range)
+    else:
+        asset_partitions_subset = None
 
     return InputContext(
         name=name,
@@ -561,4 +644,51 @@ def build_input_context(
         op_def=op_def,
         asset_key=asset_key,
         partition_key=partition_key,
+        asset_partitions_subset=asset_partitions_subset,
+        asset_partitions_def=asset_partitions_def,
+        instance=instance,
     )
+
+
+class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
+    """For build_input_context when no PartitionsDefinition has been provided"""
+
+    def __init__(self, key_range: PartitionKeyRange):
+        self._key_range = key_range
+
+    def get_partition_keys_not_in_subset(
+        self, current_time: Optional[datetime] = None
+    ) -> Iterable[str]:
+        raise NotImplementedError()
+
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
+        if self._key_range.start == self._key_range.end:
+            return self._key_range.start
+        else:
+            raise NotImplementedError()
+
+    def get_partition_key_ranges(
+        self, current_time: Optional[datetime] = None
+    ) -> Sequence[PartitionKeyRange]:
+        return [self._key_range]
+
+    def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset":
+        raise NotImplementedError()
+
+    def with_partition_key_range(
+        self, partition_key_range: PartitionKeyRange
+    ) -> "PartitionsSubset":
+        raise NotImplementedError()
+
+    def serialize(self) -> str:
+        raise NotImplementedError()
+
+    @property
+    def partitions_def(self) -> "PartitionsDefinition":
+        raise NotImplementedError()
+
+    def __len__(self) -> int:
+        raise NotImplementedError()
+
+    def __contains__(self, value) -> bool:
+        raise NotImplementedError()

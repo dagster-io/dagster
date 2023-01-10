@@ -19,7 +19,6 @@ from .types import (
 
 
 def bq_resource_config():
-
     project = Field(
         StringSource,
         description="""Project ID for the project which the client acts on behalf of. Will be passed
@@ -39,7 +38,6 @@ def bq_resource_config():
 
 def _define_shared_fields():
     """The following fields are shared between both QueryJobConfig and LoadJobConfig."""
-
     clustering_fields = Field(
         [String],
         description="""Fields defining clustering for the table

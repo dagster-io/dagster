@@ -168,6 +168,9 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
             return AssetKey(asset_key["path"])
         return None
 
+    def to_graphql_input(self) -> Mapping[str, Sequence[str]]:
+        return {"path": self.path}
+
     @staticmethod
     def from_coerceable(arg: "CoercibleToAssetKey") -> "AssetKey":
         if isinstance(arg, AssetKey):
@@ -177,9 +180,11 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         elif isinstance(arg, list):
             check.list_param(arg, "arg", of_type=str)
             return AssetKey(arg)
-        else:
+        elif isinstance(arg, tuple):
             check.tuple_param(arg, "arg", of_type=str)
             return AssetKey(arg)
+        else:
+            check.failed(f"Unexpected type for AssetKey: {type(arg)}")
 
 
 class AssetKeyPartitionKey(NamedTuple):
@@ -242,7 +247,6 @@ class Output(Generic[T]):
         metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_sequence_param(
             metadata_entries,
@@ -311,7 +315,6 @@ class DynamicOutput(Generic[T]):
         metadata_entries: Optional[Sequence[Union[PartitionMetadataEntry, MetadataEntry]]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
@@ -391,11 +394,8 @@ class AssetObservation(
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
-        elif isinstance(asset_key, list):
-            check.list_param(asset_key, "asset_key", of_type=str)
-            asset_key = AssetKey(asset_key)
-        else:
-            check.tuple_param(asset_key, "asset_key", of_type=str)
+        elif isinstance(asset_key, Sequence):
+            check.sequence_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
         tags = check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
@@ -481,19 +481,16 @@ class AssetMaterialization(
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
-        elif isinstance(asset_key, list):
+        elif isinstance(asset_key, Sequence):
             check.sequence_param(asset_key, "asset_key", of_type=str)
-            asset_key = AssetKey(asset_key)
-        else:
-            check.tuple_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
         check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
         invalid_tags = [tag for tag in tags or {} if not tag.startswith(SYSTEM_TAG_PREFIX)]
         if len(invalid_tags) > 0:
             check.failed(
-                f"Invalid tags: {tags} Users should not pass values into the tags argument for AssetMaterializations. "
-                "The tags argument is reserved for system-populated tags."
+                f"Invalid tags: {tags} Users should not pass values into the tags argument for"
+                " AssetMaterializations. The tags argument is reserved for system-populated tags."
             )
 
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
@@ -754,7 +751,6 @@ class TypeCheck(
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-
         metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
@@ -820,7 +816,6 @@ class RetryRequested(Exception):
             to the up_for_retry state
 
     Example:
-
         .. code-block:: python
 
             @op

@@ -4,6 +4,7 @@
 import pytest
 from click.testing import CliRunner
 from dagster_airflow.cli import scaffold
+
 from dagster_airflow_tests.marks import requires_airflow_db
 
 
@@ -44,7 +45,8 @@ def test_build_dags(clean_airflow_home, cli_args):
     """
     runner = CliRunner()
 
-    runner.invoke(scaffold, cli_args)
+    result = runner.invoke(scaffold, cli_args)
+    assert result.exit_code == 0
 
     # This forces Airflow to refresh DAGs; see https://stackoverflow.com/a/50356956/11295366
     from airflow.models import DagBag

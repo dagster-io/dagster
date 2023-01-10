@@ -1,12 +1,13 @@
-import {ApolloClient, gql, useApolloClient} from '@apollo/client';
+import {useApolloClient} from '@apollo/client';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 
+import {graphql} from '../graphql';
+import {PartitionHealthQueryQuery, PartitionHealthQueryQueryVariables} from '../graphql/graphql';
 import {PartitionState} from '../partitions/PartitionStatus';
 
 import {mergedStates} from './MultipartitioningSupport';
 import {AssetKey} from './types';
-import {PartitionHealthQuery, PartitionHealthQueryVariables} from './types/PartitionHealthQuery';
 
 /**
  * usePartitionHealthData retrieves partitionKeysByDimension + partitionMaterializationCounts and
@@ -25,7 +26,7 @@ export interface PartitionHealthData {
   stateForSingleDimension: (
     dimensionIdx: number,
     dimensionKey: string,
-    withinParentDimensions?: string[],
+    otherDimensionSelectedKeys?: string[],
   ) => PartitionState;
 }
 
@@ -39,15 +40,7 @@ export type PartitionHealthDimensionRange = {
   selected: string[];
 };
 
-async function loadPartitionHealthData(client: ApolloClient<any>, loadKey: AssetKey) {
-  const {data} = await client.query<PartitionHealthQuery, PartitionHealthQueryVariables>({
-    query: PARTITION_HEALTH_QUERY,
-    fetchPolicy: 'network-only',
-    variables: {
-      assetKey: {path: loadKey.path},
-    },
-  });
-
+export function buildPartitionHealthData(data: PartitionHealthQueryQuery, loadKey: AssetKey) {
   const dimensions =
     data.assetNodeOrError.__typename === 'AssetNode'
       ? data.assetNodeOrError.partitionKeysByDimension
@@ -82,14 +75,25 @@ async function loadPartitionHealthData(client: ApolloClient<any>, loadKey: Asset
   const stateForSingleDimension = (
     dimensionIdx: number,
     dimensionKey: string,
-    withinParentDimensions?: string[],
+    otherDimensionSelectedKeys?: string[],
   ) => {
+    if (dimensionIdx === 0 && dimensions.length === 1) {
+      return stateForKey([dimensionKey]);
+    }
     if (dimensionIdx === 0) {
-      return stateForPartialKey([dimensionKey]);
+      return mergedStates(
+        Object.entries<PartitionState>(stateByKey[dimensionKey])
+          .filter(
+            ([key]) => !otherDimensionSelectedKeys || otherDimensionSelectedKeys.includes(key),
+          )
+          .map(([_, val]) => val),
+      );
     } else if (dimensionIdx === 1) {
       return mergedStates(
         Object.entries<{[subdimensionKey: string]: PartitionState}>(stateByKey)
-          .filter(([key]) => !withinParentDimensions || withinParentDimensions.includes(key))
+          .filter(
+            ([key]) => !otherDimensionSelectedKeys || otherDimensionSelectedKeys.includes(key),
+          )
           .map(([_, val]) => val[dimensionKey]),
       );
     } else {
@@ -140,7 +144,17 @@ export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMateriali
     }
     const loadKey: AssetKey = JSON.parse(missingKeyJSON);
     const run = async () => {
-      const loaded = await loadPartitionHealthData(client, loadKey);
+      const {data} = await client.query<
+        PartitionHealthQueryQuery,
+        PartitionHealthQueryQueryVariables
+      >({
+        query: PARTITION_HEALTH_QUERY,
+        fetchPolicy: 'network-only',
+        variables: {
+          assetKey: {path: loadKey.path},
+        },
+      });
+      const loaded = buildPartitionHealthData(data, loadKey);
       setResult((result) => [
         ...result.filter((r) => !isEqual(r.assetKey, loadKey)),
         {...loaded, fetchedAt: assetLastMaterializedAt},
@@ -155,7 +169,7 @@ export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMateriali
   }, [assetKeyJSON, result]);
 }
 
-const PARTITION_HEALTH_QUERY = gql`
+const PARTITION_HEALTH_QUERY = graphql(`
   query PartitionHealthQuery($assetKey: AssetKeyInput!) {
     assetNodeOrError(assetKey: $assetKey) {
       ... on AssetNode {
@@ -175,4 +189,4 @@ const PARTITION_HEALTH_QUERY = gql`
       }
     }
   }
-`;
+`);

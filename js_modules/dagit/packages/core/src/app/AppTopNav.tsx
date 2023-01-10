@@ -71,7 +71,15 @@ export const AppTopNav: React.FC<Props> = ({
             shortcutLabel="⌥3"
             shortcutFilter={(e) => e.altKey && e.code === 'Digit3'}
           >
-            <TopNavLink to="/assets" data-cy="AppTopNav_AssetsLink" exact={false}>
+            <TopNavLink
+              to="/assets"
+              data-cy="AppTopNav_AssetsLink"
+              isActive={(_, location) => {
+                const {pathname} = location;
+                return pathname.startsWith('/assets') || pathname.startsWith('/asset-groups');
+              }}
+              exact={false}
+            >
               Assets
             </TopNavLink>
           </ShortcutHandler>
@@ -82,18 +90,17 @@ export const AppTopNav: React.FC<Props> = ({
         element: (
           <ShortcutHandler
             key="deployment"
-            onShortcut={() => history.push('/code-locations')}
+            onShortcut={() => history.push('/locations')}
             shortcutLabel="⌥4"
             shortcutFilter={(e) => e.altKey && e.code === 'Digit4'}
           >
             <TopNavLink
-              to="/code-locations"
+              to="/locations"
               data-cy="AppTopNav_StatusLink"
               isActive={(_, location) => {
                 const {pathname} = location;
                 return (
-                  pathname.startsWith('/code-locations') ||
-                  pathname.startsWith('/workspace') ||
+                  pathname.startsWith('/locations') ||
                   pathname.startsWith('/health') ||
                   pathname.startsWith('/config')
                 );
@@ -147,15 +154,17 @@ export const AppTopNavLogo: React.FC = () => {
 
   return (
     <LogoContainer>
-      <ShortcutHandler
-        onShortcut={() => onToggle()}
-        shortcutLabel="."
-        shortcutFilter={(e) => e.key === '.'}
-      >
-        <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
-          <Icon name="menu" color={Colors.White} size={24} />
-        </NavButton>
-      </ShortcutHandler>
+      {nav.canOpen ? (
+        <ShortcutHandler
+          onShortcut={() => onToggle()}
+          shortcutLabel="."
+          shortcutFilter={(e) => e.key === '.'}
+        >
+          <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
+            <Icon name="menu" color={Colors.White} size={24} />
+          </NavButton>
+        </ShortcutHandler>
+      ) : null}
       <Box flex={{display: 'inline-flex'}} margin={{left: 8}}>
         <DaggyTooltip
           content={

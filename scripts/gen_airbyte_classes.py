@@ -1,21 +1,20 @@
 import importlib.util
+import itertools
 import json
 import os
 import re
 import subprocess
 import sys
+import textwrap
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import click
-import yaml
-
-import itertools
 import dagster._check as check
+import yaml
 from dagster._utils import file_relative_path, mkdir_p
 from dagster._utils.merger import deep_merge_dicts
-import textwrap
 
 
 def _remove_invalid_chars(name: str) -> str:
@@ -59,6 +58,8 @@ class SchemaType(ABC):
     the Python code to annotate that type or check it at runtime.
     """
 
+    description: Optional[str] = None
+
     @abstractmethod
     def get_check(self, name: str, scope: Optional[str] = None):
         """
@@ -66,7 +67,9 @@ class SchemaType(ABC):
         """
 
     @abstractmethod
-    def annotation(self, scope: Optional[str] = None, quote: bool = False):
+    def annotation(
+        self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
+    ):
         """
         Returns the Python type annotation for this type, e.g. str or Union[str, int]
         """
@@ -77,6 +80,27 @@ class SchemaType(ABC):
         If this is a constant field, returns the constant value, otherwise returns None
         """
         return None
+
+    def add_description(self, description: str):
+        if not description:
+            return
+        self.description = description.replace("\n", " ")
+
+    def get_doc_desc(self, name: str, scope: Optional[str] = None) -> Optional[str]:
+
+        if not self.description:
+            return None
+        formatted_desc = (
+            f"{name} ({self.annotation(hide_default=True, scope=scope)}): {self.description}"
+        )
+        desc_escaped_trailing_underscores = re.sub(
+            r"_([^a-zA-Z0-9_])",
+            r"\\_\1",
+            formatted_desc,
+        )
+        desc_escaped_backslashes = desc_escaped_trailing_underscores.replace("\\", "\\\\")
+        desc_removed_tags = re.sub("<[^<]+?>", "", desc_escaped_backslashes)
+        return desc_removed_tags
 
 
 class RawType(SchemaType):
@@ -94,7 +118,9 @@ class RawType(SchemaType):
     def const_value(self):
         return self._const_value
 
-    def annotation(self, scope: Optional[str] = None, quote: bool = False):
+    def annotation(
+        self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
+    ):
         if self.type_str in CHECK_MAPPING:
             return self.type_str
         scope = f"{scope}." if scope else ""
@@ -117,8 +143,10 @@ class ListType(SchemaType):
     def __str__(self):
         return f"List[{self.inner}]"
 
-    def annotation(self, scope: Optional[str] = None, quote: bool = False):
-        return f"List[{self.inner.annotation(scope, quote)}]"
+    def annotation(
+        self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
+    ):
+        return f"List[{self.inner.annotation(scope, quote, hide_default)}]"
 
     def get_check(self, name: str, scope: Optional[str] = None):
         return "check.list_param({}, '{}', {})".format(name, name, self.inner.annotation(scope))
@@ -131,8 +159,10 @@ class OptType(SchemaType):
     def __str__(self):
         return f"Optional[{self.inner}]"
 
-    def annotation(self, scope: Optional[str] = None, quote: bool = False):
-        return f"Optional[{self.inner.annotation(scope, quote)}] = None"
+    def annotation(
+        self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
+    ):
+        return f"Optional[{self.inner.annotation(scope, quote, hide_default)}]{' = None' if not hide_default else ''}"
 
     def get_check(self, name: str, scope: Optional[str] = None):
         inner_check = self.inner.get_check(name, scope)
@@ -152,8 +182,10 @@ class UnionType(SchemaType):
     def __str__(self):
         return f"Union[{', '.join([str(x) for x in self.inner])}]"
 
-    def annotation(self, scope: Optional[str] = None, quote: bool = False):
-        return f"Union[{', '.join([x.annotation(scope, quote) for x in self.inner])}]"
+    def annotation(
+        self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
+    ):
+        return f"Union[{', '.join([x.annotation(scope, quote, hide_default) for x in self.inner])}]"
 
     def get_check(self, name: str, scope: Optional[str] = None):
         scoped_names = [x.annotation(scope) for x in self.inner]
@@ -176,7 +208,6 @@ def get_class_definitions(name: str, schema: dict) -> Dict[str, Dict[str, Schema
 
     Each class will be turned into a Python class definition with the given name and fields.
     """
-
     class_definitions: Dict[str, Dict[str, SchemaType]] = {}
 
     fields = {}
@@ -243,6 +274,7 @@ def get_class_definitions(name: str, schema: dict) -> Dict[str, Dict[str, Schema
                     fields[field_name] = RawType(field_type, const_value=field.get("const"))
                 if field_name not in required_fields:
                     fields[field_name] = OptType(fields[field_name])
+        fields[field_name].add_description(field.get("description"))
 
     class_definitions[name] = fields
     return class_definitions
@@ -250,6 +282,7 @@ def get_class_definitions(name: str, schema: dict) -> Dict[str, Dict[str, Schema
 
 CLASS_TEMPLATE = """
 class {cls_name}:
+    @public
     def __init__(self, {fields_in}):
 {self_fields}
 """
@@ -257,11 +290,14 @@ class {cls_name}:
 
 SOURCE_TEMPLATE = '''
 class {cls_name}(GeneratedAirbyteSource): {nested_defs}
+    @public
     def __init__(self, name: str, {fields_in}):
         """
         Airbyte Source for {human_readable_name}
-
-        Documentation can be found at {docs_url}
+{docs_url}
+        Args:
+            name (str): The name of the destination.
+{fields_doc}
         """
 {self_fields}
         super().__init__("{human_readable_name}", name)
@@ -269,11 +305,14 @@ class {cls_name}(GeneratedAirbyteSource): {nested_defs}
 
 DESTINATION_TEMPLATE = '''
 class {cls_name}(GeneratedAirbyteDestination): {nested_defs}
+    @public
     def __init__(self, name: str, {fields_in}):
         """
         Airbyte Destination for {human_readable_name}
-
-        Documentation can be found at {docs_url}
+{docs_url}
+        Args:
+            name (str): The name of the destination.
+{fields_doc}
         """
 {self_fields}
         super().__init__("{human_readable_name}", name)
@@ -331,11 +370,20 @@ def create_connector_class_definition(
         [
             f"{field_name}: {field_type} = None"
             if isinstance(field_type, OptType)
-            else f"{field_name}: {field_type}"
+            else f"{field_name}: {field_type.annotation(scope=cls_name, quote=True)}"
             for field_name, field_type in sorted(
                 cls_def.items(), key=lambda x: isinstance(x[1], OptType)
             )
             if field_type.const_value is None
+        ]
+    )
+    fields_doc = "\n".join(
+        [
+            textwrap.indent(
+                field_type.get_doc_desc(field_name, scope=cls_name) or "", "            "
+            )
+            for field_name, field_type in cls_def.items()
+            if field_type.description
         ]
     )
 
@@ -354,10 +402,13 @@ def create_connector_class_definition(
     return (SOURCE_TEMPLATE if is_source else DESTINATION_TEMPLATE).format(
         cls_name=cls_name,
         fields_in=fields_in,
+        fields_doc=fields_doc,
         self_fields=self_fields,
         nested_defs=nested_defs,
         human_readable_name=connector_name_human_readable,
-        docs_url=docs_url,
+        docs_url=f"\n        Documentation can be found at {docs_url}\n"
+        if docs_url and docs_url != "https://docsurl.com"
+        else "",
     )
 
 
@@ -371,7 +422,6 @@ def load_from_spec_file(
     """
     Loads a connector spec file and generates a python class definition for it
     """
-
     with open(filepath, encoding="utf8") as f:
         if filepath.endswith(".json"):
             schema = json.loads(f.read())
@@ -473,6 +523,7 @@ from typing import Any, List, Optional, Union
 from dagster_airbyte.managed.types import {imp}
 
 import dagster._check as check
+from dagster._annotations import public
 
 
 

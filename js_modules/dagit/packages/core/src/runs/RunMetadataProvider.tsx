@@ -1,13 +1,14 @@
-import {gql} from '@apollo/client';
 import * as React from 'react';
 
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
-import {StepEventStatus} from '../types/globalTypes';
+import {graphql} from '../graphql';
+import {
+  RunFragmentFragment,
+  RunMetadataProviderMessageFragmentFragment,
+  StepEventStatus,
+} from '../graphql/graphql';
 
 import {LogsProviderLogs} from './LogsProvider';
 import {RunContext} from './RunContext';
-import {RunFragment} from './types/RunFragment';
-import {RunMetadataProviderMessageFragment} from './types/RunMetadataProviderMessageFragment';
 
 export enum IStepState {
   PREPARING = 'preparing',
@@ -100,7 +101,7 @@ export const extractLogCaptureStepsFromLegacySteps = (stepKeys: string[]) => {
 };
 
 const fromTimestamp = (ts: number | null) => (ts ? Math.floor(ts * 1000) : undefined);
-function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
+function extractMetadataFromRun(run?: RunFragmentFragment): IRunMetadataDict {
   const metadata: IRunMetadataDict = {
     firstLogAt: 0,
     mostRecentLogAt: 0,
@@ -169,8 +170,22 @@ const stepStatusToStepState = (status: StepEventStatus | null) => {
   }
 };
 
+const refineMarkerEvent = (log: RunMetadataProviderMessageFragmentFragment) => {
+  if (
+    log.__typename === 'EngineEvent' ||
+    log.__typename === 'ResourceInitFailureEvent' ||
+    log.__typename === 'ResourceInitStartedEvent' ||
+    log.__typename === 'ResourceInitSuccessEvent' ||
+    log.__typename === 'StepWorkerStartedEvent' ||
+    log.__typename === 'StepWorkerStartingEvent'
+  ) {
+    return log;
+  }
+  return null;
+};
+
 export function extractMetadataFromLogs(
-  logs: RunMetadataProviderMessageFragment[],
+  logs: RunMetadataProviderMessageFragmentFragment[],
 ): IRunMetadataDict {
   const metadata: IRunMetadataDict = {
     firstLogAt: 0,
@@ -219,19 +234,15 @@ export function extractMetadataFromLogs(
       }
     }
 
-    if (
-      log.__typename === 'EngineEvent' ||
-      log.__typename === 'ResourceInitFailureEvent' ||
-      log.__typename === 'ResourceInitStartedEvent' ||
-      log.__typename === 'ResourceInitSuccessEvent' ||
-      log.__typename === 'StepWorkerStartedEvent' ||
-      log.__typename === 'StepWorkerStartingEvent'
-    ) {
-      if (log.markerStart) {
-        upsertMarker(metadata.globalMarkers, log.markerStart).start = timestamp;
-      }
-      if (log.markerEnd) {
-        upsertMarker(metadata.globalMarkers, log.markerEnd).end = timestamp;
+    if (!log.stepKey) {
+      const markerEvent = refineMarkerEvent(log);
+      if (markerEvent) {
+        if (markerEvent.markerStart) {
+          upsertMarker(metadata.globalMarkers, markerEvent.markerStart).start = timestamp;
+        }
+        if (markerEvent.markerEnd) {
+          upsertMarker(metadata.globalMarkers, markerEvent.markerEnd).end = timestamp;
+        }
       }
     }
 
@@ -264,6 +275,16 @@ export function extractMetadataFromLogs(
           end: undefined,
           markers: [],
         } as IStepMetadata);
+
+      const markerEvent = refineMarkerEvent(log);
+      if (markerEvent) {
+        if (markerEvent.markerStart) {
+          upsertMarker(step.markers, markerEvent.markerStart).start = timestamp;
+        }
+        if (markerEvent.markerEnd) {
+          upsertMarker(step.markers, markerEvent.markerEnd).end = timestamp;
+        }
+      }
 
       if (log.__typename === 'ExecutionStepStartEvent') {
         upsertState(step, timestamp, IStepState.RUNNING);
@@ -337,7 +358,7 @@ export const RunMetadataProvider: React.FC<IRunMetadataProviderProps> = ({logs, 
   return <>{children(metadata)}</>;
 };
 
-export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
+export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = graphql(`
   fragment RunMetadataProviderMessageFragment on DagsterRunEvent {
     __typename
     ... on MessageEvent {
@@ -364,5 +385,4 @@ export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
       externalUrl
     }
   }
-  ${METADATA_ENTRY_FRAGMENT}
-`;
+`);

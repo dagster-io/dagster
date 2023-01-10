@@ -1,12 +1,18 @@
 import re
+from typing import TYPE_CHECKING, Dict, Mapping, Optional
 
 import dagster._check as check
+from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.version_strategy import OpVersionContext, ResourceVersionContext
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.step import is_executable_step
+from dagster._core.system_config.objects import ResolvedRunConfig
 
 from .plan.inputs import join_and_hash
+
+if TYPE_CHECKING:
+    from dagster._core.execution.plan.plan import ExecutionPlan
 
 VALID_VERSION_REGEX_STR = r"^[A-Za-z0-9_]+$"
 VALID_VERSION_REGEX = re.compile(VALID_VERSION_REGEX_STR)
@@ -44,7 +50,11 @@ def resolve_config_version(config_value: object):
         )
 
 
-def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
+def resolve_step_versions(
+    pipeline_def: PipelineDefinition,
+    execution_plan: "ExecutionPlan",
+    resolved_run_config: ResolvedRunConfig,
+) -> Mapping[str, Optional[str]]:
     """Resolves the version of each step in an execution plan.
 
     Execution plan provides execution steps for analysis. It returns dict[str, str] where each key
@@ -69,15 +79,14 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
         Dict[str, Optional[str]]: A dictionary that maps the key of an execution step to a version.
             If a step has no computed version, then the step key maps to None.
     """
-
     resource_versions = {}
     resource_defs = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs
 
-    step_versions = {}  # step_key (str) -> version (str)
+    step_versions: Dict[str, Optional[str]] = {}  # step_key (str) -> version (str)
 
     for step in execution_plan.get_all_steps_in_topo_order():
         # do not compute versions for steps that are not executable
-        if not is_executable_step(step):
+        if not is_executable_step(step):  # type: ignore
             continue
 
         solid_def = pipeline_def.get_solid(step.solid_handle).definition
@@ -121,7 +130,6 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
         resource_versions_for_solid = []
         for resource_key in solid_def.required_resource_keys:
             if resource_key not in resource_versions:
-
                 resource_config = resolved_run_config.resources[resource_key].config
                 resource_config_version = resolve_config_version(resource_config)
 
@@ -130,21 +138,19 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
                 if resource_def.version is not None:
                     resource_def_version = resource_def.version
                 else:
-                    version_context = ResourceVersionContext(
+                    resource_version_context = ResourceVersionContext(
                         resource_def=resource_def, resource_config=resource_config
                     )
-                    resource_def_version = pipeline_def.version_strategy.get_resource_version(
-                        version_context
-                    )
+                    resource_def_version = check.not_none(
+                        pipeline_def.version_strategy
+                    ).get_resource_version(resource_version_context)
 
                 if resource_def_version is not None:
-
                     check_valid_version(resource_def_version)
                     resource_versions[resource_key] = join_and_hash(
                         resource_config_version, resource_def_version
                     )
                 else:
-
                     resource_versions[resource_key] = join_and_hash(resource_config)
 
             if resource_versions[resource_key] is not None:
@@ -163,11 +169,15 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
     return step_versions
 
 
-def resolve_step_output_versions(pipeline_def, execution_plan, resolved_run_config):
+def resolve_step_output_versions(
+    pipeline_def: PipelineDefinition,
+    execution_plan: "ExecutionPlan",
+    resolved_run_config: ResolvedRunConfig,
+):
     step_versions = resolve_step_versions(pipeline_def, execution_plan, resolved_run_config)
     return {
         StepOutputHandle(step.key, output_name): join_and_hash(output_name, step_versions[step.key])
         for step in execution_plan.steps
-        if is_executable_step(step)
+        if is_executable_step(step)  # type: ignore
         for output_name in step.step_output_dict.keys()
     }

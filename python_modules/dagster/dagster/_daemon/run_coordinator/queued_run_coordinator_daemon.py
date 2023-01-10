@@ -1,93 +1,35 @@
 import sys
-from collections import defaultdict
-from typing import Dict, Tuple
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import ExitStack
+from typing import Dict, List, Optional
 
-from dagster import DagsterEvent, DagsterEventType
-from dagster import _check as check
+from dagster import (
+    DagsterEvent,
+    DagsterEventType,
+    _check as check,
+)
+from dagster._core.errors import DagsterRepositoryLocationLoadError, DagsterUserCodeUnreachableError
+from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
-from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
+from dagster._core.launcher import LaunchRunContext
+from dagster._core.run_coordinator.queued_run_coordinator import (
+    QueuedRunCoordinator,
+    RunQueueConfig,
+)
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
-    PipelineRun,
-    PipelineRunStatus,
+    DagsterRun,
+    DagsterRunStatus,
     RunsFilter,
 )
 from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._daemon.daemon import IntervalDaemon
+from dagster._core.workspace.workspace import IWorkspace
+from dagster._daemon.daemon import IntervalDaemon, TDaemonGenerator
 from dagster._utils.error import serializable_error_info_from_exc_info
-
-
-class _TagConcurrencyLimitsCounter:
-    """
-    Helper object that keeps track of when the tag concurrency limits are met
-    """
-
-    def __init__(self, tag_concurrency_limits, in_progress_runs):
-        check.opt_list_param(tag_concurrency_limits, "tag_concurrency_limits", of_type=dict)
-        check.list_param(in_progress_runs, "in_progress_runs", of_type=PipelineRun)
-
-        self._key_limits: Dict[str, int] = {}
-        self._key_value_limits: Dict[Tuple[str, str], int] = {}
-        self._unique_value_limits: Dict[str, int] = {}
-
-        for tag_limit in tag_concurrency_limits:
-            key = tag_limit["key"]
-            value = tag_limit.get("value")
-            limit = tag_limit["limit"]
-
-            if isinstance(value, str):
-                self._key_value_limits[(key, value)] = limit
-            elif not value or not value["applyLimitPerUniqueValue"]:
-                self._key_limits[key] = limit
-            else:
-                self._unique_value_limits[key] = limit
-
-        self._key_counts: Dict[str, int] = defaultdict(lambda: 0)
-        self._key_value_counts: Dict[Tuple[str, str], int] = defaultdict(lambda: 0)
-        self._unique_value_counts: Dict[Tuple[str, str], int] = defaultdict(lambda: 0)
-
-        # initialize counters based on current in progress runs
-        for run in in_progress_runs:
-            self.update_counters_with_launched_run(run)
-
-    def is_run_blocked(self, run):
-        """
-        True if there are in progress runs which are blocking this run based on tag limits
-        """
-        for key, value in run.tags.items():
-            if key in self._key_limits and self._key_counts[key] >= self._key_limits[key]:
-                return True
-
-            tag_tuple = (key, value)
-            if (
-                tag_tuple in self._key_value_limits
-                and self._key_value_counts[tag_tuple] >= self._key_value_limits[tag_tuple]
-            ):
-                return True
-
-            if (
-                key in self._unique_value_limits
-                and self._unique_value_counts[tag_tuple] >= self._unique_value_limits[key]
-            ):
-                return True
-
-        return False
-
-    def update_counters_with_launched_run(self, run):
-        """
-        Add a new in progress run to the counters
-        """
-        for key, value in run.tags.items():
-            if key in self._key_limits:
-                self._key_counts[key] += 1
-
-            tag_tuple = (key, value)
-            if tag_tuple in self._key_value_limits:
-                self._key_value_counts[tag_tuple] += 1
-
-            if key in self._unique_value_limits:
-                self._unique_value_counts[tag_tuple] += 1
+from dagster._utils.tags import TagConcurrencyLimitsCounter
 
 
 class QueuedRunCoordinatorDaemon(IntervalDaemon):
@@ -96,6 +38,29 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
     store and launches them.
     """
 
+    def __init__(self, interval_seconds):
+        self._exit_stack = ExitStack()
+        self._executor = None
+        self._location_timeouts_lock = threading.Lock()
+        self._location_timeouts: Dict[str, float] = {}
+        super().__init__(interval_seconds)
+
+    def _get_executor(self, max_workers) -> ThreadPoolExecutor:
+        if self._executor is None:
+            # assumes max_workers wont change
+            self._executor = self._exit_stack.enter_context(
+                ThreadPoolExecutor(
+                    max_workers=max_workers,
+                    thread_name_prefix="run_dequeue_worker",
+                )
+            )
+        return self._executor
+
+    def __exit__(self, _exception_type, _exception_value, _traceback):
+        self._executor = None
+        self._exit_stack.pop_all()
+        super().__exit__(_exception_type, _exception_value, _traceback)
+
     @classmethod
     def daemon_type(cls):
         return "QUEUED_RUN_COORDINATOR"
@@ -103,12 +68,125 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
     def run_iteration(
         self,
         workspace_process_context: IWorkspaceProcessContext,
-    ):
+        fixed_iteration_time: Optional[float] = None,  # used for tests
+    ) -> TDaemonGenerator:
+        run_coordinator = workspace_process_context.instance.run_coordinator
+        if not isinstance(run_coordinator, QueuedRunCoordinator):
+            check.failed(f"Expected QueuedRunCoordinator, got {run_coordinator}")
+
+        run_queue_config = run_coordinator.get_run_queue_config()
+
         instance = workspace_process_context.instance
+        runs_to_dequeue = self._get_runs_to_dequeue(
+            instance, run_queue_config, fixed_iteration_time=fixed_iteration_time
+        )
+        yield from self._dequeue_runs_iter(
+            workspace_process_context,
+            run_coordinator,
+            runs_to_dequeue,
+            run_queue_config,
+            fixed_iteration_time=fixed_iteration_time,
+        )
+
+    def _dequeue_runs_iter(
+        self,
+        workspace_process_context: IWorkspaceProcessContext,
+        run_coordinator: QueuedRunCoordinator,
+        runs_to_dequeue: List[DagsterRun],
+        run_queue_config: RunQueueConfig,
+        fixed_iteration_time: Optional[float],
+    ):
+        if run_coordinator.dequeue_use_threads:
+            yield from self._dequeue_runs_iter_threaded(
+                workspace_process_context,
+                runs_to_dequeue,
+                run_coordinator.dequeue_num_workers,
+                run_queue_config,
+                fixed_iteration_time=fixed_iteration_time,
+            )
+        else:
+            yield from self._dequeue_runs_iter_loop(
+                workspace_process_context,
+                runs_to_dequeue,
+                run_queue_config,
+                fixed_iteration_time=fixed_iteration_time,
+            )
+
+    def _dequeue_run_thread(
+        self,
+        workspace_process_context: IWorkspaceProcessContext,
+        run: DagsterRun,
+        run_queue_config: RunQueueConfig,
+        fixed_iteration_time: Optional[float],
+    ) -> bool:
+        return self._dequeue_run(
+            workspace_process_context.instance,
+            workspace_process_context.create_request_context(),
+            run,
+            run_queue_config,
+            fixed_iteration_time,
+        )
+
+    def _dequeue_runs_iter_threaded(
+        self,
+        workspace_process_context: IWorkspaceProcessContext,
+        runs_to_dequeue: List[DagsterRun],
+        max_workers: Optional[int],
+        run_queue_config: RunQueueConfig,
+        fixed_iteration_time: Optional[float],
+    ):
+        num_dequeued_runs = 0
+
+        for future in as_completed(
+            self._get_executor(max_workers).submit(
+                self._dequeue_run_thread,
+                workspace_process_context,
+                run,
+                run_queue_config,
+                fixed_iteration_time=fixed_iteration_time,
+            )
+            for run in runs_to_dequeue
+        ):
+            run_launched = future.result()
+            yield None
+            if run_launched:
+                num_dequeued_runs += 1
+
+        if num_dequeued_runs > 0:
+            self._logger.info("Launched %d runs.", num_dequeued_runs)
+
+    def _dequeue_runs_iter_loop(
+        self,
+        workspace_process_context: IWorkspaceProcessContext,
+        runs_to_dequeue: List[DagsterRun],
+        run_queue_config: RunQueueConfig,
+        fixed_iteration_time: Optional[float],
+    ):
+        num_dequeued_runs = 0
+        workspace = workspace_process_context.create_request_context()
+        for run in runs_to_dequeue:
+            run_launched = self._dequeue_run(
+                workspace_process_context.instance,
+                workspace,
+                run,
+                run_queue_config,
+                fixed_iteration_time=fixed_iteration_time,
+            )
+            yield None
+            if run_launched:
+                num_dequeued_runs += 1
+
+        if num_dequeued_runs > 0:
+            self._logger.info("Launched %d runs.", num_dequeued_runs)
+
+    def _get_runs_to_dequeue(
+        self,
+        instance: DagsterInstance,
+        run_queue_config: RunQueueConfig,
+        fixed_iteration_time: Optional[float],
+    ) -> List[DagsterRun]:
         if not isinstance(instance.run_coordinator, QueuedRunCoordinator):
             check.failed(f"Expected QueuedRunCoordinator, got {instance.run_coordinator}")
-
-        run_queue_config = instance.run_coordinator.get_run_queue_config()
 
         max_concurrent_runs = run_queue_config.max_concurrent_runs
         tag_concurrency_limits = run_queue_config.tag_concurrency_limits
@@ -126,69 +204,67 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                         len(in_progress_runs), max_concurrent_runs
                     )
                 )
-                return
+                return []
 
         queued_runs = self._get_queued_runs(instance)
 
         if not queued_runs:
             self._logger.debug("Poll returned no queued runs.")
-        else:
-            self._logger.info("Retrieved %d queued runs, checking limits.", len(queued_runs))
+            return []
+
+        now = fixed_iteration_time or time.time()
+
+        with self._location_timeouts_lock:
+            paused_location_names = {
+                location_name
+                for location_name in self._location_timeouts
+                if self._location_timeouts[location_name] > now
+            }
+
+        locations_clause = ""
+        if paused_location_names:
+            locations_clause = (
+                " Temporarily skipping runs from the following locations due to a user code error: "
+                + ",".join(list(paused_location_names))
+            )
+
+        self._logger.info(
+            f"Retrieved %d queued runs, checking limits.{locations_clause}", len(queued_runs)
+        )
 
         # place in order
         sorted_runs = self._priority_sort(queued_runs)
-
-        # launch until blocked by limit rules
-        num_dequeued_runs = 0
-        tag_concurrency_limits_counter = _TagConcurrencyLimitsCounter(
+        tag_concurrency_limits_counter = TagConcurrencyLimitsCounter(
             tag_concurrency_limits, in_progress_runs
         )
 
+        batch: List[DagsterRun] = []
         for run in sorted_runs:
-            if max_concurrent_runs_enabled and num_dequeued_runs >= max_runs_to_launch:
+            if max_concurrent_runs_enabled and len(batch) >= max_runs_to_launch:
                 break
 
-            if tag_concurrency_limits_counter.is_run_blocked(run):
+            if tag_concurrency_limits_counter.is_blocked(run):
                 continue
 
-            error_info = None
+            location_name = (
+                run.external_pipeline_origin.location_name if run.external_pipeline_origin else None
+            )
+            if location_name and location_name in paused_location_names:
+                continue
 
-            try:
-                self._dequeue_run(instance, run, workspace_process_context)
-            except Exception:
-                error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            tag_concurrency_limits_counter.update_counters_with_launched_item(run)
+            batch.append(run)
 
-                message = (
-                    f"Caught an error for run {run.run_id} while removing it from the queue."
-                    " Marking the run as failed and dropping it from the queue"
-                )
-                message_with_full_error = f"{message}: {error_info.to_string()}"
-
-                self._logger.error(message_with_full_error)
-                instance.report_run_failed(run, message_with_full_error)
-
-                # modify the original error, so that the extra message appears in heartbeats
-                error_info = error_info._replace(message=f"{message}: {error_info.message}")
-
-            else:
-                tag_concurrency_limits_counter.update_counters_with_launched_run(run)
-                num_dequeued_runs += 1
-
-            yield error_info
-
-        if num_dequeued_runs > 0:
-            self._logger.info("Launched %d runs.", num_dequeued_runs)
+        return batch
 
     def _get_queued_runs(self, instance):
-        queued_runs_filter = RunsFilter(statuses=[PipelineRunStatus.QUEUED])
+        queued_runs_filter = RunsFilter(statuses=[DagsterRunStatus.QUEUED])
 
         # Reversed for fifo ordering
-        # Note: should add a maximum fetch limit https://github.com/dagster-io/dagster/issues/3339
         runs = instance.get_runs(filters=queued_runs_filter)[::-1]
         return runs
 
     def _get_in_progress_runs(self, instance):
-        # Note: should add a maximum fetch limit https://github.com/dagster-io/dagster/issues/3339
         return instance.get_runs(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
 
     def _priority_sort(self, runs):
@@ -202,26 +278,144 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         # sorted is stable, so fifo is maintained
         return sorted(runs, key=get_priority, reverse=True)
 
+    def _is_location_pausing_dequeues(self, location_name, now):
+        with self._location_timeouts_lock:
+            return (
+                location_name in self._location_timeouts
+                and self._location_timeouts[location_name] > now
+            )
+
     def _dequeue_run(
         self,
         instance: DagsterInstance,
-        run: PipelineRun,
-        workspace_process_context: IWorkspaceProcessContext,
-    ):
+        workspace: IWorkspace,
+        run: DagsterRun,
+        run_queue_config: RunQueueConfig,
+        fixed_iteration_time: Optional[float],
+    ) -> bool:
         # double check that the run is still queued before dequeing
-        reloaded_run = check.not_none(instance.get_run_by_id(run.run_id))
+        run = check.not_none(instance.get_run_by_id(run.run_id))
 
-        if reloaded_run.status != PipelineRunStatus.QUEUED:
+        now = fixed_iteration_time or time.time()
+
+        if run.status != DagsterRunStatus.QUEUED:
             self._logger.info(
                 "Run %s is now %s instead of QUEUED, skipping",
-                reloaded_run.run_id,
-                reloaded_run.status,
+                run.run_id,
+                run.status,
             )
-            return
+            return False
 
-        dequeued_event = DagsterEvent(
-            event_type_value=DagsterEventType.PIPELINE_DEQUEUED.value,
+        # Very old (pre 0.10.0) runs and programatically submitted runs may not have an
+        # attached code location name
+        location_name = (
+            run.external_pipeline_origin.location_name if run.external_pipeline_origin else None
+        )
+
+        if location_name and self._is_location_pausing_dequeues(location_name, now):
+            self._logger.info(
+                (
+                    "Pausing dequeues for runs from code location %s to give its code server time"
+                    " to recover"
+                ),
+                location_name,
+            )
+            return False
+
+        launch_started_event = DagsterEvent(
+            event_type_value=DagsterEventType.PIPELINE_STARTING.value,
             pipeline_name=run.pipeline_name,
         )
-        instance.report_dagster_event(dequeued_event, run_id=run.run_id)
-        instance.launch_run(run.run_id, workspace_process_context.create_request_context())
+
+        instance.report_dagster_event(launch_started_event, run_id=run.run_id)
+
+        run = check.not_none(instance.get_run_by_id(run.run_id))
+
+        try:
+            instance.run_launcher.launch_run(
+                LaunchRunContext(pipeline_run=run, workspace=workspace)
+            )
+        except Exception as e:
+            error = serializable_error_info_from_exc_info(sys.exc_info())
+
+            run = check.not_none(instance.get_run_by_id(run.run_id))
+            # Make sure we don't re-enqueue a run if it has already finished or moved into STARTED:
+            if run.status not in (DagsterRunStatus.QUEUED, DagsterRunStatus.STARTING):
+                self._logger.info(
+                    f"Run {run.run_id} failed while being dequeued, but has already advanced to"
+                    f" {run.status} - moving on. Error: {error.to_string()}"
+                )
+                return False
+            elif run_queue_config.max_user_code_failure_retries and isinstance(
+                e, (DagsterUserCodeUnreachableError, DagsterRepositoryLocationLoadError)
+            ):
+                if location_name:
+                    with self._location_timeouts_lock:
+                        # Don't try to dequeue runs from this location for another N seconds
+                        self._location_timeouts[location_name] = (
+                            now + run_queue_config.user_code_failure_retry_delay
+                        )
+
+                enqueue_event_records = instance.get_records_for_run(
+                    run_id=run.run_id, of_type=DagsterEventType.PIPELINE_ENQUEUED
+                ).records
+
+                check.invariant(len(enqueue_event_records), "Could not find enqueue event for run")
+
+                num_retries_so_far = len(enqueue_event_records) - 1
+
+                if num_retries_so_far >= run_queue_config.max_user_code_failure_retries:
+                    message = (
+                        "Run dequeue failed to reach the user code server after"
+                        f" {run_queue_config.max_user_code_failure_retries} attempts, failing run"
+                    )
+                    message_with_full_error = f"{message}: {error.to_string()}"
+                    self._logger.error(message_with_full_error)
+                    instance.report_engine_event(
+                        message,
+                        run,
+                        EngineEventData.engine_error(error),
+                    )
+                    instance.report_run_failed(run)
+                    return False
+                else:
+                    retries_left = (
+                        run_queue_config.max_user_code_failure_retries - num_retries_so_far
+                    )
+                    retries_str = "retr" + ("y" if retries_left == 1 else "ies")
+                    message = (
+                        "Run dequeue failed to reach the user code server, re-submitting the run"
+                        f" into the queue ({retries_left} {retries_str} remaining)"
+                    )
+                    message_with_full_error = f"{message}: {error.to_string()}"
+                    self._logger.warning(message_with_full_error)
+
+                    instance.report_engine_event(
+                        message,
+                        run,
+                        EngineEventData.engine_error(error),
+                    )
+                    # Re-submit the run into the queue
+                    enqueued_event = DagsterEvent(
+                        event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
+                        pipeline_name=run.pipeline_name,
+                    )
+                    instance.report_dagster_event(enqueued_event, run_id=run.run_id)
+                    return False
+            else:
+                message = (
+                    "Caught an unrecoverable error while dequeuing the run. Marking the run as"
+                    " failed and dropping it from the queue"
+                )
+                message_with_full_error = f"{message}: {error.to_string()}"
+                self._logger.error(message_with_full_error)
+
+                instance.report_engine_event(
+                    message,
+                    run,
+                    EngineEventData.engine_error(error),
+                )
+
+                instance.report_run_failed(run)
+                return False
+        return True

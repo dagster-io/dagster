@@ -4,6 +4,10 @@
 import os
 from contextlib import contextmanager
 
+from dagster._legacy import execute_pipeline
+from dagster._utils.merger import merge_dicts
+from dagster._utils.test.postgres_instance import postgres_instance_for_test
+from dagster._utils.yaml_utils import merge_yamls
 from dagster_test.test_project import (
     find_local_test_image,
     get_buildkite_registry_config,
@@ -11,11 +15,6 @@ from dagster_test.test_project import (
     get_test_project_environments_path,
     get_test_project_recon_pipeline,
 )
-
-from dagster._legacy import execute_pipeline
-from dagster._utils import merge_dicts
-from dagster._utils.test.postgres_instance import postgres_instance_for_test
-from dagster._utils.yaml_utils import merge_yamls
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -69,14 +68,13 @@ def test_execute_celery_docker_image_on_executor_config(aws_creds):
     )
 
     with celery_docker_postgres_instance() as instance:
-
         result = execute_pipeline(
             get_test_project_recon_pipeline("docker_celery_pipeline"),
             run_config=run_config,
             instance=instance,
         )
         assert result.success
-        assert result.result_for_solid("get_environment_solid").output_value("result") == "here!"
+        assert result.result_for_node("get_environment_solid").output_value("result") == "here!"
 
 
 def test_execute_celery_docker_image_on_pipeline_config(aws_creds):
@@ -126,4 +124,4 @@ def test_execute_celery_docker_image_on_pipeline_config(aws_creds):
             instance=instance,
         )
         assert result.success
-        assert result.result_for_solid("get_environment_solid").output_value("result") == "here!"
+        assert result.result_for_node("get_environment_solid").output_value("result") == "here!"

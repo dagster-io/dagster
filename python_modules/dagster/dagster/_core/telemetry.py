@@ -34,7 +34,7 @@ from dagster._core.definitions.reconstruct import (
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 from dagster.version import __version__ as dagster_module_version
 
 TELEMETRY_STR = ".telemetry"
@@ -275,7 +275,6 @@ def _check_telemetry_instance_param(args, kwargs, instance_index):
 
 
 def _get_telemetry_logger():
-
     # If a concurrently running process deleted the logging directory since the
     # last action, we need to make sure to re-create the directory
     # (the logger does not do this itself.)
@@ -395,9 +394,11 @@ def log_external_repo_stats(instance, source, external_repo, external_pipeline=N
 
         pipeline_name_hash = hash_name(external_pipeline.name) if external_pipeline else ""
         repo_hash = hash_name(external_repo.name)
+        location_name_hash = hash_name(external_repo.handle.location_name)
         num_pipelines_in_repo = len(external_repo.get_all_external_jobs())
         num_schedules_in_repo = len(external_repo.get_external_schedules())
         num_sensors_in_repo = len(external_repo.get_external_sensors())
+        num_assets_in_repo = len(external_repo.get_external_asset_nodes())
 
         write_telemetry_log_line(
             TelemetryEntry(
@@ -411,7 +412,9 @@ def log_external_repo_stats(instance, source, external_repo, external_pipeline=N
                     "num_pipelines_in_repo": str(num_pipelines_in_repo),
                     "num_schedules_in_repo": str(num_schedules_in_repo),
                     "num_sensors_in_repo": str(num_sensors_in_repo),
+                    "num_assets_in_repo": str(num_assets_in_repo),
                     "repo_hash": repo_hash,
+                    "location_name_hash": location_name_hash,
                 },
             )._asdict()
         )
@@ -433,6 +436,10 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
             num_pipelines_in_repo = len(repository.pipeline_names)
             num_schedules_in_repo = len(repository.schedule_defs)
             num_sensors_in_repo = len(repository.sensor_defs)
+            all_assets = list(
+                repository._assets_defs_by_key.values()  # pylint: disable=protected-access
+            )
+            num_assets_in_repo = len(all_assets)
         elif isinstance(repo, ReconstructableRepository):
             pipeline_name_hash = ""
             repository = repo.get_definition()
@@ -440,12 +447,17 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
             num_pipelines_in_repo = len(repository.pipeline_names)
             num_schedules_in_repo = len(repository.schedule_defs)
             num_sensors_in_repo = len(repository.sensor_defs)
+            all_assets = list(
+                repository._assets_defs_by_key.values()  # pylint: disable=protected-access
+            )
+            num_assets_in_repo = len(all_assets)
         else:
             pipeline_name_hash = hash_name(pipeline.get_definition().name)
             repo_hash = hash_name(get_ephemeral_repository_name(pipeline.get_definition().name))
             num_pipelines_in_repo = 1
             num_schedules_in_repo = 0
             num_sensors_in_repo = 0
+            num_assets_in_repo = 0
 
         write_telemetry_log_line(
             TelemetryEntry(
@@ -459,6 +471,7 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
                     "num_pipelines_in_repo": str(num_pipelines_in_repo),
                     "num_schedules_in_repo": str(num_schedules_in_repo),
                     "num_sensors_in_repo": str(num_sensors_in_repo),
+                    "num_assets_in_repo": str(num_assets_in_repo),
                     "repo_hash": repo_hash,
                 },
             )._asdict()

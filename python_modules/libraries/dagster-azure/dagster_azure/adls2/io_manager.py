@@ -2,12 +2,18 @@ import pickle
 from contextlib import contextmanager
 from typing import Union
 
-from dagster_azure.adls2.utils import ResourceNotFoundError
-
-from dagster import Field, IOManager, InputContext, OutputContext, StringSource
-from dagster import _check as check
-from dagster import io_manager
+from dagster import (
+    Field,
+    InputContext,
+    IOManager,
+    OutputContext,
+    StringSource,
+    _check as check,
+    io_manager,
+)
 from dagster._utils import PICKLE_PROTOCOL
+
+from dagster_azure.adls2.utils import ResourceNotFoundError
 
 _LEASE_DURATION = 60  # One minute
 
@@ -94,8 +100,10 @@ class PickledObjectADLS2IOManager(IOManager):
         if context.dagster_type.typing_type == type(None):
             check.invariant(
                 obj is None,
-                "Output had Nothing type or 'None' annotation, but handle_output received value "
-                f"that was not None and was of type {type(obj)}.",
+                (
+                    "Output had Nothing type or 'None' annotation, but handle_output received"
+                    f" value that was not None and was of type {type(obj)}."
+                ),
             )
             return None
 

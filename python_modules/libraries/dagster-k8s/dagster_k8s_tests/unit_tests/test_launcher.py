@@ -1,11 +1,6 @@
 import json
 from unittest import mock
 
-from dagster_k8s import K8sRunLauncher
-from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, UserDefinedDagsterK8sConfig
-from kubernetes.client.models.v1_job import V1Job
-from kubernetes.client.models.v1_job_status import V1JobStatus
-
 from dagster import reconstructable
 from dagster._core.host_representation import RepositoryHandle
 from dagster._core.launcher import LaunchRunContext
@@ -19,12 +14,15 @@ from dagster._core.test_utils import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ExecuteRunArgs
 from dagster._legacy import pipeline
-from dagster._utils import merge_dicts
 from dagster._utils.hosted_user_process import external_pipeline_from_recon_pipeline
+from dagster._utils.merger import merge_dicts
+from dagster_k8s import K8sRunLauncher
+from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, UserDefinedDagsterK8sConfig
+from kubernetes.client.models.v1_job import V1Job
+from kubernetes.client.models.v1_job_status import V1JobStatus
 
 
 def test_launcher_from_config(kubeconfig_file):
-
     resources = {
         "requests": {"memory": "64Mi", "cpu": "250m"},
         "limits": {"memory": "128Mi", "cpu": "500m"},
@@ -54,7 +52,7 @@ def test_launcher_from_config(kubeconfig_file):
         assert isinstance(run_launcher, K8sRunLauncher)
         assert run_launcher.fail_pod_on_run_failure is None
         assert run_launcher.resources == resources
-        assert run_launcher.scheduler_name == None
+        assert run_launcher.scheduler_name is None
 
     with instance_for_test(
         overrides={
@@ -98,6 +96,7 @@ def test_launcher_with_container_context(kubeconfig_file):
                 "requests": {"memory": "32Mi", "cpu": "125m"},
             },
             "scheduler_name": "test-scheduler-2",
+            "security_context": {"capabilities": {"add": ["SYS_PTRACE"]}},
         }
     }
 
@@ -154,6 +153,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             "limits": {"memory": "64Mi", "cpu": "250m"},
             "requests": {"memory": "32Mi", "cpu": "125m"},
         }
+        assert container.security_context.capabilities.add == ["SYS_PTRACE"]
 
         assert kwargs["body"].spec.template.spec.scheduler_name == "test-scheduler-2"
 
@@ -174,8 +174,106 @@ def test_launcher_with_container_context(kubeconfig_file):
         )
 
 
-def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
+def test_launcher_with_k8s_config(kubeconfig_file):
+    # Construct a K8s run launcher in a fake k8s environment.
+    mock_k8s_client_batch_api = mock.MagicMock()
+    k8s_run_launcher = K8sRunLauncher(
+        service_account_name="dagit-admin",
+        instance_config_map="dagster-instance",
+        postgres_password_secret="dagster-postgresql-secret",
+        dagster_home="/opt/dagster/dagster_home",
+        job_image="fake_job_image",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+        env_vars=["FOO_TEST=foo"],
+        scheduler_name="test-scheduler",
+        run_k8s_config={
+            "container_config": {"command": ["echo", "RUN"], "tty": True},
+            "pod_template_spec_metadata": {"namespace": "my_pod_namespace"},
+            "pod_spec_config": {"dns_policy": "value"},
+            "job_metadata": {
+                "namespace": "my_job_value",
+            },
+            "job_spec_config": {"backoff_limit": 120},
+        },
+    )
 
+    container_context_config = {
+        "k8s": {
+            "run_k8s_config": {
+                "container_config": {"command": ["echo", "REPLACED"]},
+            }
+        }
+    }
+
+    run_tags_k8s_config = UserDefinedDagsterK8sConfig(
+        container_config={"working_dir": "my_working_dir"},
+    )
+    user_defined_k8s_config_json = json.dumps(run_tags_k8s_config.to_dict())
+    run_tags = {"dagster-k8s/config": user_defined_k8s_config_json}
+
+    # Create fake external pipeline.
+    recon_pipeline = reconstructable(fake_pipeline)
+    recon_repo = recon_pipeline.repository
+    repo_def = recon_repo.get_definition()
+
+    python_origin = recon_pipeline.get_python_origin()
+    python_origin = python_origin._replace(
+        repository_origin=python_origin.repository_origin._replace(
+            container_context=container_context_config,
+        )
+    )
+    loadable_target_origin = LoadableTargetOrigin(python_file=__file__)
+
+    with instance_for_test() as instance:
+        with in_process_test_workspace(instance, loadable_target_origin) as workspace:
+            location = workspace.get_repository_location(workspace.repository_location_names[0])
+            repo_handle = RepositoryHandle(
+                repository_name=repo_def.name,
+                repository_location=location,
+            )
+            fake_external_pipeline = external_pipeline_from_recon_pipeline(
+                recon_pipeline,
+                solid_selection=None,
+                repository_handle=repo_handle,
+            )
+
+            # Launch the run in a fake Dagster instance.
+            pipeline_name = "demo_pipeline"
+            run = create_run_for_test(
+                instance,
+                pipeline_name=pipeline_name,
+                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
+                pipeline_code_origin=python_origin,
+                tags=run_tags,
+            )
+            k8s_run_launcher.register_instance(instance)
+            k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
+
+            updated_run = instance.get_run_by_id(run.run_id)
+            assert updated_run.tags[DOCKER_IMAGE_TAG] == "fake_job_image"
+
+        # Check that user defined k8s config was passed down to the k8s job.
+        mock_method_calls = mock_k8s_client_batch_api.method_calls
+        assert len(mock_method_calls) > 0
+        method_name, _args, kwargs = mock_method_calls[0]
+        assert method_name == "create_namespaced_job"
+
+        container = kwargs["body"].spec.template.spec.containers[0]
+
+        # config from container context applied
+        command = container.command
+        assert command == ["echo", "REPLACED"]
+
+        # config from run launcher applied
+        assert container.tty
+
+        # config from run tags applied
+        assert container.working_dir == "my_working_dir"
+
+
+def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     labels = {"foo_label_key": "bar_label_value"}
 
     # Construct a K8s run launcher in a fake k8s environment.
@@ -254,6 +352,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
         job_resources = container.resources
         assert job_resources.to_dict() == expected_resources
         assert DAGSTER_PG_PASSWORD_ENV_VAR in [env.name for env in container.env]
+        assert "DAGSTER_RUN_JOB_NAME" in [env.name for env in container.env]
 
         assert kwargs["body"].spec.template.spec.scheduler_name == "test-scheduler-2"
 
@@ -396,12 +495,11 @@ def fake_pipeline():
 
 
 def test_check_run_health(kubeconfig_file):
-
     labels = {"foo_label_key": "bar_label_value"}
 
     # Construct a K8s run launcher in a fake k8s environment.
-    mock_k8s_client_batch_api = mock.Mock(spec_set=["read_namespaced_job"])
-    mock_k8s_client_batch_api.read_namespaced_job.side_effect = [
+    mock_k8s_client_batch_api = mock.Mock(spec_set=["read_namespaced_job_status"])
+    mock_k8s_client_batch_api.read_namespaced_job_status.side_effect = [
         V1Job(status=V1JobStatus(failed=0, succeeded=0)),
         V1Job(status=V1JobStatus(failed=0, succeeded=1)),
         V1Job(status=V1JobStatus(failed=1, succeeded=0)),
@@ -448,6 +546,9 @@ def test_check_run_health(kubeconfig_file):
             k8s_run_launcher.register_instance(instance)
 
             # same order as side effects
-            assert k8s_run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
-            assert k8s_run_launcher.check_run_worker_health(run).status == WorkerStatus.SUCCESS
-            assert k8s_run_launcher.check_run_worker_health(run).status == WorkerStatus.FAILED
+            health = k8s_run_launcher.check_run_worker_health(run)
+            assert health.status == WorkerStatus.RUNNING, health.msg
+            health = k8s_run_launcher.check_run_worker_health(run)
+            assert health.status == WorkerStatus.SUCCESS, health.msg
+            health = k8s_run_launcher.check_run_worker_health(run)
+            assert health.status == WorkerStatus.FAILED, health.msg

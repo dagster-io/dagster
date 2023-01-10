@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 import dagster._check as check
 from dagster import file_relative_path
 from dagster._core.test_utils import instance_for_test
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 BUILDKITE = bool(os.getenv("BUILDKITE"))
 
@@ -51,7 +51,7 @@ class TestMySQLInstance:
     @staticmethod
     def dagster_mysql_installed():
         try:
-            import dagster_mysql  # pylint: disable=unused-import
+            import dagster_mysql  # noqa: F401
         except ImportError:
             return False
         return True
@@ -71,12 +71,15 @@ class TestMySQLInstance:
         )
         from dagster_mysql.utils import get_conn_string  # pylint: disable=import-error
 
+        env_name = (
+            "MYSQL_TEST_BACKCOMPAT_DB_HOST" if kwargs.get("port") == 3307 else "MYSQL_TEST_DB_HOST"
+        )
         return get_conn_string(
             **dict(
                 dict(
                     username="test",
                     password="test",
-                    hostname=TestMySQLInstance.get_hostname(),
+                    hostname=TestMySQLInstance.get_hostname(env_name),
                     db_name="test",
                 ),
                 **kwargs,

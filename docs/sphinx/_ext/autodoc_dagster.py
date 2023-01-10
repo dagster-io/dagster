@@ -3,8 +3,6 @@ import json
 import textwrap
 from typing import Any, List, Tuple, Type, Union, cast
 
-from sphinx.ext.autodoc import ClassDocumenter, DataDocumenter, ObjectMembers
-
 import dagster._check as check
 from dagster import BoolSource, Field, IntSource, StringSource
 from dagster._annotations import is_public
@@ -19,11 +17,11 @@ from dagster._config.config_type import (
 )
 from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._serdes import ConfigurableClass
+from sphinx.ext.autodoc import ClassDocumenter, DataDocumenter, ObjectMembers
 
 
 def type_repr(config_type: ConfigType) -> str:
     """Generate a human-readable name for a given dagster ConfigType"""
-
     # Use given name if possible
     if config_type.given_name:
         return config_type.given_name
@@ -79,9 +77,9 @@ def config_field_to_lines(field, name=None) -> List[str]:
         if field.description:
             # trim / normalize whitespace. some of our config descriptions misuse triple-quote blocks
             # so this makes them look nicer
-            for l in field.description.split("\n"):
+            for ln in field.description.split("\n"):
                 # escape '*' characters because they get interpreted as emphasis markers in rst
-                lines.append(" " * 4 + textwrap.dedent(l.replace("*", "\\*")))
+                lines.append(" " * 4 + textwrap.dedent(ln.replace("*", "\\*")))
             lines.append("")
 
         if field.default_provided:
@@ -94,8 +92,8 @@ def config_field_to_lines(field, name=None) -> List[str]:
                 lines.append("")
                 lines.append("        .. code-block:: javascript")
                 lines.append("")
-                for l in ls:
-                    lines.append(" " * 12 + l)
+                for ln in ls:
+                    lines.append(" " * 12 + ln)
             else:
                 lines.append("")
                 lines.append(f"    **Default Value:** {repr(val)}")

@@ -25,12 +25,12 @@ from dagster._utils import check
 
 from .configurable import ConfigurableDefinition
 from .definition_config_schema import IDefinitionConfigSchema
-from .dependency import DependencyStructure, Node, NodeHandle, SolidInputHandle
+from .dependency import DependencyStructure, GraphNode, Node, NodeHandle, NodeInput
 from .graph_definition import GraphDefinition
 from .logger_definition import LoggerDefinition
 from .mode import ModeDefinition
+from .op_definition import NodeDefinition, OpDefinition
 from .resource_definition import ResourceDefinition
-from .solid_definition import NodeDefinition, SolidDefinition
 
 
 def define_resource_dictionary_cls(
@@ -137,7 +137,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         )
     )
 
-    top_level_node = Node(
+    top_level_node = GraphNode(
         name=creation_data.graph_def.name,
         definition=creation_data.graph_def,
         graph_definition=creation_data.graph_def,
@@ -219,7 +219,7 @@ def get_inputs_field(
     direct_inputs = check.opt_mapping_param(direct_inputs, "direct_inputs")
     inputs_field_fields = {}
     for name, inp in solid.definition.input_dict.items():
-        inp_handle = SolidInputHandle(solid, inp)
+        inp_handle = NodeInput(solid, inp)
         has_upstream = input_has_upstream(dependency_structure, inp_handle, solid, name)
         if inp.input_manager_key:
             input_field = get_input_manager_input_field(solid, inp, resource_defs)
@@ -249,8 +249,10 @@ def get_inputs_field(
         return Field(
             Shape(inputs_field_fields),
             is_required=False,
-            description=f"This {node_type} is not present in the current {node_type} selection, "
-            "the input config values are allowed but ignored.",
+            description=(
+                f"This {node_type} is not present in the current {node_type} selection, "
+                "the input config values are allowed but ignored."
+            ),
         )
     else:
         return Field(Shape(inputs_field_fields))
@@ -258,7 +260,7 @@ def get_inputs_field(
 
 def input_has_upstream(
     dependency_structure: DependencyStructure,
-    input_handle: SolidInputHandle,
+    input_handle: NodeInput,
     solid: Node,
     input_name: str,
 ) -> bool:
@@ -273,9 +275,9 @@ def get_input_manager_input_field(
     if input_def.root_manager_key:
         if input_def.root_manager_key not in resource_defs:
             raise DagsterInvalidDefinitionError(
-                f"Input '{input_def.name}' for {solid.describe_node()} requires root_manager_key "
-                f"'{input_def.root_manager_key}', but no resource has been provided. Please include a "
-                f"resource definition for that key in the provided resource_defs."
+                f"Input '{input_def.name}' for {solid.describe_node()} requires root_manager_key"
+                f" '{input_def.root_manager_key}', but no resource has been provided. Please"
+                " include a resource definition for that key in the provided resource_defs."
             )
 
         root_manager = resource_defs[input_def.root_manager_key]
@@ -293,9 +295,9 @@ def get_input_manager_input_field(
     elif input_def.input_manager_key:
         if input_def.input_manager_key not in resource_defs:
             raise DagsterInvalidDefinitionError(
-                f"Input '{input_def.name}' for {solid.describe_node()} requires input_manager_key "
-                f"'{input_def.input_manager_key}', but no resource has been provided. Please include a "
-                f"resource definition for that key in the provided resource_defs."
+                f"Input '{input_def.name}' for {solid.describe_node()} requires input_manager_key"
+                f" '{input_def.input_manager_key}', but no resource has been provided. Please"
+                " include a resource definition for that key in the provided resource_defs."
             )
 
         input_manager = resource_defs[input_def.input_manager_key]
@@ -328,7 +330,6 @@ def get_outputs_field(
     solid: Node,
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> Optional[Field]:
-
     # if any outputs have configurable output managers, use those for the schema and ignore all type
     # materializers
     output_manager_fields = {}
@@ -362,7 +363,7 @@ def get_output_manager_output_field(
         raise DagsterInvalidDefinitionError(
             f'Output "{output_def.name}" for {solid.describe_node()} requires io_manager_key '
             f'"{output_def.io_manager_key}", but no resource has been provided. Please include a '
-            f"resource definition for that key in the provided resource_defs."
+            "resource definition for that key in the provided resource_defs."
         )
     if not isinstance(resource_defs[output_def.io_manager_key], IOutputManagerDefinition):
         raise DagsterInvalidDefinitionError(
@@ -399,8 +400,10 @@ def solid_config_field(
             return Field(
                 Shape(trimmed_fields, field_aliases=field_aliases),
                 is_required=False,
-                description=f"This {node_type} is not present in the current {node_type} selection, "
-                "the config values are allowed but ignored.",
+                description=(
+                    f"This {node_type} is not present in the current {node_type} selection, "
+                    "the config values are allowed but ignored."
+                ),
             )
         else:
             return Field(Shape(trimmed_fields, field_aliases=field_aliases))
@@ -446,7 +449,6 @@ def define_isolid_field(
     is_using_graph_job_op_apis: bool,
     asset_layer: AssetLayer,
 ) -> Optional[Field]:
-
     # All solids regardless of compositing status get the same inputs and outputs
     # config. The only thing the varies is on extra element of configuration
     # 1) Vanilla solid definition: a 'config' key with the config_schema as the value
@@ -457,7 +459,7 @@ def define_isolid_field(
     # 4) `configured` composite with field mapping: a 'config' key with the config_schema that was
     #    provided when `configured` was called (via CompositeSolidDefinition#config_schema)
 
-    if isinstance(solid.definition, SolidDefinition):
+    if isinstance(solid.definition, OpDefinition):
         return construct_leaf_solid_config(
             solid,
             handle,
@@ -565,7 +567,7 @@ def define_solid_dictionary_cls(
 
 
 def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigType]:
-    if isinstance(node_def, SolidDefinition):
+    if isinstance(node_def, OpDefinition):
         if node_def.has_config_field:
             yield from node_def.get_config_field().config_type.type_iterator()
     elif isinstance(node_def, GraphDefinition):

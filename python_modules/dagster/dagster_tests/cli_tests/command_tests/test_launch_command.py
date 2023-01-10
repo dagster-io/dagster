@@ -1,10 +1,9 @@
 import click
 import pytest
 from click.testing import CliRunner
-
 from dagster._cli.job import execute_launch_command, job_launch_command
 from dagster._core.errors import DagsterRunAlreadyExists
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import new_cwd
 from dagster._utils import file_relative_path
 
@@ -161,7 +160,7 @@ def test_launch_queued(gen_pipeline_args):
             run = instance.get_run_by_id(run_id)
             assert run is not None
 
-            assert run.status == PipelineRunStatus.QUEUED
+            assert run.status == DagsterRunStatus.QUEUED
 
 
 @pytest.mark.parametrize(
@@ -193,7 +192,7 @@ def test_job_launch_queued(gen_pipeline_args):
             run = instance.get_run_by_id(run_id)
             assert run is not None
 
-            assert run.status == PipelineRunStatus.QUEUED
+            assert run.status == DagsterRunStatus.QUEUED
 
 
 def test_default_working_directory():
@@ -241,7 +240,7 @@ def test_job_launch_handles_pipeline():
     job_kwargs = {
         "workspace": None,
         "job_name": "my_job",
-        "python_file": file_relative_path(__file__, "repo_pipeline_and_job.py"),
+        "python_file": (file_relative_path(__file__, "repo_pipeline_and_job.py"),),
         "module_name": None,
         "attribute": "my_repo",
     }

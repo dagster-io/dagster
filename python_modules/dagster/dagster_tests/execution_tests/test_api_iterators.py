@@ -1,7 +1,8 @@
 import pytest
-
-from dagster import _check as check
-from dagster import resource
+from dagster import (
+    _check as check,
+    resource,
+)
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events.log import EventLogEntry, construct_event_logger
@@ -12,7 +13,7 @@ from dagster._core.execution.api import (
     execute_run,
     execute_run_iterator,
 )
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import ModeDefinition, PipelineDefinition, solid
 
@@ -121,7 +122,7 @@ def test_execute_run_iterator():
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
             mode="default",
-        ).with_status(PipelineRunStatus.SUCCESS)
+        ).with_status(DagsterRunStatus.SUCCESS)
 
         events = list(
             execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
@@ -151,7 +152,8 @@ def test_execute_run_iterator():
                 )
             )
             assert (
-                "Ignoring a duplicate run that was started from somewhere other than the run monitor daemon"
+                "Ignoring a duplicate run that was started from somewhere other than the run"
+                " monitor daemon"
                 in event.message
             )
 
@@ -171,7 +173,7 @@ def test_execute_run_iterator():
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
             mode="default",
-        ).with_status(PipelineRunStatus.CANCELED)
+        ).with_status(DagsterRunStatus.CANCELED)
 
         events = list(
             execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
@@ -203,7 +205,7 @@ def test_restart_running_run_worker():
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
             mode="default",
-        ).with_status(PipelineRunStatus.STARTED)
+        ).with_status(DagsterRunStatus.STARTED)
 
         events = list(
             execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
@@ -211,13 +213,14 @@ def test_restart_running_run_worker():
 
         assert any(
             [
-                f"{pipeline_run.pipeline_name} ({pipeline_run.run_id}) started a new run worker while the run was already in state DagsterRunStatus.STARTED. "
+                f"{pipeline_run.pipeline_name} ({pipeline_run.run_id}) started a new run worker"
+                " while the run was already in state DagsterRunStatus.STARTED. "
                 in event.message
                 for event in events
             ]
         )
 
-        assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.FAILURE
+        assert instance.get_run_by_id(pipeline_run.run_id).status == DagsterRunStatus.FAILURE
 
 
 def test_start_run_worker_after_run_failure():
@@ -239,7 +242,7 @@ def test_start_run_worker_after_run_failure():
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
             mode="default",
-        ).with_status(PipelineRunStatus.FAILURE)
+        ).with_status(DagsterRunStatus.FAILURE)
 
         event = next(
             execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
@@ -269,7 +272,7 @@ def test_execute_canceled_state():
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
             mode="default",
-        ).with_status(PipelineRunStatus.CANCELED)
+        ).with_status(DagsterRunStatus.CANCELED)
 
         with pytest.raises(DagsterInvariantViolationError):
             execute_run(
@@ -290,7 +293,7 @@ def test_execute_canceled_state():
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
             mode="default",
-        ).with_status(PipelineRunStatus.CANCELED)
+        ).with_status(DagsterRunStatus.CANCELED)
 
         iter_events = list(
             execute_run_iterator(InMemoryPipeline(pipeline_def), iter_run, instance=instance)
@@ -325,7 +328,7 @@ def test_execute_run_bad_state():
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
             mode="default",
-        ).with_status(PipelineRunStatus.SUCCESS)
+        ).with_status(DagsterRunStatus.SUCCESS)
 
         with pytest.raises(
             check.CheckError,

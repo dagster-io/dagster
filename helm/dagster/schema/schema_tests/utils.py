@@ -17,7 +17,7 @@ def create_simple_user_deployment(
         port=3030,
         includeConfigInLaunchedRuns=(
             UserDeploymentIncludeConfigInLaunchedRuns(enabled=include_config_in_launched_runs)
-            if include_config_in_launched_runs != None
+            if include_config_in_launched_runs is not None
             else None
         ),
     )

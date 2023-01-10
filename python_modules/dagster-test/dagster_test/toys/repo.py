@@ -6,8 +6,9 @@ from dagster import ExperimentalWarning
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
 import pendulum
+from dagster import AssetMaterialization, Output, graph, load_assets_from_modules, op, repository
+
 from dagster_test.toys import big_honkin_asset_graph as big_honkin_asset_graph_module
-from dagster_test.toys.asset_lineage import asset_lineage_job, asset_lineage_partition_set
 from dagster_test.toys.asset_sensors import get_asset_sensors_repo
 from dagster_test.toys.branches import branch_failed_job, branch_job
 from dagster_test.toys.composition import composition_job
@@ -53,8 +54,6 @@ from dagster_test.toys.sleepy import sleepy_job
 from dagster_test.toys.software_defined_assets import software_defined_assets
 from dagster_test.toys.unreliable import unreliable_job
 
-from dagster import AssetMaterialization, Output, graph, load_assets_from_modules, op, repository
-
 from .schedules import get_toys_schedules
 from .sensors import get_toys_sensors
 
@@ -95,8 +94,6 @@ def toys_repository():
             branch_failed_job,
             unreliable_job,
             dynamic_job,
-            asset_lineage_job,
-            asset_lineage_partition_set,
             model_job,
             multi_inputs_outputs_job,
             hello_world_notebook_pipeline,

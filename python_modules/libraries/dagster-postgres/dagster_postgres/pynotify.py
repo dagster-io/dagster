@@ -33,10 +33,9 @@ import sys
 from threading import Event
 from typing import Iterator, Optional, Sequence
 
-from psycopg2.extensions import Notify
-
 import dagster._check as check
 from dagster._core.storage.sql import create_engine
+from psycopg2.extensions import Notify
 
 from .utils import create_pg_connection
 
@@ -98,7 +97,6 @@ def await_pg_notifications(
             1: None, in case of timeout
             2: Notify, in case of successful notification reception
     """
-
     check.str_param(conn_string, "conn_string")
     channels = None if channels is None else check.sequence_param(channels, "channels", of_type=str)
     check.float_param(timeout, "timeout")

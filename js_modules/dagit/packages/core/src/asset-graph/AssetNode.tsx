@@ -1,29 +1,27 @@
-import {gql} from '@apollo/client';
-import {Colors, Icon, FontFamily, Box, CaptionMono, Caption, Spinner} from '@dagster-io/ui';
+import {Colors, Icon, FontFamily, Box, Caption, Spinner} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
-import {isAssetLate} from '../assets/CurrentMinutesLateTag';
+import {humanizedLateString, isAssetLate} from '../assets/CurrentMinutesLateTag';
 import {isAssetStale} from '../assets/StaleTag';
 import {OpTags} from '../graph/OpTags';
+import {graphql} from '../graphql';
+import {AssetNodeFragmentFragment} from '../graphql/graphql';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
-import {AssetLatestRunSpinner, AssetLatestRunWithNotices, AssetRunLink} from './AssetRunLinking';
+import {AssetLatestRunSpinner, AssetRunLink} from './AssetRunLinking';
 import {LiveDataForNode} from './Utils';
-import {ASSET_NODE_ANNOTATIONS_MAX_WIDTH, ASSET_NODE_NAME_MAX_LENGTH} from './layout';
-import {AssetNodeFragment} from './types/AssetNodeFragment';
+import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 
 export const AssetNode: React.FC<{
-  definition: AssetNodeFragment;
+  definition: AssetNodeFragmentFragment;
   liveData?: LiveDataForNode;
   selected: boolean;
-  inAssetCatalog?: boolean;
-}> = React.memo(({definition, selected, liveData, inAssetCatalog}) => {
+}> = React.memo(({definition, selected, liveData}) => {
   const firstOp = definition.opNames.length ? definition.opNames[0] : null;
-  const computeName = definition.graphName || definition.opNames[0] || null;
 
   // Used for linking to the run with this step highlighted. We only support highlighting
   // a single step, so just use the first one.
@@ -46,69 +44,42 @@ export const AssetNode: React.FC<{
               })}
             </div>
             <div style={{flex: 1}} />
-            <Box flex={{alignItems: 'center'}} style={{maxWidth: ASSET_NODE_ANNOTATIONS_MAX_WIDTH}}>
-              <AssetLatestRunSpinner liveData={liveData} />
-            </Box>
           </Name>
-          {definition.description && !inAssetCatalog && (
-            <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
-          )}
-          {computeName && displayName !== computeName && (
-            <Description>
-              <Box
-                flex={{gap: 4, alignItems: 'flex-end'}}
-                style={{marginLeft: -2, overflow: 'hidden'}}
-              >
-                <Icon name={definition.graphName ? 'job' : 'op'} size={16} />
-                <div style={{minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis'}}>
-                  {computeName}
-                </div>
-              </Box>
+          {definition.description ? (
+            <Description $color={Colors.Gray800}>
+              {markdownToPlaintext(definition.description).split('\n')[0]}
             </Description>
+          ) : (
+            <Description $color={Colors.Gray400}>No description</Description>
           )}
-
-          {isSource && !definition.isObservable ? null : (
+          {definition.isObservable && isSource ? (
             <Stats>
-              {isSource ? (
-                <StatsRow>
-                  <span>Observed</span>
-                  {liveData?.lastObservation ? (
-                    <CaptionMono style={{textAlign: 'right'}}>
-                      <AssetRunLink
-                        runId={liveData.lastObservation.runId}
-                        event={{stepKey, timestamp: liveData.lastObservation.timestamp}}
-                      >
-                        <TimestampDisplay
-                          timestamp={Number(liveData.lastObservation.timestamp) / 1000}
-                          timeFormat={{showSeconds: false, showTimezone: false}}
-                        />
-                      </AssetRunLink>
-                    </CaptionMono>
-                  ) : (
-                    <span>–</span>
-                  )}
-                </StatsRow>
-              ) : (
-                <>
-                  <StatsRow>
-                    <span>Latest&nbsp;Run</span>
-                    <Caption style={{textAlign: 'right'}}>
-                      <AssetLatestRunWithNotices
-                        liveData={liveData}
-                        includeFreshness={false}
-                        includeRunStatus={false}
+              <StatsRow>
+                <span>Observed</span>
+                {liveData?.lastObservation ? (
+                  <Caption style={{textAlign: 'right'}}>
+                    <AssetRunLink
+                      runId={liveData.lastObservation.runId}
+                      event={{stepKey, timestamp: liveData.lastObservation.timestamp}}
+                    >
+                      <TimestampDisplay
+                        timestamp={Number(liveData.lastObservation.timestamp) / 1000}
+                        timeFormat={{showSeconds: false, showTimezone: false}}
                       />
-                    </Caption>
-                  </StatsRow>
-                </>
-              )}
+                    </AssetRunLink>
+                  </Caption>
+                ) : (
+                  <span>–</span>
+                )}
+              </StatsRow>
             </Stats>
+          ) : isSource ? null : (
+            <AssetNodeStatusRow definition={definition} liveData={liveData} stepKey={stepKey} />
           )}
-          <AssetNodeStatusRow definition={definition} liveData={liveData} stepKey={stepKey} />
           {definition.computeKind && (
             <OpTags
               minified={false}
-              style={{right: -2, paddingTop: 5}}
+              style={{right: -2, paddingTop: 7}}
               tags={[
                 {
                   label: definition.computeKind,
@@ -127,8 +98,25 @@ export const AssetNode: React.FC<{
   );
 }, isEqual);
 
+export const AssetNodeStatusBox: React.FC<{background: string}> = ({background, children}) => (
+  <Box
+    padding={{horizontal: 8}}
+    style={{
+      borderBottomLeftRadius: 6,
+      borderBottomRightRadius: 6,
+      whiteSpace: 'nowrap',
+      lineHeight: '12px',
+      height: 24,
+    }}
+    flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
+    background={background}
+  >
+    {children}
+  </Box>
+);
+
 export const AssetNodeStatusRow: React.FC<{
-  definition: AssetNodeFragment;
+  definition: AssetNodeFragmentFragment;
   liveData: LiveDataForNode | undefined;
   stepKey: string;
 }> = ({definition, liveData, stepKey}) => {
@@ -138,92 +126,110 @@ export const AssetNodeStatusRow: React.FC<{
 
   if (!liveData) {
     return (
-      <Box
-        padding={{horizontal: 8}}
-        style={{borderBottomLeftRadius: 4, borderBottomRightRadius: 4, height: 24}}
-        flex={{justifyContent: 'space-between', alignItems: 'center'}}
-        background={Colors.Gray100}
-      >
+      <AssetNodeStatusBox background={Colors.Gray100}>
         <Spinner purpose="caption-text" />
-      </Box>
+        <Caption style={{flex: 1}} color={Colors.Gray800}>
+          Loading...
+        </Caption>
+      </AssetNodeStatusBox>
     );
   }
 
-  const {lastMaterialization, runWhichFailedToMaterialize} = liveData;
+  const {
+    lastMaterialization,
+    runWhichFailedToMaterialize,
+    inProgressRunIds,
+    unstartedRunIds,
+  } = liveData;
+
+  const materializingRunId = inProgressRunIds[0] || unstartedRunIds[0];
   const late = isAssetLate(liveData);
+
+  if (materializingRunId) {
+    return (
+      <AssetNodeStatusBox background={Colors.Blue50}>
+        <AssetLatestRunSpinner liveData={liveData} />
+        <Caption style={{flex: 1}} color={Colors.Gray800}>
+          Materializing...
+        </Caption>
+        <AssetRunLink runId={materializingRunId} />
+      </AssetNodeStatusBox>
+    );
+  }
+
+  const lastMaterializationLink = lastMaterialization ? (
+    <Caption>
+      <AssetRunLink
+        runId={lastMaterialization.runId}
+        event={{stepKey, timestamp: lastMaterialization.timestamp}}
+      >
+        <TimestampDisplay
+          timestamp={Number(lastMaterialization.timestamp) / 1000}
+          timeFormat={{showSeconds: false, showTimezone: false}}
+        />
+      </AssetRunLink>
+    </Caption>
+  ) : undefined;
 
   if (runWhichFailedToMaterialize || late) {
     return (
-      <Box
-        padding={{horizontal: 8}}
-        style={{borderBottomLeftRadius: 4, borderBottomRightRadius: 4, height: 24}}
-        flex={{justifyContent: 'space-between', alignItems: 'center'}}
-        background={Colors.Red50}
-      >
+      <AssetNodeStatusBox background={Colors.Red50}>
         <Caption color={Colors.Red700}>
-          {runWhichFailedToMaterialize && late ? `Failed (Late)` : late ? 'Late' : 'Failed'}
+          {runWhichFailedToMaterialize && late
+            ? `Failed (Late)`
+            : late
+            ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
+            : 'Failed'}
         </Caption>
-      </Box>
+        {lastMaterializationLink}
+      </AssetNodeStatusBox>
     );
   }
 
   if (!lastMaterialization) {
     return (
-      <Box
-        padding={{horizontal: 8}}
-        style={{borderBottomLeftRadius: 4, borderBottomRightRadius: 4, height: 24}}
-        flex={{justifyContent: 'space-between', alignItems: 'center'}}
-        background={Colors.Gray100}
-      >
-        <Caption color={Colors.Gray700}>Never materialized</Caption>
-      </Box>
+      <AssetNodeStatusBox background={Colors.Yellow50}>
+        <Caption color={Colors.Yellow700}>Never materialized</Caption>
+      </AssetNodeStatusBox>
     );
   }
 
-  if (isAssetStale(liveData)) {
+  if (!liveData.freshnessPolicy && isAssetStale(liveData)) {
     return (
-      <Box
-        padding={{horizontal: 8}}
-        style={{borderBottomLeftRadius: 4, borderBottomRightRadius: 4, height: 24}}
-        flex={{justifyContent: 'space-between', alignItems: 'center'}}
-        background={Colors.Yellow50}
-      >
+      <AssetNodeStatusBox background={Colors.Yellow50}>
         <Caption color={Colors.Yellow700}>Stale</Caption>
-      </Box>
+        {lastMaterializationLink}
+      </AssetNodeStatusBox>
     );
   }
 
   return (
-    <Box
-      padding={{horizontal: 8}}
-      style={{borderBottomLeftRadius: 7, borderBottomRightRadius: 7, height: 24}}
-      flex={{justifyContent: 'space-between', alignItems: 'center'}}
-      background={Colors.Green50}
-    >
+    <AssetNodeStatusBox background={Colors.Green50}>
       <Caption color={Colors.Green700}>Materialized</Caption>
-      <AssetNodeShowOnHover>
-        <AssetRunLink
-          color={Colors.Green700}
-          runId={lastMaterialization.runId}
-          event={{stepKey, timestamp: lastMaterialization.timestamp}}
-        >
-          <TimestampDisplay
-            timestamp={Number(lastMaterialization.timestamp) / 1000}
-            timeFormat={{showSeconds: false, showTimezone: false}}
-          />
-        </AssetRunLink>
-      </AssetNodeShowOnHover>
-    </Box>
+      {lastMaterializationLink}
+    </AssetNodeStatusBox>
   );
 };
 
 export const AssetNodeMinimal: React.FC<{
   selected: boolean;
   liveData?: LiveDataForNode;
-  definition: AssetNodeFragment;
+  definition: AssetNodeFragmentFragment;
 }> = ({selected, definition, liveData}) => {
   const {isSource, assetKey} = definition;
   const displayName = assetKey.path[assetKey.path.length - 1];
+  const materializingRunId = liveData?.inProgressRunIds?.[0] || liveData?.unstartedRunIds?.[0];
+
+  const [background, border] =
+    !liveData || definition.isSource
+      ? [Colors.Gray100, Colors.Gray300]
+      : materializingRunId
+      ? [Colors.Blue50, Colors.Blue500]
+      : liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
+      ? [Colors.Red50, Colors.Red500]
+      : !liveData?.lastMaterialization || (!liveData.freshnessPolicy && isAssetStale(liveData))
+      ? [Colors.Yellow50, Colors.Yellow500]
+      : [Colors.Green50, Colors.Green500];
 
   return (
     <AssetInsetForHoverEffect>
@@ -231,27 +237,11 @@ export const AssetNodeMinimal: React.FC<{
         <MinimalAssetNodeBox
           $selected={selected}
           $isSource={isSource}
-          $background={
-            liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
-              ? Colors.Red50
-              : !liveData?.lastMaterialization
-              ? Colors.Gray100
-              : isAssetStale(liveData)
-              ? Colors.Yellow50
-              : Colors.Green50
-          }
-          $border={
-            liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
-              ? Colors.Red500
-              : !liveData?.lastMaterialization
-              ? Colors.Gray500
-              : isAssetStale(liveData)
-              ? Colors.Yellow500
-              : Colors.Green500
-          }
+          $background={background}
+          $border={border}
         >
-          <div style={{position: 'absolute', right: 5, top: 5}}>
-            <AssetLatestRunSpinner liveData={liveData} purpose="body-text" />
+          <div style={{position: 'absolute', bottom: 6, left: 6}}>
+            <AssetLatestRunSpinner liveData={liveData} purpose="section" />
           </div>
 
           <MinimalName style={{fontSize: 30}} $isSource={isSource}>
@@ -263,7 +253,7 @@ export const AssetNodeMinimal: React.FC<{
   );
 };
 
-export const ASSET_NODE_LIVE_FRAGMENT = gql`
+export const ASSET_NODE_LIVE_FRAGMENT = graphql(`
   fragment AssetNodeLiveFragment on AssetNode {
     id
     opNames
@@ -274,30 +264,46 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
       path
     }
     assetMaterializations(limit: 1) {
-      timestamp
-      runId
+      ...AssetNodeLiveMaterialization
     }
     freshnessPolicy {
-      maximumLagMinutes
-      cronSchedule
+      ...AssetNodeLiveFreshnessPolicy
     }
     freshnessInfo {
-      currentMinutesLate
+      ...AssetNodeLiveFreshnessInfo
     }
     assetObservations(limit: 1) {
-      timestamp
-      runId
+      ...AssetNodeLiveObservation
     }
     currentLogicalVersion
     projectedLogicalVersion
   }
-`;
+
+  fragment AssetNodeLiveFreshnessPolicy on FreshnessPolicy {
+    maximumLagMinutes
+    cronSchedule
+  }
+
+  fragment AssetNodeLiveFreshnessInfo on AssetFreshnessInfo {
+    currentMinutesLate
+  }
+
+  fragment AssetNodeLiveMaterialization on MaterializationEvent {
+    timestamp
+    runId
+  }
+
+  fragment AssetNodeLiveObservation on ObservationEvent {
+    timestamp
+    runId
+  }
+`);
 
 // Note: This fragment should only contain fields that are needed for
 // useAssetGraphData and the Asset DAG. Some pages of Dagit request this
 // fragment for every AssetNode on the instance. Add fields with care!
 //
-export const ASSET_NODE_FRAGMENT = gql`
+export const ASSET_NODE_FRAGMENT = graphql(`
   fragment AssetNodeFragment on AssetNode {
     id
     graphName
@@ -310,10 +316,14 @@ export const ASSET_NODE_FRAGMENT = gql`
     isObservable
     isSource
     assetKey {
-      path
+      ...AssetNodeKey
     }
   }
-`;
+
+  fragment AssetNodeKey on AssetKey {
+    path
+  }
+`);
 
 const AssetInsetForHoverEffect = styled.div`
   padding: 10px 4px 2px 4px;
@@ -321,6 +331,8 @@ const AssetInsetForHoverEffect = styled.div`
 `;
 
 export const AssetNodeContainer = styled.div<{$selected: boolean}>`
+  user-select: none;
+  cursor: default;
   padding: 4px;
 `;
 
@@ -402,12 +414,12 @@ const MinimalName = styled(Name)`
   transform: translate(-50%, -50%);
 `;
 
-const Description = styled.div`
-  padding: 4px 8px;
+const Description = styled.div<{$color: string}>`
+  padding: 6px 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: ${Colors.Gray700};
+  color: ${(p) => p.$color};
   border-top: 1px solid ${Colors.Blue50};
   background: ${Colors.White};
   font-size: 12px;
@@ -426,6 +438,6 @@ const StatsRow = styled.div`
   justify-content: space-between;
   min-height: 18px;
   & > span {
-    color: ${Colors.Gray700};
+    color: ${Colors.Gray800};
   }
 `;

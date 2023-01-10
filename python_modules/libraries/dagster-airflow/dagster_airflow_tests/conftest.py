@@ -11,9 +11,8 @@ import tempfile
 
 import docker
 import pytest
-from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
-
 from dagster._utils import mkdir_p
+from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -31,7 +30,6 @@ def airflow_home():
 @pytest.fixture(scope="function")
 def clean_airflow_home(airflow_home):
     """Ensure that the existing contents of AIRFLOW_HOME do not interfere with test."""
-
     airflow_dags_path = os.path.join(airflow_home, "dags")
 
     # Ensure Airflow DAGs folder exists

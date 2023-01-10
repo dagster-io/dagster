@@ -1,11 +1,12 @@
-import {gql, useQuery} from '@apollo/client';
-import {Box, Page, Spinner} from '@dagster-io/ui';
+import {useQuery} from '@apollo/client';
+import {Box, Colors, Page, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router';
 import {useParams} from 'react-router-dom';
 
 import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {graphql} from '../graphql';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
@@ -13,10 +14,6 @@ import {AssetGlobalLineageLink, AssetPageHeader} from './AssetPageHeader';
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {
-  AssetsCatalogRootQuery,
-  AssetsCatalogRootQueryVariables,
-} from './types/AssetsCatalogRootQuery';
 
 export const AssetsCatalogRoot = () => {
   useTrackPageView();
@@ -28,13 +25,10 @@ export const AssetsCatalogRoot = () => {
     .filter((x: string) => x)
     .map(decodeURIComponent);
 
-  const queryResult = useQuery<AssetsCatalogRootQuery, AssetsCatalogRootQueryVariables>(
-    ASSETS_CATALOG_ROOT_QUERY,
-    {
-      skip: currentPath.length === 0,
-      variables: {assetKey: {path: currentPath}},
-    },
-  );
+  const queryResult = useQuery(ASSETS_CATALOG_ROOT_QUERY, {
+    skip: currentPath.length === 0,
+    variables: {assetKey: {path: currentPath}},
+  });
 
   useDocumentTitle(
     currentPath && currentPath.length
@@ -42,40 +36,51 @@ export const AssetsCatalogRoot = () => {
       : 'Assets',
   );
 
-  return queryResult.loading ? (
-    <Page>
-      <AssetPageHeader assetKey={{path: currentPath}} />
-      <Box padding={64}>
-        <Spinner purpose="page" />
-      </Box>
-    </Page>
-  ) : currentPath.length === 0 ||
-    queryResult.data?.assetOrError.__typename === 'AssetNotFoundError' ? (
-    <Page>
-      <AssetPageHeader
-        assetKey={{path: currentPath}}
-        right={
-          <Box flex={{gap: 12, alignItems: 'center'}}>
-            <AssetGlobalLineageLink />
-            <ReloadAllButton label="Reload definitions" />
+  if (queryResult.loading) {
+    return (
+      <Page>
+        <AssetPageHeader assetKey={{path: currentPath}} />
+        <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
+            <Spinner purpose="body-text" />
+            <div style={{color: Colors.Gray600}}>Loading assets…</div>
           </Box>
-        }
-      />
-      <AssetsCatalogTable
-        prefixPath={currentPath}
-        setPrefixPath={(prefixPath) => history.push(assetDetailsPathForKey({path: prefixPath}))}
-      />
-    </Page>
-  ) : (
-    <AssetView assetKey={{path: currentPath}} />
-  );
+        </Box>
+      </Page>
+    );
+  }
+
+  if (
+    currentPath.length === 0 ||
+    queryResult.data?.assetOrError.__typename === 'AssetNotFoundError'
+  ) {
+    return (
+      <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
+        <AssetPageHeader
+          assetKey={{path: currentPath}}
+          right={
+            <Box flex={{gap: 12, alignItems: 'center'}}>
+              <AssetGlobalLineageLink />
+              <ReloadAllButton label="Reload definitions" />
+            </Box>
+          }
+        />
+        <AssetsCatalogTable
+          prefixPath={currentPath}
+          setPrefixPath={(prefixPath) => history.push(assetDetailsPathForKey({path: prefixPath}))}
+        />
+      </Box>
+    );
+  }
+
+  return <AssetView assetKey={{path: currentPath}} />;
 };
 
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export
 export default AssetsCatalogRoot;
 
-const ASSETS_CATALOG_ROOT_QUERY = gql`
+const ASSETS_CATALOG_ROOT_QUERY = graphql(`
   query AssetsCatalogRootQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       __typename
@@ -87,4 +92,4 @@ const ASSETS_CATALOG_ROOT_QUERY = gql`
       }
     }
   }
-`;
+`);

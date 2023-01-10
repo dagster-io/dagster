@@ -32,7 +32,7 @@ def loadable_targets_from_python_file(
 def loadable_targets_from_python_module(
     module_name: str,
     working_directory: Optional[str],
-    remove_from_path_fn: Callable[[], Sequence[str]] = None,
+    remove_from_path_fn: Optional[Callable[[], Sequence[str]]] = None,
 ) -> Sequence[LoadableTarget]:
     module = load_python_module(
         module_name,
@@ -45,7 +45,7 @@ def loadable_targets_from_python_module(
 def loadable_targets_from_python_package(
     package_name: str,
     working_directory: Optional[str],
-    remove_from_path_fn: Callable[[], Sequence[str]] = None,
+    remove_from_path_fn: Optional[Callable[[], Sequence[str]]] = None,
 ) -> Sequence[LoadableTarget]:
     module = load_python_module(
         package_name, working_directory, remove_from_path_fn=remove_from_path_fn
@@ -60,13 +60,6 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
         if len(loadable_defs) > 1:
             raise DagsterInvariantViolationError(
                 "Cannot have more than one Definitions object defined at module scope"
-            )
-
-        # currently this is super strict and requires that it be named defs
-        symbol = loadable_defs[0].attribute
-        if symbol != "defs":
-            raise DagsterInvariantViolationError(
-                f"Found Definitions object at {symbol}. This object must be at a top-level variable named 'defs'."
             )
 
         return loadable_defs
@@ -87,10 +80,10 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
         target_type = "job" if len(loadable_jobs) > 1 else "pipeline"
         raise DagsterInvariantViolationError(
             (
-                'No repository and more than one {target_type} found in "{module_name}". If you load '
-                "a file or module directly it must have only one {target_type} "
-                "in scope. Found {target_type}s defined in variables or decorated "
-                "functions: {pipeline_symbols}."
+                'No repository and more than one {target_type} found in "{module_name}". If you'
+                " load a file or module directly it must have only one {target_type} in scope."
+                " Found {target_type}s defined in variables or decorated functions:"
+                " {pipeline_symbols}."
             ).format(
                 module_name=module.__name__,
                 pipeline_symbols=repr([p.attribute for p in loadable_pipelines]),
@@ -123,12 +116,10 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
     elif len(loadable_asset_groups) > 1:
         var_names = repr([a.attribute for a in loadable_asset_groups])
         raise DagsterInvariantViolationError(
-            (
-                f'More than one asset group found in "{module.__name__}". '
-                "If you load a file or module directly and it has no repositories, jobs, "
-                "pipeline, or graphs in scope, it must have no more than one asset group in scope. "
-                f"Found asset groups defined in variables: {var_names}."
-            )
+            f'More than one asset group found in "{module.__name__}". '
+            "If you load a file or module directly and it has no repositories, jobs, "
+            "pipeline, or graphs in scope, it must have no more than one asset group in scope. "
+            f"Found asset groups defined in variables: {var_names}."
         )
 
     asset_group_from_module_assets = AssetGroup.from_modules([module])

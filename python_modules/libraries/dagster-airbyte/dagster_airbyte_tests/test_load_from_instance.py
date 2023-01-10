@@ -1,12 +1,19 @@
 import pytest
 import responses
-from dagster_airbyte import airbyte_resource
-from dagster_airbyte.asset_defs import AirbyteConnectionMetadata, load_assets_from_airbyte_instance
-
-from dagster import AssetKey, IOManager, asset, build_init_resource_context, io_manager, materialize
+from dagster import (
+    AssetKey,
+    FreshnessPolicy,
+    IOManager,
+    asset,
+    build_init_resource_context,
+    io_manager,
+    materialize,
+)
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.execution.with_resources import with_resources
+from dagster_airbyte import airbyte_resource
+from dagster_airbyte.asset_defs import AirbyteConnectionMetadata, load_assets_from_airbyte_instance
 
 from .utils import (
     get_instance_connections_json,
@@ -16,6 +23,8 @@ from .utils import (
     get_project_job_json,
 )
 
+TEST_FRESHNESS_POLICY = FreshnessPolicy(maximum_lag_minutes=60)
+
 
 @responses.activate
 @pytest.mark.parametrize("use_normalization_tables", [True, False])
@@ -24,13 +33,16 @@ from .utils import (
 @pytest.mark.parametrize(
     "connection_to_asset_key_fn", [None, lambda conn, name: AssetKey([f"{conn.name[0]}_{name}"])]
 )
+@pytest.mark.parametrize(
+    "connection_to_freshness_policy_fn", [None, lambda _: TEST_FRESHNESS_POLICY]
+)
 def test_load_from_instance(
     use_normalization_tables,
     connection_to_group_fn,
     filter_connection,
     connection_to_asset_key_fn,
+    connection_to_freshness_policy_fn,
 ):
-
     load_calls = []
 
     @io_manager
@@ -86,6 +98,7 @@ def test_load_from_instance(
             connection_filter=(lambda _: False) if filter_connection else None,
             connection_to_io_manager_key_fn=(lambda _: "test_io_manager"),
             connection_to_asset_key_fn=connection_to_asset_key_fn,
+            connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
         )
     else:
         ab_cacheable_assets = load_assets_from_airbyte_instance(
@@ -94,6 +107,7 @@ def test_load_from_instance(
             connection_filter=(lambda _: False) if filter_connection else None,
             io_manager_key="test_io_manager",
             connection_to_asset_key_fn=connection_to_asset_key_fn,
+            connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
         )
     ab_assets = ab_cacheable_assets.build_definitions(ab_cacheable_assets.compute_cacheable_data())
     ab_assets = with_resources(ab_assets, {"test_io_manager": test_io_manager})
@@ -116,12 +130,19 @@ def test_load_from_instance(
         assert len(ab_assets) == 0
         return
 
-    tables = {"dagster_releases", "dagster_tags", "dagster_teams"} | (
+    tables = {
+        "dagster_releases",
+        "dagster_tags",
+        "dagster_teams",
+        "dagster_array_test",
+        "dagster_unknown_test",
+    } | (
         {
             "dagster_releases_assets",
             "dagster_releases_author",
             "dagster_tags_commit",
             "dagster_releases_foo",
+            "dagster_array_test_author",
         }
         if use_normalization_tables
         else set()
@@ -184,6 +205,10 @@ def test_load_from_instance(
         ]
     )
     assert len(ab_assets[0].op.output_defs) == len(tables)
+
+    expected_freshness_policy = TEST_FRESHNESS_POLICY if connection_to_freshness_policy_fn else None
+    freshness_policies = ab_assets[0].freshness_policies_by_key
+    assert all(freshness_policies[key] == expected_freshness_policy for key in freshness_policies)
 
     responses.add(
         method=responses.POST,

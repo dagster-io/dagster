@@ -23,13 +23,13 @@ def test_execute_pipeline():
 
     assert result.success
 
-    assert result.result_for_solid("sum_op").output_value().to_dict("list") == {
+    assert result.result_for_node("sum_op").output_value().to_dict("list") == {
         "num1": [1, 3],
         "num2": [2, 4],
         "sum": [3, 7],
     }
 
-    assert result.result_for_solid("sum_sq_op").output_value().to_dict("list") == {
+    assert result.result_for_node("sum_sq_op").output_value().to_dict("list") == {
         "num1": [1, 3],
         "num2": [2, 4],
         "sum": [3, 7],
@@ -38,12 +38,10 @@ def test_execute_pipeline():
 
 
 def test_cli_execute():
-
     # currently paths in env files have to be relative to where the
     # script has launched so we have to simulate that
     cwd = os.getcwd()
     try:
-
         os.chdir(file_relative_path(__file__, "../.."))
         with instance_for_test() as instance:
             do_execute_command(
@@ -64,13 +62,11 @@ def test_cli_execute():
 
 
 def test_cli_execute_failure():
-
     # currently paths in env files have to be relative to where the
     # script has launched so we have to simulate that
     # with pytest.raises(DagsterExecutionStepExecutionError) as e_info:
     cwd = os.getcwd()
     try:
-
         os.chdir(file_relative_path(__file__, "../.."))
         with instance_for_test() as instance:
             result = do_execute_command(

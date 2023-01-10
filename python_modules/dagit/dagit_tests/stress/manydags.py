@@ -1,6 +1,6 @@
-from dagit_tests.stress.dag_gen import generate_job
-
 from dagster import repository
+
+from dagit_tests.stress.dag_gen import generate_job
 
 
 @repository

@@ -1,16 +1,15 @@
 from itertools import chain
-from typing import Any, Dict, Iterable, List, Optional
-
-import requests.exceptions
-from gql import Client, gql
-from gql.transport import Transport
-from gql.transport.requests import RequestsHTTPTransport
+from typing import Any, Dict, Iterable, List, Mapping, Optional
 
 import dagster._check as check
+import requests.exceptions
 from dagster import DagsterRunStatus
 from dagster._annotations import public
 from dagster._core.definitions.utils import validate_tags
 from dagster._utils.backcompat import experimental_class_warning
+from gql import Client, gql
+from gql.transport import Transport
+from gql.transport.requests import RequestsHTTPTransport
 
 from .client_queries import (
     CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY,
@@ -99,7 +98,8 @@ class DagsterGraphQLClient:
             return self._client.execute(gql(query), variable_values=variables)
         except Exception as exc:  # catch generic Exception from the gql client
             raise DagsterGraphQLClientError(
-                f"Exception occured during execution of query \n{query}\n with variables \n{variables}\n"
+                f"Exception occured during execution of query \n{query}\n with variables"
+                f" \n{variables}\n"
             ) from exc
 
     def _get_repo_locations_and_names_with_pipeline(self, pipeline_name: str) -> List[PipelineInfo]:
@@ -119,7 +119,7 @@ class DagsterGraphQLClient:
         pipeline_name: str,
         repository_location_name: Optional[str] = None,
         repository_name: Optional[str] = None,
-        run_config: Optional[Any] = None,
+        run_config: Optional[Mapping[str, Any]] = None,
         mode: Optional[str] = None,
         preset: Optional[str] = None,
         tags: Optional[Dict[str, Any]] = None,
@@ -131,13 +131,15 @@ class DagsterGraphQLClient:
         check.str_param(pipeline_name, "pipeline_name")
         check.opt_str_param(mode, "mode")
         check.opt_str_param(preset, "preset")
-        run_config = check.opt_dict_param(run_config, "run_config")
+        run_config = check.opt_mapping_param(run_config, "run_config")
 
         # The following invariant will never fail when a job is executed
         check.invariant(
             (mode is not None and run_config is not None) or preset is not None,
-            "Either a mode and run_config or a preset must be specified in order to "
-            f"submit the pipeline {pipeline_name} for execution",
+            (
+                "Either a mode and run_config or a preset must be specified in order to "
+                f"submit the pipeline {pipeline_name} for execution"
+            ),
         )
         tags = validate_tags(tags)
 
@@ -148,7 +150,10 @@ class DagsterGraphQLClient:
             if len(pipeline_info_lst) == 0:
                 raise DagsterGraphQLClientError(
                     f"{pipeline_or_job}NotFoundError",
-                    f"No {'jobs' if is_using_job_op_graph_apis else 'pipelines'} with the name `{pipeline_name}` exist",
+                    (
+                        f"No {'jobs' if is_using_job_op_graph_apis else 'pipelines'} with the name"
+                        f" `{pipeline_name}` exist"
+                    ),
                 )
             elif len(pipeline_info_lst) == 1:
                 pipeline_info = pipeline_info_lst[0]
@@ -156,9 +161,9 @@ class DagsterGraphQLClient:
                 repository_name = pipeline_info.repository_name
             else:
                 raise DagsterGraphQLClientError(
-                    "Must specify repository_location_name and repository_name"
-                    f" since there are multiple {'jobs' if is_using_job_op_graph_apis else 'pipelines'} with the name {pipeline_name}."
-                    f"\n\tchoose one of: {pipeline_info_lst}"
+                    "Must specify repository_location_name and repository_name since there are"
+                    f" multiple {'jobs' if is_using_job_op_graph_apis else 'pipelines'} with the"
+                    f" name {pipeline_name}.\n\tchoose one of: {pipeline_info_lst}"
                 )
 
         variables: Dict[str, Any] = {

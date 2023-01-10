@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 
-const TimezoneStorageKey = 'TimezonePreference';
+export const TimezoneStorageKey = 'TimezonePreference';
 
 export const TimezoneContext = React.createContext<
   [string, React.Dispatch<React.SetStateAction<string | undefined>>]

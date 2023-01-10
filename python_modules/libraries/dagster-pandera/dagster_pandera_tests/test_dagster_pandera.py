@@ -4,9 +4,6 @@ import re
 import pandas as pd
 import pandera as pa
 import pytest
-from dagster_pandera import pandera_schema_to_dagster_type
-from pandera.typing.config import BaseConfig
-
 from dagster import DagsterType, TypeCheck, check_dagster_type
 from dagster._core.definitions.metadata import TableSchemaMetadataValue
 from dagster._core.definitions.metadata.table import (
@@ -15,6 +12,8 @@ from dagster._core.definitions.metadata.table import (
     TableConstraints,
     TableSchema,
 )
+from dagster_pandera import pandera_schema_to_dagster_type
+from pandera.typing.config import BaseConfig
 
 # ########################
 # ##### FIXTURES
@@ -72,7 +71,6 @@ def make_schema_model_config(**config_attrs):
 
 def sample_schema_model(**config_attrs):
     class SampleSchemaModel(pa.SchemaModel):
-
         a: pa.typing.Series[int] = pa.Field(le=10, description="a desc")
         b: pa.typing.Series[float] = pa.Field(lt=-1.2, description="b desc")
         c: pa.typing.Series[str] = pa.Field(str_startswith="value_", description="c desc")

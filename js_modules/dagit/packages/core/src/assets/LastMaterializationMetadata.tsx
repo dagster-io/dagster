@@ -1,23 +1,25 @@
-import {gql} from '@apollo/client';
 import {Box, Colors, Group, Icon, Mono, NonIdealState, Table} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Timestamp} from '../app/time/Timestamp';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {isHiddenAssetGroupJob, LiveDataForNode} from '../asset-graph/Utils';
+import {StaleTag} from '../assets/StaleTag';
+import {graphql} from '../graphql';
+import {LatestMaterializationMetadataFragmentFragment} from '../graphql/graphql';
+import {MetadataEntry} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
-import {LatestMaterializationMetadataFragment} from './types/LatestMaterializationMetadataFragment';
 
 export const LatestMaterializationMetadata: React.FC<{
-  latest: LatestMaterializationMetadataFragment | undefined;
-}> = ({latest}) => {
+  latest: LatestMaterializationMetadataFragmentFragment | undefined;
+  liveData: LiveDataForNode | undefined;
+}> = ({latest, liveData}) => {
   const latestRun = latest?.runOrError.__typename === 'Run' ? latest?.runOrError : null;
   const repositoryOrigin = latestRun?.repositoryOrigin;
   const repoAddress = repositoryOrigin
@@ -86,11 +88,14 @@ export const LatestMaterializationMetadata: React.FC<{
         <tr>
           <td>Timestamp</td>
           <td>
-            {latestEvent ? (
-              <Timestamp timestamp={{ms: Number(latestEvent.timestamp)}} />
-            ) : (
-              'No materialization events'
-            )}
+            <Box flex={{gap: 8, alignItems: 'center'}}>
+              {latestEvent ? (
+                <Timestamp timestamp={{ms: Number(latestEvent.timestamp)}} />
+              ) : (
+                'No materialization events'
+              )}
+              {liveData && <StaleTag liveData={liveData} />}
+            </Box>
           </td>
         </tr>
         {latestAssetLineage?.length ? (
@@ -133,7 +138,7 @@ const MetadataTable = styled(Table)`
   }
 `;
 
-export const LATEST_MATERIALIZATION_METADATA_FRAGMENT = gql`
+export const LATEST_MATERIALIZATION_METADATA_FRAGMENT = graphql(`
   fragment LatestMaterializationMetadataFragment on MaterializationEvent {
     partition
     runOrError {
@@ -163,5 +168,4 @@ export const LATEST_MATERIALIZATION_METADATA_FRAGMENT = gql`
       partitions
     }
   }
-  ${METADATA_ENTRY_FRAGMENT}
-`;
+`);

@@ -3,7 +3,8 @@ from asyncio import Task, get_event_loop
 from enum import Enum
 from typing import Any, AsyncGenerator, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-from dagit.templates.playground import TEMPLATE
+import dagster._check as check
+from dagster._seven import json
 from dagster_graphql.implementation.utils import ErrorCapture
 from graphene import Schema
 from graphql import GraphQLError, GraphQLFormattedError
@@ -18,8 +19,7 @@ from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from starlette.routing import BaseRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
-import dagster._check as check
-from dagster._seven import json
+from dagit.templates.playground import TEMPLATE
 
 
 class GraphQLWS(str, Enum):
@@ -74,7 +74,6 @@ class GraphQLServer(ABC):
             * our context type (crucial)
             * our GraphiQL playground (could change)
         """
-
         if request.method == "GET":
             # render graphiql
             if "text/html" in request.headers.get("Accept", ""):
@@ -120,7 +119,10 @@ class GraphQLServer(ABC):
                 variables = cast(Dict[str, Any], json.loads(variables))
             except json.JSONDecodeError:
                 return PlainTextResponse(
-                    f"Malformed GraphQL variables. Passed as string but not valid JSON:\n{variables}",
+                    (
+                        "Malformed GraphQL variables. Passed as string but not valid"
+                        f" JSON:\n{variables}"
+                    ),
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
 

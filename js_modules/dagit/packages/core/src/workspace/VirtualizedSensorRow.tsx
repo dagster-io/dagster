@@ -1,4 +1,4 @@
-import {gql, useLazyQuery} from '@apollo/client';
+import {useLazyQuery} from '@apollo/client';
 import {Box, Caption, Colors, MiddleTruncate} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -6,19 +6,18 @@ import styled from 'styled-components/macro';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {AssetLink} from '../assets/AssetLink';
+import {graphql} from '../graphql';
+import {InstigationType} from '../graphql/graphql';
 import {LastRunSummary} from '../instance/LastRunSummary';
-import {TickTag, TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
+import {TickTag} from '../instigation/InstigationTick';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
-import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
-import {InstigationType} from '../types/globalTypes';
+import {SensorSwitch} from '../sensors/SensorSwitch';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from './WorkspaceContext';
 import {RepoAddress} from './types';
-import {SingleSensorQuery, SingleSensorQueryVariables} from './types/SingleSensorQuery';
 import {workspacePathFromAddress} from './workspacePath';
 
 const TEMPLATE_COLUMNS = '76px 1.5fr 1fr 120px 148px 180px';
@@ -35,19 +34,15 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
 
   const repo = useRepository(repoAddress);
 
-  const [querySensor, queryResult] = useLazyQuery<SingleSensorQuery, SingleSensorQueryVariables>(
-    SINGLE_SENSOR_QUERY,
-    {
-      fetchPolicy: 'cache-and-network',
-      variables: {
-        selector: {
-          repositoryName: repoAddress.name,
-          repositoryLocationName: repoAddress.location,
-          sensorName: name,
-        },
+  const [querySensor, queryResult] = useLazyQuery(SINGLE_SENSOR_QUERY, {
+    variables: {
+      selector: {
+        repositoryName: repoAddress.name,
+        repositoryLocationName: repoAddress.location,
+        sensorName: name,
       },
     },
-  );
+  });
 
   useDelayedRowQuery(querySensor);
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
@@ -190,7 +185,7 @@ const RowGrid = styled(Box)`
   height: 100%;
 `;
 
-const SINGLE_SENSOR_QUERY = gql`
+const SINGLE_SENSOR_QUERY = graphql(`
   query SingleSensorQuery($selector: SensorSelector!) {
     sensorOrError(sensorSelector: $selector) {
       ... on Sensor {
@@ -226,8 +221,4 @@ const SINGLE_SENSOR_QUERY = gql`
       }
     }
   }
-
-  ${SENSOR_SWITCH_FRAGMENT}
-  ${TICK_TAG_FRAGMENT}
-  ${RUN_TIME_FRAGMENT}
-`;
+`);

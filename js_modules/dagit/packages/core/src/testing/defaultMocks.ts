@@ -1,6 +1,6 @@
 import faker from 'faker';
 
-import {RepositoryLocationLoadStatus} from '../types/globalTypes';
+import {RepositoryLocationLoadStatus} from '../graphql/graphql';
 
 export const hyphenatedName = (wordCount = 2) =>
   faker.random.words(wordCount).replace(/ /g, '-').toLowerCase();
@@ -59,6 +59,14 @@ export const defaultMocks = {
   WorkspaceLocationEntry: () => ({
     id: randomId,
     loadStatus: () => RepositoryLocationLoadStatus.LOADED,
+  }),
+  WorkspaceLocationStatusEntries: () => ({
+    entries: () => [...new Array(1)],
+  }),
+  WorkspaceLocationStatusEntry: () => ({
+    id: randomId,
+    loadStatus: () => RepositoryLocationLoadStatus.LOADED,
+    updateTimestamp: () => 0,
   }),
   Schedule: () => ({
     id: hyphenatedName,
@@ -190,5 +198,8 @@ export const defaultMocks = {
   }),
   InstigationStatesOrError: () => ({
     __typename: 'InstigationStates',
+  }),
+  LocationStatusesOrError: () => ({
+    __typename: 'WorkspaceLocationStatusEntries',
   }),
 };

@@ -6,13 +6,6 @@ from contextlib import contextmanager
 
 import nbformat
 import pytest
-from dagstermill import DagstermillError
-from dagstermill.compat import ExecutionError
-from dagstermill.examples.repository import custom_io_mgr_key_job
-from dagstermill.factory import define_dagstermill_op
-from jupyter_client.kernelspec import NoSuchKernel
-from nbconvert.preprocessors import ExecutePreprocessor
-
 from dagster import job
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
@@ -20,6 +13,12 @@ from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import execute_pipeline
 from dagster._utils import file_relative_path, safe_tempfile_path
+from dagstermill import DagstermillError
+from dagstermill.compat import ExecutionError
+from dagstermill.examples.repository import custom_io_mgr_key_job
+from dagstermill.factory import define_dagstermill_op
+from jupyter_client.kernelspec import NoSuchKernel
+from nbconvert.preprocessors import ExecutePreprocessor
 
 DAGSTER_PANDAS_PRESENT = importlib.util.find_spec("dagster_pandas") is not None
 SKLEARN_PRESENT = importlib.util.find_spec("sklearn") is not None
@@ -82,7 +81,7 @@ def test_hello_world_job():
 def test_hello_world_with_config():
     with exec_for_test("hello_world_config_job") as result:
         assert result.success
-        assert result.output_for_solid("hello_world_config") == "hello"
+        assert result.output_for_node("hello_world_config") == "hello"
 
 
 @pytest.mark.notebook_test
@@ -92,35 +91,35 @@ def test_hello_world_with_config_escape():
         env={"ops": {"hello_world_config": {"config": {"greeting": "'"}}}},
     ) as result:
         assert result.success
-        assert result.output_for_solid("hello_world_config") == "'"
+        assert result.output_for_node("hello_world_config") == "'"
 
     with exec_for_test(
         "hello_world_config_job",
         env={"ops": {"hello_world_config": {"config": {"greeting": '"'}}}},
     ) as result:
         assert result.success
-        assert result.output_for_solid("hello_world_config") == '"'
+        assert result.output_for_node("hello_world_config") == '"'
 
     with exec_for_test(
         "hello_world_config_job",
         env={"ops": {"hello_world_config": {"config": {"greeting": "\\"}}}},
     ) as result:
         assert result.success
-        assert result.output_for_solid("hello_world_config") == "\\"
+        assert result.output_for_node("hello_world_config") == "\\"
 
     with exec_for_test(
         "hello_world_config_job",
         env={"ops": {"hello_world_config": {"config": {"greeting": "}"}}}},
     ) as result:
         assert result.success
-        assert result.output_for_solid("hello_world_config") == "}"
+        assert result.output_for_node("hello_world_config") == "}"
 
     with exec_for_test(
         "hello_world_config_job",
         env={"ops": {"hello_world_config": {"config": {"greeting": "\n"}}}},
     ) as result:
         assert result.success
-        assert result.output_for_solid("hello_world_config") == "\n"
+        assert result.output_for_node("hello_world_config") == "\n"
 
 
 @pytest.mark.notebook_test
@@ -130,7 +129,7 @@ def test_alias_with_config():
         env={"ops": {"aliased_greeting": {"config": {"greeting": "boo"}}}},
     ) as result:
         assert result.success
-        assert result.output_for_solid("aliased_greeting") == "boo"
+        assert result.output_for_node("aliased_greeting") == "boo"
 
 
 @pytest.mark.notebook_test
@@ -172,7 +171,7 @@ def test_reexecute_result_notebook():
 def test_hello_world_with_output():
     with exec_for_test("hello_world_output_job") as result:
         assert result.success
-        assert result.result_for_solid("hello_world_output").output_value() == "hello, world"
+        assert result.result_for_node("hello_world_output").output_value() == "hello, world"
 
 
 @pytest.mark.notebook_test
@@ -191,7 +190,7 @@ def test_add_job():
         "add_job", {"loggers": {"console": {"config": {"log_level": "ERROR"}}}}
     ) as result:
         assert result.success
-        assert result.result_for_solid("add_two_numbers").output_value() == 3
+        assert result.result_for_node("add_two_numbers").output_value() == 3
 
 
 @pytest.mark.notebook_test
@@ -201,8 +200,8 @@ def test_double_add_job():
         {"loggers": {"console": {"config": {"log_level": "ERROR"}}}},
     ) as result:
         assert result.success
-        assert result.result_for_solid("add_two_numbers_1").output_value() == 3
-        assert result.result_for_solid("add_two_numbers_2").output_value() == 7
+        assert result.result_for_node("add_two_numbers_1").output_value() == 3
+        assert result.result_for_node("add_two_numbers_2").output_value() == 7
 
 
 @pytest.mark.notebook_test
@@ -218,9 +217,9 @@ def test_fan_in_notebook_job():
         },
     ) as result:
         assert result.success
-        assert result.result_for_solid("op_1").output_value() == "hello"
-        assert result.result_for_solid("op_2").output_value() == "world"
-        assert result.result_for_solid("fan_in").output_value() == "hello world"
+        assert result.result_for_node("op_1").output_value() == "hello"
+        assert result.result_for_node("op_2").output_value() == "world"
+        assert result.result_for_node("fan_in").output_value() == "hello world"
 
 
 @pytest.mark.notebook_test
@@ -234,7 +233,7 @@ def test_graph_job():
     ) as result:
         assert result.success
         assert (
-            result.result_for_solid("outer").result_for_solid("yield_something").output_value()
+            result.result_for_node("outer").result_for_node("yield_something").output_value()
             == "hello"
         )
 
@@ -263,8 +262,8 @@ def test_notebook_dag():
         {"ops": {"load_a": {"config": 1}, "load_b": {"config": 2}}},
     ) as result:
         assert result.success
-        assert result.result_for_solid("add_two_numbers").output_value() == 3
-        assert result.result_for_solid("mult_two_numbers").output_value() == 6
+        assert result.result_for_node("add_two_numbers").output_value() == 3
+        assert result.result_for_node("mult_two_numbers").output_value() == 6
 
 
 @pytest.mark.notebook_test
@@ -281,6 +280,32 @@ def test_error_notebook():
     ) as result:
         assert not result.success
         assert result.step_event_list[1].event_type.value == "STEP_FAILURE"
+
+    result = None
+    recon_pipeline = ReconstructablePipeline.for_module(
+        "dagstermill.examples.repository", "error_job"
+    )
+
+    # test that the notebook is saved on failure
+    with instance_for_test() as instance:
+        try:
+            result = execute_pipeline(
+                recon_pipeline,
+                {"execution": {"config": {"in_process": {}}}},
+                instance=instance,
+                raise_on_error=False,
+            )
+            storage_dir = instance.storage_directory()
+            files = os.listdir(storage_dir)
+            notebook_found = (False,)
+            for f in files:
+                if "-out.ipynb" in f:
+                    notebook_found = True
+
+            assert notebook_found
+        finally:
+            if result:
+                cleanup_result_notebook(result)
 
 
 @pytest.mark.nettest
@@ -422,21 +447,21 @@ def test_hello_logging():
 def test_reimport():
     with exec_for_test("reimport_job") as result:
         assert result.success
-        assert result.result_for_solid("reimport").output_value() == 6
+        assert result.result_for_node("reimport").output_value() == 6
 
 
 @pytest.mark.notebook_test
 def test_yield_3_job():
     with exec_for_test("yield_3_job") as result:
         assert result.success
-        assert result.result_for_solid("yield_3").output_value() == 3
+        assert result.result_for_node("yield_3").output_value() == 3
 
 
 @pytest.mark.notebook_test
 def test_yield_obj_job():
     with exec_for_test("yield_obj_job") as result:
         assert result.success
-        assert result.result_for_solid("yield_obj").output_value().x == 3
+        assert result.result_for_node("yield_obj").output_value().x == 3
 
 
 @pytest.mark.notebook_test
@@ -507,8 +532,7 @@ def test_retries(capsys):
     with exec_for_test(
         "retries_job", {"execution": {"config": {"in_process": {}}}}, raise_on_error=False
     ) as result:
-
-        assert result.result_for_solid("yield_retry").retry_attempts == 1
+        assert result.result_for_node("yield_retry").retry_attempts == 1
 
         # the raise_retry op should trigger a warning to use yield_event
         warn_found = False
@@ -526,7 +550,7 @@ def test_failure(capsys):
         "failure_job", {"execution": {"config": {"in_process": {}}}}, raise_on_error=False
     ) as result:
         assert (
-            result.result_for_solid("yield_failure").failure_data.user_failure_data.description
+            result.result_for_node("yield_failure").failure_data.user_failure_data.description
             == "bad bad notebook"
         )
 
@@ -542,9 +566,8 @@ def test_failure(capsys):
 
 @pytest.mark.notebook_test
 def test_hello_world_graph():
-    from dagstermill.examples.repository import build_hello_world_job
-
     from dagster import reconstructable
+    from dagstermill.examples.repository import build_hello_world_job
 
     with instance_for_test() as instance:
         result = None

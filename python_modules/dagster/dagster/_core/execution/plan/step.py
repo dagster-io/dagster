@@ -3,6 +3,7 @@ from enum import Enum
 from typing import (
     TYPE_CHECKING,
     FrozenSet,
+    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -13,18 +14,19 @@ from typing import (
     cast,
 )
 
+from typing_extensions import TypeGuard
+
 import dagster._check as check
 from dagster._core.definitions.utils import validate_tags
 from dagster._serdes.serdes import DefaultEnumSerializer, whitelist_for_serdes
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .handle import ResolvedFromDynamicStepHandle, StepHandle, UnresolvedStepHandle
 from .inputs import StepInput, UnresolvedCollectStepInput, UnresolvedMappedStepInput
 from .outputs import StepOutput
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.dependency import Node, NodeHandle
-    from dagster._core.definitions.hook_definition import HookDefinition
+    from dagster._core.definitions.dependency import NodeHandle
 
 
 class StepKindSerializer(DefaultEnumSerializer):
@@ -45,7 +47,9 @@ class StepKind(Enum):
     UNRESOLVED_COLLECT = "UNRESOLVED_COLLECT"
 
 
-def is_executable_step(step: Union["ExecutionStep", "UnresolvedMappedExecutionStep"]) -> bool:
+def is_executable_step(
+    step: Union["ExecutionStep", "UnresolvedMappedExecutionStep"]
+) -> TypeGuard["ExecutionStep"]:
     # This function is set up defensively to ensure new step types handled properly
     if isinstance(step, ExecutionStep):
         return True
@@ -101,6 +105,16 @@ class IExecutionStep:
 
     @abstractmethod
     def step_output_named(self, name: str) -> StepOutput:
+        pass
+
+    @property
+    @abstractmethod
+    def step_output_dict(self) -> Mapping[str, StepOutput]:
+        pass
+
+    @property
+    @abstractmethod
+    def step_input_dict(self) -> Mapping[str, StepInput]:
         pass
 
 
@@ -207,7 +221,7 @@ class ExecutionStep(
         return None
 
 
-class UnresolvedMappedExecutionStep(
+class UnresolvedMappedExecutionStep(  # type: ignore
     NamedTuple(
         "_UnresolvedMappedExecutionStep",
         [
@@ -327,15 +341,21 @@ class UnresolvedMappedExecutionStep(
         return frozenset(keys)
 
     def resolve(
-        self, mappings: Mapping[str, Mapping[str, Sequence[str]]]
+        self, mappings: Mapping[str, Mapping[str, Optional[Sequence[str]]]]
     ) -> Sequence[ExecutionStep]:
         check.invariant(
             all(key in mappings for key in self.resolved_by_step_keys),
             "resolving with mappings that do not contain all required step keys",
         )
-        execution_steps = []
+        execution_steps: List[ExecutionStep] = []
 
-        for mapped_key in mappings[self.resolved_by_step_key][self.resolved_by_output_name]:
+        mapping_keys = mappings[self.resolved_by_step_key][self.resolved_by_output_name]
+
+        # dynamic output skipped
+        if mapping_keys is None:
+            return execution_steps
+
+        for mapped_key in mapping_keys:
             resolved_inputs = [_resolved_input(inp, mapped_key) for inp in self.step_inputs]
 
             execution_steps.append(
@@ -361,7 +381,7 @@ def _resolved_input(
     return step_input.resolve(map_key)
 
 
-class UnresolvedCollectExecutionStep(
+class UnresolvedCollectExecutionStep(  # type: ignore
     NamedTuple(
         "_UnresolvedCollectExecutionStep",
         [
@@ -459,7 +479,9 @@ class UnresolvedCollectExecutionStep(
 
         return frozenset(keys)
 
-    def resolve(self, mappings: Mapping[str, Mapping[str, Sequence[str]]]) -> ExecutionStep:
+    def resolve(
+        self, mappings: Mapping[str, Mapping[str, Optional[Sequence[str]]]]
+    ) -> ExecutionStep:
         check.invariant(
             all(key in mappings for key in self.resolved_by_step_keys),
             "resolving with mappings that do not contain all required step keys",

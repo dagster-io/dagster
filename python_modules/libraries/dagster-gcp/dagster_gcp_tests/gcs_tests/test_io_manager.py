@@ -1,8 +1,3 @@
-from dagster_gcp.gcs import FakeGCSClient
-from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager, gcs_pickle_io_manager
-from dagster_gcp.gcs.resources import gcs_resource
-from google.cloud import storage  # type: ignore
-
 from dagster import (
     AssetsDefinition,
     DagsterInstance,
@@ -33,7 +28,11 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import AssetGroup, PipelineRun
+from dagster._legacy import AssetGroup, DagsterRun
+from dagster_gcp.gcs import FakeGCSClient
+from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager, gcs_pickle_io_manager
+from dagster_gcp.gcs.resources import gcs_resource
+from google.cloud import storage  # type: ignore
 
 
 @resource
@@ -93,7 +92,7 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(pipeline_name=inty_job.name, run_id=run_id, run_config=run_config)
+    pipeline_run = DagsterRun(pipeline_name=inty_job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(

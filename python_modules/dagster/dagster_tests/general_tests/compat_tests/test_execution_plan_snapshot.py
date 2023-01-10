@@ -17,7 +17,7 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
-from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.root_input_manager import root_input_manager
 from dagster._legacy import (
     DynamicOutputDefinition,
@@ -181,7 +181,6 @@ def _validate_execution_plan(plan):
 # Verify that an previously generated execution plan snapshot can still execute a
 # pipeline successfully
 def test_execution_plan_snapshot_backcompat():
-
     src_dir = file_relative_path(__file__, "test_execution_plan_snapshots/")
     snapshot_dirs = [f for f in os.listdir(src_dir) if not os.path.isfile(os.path.join(src_dir, f))]
     for snapshot_dir_path in snapshot_dirs:
@@ -193,7 +192,7 @@ def test_execution_plan_snapshot_backcompat():
                 assert len(runs) == 1
 
                 run = runs[0]
-                assert run.status == PipelineRunStatus.NOT_STARTED
+                assert run.status == DagsterRunStatus.NOT_STARTED
 
                 the_pipeline = InMemoryPipeline(dynamic_pipeline)
 

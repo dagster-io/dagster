@@ -1,19 +1,19 @@
 from tempfile import TemporaryDirectory
+from urllib.parse import urlparse
 
 import pytest
 import sqlalchemy as db
 import yaml
-from dagster_mysql import MySQLEventLogStorage, MySQLRunStorage, MySQLScheduleStorage
-from dagster_mysql.utils import get_conn
-from sqlalchemy.pool import NullPool
-
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.storage.sql import create_engine, get_alembic_config, stamp_alembic_rev
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
+from dagster_mysql import MySQLEventLogStorage, MySQLRunStorage, MySQLScheduleStorage
+from dagster_mysql.utils import get_conn
+from sqlalchemy.pool import NullPool
 
 
-def full_mysql_config(hostname):
+def full_mysql_config(hostname, port):
     return """
       run_storage:
         module: dagster_mysql.run_storage
@@ -23,6 +23,7 @@ def full_mysql_config(hostname):
             username: test
             password: test
             hostname: {hostname}
+            port: {port}
             db_name: test
 
       event_log_storage:
@@ -33,6 +34,7 @@ def full_mysql_config(hostname):
               username: test
               password: test
               hostname: {hostname}
+              port: {port}
               db_name: test
 
       schedule_storage:
@@ -43,13 +45,14 @@ def full_mysql_config(hostname):
               username: test
               password: test
               hostname: {hostname}
+              port: {port}
               db_name: test
     """.format(
-        hostname=hostname
+        hostname=hostname, port=port
     )
 
 
-def unified_mysql_config(hostname):
+def unified_mysql_config(hostname, port):
     return f"""
       storage:
         mysql:
@@ -58,10 +61,15 @@ def unified_mysql_config(hostname):
             password: test
             hostname: {hostname}
             db_name: test
+            port: {port}
     """
 
 
-def test_connection_leak(hostname, conn_string):
+def test_connection_leak(conn_string):
+    parse_result = urlparse(conn_string)
+    hostname = parse_result.hostname
+    port = parse_result.port
+
     num_instances = 20
 
     tempdir = TemporaryDirectory()
@@ -70,7 +78,7 @@ def test_connection_leak(hostname, conn_string):
         copies.append(
             DagsterInstance.from_ref(
                 InstanceRef.from_dir(
-                    tempdir.name, overrides=yaml.safe_load(full_mysql_config(hostname))
+                    tempdir.name, overrides=yaml.safe_load(full_mysql_config(hostname, port))
                 )
             )
         )
@@ -91,7 +99,11 @@ def test_connection_leak(hostname, conn_string):
     tempdir.cleanup()
 
 
-def test_load_instance(conn_string, hostname):
+def test_load_instance(conn_string):
+    parse_result = urlparse(conn_string)
+    hostname = parse_result.hostname
+    port = parse_result.port
+
     # Wipe the DB to ensure it is fresh
     MySQLEventLogStorage.wipe_storage(conn_string)
     MySQLRunStorage.wipe_storage(conn_string)
@@ -104,17 +116,21 @@ def test_load_instance(conn_string, hostname):
         stamp_alembic_rev(alembic_config, conn, rev=None, quiet=False)
 
     # Now load from scratch, verify it loads without errors
-    with instance_for_test(overrides=yaml.safe_load(full_mysql_config(hostname))):
+    with instance_for_test(overrides=yaml.safe_load(full_mysql_config(hostname, port))):
         pass
 
     # Now load from scratch, using unified storage config
-    with instance_for_test(overrides=yaml.safe_load(unified_mysql_config(hostname))):
+    with instance_for_test(overrides=yaml.safe_load(unified_mysql_config(hostname, port))):
         pass
 
 
 @pytest.mark.skip("https://github.com/dagster-io/dagster/issues/3719")
-def test_statement_timeouts(hostname):
-    with instance_for_test(overrides=yaml.safe_load(full_mysql_config(hostname))) as instance:
+def test_statement_timeouts(conn_string):
+    parse_result = urlparse(conn_string)
+    hostname = parse_result.hostname
+    port = parse_result.port
+
+    with instance_for_test(overrides=yaml.safe_load(full_mysql_config(hostname, port))) as instance:
         instance.optimize_for_dagit(statement_timeout=500, pool_recycle=-1)  # 500ms
 
         # ensure migration error is not raised by being up to date

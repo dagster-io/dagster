@@ -1,8 +1,6 @@
-import {gql} from '@apollo/client';
+import {graphql} from '../graphql';
 
-import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
-
-export const ASSET_NODE_CONFIG_FRAGMENT = gql`
+export const ASSET_NODE_CONFIG_FRAGMENT = graphql(`
   fragment AssetNodeConfigFragment on AssetNode {
     id
     configField {
@@ -16,5 +14,4 @@ export const ASSET_NODE_CONFIG_FRAGMENT = gql`
       }
     }
   }
-  ${CONFIG_TYPE_SCHEMA_FRAGMENT}
-`;
+`);
