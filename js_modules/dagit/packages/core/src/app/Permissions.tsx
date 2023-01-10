@@ -89,22 +89,25 @@ export const extractPermissions = (
 
 export type PermissionsMap = ReturnType<typeof extractPermissions>;
 
-type PermissionsContext = {
+type PermissionsContextType = {
   // todo dish: Optional for Cloud compatibility. Make them non-optional.
   unscopedPermissions?: PermissionsMap;
   locationPermissions?: Record<string, PermissionsMap>;
   loading: boolean;
+  // Raw unscoped permission data, for Cloud extraction
+  rawUnscopedData?: PermissionFragmentFragment[];
 
-  // todo dish: For Cloud compatibility, delete.
+  // todo dish: For Cloud compatibility, delete in favor of `rawUnscopedData`
   data: PermissionFragmentFragment[];
 };
 
-export const PermissionsContext = React.createContext<PermissionsContext>({
+export const PermissionsContext = React.createContext<PermissionsContextType>({
   unscopedPermissions: extractPermissions([]),
   locationPermissions: {},
   loading: true,
+  rawUnscopedData: [],
 
-  // todo dish: For Cloud compatibility, delete.
+  // todo dish: For Cloud compatibility, delete in favor of `rawUnscopedData`
   data: [],
 });
 
@@ -132,6 +135,7 @@ export const PermissionsProvider: React.FC = (props) => {
       unscopedPermissions,
       locationPermissions,
       loading,
+      rawUnscopedData: unscopedPermissionsRaw,
 
       // todo dish: For Cloud compatibility, delete.
       data: unscopedPermissionsRaw,
