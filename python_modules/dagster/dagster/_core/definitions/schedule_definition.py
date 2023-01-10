@@ -617,7 +617,9 @@ class ScheduleDefinition:
 
         # clone all the run requests with the required schedule tags
         run_requests_with_schedule_tags = [
-            request.with_replaced_attrs(tags=merge_dicts(request.tags, DagsterRun.tags_for_schedule(self)))
+            request.with_replaced_attrs(
+                tags=merge_dicts(request.tags, DagsterRun.tags_for_schedule(self))
+            )
             for request in run_requests
         ]
 

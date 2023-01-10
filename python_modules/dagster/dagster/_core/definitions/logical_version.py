@@ -9,8 +9,6 @@ from dagster import _check as check
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.external_data import ExternalAssetNode
-    from dagster._core.host_representation.external import ExternalRepository
     from dagster._core.definitions.events import (
         AssetKey,
         AssetMaterialization,
@@ -18,6 +16,9 @@ if TYPE_CHECKING:
         Materialization,
     )
     from dagster._core.events.log import EventLogEntry
+    from dagster._core.host_representation.external import ExternalRepository
+    from dagster._core.host_representation.external_data import ExternalAssetNode
+    from dagster._core.instance import DagsterInstance
 
 
 class UnknownValue:
@@ -204,7 +205,7 @@ class CachingProjectedLogicalVersionResolver:
 
     def __init__(
         self,
-        instance: DagsterInstance,
+        instance: "DagsterInstance",
         repositories: Sequence["ExternalRepository"],
         key_to_node_map: Optional[Mapping[AssetKey, "ExternalAssetNode"]],
     ):

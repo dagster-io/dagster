@@ -8,7 +8,6 @@ from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
 from typing import Dict, List, Optional, cast
-from dagster._scheduler.stale import resolve_asset_selection
 
 import pendulum
 
@@ -34,7 +33,8 @@ from dagster._core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterS
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
-from dagster._core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
+from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._scheduler.stale import resolve_asset_selection
 from dagster._seven.compat.pendulum import to_timezone
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import default_date_format_string
@@ -606,10 +606,14 @@ def _schedule_runs_at_time(
 
     for run_request in schedule_execution_data.run_requests:
         asset_selection = resolve_asset_selection(workspace_process_context, run_request, external_schedule.pipeline_name)  # type: ignore
-        if asset_selection is not None and len(asset_selection) == 0:  # asset selection is empty set after filtering for stale
+        if (
+            asset_selection is not None and len(asset_selection) == 0
+        ):  # asset selection is empty set after filtering for stale
             continue
         elif asset_selection is not None:
-            run_request = run_request.with_replaced_attrs(asset_selection=asset_selection, stale_assets_only=False)
+            run_request = run_request.with_replaced_attrs(
+                asset_selection=asset_selection, stale_assets_only=False
+            )
 
         pipeline_selector = PipelineSelector(
             location_name=schedule_origin.external_repository_origin.repository_location_origin.location_name,
@@ -670,6 +674,7 @@ def _schedule_runs_at_time(
 
     _check_for_debug_crash(debug_crash_flags, "TICK_SUCCESS")
     tick_context.update_state(TickStatus.SUCCESS)
+
 
 def _get_existing_run_for_request(
     instance: DagsterInstance,

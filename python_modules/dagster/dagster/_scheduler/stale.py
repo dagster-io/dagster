@@ -1,6 +1,5 @@
 from typing import Dict, Iterable, List, Mapping, Optional, Sequence
 
-import dagster._check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.logical_version import (
     DEFAULT_LOGICAL_VERSION,
@@ -16,7 +15,9 @@ from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRe
 
 
 def resolve_asset_selection(
-    context: WorkspaceProcessContext, run_request: RunRequest, job_name: str,
+    context: WorkspaceProcessContext,
+    run_request: RunRequest,
+    job_name: str,
 ) -> Optional[Sequence[AssetKey]]:
     if run_request.stale_assets_only:
         request_context = context.create_request_context()

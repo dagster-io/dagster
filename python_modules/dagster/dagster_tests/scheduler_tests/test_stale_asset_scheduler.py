@@ -5,6 +5,7 @@ from dagster._core.definitions.decorators.schedule_decorator import schedule
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 
+
 def _get_repo():
     @asset
     def foo():
