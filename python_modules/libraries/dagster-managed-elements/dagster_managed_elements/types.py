@@ -10,7 +10,7 @@ class ManagedElementError(enum.Enum):
     CANNOT_CONNECT = "cannot_connect"
 
 
-SANITIZE_KEY_KEYWORDS = ["password", "token", "secret", "ssh_key"]
+SANITIZE_KEY_KEYWORDS = ["password", "token", "secret", "ssh_key", "credentials"]
 SANITIZE_KEY_EXACT_MATCHES = ["pat"]
 
 SECRET_MASK_VALUE = "**********"
