@@ -6,14 +6,13 @@ import pytest
 from click.testing import CliRunner
 from dagit.app import create_app_from_workspace_process_context
 from dagit.cli import dagit, host_dagit_ui_with_workspace_process_context
-from starlette.testclient import TestClient
-
 from dagster import _seven
 from dagster._core.instance import DagsterInstance
 from dagster._core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster._utils import file_relative_path
+from starlette.testclient import TestClient
 
 
 def test_create_app_with_workspace():
@@ -129,7 +128,6 @@ def test_graphql_view_at_path_prefix():
 
 def test_successful_host_dagit_ui_from_workspace():
     with mock.patch("uvicorn.run"), tempfile.TemporaryDirectory() as temp_dir:
-
         instance = DagsterInstance.local_temp(temp_dir)
 
         with load_workspace_process_context_from_yaml_paths(

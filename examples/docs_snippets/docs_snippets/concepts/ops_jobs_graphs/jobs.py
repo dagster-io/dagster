@@ -28,6 +28,7 @@ def one_plus_one():
 
 # end_pipeline_example_marker
 
+
 # start_multiple_usage_pipeline
 @job
 def multiple_usage():
@@ -35,6 +36,7 @@ def multiple_usage():
 
 
 # end_multiple_usage_pipeline
+
 
 # start_alias_pipeline
 @job

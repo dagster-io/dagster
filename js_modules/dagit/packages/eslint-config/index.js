@@ -59,12 +59,27 @@ module.exports = {
           },
           {
             name: 'graphql-tag',
-            message: 'Please import from `@apollo/client`.',
+            message: 'Please import `graphql()` from local codegen import.',
+          },
+          {
+            name: 'graphql',
+            importNames: ['graphql'],
+            message: 'Please import `graphql()` from local codegen import.',
+          },
+          {
+            name: 'graphql/graphql',
+            importNames: ['graphql'],
+            message: 'Please import `graphql()` from local codegen import.',
           },
           {
             name: 'graphql.macro',
             importNames: ['gql'],
-            message: 'Please import from `@apollo/client`.',
+            message: 'Please use `graphql()` from local codegen import, instead of `gql`.',
+          },
+          {
+            name: '@apollo/client',
+            importNames: ['gql'],
+            message: 'Please use `graphql()` from local codegen import, instead of `gql`.',
           },
           {
             name: 'lodash',

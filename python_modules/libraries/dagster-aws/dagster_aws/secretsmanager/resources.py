@@ -1,12 +1,16 @@
 from contextlib import contextmanager
 
-from dagster_aws.utils import BOTO3_SESSION_CONFIG
-
-from dagster import Array, Field, Noneable
-from dagster import _check as check
-from dagster import resource
+from dagster import (
+    Array,
+    Field,
+    Noneable,
+    _check as check,
+    resource,
+)
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
+
+from dagster_aws.utils import BOTO3_SESSION_CONFIG
 
 from .secrets import construct_secretsmanager_client, get_secrets_from_arns, get_tagged_secrets
 
@@ -82,7 +86,7 @@ def secretsmanager_resource(context):
                 Array(str),
                 is_required=False,
                 default_value=[],
-                description=("An array of AWS Secrets Manager secrets arns to fetch."),
+                description="An array of AWS Secrets Manager secrets arns to fetch.",
             ),
             "secrets_tag": Field(
                 Noneable(str),
@@ -96,7 +100,7 @@ def secretsmanager_resource(context):
                 bool,
                 is_required=False,
                 default_value=False,
-                description=("Whether to mount the secrets as environment variables."),
+                description="Whether to mount the secrets as environment variables.",
             ),
         },
     )

@@ -11,8 +11,6 @@ from typing import (
     Union,
 )
 
-from slack_sdk.web.client import WebClient
-
 from dagster import (
     AssetSelection,
     DefaultSensorStatus,
@@ -27,6 +25,7 @@ from dagster._core.definitions.run_status_sensor_definition import (
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._utils.backcompat import deprecation_warning
+from slack_sdk.web.client import WebClient
 
 if TYPE_CHECKING:
     from dagster._core.host_representation.selector import (
@@ -50,9 +49,15 @@ def _build_slack_blocks_and_text(
         blocks.extend(blocks_fn(context))
     else:
         if isinstance(context, RunFailureSensorContext):
-            text = f'*Job "{context.pipeline_run.pipeline_name}" failed. `{context.pipeline_run.run_id.split("-")[0]}`*'
+            text = (
+                f'*Job "{context.pipeline_run.pipeline_name}" failed.'
+                f' `{context.pipeline_run.run_id.split("-")[0]}`*'
+            )
         else:
-            text = f'*Asset "{context.asset_key.to_user_string()}" is now {"on time" if context.minutes_late == 0 else f"{context.minutes_late:.2f} minutes late.*"}'
+            text = (
+                f'*Asset "{context.asset_key.to_user_string()}" is now'
+                f' {"on time" if context.minutes_late == 0 else f"{context.minutes_late:.2f} minutes late.*"}'
+            )
 
         blocks.extend(
             [
@@ -206,7 +211,10 @@ def make_slack_on_run_failure_sensor(
 
 
 def _default_freshness_message_text_fn(context: FreshnessPolicySensorContext) -> str:
-    return f"Asset `{context.asset_key.to_user_string()}` is now {context.minutes_late:.2f} minutes late."
+    return (
+        f"Asset `{context.asset_key.to_user_string()}` is now {context.minutes_late:.2f} minutes"
+        " late."
+    )
 
 
 @experimental

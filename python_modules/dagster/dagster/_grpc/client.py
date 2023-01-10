@@ -128,17 +128,34 @@ class DagsterGrpcClient:
             stub = DagsterApiStub(channel)
             return getattr(stub, method)(request, metadata=self._metadata, timeout=timeout)
 
+    def _raise_grpc_exception(self, e: Exception, timeout, custom_timeout_message=None):
+        if isinstance(e, grpc.RpcError):
+            if e.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
+                raise DagsterUserCodeUnreachableError(
+                    custom_timeout_message
+                    or f"User code server request timed out due to taking longer than {timeout} seconds to complete."
+                ) from e
+            else:
+                raise DagsterUserCodeUnreachableError(
+                    f"Could not reach user code server. gRPC Error code: {e.code().name}"
+                ) from e
+        else:
+            raise DagsterUserCodeUnreachableError("Could not reach user code server") from e
+
     def _query(
         self,
         method,
         request_type,
         timeout=DEFAULT_GRPC_TIMEOUT,
+        custom_timeout_message=None,
         **kwargs,
     ):
         try:
             return self._get_response(method, request=request_type(**kwargs), timeout=timeout)
         except Exception as e:
-            raise DagsterUserCodeUnreachableError("Could not reach user code server") from e
+            self._raise_grpc_exception(
+                e, timeout=timeout, custom_timeout_message=custom_timeout_message
+            )
 
     def _get_streaming_response(
         self,
@@ -146,7 +163,6 @@ class DagsterGrpcClient:
         request,
         timeout=DEFAULT_GRPC_TIMEOUT,
     ):
-
         with self._channel() as channel:
             stub = DagsterApiStub(channel)
             yield from getattr(stub, method)(request, metadata=self._metadata, timeout=timeout)
@@ -156,6 +172,7 @@ class DagsterGrpcClient:
         method,
         request_type,
         timeout=DEFAULT_GRPC_TIMEOUT,
+        custom_timeout_message=None,
         **kwargs,
     ):
         try:
@@ -163,7 +180,9 @@ class DagsterGrpcClient:
                 method, request=request_type(**kwargs), timeout=timeout
             )
         except Exception as e:
-            raise DagsterUserCodeUnreachableError("Could not reach user code server") from e
+            self._raise_grpc_exception(
+                e, timeout=timeout, custom_timeout_message=custom_timeout_message
+            )
 
     def ping(self, echo):
         check.str_param(echo, "echo")
@@ -366,6 +385,13 @@ class DagsterGrpcClient:
             SensorExecutionArgs,
         )
 
+        custom_timeout_message = (
+            f"The sensor tick timed out due to taking longer than {timeout} seconds to execute the"
+            " sensor function. One way to avoid this error is to break up the sensor work into"
+            " chunks, using cursors to let subsequent sensor calls pick up where the previous call"
+            " left off."
+        )
+
         chunks = list(
             self._streaming_query(
                 "ExternalSensorExecution",
@@ -374,6 +400,7 @@ class DagsterGrpcClient:
                 serialized_external_sensor_execution_args=serialize_dagster_namedtuple(
                     sensor_execution_args
                 ),
+                custom_timeout_message=custom_timeout_message,
             )
         )
 
@@ -475,7 +502,8 @@ class DagsterGrpcClient:
 
 class EphemeralDagsterGrpcClient(DagsterGrpcClient):
     """A client that tells the server process that created it to shut down once it leaves a
-    context manager."""
+    context manager.
+    """
 
     def __init__(
         self, server_process=None, *args, **kwargs

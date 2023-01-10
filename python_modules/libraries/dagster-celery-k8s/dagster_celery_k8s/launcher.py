@@ -2,16 +2,11 @@ import sys
 from typing import cast
 
 import kubernetes
-from dagster_k8s.client import DagsterKubernetesClient
-from dagster_k8s.job import (
-    DagsterK8sJobConfig,
-    construct_dagster_k8s_job,
-    get_job_name_from_run_id,
-    get_user_defined_k8s_config,
+from dagster import (
+    DagsterInvariantViolationError,
+    MetadataEntry,
+    _check as check,
 )
-
-from dagster import DagsterInvariantViolationError, MetadataEntry
-from dagster import _check as check
 from dagster._config import process_config, resolve_to_config_type
 from dagster._core.events import EngineEventData
 from dagster._core.execution.retries import RetryMode
@@ -21,8 +16,16 @@ from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import frozentags, merge_dicts
+from dagster._utils import frozentags
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.merger import merge_dicts
+from dagster_k8s.client import DagsterKubernetesClient
+from dagster_k8s.job import (
+    DagsterK8sJobConfig,
+    construct_dagster_k8s_job,
+    get_job_name_from_run_id,
+    get_user_defined_k8s_config,
+)
 
 from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
 
@@ -166,22 +169,24 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             if job_image_from_executor_config:
                 job_image = job_image_from_executor_config
                 self._instance.report_engine_event(
-                    f"You have specified a job_image {job_image_from_executor_config} in your executor configuration, "
-                    f"but also {job_image} in your user-code deployment. Using the job image {job_image_from_executor_config} "
-                    f"from executor configuration as it takes precedence.",
+                    (
+                        f"You have specified a job_image {job_image_from_executor_config} in your"
+                        f" executor configuration, but also {job_image} in your user-code"
+                        f" deployment. Using the job image {job_image_from_executor_config} from"
+                        " executor configuration as it takes precedence."
+                    ),
                     run,
                     cls=self.__class__,
                 )
         else:
             if not job_image_from_executor_config:
                 raise DagsterInvariantViolationError(
-                    "You have not specified a job_image in your executor configuration. "
-                    "To resolve this error, specify the job_image configuration in the executor "
-                    "config section in your run config. \n"
-                    "Note: You may also be seeing this error because you are using the configured API. "
-                    "Using configured with the celery-k8s executor is not supported at this time, "
-                    "and the job_image must be configured at the top-level executor config without "
-                    "using configured."
+                    "You have not specified a job_image in your executor configuration. To resolve"
+                    " this error, specify the job_image configuration in the executor config"
+                    " section in your run config. \nNote: You may also be seeing this error because"
+                    " you are using the configured API. Using configured with the celery-k8s"
+                    " executor is not supported at this time, and the job_image must be configured"
+                    " at the top-level executor config without using configured."
                 )
 
             job_image = job_image_from_executor_config
@@ -312,8 +317,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
                 )
             else:
                 self._instance.report_engine_event(
-                    message="Dagster Job was not terminated successfully; delete_job returned {}".format(
-                        termination_result
+                    message=(
+                        "Dagster Job was not terminated successfully; delete_job returned {}"
+                        .format(termination_result)
                     ),
                     pipeline_run=run,
                     cls=self.__class__,
@@ -321,7 +327,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             return termination_result
         except Exception:
             self._instance.report_engine_event(
-                message="Dagster Job was not terminated successfully; encountered error in delete_job",
+                message=(
+                    "Dagster Job was not terminated successfully; encountered error in delete_job"
+                ),
                 pipeline_run=run,
                 engine_event_data=EngineEventData.engine_error(
                     serializable_error_info_from_exc_info(sys.exc_info())
@@ -364,8 +372,7 @@ def _get_validated_celery_k8s_executor_config(run_config):
     execution_config_schema = resolve_to_config_type(celery_k8s_executor_config())
 
     # In run config on jobs, we don't have an executor key
-    if not CELERY_K8S_CONFIG_KEY in executor_config:
-
+    if CELERY_K8S_CONFIG_KEY not in executor_config:
         execution_run_config = executor_config.get("config", {})
     else:
         execution_run_config = (run_config["execution"][CELERY_K8S_CONFIG_KEY] or {}).get(
@@ -379,7 +386,8 @@ def _get_validated_celery_k8s_executor_config(run_config):
         "Incorrect execution schema provided. Note: You may also be seeing this error "
         "because you are using the configured API. "
         "Using configured with the {config_key} executor is not supported at this time, "
-        "and all executor config must be directly in the run config without using configured.".format(
+        "and all executor config must be directly in the run config without using configured."
+        .format(
             config_key=CELERY_K8S_CONFIG_KEY,
         ),
     )

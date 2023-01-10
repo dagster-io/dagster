@@ -1,3 +1,3 @@
-import {RunDagsterRunEventFragment} from './types/RunDagsterRunEventFragment';
+import {RunDagsterRunEventFragmentFragment} from '../graphql/graphql';
 
-export type LogNode = RunDagsterRunEventFragment & {clientsideKey: string};
+export type LogNode = RunDagsterRunEventFragmentFragment & {clientsideKey: string};

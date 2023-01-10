@@ -11,8 +11,8 @@ import {
   AssetNodeLiveFreshnessPolicyFragment,
   AssetNodeLiveMaterializationFragment,
   AssetNodeLiveObservationFragment,
+  RunStatus,
 } from '../graphql/graphql';
-import {RunStatus} from '../types/globalTypes';
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 type AssetKey = AssetNodeKeyFragment;

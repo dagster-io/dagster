@@ -10,8 +10,10 @@ from .utils import generate_materialization
     ins={"start_after": In(Nothing)},
     out=Out(
         CensusOutput,
-        description="Parsed json dictionary representing the details of the Census sync after "
-        "the sync successfully completes.",
+        description=(
+            "Parsed json dictionary representing the details of the Census sync after "
+            "the sync successfully completes."
+        ),
     ),
     config_schema={
         "sync_id": Field(
@@ -22,8 +24,10 @@ from .utils import generate_materialization
         "force_full_sync": Field(
             config=Bool,
             default_value=False,
-            description="If this trigger request should be a Full Sync. "
-            "Note that some sync configurations such as Append do not support full syncs.",
+            description=(
+                "If this trigger request should be a Full Sync. "
+                "Note that some sync configurations such as Append do not support full syncs."
+            ),
         ),
         "poll_interval": Field(
             float,
@@ -33,8 +37,10 @@ from .utils import generate_materialization
         "poll_timeout": Field(
             Noneable(float),
             default_value=None,
-            description="The maximum time that will waited before this operation is timed out. By "
-            "default, this will never time out.",
+            description=(
+                "The maximum time that will waited before this operation is timed out. By "
+                "default, this will never time out."
+            ),
         ),
         "yield_materializations": Field(
             config=Bool,

@@ -58,7 +58,24 @@ class AssetSelection(ABC):
     @public  # type: ignore
     @staticmethod
     def keys(*asset_keys: CoercibleToAssetKey) -> "KeysAssetSelection":
-        """Returns a selection that includes assets with any of the provided keys."""
+        """
+        Returns a selection that includes assets with any of the provided keys.
+
+        Examples:
+
+            .. code-block:: python
+
+                AssetSelection.keys(AssetKey(["a"]))
+
+                AssetSelection.keys("a")
+
+                AssetSelection.keys(AssetKey(["a"]), AssetKey(["b"]))
+
+                AssetSelection.keys("a", "b")
+
+                asset_key_list = [AssetKey(["a"]), AssetKey(["b"])]
+                AssetSelection.keys(*asset_key_list)
+        """
         _asset_keys = [
             AssetKey.from_user_string(key)
             if isinstance(key, str)
@@ -122,7 +139,8 @@ class AssetSelection(ABC):
         assets within the original asset selection.
 
         A sink asset is an asset that has no downstream dependencies within the asset selection.
-        The sink asset can have downstream dependencies outside of the asset selection."""
+        The sink asset can have downstream dependencies outside of the asset selection.
+        """
         return SinkAssetSelection(self)
 
     @public  # type: ignore
@@ -132,7 +150,8 @@ class AssetSelection(ABC):
         assets within the original asset selection.
 
         A source asset is an asset that has no upstream dependencies within the asset selection.
-        The source asset can have downstream dependencies outside of the asset selection."""
+        The source asset can have downstream dependencies outside of the asset selection.
+        """
         return SourceAssetSelection(self)
 
     def __or__(self, other: "AssetSelection") -> "OrAssetSelection":
@@ -150,7 +169,6 @@ class AssetSelection(ABC):
     def resolve(
         self, all_assets: Union[Sequence[Union[AssetsDefinition, SourceAsset]], AssetGraph]
     ) -> AbstractSet[AssetKey]:
-
         if isinstance(all_assets, AssetGraph):
             asset_graph = all_assets
         else:

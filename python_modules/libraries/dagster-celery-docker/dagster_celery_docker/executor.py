@@ -1,21 +1,28 @@
 import os
 
 import docker.client
-from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
-from dagster_celery.core_execution_loop import DELEGATE_MARKER, core_celery_execution_loop
-from dagster_celery.defaults import broker_url, result_backend
-from dagster_celery.executor import CELERY_CONFIG
-
-from dagster import DagsterInstance, Executor, Field, MetadataEntry, Permissive, StringSource
-from dagster import _check as check
-from dagster import executor, multiple_process_executor_requirements
+from dagster import (
+    DagsterInstance,
+    Executor,
+    Field,
+    MetadataEntry,
+    Permissive,
+    StringSource,
+    _check as check,
+    executor,
+    multiple_process_executor_requirements,
+)
 from dagster._cli.api import ExecuteStepArgs
 from dagster._core.events import EngineEventData
 from dagster._core.events.utils import filter_dagster_events_from_cli_logs
 from dagster._core.execution.retries import RetryMode
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._serdes import pack_value, serialize_dagster_namedtuple, unpack_value
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
+from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
+from dagster_celery.core_execution_loop import DELEGATE_MARKER, core_celery_execution_loop
+from dagster_celery.defaults import broker_url, result_backend
+from dagster_celery.executor import CELERY_CONFIG
 
 CELERY_DOCKER_CONFIG_KEY = "celery-docker"
 
@@ -41,12 +48,17 @@ def celery_docker_config():
                 "env_vars": Field(
                     [str],
                     is_required=False,
-                    description="The list of environment variables names to forward from the celery worker in to the docker container",
+                    description=(
+                        "The list of environment variables names to forward from the celery worker"
+                        " in to the docker container"
+                    ),
                 ),
                 "network": Field(
                     str,
                     is_required=False,
-                    description="Name of the network this container will be connected to at creation time",
+                    description=(
+                        "Name of the network this container will be connected to at creation time"
+                    ),
                 ),
                 "container_kwargs": Field(
                     Permissive(),
@@ -165,7 +177,6 @@ class CeleryDockerExecutor(Executor):
         return self._retries
 
     def execute(self, plan_context, execution_plan):
-
         return core_celery_execution_loop(
             plan_context, execution_plan, step_execution_fn=_submit_task_docker
         )

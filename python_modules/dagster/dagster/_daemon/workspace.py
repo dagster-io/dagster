@@ -40,12 +40,12 @@ class BaseDaemonWorkspace(IWorkspace):
         return self
 
     def get_workspace_snapshot(self) -> Mapping[str, WorkspaceLocationEntry]:
-        if self._location_entries == None:
+        if self._location_entries is None:
             self._location_entries = self._load_workspace()
         return self._location_entries.copy()
 
     def get_location_statuses(self) -> Sequence[WorkspaceLocationStatusEntry]:
-        if self._location_entries == None:
+        if self._location_entries is None:
             self._location_entries = self._load_workspace()
         return [
             location_status_from_location_entry(entry) for entry in self._location_entries.values()
@@ -59,7 +59,7 @@ class BaseDaemonWorkspace(IWorkspace):
         return DaemonIterationWorkspace(self.get_workspace_snapshot())
 
     def get_repository_location(self, location_name: str) -> RepositoryLocation:
-        if self._location_entries == None:
+        if self._location_entries is None:
             self._location_entries = self._load_workspace()
 
         if location_name not in self._location_entries:
@@ -85,7 +85,7 @@ class BaseDaemonWorkspace(IWorkspace):
         return location_entry.repository_location
 
     def cleanup(self, cleanup_locations: bool) -> None:
-        if self._location_entries != None:
+        if self._location_entries is not None:
             if cleanup_locations:
                 for location_entry in self._location_entries.values():
                     if location_entry.repository_location:

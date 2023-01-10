@@ -6,8 +6,8 @@ from dagster import (
     DagsterInstance,
     Definitions,
     ExecuteInProcessResult,
-    IOManager,
     InputContext,
+    IOManager,
     OutputContext,
 )
 from dagster._core.definitions.events import CoercibleToAssetKey
@@ -77,7 +77,8 @@ class DefinitionsRunner:
 
 class AssetBasedInMemoryIOManager(IOManager):
     """In memory I/O manager for testing asset-based jobs and workflows. Can handle both
-    partitioned and unpartitioned assets."""
+    partitioned and unpartitioned assets.
+    """
 
     def __init__(self):
         self.values = {}

@@ -23,7 +23,10 @@ def test_bad_source_structure():
 
     with pytest.raises(
         Exception,
-        match="Attribute config_map of type V1ConfigMapVolumeSource must be a dict, received my_config_map instead",
+        match=(
+            "Attribute config_map of type V1ConfigMapVolumeSource must be a dict, received"
+            " my_config_map instead"
+        ),
     ):
         k8s_model_from_dict(kubernetes.client.V1Volume, volume_dict)
 
@@ -113,7 +116,10 @@ def test_snake_case_combined_with_camel_case():
     }
     with pytest.raises(
         Exception,
-        match="Model class V1CSIVolumeSource cannot contain both volumeAttributes and volume_attributes keys",
+        match=(
+            "Model class V1CSIVolumeSource cannot contain both volumeAttributes and"
+            " volume_attributes keys"
+        ),
     ):
         k8s_snake_case_dict(kubernetes.client.V1Volume, volume_dict)
 

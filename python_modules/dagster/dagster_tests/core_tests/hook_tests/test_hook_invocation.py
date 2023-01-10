@@ -2,7 +2,6 @@ import re
 
 import mock
 import pytest
-
 from dagster import HookContext, build_hook_context, failure_hook, op, resource, success_hook
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.errors import (
@@ -38,25 +37,37 @@ def test_event_list_hook_invocation():
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Decorated function expects two parameters, context and event_list, but 0 were provided.",
+        match=(
+            "Decorated function expects two parameters, context and event_list, but 0 were"
+            " provided."
+        ),
     ):
         basic_event_list_hook()  # pylint: disable=no-value-for-parameter
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Decorated function expects two parameters, context and event_list, but 1 were provided.",
+        match=(
+            "Decorated function expects two parameters, context and event_list, but 1 were"
+            " provided."
+        ),
     ):
         basic_event_list_hook(event_list=[])  # pylint: disable=no-value-for-parameter
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Decorated function expects two parameters, context and event_list, but 1 were provided.",
+        match=(
+            "Decorated function expects two parameters, context and event_list, but 1 were"
+            " provided."
+        ),
     ):
         basic_event_list_hook(context=None)  # pylint: disable=no-value-for-parameter
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Decorated function expects two parameters, context and event_list, but 1 were provided.",
+        match=(
+            "Decorated function expects two parameters, context and event_list, but 1 were"
+            " provided."
+        ),
     ):
         basic_event_list_hook(None)  # pylint: disable=no-value-for-parameter
 
@@ -111,7 +122,6 @@ def test_context_hook_invocation(hook_decorator):
     [(success_hook, False), (failure_hook, False), (event_list_hook, True)],
 )
 def test_success_hook_with_resources(hook_decorator, is_event_list_hook):
-
     decorator = hook_decorator(required_resource_keys={"foo", "bar"})
     if is_event_list_hook:
 

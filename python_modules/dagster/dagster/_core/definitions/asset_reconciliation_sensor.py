@@ -405,7 +405,6 @@ def get_current_data_times_for_key(
     relevant_upstream_keys: AbstractSet[AssetKey],
     asset_key: AssetKey,
 ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
-
     # calculate the data time for this record in relation to the upstream keys which are
     # set to be updated this tick and are involved in some constraint
     latest_record = instance_queryer.get_latest_materialization_record(asset_key)
@@ -467,7 +466,6 @@ def get_execution_time_window_for_constraints(
     min_dt = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
 
     for constraint in sorted(constraints, key=lambda c: c.required_by_time):
-
         # the set of keys in this constraint that are actually upstream of this asset
         relevant_constraint_keys = constraint.asset_keys & relevant_upstream_keys
 
@@ -576,7 +574,6 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 # recieve the current contents of the asset
                 execution_window_start = None
             else:
-
                 # calculate the data times you would expect after all currently-executing runs
                 # were to successfully complete
                 in_progress_data_times = instance_queryer.get_in_progress_data_times_for_key(
@@ -724,7 +721,7 @@ def build_asset_reconciliation_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     run_tags: Optional[Mapping[str, str]] = None,
 ) -> SensorDefinition:
-    """Constructs a sensor that will monitor the provided assets and launch materializations to
+    r"""Constructs a sensor that will monitor the provided assets and launch materializations to
     "reconcile" them.
 
     An asset is considered "unreconciled" if any of:

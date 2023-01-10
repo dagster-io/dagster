@@ -137,7 +137,8 @@ def _has_max_data(chunk) -> bool:
 
 class CapturedLogManager(ABC):
     """Abstract base class for capturing the unstructured logs (stdout/stderr) in the current
-    process, stored / retrieved with a provided log_key."""
+    process, stored / retrieved with a provided log_key.
+    """
 
     @abstractmethod
     @contextmanager

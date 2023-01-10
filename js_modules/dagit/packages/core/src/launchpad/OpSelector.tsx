@@ -66,7 +66,6 @@ export const OpSelector = (props: IOpSelectorProps) => {
   const isJob = isThisThingAJob(repo, pipelineName);
   const {data, loading} = useQuery(SOLID_SELECTOR_QUERY, {
     variables: {selector, requestScopeHandleID: flattenGraphs ? undefined : ''},
-    fetchPolicy: 'cache-and-network',
   });
 
   const query = props.query || '*';

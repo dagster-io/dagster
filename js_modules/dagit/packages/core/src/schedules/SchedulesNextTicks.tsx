@@ -33,10 +33,10 @@ import {
   ScheduleFragmentFragment,
   ScheduleFutureTickEvaluationResultFragment,
   ScheduleFutureTickRunRequestFragment,
+  InstigationStatus,
 } from '../graphql/graphql';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunTags} from '../runs/RunTags';
-import {InstigationStatus} from '../types/globalTypes';
 import {MenuLink} from '../ui/MenuLink';
 import {
   findRepositoryAmongOptions,

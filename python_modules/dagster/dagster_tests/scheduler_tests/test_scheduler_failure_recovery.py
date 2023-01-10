@@ -2,7 +2,6 @@ import multiprocessing
 
 import pendulum
 import pytest
-
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.pipeline_run import DagsterRunStatus
@@ -195,7 +194,6 @@ def test_failure_recovery_after_run_created(
 
     frozen_datetime = frozen_datetime.add(minutes=5)
     with pendulum.test(frozen_datetime):
-
         # Running again just launches the existing run and marks the tick as success
         scheduler_process = spawn_ctx.Process(
             target=_test_launch_scheduled_runs_in_subprocess,

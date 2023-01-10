@@ -4,6 +4,7 @@ import re
 import shutil
 from typing import Any, Dict, List
 
+
 def read_json(filename: str) -> Dict[str, object]:
     with open(filename, encoding="utf8") as f:
         data = json.load(f)
@@ -26,7 +27,7 @@ def add_data_at_route(root_data, route, data):
     curr = root_data
 
     for part in route[:-1]:
-        if not part in curr:
+        if part not in curr:
             curr[part] = {}
 
         curr = curr[part]

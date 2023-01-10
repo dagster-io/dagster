@@ -5,7 +5,21 @@ from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 import pendulum
 import sqlalchemy as db
@@ -19,7 +33,6 @@ from dagster._core.errors import (
 )
 from dagster._core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent, DagsterEventType
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.host_representation.origin import ExternalPipelineOrigin
 from dagster._core.snap import (
     ExecutionPlanSnapshot,
@@ -40,7 +53,8 @@ from dagster._serdes import (
     serialize_dagster_namedtuple,
 )
 from dagster._seven import JSONDecodeError
-from dagster._utils import merge_dicts, utc_datetime_from_timestamp
+from dagster._utils import utc_datetime_from_timestamp
+from dagster._utils.merger import merge_dicts
 
 from ..pipeline_run import (
     DagsterRun,
@@ -58,8 +72,8 @@ from .schema import (
     DaemonHeartbeatsTable,
     InstanceInfo,
     KeyValueStoreTable,
-    RunTagsTable,
     RunsTable,
+    RunTagsTable,
     SecondaryIndexMigrationTable,
     SnapshotsTable,
 )
@@ -175,7 +189,6 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             kwargs["end_time"] = now.timestamp()
 
         with self.connect() as conn:
-
             conn.execute(
                 RunsTable.update()  # pylint: disable=no-value-for-parameter
                 .where(RunsTable.c.run_id == run_id)
@@ -247,6 +260,12 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         if filters.updated_after:
             query = query.where(RunsTable.c.update_timestamp > filters.updated_after)
+
+        if filters.updated_before:
+            query = query.where(RunsTable.c.update_timestamp < filters.updated_before)
+
+        if filters.created_after:
+            query = query.where(RunsTable.c.create_timestamp > filters.created_after)
 
         if filters.created_before:
             query = query.where(RunsTable.c.create_timestamp < filters.created_before)
@@ -576,7 +595,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         root_run = self.get_run_by_id(root_run_id)
         if not root_run:
             raise DagsterRunNotFoundError(
-                f"Run id {root_run_id} set as root run id for run {run_id} was not found in instance.",
+                (
+                    f"Run id {root_run_id} set as root run id for run {run_id} was not found in"
+                    " instance."
+                ),
                 invalid_run_id=root_run_id,
             )
 
@@ -950,7 +972,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         query = (
             db.select([1])
             .where(SecondaryIndexMigrationTable.c.name == migration_name)
-            .where(SecondaryIndexMigrationTable.c.migration_completed != None)
+            .where(SecondaryIndexMigrationTable.c.migration_completed != None)  # noqa: E711
             .limit(1)
         )
         with self.connect() as conn:
@@ -993,7 +1015,6 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat):
         with self.connect() as conn:
-
             # insert, or update if already present
             try:
                 conn.execute(
@@ -1016,7 +1037,6 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
 
     def get_daemon_heartbeats(self) -> Mapping[str, DaemonHeartbeat]:
-
         with self.connect() as conn:
             rows = conn.execute(db.select(DaemonHeartbeatsTable.columns))
             heartbeats = []
@@ -1068,16 +1088,16 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def add_backfill(self, partition_backfill: PartitionBackfill):
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
-        values = dict(
+        values: Dict[str, Any] = dict(
             key=partition_backfill.backfill_id,
             status=partition_backfill.status.value,
             timestamp=utc_datetime_from_timestamp(partition_backfill.backfill_timestamp),
-            body=serialize_dagster_namedtuple(partition_backfill),
+            body=serialize_dagster_namedtuple(cast(NamedTuple, partition_backfill)),
         )
 
         if self.has_bulk_actions_selector_cols():
             values["selector_id"] = partition_backfill.selector_id
-            values["action_type"] = BulkActionType.PARTITION_BACKFILL.value
+            values["action_type"] = partition_backfill.bulk_action_type.value
 
         with self.connect() as conn:
             conn.execute(

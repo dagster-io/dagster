@@ -29,11 +29,10 @@ import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
 import {graphql} from '../graphql';
-import {LaunchPartitionBackfillMutation} from '../graphql/graphql';
+import {LaunchPartitionBackfillMutation, RunStatus} from '../graphql/graphql';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {LaunchButton} from '../launchpad/LaunchButton';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
-import {RunStatus} from '../types/globalTypes';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -108,6 +107,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   }, [onLaunch]);
 
   const {loading, data} = useQuery(PARTITIONS_BACKFILL_SELECTOR_QUERY, {
+    fetchPolicy: 'network-only',
     variables: {
       repositorySelector,
       partitionSetName,
@@ -116,7 +116,6 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
         pipelineName,
       },
     },
-    fetchPolicy: 'network-only',
   });
 
   const [queryStatuses, {loading: statusesLoading, data: statusesData}] = useLazyQuery(
@@ -126,7 +125,6 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
         repositorySelector,
         partitionSetName,
       },
-      fetchPolicy: 'cache-and-network',
     },
   );
 

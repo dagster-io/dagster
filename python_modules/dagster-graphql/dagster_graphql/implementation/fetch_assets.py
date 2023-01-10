@@ -2,14 +2,13 @@ import datetime
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple
 
-from dagster_graphql.implementation.loader import (
-    CrossRepoAssetDependedByLoader,
-    ProjectedLogicalVersionLoader,
-)
-
 import dagster._seven as seven
-from dagster import AssetKey, DagsterEventType, EventRecordsFilter
-from dagster import _check as check
+from dagster import (
+    AssetKey,
+    DagsterEventType,
+    EventRecordsFilter,
+    _check as check,
+)
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.events import ASSET_EVENTS
@@ -21,6 +20,14 @@ from dagster._core.host_representation.external_data import (
 from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.storage.tags import get_dimension_from_partition_tag
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+
+from dagster_graphql.implementation.loader import (
+    CrossRepoAssetDependedByLoader,
+    ProjectedLogicalVersionLoader,
+)
+
+if TYPE_CHECKING:
+    pass
 
 from .utils import capture_error
 
@@ -422,7 +429,7 @@ def unique_repos(external_repositories):
             external_repository.handle.location_name,
             external_repository.name,
         )
-        if not repo_id in used:
+        if repo_id not in used:
             used.add(repo_id)
             repos.append(external_repository)
 

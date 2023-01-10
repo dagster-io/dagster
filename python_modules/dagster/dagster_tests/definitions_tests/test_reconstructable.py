@@ -3,7 +3,6 @@ import sys
 import types
 
 import pytest
-
 from dagster import (
     DagsterInvariantViolationError,
     GraphDefinition,
@@ -89,7 +88,8 @@ def test_not_defined_in_module(mocker):
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            "reconstructable() can not reconstruct jobs or pipelines defined in interactive environments"
+            "reconstructable() can not reconstruct jobs or pipelines defined in interactive"
+            " environments"
         ),
     ):
         reconstructable(get_the_pipeline)
@@ -99,7 +99,10 @@ def test_manual_instance():
     defn = JobDefinition(graph_def=GraphDefinition(node_defs=[the_op], name="test"))
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Reconstructable target was not a function returning a job definition, or a job definition produced by a decorated function.",
+        match=(
+            "Reconstructable target was not a function returning a job definition, or a job"
+            " definition produced by a decorated function."
+        ),
     ):
         reconstructable(defn)
 
@@ -116,8 +119,8 @@ def test_bad_target():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, "
-            "AssetGroup, or RepositoryDefinition. Got None."
+            "Loadable attributes must be either a JobDefinition, GraphDefinition,"
+            " PipelineDefinition, AssetGroup, or RepositoryDefinition. Got None."
         ),
     ):
         reconstructable(not_the_pipeline)

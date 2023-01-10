@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Callable, List, Mapping, Optional, Union
 
 import pkg_resources
+
 from dagster_buildkite.git import ChangedFiles
 from dagster_buildkite.python_packages import PythonPackages, changed_filetypes
 
@@ -99,8 +100,6 @@ class PackageSpec:
         run_pytest (bool, optional): Whether to run pytest. Enabled by default.
         run_mypy (bool, optional): Whether to run mypy. Runs in the highest available supported
             Python version. Enabled by default.
-        run_pylint (bool, optional): Whether to run pylint. Runs in the highest available supported
-            Python version. Enabled by default.
     """
 
     directory: str
@@ -117,7 +116,6 @@ class PackageSpec:
     queue: Optional[BuildkiteQueue] = None
     run_pytest: bool = True
     run_mypy: bool = True
-    run_pylint: bool = True
 
     def __post_init__(self):
         if not self.name:
@@ -138,7 +136,6 @@ class PackageSpec:
         ]
 
         if self.run_pytest:
-
             default_python_versions = AvailablePythonVersion.get_pytest_defaults()
             pytest_python_versions = sorted(
                 list(set(default_python_versions) - set(self.unsupported_python_versions))
@@ -155,7 +152,6 @@ class PackageSpec:
 
             for py_version in pytest_python_versions:
                 for other_factor in tox_factors:
-
                     version_factor = AvailablePythonVersion.to_tox_factor(py_version)
                     if other_factor is None:
                         tox_env = version_factor
@@ -206,18 +202,6 @@ class PackageSpec:
                 )
             )
 
-        if self.run_pylint:
-            steps.append(
-                build_tox_step(
-                    self.directory,
-                    "pylint",
-                    base_label=base_name,
-                    command_type="pylint",
-                    python_version=supported_python_versions[-1],
-                    skip_reason=self.skip_reason,
-                )
-            )
-
         emoji = _PACKAGE_TYPE_TO_EMOJI_MAP[self.package_type]  # type: ignore[index]
         return [
             GroupStep(
@@ -247,7 +231,7 @@ class PackageSpec:
     @property
     def skip_reason(self) -> Optional[str]:
         # Memoize so we don't log twice
-        if self._should_skip == False:
+        if self._should_skip is False:
             return None
 
         if self._skip_reason:

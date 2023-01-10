@@ -71,7 +71,6 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
 
   const {data, error, loading} = useQuery(REPOSITORY_GRAPHS_LIST_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {repositorySelector},
   });
 

@@ -1,7 +1,6 @@
 import re
 
 import pytest
-
 from dagster import (
     Any,
     DagsterInvalidDefinitionError,
@@ -39,7 +38,7 @@ def test_no_parens_solid():
     def hello_world():
         called["yup"] = True
 
-    result = execute_in_graph(hello_world)
+    execute_in_graph(hello_world)
 
     assert called["yup"]
 
@@ -51,7 +50,7 @@ def test_empty_solid():
     def hello_world():
         called["yup"] = True
 
-    result = execute_in_graph(hello_world)
+    execute_in_graph(hello_world)
 
     assert called["yup"]
 
@@ -240,9 +239,7 @@ def test_any_config_field():
         assert context.op_config == conf_value
         called["yup"] = True
 
-    result = execute_in_graph(
-        hello_world, run_config={"solids": {"hello_world": {"config": conf_value}}}
-    )
+    execute_in_graph(hello_world, run_config={"solids": {"hello_world": {"config": conf_value}}})
 
     assert called["yup"]
 
@@ -334,7 +331,7 @@ def test_solid_yields_single_bare_value():
         DagsterInvariantViolationError,
         match="yielded a value of type <class 'int'>",
     ):
-        result = execute_in_graph(return_iterator)
+        execute_in_graph(return_iterator)
 
 
 def test_solid_yields_multiple_bare_values():
@@ -347,7 +344,7 @@ def test_solid_yields_multiple_bare_values():
         DagsterInvariantViolationError,
         match="yielded a value of type <class 'int'>",
     ):
-        result = execute_in_graph(return_iterator)
+        execute_in_graph(return_iterator)
 
 
 def test_solid_returns_iterator():
@@ -362,7 +359,7 @@ def test_solid_returns_iterator():
     with pytest.raises(
         DagsterInvariantViolationError, match="yielded a value of type <class 'int'>"
     ):
-        result = execute_in_graph(return_iterator)
+        execute_in_graph(return_iterator)
 
 
 def test_input_default():

@@ -4,12 +4,6 @@ from typing import List, Optional
 
 import pytest
 import responses
-from dagster_dbt import (
-    DagsterDbtCloudJobInvariantViolationError,
-    dbt_cloud_resource,
-    load_assets_from_dbt_cloud_job,
-)
-
 from dagster import (
     AssetKey,
     AssetSelection,
@@ -22,6 +16,11 @@ from dagster import (
     file_relative_path,
 )
 from dagster._core.test_utils import instance_for_test
+from dagster_dbt import (
+    DagsterDbtCloudJobInvariantViolationError,
+    dbt_cloud_resource,
+    load_assets_from_dbt_cloud_job,
+)
 
 from ..utils import assert_assets_match_project
 
@@ -360,7 +359,8 @@ def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
         job_id=DBT_CLOUD_JOB_ID,
         cause="Generating software-defined assets for Dagster.",
         steps_override=[
-            f"dbt compile --vars '{json.dumps({'run_date': partition_def.get_last_partition_key()})}'"
+            "dbt compile --vars"
+            f" '{json.dumps({'run_date': partition_def.get_last_partition_key()})}'"
         ],
     )
 

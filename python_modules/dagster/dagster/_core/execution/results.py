@@ -45,7 +45,7 @@ def _construct_events_by_step_key(
 ) -> Mapping[str, Sequence[DagsterEvent]]:
     events_by_step_key: DefaultDict[str, List[DagsterEvent]] = defaultdict(list)
     for event in event_list:
-        if not event.step_key is None:
+        if event.step_key is not None:
             events_by_step_key[event.step_key].append(event)
     return dict(events_by_step_key)
 
@@ -130,7 +130,8 @@ class GraphExecutionResult:
         self,
     ) -> Sequence[Union["CompositeSolidExecutionResult", "OpExecutionResult"]]:
         """List[Union[CompositeSolidExecutionResult, SolidExecutionResult]]: The results for each
-        top level solid."""
+        top level solid.
+        """
         return [self.result_for_node(node.name) for node in self.container.solids]
 
     def _result_for_handle(
@@ -385,7 +386,8 @@ class OpExecutionResult:
 
     @property
     def compute_output_events_dict(self) -> Mapping[str, Sequence[DagsterEvent]]:
-        """Dict[str, List[DagsterEvent]]: All events of type ``STEP_OUTPUT``, keyed by output name"""
+        """Dict[str, List[DagsterEvent]]: All events of type ``STEP_OUTPUT``, keyed by output name
+        """
         results: DefaultDict[str, List[DagsterEvent]] = defaultdict(list)
         for se in self.output_events_during_compute:
             results[se.step_output_data.output_name].append(se)
@@ -593,7 +595,7 @@ class OpExecutionResult:
                 return result
 
             raise DagsterInvariantViolationError(
-                (f"Did not find result {output_name} in node {self.node.name} " "execution result")
+                f"Did not find result {output_name} in node {self.node.name} execution result"
             )
 
     def _get_value(self, context: StepExecutionContext, step_output_data: StepOutputData) -> object:
@@ -620,7 +622,8 @@ class OpExecutionResult:
     @property
     def failure_data(self) -> Optional[StepFailureData]:
         """Union[None, StepFailureData]: Any data corresponding to this step's failure, if it
-        failed."""
+        failed.
+        """
         for step_event in self.compute_step_events:
             if step_event.event_type == DagsterEventType.STEP_FAILURE:
                 return step_event.step_failure_data

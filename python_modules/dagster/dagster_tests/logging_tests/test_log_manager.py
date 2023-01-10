@@ -3,16 +3,15 @@ import sys
 import textwrap
 
 import pytest
-
 from dagster import DagsterEvent
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.errors import DagsterUserCodeExecutionError, user_code_error_boundary
 from dagster._core.execution.plan.objects import ErrorSource, StepFailureData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.log_manager import (
+    DagsterLoggingMetadata,
     DagsterLogHandler,
     DagsterLogManager,
-    DagsterLoggingMetadata,
     DagsterMessageProps,
     construct_log_string,
 )
@@ -42,7 +41,8 @@ def test_construct_log_string_for_event():
 
     assert (
         construct_log_string(logging_metadata=logging_metadata, message_props=dagster_message_props)
-        == 'my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_OUTPUT - Yielded output "result" of type "Any" for step "solid2". (Type check passed).'
+        == "my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_OUTPUT - Yielded"
+        ' output "result" of type "Any" for step "solid2". (Type check passed).'
     )
 
 

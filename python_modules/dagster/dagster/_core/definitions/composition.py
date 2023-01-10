@@ -115,8 +115,7 @@ def assert_in_composition(name: str, node_def: NodeDefinition) -> None:
         node_label = node_def.node_type_str
         if node_def.is_graph_job_op_node:
             correction = (
-                f"Invoking {node_label}s is only valid in a function decorated with "
-                "@job or @graph."
+                f"Invoking {node_label}s is only valid in a function decorated with @job or @graph."
             )
         else:
             correction = (
@@ -124,7 +123,8 @@ def assert_in_composition(name: str, node_def: NodeDefinition) -> None:
                 "@pipeline or @composite_solid."
             )
         raise DagsterInvariantViolationError(
-            f"Attempted to call {node_label} '{name}' outside of a composition function. {correction}"
+            f"Attempted to call {node_label} '{name}' outside of a composition function."
+            f" {correction}"
         )
 
 
@@ -171,9 +171,8 @@ class InProgressCompositionContext:
 
         if self._invocations.get(node_name):
             raise DagsterInvalidDefinitionError(
-                "{source} {name} invoked the same node ({node_name}) twice without aliasing.".format(
-                    source=self.source, name=self.name, node_name=node_name
-                )
+                "{source} {name} invoked the same node ({node_name}) twice without aliasing."
+                .format(source=self.source, name=self.name, node_name=node_name)
             )
 
         self._invocations[node_name] = InvokedNode(
@@ -214,7 +213,6 @@ class CompleteCompositionContext(NamedTuple):
         output_mapping_dict: Mapping[str, OutputMapping],
         pending_invocations: Mapping[str, "PendingNodeInvocation"],
     ):
-
         dep_dict: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
         node_def_dict: Dict[str, NodeDefinition] = {}
         input_mappings = []
@@ -350,28 +348,28 @@ class PendingNodeInvocation:
             )  # will be the string "solid" for solids, and the string "ops" for ops
             if not isinstance(self.node_def.compute_fn, DecoratedOpFunction):
                 raise DagsterInvalidInvocationError(
-                    f"Attemped to invoke {node_label} that was not constructed using the `@{node_label}` "
-                    f"decorator. Only {node_label}s constructed using the `@{node_label}` decorator can be "
-                    "directly invoked."
+                    f"Attemped to invoke {node_label} that was not constructed using the"
+                    f" `@{node_label}` decorator. Only {node_label}s constructed using the"
+                    f" `@{node_label}` decorator can be directly invoked."
                 )
             if self.node_def.compute_fn.has_context_arg():
                 if len(args) == 0:
                     raise DagsterInvalidInvocationError(
-                        f"Compute function of {node_label} '{self.given_alias}' has context argument, but no context "
-                        "was provided when invoking."
+                        f"Compute function of {node_label} '{self.given_alias}' has context"
+                        " argument, but no context was provided when invoking."
                     )
                 elif args[0] is not None and not isinstance(args[0], UnboundOpExecutionContext):
                     raise DagsterInvalidInvocationError(
-                        f"Compute function of {node_label} '{self.given_alias}' has context argument, but no context "
-                        "was provided when invoking."
+                        f"Compute function of {node_label} '{self.given_alias}' has context"
+                        " argument, but no context was provided when invoking."
                     )
                 context = args[0]
                 return op_invocation_result(self, context, *args[1:], **kwargs)
             else:
                 if len(args) > 0 and isinstance(args[0], UnboundOpExecutionContext):
                     raise DagsterInvalidInvocationError(
-                        f"Compute function of {node_label} '{self.given_alias}' has no context argument, but "
-                        "context was provided when invoking."
+                        f"Compute function of {node_label} '{self.given_alias}' has no context"
+                        " argument, but context was provided when invoking."
                     )
                 return op_invocation_result(self, None, *args, **kwargs)
 
@@ -471,7 +469,6 @@ class PendingNodeInvocation:
         return f"{self.node_def.node_type_str} '{node_name}'"
 
     def _process_argument_node(self, node_name, output_node, input_name, input_bindings, arg_desc):
-
         if isinstance(output_node, (InvokedNodeOutputHandle, InputMappingNode, DynamicFanIn)):
             input_bindings[input_name] = output_node
 
@@ -516,14 +513,12 @@ class PendingNodeInvocation:
             )
         elif isinstance(output_node, InvokedNodeDynamicOutputWrapper):
             raise DagsterInvalidDefinitionError(
-                f"In {current_context().source} {current_context().name}, received the dynamic output "
-                f"{output_node.output_name} from {output_node.describe_node()} directly. Dynamic "
-                "output must be unpacked by invoking map or collect."
+                f"In {current_context().source} {current_context().name}, received the dynamic"
+                f" output {output_node.output_name} from {output_node.describe_node()} directly."
+                " Dynamic output must be unpacked by invoking map or collect."
             )
 
-        elif isinstance(output_node, PendingNodeInvocation) or isinstance(
-            output_node, NodeDefinition
-        ):
+        elif isinstance(output_node, (NodeDefinition, PendingNodeInvocation)):
             raise DagsterInvalidDefinitionError(
                 "In {source} {name}, received an un-invoked {described_node} "
                 " for input "
@@ -841,9 +836,9 @@ class InvokedNodeDynamicOutputWrapper:
 
     def alias(self, _):
         raise DagsterInvariantViolationError(
-            "In {source} {name}, attempted to call alias method for {cls}. This object "
-            'represents the dynamic out "{out}" from the already invoked {described_node}. Consider '
-            "checking the location of parentheses.".format(
+            "In {source} {name}, attempted to call alias method for {cls}. This object represents"
+            ' the dynamic out "{out}" from the already invoked {described_node}. Consider checking'
+            " the location of parentheses.".format(
                 source=current_context().source,
                 name=current_context().name,
                 cls=self.__class__.__name__,
@@ -854,9 +849,9 @@ class InvokedNodeDynamicOutputWrapper:
 
     def with_hooks(self, _):
         raise DagsterInvariantViolationError(
-            "In {source} {name}, attempted to call hook method for {cls}. This object "
-            'represents the dynamic out "{out}" from the already invoked {described_node}. Consider '
-            "checking the location of parentheses.".format(
+            "In {source} {name}, attempted to call hook method for {cls}. This object represents"
+            ' the dynamic out "{out}" from the already invoked {described_node}. Consider checking'
+            " the location of parentheses.".format(
                 source=current_context().source,
                 name=current_context().name,
                 cls=self.__class__.__name__,
@@ -930,9 +925,10 @@ def composite_mapping_from_output(
             for handle in output:
                 if handle.output_name not in output_def_dict:
                     raise DagsterInvalidDefinitionError(
-                        "Output name mismatch returning output tuple in {decorator_name} '{name}'. "
-                        "No matching OutputDefinition named {output_name} for {solid_name}.{output_name}."
-                        "Return a dict to map to the desired OutputDefinition".format(
+                        "Output name mismatch returning output tuple in {decorator_name} '{name}'."
+                        " No matching OutputDefinition named {output_name} for"
+                        " {solid_name}.{output_name}.Return a dict to map to the desired"
+                        " OutputDefinition".format(
                             decorator_name=decorator_name,
                             name=solid_name,
                             output_name=handle.output_name,
@@ -1071,12 +1067,14 @@ def do_composition(
         if ignore_output_from_composition_fn:
             if output is not None:
                 warnings.warn(
-                    "You have returned a value out of a @pipeline-decorated function. "
-                    "This currently has no effect on behavior, but will after 0.11.0 is "
-                    "released. In order to preserve existing behavior to do not return "
-                    "anything out of this function. Pipelines (and its successor, graphs) "
-                    "will have meaningful outputs just like composite solids do today, "
-                    "and the return value will be meaningful.",
+                    (
+                        "You have returned a value out of a @pipeline-decorated function. "
+                        "This currently has no effect on behavior, but will after 0.11.0 is "
+                        "released. In order to preserve existing behavior to do not return "
+                        "anything out of this function. Pipelines (and its successor, graphs) "
+                        "will have meaningful outputs just like composite solids do today, "
+                        "and the return value will be meaningful."
+                    ),
                     stacklevel=3,
                 )
             output = None

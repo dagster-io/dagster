@@ -7,9 +7,7 @@ console.log('Downloading schema...');
 
 const TARGET_FILE = './src/graphql/schema.graphql';
 
-// https://github.com/dagster-io/dagster/issues/2623
-// Initially, write schema.graphql in the SDL format, without descriptions
-// Otherwise, the generated types in Typescript would also have descriptions.
+// Write schema.graphql in the SDL format, without descriptions. We don't need them here.
 const result = execSync(
   `dagster-graphql --ephemeral-instance --empty-workspace -t '${getIntrospectionQuery({
     descriptions: false,
@@ -19,9 +17,11 @@ const result = execSync(
 const schemaJson = JSON.parse(result).data;
 const sdl = printSchema(buildClientSchema(schemaJson));
 
-console.log('Generating schema.graphql without descriptions...');
+console.log('Generating schema.graphql...');
 
 writeFileSync(TARGET_FILE, sdl);
+
+execSync(`yarn prettier --loglevel silent --write ${TARGET_FILE}`, {stdio: 'inherit'});
 
 // Write `possibleTypes.generated.json`, used in prod for `AppCache` and in tests for creating
 // a mocked schema.
@@ -37,31 +37,8 @@ console.log('Generating possibleTypes.generated.json...');
 
 writeFileSync('./src/graphql/possibleTypes.generated.json', JSON.stringify(possibleTypes));
 
-console.log('Generating 💾 OLD 💾 TypeScript types...');
-
-// todo dish: Delete apollo codegen usage.
-execSync(
-  `find src -type d -name types | xargs rm -r && yarn apollo codegen:generate --includes "./src/**/*.tsx" --target typescript types --localSchemaFile ${TARGET_FILE} --globalTypesFile ./src/types/globalTypes.ts`,
-  {stdio: 'inherit'},
-);
-
-console.log('Generating ✨ NEW ✨ TypeScript types...');
+console.log('Generating TypeScript types...');
 
 execSync('yarn graphql-codegen', {stdio: 'inherit'});
-
-// https://github.com/dagster-io/dagster/issues/2623
-// Finally, write schema.graphql in the SDL format, with descriptions
-const resultWithDescriptions = execSync(
-  `dagster-graphql --ephemeral-instance --empty-workspace -t '${getIntrospectionQuery()}'`,
-  {cwd: '../../../../examples/docs_snippets/'},
-).toString();
-const schemaJsonWithDescriptions = JSON.parse(resultWithDescriptions).data;
-const sdlWithDescriptions = printSchema(buildClientSchema(schemaJsonWithDescriptions));
-
-console.log('Generating schema.graphql with descriptions...');
-
-writeFileSync(TARGET_FILE, sdlWithDescriptions);
-
-execSync(`yarn prettier --loglevel silent --write ${TARGET_FILE}`, {stdio: 'inherit'});
 
 console.log('Done!');

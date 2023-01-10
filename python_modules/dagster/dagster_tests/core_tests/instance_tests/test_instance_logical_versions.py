@@ -49,7 +49,6 @@ def _create_test_event_log_entry(event_type: DagsterEventType, data: Any) -> Eve
 
 
 def test_extract_logical_version_and_provenance_from_materialization_entry():
-
     materialization = AssetMaterialization(
         asset_key="foo",
         tags={
@@ -73,7 +72,6 @@ def test_extract_logical_version_and_provenance_from_materialization_entry():
 
 
 def test_extract_logical_version_from_observation_entry():
-
     observation = AssetObservation(
         asset_key="foo",
         tags={

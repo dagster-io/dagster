@@ -1,7 +1,6 @@
 from contextlib import contextmanager
 
 import pytest
-
 from dagster import Field, Noneable, Selector, build_init_resource_context, resource
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -27,8 +26,10 @@ def test_resource_invocation_none_arg():
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Resource initialization function has context argument, but no "
-        "context was provided when invoking.",
+        match=(
+            "Resource initialization function has context argument, but no "
+            "context was provided when invoking."
+        ),
     ):
         basic_resource()  # pylint: disable=no-value-for-parameter
 
@@ -224,8 +225,10 @@ def test_resource_dep_no_context():
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Attempted to invoke resource with argument, but underlying "
-        "function has no context argument. Either specify a context argument on "
-        "the resource function, or remove the passed-in argument.",
+        match=(
+            "Attempted to invoke resource with argument, but underlying "
+            "function has no context argument. Either specify a context argument on "
+            "the resource function, or remove the passed-in argument."
+        ),
     ):
         the_resource(None)

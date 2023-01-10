@@ -5,12 +5,11 @@ import time
 from contextlib import contextmanager
 
 from click.testing import CliRunner
-from dagster_graphql.cli import ui
-
 from dagster import _seven
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
+from dagster_graphql.cli import ui
 
 
 @contextmanager
@@ -56,7 +55,11 @@ def test_basic_repositories():
 
 
 def test_basic_repository_locations():
-    query = "{ workspaceOrError { ... on Workspace { locationEntries { __typename, name, locationOrLoadError { __typename, ... on RepositoryLocation { __typename, name } ... on PythonError { message } } } } } }"
+    query = (
+        "{ workspaceOrError { ... on Workspace { locationEntries { __typename, name,"
+        " locationOrLoadError { __typename, ... on RepositoryLocation { __typename, name } ... on"
+        " PythonError { message } } } } } }"
+    )
 
     workspace_path = file_relative_path(__file__, "./cli_test_error_workspace.yaml")
 
@@ -85,7 +88,10 @@ def test_basic_variables():
         { ... on Pipeline { name } }
     }
     """
-    variables = '{"pipelineName": "math", "repositoryName": "test", "repositoryLocationName": "test_cli_location"}'
+    variables = (
+        '{"pipelineName": "math", "repositoryName": "test", "repositoryLocationName":'
+        ' "test_cli_location"}'
+    )
     workspace_path = file_relative_path(__file__, "./cli_test_workspace.yaml")
 
     with dagster_cli_runner() as runner:

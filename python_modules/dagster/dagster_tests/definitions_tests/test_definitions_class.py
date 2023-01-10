@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -500,7 +499,6 @@ def test_implicit_global_job_with_partitioned_asset():
 
 
 def test_implicit_job_with_source_assets():
-
     source_asset = SourceAsset("source_asset")
 
     @asset

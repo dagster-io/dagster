@@ -16,7 +16,7 @@ An asset observation is an event that records metadata about a given asset. Unli
 
 ## Overview
 
-<PyObject object="AssetObservation" /> events are used record metadata in Dagster
+<PyObject object="AssetObservation" /> events are used to record metadata in Dagster
 about a given asset. Asset observation events can be logged at runtime within ops
 and assets. An asset must be defined using the <PyObject
 object="asset"
@@ -55,7 +55,7 @@ height={917}
 There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject object="MetadataEntry" /> class. Each observation event optionally takes a dictionary of metadata entries that are then displayed in the event log and the [Asset Details](/concepts/dagit/dagit#asset-details) page. Check our API docs for <PyObject object="MetadataEntry" /> for more details on the types of event metadata available.
 
 ```python file=concepts/assets/observations.py startafter=start_observation_asset_marker_2 endbefore=end_observation_asset_marker_2
-from dagster import op, AssetObservation, MetadataValue
+from dagster import AssetObservation, MetadataValue, op
 
 
 @op
@@ -93,7 +93,7 @@ height={1146}
 If you are observing a single slice of an asset (e.g. a single day's worth of data on a larger table), rather than mutating or creating it entirely, you can indicate this to Dagster by including the `partition` argument on the object.
 
 ```python file=/concepts/assets/observations.py startafter=start_partitioned_asset_observation endbefore=end_partitioned_asset_observation
-from dagster import op, AssetMaterialization
+from dagster import AssetMaterialization, op
 
 
 @op(config_schema={"date": str})
@@ -108,13 +108,13 @@ def partitioned_dataset_op(context):
 
 ### Observable source assets
 
-<PyObject object="SourceAsset" /> objects may have a user-defined _observation function_
+<PyObject object="SourceAsset" /> objects may have a user-defined observation function
 that returns a <PyObject object="LogicalVersion" />. Whenever the observation
-function is run, an `AssetObservation` will be generated for the source asset
-and tagged with the returned logical version. The logical version is used in
-staleness calculations for downstream assets.
+function is run, an <PyObject object="AssetObservation" /> will be generated for
+the source asset and tagged with the returned logical version. The logical
+version is used in staleness calculations for downstream assets.
 
-The <PyObject object="observable_source_asset" /> decorator provides a convenient way to define source assets with observation functions. The below observable source asset takes a file hash and returns it as the logical version. Every time you run the observation function, a new observation will be generated with this hash set as logical version.
+The <PyObject object="observable_source_asset" /> decorator provides a convenient way to define source assets with observation functions. The below observable source asset takes a file hash and returns it as the logical version. Every time you run the observation function, a new observation will be generated with this hash set as its logical version.
 
 ```python file=/concepts/assets/observable_source_assets.py startafter=start_marker endbefore=end_marker
 from hashlib import sha256
@@ -129,7 +129,7 @@ def foo_source_asset(_context):
     return LogicalVersion(hash_sig.hexdigest())
 ```
 
-When the file content changes, the hash and therefore the logical version will change-- this will notify Dagster that downstream assets derived from an older value (i.e. a different logical version) of this source asset are stale.
+When the file content changes, the hash and therefore the logical version will change - this will notify Dagster that downstream assets derived from an older value (i.e. a different logical version) of this source asset are stale.
 
 Source asset observations can be triggered via the "Observe sources" button in the Dagit graph explorer view. Note that this button will only be visible if at least one source asset in the current graph defines an observation function.
 

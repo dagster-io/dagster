@@ -1,5 +1,7 @@
-from dagster import Output
-from dagster import _check as check
+from dagster import (
+    Output,
+    _check as check,
+)
 from dagster._core.definitions import In, InputDefinition, OpDefinition, lambda_solid
 from dagster._core.definitions.output import Out
 

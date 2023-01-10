@@ -1,15 +1,18 @@
 from typing import Iterator, List, Optional, cast
 
 import kubernetes
-from dagster_k8s.launcher import K8sRunLauncher
-
-from dagster import Field, IntSource, StringSource
-from dagster import _check as check
-from dagster import executor
+from dagster import (
+    Field,
+    IntSource,
+    StringSource,
+    _check as check,
+    executor,
+)
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.events import DagsterEvent, EngineEventData, MetadataEntry
 from dagster._core.execution.retries import RetryMode, get_retries_config
+from dagster._core.execution.tags import get_tag_concurrency_limits_config
 from dagster._core.executor.base import Executor
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating import (
@@ -18,7 +21,10 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
     StepHandlerContext,
 )
-from dagster._utils import frozentags, merge_dicts
+from dagster._utils import frozentags
+from dagster._utils.merger import merge_dicts
+
+from dagster_k8s.launcher import K8sRunLauncher
 
 from .client import DagsterKubernetesClient
 from .container_context import K8sContainerContext
@@ -40,9 +46,12 @@ from .job import (
             "max_concurrent": Field(
                 IntSource,
                 is_required=False,
-                description="Limit on the number of pods that will run concurrently within the scope "
-                "of a Dagster run. Note that this limit is per run, not global.",
+                description=(
+                    "Limit on the number of pods that will run concurrently within the scope "
+                    "of a Dagster run. Note that this limit is per run, not global."
+                ),
             ),
+            "tag_concurrency_limits": get_tag_concurrency_limits_config(),
         },
     ),
     requirements=multiple_process_executor_requirements(),
@@ -88,8 +97,10 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
     run_launcher = init_context.instance.run_launcher
     if not isinstance(run_launcher, K8sRunLauncher):
         raise DagsterUnmetExecutorRequirementsError(
-            "This engine is only compatible with a K8sRunLauncher; configure the "
-            "K8sRunLauncher on your instance to use it.",
+            (
+                "This engine is only compatible with a K8sRunLauncher; configure the "
+                "K8sRunLauncher on your instance to use it."
+            ),
         )
 
     exc_cfg = init_context.executor_config
@@ -118,6 +129,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         ),
         retries=RetryMode.from_config(exc_cfg["retries"]),  # type: ignore
         max_concurrent=check.opt_int_elem(exc_cfg, "max_concurrent"),
+        tag_concurrency_limits=check.opt_list_elem(exc_cfg, "tag_concurrency_limits"),
         should_verify_step=True,
     )
 

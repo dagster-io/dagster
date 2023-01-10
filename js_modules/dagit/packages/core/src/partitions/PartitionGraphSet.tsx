@@ -1,6 +1,8 @@
-import {gql} from '@apollo/client';
 import * as React from 'react';
 import styled from 'styled-components/macro';
+
+import {graphql} from '../graphql';
+import {PartitionGraphSetRunFragmentFragment} from '../graphql/graphql';
 
 import {PartitionGraph} from './PartitionGraph';
 import {
@@ -15,13 +17,11 @@ import {
   getStepExpectationSuccessForRun,
   getStepMaterializationCountForRun,
   StepSelector,
-  PARTITION_GRAPH_FRAGMENT,
 } from './PartitionGraphUtils';
-import {PartitionGraphSetRunFragment} from './types/PartitionGraphSetRunFragment';
 
 const _reverseSortRunCompare = (
-  a: PartitionGraphSetRunFragment,
-  b: PartitionGraphSetRunFragment,
+  a: PartitionGraphSetRunFragmentFragment,
+  b: PartitionGraphSetRunFragmentFragment,
 ) => {
   if (!a.stats || a.stats.__typename !== 'RunStatsSnapshot' || !a.stats.startTime) {
     return 1;
@@ -33,7 +33,7 @@ const _reverseSortRunCompare = (
 };
 
 export const PartitionGraphSet: React.FC<{
-  partitions: {name: string; runs: PartitionGraphSetRunFragment[]}[];
+  partitions: {name: string; runs: PartitionGraphSetRunFragmentFragment[]}[];
   isJob: boolean;
 }> = React.memo(({partitions, isJob}) => {
   const allStepKeys = getStepKeys(partitions);
@@ -131,7 +131,7 @@ export const PartitionGraphSet: React.FC<{
   );
 });
 
-export const PARTITION_GRAPH_SET_RUN_FRAGMENT = gql`
+export const PARTITION_GRAPH_SET_RUN_FRAGMENT = graphql(`
   fragment PartitionGraphSetRunFragment on PipelineRun {
     id
     tags {
@@ -140,8 +140,7 @@ export const PARTITION_GRAPH_SET_RUN_FRAGMENT = gql`
     }
     ...PartitionGraphFragment
   }
-  ${PARTITION_GRAPH_FRAGMENT}
-`;
+`);
 
 const PartitionContentContainer = styled.div`
   display: flex;
@@ -150,7 +149,7 @@ const PartitionContentContainer = styled.div`
   margin: 0 auto;
 `;
 
-function getStepKeys(partitions: {name: string; runs: PartitionGraphSetRunFragment[]}[]) {
+function getStepKeys(partitions: {name: string; runs: PartitionGraphSetRunFragmentFragment[]}[]) {
   const allStepKeys = new Set<string>();
   partitions.forEach((partition) => {
     partition.runs.forEach((run) => {

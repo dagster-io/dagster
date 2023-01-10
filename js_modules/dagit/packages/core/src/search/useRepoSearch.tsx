@@ -126,17 +126,12 @@ const secondaryDataToSearchResults = (data?: SearchSecondaryQueryQuery) => {
 export const useRepoSearch = () => {
   const [performBootstrapQuery, {data: bootstrapData, loading: bootstrapLoading}] = useLazyQuery(
     SEARCH_BOOTSTRAP_QUERY,
-    {
-      fetchPolicy: 'cache-and-network',
-    },
   );
 
   const [
     performSecondaryQuery,
     {data: secondaryData, loading: secondaryLoading, called: secondaryQueryCalled},
-  ] = useLazyQuery(SEARCH_SECONDARY_QUERY, {
-    fetchPolicy: 'cache-and-network',
-  });
+  ] = useLazyQuery(SEARCH_SECONDARY_QUERY);
 
   const bootstrapFuse = React.useMemo(() => bootstrapDataToSearchResults(bootstrapData), [
     bootstrapData,

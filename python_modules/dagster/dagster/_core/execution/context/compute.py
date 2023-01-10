@@ -34,7 +34,8 @@ from .system import StepExecutionContext
 
 
 class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
-    """Base class for solid context implemented by SolidExecutionContext and DagstermillExecutionContext"""
+    """Base class for solid context implemented by SolidExecutionContext and DagstermillExecutionContext
+    """
 
     @abstractmethod
     def has_tag(self, key) -> bool:
@@ -164,8 +165,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         :meta private:
         """
         raise DagsterInvalidPropertyError(
-            "You have attempted to access the file manager which has been moved to resources in 0.10.0. "
-            "Please access it via `context.resources.file_manager` instead."
+            "You have attempted to access the file manager which has been moved to resources in"
+            " 0.10.0. Please access it via `context.resources.file_manager` instead."
         )
 
     @public  # type: ignore
@@ -320,7 +321,6 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         selected_asset_keys = self.selected_asset_keys
         selected_outputs = set()
         for output_name in self.op.output_dict.keys():
-
             asset_info = self.job_def.asset_layer.asset_info_for_output(
                 self.solid_handle, output_name
             )
@@ -376,7 +376,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         deprecation_warning(
             "OpExecutionContext.output_asset_partitions_time_window",
             "1.0.0",
-            additional_warn_txt="Use OpExecutionContext.asset_partitions_time_window_for_output instead.",
+            additional_warn_txt=(
+                "Use OpExecutionContext.asset_partitions_time_window_for_output instead."
+            ),
         )
 
         return self.asset_partitions_time_window_for_output(output_name)
@@ -415,7 +417,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         )
         if result is None:
             raise DagsterInvariantViolationError(
-                f"Attempting to access partitions def for asset {asset_key}, but it is not partitioned"
+                f"Attempting to access partitions def for asset {asset_key}, but it is not"
+                " partitioned"
             )
 
         return result
@@ -429,7 +432,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         )
         if result is None:
             raise DagsterInvariantViolationError(
-                f"Attempting to access partitions def for asset {asset_key}, but it is not partitioned"
+                f"Attempting to access partitions def for asset {asset_key}, but it is not"
+                " partitioned"
             )
 
         return result
@@ -444,7 +448,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
         """Returns a list of the partition keys of the upstream asset corresponding to the
-        given input."""
+        given input.
+        """
         return self.asset_partitions_def_for_input(input_name).get_partition_keys_in_range(
             self._step_execution_context.asset_partition_key_range_for_input(input_name)
         )

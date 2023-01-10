@@ -2,7 +2,6 @@ from datetime import datetime
 
 import pendulum
 import pytest
-
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -597,7 +596,6 @@ def test_explicit_asset_keys():
 
 
 def test_source_asset_with_op():
-
     foo = SourceAsset(key=AssetKey("foo"), description=None)
 
     @asset
@@ -968,7 +966,10 @@ def test_deps_resolve_group():
 
 
 def test_back_compat_external_sensor():
-    SERIALIZED_0_12_10_SENSOR = '{"__class__": "ExternalSensorData", "description": null, "min_interval": null, "mode": "default", "name": "my_sensor", "pipeline_name": "my_pipeline", "solid_selection": null}'
+    SERIALIZED_0_12_10_SENSOR = (
+        '{"__class__": "ExternalSensorData", "description": null, "min_interval": null, "mode":'
+        ' "default", "name": "my_sensor", "pipeline_name": "my_pipeline", "solid_selection": null}'
+    )
     external_sensor_data = deserialize_json_to_dagster_namedtuple(SERIALIZED_0_12_10_SENSOR)
     assert isinstance(external_sensor_data, ExternalSensorData)
     assert len(external_sensor_data.target_dict) == 1

@@ -42,7 +42,8 @@ USED_DATA_TAG = ".dagster/used_data"
 
 class CachingInstanceQueryer:
     """Provides utility functions for querying for asset-materialization related data from the
-    instance which will attempt to limit redundant expensive calls."""
+    instance which will attempt to limit redundant expensive calls.
+    """
 
     def __init__(self, instance: "DagsterInstance"):
         self._instance = instance
@@ -52,6 +53,10 @@ class CachingInstanceQueryer:
         # anything, we can keep track of that fact, so that the next time try to fetch the latest
         # materialization record for a >= cursor, we don't need to query the instance
         self._no_materializations_after_cursor_cache: Dict[AssetKeyPartitionKey, int] = {}
+
+    @property
+    def instance(self) -> "DagsterInstance":
+        return self._instance
 
     def is_asset_in_run(self, run_id: str, asset: Union[AssetKey, AssetKeyPartitionKey]) -> bool:
         run = self._get_run_by_id(run_id=run_id)
@@ -65,7 +70,7 @@ class CachingInstanceQueryer:
         else:
             asset_key = asset
 
-        return asset_key in self._get_planned_materializations_for_run(run_id=run_id)
+        return asset_key in self.get_planned_materializations_for_run(run_id=run_id)
 
     def _get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
         run_record = self._get_run_record_by_id(run_id=run_id)
@@ -85,13 +90,12 @@ class CachingInstanceQueryer:
         self, run_id: str
     ) -> AbstractSet[AssetKey]:
         materializations_planned = self._instance.get_records_for_run(
-            run_id=run_id,
-            of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+            run_id=run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
         ).records
         return set(cast(AssetKey, record.asset_key) for record in materializations_planned)
 
     @cached_method
-    def _get_planned_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
+    def get_planned_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
         run = self._get_run_by_id(run_id=run_id)
         if run is None:
             return set()
@@ -103,7 +107,7 @@ class CachingInstanceQueryer:
             return self._get_planned_materializations_for_run_from_events(run_id=run_id)
 
     @cached_method
-    def _get_current_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
+    def get_current_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
         materializations = self._instance.get_records_for_run(
             run_id=run_id,
             of_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -203,13 +207,17 @@ class CachingInstanceQueryer:
 
     @cached_method
     def get_materialization_records(
-        self, asset_key: AssetKey, after_cursor: Optional[int] = None
+        self,
+        asset_key: AssetKey,
+        after_cursor: Optional[int] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ) -> Iterable["EventLogRecord"]:
         return self._instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
                 asset_key=asset_key,
                 after_cursor=after_cursor,
+                tags=tags,
             )
         )
 
@@ -297,7 +305,8 @@ class CachingInstanceQueryer:
     def _upstream_subset(
         self, asset_graph: AssetGraph, start_key: AssetKey, input_keys: AbstractSet[AssetKey]
     ) -> AbstractSet[AssetKey]:
-        """Helper method which returns the set up keys in the input set which are upstream of start_key"""
+        """Helper method which returns the set up keys in the input set which are upstream of start_key
+        """
         ret = set()
         if start_key in input_keys:
             ret.add(start_key)
@@ -327,7 +336,6 @@ class CachingInstanceQueryer:
         # not all required keys have known values
         unknown_required_keys = required_keys - set(known_data.keys())
         if unknown_required_keys:
-
             # find the upstream times of each of the parents of this asset
             for parent_key in asset_graph.get_parents(asset_key):
                 if parent_key in asset_graph.source_asset_keys:
@@ -400,7 +408,8 @@ class CachingInstanceQueryer:
         """
         if record.asset_key is None or record.asset_materialization is None:
             raise DagsterInvariantViolationError(
-                "Can only calculate data times for records with a materialization event and an asset_key."
+                "Can only calculate data times for records with a materialization event and an"
+                " asset_key."
             )
         if upstream_keys is None:
             upstream_keys = asset_graph.get_non_source_roots(record.asset_key)
@@ -443,8 +452,8 @@ class CachingInstanceQueryer:
         """Returns the upstream data times that a given asset key will be expected to have at the
         completion of the given run.
         """
-        planned_keys = self._get_planned_materializations_for_run(run_id=run_id)
-        materialized_keys = self._get_current_materializations_for_run(run_id=run_id)
+        planned_keys = self.get_planned_materializations_for_run(run_id=run_id)
+        materialized_keys = self.get_current_materializations_for_run(run_id=run_id)
 
         # if key is not pending materialization within the run, then downstream pending
         # materializations will (in general) read from the current state of the data

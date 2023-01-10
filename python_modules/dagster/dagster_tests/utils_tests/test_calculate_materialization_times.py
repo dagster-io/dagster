@@ -3,7 +3,6 @@ from collections import defaultdict
 
 import mock
 import pytest
-
 from dagster import (
     AssetKey,
     AssetOut,
@@ -97,7 +96,7 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 def test_caching_instance_queryer(
     ignore_asset_tags, relative_to, runs_to_expected_data_times_index
 ):
-    """
+    r"""
     A = B = D = F
      \\  //
        C = E
@@ -149,7 +148,6 @@ def test_caching_instance_queryer(
         return set().union(*(_get_root_keys(upstream_key) for upstream_key in upstream_keys))
 
     with DagsterInstance.ephemeral() as instance:
-
         # mapping from asset key to a mapping of materialization timestamp to run index
         materialization_times_index = defaultdict(dict)
 

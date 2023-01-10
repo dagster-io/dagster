@@ -127,7 +127,7 @@ def generate_asset_dep_graph(
 
 
 def generate_dep_graph(pipeline_def: "PipelineDefinition") -> DependencyGraph:
-    """'pipeline to dependency graph. It currently only supports top-level solids.
+    """Pipeline to dependency graph. It currently only supports top-level solids.
 
     Args:
         pipeline (PipelineDefinition): The pipeline to execute.
@@ -476,7 +476,10 @@ def parse_step_selection(
     invalid_keys = [key for key in step_keys if key not in step_deps]
     if invalid_keys:
         raise DagsterExecutionStepNotFoundError(
-            f"Step selection refers to unknown step{'s' if len(invalid_keys)> 1 else ''}: {', '.join(invalid_keys)}",
+            (
+                f"Step selection refers to unknown step{'s' if len(invalid_keys)> 1 else ''}:"
+                f" {', '.join(invalid_keys)}"
+            ),
             step_keys=invalid_keys,
         )
 

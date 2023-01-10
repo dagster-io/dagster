@@ -7,12 +7,11 @@ create an Airbyte Connection between the source database and destination databas
 import random
 from typing import Any, Dict, Mapping
 
+import dagster._check as check
 import numpy as np
 import pandas as pd
 from dagster_airbyte import AirbyteResource
 from dagster_postgres.utils import get_conn_string
-
-import dagster._check as check
 
 from .constants import PG_DESTINATION_CONFIG, PG_SOURCE_CONFIG
 
@@ -118,7 +117,6 @@ def setup_airbyte():
 
 
 def _random_dates():
-
     start = pd.to_datetime("2021-01-01")
     end = pd.to_datetime("2022-01-01")
 

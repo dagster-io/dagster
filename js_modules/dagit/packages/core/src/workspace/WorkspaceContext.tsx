@@ -160,10 +160,7 @@ const ROOT_WORKSPACE_QUERY = graphql(`
  * in the workspace, and loading/error state for the relevant query.
  */
 const useWorkspaceState = (): WorkspaceState => {
-  const {data, loading, refetch} = useQuery(ROOT_WORKSPACE_QUERY, {
-    fetchPolicy: 'cache-and-network',
-  });
-
+  const {data, loading, refetch} = useQuery(ROOT_WORKSPACE_QUERY);
   const workspaceOrError = data?.workspaceOrError;
 
   const locationEntries = React.useMemo(

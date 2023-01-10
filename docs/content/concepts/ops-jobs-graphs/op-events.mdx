@@ -47,6 +47,7 @@ type is also generic, for use with return annotations:
 from dagster import Output, op
 from typing import Tuple
 
+
 # Using Output as type annotation without inner type
 @op
 def my_output_op() -> Output:
@@ -159,7 +160,7 @@ To learn more about assets and how they are surfaced once you send this event, c
 Attaching metadata to Asset Materializations is an important way of tracking aspects of a given asset over time. This functions essentially identically to other events which accept a `metadata` parameter, allowing you to attach a set of structured labels and values to display.
 
 ```python file=concepts/assets/materialization_ops.py startafter=start_materialization_ops_marker_2 endbefore=end_materialization_ops_marker_2
-from dagster import op, AssetMaterialization, MetadataValue
+from dagster import AssetMaterialization, MetadataValue, op
 
 
 @op

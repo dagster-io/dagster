@@ -1,3 +1,7 @@
+## 1.0.8 (January 6, 2022)
+
+- Remove `missing-graphql-variables-type`, which is no longer needed now that we're using `graphql-codegen` instead of Apollo codegen.
+
 ## 1.0.7 (December 22, 2022)
 
 - Disallow `moment`

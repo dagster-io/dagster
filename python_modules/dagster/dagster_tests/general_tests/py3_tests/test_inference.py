@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
-
 from dagster import (
     DagsterInvalidDefinitionError,
     DagsterType,
@@ -157,7 +156,7 @@ def test_kitchen_sink():
         s: str,
         x: Any,
         o: Optional[str],
-        l: List[str],
+        m: List[str],
         c: Custom,
     ):  # pylint: disable=unused-argument
         pass
@@ -171,7 +170,7 @@ def test_kitchen_sink():
     assert sink.input_defs[2].name == "f"
     assert sink.input_defs[2].dagster_type.unique_name == "Float"
 
-    assert sink.input_defs[3].name == "l"
+    assert sink.input_defs[3].name == "m"
     assert sink.input_defs[3].dagster_type.kind == DagsterTypeKind.LIST
 
     assert sink.input_defs[4].name == "n"

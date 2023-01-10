@@ -15,5 +15,5 @@ def hash_str(in_str: str) -> str:
 
 
 def serialize_pp(value: tuple) -> str:
-    """serialize and pretty print"""
+    """Serialize and pretty print."""
     return serialize_dagster_namedtuple(value, indent=2, separators=(",", ": "))

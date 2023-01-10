@@ -231,7 +231,7 @@ pytest my_dagster_project_tests
 
 If you want to enable Dagster [schedules](/concepts/partitions-schedules-sensors/schedules) or [sensors](/concepts/partitions-schedules-sensors/sensors), you will need to start a [Dagster Daemon](/deployment/dagster-daemon).
 
-Start a daemon process in the same folder as your `workspace.yaml` file, but in a different shell or terminal:
+Start a daemon process in the same folder as your `pyproject.toml` file, but in a different shell or terminal:
 
 ```bash
 dagster-daemon run
@@ -253,4 +253,4 @@ Once your project is ready to move to production, check out our recommendation f
 Check out the following resources to learn more about deployment options:
 
 - [Dagster Cloud](/dagster-cloud) - Deploy using Dagster-managed infrastructure
-- [Your own infrastrucutre](/deployment) - Deploy to your own infrastructure, such as Docker, Kubernetes, Amazon Web Services, etc.
+- [Your own infrastructure](/deployment) - Deploy to your own infrastructure, such as Docker, Kubernetes, Amazon Web Services, etc.

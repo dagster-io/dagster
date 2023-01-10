@@ -3,8 +3,10 @@ from typing import Any, Callable, Mapping, Optional, TypeVar, Union
 
 from typing_extensions import Self
 
-from dagster import Field
-from dagster import _check as check
+from dagster import (
+    Field,
+    _check as check,
+)
 from dagster._config import EvaluateValueResult
 
 from .definition_config_schema import (
@@ -168,12 +170,12 @@ def _check_configurable_param(configurable: ConfigurableDefinition) -> None:
         not isinstance(configurable, PendingNodeInvocation),
         "configurable",
         (
-            "You have invoked `configured` on a PendingNodeInvocation (an intermediate type), which is "
-            "produced by aliasing or tagging a solid definition. To configure a solid, you must "
-            "call `configured` on either a SolidDefinition and CompositeSolidDefinition. To fix "
-            "this error, make sure to call `configured` on the definition object *before* using "
-            "the `tag` or `alias` methods. For usage examples, see "
-            "https://docs.dagster.io/concepts/configuration/configured"
+            "You have invoked `configured` on a PendingNodeInvocation (an intermediate type), which"
+            " is produced by aliasing or tagging a solid definition. To configure a solid, you must"
+            " call `configured` on either a SolidDefinition and CompositeSolidDefinition. To fix"
+            " this error, make sure to call `configured` on the definition object *before* using"
+            " the `tag` or `alias` methods. For usage examples, see"
+            " https://docs.dagster.io/concepts/configuration/configured"
         ),
     )
     check.inst_param(
@@ -181,10 +183,10 @@ def _check_configurable_param(configurable: ConfigurableDefinition) -> None:
         "configurable",
         ConfigurableDefinition,
         (
-            "Only the following types can be used with the `configured` method: ResourceDefinition, "
-            "ExecutorDefinition, CompositeSolidDefinition, SolidDefinition, and LoggerDefinition. "
-            "For usage examples of `configured`, see "
-            "https://docs.dagster.io/concepts/configuration/configured"
+            "Only the following types can be used with the `configured` method: ResourceDefinition,"
+            " ExecutorDefinition, CompositeSolidDefinition, SolidDefinition, and LoggerDefinition."
+            " For usage examples of `configured`, see"
+            " https://docs.dagster.io/concepts/configuration/configured"
         ),
     )
 

@@ -1,12 +1,16 @@
 import hashlib
 
+from dagster import (
+    In,
+    List,
+    Nothing,
+    Out,
+    _check as check,
+    op,
+)
 from dagster_pandas import DataFrame
 from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
 from google.cloud.bigquery.table import EncryptionConfiguration, TimePartitioning
-
-from dagster import In, List, Nothing, Out
-from dagster import _check as check
-from dagster import op
 
 from .configs import (
     define_bigquery_create_dataset_config,

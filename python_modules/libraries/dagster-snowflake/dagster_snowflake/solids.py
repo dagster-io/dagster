@@ -1,6 +1,8 @@
-from dagster import Nothing
-from dagster import _check as check
-from dagster import op
+from dagster import (
+    Nothing,
+    _check as check,
+    op,
+)
 from dagster._legacy import InputDefinition, solid
 
 

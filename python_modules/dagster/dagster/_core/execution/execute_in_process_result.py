@@ -74,7 +74,6 @@ class ExecuteInProcessResult(ExecutionResult):
         step_key = str(handle)
         output_found = False
         for step_output_handle, value in self._output_capture.items():
-
             # For the mapped output case, where step keys are in the format
             # "step_key[upstream_mapped_output_name]" within the step output handle.
             if (

@@ -1,5 +1,6 @@
 import pytest
 import yaml
+from dagster._core.instance.config import schedules_daemon_config, sensors_daemon_config
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from kubernetes import client as k8s_client
 from kubernetes.client import models
@@ -17,8 +18,6 @@ from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.subschema.user_deployments import UserDeployments
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
-
-from dagster._core.instance.config import schedules_daemon_config, sensors_daemon_config
 
 from .utils import create_simple_user_deployment
 
@@ -207,6 +206,20 @@ def test_queued_run_coordinator_unique_values(
     ]
 
 
+def test_run_monitoring_defaults(
+    instance_template: HelmTemplate,
+):  # pylint: disable=redefined-outer-name
+    helm_values = DagsterHelmValues.construct()
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert "run_monitoring" not in instance
+
+
 def test_run_monitoring(
     instance_template: HelmTemplate,
 ):  # pylint: disable=redefined-outer-name
@@ -221,6 +234,42 @@ def test_run_monitoring(
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
 
     assert instance["run_monitoring"]["enabled"] is True
+
+    assert "max_resume_run_attempts" not in instance["run_monitoring"]
+
+
+def test_run_monitoring_no_max_resume_run_attempts(
+    instance_template: HelmTemplate,
+):  # pylint: disable=redefined-outer-name
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(runMonitoring={"enabled": True, "maxResumeRunAttempts": 0})
+    )
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["run_monitoring"]["enabled"] is True
+    assert instance["run_monitoring"]["max_resume_run_attempts"] == 0
+
+
+def test_run_monitoring_set_max_resume_run_attempts(
+    instance_template: HelmTemplate,
+):  # pylint: disable=redefined-outer-name
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(runMonitoring={"enabled": True, "maxResumeRunAttempts": 2})
+    )
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["run_monitoring"]["enabled"] is True
+    assert instance["run_monitoring"]["max_resume_run_attempts"] == 2
 
 
 def test_run_retries(

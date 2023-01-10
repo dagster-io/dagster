@@ -26,7 +26,6 @@ export const RunRoot = () => {
   const {runId} = useParams<{runId: string}>();
 
   const {data, loading} = useQuery(RUN_ROOT_QUERY, {
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     variables: {runId},
   });

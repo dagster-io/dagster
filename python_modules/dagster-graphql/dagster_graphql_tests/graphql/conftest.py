@@ -1,7 +1,6 @@
 import tempfile
 
 import pytest
-
 from dagster._core.test_utils import instance_for_test
 
 from .repo import define_test_out_of_process_context

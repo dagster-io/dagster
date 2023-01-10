@@ -20,7 +20,6 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
   const endSec = end / 1000.0;
 
   const queryData = useQuery(RUN_TIMELINE_QUERY, {
-    fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
     variables: {
       inProgressFilter: {

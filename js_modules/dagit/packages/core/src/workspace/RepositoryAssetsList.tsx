@@ -55,7 +55,6 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
 
   const {data, error, loading} = useQuery(REPOSITORY_ASSETS_LIST_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {repositorySelector},
   });
 

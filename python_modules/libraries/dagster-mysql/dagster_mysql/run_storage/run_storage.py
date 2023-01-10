@@ -1,9 +1,7 @@
 from typing import Mapping
 
-import sqlalchemy as db
-from packaging.version import parse
-
 import dagster._check as check
+import sqlalchemy as db
 from dagster._core.storage.config import mysql_config
 from dagster._core.storage.runs import (
     DaemonHeartbeatsTable,
@@ -20,6 +18,7 @@ from dagster._core.storage.sql import (
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster._utils import utc_datetime_from_timestamp
+from packaging.version import parse
 
 from ..utils import (
     create_mysql_connection,

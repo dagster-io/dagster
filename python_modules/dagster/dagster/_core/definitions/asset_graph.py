@@ -63,6 +63,13 @@ class AssetGraph:
         return self._source_asset_keys
 
     @property
+    def root_asset_keys(self) -> AbstractSet[AssetKey]:
+        """Non-source asset keys that have no non-source parents."""
+        from .asset_selection import AssetSelection
+
+        return AssetSelection.keys(*self.all_asset_keys).sources().resolve(self)
+
+    @property
     def freshness_policies_by_key(self):
         return self._freshness_policies_by_key
 
@@ -286,7 +293,8 @@ class AssetGraph:
                     visited.add(parent_key)
 
     def get_required_multi_asset_keys(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
-        """For a given asset_key, return the set of asset keys that must be materialized at the same time."""
+        """For a given asset_key, return the set of asset keys that must be materialized at the same time.
+        """
         if self._required_multi_asset_sets_by_key is None:
             raise DagsterInvariantViolationError(
                 "Required neighbor information not set when creating this AssetGraph"

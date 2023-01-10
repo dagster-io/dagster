@@ -6,9 +6,9 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {graphql} from '../graphql';
+import {InstigationType} from '../graphql/graphql';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {UnloadableSensors} from '../instigation/Unloadable';
-import {InstigationType} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -34,7 +34,6 @@ export const SensorsRoot = (props: Props) => {
       repositorySelector,
       instigationType: InstigationType.SENSOR,
     },
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });

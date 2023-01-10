@@ -118,7 +118,6 @@ def _composite_descent(
     """
 
     for solid in parent_stack.current_container.solids:
-
         current_stack = parent_stack.descend(solid)
         current_handle = current_stack.handle
 
@@ -302,9 +301,8 @@ def _get_error_lambda(current_stack):
 
 
 def _get_top_level_error_lambda(pipeline_def):
-    return lambda: (
-        f"The config mapping function on top-level graph {pipeline_def.graph.name} in job "
-        f"{pipeline_def.name} has thrown an unexpected error during its execution."
+    return (
+        lambda: f"The config mapping function on top-level graph {pipeline_def.graph.name} in job {pipeline_def.name} has thrown an unexpected error during its execution."
     )
 
 

@@ -39,7 +39,7 @@ def main(quiet: bool, extra_packages: List[str]) -> None:
 
     # Supported on all Python versions.
     install_targets += [
-        "-e python_modules/dagster[black,isort,mypy,test]",
+        "-e python_modules/dagster[black,mypy,ruff,test]",
         "-e python_modules/dagster-graphql",
         "-e python_modules/dagster-test",
         "-e python_modules/dagit",

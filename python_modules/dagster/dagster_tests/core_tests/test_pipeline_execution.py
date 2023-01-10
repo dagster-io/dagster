@@ -2,7 +2,6 @@ import uuid
 import warnings
 
 import pytest
-
 from dagster import (
     DependencyDefinition,
     Field,
@@ -14,9 +13,9 @@ from dagster import (
     Output,
     ResourceDefinition,
     String,
+    _check as check,
+    reconstructable,
 )
-from dagster import _check as check
-from dagster import reconstructable
 from dagster._core.definitions.dependency import DependencyStructure, OpNode
 from dagster._core.definitions.graph_definition import GraphDefinition, _create_adjacency_lists
 from dagster._core.definitions.job_definition import JobDefinition

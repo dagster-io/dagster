@@ -3,7 +3,6 @@ import threading
 
 import pendulum
 import pytest
-
 from dagster import AssetKey, materialize
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
@@ -67,7 +66,6 @@ def test_simple_parent_sensor(executor):
 
             freeze_datetime = freeze_datetime.add(seconds=60)
         with pendulum.test(freeze_datetime):
-
             materialize([x], instance=instance)
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
 
@@ -90,7 +88,6 @@ def test_simple_parent_sensor(executor):
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
-
             materialize([x], instance=instance)
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
 
@@ -113,7 +110,7 @@ def test_simple_parent_sensor(executor):
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_two_parents_AND_sensor(executor):
-    """Asset graph:
+    r"""Asset graph:
         x   z
         \   /
           d
@@ -146,7 +143,6 @@ def test_two_parents_AND_sensor(executor):
 
             freeze_datetime = freeze_datetime.add(seconds=60)
         with pendulum.test(freeze_datetime):
-
             materialize([x], instance=instance)
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
 
@@ -164,7 +160,6 @@ def test_two_parents_AND_sensor(executor):
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
-
             materialize([z], instance=instance)
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
 
@@ -187,7 +182,7 @@ def test_two_parents_AND_sensor(executor):
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_two_parents_OR_sensor(executor):
-    """Asset graph:
+    r"""Asset graph:
         x   z
         \   /
           d
@@ -222,7 +217,6 @@ def test_two_parents_OR_sensor(executor):
 
             freeze_datetime = freeze_datetime.add(seconds=60)
         with pendulum.test(freeze_datetime):
-
             materialize([x], instance=instance)
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
 
@@ -244,7 +238,6 @@ def test_two_parents_OR_sensor(executor):
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
-
             materialize([z], instance=instance)
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
 
@@ -267,7 +260,7 @@ def test_two_parents_OR_sensor(executor):
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_two_downstream_OR_sensor(executor):
-    """Asset graph:
+    r"""Asset graph:
         x   z   e
         \   /\  /
           d    f
@@ -307,7 +300,6 @@ def test_two_downstream_OR_sensor(executor):
 
             freeze_datetime = freeze_datetime.add(seconds=60)
         with pendulum.test(freeze_datetime):
-
             materialize([x], instance=instance)
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
 
@@ -332,7 +324,6 @@ def test_two_downstream_OR_sensor(executor):
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
-
             materialize([e], instance=instance)
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
 
@@ -357,7 +348,6 @@ def test_two_downstream_OR_sensor(executor):
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
-
             materialize([z], instance=instance)
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
 
@@ -382,7 +372,7 @@ def test_two_downstream_OR_sensor(executor):
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_layered_sensor(executor):
-    """Asset graph:
+    r"""Asset graph:
         x       z       e
         \       /\      /
             d       f
@@ -417,7 +407,6 @@ def test_layered_sensor(executor):
 
             freeze_datetime = freeze_datetime.add(seconds=60)
         with pendulum.test(freeze_datetime):
-
             materialize([x, z, e], instance=instance)
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
 
@@ -440,7 +429,7 @@ def test_layered_sensor(executor):
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_layered_AND_sensor_no_materialize(executor):
-    """Asset graph:
+    r"""Asset graph:
         x       z       e
         \       /\      /
             d       f
@@ -475,7 +464,6 @@ def test_layered_AND_sensor_no_materialize(executor):
 
             freeze_datetime = freeze_datetime.add(seconds=60)
         with pendulum.test(freeze_datetime):
-
             materialize([x, z, e], instance=instance)
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
 
@@ -493,7 +481,7 @@ def test_layered_AND_sensor_no_materialize(executor):
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_layered_OR_sensor_no_materialize(executor):
-    """Asset graph:
+    r"""Asset graph:
         x       z       e
         \       /\      /
             d       f
@@ -528,7 +516,6 @@ def test_layered_OR_sensor_no_materialize(executor):
 
             freeze_datetime = freeze_datetime.add(seconds=60)
         with pendulum.test(freeze_datetime):
-
             materialize([x, z, e], instance=instance)
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
 
@@ -589,7 +576,6 @@ def test_lots_of_materializations_sensor(executor):
 
             freeze_datetime = freeze_datetime.add(seconds=60)
         with pendulum.test(freeze_datetime):
-
             evaluate_sensors(workspace_ctx, executor)
 
             ticks = instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
@@ -604,7 +590,7 @@ def test_lots_of_materializations_sensor(executor):
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_many_materializations_for_one_parent_sensor(executor):
-    """Asset graph:
+    r"""Asset graph:
         x    z
         |\   /
         y  d
@@ -638,7 +624,6 @@ def test_many_materializations_for_one_parent_sensor(executor):
 
             freeze_datetime = freeze_datetime.add(seconds=60)
         with pendulum.test(freeze_datetime):
-
             materialize([x], instance=instance)
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
 
@@ -661,7 +646,6 @@ def test_many_materializations_for_one_parent_sensor(executor):
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
-
             materialize([x], instance=instance)
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
 
@@ -684,7 +668,6 @@ def test_many_materializations_for_one_parent_sensor(executor):
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
-
             materialize([z], instance=instance)
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
 
@@ -741,7 +724,6 @@ def test_two_graph_sensor(executor):
 
             freeze_datetime = freeze_datetime.add(seconds=60)
         with pendulum.test(freeze_datetime):
-
             materialize([x], instance=instance)
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
 
@@ -764,7 +746,6 @@ def test_two_graph_sensor(executor):
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
-
             materialize([h], instance=instance)
             wait_for_all_runs_to_finish(instance, timeout=TIMEOUT)
 
@@ -787,7 +768,7 @@ def test_two_graph_sensor(executor):
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
 def test_parent_in_progress_stops_materialization(executor):
-    """Asset graph:
+    r"""Asset graph:
         sleeper    x
             \      /
         waits_on_sleep
@@ -979,7 +960,6 @@ def test_with_tags(executor):
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
-
             y_sensor = external_repo.get_external_sensor("just_y_AND")
             instance.start_sensor(y_sensor)
 

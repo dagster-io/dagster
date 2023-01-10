@@ -3,22 +3,20 @@ import {Button, DialogBody, DialogFooter, Dialog} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {graphql} from '../graphql';
+import {BackfillTableFragmentFragment, BulkActionStatus} from '../graphql/graphql';
 import {cancelableStatuses} from '../runs/RunStatuses';
 import {TerminationDialog} from '../runs/TerminationDialog';
-import {BulkActionStatus} from '../types/globalTypes';
 
 import {SINGLE_BACKFILL_QUERY} from './BackfillRow';
-import {BackfillTableFragment} from './types/BackfillTableFragment';
 
 interface Props {
-  backfill?: BackfillTableFragment;
+  backfill?: BackfillTableFragmentFragment;
   onClose: () => void;
   onComplete: () => void;
 }
 export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props) => {
   const [cancelBackfill] = useMutation(CANCEL_BACKFILL_MUTATION);
   const {data} = useQuery(SINGLE_BACKFILL_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {
       backfillId: backfill?.backfillId || '',
     },

@@ -1,6 +1,6 @@
 import {MainContent} from '@dagster-io/ui';
 import * as React from 'react';
-import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
+import {Route, Switch, useLocation} from 'react-router-dom';
 
 const UserSettingsRoot = React.lazy(() => import('./UserSettingsRoot'));
 const WorkspaceRoot = React.lazy(() => import('../workspace/WorkspaceRoot'));
@@ -29,25 +29,6 @@ export const ContentRoot = React.memo(() => {
   return (
     <MainContent ref={main}>
       <Switch>
-        {/* todo dish: These /instance routes are for backward compatibility. Remove them
-        in November or December 2022. */}
-        <Route path="/instance" exact render={() => <Redirect to="/locations" />} />
-        <Route
-          path="/instance/*"
-          exact
-          render={({match}) => {
-            const {url} = match;
-            return <Redirect to={url.replace('/instance', '')} />;
-          }}
-        />
-        <Route
-          path="/workspace/*"
-          exact
-          render={({match}) => {
-            const {url} = match;
-            return <Redirect to={url.replace('/workspace', '/locations')} />;
-          }}
-        />
         <Route path="/asset-groups(/?.*)">
           <React.Suspense fallback={<div />}>
             <AssetsGroupsGlobalGraphRoot />

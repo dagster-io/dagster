@@ -39,7 +39,6 @@ export const InstanceConfig = React.memo(() => {
 
   const {pageTitle} = React.useContext(InstancePageContext);
   const queryResult = useQuery(INSTANCE_CONFIG_QUERY, {
-    fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
   });
 

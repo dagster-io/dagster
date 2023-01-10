@@ -49,7 +49,8 @@ class BranchingIOManager(IOManager):
 
     Some storage systems branching functionality natively. Examples include Snowflake's
     CLONE feature. Branching I/O managers allow users to implement that functionality
-    in more flexible software layer over arbitrary storage systems."""
+    in more flexible software layer over arbitrary storage systems.
+    """
 
     def __init__(
         self,
@@ -79,7 +80,8 @@ class BranchingIOManager(IOManager):
             == self.branch_name
         ):
             context.log.info(
-                f'Branching Manager: Loading "{context.asset_key.to_user_string()}" from "{self.branch_name}"'
+                f'Branching Manager: Loading "{context.asset_key.to_user_string()}" from'
+                f' "{self.branch_name}"'
             )
             return self.branch_io_manager.load_input(context)
 
@@ -96,5 +98,6 @@ class BranchingIOManager(IOManager):
         context.add_output_metadata({self.branch_metadata_key: self.branch_name})
 
         context.log.info(
-            f'Branching Manager: Writing "{context.asset_key.to_user_string()}" to branch "{self.branch_name}"'
+            f'Branching Manager: Writing "{context.asset_key.to_user_string()}" to branch'
+            f' "{self.branch_name}"'
         )

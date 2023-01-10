@@ -1,15 +1,14 @@
 import re
 
 import pytest
-
 from dagster import (
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
     DependencyDefinition,
     MetadataEntry,
     Output,
+    _check as check,
 )
-from dagster import _check as check
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
 from dagster._legacy import (
@@ -58,7 +57,7 @@ def test_compute_failure_pipeline():
 
 
 def test_failure_midstream():
-    """
+    r"""
     A
      \\
        C (fails) = D (skipped)
@@ -99,7 +98,7 @@ def test_failure_midstream():
 
 
 def test_failure_propagation():
-    """
+    r"""
       B =========== C
      //             \\
     A                F (skipped)

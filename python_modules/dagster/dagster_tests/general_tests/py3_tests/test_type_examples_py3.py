@@ -8,7 +8,6 @@ import tempfile
 import time
 
 import pytest
-
 from dagster import (
     Any,
     Bool,
@@ -26,9 +25,10 @@ from dagster import (
     Set,
     String,
     Tuple,
+    _check as check,
+    job,
+    op,
 )
-from dagster import _check as check
-from dagster import job, op
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
@@ -347,7 +347,7 @@ def hello_world(context) -> str:
     if "haw" in context.op_config:
         return "Aloha honua!"
     if "cn" in context.op_config:
-        return "你好，世界!"
+        return "你好,世界!"
     return "Hello, world!"
 
 
@@ -368,7 +368,7 @@ def hello_world_default(context) -> str:
     if "haw" in context.op_config:
         return "Aloha {whom}!".format(whom=context.op_config["haw"]["whom"])
     if "cn" in context.op_config:
-        return "你好，{whom}!".format(whom=context.op_config["cn"]["whom"])
+        return "你好,{whom}!".format(whom=context.op_config["cn"]["whom"])
     if "en" in context.op_config:
         return "Hello, {whom}!".format(whom=context.op_config["en"]["whom"])
     assert False, "invalid op_config"

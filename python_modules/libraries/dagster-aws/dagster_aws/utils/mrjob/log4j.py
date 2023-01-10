@@ -44,7 +44,7 @@ class Log4jRecord(
         "_Log4jRecord", "caller_location level logger message num_lines start_line thread timestamp"
     )
 ):
-    """Represents a Log4J log record.
+    r"""Represents a Log4J log record.
 
     caller_location -- e.g. 'YarnClientImpl.java:submitApplication(251)'
     level -- e.g. 'INFO'
@@ -82,7 +82,7 @@ class Log4jRecord(
 
 
 def parse_hadoop_log4j_records(lines):
-    """Parse lines from a hadoop log into log4j records.
+    r"""Parse lines from a hadoop log into log4j records.
 
     Yield Log4jRecords.
 

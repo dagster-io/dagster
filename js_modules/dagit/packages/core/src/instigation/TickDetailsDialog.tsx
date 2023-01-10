@@ -6,9 +6,8 @@ import * as React from 'react';
 import {copyValue} from '../app/DomUtils';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {graphql} from '../graphql';
-import {InstigationSelector} from '../graphql/graphql';
+import {InstigationSelector, InstigationTickStatus} from '../graphql/graphql';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {InstigationTickStatus} from '../types/globalTypes';
 
 import {FailedRunList, RunList, TickTag} from './InstigationTick';
 
@@ -19,7 +18,6 @@ export const TickDetailsDialog: React.FC<{
 }> = ({timestamp, instigationSelector, onClose}) => {
   const {data} = useQuery(JOB_SELECTED_TICK_QUERY, {
     variables: {instigationSelector, timestamp: timestamp || 0},
-    fetchPolicy: 'cache-and-network',
     skip: !timestamp,
     partialRefetch: true,
   });

@@ -32,6 +32,7 @@ import {tokenForAssetKey} from '../asset-graph/Utils';
 import {responseToYamlValidationResult} from '../configeditor/ConfigEditorUtils';
 import {graphql} from '../graphql';
 import {
+  ConfigEditorPipelinePresetFragment,
   ConfigPartitionSelectionQueryQuery,
   ConfigPartitionSelectionQueryQueryVariables,
   LaunchpadSessionPartitionSetsFragmentFragment,
@@ -59,14 +60,13 @@ import {RunPreview} from './RunPreview';
 import {SessionSettingsBar} from './SessionSettingsBar';
 import {TagContainer, TagEditor} from './TagEditor';
 import {scaffoldPipelineConfig} from './scaffoldType';
-import {ConfigEditorGeneratorPipelineFragment_presets} from './types/ConfigEditorGeneratorPipelineFragment';
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 const LOADING_CONFIG_FOR_PARTITION = `Generating configuration...`;
 const LOADING_CONFIG_SCHEMA = `Loading config schema...`;
 const LOADING_RUN_PREVIEW = `Checking config...`;
 
-type Preset = ConfigEditorGeneratorPipelineFragment_presets;
+type Preset = ConfigEditorPipelinePresetFragment;
 
 interface LaunchpadSessionProps {
   session: IExecutionSession;
@@ -185,7 +185,6 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
 
   const configResult = useQuery(PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY, {
     variables: {selector: pipelineSelector, mode: currentSession?.mode},
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
   });
 

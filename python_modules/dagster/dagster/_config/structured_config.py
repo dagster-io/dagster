@@ -1,5 +1,9 @@
 import inspect
 
+from dagster._config.config_type import ConfigType
+from dagster._config.source import BoolSource, IntSource, StringSource
+from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
+
 try:
     from functools import cached_property
 except ImportError:
@@ -9,15 +13,16 @@ except ImportError:
 
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, cast
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 from pydantic.fields import SHAPE_SINGLETON, ModelField
 
 import dagster._check as check
 from dagster import Field, Shape
 from dagster._config.field_utils import (
     FIELD_NO_DEFAULT_PROVIDED,
+    Permissive,
     config_dictionary_from_values,
     convert_potential_field,
 )
@@ -25,22 +30,72 @@ from dagster._core.definitions.resource_definition import ResourceDefinition, Re
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 
 
-class Config(BaseModel):
+class MakeConfigCacheable(BaseModel):
+    """This class centralizes and implements all the chicanery we need in order
+    to support caching decorators. If we decide this is a bad idea we can remove it
+    all in one go.
+    """
+
+    # Pydantic config for this class
+    # Cannot use kwargs for base class as this is not support for pydnatic<1.8
+    class Config:
+        # Various pydantic model config (https://docs.pydantic.dev/usage/model_config/)
+        # Necessary to allow for caching decorators
+        arbitrary_types_allowed = True
+        # Avoid pydantic reading a cached property class as part of the schema
+        keep_untouched = (cached_property,)
+        # Ensure the class is serializable, for caching purposes
+        frozen = True
+
+    def __setattr__(self, name: str, value: Any):
+        # This is a hack to allow us to set attributes on the class that are not part of the
+        # config schema. Pydantic will normally raise an error if you try to set an attribute
+        # that is not part of the schema.
+
+        if name.startswith("_") or name.endswith("_cache"):
+            object.__setattr__(self, name, value)
+            return
+
+        return super().__setattr__(name, value)
+
+
+class Config(MakeConfigCacheable):
     """
     Base class for Dagster configuration models.
     """
 
 
+class PermissiveConfig(Config):
+    # Pydantic config for this class
+    # Cannot use kwargs for base class as this is not support for pydantic<1.8
+    class Config:
+        extra = "allow"
+
+    """
+    Base class for Dagster configuration models that allow arbitrary extra fields.
+    """
+
+
+def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSchema:
+    """Return a new config schema configured with the passed in data"""
+
+    # We don't do anything with this resource definition, other than
+    # use it to construct configured schema
+    inner_resource_def = ResourceDefinition(lambda _: None, schema_field)
+    configured_resource_def = inner_resource_def.configured(
+        config_dictionary_from_values(
+            data,
+            schema_field,
+        ),
+    )
+    # this cast required to make mypy happy, which does not support Self
+    configured_resource_def = cast(ResourceDefinition, configured_resource_def)
+    return configured_resource_def.config_schema
+
+
 class Resource(
     ResourceDefinition,
     Config,
-    # Various pydantic model config (https://docs.pydantic.dev/usage/model_config/)
-    # Necessary to allow for caching decorators
-    arbitrary_types_allowed=True,
-    # Avoid pydantic reading a cached property class as part of the schema
-    keep_untouched=(cached_property,),
-    # Ensure the class is serializable, for caching purposes
-    frozen=True,
 ):
     """
     Base class for Dagster resources that utilize structured config.
@@ -62,39 +117,23 @@ class Resource(
 
     def __init__(self, **data: Any):
         schema = infer_schema_from_config_class(self.__class__)
-
-        inner_resource_def = ResourceDefinition(self.resource_function, schema)
-        configured_resource_def = inner_resource_def.configured(
-            config_dictionary_from_values(
-                data,
-                schema,
-            ),
-        )
-
         Config.__init__(self, **data)
         ResourceDefinition.__init__(
             self,
-            resource_fn=self.resource_function,
-            # mypy worries that configured_resource_def could be self, which
-            # has not had config_schema initialized yet, but we know that's not the case
-            config_schema=configured_resource_def.config_schema,  # type: ignore[attr-defined]
+            resource_fn=self.create_object_to_pass_to_user_code,
+            config_schema=_curry_config_schema(schema, data),
             description=self.__doc__,
         )
 
-    def __setattr__(self, name: str, value: Any):
-        # This is a hack to allow us to set attributes on the class that are not part of the
-        # config schema. Pydantic will normally raise an error if you try to set an attribute
-        # that is not part of the schema.
+    def create_object_to_pass_to_user_code(self, context) -> Any:  # pylint: disable=unused-argument
+        """
+        Returns the object that this resource hands to user code, accessible by ops or assets
+        through the context or resource parameters. This works like the function decorated
+        with @resource when using function-based resources.
 
-        if name.startswith("_") or name.endswith("_cache"):
-            object.__setattr__(self, name, value)
-            return
-
-        return super().__setattr__(name, value)
-
-    def resource_function(self, context) -> Any:  # pylint: disable=unused-argument
-        # Default behavior, for "new-style" resources, is to return the resource itself, so that
-        # initialization is a no-op
+        Default behavior for new class-based resources is to return itself, passing
+        the actual resource object to user code.
+        """
         return self
 
 
@@ -153,38 +192,17 @@ class StructuredConfigIOManagerBase(IOManagerDefinition, Config, ABC):
 
     def __init__(self, **data: Any):
         schema = infer_schema_from_config_class(self.__class__)
-
-        inner_resource_def = ResourceDefinition(self.resource_function, schema)
-        configured_resource_def = inner_resource_def.configured(
-            config_dictionary_from_values(
-                data,
-                schema,
-            ),
-        )
-
         Config.__init__(self, **data)
         IOManagerDefinition.__init__(
             self,
-            resource_fn=self.resource_function,
-            # mypy worries that configured_resource_def could be self, which
-            # has not had config_schema initialized yet, but we know that's not the case
-            config_schema=configured_resource_def.config_schema,  # type: ignore[attr-defined]
+            resource_fn=self.create_io_manager_to_pass_to_user_code,
+            config_schema=_curry_config_schema(schema, data),
             description=self.__doc__,
         )
 
-    def __setattr__(self, name: str, value: Any):
-        # This is a hack to allow us to set attributes on the class that are not part of the
-        # config schema. Pydantic will normally raise an error if you try to set an attribute
-        # that is not part of the schema.
-
-        if name.startswith("_"):
-            object.__setattr__(self, name, value)
-            return
-
-        return super().__setattr__(name, value)
-
     @abstractmethod
-    def resource_function(self, context) -> IOManager:
+    def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
+        """Implement as one would implement a @io_manager decorator function"""
         raise NotImplementedError()
 
 
@@ -197,7 +215,7 @@ class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
     :py:meth:`handle_output` and :py:meth:`load_input` methods.
     """
 
-    def resource_function(self, context) -> IOManager:
+    def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
         return self
 
 
@@ -211,18 +229,61 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
             pydantic_field.type_, description=pydantic_field.field_info.description
         )
 
-    dagster_type = pydantic_field.type_
     if pydantic_field.shape != SHAPE_SINGLETON:
         raise NotImplementedError(f"Pydantic shape {pydantic_field.shape} not supported")
 
-    inner_config_type = convert_potential_field(dagster_type).config_type
     return Field(
-        config=inner_config_type,
+        config=_config_type_for_pydantic_field(pydantic_field),
         description=pydantic_field.field_info.description,
+        is_required=_is_pydantic_field_required(pydantic_field),
         default_value=pydantic_field.default
         if pydantic_field.default
         else FIELD_NO_DEFAULT_PROVIDED,
     )
+
+
+def _config_type_for_pydantic_field(pydantic_field: ModelField) -> ConfigType:
+    return _config_type_for_type_on_pydantic_field(pydantic_field.type_)
+
+
+def _config_type_for_type_on_pydantic_field(potential_dagster_type: Any) -> ConfigType:
+    # special case raw python literals to their source equivalents
+    if potential_dagster_type is str:
+        return StringSource
+    elif potential_dagster_type is int:
+        return IntSource
+    elif potential_dagster_type is bool:
+        return BoolSource
+    else:
+        return convert_potential_field(potential_dagster_type).config_type
+
+
+def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
+    # required is of type BoolUndefined = Union[bool, UndefinedType] in Pydantic
+    if isinstance(pydantic_field.required, bool):
+        return pydantic_field.required
+
+    raise Exception(
+        "pydantic.field.required is their UndefinedType sentinel value which we "
+        "do not fully understand the semantics of right now. For the time being going "
+        "to throw an error to figure see when we actually encounter this state."
+    )
+
+
+class StructuredIOManagerAdapter(StructuredConfigIOManagerBase):
+    @property
+    @abstractmethod
+    def wrapped_io_manager(self) -> IOManagerDefinition:
+        raise NotImplementedError()
+
+    def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
+        raise NotImplementedError(
+            "Because we override resource_fn in the adapter, this is never called."
+        )
+
+    @property
+    def resource_fn(self) -> ResourceFunction:
+        return self.wrapped_io_manager.resource_fn
 
 
 def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any) -> Field:
@@ -237,7 +298,9 @@ def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any)
         )
         return infer_schema_from_config_class(model_cls)
 
-    inner_config_type = convert_potential_field(model_cls).config_type
+    # If were are here config is annotated with a primitive type
+    # We do a conversion to a type as if it were a type on a pydantic field
+    inner_config_type = _config_type_for_type_on_pydantic_field(model_cls)
     return Field(
         config=inner_config_type,
         default_value=FIELD_NO_DEFAULT_PROVIDED
@@ -250,7 +313,14 @@ def _safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
     """Version of issubclass that returns False if cls is not a Type."""
     if not isinstance(cls, type):
         return False
-    return issubclass(cls, possible_parent_cls)
+
+    try:
+        return issubclass(cls, possible_parent_cls)
+    except TypeError:
+        # Using builtin Python types in python 3.9+ will raise a TypeError when using issubclass
+        # even though the isinstance check will succeed (as will inspect.isclass), for example
+        # list[dict[str, str]] will raise a TypeError
+        return False
 
 
 def infer_schema_from_config_class(
@@ -266,8 +336,10 @@ def infer_schema_from_config_class(
     )
 
     fields = {}
-    for pydantic_field_name, pydantic_field in model_cls.__fields__.items():
-        fields[pydantic_field_name] = _convert_pydantic_field(pydantic_field)
+    for pydantic_field in model_cls.__fields__.values():
+        fields[pydantic_field.alias] = _convert_pydantic_field(pydantic_field)
+
+    shape_cls = Permissive if model_cls.__config__.extra == Extra.allow else Shape
 
     docstring = model_cls.__doc__.strip() if model_cls.__doc__ else None
-    return Field(config=Shape(fields), description=description or docstring)
+    return Field(config=shape_cls(fields), description=description or docstring)

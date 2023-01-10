@@ -3,6 +3,11 @@ import tempfile
 
 import pytest
 import yaml
+from dagster._config import process_config, resolve_to_config_type
+from dagster._core.instance.config import retention_config_schema
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.run_coordinator import QueuedRunCoordinator
+from dagster._core.test_utils import environ
 from dagster_aws.s3.compute_log_manager import S3ComputeLogManager
 from dagster_azure.blob.compute_log_manager import AzureBlobComputeLogManager
 from dagster_gcp.gcs.compute_log_manager import GCSComputeLogManager
@@ -10,16 +15,10 @@ from dagster_k8s import K8sRunLauncher
 from kubernetes.client import models
 from schema.charts.dagster.subschema.compute_log_manager import (
     AzureBlobComputeLogManager as AzureBlobComputeLogManagerModel,
-)
-from schema.charts.dagster.subschema.compute_log_manager import (
     ComputeLogManager,
     ComputeLogManagerConfig,
     ComputeLogManagerType,
-)
-from schema.charts.dagster.subschema.compute_log_manager import (
     GCSComputeLogManager as GCSComputeLogManagerModel,
-)
-from schema.charts.dagster.subschema.compute_log_manager import (
     S3ComputeLogManager as S3ComputeLogManagerModel,
 )
 from schema.charts.dagster.subschema.daemon import (
@@ -45,12 +44,6 @@ from schema.charts.dagster.subschema.run_launcher import (
 from schema.charts.dagster.subschema.telemetry import Telemetry
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.utils.helm_template import HelmTemplate
-
-from dagster._config import process_config, resolve_to_config_type
-from dagster._core.instance.config import retention_config_schema
-from dagster._core.instance.ref import InstanceRef
-from dagster._core.run_coordinator import QueuedRunCoordinator
-from dagster._core.test_utils import environ
 
 
 def to_camel_case(s: str) -> str:
@@ -179,7 +172,7 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
     assert run_launcher_config["config"]["volumes"] == volumes
     assert run_launcher_config["config"]["labels"] == labels
 
-    assert not "fail_pod_on_run_failure" in run_launcher_config["config"]
+    assert "fail_pod_on_run_failure" not in run_launcher_config["config"]
 
 
 def test_k8s_run_launcher_fail_pod_on_run_failure(template: HelmTemplate):
@@ -255,7 +248,6 @@ def _check_valid_run_launcher_yaml(dagster_config):
 
 
 def test_k8s_run_launcher_scheduler_name(template: HelmTemplate):
-
     helm_values = DagsterHelmValues.construct(
         runLauncher=RunLauncher.construct(
             type=RunLauncherType.K8S,
@@ -313,7 +305,6 @@ def test_k8s_run_launcher_security_context(template: HelmTemplate):
 
 
 def test_k8s_run_launcher_raw_k8s_config(template: HelmTemplate):
-
     container_config = {
         "resources": {
             "requests": {"cpu": "250m", "memory": "64Mi"},
@@ -443,7 +434,7 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
 
     assert run_launcher_config["config"]["service_account_name"] == "release-name-dagster"
 
-    assert not "fail_pod_on_run_failure" in run_launcher_config["config"]
+    assert "fail_pod_on_run_failure" not in run_launcher_config["config"]
 
     helm_values_with_image_pull_policy = DagsterHelmValues.construct(
         runLauncher=RunLauncher.construct(
@@ -820,7 +811,16 @@ def test_compute_log_manager_has_schema(json_schema_model, compute_log_manager_c
 )
 def test_run_coordinator_has_schema(json_schema_model, run_coordinator_class):
     json_schema_fields = json_schema_model.schema()["properties"].keys()
-    run_coordinator_fields = set(map(to_camel_case, run_coordinator_class.config_type().keys()))
+    run_coordinator_fields = set(
+        map(
+            to_camel_case,
+            {
+                key
+                for key in run_coordinator_class.config_type().keys()
+                if key not in {"user_code_failure_retry_delay", "max_user_code_failure_retries"}
+            },
+        )
+    )
 
     assert json_schema_fields == run_coordinator_fields
 

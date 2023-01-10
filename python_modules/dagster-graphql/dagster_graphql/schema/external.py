@@ -1,14 +1,10 @@
 import asyncio
 
 import graphene
-from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
-from dagster_graphql.implementation.loader import (
-    ProjectedLogicalVersionLoader,
-    RepositoryScopedBatchLoader,
+from dagster import (
+    DagsterInstance,
+    _check as check,
 )
-
-from dagster import DagsterInstance
-from dagster import _check as check
 from dagster._core.host_representation import (
     ExternalRepository,
     GrpcServerRepositoryLocation,
@@ -25,9 +21,16 @@ from dagster._core.workspace.context import (
     WorkspaceProcessContext,
 )
 
+from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
+from dagster_graphql.implementation.loader import (
+    ProjectedLogicalVersionLoader,
+    RepositoryScopedBatchLoader,
+)
+
 from .asset_graph import GrapheneAssetGroup, GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
 from .partition_sets import GraphenePartitionSet
+from .permissions import GraphenePermission
 from .pipelines.pipeline import GrapheneJob, GraphenePipeline
 from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin
 from .schedules import GrapheneSchedule
@@ -155,6 +158,8 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     updatedTimestamp = graphene.NonNull(graphene.Float)
 
+    permissions = graphene.Field(non_null_list(GraphenePermission))
+
     class Meta:
         name = "WorkspaceLocationEntry"
 
@@ -189,6 +194,10 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
 
     def resolve_updatedTimestamp(self, _):
         return self._location_entry.update_timestamp
+
+    def resolve_permissions(self, graphene_info):
+        permissions = graphene_info.context.permissions_for_location(self.name)
+        return [GraphenePermission(permission, value) for permission, value in permissions.items()]
 
 
 class GrapheneRepository(graphene.ObjectType):
@@ -361,7 +370,6 @@ class GrapheneLocationStateChangeSubscription(graphene.ObjectType):
 
 
 async def gen_location_state_changes(graphene_info: HasContext):
-
     # This lives on the process context and is never modified/destroyed, so we can
     # access it directly
     context = graphene_info.context.process_context

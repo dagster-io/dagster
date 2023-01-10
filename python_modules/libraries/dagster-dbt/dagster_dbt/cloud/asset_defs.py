@@ -14,8 +14,6 @@ from typing import (
     cast,
 )
 
-from dbt.main import parse_args as dbt_parse_args
-
 import dagster._check as check
 from dagster import (
     AssetKey,
@@ -37,6 +35,7 @@ from dagster._core.definitions.cacheable_assets import (
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.backcompat import experimental_arg_warning
+from dbt.main import parse_args as dbt_parse_args
 
 from ..asset_defs import (
     _get_asset_deps,

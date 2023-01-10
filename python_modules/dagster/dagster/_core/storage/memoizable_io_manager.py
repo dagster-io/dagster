@@ -47,8 +47,7 @@ class VersionedPickledObjectFilesystemIOManager(MemoizableIOManager):
         else:
             if context.upstream_output is None:
                 raise DagsterInvariantViolationError(
-                    "Missing value of InputContext.upstream_output. "
-                    "Cannot compute the input path."
+                    "Missing value of InputContext.upstream_output. Cannot compute the input path."
                 )
 
             output_context = context.upstream_output

@@ -18,14 +18,16 @@ import {useHistory} from 'react-router-dom';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {AssetKey} from '../assets/types';
 import {
   ConfigPartitionSelectionQueryQuery,
   ConfigPartitionSelectionQueryQueryVariables,
+  LaunchBackfillParams,
   LaunchPartitionBackfillMutation,
   LaunchPartitionBackfillMutationVariables,
+  PartitionDefinitionForLaunchAssetFragment,
 } from '../graphql/graphql';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
@@ -40,7 +42,6 @@ import {RepoAddress} from '../workspace/types';
 import {executionParamsForAssetJob} from './LaunchAssetExecutionButton';
 import {explodePartitionKeysInRanges, mergedAssetHealth} from './MultipartitioningSupport';
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
-import {LaunchAssetExecutionAssetNodeFragment_partitionDefinition} from './types/LaunchAssetExecutionAssetNodeFragment';
 import {usePartitionDimensionRanges} from './usePartitionDimensionRanges';
 import {PartitionHealthDimensionRange, usePartitionHealthData} from './usePartitionHealthData';
 import {usePartitionNameForPipeline} from './usePartitionNameForPipeline';
@@ -52,7 +53,7 @@ interface Props {
   assets: {
     assetKey: AssetKey;
     opNames: string[];
-    partitionDefinition: LaunchAssetExecutionAssetNodeFragment_partitionDefinition | null;
+    partitionDefinition: PartitionDefinitionForLaunchAssetFragment | null;
   }[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
 }
@@ -219,6 +220,18 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         setOpen(false);
       }
     } else {
+      const selectorUnlessGraph:
+        | LaunchBackfillParams['selector']
+        | undefined = !isHiddenAssetGroupJob(assetJobName)
+        ? {
+            partitionSetName: partitionSet.name,
+            repositorySelector: {
+              repositoryLocationName: repoAddress.location,
+              repositoryName: repoAddress.name,
+            },
+          }
+        : undefined;
+
       const {data: launchBackfillData} = await client.mutate<
         LaunchPartitionBackfillMutation,
         LaunchPartitionBackfillMutationVariables
@@ -226,13 +239,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         mutation: LAUNCH_PARTITION_BACKFILL_MUTATION,
         variables: {
           backfillParams: {
-            selector: {
-              partitionSetName: partitionSet.name,
-              repositorySelector: {
-                repositoryLocationName: repoAddress.location,
-                repositoryName: repoAddress.name,
-              },
-            },
+            selector: selectorUnlessGraph,
             assetSelection: assets.map((a) => ({path: a.assetKey.path})),
             partitionNames: allSelected.map((k) => k.partitionKey),
             fromFailure: false,

@@ -1,11 +1,7 @@
-import re
-
 import pytest
-
 from dagster import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
-    DagsterInvalidDefinitionError,
     Field,
     Int,
     Output,
@@ -187,9 +183,11 @@ def test_config_mapper_throws():
 
     with pytest.raises(
         DagsterConfigMappingFunctionError,
-        match="The config mapping function on graph 'do_stuff' "
-        "in pipeline 'wrap_pipeline' has thrown an unexpected error during its "
-        'execution. The definition is instantiated at stack "do_stuff"',
+        match=(
+            "The config mapping function on graph 'do_stuff' "
+            "in pipeline 'wrap_pipeline' has thrown an unexpected error during its "
+            'execution. The definition is instantiated at stack "do_stuff"'
+        ),
     ):
         execute_pipeline(
             wrap_pipeline,
@@ -204,9 +202,11 @@ def test_config_mapper_throws():
     # config mapping: https://github.com/dagster-io/dagster/issues/4831
     with pytest.raises(
         DagsterConfigMappingFunctionError,
-        match="The config mapping function on graph 'bad_wrap' "
-        "in job 'wrap_invocations' has thrown an unexpected error during its "
-        'execution. The definition is instantiated at stack "bad_wrap"',
+        match=(
+            "The config mapping function on graph 'bad_wrap' "
+            "in job 'wrap_invocations' has thrown an unexpected error during its "
+            'execution. The definition is instantiated at stack "bad_wrap"'
+        ),
     ):
         wrap_invocations.to_job().execute_in_process(
             run_config={"ops": {"bad_wrap": {"config": {"does_not_matter": "blah"}}}}
@@ -246,7 +246,8 @@ def test_config_mapper_throws_nested():
         "The config mapping function on graph 'layer1' "
         "in pipeline 'wrap_pipeline' has thrown an unexpected "
         'error during its execution. The definition is instantiated at stack "layer0:layer1".'
-    ) in str(exc_info.value)
+        in str(exc_info.value)
+    )
 
 
 def test_composite_config_field():
@@ -786,9 +787,11 @@ def test_wrap_all_config_and_inputs():
         )
 
     assert len(exc_info.value.errors) == 2
-    assert exc_info.value.errors[0].message == (
-        'Received unexpected config entry "this_key_doesnt_exist" at path root:solids:wrap_all:config. '
-        'Expected: "{ config_field_a: String config_field_b: String }".'
+    assert (
+        exc_info.value.errors[0].message
+        == 'Received unexpected config entry "this_key_doesnt_exist" at path'
+        ' root:solids:wrap_all:config. Expected: "{ config_field_a: String config_field_b:'
+        ' String }".'
     )
 
     expected_suggested_config = {"config_field_b": "..."}

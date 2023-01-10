@@ -5,10 +5,9 @@ import time
 from typing import Any, Mapping, Optional
 
 import requests
+from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
-
-from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource
 
 from .types import CensusOutput
 
@@ -162,7 +161,8 @@ class CensusResource:
             response_dict = self.get_sync_run(sync_run_id)
             if "data" not in response_dict.keys():
                 raise ValueError(
-                    f"Getting status of sync failed, please visit Census Logs at {log_url} to see more."
+                    f"Getting status of sync failed, please visit Census Logs at {log_url} to see"
+                    " more."
                 )
 
             sync_id = response_dict["data"]["sync_id"]
@@ -177,7 +177,8 @@ class CensusResource:
                 seconds=poll_timeout
             ):
                 raise Failure(
-                    f"Sync for sync '{sync_id}' timed out after {datetime.datetime.now() - poll_start}."
+                    f"Sync for sync '{sync_id}' timed out after"
+                    f" {datetime.datetime.now() - poll_start}."
                 )
 
             break
@@ -257,8 +258,10 @@ class CensusResource:
         "request_max_retries": Field(
             int,
             default_value=3,
-            description="The maximum number of times requests to the Census API should be retried "
-            "before failing.",
+            description=(
+                "The maximum number of times requests to the Census API should be retried "
+                "before failing."
+            ),
         ),
         "request_retry_delay": Field(
             float,

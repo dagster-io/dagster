@@ -1,6 +1,5 @@
 import graphene
 import pendulum
-
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 
 from .pipelines.status import GrapheneRunStatus
@@ -143,7 +142,7 @@ class GraphenePartitionSetSelector(graphene.InputObjectType):
 
 
 class GrapheneLaunchBackfillParams(graphene.InputObjectType):
-    selector = graphene.NonNull(GraphenePartitionSetSelector)
+    selector = graphene.InputField(GraphenePartitionSetSelector)
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.InputField(graphene.List(graphene.NonNull(GrapheneAssetKeyInput)))

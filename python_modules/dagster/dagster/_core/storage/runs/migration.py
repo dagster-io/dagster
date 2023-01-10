@@ -6,15 +6,16 @@ from tqdm import tqdm
 import dagster._check as check
 from dagster._serdes import deserialize_as
 
-from ...execution.backfill import PartitionBackfill
-from ...execution.bulk_actions import BulkActionType
+from ...execution.job_backfill import PartitionBackfill
 from ..pipeline_run import DagsterRun, DagsterRunStatus
 from ..runs.base import RunStorage
-from ..runs.schema import BulkActionsTable, RunTagsTable, RunsTable
+from ..runs.schema import BulkActionsTable, RunsTable, RunTagsTable
 from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, REPOSITORY_LABEL_TAG
 
 RUN_PARTITIONS = "run_partitions"
-RUN_START_END = "run_start_end_overwritten"  # was run_start_end, but renamed to overwrite bad timestamps written
+RUN_START_END = (  # was run_start_end, but renamed to overwrite bad timestamps written
+    "run_start_end_overwritten"
+)
 RUN_REPO_LABEL_TAGS = "run_repo_label_tags"
 BULK_ACTION_TYPES = "bulk_action_types"
 
@@ -248,7 +249,7 @@ def migrate_bulk_actions(run_storage: RunStorage, print_fn=None):
                     BulkActionsTable.update()
                     .values(
                         selector_id=backfill.selector_id,
-                        action_type=BulkActionType.PARTITION_BACKFILL.value,
+                        action_type=backfill.bulk_action_type.value,
                     )
                     .where(BulkActionsTable.c.id == storage_id)
                 )

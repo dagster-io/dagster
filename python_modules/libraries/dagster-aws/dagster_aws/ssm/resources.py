@@ -1,12 +1,16 @@
 from contextlib import contextmanager
 
-from dagster_aws.utils import BOTO3_SESSION_CONFIG
-
-from dagster import Array, Field, Shape
-from dagster import _check as check
-from dagster import resource
+from dagster import (
+    Array,
+    Field,
+    Shape,
+    _check as check,
+    resource,
+)
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
+
+from dagster_aws.utils import BOTO3_SESSION_CONFIG
 
 from .parameters import (
     construct_ssm_client,
@@ -81,10 +85,12 @@ tag_shape = Shape(
         "values": Field(
             [str],
             is_required=False,
-            description="List of tag values to match on. If no values are provided, "
-            "all parameters with the given tag key will be returned. Note: the "
-            "underlying AWS API will throw an exception when more than 10 "
-            "parameters match the tag filter query.",
+            description=(
+                "List of tag values to match on. If no values are provided, "
+                "all parameters with the given tag key will be returned. Note: the "
+                "underlying AWS API will throw an exception when more than 10 "
+                "parameters match the tag filter query."
+            ),
         ),
     }
 )
@@ -104,7 +110,10 @@ tag_shape = Shape(
                 Array(tag_shape),
                 is_required=False,
                 default_value=[],
-                description="AWS SSM Parameter store parameters with this tag will be fetched and made available.",
+                description=(
+                    "AWS SSM Parameter store parameters with this tag will be fetched and made"
+                    " available."
+                ),
             ),
             "parameter_paths": Field(
                 [str],
@@ -116,7 +125,10 @@ tag_shape = Shape(
                 bool,
                 is_required=False,
                 default_value=False,
-                description="Whether to decrypt parameters upon retrieval. Is ignored by AWS if parameter type is String or StringList",
+                description=(
+                    "Whether to decrypt parameters upon retrieval. Is ignored by AWS if parameter"
+                    " type is String or StringList"
+                ),
             ),
             "add_to_environment": Field(
                 bool,

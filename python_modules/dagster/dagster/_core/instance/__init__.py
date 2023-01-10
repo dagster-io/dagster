@@ -35,7 +35,6 @@ import yaml
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._config.field import Field
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import (
@@ -47,8 +46,8 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
     DagsterRunConflict,
-    DagsterUndefinedLogicalVersionError,
 )
+from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
@@ -61,21 +60,19 @@ from dagster._core.storage.pipeline_run import (
     TagBucket,
 )
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, RESUME_RETRY_TAG, ROOT_RUN_ID_TAG
-from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.utils import str_format_list
 from dagster._serdes import ConfigurableClass
 from dagster._seven import get_current_datetime_in_utc
-from dagster._utils import merge_dicts, traced
+from dagster._utils import traced
 from dagster._utils.backcompat import deprecation_warning, experimental_functionality_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.log import get_dagster_logger
+from dagster._utils.merger import merge_dicts
 
 from .config import (
     DAGSTER_CONFIG_YAML_FILENAME,
     DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
     get_default_tick_retention_settings,
     get_tick_retention_settings,
-    is_dagster_home_set,
 )
 from .ref import InstanceRef
 
@@ -98,11 +95,11 @@ if TYPE_CHECKING:
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.host_representation import (
         ExternalPipeline,
+        ExternalPipelineOrigin,
         ExternalSensor,
         HistoricalPipeline,
         RepositoryLocation,
     )
-    from dagster._core.host_representation.origin import ExternalPipelineOrigin
     from dagster._core.launcher import RunLauncher
     from dagster._core.run_coordinator import RunCoordinator
     from dagster._core.scheduler import Scheduler
@@ -114,7 +111,6 @@ if TYPE_CHECKING:
     )
     from dagster._core.secrets import SecretsLoader
     from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
-    from dagster._core.storage.captured_log_manager import CapturedLogManager
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.event_log.base import AssetRecord, EventLogRecord, EventRecordsFilter
@@ -377,21 +373,27 @@ class DagsterInstance:
         if self.run_monitoring_enabled and self.run_monitoring_max_resume_run_attempts:
             check.invariant(
                 self.run_launcher.supports_resume_run,
-                "The configured run launcher does not support resuming runs. "
-                "Set max_resume_run_attempts to 0 to use run monitoring. Any runs with a failed run "
-                "worker will be marked as failed, but will not be resumed.",
+                (
+                    "The configured run launcher does not support resuming runs. Set"
+                    " max_resume_run_attempts to 0 to use run monitoring. Any runs with a failed"
+                    " run worker will be marked as failed, but will not be resumed."
+                ),
             )
 
         if self.run_retries_enabled:
             check.invariant(
                 self.run_storage.supports_kvs(),
-                "Run retries are enabled, but the configured run storage does not support them. "
-                "Consider switching to Postgres or Mysql.",
+                (
+                    "Run retries are enabled, but the configured run storage does not support them."
+                    " Consider switching to Postgres or Mysql."
+                ),
             )
             check.invariant(
                 self.event_log_storage.supports_event_consumer_queries(),
-                "Run retries are enabled, but the configured event log storage does not support them. "
-                "Consider switching to Postgres or Mysql.",
+                (
+                    "Run retries are enabled, but the configured event log storage does not support"
+                    " them. Consider switching to Postgres or Mysql."
+                ),
             )
 
     # ctors
@@ -428,19 +430,16 @@ class DagsterInstance:
 
         if not dagster_home_path:
             raise DagsterHomeNotSetError(
-                (
-                    "The environment variable $DAGSTER_HOME is not set. \n"
-                    "Dagster requires this environment variable to be set to an existing directory in your filesystem. "
-                    "This directory is used to store metadata across sessions, or load the dagster.yaml "
-                    "file which can configure storing metadata in an external database.\n"
-                    "You can resolve this error by exporting the environment variable. For example, you can run the following command in your shell or include it in your shell configuration file:\n"
-                    '\texport DAGSTER_HOME=~"/dagster_home"\n'
-                    "or PowerShell\n"
-                    "$env:DAGSTER_HOME = ($home + '\\dagster_home')"
-                    "or batch"
-                    "set DAGSTER_HOME=%UserProfile%/dagster_home"
-                    "Alternatively, DagsterInstance.ephemeral() can be used for a transient instance.\n"
-                )
+                "The environment variable $DAGSTER_HOME is not set. \nDagster requires this"
+                " environment variable to be set to an existing directory in your filesystem. This"
+                " directory is used to store metadata across sessions, or load the dagster.yaml"
+                " file which can configure storing metadata in an external database.\nYou can"
+                " resolve this error by exporting the environment variable. For example, you can"
+                " run the following command in your shell or include it in your shell configuration"
+                ' file:\n\texport DAGSTER_HOME=~"/dagster_home"\nor PowerShell\n$env:DAGSTER_HOME'
+                " = ($home + '\\dagster_home')or batchset"
+                " DAGSTER_HOME=%UserProfile%/dagster_homeAlternatively, DagsterInstance.ephemeral()"
+                " can be used for a transient instance.\n"
             )
 
         dagster_home_path = os.path.expanduser(dagster_home_path)
@@ -456,8 +455,8 @@ class DagsterInstance:
         if not (os.path.exists(dagster_home_path) and os.path.isdir(dagster_home_path)):
             raise DagsterInvariantViolationError(
                 (
-                    '$DAGSTER_HOME "{}" is not a directory or does not exist. Dagster requires this '
-                    "environment variable to be set to an existing directory in your filesystem"
+                    '$DAGSTER_HOME "{}" is not a directory or does not exist. Dagster requires this'
+                    " environment variable to be set to an existing directory in your filesystem"
                 ).format(dagster_home_path)
             )
 
@@ -532,9 +531,11 @@ class DagsterInstance:
             "Attempted to prepare an ineligible DagsterInstance ({inst_type}) for cross "
             "process communication.{dagster_home_msg}".format(
                 inst_type=self._instance_type,
-                dagster_home_msg="\nDAGSTER_HOME environment variable is not set, set it to "
-                "a directory on the filesystem for dagster to use for storage and cross "
-                "process coordination."
+                dagster_home_msg=(
+                    "\nDAGSTER_HOME environment variable is not set, set it to "
+                    "a directory on the filesystem for dagster to use for storage and cross "
+                    "process coordination."
+                )
                 if os.getenv("DAGSTER_HOME") is None
                 else "",
             )
@@ -571,7 +572,6 @@ class DagsterInstance:
         )
 
     def info_dict(self):
-
         settings = self._settings if self._settings else {}
 
         ret = {
@@ -756,7 +756,6 @@ class DagsterInstance:
         from dagster._core.storage.migration.utils import upgrading_instance
 
         with upgrading_instance(self):
-
             if print_fn:
                 print_fn("Updating run storage...")
             self._run_storage.upgrade()
@@ -937,7 +936,7 @@ class DagsterInstance:
             asset_selection=asset_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
-            status=status,
+            status=DagsterRunStatus(status) if status else None,
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
@@ -971,7 +970,6 @@ class DagsterInstance:
         external_pipeline_origin=None,
         pipeline_code_origin=None,
     ) -> DagsterRun:
-
         # https://github.com/dagster-io/dagster/issues/2403
         if tags and IS_AIRFLOW_INGEST_PIPELINE_STR in tags:
             if AIRFLOW_EXECUTION_DATE_STR not in tags:
@@ -979,9 +977,11 @@ class DagsterInstance:
 
         check.invariant(
             not (not pipeline_snapshot and execution_plan_snapshot),
-            "It is illegal to have an execution plan snapshot and not have a pipeline snapshot. "
-            "It is possible to have no execution plan snapshot since we persist runs "
-            "that do not successfully compile execution plans in the scheduled case.",
+            (
+                "It is illegal to have an execution plan snapshot and not have a pipeline snapshot."
+                " It is possible to have no execution plan snapshot since we persist runs that do"
+                " not successfully compile execution plans in the scheduled case."
+            ),
         )
 
         pipeline_snapshot_id = (
@@ -1105,31 +1105,133 @@ class DagsterInstance:
                         event = DagsterEvent(
                             event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
                             pipeline_name=pipeline_name,
-                            message=f"{pipeline_name} intends to materialize asset {asset_key.to_string()}",
+                            message=(
+                                f"{pipeline_name} intends to materialize asset"
+                                f" {asset_key.to_string()}"
+                            ),
                             event_specific_data=AssetMaterializationPlannedData(asset_key),
                         )
                         self.report_dagster_event(event, pipeline_run.run_id, logging.DEBUG)
 
     def create_run(
         self,
-        pipeline_name,
-        run_id,
-        run_config,
-        mode,
-        solids_to_execute,
-        step_keys_to_execute,
-        status,
-        tags,
-        root_run_id,
-        parent_run_id,
-        pipeline_snapshot,
-        execution_plan_snapshot,
-        parent_pipeline_snapshot,
-        asset_selection=None,
-        solid_selection=None,
-        external_pipeline_origin=None,
-        pipeline_code_origin=None,
+        *,
+        pipeline_name: str,
+        run_id: Optional[str],
+        run_config: Optional[Mapping[str, object]],
+        mode: Optional[str],
+        status: Optional[DagsterRunStatus],
+        tags: Optional[Mapping[str, Any]],
+        root_run_id: Optional[str],
+        parent_run_id: Optional[str],
+        step_keys_to_execute: Optional[Sequence[str]],
+        execution_plan_snapshot: Optional[ExecutionPlanSnapshot],
+        pipeline_snapshot: Optional[PipelineSnapshot],
+        parent_pipeline_snapshot: Optional[PipelineSnapshot],
+        asset_selection: Optional[AbstractSet[AssetKey]],
+        solids_to_execute: Optional[AbstractSet[str]],
+        solid_selection: Optional[Sequence[str]],
+        external_pipeline_origin: Optional["ExternalPipelineOrigin"],
+        pipeline_code_origin: Optional[PipelinePythonOrigin],
     ) -> DagsterRun:
+        from dagster._core.definitions.utils import validate_tags
+        from dagster._core.host_representation.origin import ExternalPipelineOrigin
+        from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
+
+        check.str_param(pipeline_name, "pipeline_name")
+        check.opt_str_param(
+            run_id, "run_id"
+        )  # will be assigned to make_new_run_id() lower in callstack
+        check.opt_mapping_param(run_config, "run_config", key_type=str)
+        check.opt_str_param(mode, "mode")
+
+        check.opt_inst_param(status, "status", DagsterRunStatus)
+        check.opt_mapping_param(tags, "tags", key_type=str)
+
+        validated_tags = validate_tags(tags)
+
+        check.opt_str_param(root_run_id, "root_run_id")
+        check.opt_str_param(parent_run_id, "parent_run_id")
+
+        # If step_keys_to_execute is None, then everything is executed.  In some cases callers
+        # are still exploding and sending the full list of step keys even though that is
+        # unnecessary.
+
+        check.opt_sequence_param(step_keys_to_execute, "step_keys_to_execute")
+        check.opt_inst_param(
+            execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot
+        )
+
+        if root_run_id or parent_run_id:
+            check.invariant(
+                root_run_id and parent_run_id,
+                (
+                    "If root_run_id or parent_run_id is passed, this is a re-execution scenario and"
+                    " root_run_id and parent_run_id must both be passed."
+                ),
+            )
+
+        # The pipeline_snapshot should always be set in production scenarios. In tests
+        # we have sometimes omitted it out of convenience.
+
+        check.opt_inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
+        check.opt_inst_param(parent_pipeline_snapshot, "parent_pipeline_snapshot", PipelineSnapshot)
+
+        if parent_pipeline_snapshot:
+            check.invariant(
+                pipeline_snapshot,
+                "If parent_pipeline_snapshot is set, pipeline_snapshot should also be.",
+            )
+
+        # solid_selection is a sequence of selection queries assigned by the user.
+        # *Most* callers expand the solid_selection into an explicit set of
+        # solids_to_execute via accessing external_pipeline.solids_to_execute
+        # but not all do. Some (launch execution mutation in graphql and backfill run
+        # creation, for example) actually pass the solid *selection* into the
+        # solids_to_execute parameter, but just as a frozen set, rather than
+        # fully resolving the selection, as the daemon launchers do. Given the
+        # state of callers we just check to ensure that the arguments are well-formed.
+        #
+        # asset_selection adds another dimension to this lovely dance. solid_selection
+        # and asset_selection are mutually exclusive and should never both be set.
+        # This is invariant is checked in a sporadic fashion around
+        # the codebase, but is never enforced in a typed fashion.
+        #
+        # Additionally, the way that callsites currently behave *if* asset selection
+        # is set (i.e., not None) then *neither* solid_selection *nor*
+        # solids_to_execute is passed. In the asset selection case resolving
+        # the set of assets into the canonical solids_to_execute is done in
+        # the user process, and the exact resolution is never persisted in the run.
+        # We are asserting that invariant here to maintain that behavior.
+
+        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
+        check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
+        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
+
+        if asset_selection is not None:
+            check.invariant(
+                solid_selection is None,
+                "Cannot pass both asset_selection and solid_selection",
+            )
+
+            check.invariant(
+                solids_to_execute is None,
+                "Cannot pass both asset_selection and solids_to_execute",
+            )
+
+        # The "python origin" arguments exist so a job can be reconstructed in memory
+        # after a DagsterRun has been fetched from the database.
+        #
+        # There are cases (notably in _logged_execute_pipeline with Reconstructable pipelines)
+        # where pipeline_code_origin and is not. In some cloud test cases only
+        # external_pipeline_origin is passed But they are almost always passed together.
+        # If these are not set the created run will never be able to be relaunched from
+        # the information just in the run or in another process.
+
+        check.opt_inst_param(
+            external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
+        )
+        check.opt_inst_param(pipeline_code_origin, "pipeline_code_origin", PipelinePythonOrigin)
 
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
@@ -1141,7 +1243,7 @@ class DagsterInstance:
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
-            tags=tags,
+            tags=dict(validated_tags),
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
             pipeline_snapshot=pipeline_snapshot,
@@ -1160,6 +1262,7 @@ class DagsterInstance:
 
     def create_reexecuted_run(
         self,
+        *,
         parent_run: DagsterRun,
         repo_location: "RepositoryLocation",
         external_pipeline: "ExternalPipeline",
@@ -1683,7 +1786,6 @@ class DagsterInstance:
         self.handle_new_event(event_record)
 
     def report_run_canceling(self, run, message=None):
-
         from dagster._core.events import DagsterEvent, DagsterEventType
 
         check.inst_param(run, "run", DagsterRun)
@@ -1772,8 +1874,7 @@ class DagsterInstance:
             run_id (str): The id of the run.
         """
 
-        from dagster._core.host_representation import ExternalPipelineOrigin
-        from dagster._core.origin import PipelinePythonOrigin
+        from dagster._core.host_representation.origin import ExternalPipelineOrigin
         from dagster._core.run_coordinator import SubmitRunContext
 
         run = self.get_run_by_id(run_id)

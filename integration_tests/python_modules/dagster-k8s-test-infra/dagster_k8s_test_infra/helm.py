@@ -5,15 +5,15 @@ import subprocess
 import time
 from contextlib import ExitStack, contextmanager
 
+import dagster._check as check
 import kubernetes
 import pytest
 import requests
 import yaml
+from dagster._utils import find_free_port, git_repository_root
+from dagster._utils.merger import merge_dicts
 from dagster_aws_tests.aws_credential_test_utils import get_aws_creds
 from dagster_k8s.client import DagsterKubernetesClient
-
-import dagster._check as check
-from dagster._utils import find_free_port, git_repository_root, merge_dicts
 
 from .integration_utils import IS_BUILDKITE, check_output, get_test_namespace, image_pull_policy
 
@@ -120,7 +120,8 @@ def run_monitoring_namespace(cluster_provider, pytestconfig, should_cleanup):
 @pytest.fixture(scope="session")
 def configmaps(namespace, should_cleanup):
     print(
-        f"Creating k8s test object ConfigMaps: {TEST_CONFIGMAP_NAME}, {TEST_OTHER_CONFIGMAP_NAME}, {TEST_VOLUME_CONFIGMAP_NAME}"
+        f"Creating k8s test object ConfigMaps: {TEST_CONFIGMAP_NAME}, {TEST_OTHER_CONFIGMAP_NAME},"
+        f" {TEST_VOLUME_CONFIGMAP_NAME}"
     )
     kube_api = kubernetes.client.CoreV1Api()
 
@@ -513,7 +514,6 @@ def _helm_chart_helper(
             print("Waiting for daemon pod to be ready...")
             start_time = time.time()
             while True:
-
                 if time.time() - start_time > 120:
                     raise Exception("No daemon pod after 2 minutes")
 
@@ -720,7 +720,9 @@ def helm_chart_for_k8s_run_launcher(
                         "volumeMounts": [
                             {
                                 "name": "test-volume",
-                                "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
+                                "mountPath": (
+                                    "/opt/dagster/test_mount_path/volume_mounted_file.yaml"
+                                ),
                                 "subPath": "volume_mounted_file.yaml",
                             }
                         ],
@@ -756,7 +758,9 @@ def helm_chart_for_k8s_run_launcher(
                     "enabled": not enable_subchart,
                     "servers": [
                         {
-                            "host": f"user-code-deployment-1.{user_code_namespace}.svc.cluster.local",
+                            "host": (
+                                f"user-code-deployment-1.{user_code_namespace}.svc.cluster.local"
+                            ),
                             "port": 3030,
                             "name": "user-code-deployment-1",
                         }
@@ -1050,8 +1054,8 @@ def _port_forward_dagit(namespace):
                 raise Exception("Timed out while waiting for dagit port forwarding")
 
             print(
-                "Waiting for port forwarding from k8s pod %s:80 to localhost:%d to be"
-                " available..." % (dagit_pod_name, forward_port)
+                "Waiting for port forwarding from k8s pod %s:80 to localhost:%d to be available..."
+                % (dagit_pod_name, forward_port)
             )
             try:
                 check_output(["curl", f"http://{dagit_url}"])

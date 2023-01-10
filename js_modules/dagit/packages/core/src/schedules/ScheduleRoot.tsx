@@ -41,7 +41,6 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
     variables: {
       scheduleSelector,
     },
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });
@@ -100,7 +99,6 @@ export const SchedulePreviousRuns: React.FC<{
   highlightedIds?: string[];
 }> = ({schedule, highlightedIds, tabs}) => {
   const queryResult = useQuery(PREVIOUS_RUNS_FOR_SCHEDULE_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {
       limit: 20,
       filter: {

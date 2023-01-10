@@ -1,1 +1,1 @@
-from .repository import tutorial_dbt_dagster
+from .repository import tutorial_dbt_dagster as tutorial_dbt_dagster

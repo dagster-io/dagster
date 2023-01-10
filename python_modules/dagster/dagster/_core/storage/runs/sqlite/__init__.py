@@ -1,1 +1,1 @@
-from .sqlite_run_storage import SqliteRunStorage
+from .sqlite_run_storage import SqliteRunStorage as SqliteRunStorage

@@ -19,19 +19,16 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataUserInput
-from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
-from dagster._core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from dagster._utils import merge_dicts
 from dagster._utils.backcompat import (
     ExperimentalWarning,
     deprecation_warning,
     experimental_arg_warning,
 )
+from dagster._utils.merger import merge_dicts
 
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKeyPrefix
@@ -148,10 +145,12 @@ class AssetsDefinition(ResourceAddable):
         }
         check.invariant(
             set(self._asset_deps.keys()) == all_asset_keys,
-            "The set of asset keys with dependencies specified in the asset_deps argument must "
-            "equal the set of asset keys produced by this AssetsDefinition. \n"
-            f"asset_deps keys: {set(self._asset_deps.keys())} \n"
-            f"expected keys: {all_asset_keys}",
+            (
+                "The set of asset keys with dependencies specified in the asset_deps argument must "
+                "equal the set of asset keys produced by this AssetsDefinition. \n"
+                f"asset_deps keys: {set(self._asset_deps.keys())} \n"
+                f"expected keys: {all_asset_keys}"
+            ),
         )
         self._resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
 
@@ -407,7 +406,10 @@ class AssetsDefinition(ResourceAddable):
             for output_name, asset_keys in internal_asset_deps.items():
                 check.invariant(
                     output_name in keys_by_output_name,
-                    f"output_name {output_name} specified in internal_asset_deps does not exist in the decorated function",
+                    (
+                        f"output_name {output_name} specified in internal_asset_deps does not exist"
+                        " in the decorated function"
+                    ),
                 )
                 transformed_internal_asset_deps[keys_by_output_name[output_name]] = asset_keys
 
@@ -576,6 +578,9 @@ class AssetsDefinition(ResourceAddable):
     @public
     def get_partition_mapping(self, in_asset_key: AssetKey) -> Optional[PartitionMapping]:
         return self._partition_mappings.get(in_asset_key)
+
+    def get_partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
+        return self._partition_mappings.get(self._keys_by_input_name[input_name])
 
     def infer_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
         with warnings.catch_warnings():
@@ -917,10 +922,12 @@ def _infer_keys_by_input_names(
     if keys_by_input_name:
         check.invariant(
             set(keys_by_input_name.keys()) == set(all_input_names),
-            "The set of input names keys specified in the keys_by_input_name argument must "
-            f"equal the set of asset keys inputted by '{node_def.name}'. \n"
-            f"keys_by_input_name keys: {set(keys_by_input_name.keys())} \n"
-            f"expected keys: {all_input_names}",
+            (
+                "The set of input names keys specified in the keys_by_input_name argument must "
+                f"equal the set of asset keys inputted by '{node_def.name}'. \n"
+                f"keys_by_input_name keys: {set(keys_by_input_name.keys())} \n"
+                f"expected keys: {all_input_names}"
+            ),
         )
 
     # If asset key is not supplied in keys_by_input_name, create asset key
@@ -940,10 +947,12 @@ def _infer_keys_by_output_names(
     if keys_by_output_name:
         check.invariant(
             set(keys_by_output_name.keys()) == set(output_names),
-            "The set of output names keys specified in the keys_by_output_name argument must "
-            f"equal the set of asset keys outputted by {node_def.name}. \n"
-            f"keys_by_input_name keys: {set(keys_by_output_name.keys())} \n"
-            f"expected keys: {set(output_names)}",
+            (
+                "The set of output names keys specified in the keys_by_output_name argument must "
+                f"equal the set of asset keys outputted by {node_def.name}. \n"
+                f"keys_by_input_name keys: {set(keys_by_output_name.keys())} \n"
+                f"expected keys: {set(output_names)}"
+            ),
         )
 
     inferred_keys_by_output_names: Dict[str, AssetKey] = {
@@ -1028,10 +1037,13 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
 
     check.invariant(
         not unmapped_leaf_nodes,
-        f"All leaf nodes within graph '{graph_def.name}' must generate outputs which are mapped to "
-        "outputs of the graph, and produce assets. The following leaf node(s) are non-asset producing "
-        f"ops: {unmapped_leaf_nodes}. This behavior is not currently supported because these ops "
-        "are not required for the creation of the associated asset(s).",
+        (
+            f"All leaf nodes within graph '{graph_def.name}' must generate outputs which are mapped"
+            " to outputs of the graph, and produce assets. The following leaf node(s) are"
+            f" non-asset producing ops: {unmapped_leaf_nodes}. This behavior is not currently"
+            " supported because these ops are not required for the creation of the associated"
+            " asset(s)."
+        ),
     )
 
 
@@ -1053,5 +1065,6 @@ def _validate_self_deps(
                     continue
 
             raise DagsterInvalidDefinitionError(
-                "Assets can only depend on themselves if they are time-partitioned and each partition depends on earlier partitions"
+                "Assets can only depend on themselves if they are time-partitioned and each"
+                " partition depends on earlier partitions"
             )

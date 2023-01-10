@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Code} from '@blueprintjs/core';
 import {Colors, FontFamily} from '@dagster-io/ui';
@@ -6,12 +5,12 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {breakOnUnderscores} from '../app/Util';
-import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
-
-import {OpTypeSignatureFragment} from './types/OpTypeSignatureFragment';
+import {graphql} from '../graphql';
+import {OpTypeSignatureFragmentFragment} from '../graphql/graphql';
+import {TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
 
 interface IOpTypeSignature {
-  definition: OpTypeSignatureFragment;
+  definition: OpTypeSignatureFragmentFragment;
 }
 
 export const OpTypeSignature: React.FC<IOpTypeSignature> = (props) => {
@@ -36,7 +35,7 @@ export const OpTypeSignature: React.FC<IOpTypeSignature> = (props) => {
   );
 };
 
-export const OP_TYPE_SIGNATURE_FRAGMENT = gql`
+export const OP_TYPE_SIGNATURE_FRAGMENT = graphql(`
   fragment OpTypeSignatureFragment on ISolidDefinition {
     outputDefinitions {
       name
@@ -51,9 +50,7 @@ export const OP_TYPE_SIGNATURE_FRAGMENT = gql`
       }
     }
   }
-
-  ${DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT}
-`;
+`);
 
 const TypeSignature = styled(Code)`
   && {

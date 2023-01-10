@@ -132,7 +132,6 @@ class FreshnessPolicy(
             if dt is not None:
                 used_data_time = min(used_data_time or dt, dt)
         while evaluation_tick is not None and evaluation_tick < window_end:
-
             required_data_time = evaluation_tick - self.maximum_lag_delta
             required_by_time = evaluation_tick
 

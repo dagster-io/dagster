@@ -10,6 +10,9 @@
   <a target="_blank" href="https://dagster.io/slack" style="background:none">
     <img src="https://img.shields.io/badge/slack-dagster-blue.svg?labelColor=4F43DD&color=163B36&logo=slack" />
   </a>
+  <a target="_blank" href="https://linkedin.com/showcase/dagster" style="background:none">
+    <img src="https://img.shields.io/badge/linkedin-dagster-blue.svg?labelColor=4F43DD&color=163B36&logo=linkedin" />
+  </a>
   <a target="_blank" href="https://github.com/dagster-io/dagster" style="background:none">
     <img src="https://img.shields.io/github/stars/dagster-io/dagster?labelColor=4F43DD&color=163B36&logo=github">
   </a>
@@ -99,6 +102,7 @@ Join our community here:
 - 🌟 [Star us on Github](https://github.com/dagster-io/dagster)
 - 📥 [Subscribe to our Newsletter](https://dagster.io/newsletter-signup)
 - 🐦 [Follow us on Twitter](https://twitter.com/dagster)
+- 🕴️ [Follow us on LinkedIn](https://linkedin.com/showcase/dagster)
 - 📺 [Subscribe to our YouTube channel](https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q)
 - 📚 [Read our blog posts](https://dagster.io/blog)
 - 👋 [Join us on Slack](https://dagster.io/slack)

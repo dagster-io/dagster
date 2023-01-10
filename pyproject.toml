@@ -10,38 +10,16 @@
 [tool.black]
 line-length = 100
 
+# Enable "preview" mode-- this adds style rules likely to be incorporated into black's next major
+# release. The reason for enabling this, as of 2022-12-04, is to turn on formatting of long string
+# literals.
+preview = true
+
 # Black will refuse to run if it's not this version.
-required-version = "22.3.0"
+required-version = "22.12.0"
 
 # Ensure black's output will be compatible with all listed versions.
-target-version = ['py36', 'py37', 'py38', 'py39', 'py310']
-
-# ########################
-# ##### ISORT
-# ########################
-
-# [Docs root]
-#   https://pycqa.github.io/isort/
-# [Config option reference]
-#   https://pycqa.github.io/isort/docs/configuration/options.html
-
-# NOTE: File inclusion//exclusion/skip options are set at the invocation site
-# and shouldn't be set in this config file.
-
-[tool.isort]
-
-# Ensures isort classifies imports from `dagster` as first-party in all environments. Without this
-# there can be differences between buildkite and local dev.
-known_first_party = ['dagster']
-
-# Sets a variety of default options for parentheses etc that are compatible with black.
-profile = "black"
-
-# Sorts uppercase imports before lowercase improts.
-case_sensitive=true
-
-# profile=black just sets defaults, it won't read our line-length override in black's config
-line_length=100
+target-version = ['py37', 'py38', 'py39', 'py310', 'py311']
 
 # ########################
 # ##### MYPY
@@ -81,85 +59,6 @@ namespace_packages = true
 # Print codes (e.g. "[arg-type]") for each error in output.
 show_error_codes = true
 
-# ########################
-# ##### PYLINT
-# ########################
-
-# [Docs root]
-#   https://pylint.pycqa.org/en/latest/
-# [Rule/options reference]
-#   https://pylint.pycqa.org/en/latest/technical_reference/features.html
-#   This is a comprehensive reference of all Pylint checkers/rules and seems to be one of the only
-#   docs pages that's actually maintained.
-# [Changelog]
-#   https://pylint.pycqa.org/en/latest/whatsnew/index.html
-#   Often contains up-to-date info that corrects incorrect stuff in the older docs.
-# [Github issues]
-#   https://github.com/PyCQA/pylint/issues
-#   Best places to find workarounds or discussion/explanation of weird behavior.
-
-# NOTE (2022-02-26): Pylint's docs are generally terrible, and googling often takes you on a wild
-# goose chase. The docs are frequently wrong, and stay wrong for years even when many people point
-# out the issue. If you encounter confusing behavior or want to figure out how something works, you
-# can't trust the most obvious source-- for instance, the "Configuration" page in the docs seems to
-# include a random set of info and doesn't even mention config files. For that, you have to look at
-# the "Running pylint" page. To get accurate info, you may have to look through
-# the Rule/option reference, Changelog, and Github issues linked above.
-
-# NOTE (2022-02-26): Running pylint in parallel (i.e. -j/--jobs option != 1) currently will not work
-# (with Dagster's configuration) on some platforms (specifically macOS, maybe others). This is
-# because of the `dagster.utils.linter` plugin, which contains extensions that can't be properly
-# pickled. There are open issues discussing this problem but it looks like the situation is likely
-# to persist for some time:
-#   https://pylint.pycqa.org/en/latest/user_guide/run.html#parallel-execution
-#   https://github.com/PyCQA/pylint/issues/4874
-
-# Pylint has many options that are divvied up by category. Each [SECTION] below corresponds to a
-# section in the "Rule/options reference" doc.
-
-[tool.pylint.master]
-
-# Minimum python version supported by Dagster.
-py-version = 3.6
-
-# Contains assorted Dagster-specific checks (for dev purposes, not users).
-load-plugins=['dagster.utils.linter']
-
-[tool.pylint.messages-control]
-disable=[
-
-  # [category] convention-related checks-- too much noise
-  'C',
-
-  # [category] refactoring-related checks-- too much noise
-  'R',
-
-  # [checker] redundant with mypy
-  'typecheck',
-
-  # There are many places where we want to catch a maximally generic exception.
-  'bare-except',
-  'broad-except',
-
-  # Sometimes it's useful to leave `TODO` comments in the code.
-  'fixme',
-
-  # Pylint is by default very strict on logging string interpolations, but the
-  # (performance-motivated) rules do not make sense for infrequent log messages (like error reports)
-  # and make messages less readable.
-  'logging-fstring-interpolation',
-  'logging-format-interpolation',
-  'logging-not-lazy',
-
-   # Maybe we should transition in the future, but right now there are many instances in Dagster
-   # code of manually wrapping outer exception text.
-  'raise-missing-from',
-
-  # This rule is incompatible with SDAs, which have parameters named the same as upstream assets.
-  'redefined-outer-name',
-
-]
-
 [tool.pytest.ini_options]
 
 filterwarnings = [
@@ -168,3 +67,161 @@ filterwarnings = [
   "ignore::UserWarning",
   "ignore::pytest.PytestCollectionWarning",
 ]
+
+# ########################
+# ##### RUFF
+# ########################
+
+# [Docs root]
+#   https://github.com/charliermarsh/ruff#ruff
+# [Config option reference]
+#   https://github.com/charliermarsh/ruff#reference
+#
+# As of 2022-12-05, the entire documentation of Ruff is in its very long
+# README.
+
+[tool.ruff]
+
+exclude = [
+  "*/__generated__/*",
+  "*/dagster_airflow/vendor/*",
+  "*/snapshots/*",
+  ".git/*"
+]
+
+ignore = [
+
+  # (non-google docstring)  These docstring rules are collectively incompatible
+  # with the Google-style docstrings we use. List taken from:
+  # https://github.com/charliermarsh/ruff#does-ruff-support-numpy--or-google-style-docstrings
+  "D203",
+  "D204",
+  "D213",
+  "D215",
+  "D400",
+  "D404",
+  "D406",
+  "D407",
+  "D408",
+  "D409",
+  "D413",
+
+  # (missing public docstrings) These work off of the Python sense of "public", rather than our
+  # bespoke definition based off of `@public`. When ruff supports custom plugins then we can write
+  # appropriate rules to require docstrings for `@public`.
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "D105",
+  "D106",
+  "D107",
+
+  # (stack ignores) These are here just to make intermediate steps in the stack
+  # green, they will be gone when this is merged.
+  "D202",
+  "D411",
+  "D412",
+  "D415",
+
+  # (module level import not at top) There are several places where we use e.g.
+  # warnings.filterwarings calls before imports.
+  "E402",
+
+  # (line too long): This fires for comments, which black won't wrap.
+  # Disabling until there is an autoformat solution available for comments.
+  "E501",
+
+  # (no type comparison): There are a few places where we use `== type(None)` which are more clear
+  # than the equivalent `isinstance` check.
+  'E721',
+
+  # (bare exception): There are many places where we want to catch a maximally generic exception.
+  'E722',
+
+  # (no assign lambda): existing code assigns lambdas in a few places. With black formatting
+  # requiring extra empty lines between defs, disallowing lambda assignment can make code less
+  # readable.
+  "E731",
+
+  # (no redundant alias) Allow redundant import aliases for explicit re-exports.
+  "PLC0414",
+
+  # (use from for submodule imports) Sometimes it is clearer to import a submodule directly.
+  "PLR0402",
+
+  ##### TEMPORARY DISABLES
+
+  # (assorted docstring rules) There are too many violations of these to enable
+  # right now, but we should enable after fixing the violations.
+  "D200",  # (one-line docstring should fit)
+  "D205",  # (blank line after summary)
+  "D212",  # (multi-line docstring summary should start at 1st line)
+  "D415",  # (docstring summary should end with a period)
+  "D417",  # (missing arg in docstring)
+
+  # (buggy docstring rules) These rules should be enabled when bugs with them are fixed.
+  "D207", # (under-indented docstring)
+  "D208", # (over-indented docstring)
+  "D402", # (first line should not be the function's "signature")
+
+  # (disallow print statements) Allowing until there are file-scoped error-specific ignores and we
+  # can bulk-convert our pylint disables.
+  "T201",  # (no print call)
+  "T203",  # (no pprint call)
+
+]
+
+# Match black. Note that this also checks comment line length, but black does not format comments.
+line-length = 100
+
+# By default, ruff only uses all "E" (pycodestyle) and "F" (pyflakes) rules.
+# Here we append to the defaults.
+select = [
+
+  # (pydocstyle) Docstring-related rules. See above ignore section for selected
+  # exclusions that sculpt the rules to fit Google-style docstrings. See:
+  # https://github.com/charliermarsh/ruff#does-ruff-support-numpy--or-google-style-docstrings
+  "D",
+
+  # (pycodestyle) use all pycodestyle rules
+  "E",
+
+  # (pyflakes) use all pyflakes rules
+  "F",
+
+  # (isort) detect improperly sorted imports
+  "I001",
+
+  # (pylint) use all pylint rules (ruff currently implements only a subset of
+  # pylint's rules)
+  "PLC",
+  "PLE",
+  "PLR",
+  "PLW",
+
+  # (no commented out code) keep commented out code blocks out of the codebase
+  # "ERA001",
+
+  # (ruff-specific) Enable all ruff-specific checks (i.e. not ports of
+  # functionality from an existing linter).
+  "RUF",
+
+  # (disallow print statements) keep debugging statements out of the codebase
+  "T",
+
+]
+
+# Fail if Ruff is not running this version.
+required-version = "0.0.212"
+
+[tool.ruff.isort]
+
+# Combine multiple `from foo import bar as baz` statements with the same source
+# (`foo`) into a single statement.
+combine-as-imports = true
+
+# Imports of the form `from foo import bar as baz` show one `import bar as baz`
+# per line. Useful for __init__.py files that just re-export symbols.
+force-wrap-aliases = true

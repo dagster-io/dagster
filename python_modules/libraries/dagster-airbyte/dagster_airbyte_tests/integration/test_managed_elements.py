@@ -9,15 +9,14 @@ import mock
 import pytest
 import requests
 import requests_mock
-from dagster_airbyte import airbyte_resource, load_assets_from_connections
-from dagster_managed_elements import ManagedElementDiff
-from dagster_managed_elements.cli import apply, check
-from dagster_managed_elements.utils import diff_dicts
-
 from dagster import AssetKey, materialize
 from dagster._core.events import StepMaterializationData
 from dagster._core.test_utils import environ
 from dagster._utils import file_relative_path
+from dagster_airbyte import airbyte_resource, load_assets_from_connections
+from dagster_managed_elements import ManagedElementDiff
+from dagster_managed_elements.cli import apply, check
+from dagster_managed_elements.utils import diff_dicts
 
 from .example_stacks import example_airbyte_stack
 
@@ -51,7 +50,6 @@ def docker_compose_airbyte_instance_fixture(
     """
 
     with docker_compose_cm(docker_compose_file, env_file=docker_compose_env_file) as hostnames:
-
         webapp_host = hostnames["airbyte-webapp"]
         webapp_port = "8000" if webapp_host == "localhost" else "80"
 
@@ -126,7 +124,6 @@ def test_basic_integration(
     filename,
     track_make_requests: requests_mock.Mocker,
 ):
-
     ab_instance = airbyte_resource.configured(
         {
             "host": os.getenv("AIRBYTE_HOSTNAME", "localhost"),
@@ -245,7 +242,6 @@ def test_change_source_and_destination(
     airbyte_source_files,
     track_make_requests: requests_mock.Mocker,
 ):
-
     # Set up example element and ensure no diff and initial call counts are correct
     apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
     assert _calls_to(track_make_requests, "/sources/update") == 0
@@ -318,7 +314,6 @@ def test_change_source_and_destination(
 
 
 def test_mark_secrets_as_changed(docker_compose_airbyte_instance, airbyte_source_files):
-
     # First, apply a stack and check that there's no diff after applying it
     apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
 
@@ -356,7 +351,6 @@ def test_mark_secrets_as_changed(docker_compose_airbyte_instance, airbyte_source
 
 
 def test_change_destination_namespace(empty_airbyte_instance, airbyte_source_files):
-
     # Set up example element and ensure no diff
     apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
     check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
@@ -413,7 +407,6 @@ def test_change_destination_namespace(empty_airbyte_instance, airbyte_source_fil
 
 
 def test_sync_modes(docker_compose_airbyte_instance, airbyte_source_files):
-
     # First, apply a stack and check that there's no diff after applying it
     apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
 

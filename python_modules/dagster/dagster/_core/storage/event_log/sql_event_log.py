@@ -312,7 +312,6 @@ class SqlEventLogStorage(EventLogStorage):
             )
             and event.dagster_event.step_materialization_data.materialization.tags
         ):
-
             if not self.has_table(AssetEventTagsTable.name):
                 # If tags table does not exist, silently exit. This is to support OSS
                 # users who have not yet run the migration to create the table.
@@ -389,11 +388,7 @@ class SqlEventLogStorage(EventLogStorage):
         check.str_param(run_id, "run_id")
         check.opt_str_param(cursor, "cursor")
 
-        check.invariant(
-            not of_type
-            or isinstance(of_type, DagsterEventType)
-            or isinstance(of_type, (frozenset, set))
-        )
+        check.invariant(not of_type or isinstance(of_type, (DagsterEventType, frozenset, set)))
 
         dagster_event_types = (
             {of_type}
@@ -473,7 +468,7 @@ class SqlEventLogStorage(EventLogStorage):
             .where(
                 db.and_(
                     SqlEventLogStorageTable.c.run_id == run_id,
-                    SqlEventLogStorageTable.c.dagster_event_type != None,
+                    SqlEventLogStorageTable.c.dagster_event_type != None,  # noqa: E711
                 )
             )
             .group_by("dagster_event_type")
@@ -535,7 +530,7 @@ class SqlEventLogStorage(EventLogStorage):
         raw_event_query = (
             db.select([SqlEventLogStorageTable.c.event])
             .where(SqlEventLogStorageTable.c.run_id == run_id)
-            .where(SqlEventLogStorageTable.c.step_key != None)
+            .where(SqlEventLogStorageTable.c.step_key != None)  # noqa: E711
             .where(
                 SqlEventLogStorageTable.c.dagster_event_type.in_(
                     [
@@ -627,7 +622,7 @@ class SqlEventLogStorage(EventLogStorage):
         removed_asset_key_query = (
             db.select([SqlEventLogStorageTable.c.asset_key])
             .where(SqlEventLogStorageTable.c.run_id == run_id)
-            .where(SqlEventLogStorageTable.c.asset_key != None)
+            .where(SqlEventLogStorageTable.c.asset_key != None)  # noqa: E711
             .group_by(SqlEventLogStorageTable.c.asset_key)
         )
 
@@ -692,7 +687,8 @@ class SqlEventLogStorage(EventLogStorage):
         """Utility method to test representation of the record in the SQL table.  Returns all of
         the columns stored in the event log storage (as opposed to the deserialized `EventLogEntry`).
         This allows checking that certain fields are extracted to support performant lookups (e.g.
-        extracting `step_key` for fast filtering)"""
+        extracting `step_key` for fast filtering)
+        """
         with self.run_connection(run_id=run_id) as conn:
             query = (
                 db.select([SqlEventLogStorageTable])
@@ -708,7 +704,7 @@ class SqlEventLogStorage(EventLogStorage):
         query = (
             db.select([1])
             .where(SecondaryIndexMigrationTable.c.name == name)
-            .where(SecondaryIndexMigrationTable.c.migration_completed != None)
+            .where(SecondaryIndexMigrationTable.c.migration_completed != None)  # noqa: E711
             .limit(1)
         )
         with self.index_connection() as conn:
@@ -803,13 +799,8 @@ class SqlEventLogStorage(EventLogStorage):
         if event_records_filter.storage_ids:
             query = query.where(SqlEventLogStorageTable.c.id.in_(event_records_filter.storage_ids))
 
-        if event_records_filter.tags:
-            if not self.has_table(AssetEventTagsTable.name):
-                raise DagsterInvalidInvocationError(
-                    "Cannot filter by asset event tags because AssetEventTags table does not "
-                    "exist. Run `dagster instance migrate` to create the table."
-                )
-
+        if event_records_filter.tags and self.has_table(AssetEventTagsTable.name):
+            # If we don't have the tags table, we'll filter the results after the query
             check.invariant(
                 isinstance(event_records_filter.asset_key, AssetKey),
                 "Asset key must be set in event records filter to filter by tags.",
@@ -869,7 +860,11 @@ class SqlEventLogStorage(EventLogStorage):
         else:
             asset_details = None
 
-        if event_records_filter.tags and not self.supports_intersect:
+        if (
+            event_records_filter.tags
+            and not self.supports_intersect
+            and self.has_table(AssetEventTagsTable.name)
+        ):
             table = self._apply_tags_table_joins(
                 SqlEventLogStorageTable, event_records_filter.tags, event_records_filter.asset_key
             )
@@ -905,10 +900,24 @@ class SqlEventLogStorage(EventLogStorage):
                         "Could not resolve event record as EventLogEntry for id `%s`.", row_id
                     )
                     continue
-                else:
-                    event_records.append(
-                        EventLogRecord(storage_id=row_id, event_log_entry=event_record)
-                    )
+
+                if event_records_filter.tags and not self.has_table(AssetEventTagsTable.name):
+                    # If we can't filter tags via the tags table, filter the returned records
+                    if limit is not None:
+                        raise DagsterInvalidInvocationError(
+                            "Cannot filter events on tags with a limit, without the asset event "
+                            "tags table. To fix, run `dagster instance migrate`."
+                        )
+
+                    event_record_tags = event_record.tags
+                    if not event_record_tags or any(
+                        event_record_tags.get(k) != v for k, v in event_records_filter.tags.items()
+                    ):
+                        continue
+
+                event_records.append(
+                    EventLogRecord(storage_id=row_id, event_log_entry=event_record)
+                )
             except seven.JSONDecodeError:
                 logging.warning("Could not parse event record id `%s`.", row_id)
 
@@ -1578,7 +1587,7 @@ class SqlEventLogStorage(EventLogStorage):
                             [asset_key.to_string(legacy=True) for asset_key in asset_keys]
                         ),
                     ),
-                    SqlEventLogStorageTable.c.partition != None,
+                    SqlEventLogStorageTable.c.partition != None,  # noqa: E711
                     SqlEventLogStorageTable.c.dagster_event_type
                     == DagsterEventType.ASSET_MATERIALIZATION.value,
                 )
@@ -1604,8 +1613,9 @@ class SqlEventLogStorage(EventLogStorage):
 
 
 def _get_from_row(row, column):
-    """utility function for extracting a column from a sqlalchemy row proxy, since '_asdict' is not
-    supported in sqlalchemy 1.3"""
+    """Utility function for extracting a column from a sqlalchemy row proxy, since '_asdict' is not
+    supported in sqlalchemy 1.3.
+    """
     if not row.has_key(column):
         return None
     return row[column]

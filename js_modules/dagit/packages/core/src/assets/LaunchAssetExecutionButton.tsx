@@ -1,4 +1,4 @@
-import {ApolloClient, gql, useApolloClient} from '@apollo/client';
+import {ApolloClient, useApolloClient} from '@apollo/client';
 import {Box, Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
@@ -32,7 +32,6 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
-import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {isAssetMissing, isAssetStale} from './StaleTag';
@@ -533,17 +532,14 @@ export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQueryQuery) {
   };
 }
 
-export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
+export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = graphql(`
   fragment LaunchAssetExecutionAssetNodeFragment on AssetNode {
     id
     opNames
     jobNames
     graphName
     partitionDefinition {
-      description
-      dimensionTypes {
-        name
-      }
+      ...PartitionDefinitionForLaunchAsset
     }
     isObservable
     isSource
@@ -566,8 +562,14 @@ export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     }
     ...AssetNodeConfigFragment
   }
-  ${ASSET_NODE_CONFIG_FRAGMENT}
-`;
+
+  fragment PartitionDefinitionForLaunchAsset on PartitionDefinition {
+    description
+    dimensionTypes {
+      name
+    }
+  }
+`);
 
 export const LAUNCH_ASSET_LOADER_QUERY = graphql(`
   query LaunchAssetLoaderQuery($assetKeys: [AssetKeyInput!]!) {

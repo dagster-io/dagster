@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Colors, Icon, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -6,18 +5,21 @@ import styled from 'styled-components/macro';
 import {withMiddleTruncation} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
+import {graphql} from '../graphql';
+import {
+  OpNodeDefinitionFragmentFragment,
+  OpNodeInvocationFragmentFragment,
+} from '../graphql/graphql';
 
 import {OpIOBox, metadataForIO} from './OpIOBox';
 import {OpTags, IOpTag} from './OpTags';
 import {OpLayout} from './asyncGraphLayout';
 import {Edge, position} from './common';
-import {OpNodeDefinitionFragment} from './types/OpNodeDefinitionFragment';
-import {OpNodeInvocationFragment} from './types/OpNodeInvocationFragment';
 
 interface IOpNodeProps {
   layout: OpLayout;
-  invocation?: OpNodeInvocationFragment;
-  definition: OpNodeDefinitionFragment;
+  invocation?: OpNodeInvocationFragmentFragment;
+  definition: OpNodeDefinitionFragmentFragment;
   highlightedEdges: Edge[];
   minified: boolean;
   selected: boolean;
@@ -203,7 +205,7 @@ const OpNodeAssociatedAssets: React.FC<{nodes: {assetKey: AssetKey}[]}> = ({node
   );
 };
 
-export const OP_NODE_INVOCATION_FRAGMENT = gql`
+export const OP_NODE_INVOCATION_FRAGMENT = graphql(`
   fragment OpNodeInvocationFragment on Solid {
     name
     isDynamicMapped
@@ -241,9 +243,9 @@ export const OP_NODE_INVOCATION_FRAGMENT = gql`
       }
     }
   }
-`;
+`);
 
-export const OP_NODE_DEFINITION_FRAGMENT = gql`
+export const OP_NODE_DEFINITION_FRAGMENT = graphql(`
   fragment OpNodeDefinitionFragment on ISolidDefinition {
     __typename
     name
@@ -317,7 +319,7 @@ export const OP_NODE_DEFINITION_FRAGMENT = gql`
       displayName
     }
   }
-`;
+`);
 
 export const NodeHighlightColors = {
   Border: Colors.Blue500,

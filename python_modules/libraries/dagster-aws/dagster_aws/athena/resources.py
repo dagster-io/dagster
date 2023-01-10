@@ -7,10 +7,12 @@ from urllib.parse import urlparse
 
 import boto3
 from botocore.stub import Stubber
-
-from dagster import Field, StringSource
-from dagster import _check as check
-from dagster import resource
+from dagster import (
+    Field,
+    StringSource,
+    _check as check,
+    resource,
+)
 
 
 class AthenaError(Exception):
@@ -200,19 +202,29 @@ def athena_config():
     return {
         "workgroup": Field(
             str,
-            description="The Athena WorkGroup. https://docs.aws.amazon.com/athena/latest/ug/manage-queries-control-costs-with-workgroups.html",
+            description=(
+                "The Athena WorkGroup."
+                " https://docs.aws.amazon.com/athena/latest/ug/manage-queries-control-costs-with-workgroups.html"
+            ),
             is_required=False,
             default_value="primary",
         ),
         "polling_interval": Field(
             int,
-            description="Time in seconds between checks to see if a query execution is finished. 5 seconds by default. Must be non-negative.",
+            description=(
+                "Time in seconds between checks to see if a query execution is finished. 5 seconds"
+                " by default. Must be non-negative."
+            ),
             is_required=False,
             default_value=5,
         ),
         "max_polls": Field(
             int,
-            description="Number of times to poll before timing out. 120 attempts by default. When coupled with the default polling_interval, queries will timeout after 10 minutes (120 * 5 seconds). Must be greater than 0.",
+            description=(
+                "Number of times to poll before timing out. 120 attempts by default. When coupled"
+                " with the default polling_interval, queries will timeout after 10 minutes (120 * 5"
+                " seconds). Must be greater than 0."
+            ),
             is_required=False,
             default_value=120,
         ),

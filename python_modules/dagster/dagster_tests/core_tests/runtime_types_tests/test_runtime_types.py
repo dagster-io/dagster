@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import (
     Any,
     Bool,
@@ -84,7 +83,6 @@ def test_is_any():
 
 
 def test_display_name():
-
     int_runtime = resolve_dagster_type(Int)
     assert int_runtime.display_name == "Int"
     list_int_runtime = resolve_dagster_type(List[Int])
@@ -130,7 +128,6 @@ def test_python_mapping():
 
 
 def test_double_dagster_type():
-
     AlwaysSucceedsFoo = DagsterType(name="Foo", type_check_fn=lambda _, _val: True)
     AlwaysFailsFoo = DagsterType(name="Foo", type_check_fn=lambda _, _val: False)
 
@@ -151,8 +148,9 @@ def test_double_dagster_type():
         def _should_fail():
             yup(return_a_thing())
 
-    assert str(exc_info.value) == (
-        'You have created two dagster types with the same name "Foo". '
+    assert (
+        str(exc_info.value)
+        == 'You have created two dagster types with the same name "Foo". '
         "Dagster types have must have unique names."
     )
 

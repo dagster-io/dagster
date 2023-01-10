@@ -5,7 +5,6 @@ from typing import Any, List, Optional
 
 import pendulum
 import pytest
-
 from dagster import (
     ConfigMapping,
     DagsterInstance,
@@ -71,7 +70,10 @@ def test_top_level_inputs_execution():
 
     with pytest.raises(
         DagsterTypeCheckDidNotPass,
-        match='Type check failed for step input "leaf_in" - expected type "Int". Description: Value "bad_value" of python type "str" must be a int.',
+        match=(
+            'Type check failed for step input "leaf_in" - expected type "Int". Description: Value'
+            ' "bad_value" of python type "str" must be a int.'
+        ),
     ):
         the_graph.execute_in_process(input_values={"the_in": "bad_value"})
 
@@ -854,7 +856,10 @@ def test_top_level_graph_config_mapping_failure():
 
     with pytest.raises(
         DagsterInvalidConfigError,
-        match="In pipeline 'my_nested_graph', top level graph 'my_nested_graph' has a configuration error.",
+        match=(
+            "In pipeline 'my_nested_graph', top level graph 'my_nested_graph' has a configuration"
+            " error."
+        ),
     ):
         my_nested_graph.execute_in_process()
 
@@ -964,8 +969,10 @@ def test_graph_configured_error_in_fn():
 
     with pytest.raises(
         DagsterConfigMappingFunctionError,
-        match="The config mapping function on a `configured` GraphDefinition has thrown an "
-        "unexpected error during its execution.",
+        match=(
+            "The config mapping function on a `configured` GraphDefinition has thrown an "
+            "unexpected error during its execution."
+        ),
     ):
         configured_graph.execute_in_process()
 
@@ -1080,7 +1087,6 @@ def test_graphs_break_type_checks():
 
     @graph
     def map_str(x: str):
-
         echo_int(x)
 
     @graph
@@ -1132,7 +1138,10 @@ def test_input_values_name_not_found():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Error when constructing JobDefinition 'my_graph': Input value provided for key 'z', but job has no top-level input with that name.",
+        match=(
+            "Error when constructing JobDefinition 'my_graph': Input value provided for key 'z',"
+            " but job has no top-level input with that name."
+        ),
     ):
         my_graph.to_job(input_values={"z": 4})
 

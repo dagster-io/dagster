@@ -21,7 +21,7 @@ Create a file named `hello-dagster.py` that contains the following code:
 import pandas as pd
 import requests
 
-from dagster import MetadataValue, Output, asset, repository
+from dagster import MetadataValue, Output, asset
 
 
 @asset
@@ -118,14 +118,14 @@ But wait - there's more. Because the `hackernews_top_stories` asset specified `m
 
 ## Next steps
 
-Congrats on your first Dagster pipeline! This example used [assets](/tutorial#assets), which most Dagster projects utilize because they let data engineers:
+Congrats on your first Dagster pipeline! This example used [assets](/tutorial), which most Dagster projects utilize because they let data engineers:
 
 - Think in the same terms as stakeholders
 - Answer questions about data quality and lineage
 - Work with the modern data stack (dbt, Airbyte/Fivetran, Spark)
 - Create declarative freshness policies instead of task-driven cron schedules
 
-Dagster also offers [ops and jobs](/tutorial#ops-and-jobs), but we recommend starting with assets.
+Dagster also offers [ops and jobs](/guides/dagster/intro-to-ops-jobs), but we recommend starting with assets.
 
 While this example used a single file, most Dagster projects are organized as Python packages. From here, you can:
 

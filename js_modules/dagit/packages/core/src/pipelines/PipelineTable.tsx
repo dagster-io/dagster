@@ -1,19 +1,19 @@
-import {gql} from '@apollo/client';
 import {Colors, Group, Table, Caption} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {graphql} from '../graphql';
+import {PipelineTableFragmentFragment} from '../graphql/graphql';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {PipelineReference} from './PipelineReference';
-import {PipelineTableFragment} from './types/PipelineTableFragment';
 
 type PipelineForTable = {
-  pipelineOrJob: PipelineTableFragment;
+  pipelineOrJob: PipelineTableFragmentFragment;
   repoAddress: RepoAddress;
 };
 
@@ -110,7 +110,7 @@ const Description = styled.div`
   font-size: 12px;
 `;
 
-export const PIPELINE_TABLE_FRAGMENT = gql`
+export const PIPELINE_TABLE_FRAGMENT = graphql(`
   fragment PipelineTableFragment on Pipeline {
     id
     description
@@ -140,4 +140,4 @@ export const PIPELINE_TABLE_FRAGMENT = gql`
       }
     }
   }
-`;
+`);

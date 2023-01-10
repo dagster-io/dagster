@@ -1,5 +1,4 @@
 import pytest
-
 from dagster._core.test_utils import environ
 
 
@@ -23,7 +22,6 @@ def test_run_task_kwargs(instance_cm):
 
 
 def test_invalid_kwargs_field(instance_cm):
-
     with pytest.raises(Exception, match="Found an unexpected key foo in run_task_kwargs"):
         with instance_cm(config={"run_task_kwargs": {"foo": "bar"}}) as instance:
             print(instance.run_launcher)  # pylint: disable=print-call
@@ -38,7 +36,9 @@ def test_invalid_kwargs_field(instance_cm):
     with pytest.raises(Exception):
         with instance_cm(
             config={"overrides": {"containerOverrides": {}}},
-            match="Task overrides are set by the run launcher and cannot be set in run_task_kwargs.",
+            match=(
+                "Task overrides are set by the run launcher and cannot be set in run_task_kwargs."
+            ),
         ) as instance:
             print(instance.run_launcher)  # pylint: disable=print-call
 

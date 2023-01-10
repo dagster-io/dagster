@@ -5,7 +5,6 @@ from typing import NamedTuple
 
 import objgraph
 import pytest
-
 from dagster._check import CheckError
 from dagster._utils.cached_method import cached_method
 

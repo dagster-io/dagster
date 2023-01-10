@@ -1,7 +1,6 @@
 import tempfile
 
 import pytest
-
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster._core.test_utils import instance_for_test
 

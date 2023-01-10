@@ -4,6 +4,26 @@ import sys
 import time
 
 import kubernetes
+from dagster import (
+    DagsterEvent,
+    DagsterEventType,
+    DagsterInstance,
+    Executor,
+    MetadataEntry,
+    _check as check,
+    executor,
+    multiple_process_executor_requirements,
+)
+from dagster._cli.api import ExecuteStepArgs
+from dagster._core.errors import DagsterUnmetExecutorRequirementsError
+from dagster._core.events import EngineEventData
+from dagster._core.events.log import EventLogEntry
+from dagster._core.events.utils import filter_dagster_events_from_cli_logs
+from dagster._core.execution.plan.objects import StepFailureData, UserFailureData
+from dagster._core.execution.retries import RetryMode
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._serdes import pack_value, serialize_dagster_namedtuple, unpack_value
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
 from dagster_celery.core_execution_loop import DELEGATE_MARKER
 from dagster_celery.defaults import broker_url, result_backend
@@ -21,20 +41,6 @@ from dagster_k8s.job import (
     get_k8s_job_name,
     get_user_defined_k8s_config,
 )
-
-from dagster import DagsterEvent, DagsterEventType, DagsterInstance, Executor, MetadataEntry
-from dagster import _check as check
-from dagster import executor, multiple_process_executor_requirements
-from dagster._cli.api import ExecuteStepArgs
-from dagster._core.errors import DagsterUnmetExecutorRequirementsError
-from dagster._core.events import EngineEventData
-from dagster._core.events.log import EventLogEntry
-from dagster._core.events.utils import filter_dagster_events_from_cli_logs
-from dagster._core.execution.plan.objects import StepFailureData, UserFailureData
-from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
-from dagster._serdes import pack_value, serialize_dagster_namedtuple, unpack_value
-from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
 from .launcher import CeleryK8sRunLauncher
@@ -97,8 +103,10 @@ def celery_k8s_job_executor(init_context):
 
     if not isinstance(run_launcher, CeleryK8sRunLauncher):
         raise DagsterUnmetExecutorRequirementsError(
-            "This engine is only compatible with a CeleryK8sRunLauncher; configure the "
-            "CeleryK8sRunLauncher on your instance to use it.",
+            (
+                "This engine is only compatible with a CeleryK8sRunLauncher; configure the "
+                "CeleryK8sRunLauncher on your instance to use it."
+            ),
         )
 
     job_config = run_launcher.get_k8s_job_config(
@@ -142,7 +150,6 @@ class CeleryK8sJobExecutor(Executor):
         repo_location_name=None,
         job_wait_timeout=None,
     ):
-
         if load_incluster_config:
             check.invariant(
                 kubeconfig_file is None,

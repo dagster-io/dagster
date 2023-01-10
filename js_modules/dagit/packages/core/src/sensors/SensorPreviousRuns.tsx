@@ -17,7 +17,6 @@ export const SensorPreviousRuns: React.FC<{
   highlightedIds?: string[];
 }> = ({sensor, highlightedIds, tabs}) => {
   const {data} = useQuery(PREVIOUS_RUNS_FOR_SENSOR_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {
       limit: RUNS_LIMIT,
       filter: {

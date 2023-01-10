@@ -23,7 +23,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import OpDefinition, PartitionsDefinition
+    from dagster._core.definitions import PartitionsDefinition
     from dagster._core.definitions.op_definition import OpDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.events import DagsterEvent
@@ -166,7 +166,8 @@ class InputContext:
     @property
     def has_input_name(self) -> bool:
         """If we're the InputContext is being used to load the result of a run from outside the run,
-        then it won't have an input name."""
+        then it won't have an input name.
+        """
         return self._name is not None
 
     @public  # type: ignore
@@ -297,11 +298,13 @@ class InputContext:
         if self._asset_partitions_def is None:
             if self.asset_key:
                 raise DagsterInvariantViolationError(
-                    f"Attempting to access partitions def for asset {self.asset_key}, but it is not partitioned"
+                    f"Attempting to access partitions def for asset {self.asset_key}, but it is not"
+                    " partitioned"
                 )
             else:
                 raise DagsterInvariantViolationError(
-                    "Attempting to access partitions def for asset, but input does not correspond to an asset"
+                    "Attempting to access partitions def for asset, but input does not correspond"
+                    " to an asset"
                 )
 
         return self._asset_partitions_def
@@ -380,8 +383,10 @@ class InputContext:
         partition_key_ranges = subset.get_partition_key_ranges()
         if len(partition_key_ranges) != 1:
             check.failed(
-                "Tried to access asset_partition_key_range, but there are "
-                f"({len(partition_key_ranges)}) key ranges associated with this input.",
+                (
+                    "Tried to access asset_partition_key_range, but there are "
+                    f"({len(partition_key_ranges)}) key ranges associated with this input."
+                ),
             )
 
         return partition_key_ranges[0]
@@ -418,14 +423,19 @@ class InputContext:
 
         if not isinstance(subset, TimeWindowPartitionsSubset):
             check.failed(
-                "Tried to access asset_partitions_time_window, but the asset is not partitioned with time windows.",
+                (
+                    "Tried to access asset_partitions_time_window, but the asset is not partitioned"
+                    " with time windows."
+                ),
             )
 
         time_windows = subset.included_time_windows
         if len(time_windows) != 1:
             check.failed(
-                "Tried to access asset_partition_key_range, but there are "
-                f"({len(time_windows)}) partitions associated with this input.",
+                (
+                    "Tried to access asset_partition_key_range, but there are "
+                    f"({len(time_windows)}) partitions associated with this input."
+                ),
             )
 
         return time_windows[0]
@@ -452,7 +462,7 @@ class InputContext:
         """
         if self.upstream_output is None:
             raise DagsterInvariantViolationError(
-                "InputContext.upstream_output not defined. " "Cannot compute an identifier"
+                "InputContext.upstream_output not defined. Cannot compute an identifier"
             )
 
         return self.upstream_output.get_identifier()

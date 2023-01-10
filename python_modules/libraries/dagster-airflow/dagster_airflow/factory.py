@@ -3,18 +3,19 @@ import os
 import re
 from collections import namedtuple
 
-from airflow import DAG
-from airflow.models.baseoperator import BaseOperator
-from dagster_airflow.operators.util import check_storage_specified
-
 import dagster._check as check
 import dagster._seven as seven
+from airflow import DAG
+from airflow.models.baseoperator import BaseOperator
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.instance import DagsterInstance, is_dagster_home_set
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.config import is_dagster_home_set
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot, snapshot_from_execution_plan
 from dagster._utils.backcompat import canonicalize_backcompat_args
+
+from dagster_airflow.operators.util import check_storage_specified
 
 from .compile import coalesce_execution_steps
 from .operators.docker_operator import DagsterDockerOperator
@@ -55,8 +56,10 @@ def _rename_for_airflow(name):
 class DagsterOperatorInvocationArgs(
     namedtuple(
         "DagsterOperatorInvocationArgs",
-        "recon_repo pipeline_name run_config mode step_keys instance_ref pipeline_snapshot "
-        "execution_plan_snapshot parent_pipeline_snapshot",
+        (
+            "recon_repo pipeline_name run_config mode step_keys instance_ref pipeline_snapshot "
+            "execution_plan_snapshot parent_pipeline_snapshot"
+        ),
     )
 ):
     def __new__(

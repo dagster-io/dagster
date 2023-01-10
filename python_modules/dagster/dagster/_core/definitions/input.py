@@ -138,7 +138,8 @@ class InputDefinition:
 
         if root_manager_key and input_manager_key:
             raise DagsterInvalidDefinitionError(
-                f"Can't supply both root input manager key {root_manager_key} and input manager key {input_manager_key} on InputDefinition."
+                f"Can't supply both root input manager key {root_manager_key} and input manager key"
+                f" {input_manager_key} on InputDefinition."
             )
 
         self._root_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
@@ -296,7 +297,10 @@ class InputDefinition:
 
         check.invariant(
             self.name == inferred.name,
-            f"InferredInputProps name {inferred.name} did not align with InputDefinition name {self.name}",
+            (
+                f"InferredInputProps name {inferred.name} did not align with InputDefinition name"
+                f" {self.name}"
+            ),
         )
 
         dagster_type = self._dagster_type
@@ -519,7 +523,8 @@ class In(
     ):
         if root_manager_key and input_manager_key:
             raise DagsterInvalidDefinitionError(
-                f"Can't supply both root input manager key {root_manager_key} and input manager key {input_manager_key} on InputDefinition."
+                f"Can't supply both root input manager key {root_manager_key} and input manager key"
+                f" {input_manager_key} on InputDefinition."
             )
 
         if root_manager_key:

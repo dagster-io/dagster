@@ -63,6 +63,7 @@ You can use the client to get the status of a job run as follows:
 
 ```python file=/concepts/dagit/graphql/client_example.py startafter=start_run_status_marker endbefore=end_run_status_marker
 from dagster_graphql import DagsterGraphQLClientError
+
 from dagster import DagsterRunStatus
 
 try:
@@ -83,10 +84,7 @@ You can also reload a repository location in a Dagster deployment.
 This reloads all repositories in that repository location. This is useful in a variety of contexts, including refreshing Dagit without restarting the server. Example usage is as follows:
 
 ```python file=/concepts/dagit/graphql/client_example.py startafter=start_reload_repo_location_marker endbefore=end_reload_repo_location_marker
-from dagster_graphql import (
-    ReloadRepositoryLocationInfo,
-    ReloadRepositoryLocationStatus,
-)
+from dagster_graphql import ReloadRepositoryLocationInfo, ReloadRepositoryLocationStatus
 
 reload_info: ReloadRepositoryLocationInfo = client.reload_repository_location(REPO_NAME)
 if reload_info.status == ReloadRepositoryLocationStatus.SUCCESS:

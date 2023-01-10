@@ -4,12 +4,11 @@ from contextlib import ExitStack
 from unittest import mock
 
 import pytest
-from dagster_graphql.test.utils import define_out_of_process_workspace, main_repo_location_name
-
 from dagster import repository
 from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import lambda_solid, pipeline
+from dagster_graphql.test.utils import define_out_of_process_workspace, main_repo_location_name
 
 
 def get_repo():
@@ -156,7 +155,6 @@ def test_handle_cleanup_by_workspace_context_exit():
 
 
 def test_handle_cleaup_by_gc_without_request_context():
-
     called = {"yup": False}
 
     def call_me():

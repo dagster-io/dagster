@@ -245,7 +245,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         """Explicit lifecycle management."""
 
     def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
-        """Allows for optimizing database connection / use in the context of a long lived dagit process"""
+        """Allows for optimizing database connection / use in the context of a long lived dagit process
+        """
 
     @abstractmethod
     def get_event_records(
@@ -269,7 +270,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         raise NotImplementedError()
 
     def get_maximum_record_id(self) -> Optional[int]:
-        """Get the current greatest record id in the event log. Only supported for non sharded sql storage"""
+        """Get the current greatest record id in the event log. Only supported for non sharded sql storage
+        """
         raise NotImplementedError()
 
     @abstractmethod

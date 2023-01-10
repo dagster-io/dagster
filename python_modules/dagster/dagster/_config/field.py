@@ -123,9 +123,12 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
         check.param_invariant(
             False,
             "dagster_type",
-            f"Cannot pass config type class {obj} to resolve_to_config_type. "
-            "This error usually occurs when you pass a dagster config type class instead of a class instance into "
-            'another dagster config type. E.g. "Noneable(Permissive)" should instead be "Noneable(Permissive())".',
+            (
+                f"Cannot pass config type class {obj} to resolve_to_config_type. This error usually"
+                " occurs when you pass a dagster config type class instead of a class instance into"
+                ' another dagster config type. E.g. "Noneable(Permissive)" should instead be'
+                ' "Noneable(Permissive())".'
+            ),
         )
 
     if isinstance(obj, type) and is_subclass(obj, DagsterType):

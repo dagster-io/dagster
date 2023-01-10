@@ -112,7 +112,10 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
         self.upload_to_cloud_storage(log_key, ComputeIOType.STDERR)
 
     def is_capture_complete(self, log_key: Sequence[str]) -> bool:
-        return self.local_manager.is_capture_complete(log_key)
+        if self.local_manager.is_capture_complete(log_key):
+            return True
+        # check remote storage
+        return self.cloud_storage_has_logs(log_key, ComputeIOType.STDERR)
 
     def _log_data_for_type(self, log_key, io_type, offset, max_bytes):
         if self._has_local_file(log_key, io_type):

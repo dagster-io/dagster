@@ -40,12 +40,10 @@ from .resource_requirement import (
     ResourceDependencyRequirement,
     ResourceRequirement,
 )
-
-# pylint: disable=unused-import
-from .scoped_resources_builder import (  # type: ignore
-    IContainsGenerator,
-    Resources,
-    ScopedResourcesBuilder,
+from .scoped_resources_builder import (  # re-exported
+    IContainsGenerator as IContainsGenerator,
+    Resources as Resources,
+    ScopedResourcesBuilder as ScopedResourcesBuilder,
 )
 
 if TYPE_CHECKING:
@@ -209,8 +207,8 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
         if context_provided:
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
-                    "Resource initialization function has context argument, but no context was provided "
-                    "when invoking."
+                    "Resource initialization function has context argument, but no context was"
+                    " provided when invoking."
                 )
             if len(args) + len(kwargs) > 1:
                 raise DagsterInvalidInvocationError(
@@ -239,7 +237,9 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
                 )
         elif len(args) + len(kwargs) > 0:
             raise DagsterInvalidInvocationError(
-                "Attempted to invoke resource with argument, but underlying function has no context argument. Either specify a context argument on the resource function, or remove the passed-in argument."
+                "Attempted to invoke resource with argument, but underlying function has no context"
+                " argument. Either specify a context argument on the resource function, or remove"
+                " the passed-in argument."
             )
         else:
             return resource_invocation_result(self, None)
@@ -286,8 +286,9 @@ class _ResourceDecoratorCallable:
         required_extras = list(filter(is_required_param, extras))
         if required_extras:
             raise DagsterInvalidDefinitionError(
-                f"@resource decorated function '{resource_fn.__name__}' expects only a single positional required argument. "
-                f"Got required extra params {', '.join(positional_arg_name_list(required_extras))}"
+                f"@resource decorated function '{resource_fn.__name__}' expects only a single"
+                " positional required argument. Got required extra params"
+                f" {', '.join(positional_arg_name_list(required_extras))}"
             )
 
         resource_def = ResourceDefinition(

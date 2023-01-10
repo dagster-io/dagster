@@ -1,2 +1,4 @@
-from .duckdb_pandas_type_handler import DuckDBPandasTypeHandler as DuckDBPandasTypeHandler
-from .duckdb_pandas_type_handler import duckdb_pandas_io_manager as duckdb_pandas_io_manager
+from .duckdb_pandas_type_handler import (
+    DuckDBPandasTypeHandler as DuckDBPandasTypeHandler,
+    duckdb_pandas_io_manager as duckdb_pandas_io_manager,
+)

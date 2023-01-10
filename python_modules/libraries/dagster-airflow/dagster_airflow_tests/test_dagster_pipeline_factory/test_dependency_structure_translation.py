@@ -12,11 +12,10 @@ else:
     from airflow.utils.helpers import chain
 # pylint: enable=no-name-in-module,import-error
 
-from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
-from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_airflow_dag
-
 from dagster._core.snap import PipelineSnapshot
 from dagster._serdes import serialize_pp
+from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
+from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_airflow_dag
 
 default_args = {
     "owner": "dagster",
@@ -37,7 +36,7 @@ def test_one_task_dag(snapshot):
             default_args=default_args,
             schedule_interval=None,
         )
-    dummy_operator = DummyOperator(
+    _dummy_operator = DummyOperator(
         task_id="dummy_operator",
         dag=dag,
     )
@@ -64,11 +63,11 @@ def test_two_task_dag_no_dep(snapshot):
             default_args=default_args,
             schedule_interval=None,
         )
-    dummy_operator_1 = DummyOperator(
+    _dummy_operator_1 = DummyOperator(
         task_id="dummy_operator_1",
         dag=dag,
     )
-    dummy_operator_2 = DummyOperator(
+    _dummy_operator_2 = DummyOperator(
         task_id="dummy_operator_2",
         dag=dag,
     )
@@ -512,7 +511,7 @@ def test_one_task_dag_to_job():
             default_args=default_args,
             schedule_interval=None,
         )
-    dummy_operator = DummyOperator(
+    _dummy_operator = DummyOperator(
         task_id="dummy_operator",
         dag=dag,
     )

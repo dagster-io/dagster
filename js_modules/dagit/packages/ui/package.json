@@ -1,6 +1,6 @@
 {
   "name": "@dagster-io/ui",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Dagster UI Component Library",
   "license": "Apache-2.0",
   "main": "lib/index.js",
@@ -46,7 +46,7 @@
     "@babel/preset-env": "^7.16.7",
     "@babel/preset-react": "^7.16.7",
     "@babel/preset-typescript": "^7.16.7",
-    "@dagster-io/eslint-config": "1.0.5",
+    "@dagster-io/eslint-config": "1.0.8",
     "@mdx-js/react": "^1.6.22",
     "@rollup/plugin-babel": "^5.3.1",
     "@rollup/plugin-commonjs": "^21.0.3",

@@ -1,4 +1,4 @@
-import pdb
+import pdb  # noqa: T100
 import sys
 
 

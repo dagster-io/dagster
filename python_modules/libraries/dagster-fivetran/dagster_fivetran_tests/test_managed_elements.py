@@ -357,7 +357,6 @@ def add_groups_connectors(
 
 @responses.activate
 def test_basic_end_to_end():
-
     ft_instance = fivetran_resource.configured(
         {
             "api_key": "some_key",
@@ -393,7 +392,6 @@ def test_basic_end_to_end():
         connectors={"my_connector": github_conn},
         destinations={"my_destination": snowflake_destination},
     ) as mock_ft:
-
         assert reconciler.check() == ManagedElementDiff()
         assert reconciler.apply() == ManagedElementDiff()
 
@@ -406,7 +404,6 @@ def test_basic_end_to_end():
         connectors={},
         destinations={},
     ) as mock_ft:
-
         expected_diff = diff_dicts(
             {
                 "my_destination": {"baz": "qux"},

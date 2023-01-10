@@ -5,8 +5,10 @@ from urllib.parse import urljoin, urlparse
 import sqlalchemy as db
 from sqlalchemy.pool import NullPool
 
-from dagster import StringSource
-from dagster import _check as check
+from dagster import (
+    StringSource,
+    _check as check,
+)
 from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -19,7 +21,7 @@ from dagster._core.storage.sqlite import create_db_conn_string, get_sqlite_versi
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import mkdir_p
 
-from ..schema import InstanceInfo, RunStorageSqlMetadata, RunTagsTable, RunsTable
+from ..schema import InstanceInfo, RunsTable, RunStorageSqlMetadata, RunTagsTable
 from ..sql_run_storage import SqlRunStorage
 
 MINIMUM_SQLITE_BUCKET_VERSION = [3, 25, 0]
@@ -152,7 +154,8 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
 
     def delete_run(self, run_id):
         """Override the default sql delete run implementation until we can get full
-        support on cascading deletes"""
+        support on cascading deletes
+        """
         check.str_param(run_id, "run_id")
         remove_tags = db.delete(RunTagsTable).where(RunTagsTable.c.run_id == run_id)
         remove_run = db.delete(RunsTable).where(RunsTable.c.run_id == run_id)

@@ -1,10 +1,10 @@
-# pylint: disable=unused-import,redefined-builtin
-from typing import Any, List, Optional, Union
-
-from dagster_airbyte.managed.types import GeneratedAirbyteDestination
+# pylint: redefined-builtin
+from typing import Optional, Union
 
 import dagster._check as check
 from dagster._annotations import public
+
+from dagster_airbyte.managed.types import GeneratedAirbyteDestination
 
 
 class DynamodbDestination(GeneratedAirbyteDestination):
@@ -101,7 +101,7 @@ class BigqueryDestination(GeneratedAirbyteDestination):
             dataset_id (str): The default BigQuery Dataset ID that tables are replicated to if the source does not specify a namespace. Read more here.
             loading_method (Union[BigqueryDestination.StandardInserts, BigqueryDestination.GCSStaging]): Loading method used to send select the way data will be uploaded to BigQuery. Standard Inserts - Direct uploading using SQL INSERT statements. This method is extremely inefficient and provided only for quick testing. In almost all cases, you should use staging. GCS Staging - Writes large batches of records to a file, uploads the file to GCS, then uses COPY INTO table to upload the file. Recommended for most workloads for better speed and scalability. Read more about GCS Staging here.
             credentials_json (Optional[str]): The contents of the JSON service account key. Check out the docs if you need help generating this key. Default credentials will be used if this field is left empty.
-            transformation_priority (Optional[str]): Interactive run type means that the query is executed as soon as possible, and these queries count towards concurrent rate limit and daily limit. Read more about interactive run type here. Batch queries are queued and started as soon as idle resources are available in the BigQuery shared resource pool, which usually occurs within a few minutes. Batch queries don’t count towards your concurrent rate limit. Read more about batch queries here. The default "interactive" value is used if not set explicitly.
+            transformation_priority (Optional[str]): Interactive run type means that the query is executed as soon as possible, and these queries count towards concurrent rate limit and daily limit. Read more about interactive run type here. Batch queries are queued and started as soon as idle resources are available in the BigQuery shared resource pool, which usually occurs within a few minutes. Batch queries don`t count towards your concurrent rate limit. Read more about batch queries here. The default "interactive" value is used if not set explicitly.
             big_query_client_buffer_size_mb (Optional[int]): Google BigQuery client's chunk (buffer) size (MIN=1, MAX = 15) for each table. The size that will be written by a single RPC. Written data will be buffered and only flushed upon reaching this size or closing the channel. The default 15MB value is used if not set explicitly. Read more here.
         """
         self.project_id = check.str_param(project_id, "project_id")
@@ -548,7 +548,7 @@ class ElasticsearchDestination(GeneratedAirbyteDestination):
         ],
         upsert: Optional[bool] = None,
     ):
-        """
+        r"""
         Airbyte Destination for Elasticsearch
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/elasticsearch
@@ -1191,7 +1191,7 @@ class MongodbDestination(GeneratedAirbyteDestination):
         database: str,
         auth_type: Union["MongodbDestination.None_", "MongodbDestination.LoginPassword"],
     ):
-        """
+        r"""
         Airbyte Destination for Mongodb
 
         Documentation can be found at https://docs.airbyte.com/integrations/destinations/mongodb

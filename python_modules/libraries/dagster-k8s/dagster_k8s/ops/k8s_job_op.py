@@ -2,10 +2,9 @@ import time
 from typing import Any, Dict, List, Optional
 
 import kubernetes
-
 from dagster import Field, In, Noneable, Nothing, OpExecutionContext, Permissive, StringSource, op
 from dagster._annotations import experimental
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from ..client import DagsterKubernetesClient
 from ..container_context import K8sContainerContext
@@ -45,7 +44,10 @@ K8S_JOB_OP_CONFIG = merge_dicts(
             Noneable(str),
             is_required=False,
             default_value=None,
-            description="The kubeconfig file from which to load config. Defaults to using the default kubeconfig.",
+            description=(
+                "The kubeconfig file from which to load config. Defaults to using the default"
+                " kubeconfig."
+            ),
         ),
         "timeout": Field(
             int,
@@ -55,27 +57,47 @@ K8S_JOB_OP_CONFIG = merge_dicts(
         "container_config": Field(
             Permissive(),
             is_required=False,
-            description="Raw k8s config for the k8s pod's main container (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#container-v1-core). Keys can either snake_case or camelCase.",
+            description=(
+                "Raw k8s config for the k8s pod's main container"
+                " (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#container-v1-core)."
+                " Keys can either snake_case or camelCase."
+            ),
         ),
         "pod_template_spec_metadata": Field(
             Permissive(),
             is_required=False,
-            description="Raw k8s config for the k8s pod's metadata (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta). Keys can either snake_case or camelCase.",
+            description=(
+                "Raw k8s config for the k8s pod's metadata"
+                " (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta)."
+                " Keys can either snake_case or camelCase."
+            ),
         ),
         "pod_spec_config": Field(
             Permissive(),
             is_required=False,
-            description="Raw k8s config for the k8s pod's pod spec (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#podspec-v1-core). Keys can either snake_case or camelCase.",
+            description=(
+                "Raw k8s config for the k8s pod's pod spec"
+                " (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#podspec-v1-core)."
+                " Keys can either snake_case or camelCase."
+            ),
         ),
         "job_metadata": Field(
             Permissive(),
             is_required=False,
-            description="Raw k8s config for the k8s job's metadata (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta). Keys can either snake_case or camelCase.",
+            description=(
+                "Raw k8s config for the k8s job's metadata"
+                " (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta)."
+                " Keys can either snake_case or camelCase."
+            ),
         ),
         "job_spec_config": Field(
             Permissive(),
             is_required=False,
-            description="Raw k8s config for the k8s job's job spec (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#jobspec-v1-batch). Keys can either snake_case or camelCase.",
+            description=(
+                "Raw k8s config for the k8s job's job spec"
+                " (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#jobspec-v1-batch)."
+                " Keys can either snake_case or camelCase."
+            ),
         ),
     },
 )

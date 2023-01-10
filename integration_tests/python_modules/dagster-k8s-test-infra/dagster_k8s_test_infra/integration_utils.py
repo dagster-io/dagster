@@ -5,8 +5,7 @@ import random
 import subprocess
 
 import requests
-
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -44,7 +43,7 @@ def get_test_namespace(prefix="dagster-test"):
 
 
 def within_docker():
-    """detect if we're running inside of a docker container
+    """Detect if we're running inside of a docker container.
 
     from: https://stackoverflow.com/a/48710609/11295366
     """

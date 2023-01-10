@@ -3,8 +3,10 @@ from enum import Enum
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
-from dagster import DagsterInstance
-from dagster import _check as check
+from dagster import (
+    DagsterInstance,
+    _check as check,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.logical_version import (
     DEFAULT_LOGICAL_VERSION,
@@ -320,7 +322,8 @@ class BatchMaterializationLoader:
     ) -> Optional[EventLogEntry]:
         if asset_key not in self._asset_keys:
             check.failed(
-                f"Asset key {asset_key} not recognized for this loader.  Expected one of: {self._asset_keys}"
+                f"Asset key {asset_key} not recognized for this loader.  Expected one of:"
+                f" {self._asset_keys}"
             )
 
         if not self._fetched:

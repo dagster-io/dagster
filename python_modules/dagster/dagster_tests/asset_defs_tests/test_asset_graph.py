@@ -3,7 +3,6 @@ from unittest.mock import MagicMock
 
 import pendulum
 import pytest
-
 from dagster import (
     AssetIn,
     AssetKey,
@@ -211,9 +210,11 @@ def test_custom_unsupported_partition_mapping():
 
     with pytest.warns(
         DeprecationWarning,
-        match="Non-built-in PartitionMappings, such as TrailingWindowPartitionMapping are "
-        "deprecated and will not work with asset reconciliation. The built-in partition mappings "
-        "are AllPartitionMapping, IdentityPartitionMapping",
+        match=(
+            "Non-built-in PartitionMappings, such as TrailingWindowPartitionMapping are deprecated"
+            " and will not work with asset reconciliation. The built-in partition mappings are"
+            " AllPartitionMapping, IdentityPartitionMapping"
+        ),
     ):
 
         @asset(

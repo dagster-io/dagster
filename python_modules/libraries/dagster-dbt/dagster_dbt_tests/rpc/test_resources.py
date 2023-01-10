@@ -1,5 +1,6 @@
 import pytest
 import responses
+from dagster._legacy import ModeDefinition, execute_solid, solid
 from dagster_dbt import (
     DbtRpcOutput,
     DbtRpcResource,
@@ -8,8 +9,6 @@ from dagster_dbt import (
     dbt_rpc_sync_resource,
     local_dbt_rpc_resource,
 )
-
-from dagster._legacy import ModeDefinition, execute_solid, solid
 
 
 def test_url(client):
@@ -142,7 +141,10 @@ def test_dbt_rpc_sync_resource():
 
 
 @pytest.mark.skip(
-    reason="Failing reliably. See https://linear.app/elementl/issue/CORE-85/test-dbt-rpc-resource-status-failing-reliably"
+    reason=(
+        "Failing reliably. See"
+        " https://linear.app/elementl/issue/CORE-85/test-dbt-rpc-resource-status-failing-reliably"
+    )
 )
 @pytest.mark.parametrize(
     "client_class,resource",
@@ -167,7 +169,10 @@ def test_dbt_rpc_resource_status(
 
 
 @pytest.mark.skip(
-    reason="Failing reliably. See https://linear.app/elementl/issue/CORE-85/test-dbt-rpc-resource-status-failing-reliably"
+    reason=(
+        "Failing reliably. See"
+        " https://linear.app/elementl/issue/CORE-85/test-dbt-rpc-resource-status-failing-reliably"
+    )
 )
 def test_dbt_rpc_resource_is_not_waiting(
     dbt_rpc_server,
@@ -195,7 +200,10 @@ def test_dbt_rpc_resource_is_not_waiting(
 
 
 @pytest.mark.skip(
-    reason="Failing reliably. See https://linear.app/elementl/issue/CORE-85/test-dbt-rpc-resource-status-failing-reliably"
+    reason=(
+        "Failing reliably. See"
+        " https://linear.app/elementl/issue/CORE-85/test-dbt-rpc-resource-status-failing-reliably"
+    )
 )
 def test_dbt_rpc_sync_resource_is_waiting(
     dbt_rpc_server,
@@ -223,7 +231,10 @@ def test_dbt_rpc_sync_resource_is_waiting(
 
 
 @pytest.mark.skip(
-    reason="Failing reliably. See https://linear.app/elementl/issue/CORE-85/test-dbt-rpc-resource-status-failing-reliably"
+    reason=(
+        "Failing reliably. See"
+        " https://linear.app/elementl/issue/CORE-85/test-dbt-rpc-resource-status-failing-reliably"
+    )
 )
 @pytest.mark.parametrize(
     "client_class,resource",
@@ -248,7 +259,10 @@ def test_dbt_rpc_resource_cli(
 
 
 @pytest.mark.skip(
-    reason="Failing reliably. See https://linear.app/elementl/issue/CORE-85/test-dbt-rpc-resource-status-failing-reliably"
+    reason=(
+        "Failing reliably. See"
+        " https://linear.app/elementl/issue/CORE-85/test-dbt-rpc-resource-status-failing-reliably"
+    )
 )
 @pytest.mark.parametrize(
     "client_class,resource",
@@ -273,7 +287,10 @@ def test_dbt_rpc_resource_run(
 
 
 @pytest.mark.skip(
-    reason="Failing reliably. See https://linear.app/elementl/issue/CORE-85/test-dbt-rpc-resource-status-failing-reliably"
+    reason=(
+        "Failing reliably. See"
+        " https://linear.app/elementl/issue/CORE-85/test-dbt-rpc-resource-status-failing-reliably"
+    )
 )
 @pytest.mark.parametrize(
     "client_class,resource",
@@ -298,7 +315,10 @@ def test_dbt_rpc_resource_generate_docs(
 
 
 @pytest.mark.skip(
-    reason="Failing reliably. See https://linear.app/elementl/issue/CORE-85/test-dbt-rpc-resource-status-failing-reliably"
+    reason=(
+        "Failing reliably. See"
+        " https://linear.app/elementl/issue/CORE-85/test-dbt-rpc-resource-status-failing-reliably"
+    )
 )
 @pytest.mark.parametrize(
     "client_class,resource",

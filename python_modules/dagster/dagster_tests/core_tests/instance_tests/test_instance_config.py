@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import file_relative_path
 from dagster._core.instance.config import dagster_instance_config
 from dagster._core.test_utils import environ

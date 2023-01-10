@@ -2,21 +2,26 @@ import typing as t
 from abc import abstractmethod
 from enum import Enum as PythonEnum
 from functools import partial
-from typing import AbstractSet as TypingAbstractSet
-from typing import Iterator as TypingIterator
-from typing import Mapping
-from typing import Optional as TypingOptional
-from typing import Sequence
-from typing import Type as TypingType
-from typing import cast
+from typing import (
+    AbstractSet as TypingAbstractSet,
+    Iterator as TypingIterator,
+    Mapping,
+    Optional as TypingOptional,
+    Sequence,
+    Type as TypingType,
+    cast,
+)
 
 from typing_extensions import get_args, get_origin
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._builtins import BuiltinEnum
-from dagster._config import Array, ConfigType
-from dagster._config import Noneable as ConfigNoneable
+from dagster._config import (
+    Array,
+    ConfigType,
+    Noneable as ConfigNoneable,
+)
 from dagster._core.definitions.events import DynamicOutput, Output, TypeCheck
 from dagster._core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
@@ -32,13 +37,8 @@ from .builtin_config_schemas import BuiltinSchemas
 from .config_schema import DagsterTypeLoader, DagsterTypeMaterializer
 
 if t.TYPE_CHECKING:
-    from dagster._core.definitions.node_definition import (  # pylint: disable=unused-import
-        NodeDefinition,
-    )
-    from dagster._core.execution.context.system import (  # pylint: disable=unused-import
-        DagsterTypeLoaderContext,
-        TypeCheckContext,
-    )
+    from dagster._core.definitions.node_definition import NodeDefinition
+    from dagster._core.execution.context.system import DagsterTypeLoaderContext, TypeCheckContext
 
 TypeCheckFn = t.Callable[["TypeCheckContext", object], t.Union[TypeCheck, bool]]
 
@@ -212,7 +212,8 @@ class DagsterType(RequiresResources):
     @public  # type: ignore
     @property
     def unique_name(self) -> t.Optional[str]:
-        """The unique name of this type. Can be None if the type is not unique, such as container types"""
+        """The unique name of this type. Can be None if the type is not unique, such as container types
+        """
         # TODO: docstring and body inconsistent-- can this be None or not?
         check.invariant(
             self._name is not None,
@@ -266,9 +267,8 @@ class DagsterType(RequiresResources):
 
     def get_inner_type_for_fan_in(self) -> "DagsterType":
         check.failed(
-            "DagsterType {name} does not support fan-in, should have checked supports_fan_in before calling getter.".format(
-                name=self.display_name
-            )
+            "DagsterType {name} does not support fan-in, should have checked supports_fan_in before"
+            " calling getter.".format(name=self.display_name)
         )
 
     def get_resource_requirements(
@@ -308,8 +308,9 @@ def _validate_type_check_fn(fn: t.Callable, name: t.Optional[str]) -> bool:
         return True
 
     raise DagsterInvalidDefinitionError(
-        'type_check_fn argument on type "{name}" must take 2 arguments, '
-        "received {count}.".format(name=name, count=len(args))
+        'type_check_fn argument on type "{name}" must take 2 arguments, received {count}.'.format(
+            name=name, count=len(args)
+        )
     )
 
 
@@ -344,7 +345,6 @@ def _typemismatch_error_str(value: object, expected_type_desc: str) -> str:
 def _fail_if_not_of_type(
     value: object, value_type: t.Type[t.Any], value_type_desc: str
 ) -> TypeCheck:
-
     if not isinstance(value, value_type):
         return TypeCheck(success=False, description=_typemismatch_error_str(value, value_type_desc))
 
@@ -507,8 +507,9 @@ def isinstance_type_check_fn(
             return TypeCheck(
                 success=False,
                 description=(
-                    f"Value of type {type(value)} failed type check for Dagster type {dagster_type_name}, "
-                    f"expected value to be of Python type {expected_python_type_str}."
+                    f"Value of type {type(value)} failed type check for Dagster type"
+                    f" {dagster_type_name}, expected value to be of Python type"
+                    f" {expected_python_type_str}."
                 ),
             )
 
@@ -816,20 +817,20 @@ def make_python_type_usable_as_dagster_type(
         # https://github.com/dagster-io/dagster/issues/1831
         if isinstance(registered_dagster_type, TypeHintInferredDagsterType):
             raise DagsterInvalidDefinitionError(
-                f"A Dagster type has already been registered for the Python type "
+                "A Dagster type has already been registered for the Python type "
                 f'{python_type}. The Dagster type was "auto-registered" - i.e. a solid definition '
-                f"used the Python type as an annotation for one of its arguments or for its return "
-                f"value before make_python_type_usable_as_dagster_type was called, and we "
-                f"generated a Dagster type to correspond to it. To override the auto-generated "
-                f"Dagster type, call make_python_type_usable_as_dagster_type before any solid "
-                f"definitions refer to the Python type."
+                "used the Python type as an annotation for one of its arguments or for its return "
+                "value before make_python_type_usable_as_dagster_type was called, and we "
+                "generated a Dagster type to correspond to it. To override the auto-generated "
+                "Dagster type, call make_python_type_usable_as_dagster_type before any solid "
+                "definitions refer to the Python type."
             )
         else:
             raise DagsterInvalidDefinitionError(
-                f"A Dagster type has already been registered for the Python type "
+                "A Dagster type has already been registered for the Python type "
                 f"{python_type}. make_python_type_usable_as_dagster_type can only "
-                f"be called once on a python type as it is registering a 1:1 mapping "
-                f"between that python type and a dagster type."
+                "be called once on a python type as it is registering a 1:1 mapping "
+                "between that python type and a dagster type."
             )
 
 
@@ -845,7 +846,9 @@ class TypeHintInferredDagsterType(DagsterType):
         self.python_type = python_type
         super(TypeHintInferredDagsterType, self).__init__(
             key=f"_TypeHintInferred[{qualified_name}]",
-            description=f"DagsterType created from a type hint for the Python type {qualified_name}",
+            description=(
+                f"DagsterType created from a type hint for the Python type {qualified_name}"
+            ),
             type_check_fn=isinstance_type_check_fn(
                 python_type, python_type.__name__, qualified_name
             ),
@@ -865,8 +868,10 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
     )
-    from .python_dict import Dict as DDict
-    from .python_dict import PythonDict
+    from .python_dict import (
+        Dict as DDict,
+        PythonDict,
+    )
     from .python_set import DagsterSetApi, PythonSet
     from .python_tuple import DagsterTupleApi, PythonTuple
     from .transform_typing import transform_typing_type
@@ -941,7 +946,6 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
 
 
 def is_dynamic_output_annotation(dagster_type: object) -> bool:
-
     check.invariant(
         not (isinstance(dagster_type, type) and is_subclass(dagster_type, ConfigType)),
         "Cannot resolve a config type to a runtime type",
@@ -954,7 +958,8 @@ def is_dynamic_output_annotation(dagster_type: object) -> bool:
 
     if dagster_type == DynamicOutput or get_origin(dagster_type) == DynamicOutput:
         raise DagsterInvariantViolationError(
-            "Op annotated with return type DynamicOutput. DynamicOutputs can only be returned in the context of a List. If only one output is needed, use the Output API."
+            "Op annotated with return type DynamicOutput. DynamicOutputs can only be returned in"
+            " the context of a List. If only one output is needed, use the Output API."
         )
 
     if get_origin(dagster_type) == list and len(get_args(dagster_type)) == 1:
@@ -964,7 +969,6 @@ def is_dynamic_output_annotation(dagster_type: object) -> bool:
 
 
 def is_generic_output_annotation(dagster_type: object) -> bool:
-
     return dagster_type == Output or get_origin(dagster_type) == Output
 
 
@@ -996,7 +1000,6 @@ def construct_dagster_type_dictionary(
     def process_node_def(node_def: "NodeDefinition"):
         input_output_types = list(node_def.all_input_output_types())
         for dagster_type in input_output_types:
-
             # We don't do uniqueness check on key because with classes
             # like Array, Noneable, etc, those are ephemeral objects
             # and it is perfectly fine to have many of them.

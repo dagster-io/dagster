@@ -2,10 +2,13 @@ import datetime
 import logging
 
 import boto3
-
-from dagster import Field, StringSource
-from dagster import _check as check
-from dagster import _seven, logger
+from dagster import (
+    Field,
+    StringSource,
+    _check as check,
+    _seven,
+    logger,
+)
 from dagster._core.utils import coerce_valid_log_level
 
 # The maximum batch size is 1,048,576 bytes, and this size is calculated as the sum of all event
@@ -14,6 +17,7 @@ MAXIMUM_BATCH_SIZE = 1048576
 OVERHEAD = 26
 
 EPOCH = datetime.datetime(1970, 1, 1)
+
 
 # For real
 def millisecond_timestamp(dt):
@@ -183,8 +187,10 @@ class CloudwatchLogsHandler(logging.Handler):
         "aws_region": Field(
             StringSource,
             is_required=False,
-            description="Specifies a custom region for the S3 session. Default is chosen through "
-            "the ordinary boto3 credential chain.",
+            description=(
+                "Specifies a custom region for the S3 session. Default is chosen through "
+                "the ordinary boto3 credential chain."
+            ),
         ),
         "aws_secret_access_key": Field(StringSource, is_required=False),
         "aws_access_key_id": Field(StringSource, is_required=False),

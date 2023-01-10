@@ -1,3 +1,4 @@
+# ruff: noqa
 # We will be filling this file out as part of the PyData workshop!
 import pandas as pd
 from dagstermill import define_dagstermill_asset

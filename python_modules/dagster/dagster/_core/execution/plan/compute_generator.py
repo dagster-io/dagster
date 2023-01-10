@@ -196,7 +196,7 @@ def validate_and_coerce_op_result_to_iterator(
         raise DagsterInvariantViolationError(
             f"Error in {context.describe_op()}: If you are "
             "returning an AssetMaterialization "
-            f"or an ExpectationResult from "
+            "or an ExpectationResult from "
             f"{context.op_def.node_type_str} you must yield them "
             "directly, or log them using the OpExecutionContext.log_event method to avoid "
             "ambiguity with an implied result from returning a "
@@ -205,9 +205,9 @@ def validate_and_coerce_op_result_to_iterator(
         )
     elif result is not None and not output_defs:
         raise DagsterInvariantViolationError(
-            f"Error in {context.describe_op()}: Unexpectedly returned output of "
-            f"type {type(result)}. {context.op_def.node_type_str.capitalize()} is explicitly defined to return no "
-            "results."
+            f"Error in {context.describe_op()}: Unexpectedly returned output of type"
+            f" {type(result)}. {context.op_def.node_type_str.capitalize()} is explicitly defined to"
+            " return no results."
         )
     elif output_defs:
         for position, output_def, element in _zip_and_iterate_solid_result(
@@ -247,7 +247,9 @@ def validate_and_coerce_op_result_to_iterator(
                     annotation
                 ):
                     raise DagsterInvariantViolationError(
-                        f"Error with output for {context.describe_op()}: received Output object for output '{output_def.name}' which does not have an Output annotation. Annotation has type {annotation}."
+                        f"Error with output for {context.describe_op()}: received Output object for"
+                        f" output '{output_def.name}' which does not have an Output annotation."
+                        f" Annotation has type {annotation}."
                     )
                 output = cast(Output, element)
                 _check_output_object_name(output, output_def, position)

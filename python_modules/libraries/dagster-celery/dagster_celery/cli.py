@@ -3,13 +3,13 @@ import subprocess
 import uuid
 
 import click
-from celery.utils.nodenames import default_nodename, host_format
-
 import dagster._check as check
+from celery.utils.nodenames import default_nodename, host_format
 from dagster._config import post_process_config, validate_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.instance import DagsterInstance
-from dagster._utils import load_yaml_from_path, mkdir_p
+from dagster._utils import mkdir_p
+from dagster._utils.yaml_utils import load_yaml_from_path
 
 from .executor import CeleryExecutor, celery_executor
 from .make_app import make_app

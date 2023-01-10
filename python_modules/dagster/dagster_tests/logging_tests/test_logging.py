@@ -5,10 +5,15 @@ import sys
 from contextlib import contextmanager
 
 import pytest
-
-from dagster import DagsterInvalidConfigError
-from dagster import _check as check
-from dagster import execute_job, job, op, reconstructable, resource
+from dagster import (
+    DagsterInvalidConfigError,
+    _check as check,
+    execute_job,
+    job,
+    op,
+    reconstructable,
+    resource,
+)
 from dagster._core.definitions import NodeHandle
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.logger import InitLoggerContext
@@ -77,7 +82,6 @@ def test_logging_no_loggers_registered():
 
 def test_logging_basic():
     with _setup_logger("test") as (captured_results, logger):
-
         dl = DagsterLogManager.create(
             loggers=[logger],
             pipeline_run=DagsterRun(pipeline_name="system", run_id="123"),
@@ -93,7 +97,6 @@ def test_logging_basic():
 
 def test_logging_custom_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
-
         dl = DagsterLogManager.create(
             loggers=[logger],
             pipeline_run=DagsterRun(pipeline_name="system", run_id="123"),
@@ -104,7 +107,6 @@ def test_logging_custom_log_levels():
 
 def test_logging_integer_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
-
         dl = DagsterLogManager.create(
             loggers=[logger],
             pipeline_run=DagsterRun(pipeline_name="system", run_id="123"),
@@ -114,7 +116,6 @@ def test_logging_integer_log_levels():
 
 def test_logging_bad_custom_log_levels():
     with _setup_logger("test") as (_, logger):
-
         dl = DagsterLogManager.create(
             loggers=[logger],
             pipeline_run=DagsterRun(pipeline_name="system", run_id="123"),
@@ -148,7 +149,6 @@ def test_multiline_logging_complex():
     )
 
     with _setup_logger(DAGSTER_DEFAULT_LOGGER) as (captured_results, logger):
-
         dl = DagsterLogManager.create(
             loggers=[logger],
             pipeline_run=DagsterRun(run_id="123", pipeline_name="error_monster"),
@@ -156,8 +156,10 @@ def test_multiline_logging_complex():
         dl.log_dagster_event(logging.INFO, msg, dagster_event)
 
     expected_results = [
-        "error_monster - 123 - STEP_FAILURE - DagsterEventType.STEP_FAILURE for step "
-        "start.materialization.output.result.0",
+        (
+            "error_monster - 123 - STEP_FAILURE - DagsterEventType.STEP_FAILURE for step "
+            "start.materialization.output.result.0"
+        ),
         "",
         "FileNotFoundError: [Errno 2] No such file or directory: '/path/to/file'",
         "",
@@ -508,7 +510,6 @@ def logger_job():
 
 
 def test_system_logger_output(capfd):
-
     with instance_for_test() as instance:
         execute_job(reconstructable(logger_job), instance)
 

@@ -11,8 +11,8 @@ from dagster import (
     LoggerDefinition,
     ResourceDefinition,
     TypeCheck,
+    _check as check,
 )
-from dagster import _check as check
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import RetryRequested
 from dagster._core.definitions.op_definition import OpDefinition
@@ -217,12 +217,14 @@ class Manager:
 
         if resource_defs and mode_def:
             raise DagsterInvariantViolationError(
-                "Attempted to provide both resource_defs and mode_def arguments to `dagstermill.get_context`. Please provide one or the other."
+                "Attempted to provide both resource_defs and mode_def arguments to"
+                " `dagstermill.get_context`. Please provide one or the other."
             )
 
         if logger_defs and mode_def:
             raise DagsterInvariantViolationError(
-                "Attempted to provide both logger_defs and mode_def arguments to `dagstermill.get_context`. Please provide one or the other."
+                "Attempted to provide both logger_defs and mode_def arguments to"
+                " `dagstermill.get_context`. Please provide one or the other."
             )
 
         solid_config = canonicalize_backcompat_args(
@@ -233,7 +235,10 @@ class Manager:
             deprecation_warning(
                 "mode_def argument to dagstermill.get_context",
                 "0.17.0",
-                "Use the resource_defs argument to provide resources, and the logger_defs argument to provide loggers.",
+                (
+                    "Use the resource_defs argument to provide resources, and the logger_defs"
+                    " argument to provide loggers."
+                ),
             )
 
         # If we are running non-interactively, and there is already a context reconstituted, return
@@ -294,7 +299,6 @@ class Manager:
             DagsterInstance.ephemeral(),
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:
-
             self.context = DagstermillExecutionContext(
                 pipeline_context=pipeline_context,
                 pipeline_def=pipeline_def,
@@ -327,8 +331,8 @@ class Manager:
 
         if not self.solid_def.has_output(output_name):
             raise DagstermillError(
-                f"Op {self.solid_def.name} does not have output named {output_name}."
-                f"Expected one of {[str(output_def.name) for output_def in self.solid_def.output_defs]}"
+                f"Op {self.solid_def.name} does not have output named {output_name}.Expected one of"
+                f" {[str(output_def.name) for output_def in self.solid_def.output_defs]}"
             )
 
         # pass output value cross process boundary using io manager
@@ -373,7 +377,8 @@ class Manager:
         )
         if not isinstance(dagster_event, valid_types):
             raise DagstermillError(
-                f"Received invalid type {dagster_event} in yield_event. Expected a Dagster event type, one of {valid_types}."
+                f"Received invalid type {dagster_event} in yield_event. Expected a Dagster event"
+                f" type, one of {valid_types}."
             )
 
         if not self.in_pipeline:

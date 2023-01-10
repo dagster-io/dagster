@@ -252,7 +252,6 @@ class Node(ABC):
 
 
 class GraphNode(Node):
-
     definition: "GraphDefinition"
 
     def __init__(
@@ -275,7 +274,6 @@ class GraphNode(Node):
         parent_handle: Optional["NodeHandle"] = None,
         asset_layer: Optional["AssetLayer"] = None,
     ) -> Iterator["ResourceRequirement"]:
-
         cur_node_handle = NodeHandle(self.name, parent_handle)
 
         for node in self.definition.node_dict.values():
@@ -290,7 +288,6 @@ class GraphNode(Node):
 
 
 class OpNode(Node):
-
     definition: "OpDefinition"
 
     def __init__(
@@ -374,6 +371,13 @@ class NodeHandle(
 
     def __str__(self):
         return self.to_string()
+
+    @property
+    def root(self):
+        if self.parent:
+            return self.parent.root
+        else:
+            return self
 
     @property
     def path(self) -> Sequence[str]:
@@ -492,7 +496,8 @@ class NodeHandle(
     @classmethod
     def from_dict(cls, dict_repr: Dict[str, Any]) -> Optional["NodeHandle"]:
         """This method makes it possible to load a potentially nested NodeHandle after a
-        roundtrip through json.loads(json.dumps(NodeHandle._asdict()))"""
+        roundtrip through json.loads(json.dumps(NodeHandle._asdict()))
+        """
 
         check.dict_param(dict_repr, "dict_repr", key_type=str)
         check.invariant(
@@ -629,7 +634,8 @@ class IDependencyDefinition(ABC):  # pylint: disable=no-init
 
     @abstractmethod
     def is_fan_in(self) -> bool:
-        """The result passed to the corresponding input will be a List made from different node outputs"""
+        """The result passed to the corresponding input will be a List made from different node outputs
+        """
 
 
 class DependencyDefinition(
@@ -687,7 +693,8 @@ class DependencyDefinition(
     ):
         if solid and node:
             raise DagsterInvalidDefinitionError(
-                "Both ``node`` and legacy ``solid`` arguments provided to DependencyDefinition. Please use one or the other."
+                "Both ``node`` and legacy ``solid`` arguments provided to DependencyDefinition."
+                " Please use one or the other."
             )
 
         if not solid and not node:
@@ -909,14 +916,16 @@ class DependencyStructure:
 
                     if node_output.is_dynamic:
                         raise DagsterInvalidDefinitionError(
-                            "Currently, items in a fan-in dependency cannot be downstream of dynamic outputs. "
-                            f'Problematic dependency on dynamic output "{node_output.describe()}".'
+                            "Currently, items in a fan-in dependency cannot be downstream of"
+                            " dynamic outputs. Problematic dependency on dynamic output"
+                            f' "{node_output.describe()}".'
                         )
                     if self._dynamic_fan_out_index.get(node_output.node_name):
                         raise DagsterInvalidDefinitionError(
-                            "Currently, items in a fan-in dependency cannot be downstream of dynamic outputs. "
-                            f'Problematic dependency on output "{node_output.describe()}", downstream of '
-                            f'"{self._dynamic_fan_out_index[node_output.node_name].describe()}".'
+                            "Currently, items in a fan-in dependency cannot be downstream of"
+                            " dynamic outputs. Problematic dependency on output"
+                            f' "{node_output.describe()}", downstream of'
+                            f' "{self._dynamic_fan_out_index[node_output.node_name].describe()}".'
                         )
 
                     node_output_list.append(node_output)
@@ -961,10 +970,10 @@ class DependencyStructure:
 
         if not node_input.node.definition.input_supports_dynamic_output_dep(node_input.input_name):
             raise DagsterInvalidDefinitionError(
-                f"{node_input.node.describe_node()} cannot be downstream of dynamic output "
-                f'"{node_output.describe()}" since input "{node_input.input_name}" maps to a node '
-                "that is already downstream of another dynamic output. Nodes cannot be downstream of more "
-                "than one dynamic output"
+                f"{node_input.node.describe_node()} cannot be downstream of dynamic output"
+                f' "{node_output.describe()}" since input "{node_input.input_name}" maps to a node'
+                " that is already downstream of another dynamic output. Nodes cannot be downstream"
+                " of more than one dynamic output"
             )
 
         if self._collect_index.get(node_input.node_name):
@@ -980,9 +989,9 @@ class DependencyStructure:
 
         if self._dynamic_fan_out_index[node_input.node_name] != node_output:
             raise DagsterInvalidDefinitionError(
-                f"{node_input.node.describe_node()} cannot be downstream of more than one dynamic output. "
-                f'It is downstream of both "{node_output.describe()}" and '
-                f'"{self._dynamic_fan_out_index[node_input.node_name].describe()}"'
+                f"{node_input.node.describe_node()} cannot be downstream of more than one dynamic"
+                f' output. It is downstream of both "{node_output.describe()}" and'
+                f' "{self._dynamic_fan_out_index[node_input.node_name].describe()}"'
             )
 
     def _validate_and_set_collect(
@@ -1002,9 +1011,9 @@ class DependencyStructure:
         # if the output is already fanned out
         if self._dynamic_fan_out_index.get(node_output.node_name):
             raise DagsterInvalidDefinitionError(
-                f"{node_input.node.describe_node()} cannot be downstream of more than one dynamic output. "
-                f'It is downstream of both "{node_output.describe()}" and '
-                f'"{self._dynamic_fan_out_index[node_output.node_name].describe()}"'
+                f"{node_input.node.describe_node()} cannot be downstream of more than one dynamic"
+                f' output. It is downstream of both "{node_output.describe()}" and'
+                f' "{self._dynamic_fan_out_index[node_output.node_name].describe()}"'
             )
 
     def all_upstream_outputs_from_node(self, node_name: str) -> Sequence[NodeOutput]:

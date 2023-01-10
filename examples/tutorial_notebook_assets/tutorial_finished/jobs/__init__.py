@@ -2,7 +2,6 @@ import json
 import os
 
 import requests
-
 from dagster import job, op
 
 # This file contains a helper job to confirm that you can connect to Noteable

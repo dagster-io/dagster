@@ -1,10 +1,10 @@
-# pylint: disable=unused-import,redefined-builtin
-from typing import Any, List, Optional, Union
-
-from dagster_airbyte.managed.types import GeneratedAirbyteSource
+# pylint: redefined-builtin
+from typing import List, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import public
+
+from dagster_airbyte.managed.types import GeneratedAirbyteSource
 
 
 class StravaSource(GeneratedAirbyteSource):
@@ -2044,7 +2044,7 @@ class CourierSource(GeneratedAirbyteSource):
 class CloseComSource(GeneratedAirbyteSource):
     @public
     def __init__(self, name: str, api_key: str, start_date: Optional[str] = None):
-        """
+        r"""
         Airbyte Source for Close Com
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/close-com
@@ -2159,7 +2159,7 @@ class ElasticsearchSource(GeneratedAirbyteSource):
             "ElasticsearchSource.UsernamePassword",
         ],
     ):
-        """
+        r"""
         Airbyte Source for Elasticsearch
 
         Documentation can be found at https://docs.airbyte.com/integrations/source/elasticsearch
@@ -3220,7 +3220,7 @@ class StripeSource(GeneratedAirbyteSource):
         lookback_window_days: Optional[int] = None,
         slice_range: Optional[int] = None,
     ):
-        """
+        r"""
         Airbyte Source for Stripe
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/stripe
@@ -3798,7 +3798,7 @@ class PaystackSource(GeneratedAirbyteSource):
         start_date: str,
         lookback_window_days: Optional[int] = None,
     ):
-        """
+        r"""
         Airbyte Source for Paystack
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/paystack
@@ -5502,7 +5502,7 @@ class MetabaseSource(GeneratedAirbyteSource):
         password: Optional[str] = None,
         session_token: Optional[str] = None,
     ):
-        """
+        r"""
         Airbyte Source for Metabase
 
         Documentation can be found at https://docs.airbyte.com/integrations/sources/metabase
@@ -5824,7 +5824,7 @@ class MysqlSource(GeneratedAirbyteSource):
             password (Optional[str]): The password associated with the username.
             jdbc_url_params (Optional[str]): Additional properties to pass to the JDBC URL string when connecting to the database formatted as 'key=value' pairs separated by the symbol '&'. (example: key1=value1&key2=value2&key3=value3). For more information read about JDBC URL parameters.
             ssl (Optional[bool]): Encrypt data using SSL.
-            ssl_mode (Union[MysqlSource.Preferred, MysqlSource.Required, MysqlSource.VerifyCA, MysqlSource.VerifyIdentity]): SSL connection modes. preferred - Automatically attempt SSL connection. If the MySQL server does not support SSL, continue with a regular connection.required - Always connect with SSL. If the MySQL server doesn’t support SSL, the connection will not be established. Certificate Authority (CA) and Hostname are not verified.verify-ca - Always connect with SSL. Verifies CA, but allows connection even if Hostname does not match.Verify Identity - Always connect with SSL. Verify both CA and Hostname.Read more  in the docs.
+            ssl_mode (Union[MysqlSource.Preferred, MysqlSource.Required, MysqlSource.VerifyCA, MysqlSource.VerifyIdentity]): SSL connection modes. preferred - Automatically attempt SSL connection. If the MySQL server does not support SSL, continue with a regular connection.required - Always connect with SSL. If the MySQL server doesn`t support SSL, the connection will not be established. Certificate Authority (CA) and Hostname are not verified.verify-ca - Always connect with SSL. Verifies CA, but allows connection even if Hostname does not match.Verify Identity - Always connect with SSL. Verify both CA and Hostname.Read more  in the docs.
             replication_method (Union[MysqlSource.Standard, MysqlSource.LogicalReplicationCDC]): Replication method to use for extracting data from the database.
         """
         self.host = check.str_param(host, "host")

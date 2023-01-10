@@ -1,6 +1,5 @@
-from dagstermill.examples.repository import notebook_repo
-
 from dagster import RepositoryDefinition
+from dagstermill.examples.repository import notebook_repo
 
 
 def test_dagstermill_repo():

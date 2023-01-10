@@ -7,7 +7,6 @@ from contextlib import contextmanager
 import mock
 import pytest
 from click.testing import CliRunner
-
 from dagster import (
     Out,
     Output,
@@ -45,7 +44,8 @@ from dagster._legacy import (
     pipeline,
     solid,
 )
-from dagster._utils import file_relative_path, merge_dicts
+from dagster._utils import file_relative_path
+from dagster._utils.merger import merge_dicts
 from dagster.version import __version__
 
 

@@ -162,7 +162,10 @@ class _Solid:
         decorator_resource_keys = set(self.required_resource_keys or [])
         check.param_invariant(
             len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
-            "Cannot specify resource requirements in both @op decorator and as arguments to the decorated function",
+            (
+                "Cannot specify resource requirements in both @op decorator and as arguments to the"
+                " decorated function"
+            ),
         )
         resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
 
@@ -413,9 +416,9 @@ def resolve_checked_solid_fn_inputs(
             if param.name not in explicit_names:
                 if param.name in nothing_names:
                     raise DagsterInvalidDefinitionError(
-                        f"{decorator_name} '{fn_name}' decorated function has parameter '{param.name}' that is "
-                        "one of the input_defs of type 'Nothing' which should not be included since "
-                        "no data will be passed for it. "
+                        f"{decorator_name} '{fn_name}' decorated function has parameter"
+                        f" '{param.name}' that is one of the input_defs of type 'Nothing' which"
+                        " should not be included since no data will be passed for it. "
                     )
                 else:
                     inputs_to_infer.add(param.name)
@@ -457,9 +460,10 @@ def resolve_checked_solid_fn_inputs(
         for in_def in inferred_input_defs:
             if in_def.dagster_type.is_nothing:
                 raise DagsterInvalidDefinitionError(
-                    f"Input parameter {in_def.name} is annotated with {in_def.dagster_type.display_name} "
-                    "which is a type that represents passing no data. This type must be used "
-                    f"via In() and no parameter should be included in the {decorator_name} decorated function."
+                    f"Input parameter {in_def.name} is annotated with"
+                    f" {in_def.dagster_type.display_name} which is a type that represents passing"
+                    " no data. This type must be used via In() and no parameter should be included"
+                    f" in the {decorator_name} decorated function."
                 )
 
     input_defs.extend(inferred_input_defs)

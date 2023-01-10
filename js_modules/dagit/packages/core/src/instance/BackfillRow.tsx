@@ -10,7 +10,12 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {graphql} from '../graphql';
-import {PartitionStatusesForBackfillFragment} from '../graphql/graphql';
+import {
+  PartitionStatusesForBackfillFragment,
+  BulkActionStatus,
+  RunStatus,
+  BackfillTableFragmentFragment,
+} from '../graphql/graphql';
 import {
   PartitionState,
   PartitionStatus,
@@ -21,14 +26,11 @@ import {AssetKeyTagCollection} from '../runs/AssetKeyTagCollection';
 import {inProgressStatuses} from '../runs/RunStatuses';
 import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {BulkActionStatus, RunStatus} from '../types/globalTypes';
 import {LoadingOrNone, useDelayedRowQuery} from '../workspace/VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {workspacePathFromAddress, workspacePipelinePath} from '../workspace/workspacePath';
-
-import {BackfillTableFragment} from './types/BackfillTableFragment';
 
 type BackfillPartitionStatusData = PartitionStatusesForBackfillFragment;
 
@@ -41,17 +43,16 @@ export const BackfillRow = ({
   onShowStepStatus,
   onShowPartitionsRequested,
 }: {
-  backfill: BackfillTableFragment;
+  backfill: BackfillTableFragmentFragment;
   allPartitions?: string[];
-  onTerminateBackfill: (backfill: BackfillTableFragment) => void;
-  onResumeBackfill: (backfill: BackfillTableFragment) => void;
+  onTerminateBackfill: (backfill: BackfillTableFragmentFragment) => void;
+  onResumeBackfill: (backfill: BackfillTableFragmentFragment) => void;
   showBackfillTarget: boolean;
-  onShowStepStatus: (backfill: BackfillTableFragment) => void;
-  onShowPartitionsRequested: (backfill: BackfillTableFragment) => void;
+  onShowStepStatus: (backfill: BackfillTableFragmentFragment) => void;
+  onShowPartitionsRequested: (backfill: BackfillTableFragmentFragment) => void;
 }) => {
   const history = useHistory();
   const [queryBackfill, queryResult] = useLazyQuery(SINGLE_BACKFILL_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {
       backfillId: backfill.backfillId,
     },
@@ -145,12 +146,12 @@ const BackfillMenu = ({
   onResumeBackfill,
   onShowStepStatus,
 }: {
-  backfill: BackfillTableFragment;
+  backfill: BackfillTableFragmentFragment;
   statusData: BackfillPartitionStatusData;
   history: any;
-  onTerminateBackfill: (backfill: BackfillTableFragment) => void;
-  onResumeBackfill: (backfill: BackfillTableFragment) => void;
-  onShowStepStatus: (backfill: BackfillTableFragment) => void;
+  onTerminateBackfill: (backfill: BackfillTableFragmentFragment) => void;
+  onResumeBackfill: (backfill: BackfillTableFragmentFragment) => void;
+  onShowStepStatus: (backfill: BackfillTableFragmentFragment) => void;
 }) => {
   const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissions();
   const runsUrl = runsPathWithFilters([
@@ -224,7 +225,7 @@ const BackfillRunStatus = ({
   statusData,
   history,
 }: {
-  backfill: BackfillTableFragment;
+  backfill: BackfillTableFragmentFragment;
   history: any;
   statusData: BackfillPartitionStatusData;
 }) => {
@@ -252,7 +253,7 @@ const BackfillRunStatus = ({
 };
 
 const BackfillTarget: React.FC<{
-  backfill: BackfillTableFragment;
+  backfill: BackfillTableFragmentFragment;
 }> = ({backfill}) => {
   const {assetSelection, partitionSet, partitionSetName} = backfill;
 
@@ -327,7 +328,7 @@ const BackfillRequested = ({
   onExpand,
 }: {
   allPartitions: string[];
-  backfill: BackfillTableFragment;
+  backfill: BackfillTableFragmentFragment;
   onExpand: () => void;
 }) => {
   return (
@@ -353,7 +354,7 @@ const BackfillStatus = ({
   backfill,
   statusData,
 }: {
-  backfill: BackfillTableFragment;
+  backfill: BackfillTableFragmentFragment;
   statusData: BackfillPartitionStatusData;
 }) => {
   switch (backfill.status) {

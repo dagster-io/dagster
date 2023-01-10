@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {History} from 'history';
 import qs from 'qs';
 import * as React from 'react';
@@ -10,15 +9,18 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetKey} from '../assets/types';
 import {graphql} from '../graphql';
-import {ExecutionParams, LaunchPipelineExecutionMutation} from '../graphql/graphql';
-import {RunStatus} from '../types/globalTypes';
+import {
+  ExecutionParams,
+  LaunchPipelineExecutionMutation,
+  RunFragmentFragment,
+  RunStatus,
+  RunTableRunFragmentFragment,
+  RunTimeFragmentFragment,
+} from '../graphql/graphql';
 
 import {DagsterTag} from './RunTag';
 import {StepSelection} from './StepSelection';
 import {TimeElapsed} from './TimeElapsed';
-import {RunFragment} from './types/RunFragment';
-import {RunTableRunFragment} from './types/RunTableRunFragment';
-import {RunTimeFragment} from './types/RunTimeFragment';
 
 export function titleForRun(run: {runId: string}) {
   return run.runId.split('-').shift();
@@ -119,7 +121,7 @@ export function handleLaunchResult(
   }
 }
 
-function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment) {
+function getBaseExecutionMetadata(run: RunFragmentFragment | RunTableRunFragmentFragment) {
   const hiddenTagKeys: string[] = [DagsterTag.IsResumeRetry, DagsterTag.StepSelection];
 
   return {
@@ -154,7 +156,7 @@ export type ReExecutionStyle =
   | {type: 'selection'; selection: StepSelection};
 
 export function getReexecutionVariables(input: {
-  run: (RunFragment | RunTableRunFragment) & {runConfigYaml: string};
+  run: (RunFragmentFragment | RunTableRunFragmentFragment) & {runConfigYaml: string};
   style: ReExecutionStyle;
   repositoryLocationName: string;
   repositoryName: string;
@@ -301,7 +303,7 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = graphql(`
 `);
 
 interface RunTimeProps {
-  run: RunTimeFragment;
+  run: RunTimeFragmentFragment;
 }
 
 export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
@@ -339,7 +341,7 @@ export const RunStateSummary: React.FC<RunTimeProps> = React.memo(({run}) => {
   );
 });
 
-export const RUN_TIME_FRAGMENT = gql`
+export const RUN_TIME_FRAGMENT = graphql(`
   fragment RunTimeFragment on Run {
     id
     runId
@@ -348,4 +350,4 @@ export const RUN_TIME_FRAGMENT = gql`
     endTime
     updateTime
   }
-`;
+`);

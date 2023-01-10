@@ -17,6 +17,7 @@ import threading
 from collections import OrderedDict
 from datetime import timezone
 from enum import Enum
+from signal import Signals
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -37,16 +38,12 @@ from typing import (
     cast,
     overload,
 )
-from warnings import warn
 
 import packaging.version
 from typing_extensions import Literal
 
 import dagster._check as check
 import dagster._seven as seven
-
-from .merger import deep_merge_dicts, merge_dicts
-from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
 if sys.version_info > (3,):
     from pathlib import Path  # pylint: disable=import-error
@@ -67,6 +64,7 @@ PICKLE_PROTOCOL = 4
 
 
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
+
 
 # Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
 # version). 16 is from the 0.16.0 that library versions stayed on when core went to 1.0.0.
@@ -172,7 +170,7 @@ def pushd(path: str) -> Iterator[str]:
 
 
 def safe_isfile(path: str) -> bool:
-    """ "Backport of Python 3.8 os.path.isfile behavior.
+    """Backport of Python 3.8 os.path.isfile behavior.
 
     This is intended to backport https://docs.python.org/dev/whatsnew/3.8.html#os-path. I'm not
     sure that there are other ways to provoke this behavior on Unix other than the null byte,
@@ -468,7 +466,7 @@ def datetime_as_float(dt):
 
 
 # hashable frozen string to string dict
-class frozentags(frozendict):
+class frozentags(frozendict, Mapping[str, str]):
     def __init__(self, *args, **kwargs):
         super(frozentags, self).__init__(*args, **kwargs)
         check.dict_param(self, "self", key_type=str, value_type=str)
@@ -670,3 +668,26 @@ def traced(func: T_Callable) -> T_Callable:
         return func(*args, **kwargs)
 
     return cast(T_Callable, inner)
+
+
+def get_run_crash_explanation(prefix: str, exit_code: int):
+    # As per https://docs.python.org/3/library/subprocess.html#subprocess.CompletedProcess.returncode
+    # negative exit code means a posix signal
+    if exit_code < 0 and -exit_code in [signal.value for signal in Signals]:
+        posix_signal = -exit_code
+        signal_str = Signals(posix_signal).name
+        exit_clause = f"was terminated by signal {posix_signal} ({signal_str})."
+        if posix_signal == Signals.SIGKILL:
+            exit_clause = (
+                exit_clause
+                + " This usually indicates that the process was"
+                " killed by the operating system due to running out of"
+                " memory. Possible solutions include increasing the"
+                " amount of memory available to the run, reducing"
+                " the amount of memory used by the ops in the run, or"
+                " configuring the executor to run fewer ops concurrently."
+            )
+    else:
+        exit_clause = f"unexpectedly exited with code {exit_code}."
+
+    return prefix + " " + exit_clause

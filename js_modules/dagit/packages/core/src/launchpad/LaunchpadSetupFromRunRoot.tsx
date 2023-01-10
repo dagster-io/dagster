@@ -63,7 +63,9 @@ const LaunchpadSetupFromRunAllowedRoot: React.FC<Props> = (props) => {
 
   const [storageData, onSave] = useExecutionSessionStorage(repoAddress, pipelineName);
 
-  const {data, loading} = useQuery(CONFIG_FOR_RUN_QUERY, {variables: {runId}});
+  const {data, loading} = useQuery(CONFIG_FOR_RUN_QUERY, {
+    variables: {runId},
+  });
   const runOrError = data?.runOrError;
   const run = runOrError?.__typename === 'Run' ? runOrError : null;
 
