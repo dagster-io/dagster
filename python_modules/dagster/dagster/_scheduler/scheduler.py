@@ -197,6 +197,7 @@ def launch_scheduled_runs(
 
     schedules: Dict[str, ExternalSchedule] = {}
     error_locations = set()
+
     for location_entry in workspace_snapshot.values():
         repo_location = location_entry.repository_location
         if repo_location:
@@ -604,7 +605,12 @@ def _schedule_runs_at_time(
         return
 
     for run_request in schedule_execution_data.run_requests:
-        asset_selection = resolve_asset_selection(workspace_process_context, run_request)  # type: ignore
+        asset_selection = resolve_asset_selection(workspace_process_context, run_request, external_schedule.pipeline_name)  # type: ignore
+        if asset_selection is not None and len(asset_selection) == 0:  # asset selection is empty set after filtering for stale
+            continue
+        elif asset_selection is not None:
+            run_request = run_request.with_replaced_attrs(asset_selection=asset_selection, stale_assets_only=False)
+
         pipeline_selector = PipelineSelector(
             location_name=schedule_origin.external_repository_origin.repository_location_origin.location_name,
             repository_name=schedule_origin.external_repository_origin.repository_name,

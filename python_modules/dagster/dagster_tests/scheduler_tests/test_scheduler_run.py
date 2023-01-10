@@ -15,6 +15,7 @@ from dagster import (
     asset,
     define_asset_job,
     job,
+    materialize,
     op,
     repository,
     schedule,
@@ -449,17 +450,25 @@ default_config_schedule = ScheduleDefinition(
 
 @asset
 def asset1():
-    ...
+    return "asset1"
 
 
 @asset
-def asset2():
-    ...
+def asset2(asset1):
+    return asset1 + "asset2"
 
 
-@schedule(job=define_asset_job("asset_job"), cron_schedule="@daily")
+asset_job = define_asset_job("asset_job")
+
+
+@schedule(job=asset_job, cron_schedule="@daily")
 def asset_selection_schedule():
     return RunRequest(asset_selection=[asset1.key])
+
+
+@schedule(job=asset_job, cron_schedule="@daily")
+def stale_asset_selection_schedule():
+    return RunRequest(stale_assets_only=True)
 
 
 @repository
@@ -495,6 +504,7 @@ def the_repo():
         empty_schedule,
         [asset1, asset2],
         asset_selection_schedule,
+        stale_asset_selection_schedule,
     ]
 
 
@@ -598,6 +608,32 @@ def wait_for_all_runs_to_start(instance, timeout=10):
         ]
 
         if len(not_started_runs) == 0:
+            break
+
+
+def wait_for_all_runs_to_finish(instance, timeout=10):
+    start_time = time.time()
+    while True:
+        if time.time() - start_time > timeout:
+            raise Exception("Timed out waiting for runs to finish")
+        time.sleep(0.5)
+
+        runs = instance.get_runs()
+        unfinished_runs = [
+            run
+            for run in instance.get_runs()
+            if run.status
+            in [
+                DagsterRunStatus.NOT_STARTED,
+                DagsterRunStatus.QUEUED,
+                DagsterRunStatus.STARTING,
+                DagsterRunStatus.STARTED,
+                DagsterRunStatus.CANCELING,
+            ]
+        ]
+        print(unfinished_runs)
+
+        if len(unfinished_runs) == 0:
             break
 
 
@@ -2461,6 +2497,69 @@ def test_asset_selection(instance, workspace_context, external_repo, executor):
         assert run.asset_selection == {AssetKey("asset1")}
 
         validate_run_started(instance, run, execution_time=create_pendulum_time(2019, 2, 28))
+
+
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_stale_asset_selection_never_materialized(instance, workspace_context, external_repo, executor):
+    freeze_datetime = _get_stale_asset_selection_schedule_start()
+    external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
+
+    with pendulum.test(freeze_datetime):
+        instance.start_schedule(external_schedule)
+
+    # never materialized so all assets stale
+    freeze_datetime = freeze_datetime.add(seconds=2)
+    with pendulum.test(freeze_datetime):
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+        wait_for_all_runs_to_start(instance)
+        schedule_run = next((r for r in instance.get_runs() if r.pipeline_name == "asset_job"), None)
+        assert schedule_run is not None
+        assert schedule_run.asset_selection == {AssetKey("asset1"), AssetKey("asset2")}
+        validate_run_started(instance, schedule_run, execution_time=create_pendulum_time(2019, 2, 28))
+
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_stale_asset_selection_empty(instance, workspace_context, external_repo, executor):
+    freeze_datetime = _get_stale_asset_selection_schedule_start()
+    external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
+
+    with pendulum.test(freeze_datetime):
+        instance.start_schedule(external_schedule)
+
+    materialize([asset1, asset2], instance=instance)
+
+    # assets previously materialized so we expect empy set
+    freeze_datetime = freeze_datetime.add(seconds=2)
+    with pendulum.test(freeze_datetime):
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+        wait_for_all_runs_to_start(instance)
+        schedule_run = next((r for r in instance.get_runs() if r.pipeline_name == "asset_job"), None)
+        assert schedule_run is None
+
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_stale_asset_selection_subset(instance, workspace_context, external_repo, executor):
+    freeze_datetime = _get_stale_asset_selection_schedule_start()
+    external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
+
+    with pendulum.test(freeze_datetime):
+        instance.start_schedule(external_schedule)
+
+    materialize([asset1], instance=instance)
+
+    # assets previously materialized so we expect empy set
+    freeze_datetime = freeze_datetime.add(seconds=2)
+    with pendulum.test(freeze_datetime):
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+        wait_for_all_runs_to_start(instance)
+        schedule_run = next((r for r in instance.get_runs() if r.pipeline_name == "asset_job"), None)
+        assert schedule_run is not None
+        assert schedule_run.asset_selection == {AssetKey("asset2")}
+        validate_run_started(instance, schedule_run, execution_time=create_pendulum_time(2019, 2, 28))
+
+def _get_stale_asset_selection_schedule_start():
+    return to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
 
 
 def test_settings():

@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence, Union
 from typing_extensions import Final
 
 from dagster import _check as check
-from dagster._core.host_representation.external import ExternalRepository
-from dagster._core.host_representation.external_data import ExternalAssetNode
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
+    from dagster._core.host_representation.external_data import ExternalAssetNode
+    from dagster._core.host_representation.external import ExternalRepository
     from dagster._core.definitions.events import (
         AssetKey,
         AssetMaterialization,
@@ -190,9 +190,11 @@ def _extract_event_data_from_entry(
     assert isinstance(event_data, (AssetMaterialization, AssetObservation))
     return event_data
 
+
 # ########################
 # ##### PROJECTED LOGICAL VERSION LOADER
 # ########################
+
 
 class CachingProjectedLogicalVersionResolver:
     """
@@ -203,15 +205,15 @@ class CachingProjectedLogicalVersionResolver:
     def __init__(
         self,
         instance: DagsterInstance,
-        repositories: Sequence[ExternalRepository],
-        key_to_node_map: Optional[Mapping[AssetKey, ExternalAssetNode]],
+        repositories: Sequence["ExternalRepository"],
+        key_to_node_map: Optional[Mapping[AssetKey, "ExternalAssetNode"]],
     ):
         self._instance = instance
         self._key_to_node_map = check.opt_mapping_param(key_to_node_map, "key_to_node_map")
         self._repositories = repositories
 
     def get(self, asset_key: AssetKey) -> str:
-        return self._get_version(key=asset_key).value
+        return self._get_version(key=asset_key)
 
     @cached_method
     def _get_version(self, *, key: AssetKey) -> LogicalVersion:
@@ -234,6 +236,7 @@ class CachingProjectedLogicalVersionResolver:
             else:
                 logical_version = extract_logical_version_from_entry(materialization)
                 provenance = extract_logical_version_provenance_from_entry(materialization)
+                print("IS PROVENANCE STALE", self._is_provenance_stale(node, provenance))
                 if (
                     logical_version is None  # old materialization event before logical versions
                     or provenance is None  # should never happen
@@ -248,7 +251,7 @@ class CachingProjectedLogicalVersionResolver:
     # recorded logical version for that asset in the provenance. This indicates that a new
     # materialization with up-to-date data would produce a different logical verson.
     def _is_provenance_stale(
-        self, node: ExternalAssetNode, provenance: LogicalVersionProvenance
+        self, node: "ExternalAssetNode", provenance: LogicalVersionProvenance
     ) -> bool:
         if self._has_updated_dependencies(node, provenance):
             return True
@@ -259,14 +262,14 @@ class CachingProjectedLogicalVersionResolver:
             return False
 
     def _has_updated_dependencies(
-        self, node: ExternalAssetNode, provenance: LogicalVersionProvenance
+        self, node: "ExternalAssetNode", provenance: LogicalVersionProvenance
     ) -> bool:
         curr_dep_keys = {dep.upstream_asset_key for dep in node.dependencies}
         old_dep_keys = set(provenance.input_logical_versions.keys())
         return curr_dep_keys != old_dep_keys
 
     def _compute_projected_new_materialization_logical_version(
-        self, node: ExternalAssetNode
+        self, node: "ExternalAssetNode"
     ) -> LogicalVersion:
         dep_keys = {dep.upstream_asset_key for dep in node.dependencies}
         return compute_logical_version(
@@ -274,7 +277,7 @@ class CachingProjectedLogicalVersionResolver:
             {dep_key: self._get_version(key=dep_key) for dep_key in dep_keys},
         )
 
-    def _fetch_node(self, key: AssetKey) -> ExternalAssetNode:
+    def _fetch_node(self, key: AssetKey) -> "ExternalAssetNode":
         if key in self._key_to_node_map:
             return self._key_to_node_map[key]
         else:

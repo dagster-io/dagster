@@ -49,7 +49,7 @@ class RunRequest(
             ("tags", PublicAttr[Mapping[str, str]]),
             ("job_name", PublicAttr[Optional[str]]),
             ("asset_selection", PublicAttr[Optional[Sequence[AssetKey]]]),
-            ("stale_only", PublicAttr[bool]),
+            ("stale_assets_only", PublicAttr[bool]),
         ],
     )
 ):
@@ -73,6 +73,9 @@ class RunRequest(
             Required for sensors that target multiple jobs.
         asset_selection (Optional[Sequence[AssetKey]]): A sequence of AssetKeys that should be
             launched with this run.
+        stale_assets_only (Optional[Sequence[AssetKey]]): Set to true to further narrow the asset
+            selection to stale assets. If passed without an asset selection, all stale assets in the
+            workspace will be materialized.
     """
 
     def __new__(
@@ -82,7 +85,7 @@ class RunRequest(
         tags: Optional[Mapping[str, str]] = None,
         job_name: Optional[str] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
-        stale_only: bool = False,
+        stale_assets_only: bool = False,
     ):
         return super(RunRequest, cls).__new__(
             cls,
@@ -93,23 +96,19 @@ class RunRequest(
             asset_selection=check.opt_nullable_sequence_param(
                 asset_selection, "asset_selection", of_type=AssetKey
             ),
-            stale_only=check.bool_param(stale_only, "stale_only"),
+            stale_assets_only=check.bool_param(stale_assets_only, "stale_assets_only"),
         )
 
     @property
     def partition_key(self) -> Optional[str]:
         return self.tags.get(PARTITION_NAME_TAG)
 
-    def with_replaced_attrs(
-        self, job_name: Optional[str] = None, asset_selection: Optional[Sequence[AssetKey]] = None
-    ) -> "RunRequest":
-        return RunRequest(
-            run_key=self.run_key,
-            run_config=self.run_config,
-            tags=self.tags,
-            job_name=job_name or self.job_name,
-            asset_selection=asset_selection or self.asset_selection,
-        )
+    def with_replaced_attrs(self, **kwargs: Any) -> "RunRequest":
+        fields = self._asdict()
+        for k in fields.keys():
+            if k in kwargs:
+                fields[k] = kwargs[k]
+        return RunRequest(**fields)
 
 
 @whitelist_for_serdes
