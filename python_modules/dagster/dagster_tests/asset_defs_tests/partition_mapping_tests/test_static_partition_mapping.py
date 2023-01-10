@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import StaticPartitionMapping, StaticPartitionsDefinition
 from dagster._core.definitions.partition import DefaultPartitionsSubset
 

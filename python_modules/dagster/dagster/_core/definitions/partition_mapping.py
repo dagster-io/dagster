@@ -1,5 +1,4 @@
 import collections.abc
-import functools
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import Collection, Mapping, NamedTuple, Optional, Union, cast
@@ -366,7 +365,7 @@ class StaticPartitionMapping(PartitionMapping):
                 self._inverse_mapping[downstream_key].add(upstream_key)
 
     @cached_method
-    def _check_upstream(self, *, upstream_partitions_def: StaticPartitionsDefinition):
+    def _check_upstream(self, *, upstream_partitions_def: PartitionsDefinition):
         """
         validate that the mapping from upstream to downstream is only defined on upstream keys
         """
@@ -383,7 +382,7 @@ class StaticPartitionMapping(PartitionMapping):
             )
 
     @cached_method
-    def _check_downstream(self, *, downstream_partitions_def: StaticPartitionsDefinition):
+    def _check_downstream(self, *, downstream_partitions_def: PartitionsDefinition):
         """
         validate that the mapping from upstream to downstream only maps to downstream keys
         """
@@ -396,13 +395,14 @@ class StaticPartitionMapping(PartitionMapping):
         extra_keys = set(self._inverse_mapping.keys()).difference(downstream_keys)
         if extra_keys:
             raise ValueError(
-                f"mapping target partitions not in the downstream partitions definition: {extra_keys}"
+                "mapping target partitions not in the downstream partitions definition:"
+                f" {extra_keys}"
             )
 
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
-        downstream_partitions_def: StaticPartitionsDefinition,
+        downstream_partitions_def: PartitionsDefinition,
     ) -> PartitionsSubset:
         self._check_downstream(downstream_partitions_def=downstream_partitions_def)
 
@@ -415,7 +415,7 @@ class StaticPartitionMapping(PartitionMapping):
     def get_upstream_partitions_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
-        upstream_partitions_def: StaticPartitionsDefinition,
+        upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionsSubset:
         self._check_upstream(upstream_partitions_def=upstream_partitions_def)
 
