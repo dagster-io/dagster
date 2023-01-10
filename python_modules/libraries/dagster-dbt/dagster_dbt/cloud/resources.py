@@ -24,7 +24,7 @@ from requests.exceptions import RequestException
 from .types import DbtCloudOutput
 
 DBT_DEFAULT_HOST = "https://cloud.getdbt.com/"
-DBT_ACCOUNTS_PATH = "api/v2/accounts/"
+DBT_API_V2_PATH = "api/v2/accounts/"
 
 # default polling interval (in seconds)
 DEFAULT_POLL_INTERVAL = 10
@@ -39,7 +39,9 @@ class DbtCloudRunStatus(str, Enum):
     CANCELLED = "Cancelled"
 
 
-class DbtCloudResourceV2:
+# TODO: This resource should be a wrapper over an existing client for a accessing dbt Cloud,
+# rather than using requests to the API directly.
+class DbtCloudResource:
     """This class exposes methods on top of the dbt Cloud REST API v2.
 
     For a complete set of documentation on the dbt Cloud Administrative REST API, including expected
@@ -69,8 +71,8 @@ class DbtCloudResourceV2:
         self._log_requests = log_requests
 
     @property
-    def api_base_url(self) -> str:
-        return urljoin(self._dbt_cloud_host, DBT_ACCOUNTS_PATH)
+    def api_v2_base_url(self) -> str:
+        return urljoin(self._dbt_cloud_host, DBT_API_V2_PATH)
 
     def build_url_for_job(self, project_id: int, job_id: int) -> str:
         return urljoin(
@@ -109,7 +111,7 @@ class DbtCloudResourceV2:
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self._auth_token}",
         }
-        url = urljoin(self.api_base_url, endpoint)
+        url = urljoin(self.api_v2_base_url, endpoint)
 
         if self._log_requests:
             self._log.debug(f"Making Request: method={method} url={url} data={data}")
@@ -512,6 +514,10 @@ class DbtCloudResourceV2:
         return output
 
 
+# This is a temporary shim to support the old resource name.
+DbtCloudResourceV2 = DbtCloudResource
+
+
 @resource(
     config_schema={
         "auth_token": Field(
@@ -565,7 +571,7 @@ class DbtCloudResourceV2:
     },
     description="This resource helps interact with dbt Cloud connectors",
 )
-def dbt_cloud_resource(context) -> DbtCloudResourceV2:
+def dbt_cloud_resource(context) -> DbtCloudResource:
     """
     This resource allows users to programatically interface with the dbt Cloud Administrative REST
     API (v2) to launch jobs and monitor their progress. This currently implements only a subset of
@@ -595,7 +601,7 @@ def dbt_cloud_resource(context) -> DbtCloudResourceV2:
         def my_dbt_cloud_job():
             ...
     """
-    return DbtCloudResourceV2(
+    return DbtCloudResource(
         auth_token=context.resource_config["auth_token"],
         account_id=context.resource_config["account_id"],
         disable_schedule_on_trigger=context.resource_config["disable_schedule_on_trigger"],
