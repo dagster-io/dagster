@@ -82,11 +82,10 @@ filterwarnings = [
 
 [tool.ruff]
 
-exclude = [
+extend-exclude = [
   "*/__generated__/*",
   "*/dagster_airflow/vendor/*",
   "*/snapshots/*",
-  ".git/*"
 ]
 
 ignore = [
