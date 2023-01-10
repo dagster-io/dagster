@@ -69,7 +69,6 @@ const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
       <Dialog
         isOpen={shouldShowNux && loaded}
         style={{width: '680px', background: 'transparent', overflow: 'hidden', height: '462px'}}
-        transitionDuration={0}
       >
         <div
           ref={(element: HTMLDivElement) => {
@@ -116,7 +115,21 @@ const useCommuniyNuxIframe = ({width, height}: Props) => {
       });
       observer.observe(parent.parentNode);
       observer.observe(document.documentElement);
-      setParentRect(dialogFrame.getBoundingClientRect());
+
+      const lastRect = dialogFrame.getBoundingClientRect();
+
+      // Blueprint animates the dialog, so we need to follow it for the animation
+      // It also doens't update every frame, so we give an allowance of up to 100 frames
+      // without any updates. After 100 frames of no updates we assume the animation is complete
+      // and we stop our measuring loop
+      const loopUntilAnimationFinishes = (max: number) => {
+        const nextRect = dialogFrame.getBoundingClientRect();
+        if (lastRect.left !== nextRect.left || lastRect.top !== nextRect.top || max > 0) {
+          setParentRect(nextRect);
+          requestAnimationFrame(() => loopUntilAnimationFinishes(Math.max(max - 1, 0)));
+        }
+      };
+      requestAnimationFrame(() => loopUntilAnimationFinishes(100));
     }
   }, [parent]);
 
