@@ -1,8 +1,18 @@
 # Dagster starter kit
 
-This example is a starter kit for building a daily ETL pipeline. At a high level, this project shows how to ingest data from external sources, explore and transform the data, and materialize outputs that help visualize the data.
+This example project is a starting point for building a data engineering pipeline.
 
-*New to Dagster? Learn what Dagster is [in Concepts](https://docs.dagster.io/concepts) or [in the hands-on Tutorials](https://docs.dagster.io/tutorial).*
+This project follows an important pattern in data engineering: ETL (Extract-Transform-Load). The ETL pipeline in this project:
+
+- Extracts data from an external source
+- Transforms the data to be easier to explore
+- Loads the transformed data into a report to visualize it.
+
+To productionize this project, the pipeline is scheduled to run daily and is ready to be deployed to Dagster Cloud of your self-hosted Dagster instance.
+
+*New to Dagster? Learn to build this project from scratch with the [Dagster Tutorial](https://docs.dagster.io/tutorial).*
+
+*After working through the tutorial, expand your knowledge to solve more of your data problems with assets and other Dagster [Concepts](https://docs.dagster.io/concepts).*
 
 This guide covers:
 - [Dagster starter kit](#dagster-starter-kit)
@@ -51,6 +61,12 @@ The easiest way to spin up your Dagster project is to use [Dagster Cloud Serverl
 Check out [Dagster Cloud](https://dagster.io/cloud) to get started.
 
 ### Option 2: Running it locally
+
+Install the [Dagster CLI](https://docs.dagster.io/getting-started/install) by running:
+
+```bash
+pip install dagster dagit
+```
 
 Bootstrap your own Dagster project with this example:
 
