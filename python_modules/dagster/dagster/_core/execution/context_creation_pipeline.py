@@ -526,6 +526,7 @@ def create_context_free_log_manager(
 ) -> DagsterLogManager:
     """In the event of pipeline initialization failure, we want to be able to log the failure
     without a dependency on the PlanExecutionContext to initialize DagsterLogManager.
+
     Args:
         pipeline_run (PipelineRun)
         pipeline_def (PipelineDefinition)

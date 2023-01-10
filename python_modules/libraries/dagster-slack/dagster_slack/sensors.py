@@ -163,7 +163,6 @@ def make_slack_on_run_failure_sensor(
             status can be overridden from Dagit or via the GraphQL API.
 
     Examples:
-
         .. code-block:: python
 
             slack_on_run_failure = make_slack_on_run_failure_sensor(
@@ -266,7 +265,6 @@ def make_slack_on_freshness_policy_status_change_sensor(
             status can be overridden from Dagit or via the GraphQL API.
 
     Examples:
-
         .. code-block:: python
 
             slack_on_freshness_policy = make_slack_on_freshness_policy_status_change_sensor(

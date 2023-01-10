@@ -336,7 +336,6 @@ class Enum(ConfigType):
                 The name for the enum. If not present, `enum.__name__` will be used.
 
         Example:
-
         .. code-block:: python
 
             class Color(enum.Enum):

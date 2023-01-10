@@ -235,7 +235,6 @@ def build_schedule_context(
             the run config is computed.
 
     Examples:
-
         .. code-block:: python
 
             context = build_schedule_context(instance)
@@ -571,6 +570,7 @@ class ScheduleDefinition:
 
         Args:
             context (ScheduleEvaluationContext): The context with which to evaluate this schedule.
+
         Returns:
             ScheduleExecutionData: Contains list of run requests, or skip message if present.
 

@@ -26,7 +26,6 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
         IOManagerDefinition
 
     Examples:
-
         .. code-block:: python
 
             from dagster_duckdb import build_duckdb_io_manager

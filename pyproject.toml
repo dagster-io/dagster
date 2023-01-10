@@ -120,8 +120,6 @@ ignore = [
 
   # (stack ignores) These are here just to make intermediate steps in the stack
   # green, they will be gone when this is merged.
-  "D411",
-  "D412",
   "D415",
 
   # (module level import not at top) There are several places where we use e.g.

@@ -58,6 +58,7 @@ def ge_validation_op_factory(
         batch_kwargs (Optional[dict]): overrides the `batch_kwargs` parameter when calling the
             `ge_data_context`'s `get_batch` method. Defaults to `{"dataset": dataset}`, where
             `dataset` is the input to the generated op.
+
     Returns:
         An op that takes in a set of data and yields both an expectation with relevant metadata
         and an output with all the metadata (for user processing)

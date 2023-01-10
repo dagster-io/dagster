@@ -103,7 +103,6 @@ class Resource(
     provides a default implementation of the resource_fn that returns the resource itself.
 
     Example:
-
     .. code-block:: python
 
         class WriterResource(Resource):
@@ -145,7 +144,6 @@ class StructuredResourceAdapter(Resource, ABC):
     and implement the ``wrapped_resource`` method.
 
     Example:
-
     .. code-block:: python
 
         @resource(config_schema={"prefix": str})

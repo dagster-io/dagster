@@ -240,7 +240,6 @@ def athena_resource(context):
     """This resource enables connecting to AWS Athena and issuing queries against it.
 
     Example:
-
         .. code-block:: python
 
                 from dagster import build_op_context, op

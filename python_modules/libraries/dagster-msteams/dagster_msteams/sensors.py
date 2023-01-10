@@ -73,7 +73,6 @@ def make_teams_on_run_failure_sensor(
             monitored_jobs or job_selection. Defaults to False.
 
     Examples:
-
         .. code-block:: python
 
             teams_on_run_failure = make_teams_on_run_failure_sensor(

@@ -113,7 +113,6 @@ def build_assets_job(
         description (Optional[str]): A description of the job.
 
     Examples:
-
         .. code-block:: python
 
             @asset
@@ -234,7 +233,6 @@ def build_source_asset_observation_job(
         description (Optional[str]): A description of the job.
 
     Examples:
-
         .. code-block:: python
 
             @asset

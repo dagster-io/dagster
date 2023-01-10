@@ -414,6 +414,7 @@ class SensorDefinition:
 
         Args:
             context (SensorEvaluationContext): The context with which to evaluate this sensor.
+
         Returns:
             SensorExecutionData: Contains list of run requests, or skip message if present.
 
@@ -627,7 +628,6 @@ def build_sensor_context(
         repository_def (Optional[RepositoryDefinition]): The repository that the sensor belongs to.
 
     Examples:
-
         .. code-block:: python
 
             context = build_sensor_context()

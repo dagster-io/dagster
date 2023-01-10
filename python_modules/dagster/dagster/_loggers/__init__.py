@@ -68,7 +68,6 @@ def json_console_logger(init_context: "InitLoggerContext") -> logging.Logger:
     """This logger provides support for sending Dagster logs to stdout in json format.
 
     Example:
-
         .. code-block:: python
 
             from dagster import op, job

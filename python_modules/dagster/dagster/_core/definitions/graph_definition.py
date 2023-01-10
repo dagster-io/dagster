@@ -156,7 +156,6 @@ class GraphDefinition(NodeDefinition):
             values provided at invocation time.
 
     Examples:
-
         .. code-block:: python
 
             @op

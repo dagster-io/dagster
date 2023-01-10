@@ -149,7 +149,6 @@ class UnboundOpExecutionContext(OpExecutionContext):
         """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the solid.
 
         Example:
-
         .. code-block:: python
 
             @solid
@@ -398,7 +397,6 @@ class BoundOpExecutionContext(OpExecutionContext):
         """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the solid.
 
         Example:
-
         .. code-block:: python
 
             @solid

@@ -24,7 +24,6 @@ class AssetSelection(ABC):
     AssetSelections are typically used with :py:func:`define_asset_job`.
 
     Examples:
-
         .. code-block:: python
 
             # Select all assets in group "marketing":
@@ -62,7 +61,6 @@ class AssetSelection(ABC):
         Returns a selection that includes assets with any of the provided keys.
 
         Examples:
-
             .. code-block:: python
 
                 AssetSelection.keys(AssetKey(["a"]))

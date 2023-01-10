@@ -592,7 +592,6 @@ def build_input_context(
             being loaded.
 
     Examples:
-
         .. code-block:: python
 
             build_input_context()

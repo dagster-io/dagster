@@ -407,6 +407,7 @@ def apply_ignore_missing_data_to_mask(mask, column):
 class ColumnAggregateConstraintWithMetadata(ConstraintWithMetadata):
     """
     Similar to the base class, but now your validation functions should take in columns (pd.Series) not Dataframes.
+
     Args:
         description (str): description of the constraint
         validation_fn (Callable[[pd.Series], Tuple[bool, dict[str, Union[dict,list, str, set]]]]:
@@ -461,6 +462,7 @@ class ColumnConstraintWithMetadata(ConstraintWithMetadata):
     you want to apply to multiple columns of your dataframe
     The main difference from the base class in terms of construction is that now, your validation_fns should operate on
     individual values.
+
     Args:
         description (str): description of the constraint
         validation_fn (Callable[[Any], Tuple[bool, dict[str, Union[dict,list, str, set]]]]:

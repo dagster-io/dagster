@@ -201,7 +201,6 @@ def cloudwatch_logger(init_context):
     """This logger provides support for sending Dagster logs to AWS CloudWatch.
 
     Example:
-
         .. code-block:: python
 
             from dagster import job, op

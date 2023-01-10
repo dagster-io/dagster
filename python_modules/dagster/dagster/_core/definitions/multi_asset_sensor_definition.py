@@ -955,7 +955,6 @@ def build_multi_asset_sensor_context(
             materialization for each monitored asset. By default, set to False.
 
     Examples:
-
         .. code-block:: python
 
             with instance_for_test() as instance:

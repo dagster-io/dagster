@@ -258,23 +258,21 @@ class AirbyteConnection:
                 namespace will be that string.
 
         Example:
+            .. code-block:: python
 
-        .. code-block:: python
+                from dagster_airbyte.managed.generated.sources import FileSource
+                from dagster_airbyte.managed.generated.destinations import LocalJsonDestination
+                from dagster_airbyte import AirbyteConnection, AirbyteSyncMode
 
-            from dagster_airbyte.managed.generated.sources import FileSource
-            from dagster_airbyte.managed.generated.destinations import LocalJsonDestination
-            from dagster_airbyte import AirbyteConnection, AirbyteSyncMode
+                cereals_csv_source = FileSource(...)
+                local_json_destination = LocalJsonDestination(...)
 
-            cereals_csv_source = FileSource(...)
-            local_json_destination = LocalJsonDestination(...)
-
-            cereals_connection = AirbyteConnection(
-                name="download-cereals",
-                source=cereals_csv_source,
-                destination=local_json_destination,
-                stream_config={"cereals": AirbyteSyncMode.full_refresh_overwrite()},
-            )
-
+                cereals_connection = AirbyteConnection(
+                    name="download-cereals",
+                    source=cereals_csv_source,
+                    destination=local_json_destination,
+                    stream_config={"cereals": AirbyteSyncMode.full_refresh_overwrite()},
+                )
         """
         self.name = check.str_param(name, "name")
         self.source = check.inst_param(source, "source", AirbyteSource)
