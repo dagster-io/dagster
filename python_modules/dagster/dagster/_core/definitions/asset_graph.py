@@ -264,9 +264,12 @@ class AssetGraph:
 
     def has_non_source_parents(self, asset_key: AssetKey) -> bool:
         """Determines if an asset has any parents which are not source assets"""
-        if asset_key in self._source_asset_keys:
+        if asset_key in self._source_asset_keys or asset_key not in self.all_asset_keys:
             return False
-        return bool(self.get_parents(asset_key) - self._source_asset_keys - {asset_key})
+        return any(
+            parent_key in self.all_asset_keys and parent_key not in self._source_asset_keys
+            for parent_key in self.get_parents(asset_key) - {asset_key}
+        )
 
     def get_non_source_roots(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         """Returns all assets upstream of the given asset which do not consume any other
@@ -277,7 +280,8 @@ class AssetGraph:
         return {
             key
             for key in self.upstream_key_iterator(asset_key)
-            if not self.has_non_source_parents(key)
+            # only get keys which are actual assets and have no non-source parents
+            if key in self.all_asset_keys and not self.has_non_source_parents(key)
         }
 
     def upstream_key_iterator(self, asset_key: AssetKey) -> Iterator[AssetKey]:
@@ -286,7 +290,7 @@ class AssetGraph:
         queue = deque([asset_key])
         while queue:
             current_key = queue.popleft()
-            if current_key in self._source_asset_keys:
+            if current_key in self._source_asset_keys or current_key not in self.all_asset_keys:
                 continue
             for parent_key in self.get_parents(current_key):
                 if parent_key not in visited:
