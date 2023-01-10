@@ -4,7 +4,7 @@ import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {graphql} from '../graphql';
 import {BackfillTableFragmentFragment} from '../graphql/graphql';
@@ -39,7 +39,7 @@ export const BackfillTable = ({
     setPartitionsRequestedBackfill,
   ] = React.useState<BackfillTableFragmentFragment>();
   const [resumeBackfill] = useMutation(RESUME_BACKFILL_MUTATION);
-  const {canCancelPartitionBackfill} = usePermissions();
+  const {canCancelPartitionBackfill} = usePermissionsDEPRECATED();
 
   const candidateId = terminationBackfill?.backfillId;
 

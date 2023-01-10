@@ -5,7 +5,7 @@ import {useHistory, Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -153,7 +153,7 @@ const BackfillMenu = ({
   onResumeBackfill: (backfill: BackfillTableFragmentFragment) => void;
   onShowStepStatus: (backfill: BackfillTableFragmentFragment) => void;
 }) => {
-  const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissions();
+  const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissionsDEPRECATED();
   const runsUrl = runsPathWithFilters([
     {
       token: 'tag',

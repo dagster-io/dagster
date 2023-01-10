@@ -2,7 +2,7 @@ import {useMutation} from '@apollo/client';
 import {Checkbox, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {graphql} from '../graphql';
 import {InstigationStatus, SensorSwitchFragmentFragment} from '../graphql/graphql';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -22,7 +22,7 @@ interface Props {
 
 export const SensorSwitch: React.FC<Props> = (props) => {
   const {repoAddress, sensor, size = 'large'} = props;
-  const {canStartSensor, canStopSensor} = usePermissions();
+  const {canStartSensor, canStopSensor} = usePermissionsForLocation(repoAddress.location);
 
   const {jobOriginId, name, sensorState} = sensor;
   const {status, selectorId} = sensorState;

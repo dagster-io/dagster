@@ -13,7 +13,7 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
-import {usePermissions} from '../app/Permissions';
+import {useUnscopedPermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {AssetGroupSelector, AssetTableFragmentFragment} from '../graphql/graphql';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
@@ -201,7 +201,7 @@ const MoreActionsDropdown: React.FC<{
   requery?: RefetchQueriesFunction;
 }> = React.memo(({selected, clearSelection, requery}) => {
   const [showBulkWipeDialog, setShowBulkWipeDialog] = React.useState<boolean>(false);
-  const {canWipeAssets} = usePermissions();
+  const {canWipeAssets} = useUnscopedPermissions();
 
   if (!canWipeAssets.enabled) {
     return null;

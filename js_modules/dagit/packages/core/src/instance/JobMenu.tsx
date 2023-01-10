@@ -2,7 +2,7 @@ import {useLazyQuery} from '@apollo/client';
 import {Button, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {graphql} from '../graphql';
 import {RunTimeFragmentFragment} from '../graphql/graphql';
 import {canRunAllSteps, canRunFromFailure} from '../runs/RunActionButtons';
@@ -23,7 +23,7 @@ interface Props {
 export const JobMenu = (props: Props) => {
   const {job, repoAddress} = props;
   const lastRun = job.runs.length ? job.runs[0] : null;
-  const {canLaunchPipelineReexecution} = usePermissions();
+  const {canLaunchPipelineReexecution} = usePermissionsForLocation(repoAddress.location);
   const [fetchHasExecutionPlan, {data}] = useLazyQuery(RUN_RE_EXECUTION_QUERY);
 
   const run = data?.pipelineRunOrError.__typename === 'Run' ? data?.pipelineRunOrError : null;

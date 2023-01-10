@@ -2,7 +2,7 @@ import {useQuery} from '@apollo/client';
 import {Box, Button, Dialog, Icon, Tooltip, Colors, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {useViewport} from '../gantt/useViewport';
 import {graphql} from '../graphql';
 import {OpJobPartitionSetFragment, OpJobPartitionStatusFragment} from '../graphql/graphql';
@@ -86,7 +86,7 @@ const OpJobPartitionsViewContent: React.FC<{
   partitionSet: OpJobPartitionSetFragment;
   repoAddress: RepoAddress;
 }> = ({partitionSet, partitionNames, repoAddress}) => {
-  const {canLaunchPartitionBackfill} = usePermissions();
+  const {canLaunchPartitionBackfill} = usePermissionsForLocation(repoAddress.location);
   const {viewport, containerProps} = useViewport();
 
   const [pageSize, setPageSize] = React.useState(60);

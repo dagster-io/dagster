@@ -3,7 +3,7 @@ import {Button, Spinner, Tooltip, Icon} from '@dagster-io/ui';
 import React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {
   LaunchAssetExecutionAssetNodeFragmentFragment,
   LaunchAssetLoaderQueryQuery,
@@ -36,7 +36,7 @@ export const LaunchAssetObservationButton: React.FC<{
   intent?: 'primary' | 'none';
   preferredJobName?: string;
 }> = ({assetKeys, preferredJobName, intent = 'none'}) => {
-  const {canLaunchPipelineExecution} = usePermissions();
+  const {canLaunchPipelineExecution} = usePermissionsDEPRECATED();
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 

@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {graphql} from '../graphql';
 import {RunsFilter, RunTableRunFragmentFragment} from '../graphql/graphql';
@@ -43,7 +43,7 @@ export const RunTable = (props: RunTableProps) => {
 
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(allIds);
 
-  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
+  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissionsDEPRECATED();
   const canTerminateOrDelete =
     canTerminatePipelineExecution.enabled || canDeletePipelineRun.enabled;
 
