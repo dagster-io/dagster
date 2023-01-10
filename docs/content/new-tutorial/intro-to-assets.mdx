@@ -1,0 +1,107 @@
+---
+title: "Introduction to the Dagster Tutorial and Assets | Dagster Docs"
+description: "Learn about the objectives for the Dagster tutorial and about assets"
+noindex: True
+---
+
+# Introduction to Dagster
+
+Dagster is an orchestration framework to help data engineers deliver high-quality data. In Dagster, the objects made by data engineers are called assets.
+
+In this tutorial, you will write a data pipeline that performs ETL (Extract, Transform, Load). You will:
+
+- **Extract** data from a website
+- **Transform** it into a data structure for a chart
+- And **load** it into a visualization for reporting
+
+While writing this pipeline, you will learn about Dagster's core concepts, such as assets, schedules, and I/O Managers.
+
+## Introduction to software-defined assets
+
+Before building a Dagster project, you should first learn about Dagster's primary core concept: the Software-defined asset (SDA).
+
+Assets are objects saved somewhere and are the outputs of data pipelines. Assets can be any type of object, such as:
+
+- A database table or view
+- A file, such as in your local machine or blob storage like S3
+- A machine learning model
+- An object in an integration (such as a dbt model or an Airbyte-ingested table)
+
+A Software-defined asset is Dagster's concept that couples an asset to the function and upstream assets that are used to produce its contents.
+
+<Image
+alt="A materialized asset shown through the Dagit UI"
+src="/images/tutorial/simple-asset.png"
+width={275}
+height={132}
+/>
+
+If you have an existing data pipeline, you likely already have assets.
+
+### Goals
+
+By the end of this section, you should:
+
+- Know what assets are
+- Know the power of Software-defined assets
+- Know when to use task-based orchestration with assets
+- Begin to think about what parts of your current pipeline are assets.
+
+### Parts of a software-defined asset
+
+Software-defined assets are powerful because they encapsulate objects to enable data engineers to do more with them.
+
+As a Dagster user, you define assets in code. Developers can set multiple properties to add more information to the asset. For example, software-defined assets enrich assets by being able to have:
+
+- A description that end users will understand what the asset is for
+- The lineage of what other assets it relates to
+- A group name to categorize multiple assets or a Compute Kind to group assets by the origins of the data, such as an ingestion tool.
+
+<Image
+alt="A high-level summary of information attached to an asset"
+src="/images/tutorial/sda-metadata.png"
+width={373}
+height={787}
+/>
+
+If more information is needed, an asset can have custom entries made through the <PyObject object="MetadataEntry" /> class. You can add a chart, preview, data profiling, test statuses, or other properties that aren't natively supported.
+
+### Materializing assets
+
+To **materialize** an SDA means to create or update it. Dagster materializes assets by executing the asset's function or triggering an integration. These assets are stored in places like databases or cloud storage. Dagster supports many destinations out-of-the-box through another Dagster feature: [I/O Managers](/concepts/io-management/io-managers). If an asset does not have an I/O Manager configured, the asset is saved in the user's local file system.
+
+You can materialize individual assets. However, Dagster's strengths shine when building a DAG of assets and having materializing assets based on schedules and data freshness expectations.
+
+### Building a DAG of assets
+
+Defining multiple assets creates a DAG (directed acyclic graph) of what assets depend on other assets. The DAG helps you to understand how your data relates to each other. This graph empowers users to act, learn, or debug their pipelines.
+
+<Image
+alt="A high-level summary of information attached to an asset"
+src="/images/tutorial/asset-graph.png"
+width={317}
+height={514}
+/>
+
+The immediate value of building a DAG of assets is a complete visualization of all assets and how they are related. You will also see how materializations or errors ripple across their dependencies.
+
+By combining the information that enriches assets with the complete DAG, assets can reach SLAs (service-level agreements) by setting expectations for how frequently an asset should be updated. Using this knowledge, Dagster will use asset-based orchestration to reconcile and build assets based on the freshness expectations of their related assets.
+
+### Extending with ops and jobs
+
+Asset-based orchestration may seem like a new way to approach data orchestration, but it is similar to traditional task-based orchestration. Under the hood, assets are a wrapper around Dagster's task-based framework. Therefore, all work done with SDAs can also done with tasks.
+
+Dagster's best practices state that data engineers should use assets most of the time. However, users are able to use Dagster's Ops and Jobs' task-based framework when assets are not the right fit. Some situations to use the task-based framework are when you are:
+
+- Sending emails or alerts
+- Generating assets you do not know ahead of time
+
+Read the Ops and Jobs guide to learn more about Dagster's task-based workflows.
+
+## Next steps
+
+In this section, you learned how software-defined assets are the building blocks of Dagster. Asset-based pipelines promote data engineers and their stakeholders to have more observability, control, and power over their data pipelines. We also hinted at concepts such as declarative scheduling, I/O Managers, Ops, and Jobs. You will implement these concepts during this tutorial.
+
+Within your current setup, what are the assets that you should bring into Dagster? You likely have many assets in your existing data pipelines. If you are earlier in your journey and do not have a pipeline yet, what data do the decision-makers need? Those are strong candidates for being your assets.
+
+This tutorial will teach you how to build an ETL pipeline that will parallel how you can move your data orchestration to Dagster.
