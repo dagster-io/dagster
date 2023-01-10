@@ -698,7 +698,12 @@ def load_assets_from_dbt_manifest(
     display_raw_sql = check.opt_bool_param(display_raw_sql, "display_raw_sql", default=True)
     dbt_resource_key = check.str_param(dbt_resource_key, "dbt_resource_key")
 
-    dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"], **manifest_json["metrics"]}
+    dbt_nodes = {
+        **manifest_json["nodes"],
+        **manifest_json["sources"],
+        **manifest_json["metrics"],
+        **manifest_json["exposures"],
+    }
 
     if selected_unique_ids:
         select = (
