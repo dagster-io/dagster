@@ -38,12 +38,12 @@ from dagster._utils.schedules import schedule_execution_time_iterator
 from ..decorator_utils import get_function_params
 from ..errors import (
     DagsterInvalidDefinitionError,
+    DagsterInvalidDeserializationVersionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     DagsterUnknownPartitionError,
     ScheduleExecutionError,
     user_code_error_boundary,
-    DagsterInvalidDeserializationVersionError,
 )
 from ..storage.pipeline_run import DagsterRun
 from .config import ConfigMapping
@@ -262,6 +262,9 @@ class PartitionsDefinition(ABC, Generic[T]):
 
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return DefaultPartitionsSubset.from_serialized(self, serialized)
+
+    def can_deserialize_subset(self, serialized: str) -> bool:
+        return DefaultPartitionsSubset.can_deserialize(serialized)
 
     @property
     def serializable_unique_identifier(self) -> str:
@@ -1067,7 +1070,9 @@ class PartitionsSubset(ABC):
 
     @classmethod
     @abstractmethod
-    def from_serialized(cls, serialized: str) -> "PartitionsSubset":
+    def from_serialized(
+        cls, partitions_def: PartitionsDefinition, serialized: str
+    ) -> "PartitionsSubset":
         raise NotImplementedError()
 
     @property
@@ -1092,7 +1097,7 @@ class PartitionsSubset(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_inverse_subset(self) -> "PartitionsSubset":
+    def get_inverse_subset(self, current_time: Optional[datetime] = None) -> "PartitionsSubset":
         """
         Returns a PartitionsSubset that represents all partitions not selected in this PartitionsSubset.
         """
@@ -1182,7 +1187,7 @@ class DefaultPartitionsSubset(PartitionsSubset):
     @classmethod
     def from_serialized(
         cls, partitions_def: PartitionsDefinition, serialized: str
-    ) -> "DefaultPartitionsSubset":
+    ) -> "PartitionsSubset":
         # Check the version number, so only valid versions can be deserialized.
         data = json.loads(serialized)
 
@@ -1192,11 +1197,14 @@ class DefaultPartitionsSubset(PartitionsSubset):
         else:
             if data.get("version") != cls.SERIALIZATION_VERSION:
                 raise DagsterInvalidDeserializationVersionError(
-                    f"Attempted to deserialize partition subset with version {data.get('version')}, but only version {cls.SERIALIZATION_VERSION} is supported."
+                    f"Attempted to deserialize partition subset with version {data.get('version')},"
+                    f" but only version {cls.SERIALIZATION_VERSION} is supported."
                 )
             return cls(subset=set(data.get("subset")), partitions_def=partitions_def)
 
-    def get_inverse_subset(self) -> "DefaultPartitionsSubset":
+    def get_inverse_subset(
+        self, current_time: Optional[datetime] = None
+    ) -> "DefaultPartitionsSubset":
         return DefaultPartitionsSubset(
-            self.partitions_def, set(self.get_partition_keys_not_in_subset())
+            self.partitions_def, set(self.get_partition_keys_not_in_subset(current_time))
         )

@@ -178,7 +178,7 @@ class TimeWindowPartitionMapping(
 
         return TimeWindowPartitionsSubset(
             to_partitions_def,
-            time_windows,
+            to_partitions_def.build_merged_subset_time_windows(time_windows),
         )
 
 

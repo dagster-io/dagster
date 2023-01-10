@@ -31,37 +31,6 @@ CACHEABLE_PARTITION_TYPES = {
 }
 
 
-class PartitionMaterializationStatus(
-    NamedTuple(
-        "_PartitionMaterializationStatus",
-        [
-            ("serialized_materialized_partition_subset", str),
-            ("serialized_unmaterialized_partition_subset", str),
-        ],
-    )
-):
-    """
-    docstring here
-    """
-
-    def __new__(
-        cls,
-        serialized_materialized_partition_subset: str,
-        serialized_unmaterialized_partition_subset: str,
-    ):
-        check.opt_str_param(
-            serialized_materialized_partition_subset, "serialized_materialized_partition_subset"
-        )
-        check.opt_str_param(
-            serialized_unmaterialized_partition_subset, "serialized_unmaterialized_partition_subset"
-        )
-        return super(PartitionMaterializationStatus, cls).__new__(
-            cls,
-            serialized_materialized_partition_subset,
-            serialized_unmaterialized_partition_subset,
-        )
-
-
 @whitelist_for_serdes
 class AssetStatusCacheValue(
     NamedTuple(
@@ -188,7 +157,6 @@ def _build_status_cache(
         )
     )
 
-    # TODO represent unmaterialized partition subset
     return AssetStatusCacheValue(
         latest_storage_id=latest_storage_id,
         partitions_def_id=partitions_def.serializable_unique_identifier,
@@ -229,8 +197,6 @@ def _get_updated_status_cache(
         current_status_cache_value.partitions_def_id
         == partitions_def.serializable_unique_identifier
     )
-
-    # TODO add checks to see if a subset can be deserialized
 
     materialized_subset: PartitionsSubset = (
         partitions_def.deserialize_subset(
@@ -288,8 +254,17 @@ def _get_fresh_asset_status_cache_values(
             continue
 
         partitions_def = asset_graph.get_partitions_def(asset_key)
-        if cached_status_data is None or cached_status_data.partitions_def_id != (
-            partitions_def.serializable_unique_identifier if partitions_def else None
+        if (
+            cached_status_data is None
+            or cached_status_data.partitions_def_id
+            != (partitions_def.serializable_unique_identifier if partitions_def else None)
+            or (
+                partitions_def
+                and cached_status_data.serialized_materialized_partition_subset
+                and not partitions_def.can_deserialize_subset(
+                    cached_status_data.serialized_materialized_partition_subset
+                )
+            )
         ):
             event_records = instance.get_event_records(
                 event_records_filter=EventRecordsFilter(

@@ -14,12 +14,12 @@ from dagster import (
     hourly_partitioned_config,
     monthly_partitioned_config,
     weekly_partitioned_config,
-    DagsterInvalidInvocationError,
 )
 from dagster._core.definitions.time_window_partitions import (
     ScheduleType,
-    TimeWindow,
     SubsetTimeWindow,
+    TimeWindow,
+    TimeWindowPartitionsSubset,
 )
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
@@ -411,7 +411,9 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
         == expected_keys_not_in_subset
     )
     assert (
-        partitions_def.deserialize_subset(subset.serialize()).included_time_windows
+        cast(
+            TimeWindowPartitionsSubset, partitions_def.deserialize_subset(subset.serialize())
+        ).included_time_windows
         == subset.included_time_windows
     )
 
@@ -495,6 +497,9 @@ def test_partition_subset_with_partition_keys(initial: str, added: str):
     full_set_keys = partitions_def.get_partition_keys(
         current_time=datetime(year=2015, month=1, day=30)
     )[: len(initial)]
+    current_date = partitions_def.get_partition_keys(
+        current_time=datetime(year=2015, month=1, day=30)
+    )[len(initial)]
     initial_subset_keys = []
     added_subset_keys = []
     expected_keys_not_in_updated_subset = []
@@ -518,6 +523,11 @@ def test_partition_subset_with_partition_keys(initial: str, added: str):
         )
         == expected_keys_not_in_updated_subset
     )
+    inverse_subset = updated_subset.get_inverse_subset(
+        current_time=datetime.strptime(current_date, partitions_def.fmt)
+    )
+    assert len(inverse_subset) == len(expected_keys_not_in_updated_subset)
+    assert inverse_subset.get_partition_keys() == expected_keys_not_in_updated_subset
 
     updated_subset_str = "".join(
         ("+" if (a == "+" or b == "+") else "-") for a, b in zip(initial, added)
@@ -544,7 +554,10 @@ def test_time_window_partitions_deserialize_backwards_compatible():
     assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
     assert "2015-01-02" in deserialized
 
-    serialized = '{"time_windows": [[1420156800.0, 1420243200.0], [1420329600.0, 1420416000.0]], "num_partitions": 2}'
+    serialized = (
+        '{"time_windows": [[1420156800.0, 1420243200.0], [1420329600.0, 1420416000.0]],'
+        ' "num_partitions": 2}'
+    )
     deserialized = partitions_def.deserialize_subset(serialized)
     assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
     assert "2015-01-02" in deserialized
@@ -559,7 +572,10 @@ def test_current_time_window_partitions_serialization():
     assert partitions_def.deserialize_subset(serialized)
     assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
 
-    serialized = '{"version": 1, "time_windows": [[1420156800.0, 1420243200.0, 1], [1420329600.0, 1420416000.0, 1]]}'
+    serialized = (
+        '{"version": 1, "time_windows": [[1420156800.0, 1420243200.0, 1], [1420329600.0,'
+        " 1420416000.0, 1]]}"
+    )
     assert partitions_def.deserialize_subset(serialized)
     assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
 
@@ -598,66 +614,9 @@ def test_partition_subset_123():
 
 def test_merged_partition_time_window():
     partitions_def = DailyPartitionsDefinition(start_date="2023-01-01")
-    partitions_def.empty_subset().with_partition_keys(["2023-01-01"]).included_time_windows
     tws = partitions_def.build_merged_subset_time_windows([time_window("2023-01-01", "2023-01-02")])
     assert tws == [subset_time_window("2023-01-01", "2023-01-02", 1)]
     tws = partitions_def.build_merged_subset_time_windows(
         [time_window("2023-01-01", "2023-01-02"), time_window("2023-01-02", "2023-01-03")]
     )
     assert tws == [subset_time_window("2023-01-01", "2023-01-03", 2)]
-
-    with pytest.raises(DagsterInvalidInvocationError):
-        partitions_def.build_merged_subset_time_windows([time_window("2023-01-01", "2023-01-01")])
-
-    with pytest.raises(DagsterInvalidInvocationError):
-        partitions_def.build_merged_subset_time_windows([time_window("2022-01-01", "2022-01-04")])
-
-
-def test_iterate_valid_time_windows():
-    partitions_def = DailyPartitionsDefinition(start_date="2023-01-01")
-
-    assert list(
-        partitions_def.iterate_valid_time_windows(
-            str_to_dt("2023-01-01"), current_time=str_to_dt("2023-01-04")
-        )
-    ) == [
-        time_window("2023-01-01", "2023-01-02"),
-        time_window("2023-01-02", "2023-01-03"),
-        time_window("2023-01-03", "2023-01-04"),
-    ]
-    assert (
-        list(
-            partitions_def.iterate_valid_time_windows(
-                str_to_dt("2023-01-01"), current_time=str_to_dt("2023-01-01")
-            )
-        )
-        == []
-    )
-
-    partitions_def = DailyPartitionsDefinition(start_date="2023-01-01", end_offset=1)
-    assert list(
-        partitions_def.iterate_valid_time_windows(
-            str_to_dt("2023-01-01"), current_time=str_to_dt("2023-01-04")
-        )
-    ) == [
-        time_window("2023-01-01", "2023-01-02"),
-        time_window("2023-01-02", "2023-01-03"),
-        time_window("2023-01-03", "2023-01-04"),
-        time_window("2023-01-04", "2023-01-05"),
-    ]
-
-    partitions_def = DailyPartitionsDefinition(start_date="2023-01-01", end_offset=-1)
-    assert list(
-        partitions_def.iterate_valid_time_windows(
-            str_to_dt("2023-01-01"), current_time=str_to_dt("2023-01-04")
-        )
-    ) == [
-        time_window("2023-01-01", "2023-01-02"),
-        time_window("2023-01-02", "2023-01-03"),
-    ]
-
-
-# def test_inverse_subset():
-#     partitions_def = (
-#         DailyPartitionsDefinition(start_date="2023-01-01").empty_subset().with_partition_keys()
-#     )

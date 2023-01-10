@@ -6,17 +6,13 @@ from dagster import (
     DagsterEventType,
     DailyPartitionsDefinition,
     EventRecordsFilter,
+    MultiPartitionKey,
     StaticPartitionsDefinition,
     asset,
     define_asset_job,
     repository,
-    MultiPartitionKey,
 )
-from dagster._core.definitions.multi_dimensional_partitions import (
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
-    MultiPartitionsSubset,
-)
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import get_multidimensional_partition_tag
 from dagster._core.test_utils import instance_for_test
@@ -321,7 +317,9 @@ def test_multipartitions_subset_addition(initial, added):
             current_time=datetime.strptime(current_day, "%Y-%m-%d")
         )
     ) == set(expected_keys_not_in_updated_subset)
-    # assert added_subset.get_inverse_subset().get_partition_keys(
-    #     current_time=datetime.strptime(current_day, "%Y-%m-%d")
-    # ) == set(expected_keys_not_in_updated_subset)
-    # TODO add test for inverse
+
+    assert set(
+        added_subset.get_inverse_subset(
+            current_time=datetime.strptime(current_day, daily_partitions_def.fmt)
+        ).get_partition_keys()
+    ) == set(expected_keys_not_in_updated_subset)

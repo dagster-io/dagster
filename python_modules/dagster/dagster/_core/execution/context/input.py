@@ -689,6 +689,9 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
     ) -> "PartitionsSubset":
         raise NotImplementedError()
 
+    def get_inverse_subset(self, current_time: Optional[datetime] = None) -> "PartitionsSubset":
+        raise NotImplementedError()
+
     @classmethod
     def can_deserialize(cls, serialized: str) -> bool:
         raise NotImplementedError()

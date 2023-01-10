@@ -1,14 +1,8 @@
-from dagster import (
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
-    PartitionKeyRange,
-    StaticPartitionsDefinition,
-    DailyPartitionsDefinition,
-)
-from dagster._core.definitions.partition import DefaultPartitionsSubset
-from dagster._core.errors import DagsterInvalidDeserializationVersionError
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
 import pytest
+from dagster import DailyPartitionsDefinition, StaticPartitionsDefinition
+from dagster._core.definitions.partition import DefaultPartitionsSubset
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
+from dagster._core.errors import DagsterInvalidDeserializationVersionError
 
 
 def test_default_subset_cannot_deserialize_invalid_version():
@@ -26,7 +20,7 @@ def test_default_subset_cannot_deserialize_invalid_version():
     class NewSerializationVersionSubset(DefaultPartitionsSubset):
         SERIALIZATION_VERSION = -1
 
-    assert NewSerializationVersionSubset.can_deserialize(serialized_subset) == False
+    assert NewSerializationVersionSubset.can_deserialize(serialized_subset) is False
 
     with pytest.raises(DagsterInvalidDeserializationVersionError, match="version -1"):
         NewSerializationVersionSubset.from_serialized(static_partitions_def, serialized_subset)
@@ -45,7 +39,7 @@ def test_time_window_subset_cannot_deserialize_invalid_version():
     class NewSerializationVersionSubset(TimeWindowPartitionsSubset):
         SERIALIZATION_VERSION = -2
 
-    assert NewSerializationVersionSubset.can_deserialize(serialized_subset) == False
+    assert NewSerializationVersionSubset.can_deserialize(serialized_subset) is False
 
     with pytest.raises(DagsterInvalidDeserializationVersionError, match="version -2"):
         NewSerializationVersionSubset.from_serialized(daily_partitions_def, serialized_subset)
