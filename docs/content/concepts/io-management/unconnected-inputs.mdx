@@ -32,8 +32,8 @@ When you have an op at the beginning of a job that operates on a built-in dagste
 Here's a basic job with an unconnected string input:
 
 ```python file=/concepts/io_management/load_from_config.py startafter=def_start_marker endbefore=def_end_marker
-@op(ins={"input_string": In(String)})
-def my_op(context, input_string):
+@op
+def my_op(context, input_string: str):
     context.log.info(f"input string: {input_string}")
 
 
@@ -59,7 +59,6 @@ from typing import Dict, Union
 
 from dagster import (
     DagsterTypeLoaderContext,
-    In,
     dagster_type_loader,
     job,
     op,
@@ -88,8 +87,8 @@ class Apple:
         self.cultivar = cultivar
 
 
-@op(ins={"input_apple": In(Apple)})
-def my_op(context, input_apple):
+@op
+def my_op(context, input_apple: Apple):
     context.log.info(f"input apple diameter: {input_apple.diameter}")
 
 
