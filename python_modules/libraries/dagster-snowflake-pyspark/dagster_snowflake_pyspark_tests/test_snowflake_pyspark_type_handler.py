@@ -18,7 +18,6 @@ from dagster import (
     op,
 )
 from dagster._core.storage.db_io_manager import TableSlice
-from dagster_pyspark import pyspark_resource
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
 from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler, snowflake_pyspark_io_manager
