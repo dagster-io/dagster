@@ -576,6 +576,17 @@ def find_free_port() -> int:
         return s.getsockname()[1]
 
 
+def is_port_in_use(host, port) -> bool:
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.bind((host, port))
+        return False
+    except socket.error as e:
+        return e.errno == errno.EADDRINUSE
+    finally:
+        s.close()
+
+
 @contextlib.contextmanager
 def alter_sys_path(to_add: Sequence[str], to_remove: Sequence[str]) -> Iterator[None]:
     to_restore = [path for path in sys.path]

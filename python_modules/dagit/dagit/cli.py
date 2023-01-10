@@ -14,7 +14,7 @@ from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
 from dagster._core.telemetry import START_DAGIT_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
 from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
+from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, find_free_port, is_port_in_use
 from dagster._utils.log import configure_loggers
 
 from .app import create_app_from_workspace_process_context
@@ -66,8 +66,8 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     "--port",
     "-p",
     type=click.INT,
-    help="Port to run server on.",
-    default=DEFAULT_DAGIT_PORT,
+    help=f"Port to run server on - defaults to {DEFAULT_DAGIT_PORT}",
+    default=None,
     show_default=True,
 )
 @click.option(
@@ -157,7 +157,7 @@ def dagit(
 def host_dagit_ui_with_workspace_process_context(
     workspace_process_context: WorkspaceProcessContext,
     host: Optional[str],
-    port: int,
+    port: Optional[int],
     path_prefix: str,
     log_level: str,
 ):
@@ -165,13 +165,20 @@ def host_dagit_ui_with_workspace_process_context(
         workspace_process_context, "workspace_process_context", WorkspaceProcessContext
     )
     host = check.opt_str_param(host, "host", "127.0.0.1")
-    check.int_param(port, "port")
+    check.opt_int_param(port, "port")
     check.str_param(path_prefix, "path_prefix")
 
     configure_loggers()
     logger = logging.getLogger("dagit")
 
     app = create_app_from_workspace_process_context(workspace_process_context, path_prefix)
+
+    if not port:
+        if is_port_in_use(host, DEFAULT_DAGIT_PORT):
+            port = find_free_port()
+            logger.warning(f"Port {DEFAULT_DAGIT_PORT} is in use - using port {port} instead")
+        else:
+            port = DEFAULT_DAGIT_PORT
 
     logger.info(
         "Serving dagit on http://{host}:{port}{path_prefix} in process {pid}".format(

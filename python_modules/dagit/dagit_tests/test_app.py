@@ -5,7 +5,7 @@ from unittest import mock
 import pytest
 from click.testing import CliRunner
 from dagit.app import create_app_from_workspace_process_context
-from dagit.cli import dagit, host_dagit_ui_with_workspace_process_context
+from dagit.cli import DEFAULT_DAGIT_PORT, dagit, host_dagit_ui_with_workspace_process_context
 from dagster import _seven
 from dagster._core.instance import DagsterInstance
 from dagster._core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
@@ -127,7 +127,7 @@ def test_graphql_view_at_path_prefix():
 
 
 def test_successful_host_dagit_ui_from_workspace():
-    with mock.patch("uvicorn.run"), tempfile.TemporaryDirectory() as temp_dir:
+    with mock.patch("uvicorn.run") as server_call, tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
 
         with load_workspace_process_context_from_yaml_paths(
@@ -140,6 +140,58 @@ def test_successful_host_dagit_ui_from_workspace():
                 path_prefix="",
                 log_level="warning",
             )
+
+        call_args = server_call.call_args
+        assert call_args.kwargs["port"] == 2343
+
+
+@pytest.fixture
+def mock_is_port_in_use():
+    with mock.patch("dagit.cli.is_port_in_use") as mock_is_port_in_use:
+        yield mock_is_port_in_use
+
+
+@pytest.fixture
+def mock_find_free_port():
+    with mock.patch("dagit.cli.find_free_port") as mock_find_free_port:
+        mock_find_free_port.return_value = 1234
+        yield mock_find_free_port
+
+
+def test_host_dagit_ui_choose_port(mock_is_port_in_use, mock_find_free_port):
+    with mock.patch("uvicorn.run") as server_call, tempfile.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance.local_temp(temp_dir)
+
+        mock_is_port_in_use.return_value = False
+
+        with load_workspace_process_context_from_yaml_paths(
+            instance, [file_relative_path(__file__, "./workspace.yaml")]
+        ) as workspace_process_context:
+            host_dagit_ui_with_workspace_process_context(
+                workspace_process_context=workspace_process_context,
+                host=None,
+                port=None,
+                path_prefix="",
+                log_level="warning",
+            )
+
+        call_args = server_call.call_args
+        assert call_args.kwargs["port"] == DEFAULT_DAGIT_PORT
+
+        mock_is_port_in_use.return_value = True
+        with load_workspace_process_context_from_yaml_paths(
+            instance, [file_relative_path(__file__, "./workspace.yaml")]
+        ) as workspace_process_context:
+            host_dagit_ui_with_workspace_process_context(
+                workspace_process_context=workspace_process_context,
+                host=None,
+                port=None,
+                path_prefix="",
+                log_level="warning",
+            )
+
+        call_args = server_call.call_args
+        assert call_args.kwargs["port"] == 1234
 
 
 def test_successful_host_dagit_ui_from_multiple_workspace_files():
