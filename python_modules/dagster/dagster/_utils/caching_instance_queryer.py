@@ -349,7 +349,7 @@ class CachingInstanceQueryer:
             return None
 
         # there are no events for this asset after the given record
-        if status_cache_value.latest_storage_id == record_id:
+        if status_cache_value.latest_storage_id <= record_id:
             return first_filled_time_window.end
 
         # get the new records
