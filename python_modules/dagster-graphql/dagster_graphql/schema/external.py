@@ -13,6 +13,7 @@ from dagster._core.host_representation import (
 )
 from dagster._core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
+    LocationStateChangeEventType,
     LocationStateSubscriber,
 )
 from dagster._core.workspace.context import (
@@ -38,15 +39,7 @@ from .sensors import GrapheneSensor
 from .used_solid import GrapheneUsedSolid
 from .util import HasContext, non_null_list
 
-
-class GrapheneLocationStateChangeEventType(graphene.Enum):
-    LOCATION_UPDATED = "LOCATION_UPDATED"
-    LOCATION_DISCONNECTED = "LOCATION_DISCONNECTED"
-    LOCATION_RECONNECTED = "LOCATION_RECONNECTED"
-    LOCATION_ERROR = "LOCATION_ERROR"
-
-    class Meta:
-        name = "LocationStateChangeEventType"
+GrapheneLocationStateChangeEventType = graphene.Enum.from_enum(LocationStateChangeEventType)
 
 
 class GrapheneRepositoryLocationLoadStatus(graphene.Enum):
