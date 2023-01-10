@@ -182,7 +182,6 @@ class ManagedElementDiff(
         """
         Returns a tuple of additions, deletions, and modification entries associated with this diff object.
         """
-
         # Get top-level additions/deletions/modifications
         my_additions = [
             click.style(f"{' ' * indent}+ {k}: {_sanitize(k, v)}", fg="green")

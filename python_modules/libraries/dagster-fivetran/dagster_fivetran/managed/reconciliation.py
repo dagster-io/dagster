@@ -172,7 +172,6 @@ def reconcile_destinations(
     Generates a diff of the configured and existing destinations and reconciles them to match the
     configured state if dry_run is False.
     """
-
     diff = ManagedElementDiff()
 
     initialized_destinations: Dict[str, InitializedFivetranDestination] = {}

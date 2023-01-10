@@ -8,7 +8,6 @@ def format_duration(milliseconds):
     """Given milliseconds, return human readable duration string such as:
     533ms, 2.1s, 4m52s, 34m12s, 1h4m
     """
-
     # under 1 ms
     # ex: 0.83ms
     # ex: 8.3ms
@@ -69,7 +68,6 @@ def time_execution_scope():
         )
     )
     """
-
     timer_result = TimerResult()
     yield timer_result
     timer_result.end_time = seven.time_fn()

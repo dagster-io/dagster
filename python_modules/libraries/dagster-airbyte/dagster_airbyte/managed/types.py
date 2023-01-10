@@ -94,7 +94,6 @@ class AirbyteSyncMode(ABC):
 
         https://docs.airbyte.com/understanding-airbyte/connections/incremental-append-dedup/
         """
-
         cursor_field = check.opt_str_param(cursor_field, "cursor_field")
         if isinstance(primary_key, str):
             primary_key = [primary_key]

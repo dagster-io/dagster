@@ -144,7 +144,6 @@ class EventLogEntry(
         """
         Return the message from the structured DagsterEvent if present, fallback to user_message
         """
-
         if self.is_dagster_event:
             msg = self.get_dagster_event().message
             if msg is not None:

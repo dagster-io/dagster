@@ -186,7 +186,6 @@ class DbtRpcResource(DbtResource):
         Returns:
             Response: the HTTP response from the dbt RPC server.
         """
-
         explicit_params = dict(models=models, exclude=exclude)
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="list", params=params)
@@ -273,7 +272,6 @@ class DbtRpcResource(DbtResource):
         Returns:
             Response: the HTTP response from the dbt RPC server.
         """
-
         explicit_params = dict(models=models, exclude=exclude)
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="compile", params=params)
@@ -537,7 +535,6 @@ class DbtRpcSyncResource(DbtRpcResource):
         """Sends a request to the dbt RPC server and continuously polls for the status of a request
         until the state is ``success``.
         """
-
         out = super()._get_result(data)
         request_token: str = check.not_none(out.result.get("request_token"))
 

@@ -78,7 +78,6 @@ class PermissiveConfig(Config):
 
 def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSchema:
     """Return a new config schema configured with the passed in data"""
-
     # We don't do anything with this resource definition, other than
     # use it to construct configured schema
     inner_resource_def = ResourceDefinition(lambda _: None, schema_field)
@@ -223,7 +222,6 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     """
     Transforms a Pydantic field into a corresponding Dagster config field.
     """
-
     if _safe_is_subclass(pydantic_field.type_, Config):
         return infer_schema_from_config_class(
             pydantic_field.type_, description=pydantic_field.field_info.description
@@ -290,7 +288,6 @@ def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any)
     """
     Parses a structured config class or primitive type and returns a corresponding Dagster config Field.
     """
-
     if _safe_is_subclass(model_cls, Config):
         check.invariant(
             config_arg_default is inspect.Parameter.empty,
@@ -329,7 +326,6 @@ def infer_schema_from_config_class(
     """
     Parses a structured config class and returns a corresponding Dagster config Field.
     """
-
     check.param_invariant(
         issubclass(model_cls, Config),
         "Config type annotation must inherit from dagster._config.structured_config.Config",

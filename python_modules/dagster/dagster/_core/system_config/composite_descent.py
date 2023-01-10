@@ -75,7 +75,6 @@ def composite_descent(pipeline_def, solids_config, resource_defs):
             SolidConfig objects. It includes an entry for solids at every level of the
             composite tree - i.e. not just leaf solids, but composite solids as well
     """
-
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     check.dict_param(solids_config, "solids_config")
     check.dict_param(resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition)
@@ -116,7 +115,6 @@ def _composite_descent(
 
     This process unrolls recursively as you descend down the tree.
     """
-
     for solid in parent_stack.current_container.solids:
         current_stack = parent_stack.descend(solid)
         current_handle = current_stack.handle

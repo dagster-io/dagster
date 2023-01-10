@@ -29,7 +29,6 @@ class DbtResource:
         Reformats arguments that are easier to express as a list into the format that dbt expects,
         and deletes and keys with no value.
         """
-
         # remove any keys with a value of None
         if replace_underscores:
             flags = {k.replace("_", "-"): v for k, v in flags.items() if v is not None}

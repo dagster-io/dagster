@@ -221,7 +221,6 @@ def local_file_manager(init_context):
             read_files(write_files())
 
     """
-
     return LocalFileManager(
         base_dir=init_context.resource_config.get(
             "base_dir", os.path.join(init_context.instance.storage_directory(), "file_manager")

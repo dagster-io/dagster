@@ -18,7 +18,6 @@ def _coalesce_solid_order(execution_plan):
 
 def coalesce_execution_steps(execution_plan):
     """Groups execution steps by solid, in topological order of the solids."""
-
     solid_order = _coalesce_solid_order(execution_plan)
 
     steps = defaultdict(list)

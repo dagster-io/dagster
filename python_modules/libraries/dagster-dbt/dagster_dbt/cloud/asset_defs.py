@@ -96,7 +96,6 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         """
         For a given dbt Cloud job, fetch the latest run's dependency structure of executed nodes.
         """
-
         # Fetch information about the job.
         job = self._dbt_cloud.get_job(job_id=self._job_id)
         self._project_id = job["project_id"]
@@ -238,7 +237,6 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         Given all of the nodes and dependencies for a dbt Cloud job, build the cacheable
         representation that generate the asset definition for the job.
         """
-
         (
             asset_deps,
             asset_ins,

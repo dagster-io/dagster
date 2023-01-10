@@ -167,7 +167,6 @@ def consume_new_runs_for_automatic_reexecution(
     it won't create another. The only exception is if the new run gets deleted, in which case we'd
     retry the run again.
     """
-
     for run, retry_number in filter_runs_to_should_retry(
         [cast(DagsterRun, run_record.pipeline_run) for run_record in run_records],
         workspace_process_context.instance,

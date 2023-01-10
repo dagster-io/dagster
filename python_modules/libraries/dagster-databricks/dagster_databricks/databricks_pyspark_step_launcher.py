@@ -299,7 +299,6 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         properties) will be sourced from the Databricks process, rather than recording when this
         process happens to log them.
         """
-
         check.int_param(databricks_run_id, "databricks_run_id")
         processed_events = 0
         start = time.time()
@@ -439,7 +438,6 @@ class DatabricksPySparkStepLauncher(StepLauncher):
 
     def _upload_artifacts(self, log, step_run_ref, run_id, step_key):
         """Upload the step run ref and pyspark code to DBFS to run as a job."""
-
         log.info("Uploading main file to DBFS")
         main_local_path = self._main_file_local_path()
         with open(main_local_path, "rb") as infile:
@@ -586,7 +584,6 @@ class DatabricksConfig:
     def setup_s3_storage(self, s3_storage, dbutils, sc):
         """Obtain AWS credentials from Databricks secrets and export so both Spark and boto can use them.
         """
-
         scope = s3_storage["secret_scope"]
 
         access_key = dbutils.secrets.get(scope=scope, key=s3_storage["access_key_key"])

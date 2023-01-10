@@ -17,7 +17,6 @@ def define_spark_config():
     See the Spark documentation for reference:
         https://spark.apache.org/docs/latest/submitting-applications.html
     """
-
     master_url = Field(
         StringSource,
         description="The master URL for the cluster (e.g. spark://23.195.26.187:7077)",

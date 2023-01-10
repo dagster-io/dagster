@@ -173,7 +173,6 @@ def get_dagster_logger(name: Optional[str] = None) -> logging.Logger:
                     log.info(f"Did {i+1} things!")
 
     """
-
     # enforce that the parent logger will always have a DEBUG log level
     BASE_DAGSTER_LOGGER.setLevel(logging.DEBUG)
     base_builtin = BASE_DAGSTER_LOGGER.getChild("builtin")

@@ -166,7 +166,6 @@ def reconcile_sources(
     Generates a diff of the configured and existing sources and reconciles them to match the
     configured state if dry_run is False.
     """
-
     diff = ManagedElementDiff()
 
     initialized_sources: Dict[str, InitializedAirbyteSource] = {}
@@ -255,7 +254,6 @@ def reconcile_destinations(
     Generates a diff of the configured and existing destinations and reconciles them to match the
     configured state if dry_run is False.
     """
-
     diff = ManagedElementDiff()
 
     initialized_destinations: Dict[str, InitializedAirbyteDestination] = {}
@@ -499,7 +497,6 @@ def reconcile_connections_pre(
     sources and destinations that are being deleted or recreated before Airbyte will allow us to
     delete or recreate them.
     """
-
     diff = ManagedElementDiff()
 
     existing_connections_raw = cast(
@@ -549,7 +546,6 @@ def reconcile_connections_post(
     """
     Creates new and modifies existing connections based on the config if dry_run is False.
     """
-
     existing_connections_raw = cast(
         Dict[str, List[Dict[str, Any]]],
         check.not_none(
@@ -801,7 +797,6 @@ def load_assets_from_connections(
         ]
         airbyte_assets = load_assets_from_connections(airbyte_instance, airbyte_connections)
     """
-
     if isinstance(key_prefix, str):
         key_prefix = [key_prefix]
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)

@@ -364,7 +364,6 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         The source of the request this WorkspaceRequestContext originated from.
         For example in Dagit this object represents the web request.
         """
-
         return self._source
 
 

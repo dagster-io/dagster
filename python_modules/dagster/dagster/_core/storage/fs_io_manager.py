@@ -256,7 +256,6 @@ def custom_path_fs_io_manager(init_context):
             sample_data()
 
     """
-
     return CustomPathPickledObjectFilesystemIOManager(
         base_dir=init_context.resource_config.get("base_dir")
     )

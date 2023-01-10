@@ -103,7 +103,6 @@ class DbtCloudResourceV2:
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request
         """
-
         headers = {
             "User-Agent": f"dagster-dbt/{__version__}",
             "Content-Type": "application/json",
@@ -411,7 +410,6 @@ class DbtCloudResourceV2:
             Dict[str, Any]: A dictionary containing the parsed contents of the dbt Cloud run details.
                 See: https://docs.getdbt.com/dbt-cloud/api-v2#operation/getRunById for schema.
         """
-
         status: Optional[str] = None
 
         if href is None:

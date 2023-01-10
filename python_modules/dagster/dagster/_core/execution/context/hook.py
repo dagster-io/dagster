@@ -30,7 +30,6 @@ def _check_property_on_test_context(
     """Check if attribute is not None on context. If none, error, and point user in direction of
     how to specify the parameter on the context object.
     """
-
     value = getattr(context, attr_str)
     if value is None:
         raise DagsterInvalidPropertyError(
@@ -414,7 +413,6 @@ def build_hook_context(
             with build_hook_context(resources={"foo": context_manager_resource}) as context:
                 hook_to_invoke(context)
     """
-
     op = check.opt_inst_param(op, "op", (OpDefinition, PendingNodeInvocation))
 
     return UnboundHookContext(

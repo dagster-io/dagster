@@ -277,7 +277,6 @@ def define_redshift_config():
 
     https://docs.aws.amazon.com/redshift/latest/mgmt/connecting-to-cluster.html
     """
-
     return {
         "host": Field(StringSource, description="Redshift host", is_required=True),
         "port": Field(

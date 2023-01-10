@@ -208,7 +208,6 @@ def get_class_definitions(name: str, schema: dict) -> Dict[str, Dict[str, Schema
 
     Each class will be turned into a Python class definition with the given name and fields.
     """
-
     class_definitions: Dict[str, Dict[str, SchemaType]] = {}
 
     fields = {}
@@ -423,7 +422,6 @@ def load_from_spec_file(
     """
     Loads a connector spec file and generates a python class definition for it
     """
-
     with open(filepath, encoding="utf8") as f:
         if filepath.endswith(".json"):
             schema = json.loads(f.read())

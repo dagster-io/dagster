@@ -162,7 +162,6 @@ def build_freshness_policy_sensor_context(
             )
             freshness_policy_sensor_to_invoke(context)
     """
-
     return FreshnessPolicySensorContext(
         sensor_name=sensor_name,
         asset_key=asset_key,

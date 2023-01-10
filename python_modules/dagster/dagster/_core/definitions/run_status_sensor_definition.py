@@ -207,7 +207,6 @@ def build_run_status_sensor_context(
             )
             run_status_sensor_to_invoke(context)
     """
-
     return RunStatusSensorContext(
         sensor_name=sensor_name,
         instance=dagster_instance,

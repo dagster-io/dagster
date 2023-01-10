@@ -220,7 +220,6 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         ascending: Optional[bool],
     ):
         """Helper function to deal with cursor/limit pagination args"""
-
         if cursor:
             cursor_query = db.select([RunsTable.c.id]).where(RunsTable.c.run_id == cursor)
             query = query.where(RunsTable.c.id < cursor_query)

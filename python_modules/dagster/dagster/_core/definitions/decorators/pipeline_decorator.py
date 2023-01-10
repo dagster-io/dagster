@@ -205,7 +205,6 @@ def pipeline(
                 add_one(two)
                 mult_two(four)
     """
-
     if input_defs is not None:
         experimental_arg_warning("input_defs", "pipeline")
 

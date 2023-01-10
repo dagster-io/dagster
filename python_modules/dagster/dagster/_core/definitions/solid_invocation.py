@@ -75,7 +75,6 @@ def _check_invocation_requirements(
 
     If no context was provided, then construct an enpty UnboundSolidExecutionContext
     """
-
     # Check resource requirements
     if (
         solid_def.required_resource_keys
@@ -202,7 +201,6 @@ def _type_check_output_wrapper(
     If the solid result is itself a generator, then wrap in a fxn that will type check and yield
     outputs.
     """
-
     output_defs = {output_def.name: output_def for output_def in solid_def.output_defs}
 
     # Async generator case

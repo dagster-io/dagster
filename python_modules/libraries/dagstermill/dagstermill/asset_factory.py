@@ -224,7 +224,6 @@ def define_dagstermill_asset(
         )
 
     """
-
     check.str_param(name, "name")
     check.str_param(notebook_path, "notebook_path")
     check.bool_param(save_notebook_on_failure, "save_notebook_on_failure")

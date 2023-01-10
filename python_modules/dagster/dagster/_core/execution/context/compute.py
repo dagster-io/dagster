@@ -509,7 +509,6 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             def log_materialization(context):
                 context.log_event(AssetMaterialization("foo"))
         """
-
         if isinstance(event, (AssetMaterialization, Materialization)):
             self._events.append(
                 DagsterEvent.asset_materialization(
@@ -593,7 +592,6 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """
         Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc.
         """
-
         return self._step_execution_context.previous_attempt_count
 
     def describe_op(self):

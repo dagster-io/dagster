@@ -100,7 +100,6 @@ def make_teams_on_run_failure_sensor(
 
 
     """
-
     teams_client = TeamsClient(
         hook_url=hook_url,
         http_proxy=http_proxy,

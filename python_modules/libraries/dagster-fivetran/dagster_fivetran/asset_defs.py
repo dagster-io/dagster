@@ -431,7 +431,6 @@ def load_assets_from_fivetran_instance(
             connection_filter=lambda meta: "snowflake" in meta.name,
         )
     """
-
     if isinstance(key_prefix, str):
         key_prefix = [key_prefix]
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)

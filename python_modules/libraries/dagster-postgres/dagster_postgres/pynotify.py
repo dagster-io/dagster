@@ -97,7 +97,6 @@ def await_pg_notifications(
             1: None, in case of timeout
             2: Notify, in case of successful notification reception
     """
-
     check.str_param(conn_string, "conn_string")
     channels = None if channels is None else check.sequence_param(channels, "channels", of_type=str)
     check.float_param(timeout, "timeout")

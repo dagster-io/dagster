@@ -47,7 +47,6 @@ def create_repository_using_definitions_args(
     a single code location, you can use this function. The behavior (e.g. applying resources to
     all assets) are identical to :py:class:`Definitions` but this returns a named repository.
     """
-
     return _create_repository_using_definitions_args(
         name=name,
         assets=assets,
@@ -192,7 +191,6 @@ class Definitions:
         (return value of :py:func:`define_asset_job`) it will be resolved to a :py:class:`JobDefinition` when returned
         from this function.
         """
-
         check.str_param(name, "name")
         return self.get_repository_def().get_job(name)
 

@@ -92,7 +92,6 @@ def airbyte_sync_op(context):
             final_foobar_state = sync_foobar(start_after=some_op())
             other_op(final_foobar_state)
     """
-
     airbyte_output = context.resources.airbyte.sync_and_poll(
         connection_id=context.op_config["connection_id"],
         poll_interval=context.op_config["poll_interval"],

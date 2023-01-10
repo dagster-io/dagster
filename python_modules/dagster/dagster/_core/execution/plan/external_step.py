@@ -121,7 +121,6 @@ def step_context_to_step_run_ref(
     Returns (StepRunRef):
         A reference to the step.
     """
-
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
     retry_mode = step_context.retry_mode

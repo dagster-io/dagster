@@ -671,7 +671,6 @@ class PartitionSetDefinition(Generic[T]):
             PartitionScheduleDefinition: The generated PartitionScheduleDefinition for the partition
                 selector
         """
-
         check.str_param(schedule_name, "schedule_name")
         check.str_param(cron_schedule, "cron_schedule")
         check.opt_callable_param(should_execute, "should_execute")

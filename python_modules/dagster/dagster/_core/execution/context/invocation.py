@@ -286,7 +286,6 @@ class UnboundOpExecutionContext(OpExecutionContext):
                 expectation_results = [event for event in all_user_events if isinstance(event, ExpectationResult)]
                 ...
         """
-
         return self._user_events
 
     def get_output_metadata(
@@ -637,7 +636,6 @@ def build_op_context(
             with build_op_context(resources={"foo": context_manager_resource}) as context:
                 op_to_invoke(context)
     """
-
     if op_config and config:
         raise DagsterInvalidInvocationError(
             "Attempted to invoke ``build_op_context`` with both ``op_config``, and its "
@@ -691,7 +689,6 @@ def build_solid_context(
             with build_solid_context(resources={"foo": context_manager_resource}) as context:
                 solid_to_invoke(context)
     """
-
     if solid_config and config:
         raise DagsterInvalidInvocationError(
             "Attempted to invoke ``build_solid_context`` with both ``solid_config``, and its "

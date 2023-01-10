@@ -624,7 +624,6 @@ class JobDefinition(PipelineDefinition):
     @public
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "JobDefinition":
         """Apply a set of hooks to all op instances within the job."""
-
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
         job_def = JobDefinition(

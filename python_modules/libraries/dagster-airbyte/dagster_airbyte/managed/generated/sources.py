@@ -5082,7 +5082,6 @@ class WhiskyHunterSource(GeneratedAirbyteSource):
             name (str): The name of the destination.
 
         """
-
         super().__init__("Whisky Hunter", name)
 
 

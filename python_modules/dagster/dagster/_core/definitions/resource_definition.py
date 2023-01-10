@@ -345,7 +345,6 @@ def resource(
             definition when provided with the same inputs.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by this resource.
     """
-
     # This case is for when decorator is used bare, without arguments.
     # E.g. @resource versus @resource()
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
@@ -387,7 +386,6 @@ def make_values_resource(**kwargs: Any) -> ResourceDefinition:
     Returns:
         ResourceDefinition: A resource that passes in user-defined values.
     """
-
     return ResourceDefinition(
         resource_fn=lambda init_context: init_context.resource_config,
         config_schema=kwargs or Any,  # type: ignore

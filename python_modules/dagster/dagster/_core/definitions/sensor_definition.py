@@ -418,7 +418,6 @@ class SensorDefinition:
             SensorExecutionData: Contains list of run requests, or skip message if present.
 
         """
-
         context = check.inst_param(context, "context", SensorEvaluationContext)
 
         result = list(self._evaluation_fn(context))
@@ -635,7 +634,6 @@ def build_sensor_context(
             my_sensor(context)
 
     """
-
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")

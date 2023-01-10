@@ -294,7 +294,6 @@ class InputDefinition:
         Return a new InputDefinition that merges this ones properties with those inferred from type signature.
         This can update: dagster_type, description, and default_value if they are not set.
         """
-
         check.invariant(
             self.name == inferred.name,
             (

@@ -516,7 +516,6 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
     Attempts to minimize the total number of asset executions.
     """
-
     # look within a 12-hour time window to combine future runs together
     current_time = pendulum.now(tz=pendulum.UTC)
     plan_window_start = current_time

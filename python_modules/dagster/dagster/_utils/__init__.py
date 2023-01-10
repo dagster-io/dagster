@@ -114,7 +114,6 @@ def file_relative_path(dunderfile: str, relative_path: str) -> str:
         file_relative_path(__file__, 'path/relative/to/file')
 
     """
-
     check.str_param(dunderfile, "dunderfile")
     check.str_param(relative_path, "relative_path")
 
