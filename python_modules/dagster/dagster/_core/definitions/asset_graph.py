@@ -266,10 +266,7 @@ class AssetGraph:
         """Determines if an asset has any parents which are not source assets"""
         if asset_key in self._source_asset_keys or asset_key not in self.all_asset_keys:
             return False
-        return any(
-            parent_key in self.all_asset_keys and parent_key not in self._source_asset_keys
-            for parent_key in self.get_parents(asset_key) - {asset_key}
-        )
+        return bool(self.get_parents(asset_key) - self._source_asset_keys - {asset_key})
 
     def get_non_source_roots(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         """Returns all assets upstream of the given asset which do not consume any other
