@@ -59,7 +59,10 @@ def test_handle_output():
     with patch("pyspark.sql.DataFrame.write") as mock_write:
         handler = SnowflakePySparkTypeHandler()
 
-        spark = SparkSession.builder.getOrCreate()
+        spark = SparkSession.builder.config(
+            key="spark.jars.packages",
+            value="net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
+        ).getOrCreate()
         columns = ["col1", "col2"]
         data = [("a", "b")]
         df = spark.createDataFrame(data).toDF(*columns)
@@ -90,7 +93,10 @@ def test_handle_output():
 
 def test_load_input():
     with patch("pyspark.sql.DataFrameReader.load") as mock_read:
-        spark = SparkSession.builder.getOrCreate()
+        spark = SparkSession.builder.config(
+            key="spark.jars.packages",
+            value="net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
+        ).getOrCreate()
         columns = ["col1", "col2"]
         data = [("a", "b")]
         df = spark.createDataFrame(data).toDF(*columns)
