@@ -139,7 +139,10 @@ def test_io_manager_with_snowflake_pyspark():
             required_resource_keys={"pyspark"},
         )
         def emit_pyspark_df(_):
-            spark = SparkSession.builder.getOrCreate()
+            spark = SparkSession.builder.config(
+                "spark.jars.packages",
+                "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
+            ).getOrCreate()
             columns = ["foo", "quux"]
             data = [("bar", 1), ("baz", 2)]
             df = spark.createDataFrame(data).toDF(*columns)
@@ -158,18 +161,6 @@ def test_io_manager_with_snowflake_pyspark():
                         "config": {
                             **SHARED_BUILDKITE_SNOWFLAKE_CONF,
                             "database": "TEST_SNOWFLAKE_IO_MANAGER",
-                        }
-                    },
-                    "pyspark": {
-                        "config": {
-                            "spark_conf": {
-                                "spark.jars.packages": ",".join(
-                                    [
-                                        "net.snowflake:snowflake-jdbc:3.8.0",
-                                        "net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
-                                    ]
-                                ),
-                            }
                         }
                     },
                 }
