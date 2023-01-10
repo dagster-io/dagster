@@ -85,6 +85,16 @@ def test_load_grpc_server(capfd):
     assert f"Started Dagster code server for file {python_file} on port {port} in process" in out
 
 
+def test_grpc_connection_error():
+    port = find_free_port()
+    client = DagsterGrpcClient(port=port, host="localhost")
+    with pytest.raises(
+        DagsterUserCodeUnreachableError,
+        match="Could not reach user code server. gRPC Error code: UNAVAILABLE",
+    ):
+        client.ping("foobar")
+
+
 def test_python_environment_args():
     port = find_free_port()
     python_file = file_relative_path(__file__, "grpc_repo.py")
