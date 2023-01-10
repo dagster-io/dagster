@@ -135,7 +135,6 @@ def test_io_manager_with_snowflake_pyspark():
                     io_manager_key="snowflake", metadata={"schema": "SNOWFLAKE_IO_MANAGER_SCHEMA"}
                 )
             },
-            required_resource_keys={"pyspark"},
         )
         def emit_pyspark_df(_):
             spark = SparkSession.builder.config(
@@ -147,13 +146,13 @@ def test_io_manager_with_snowflake_pyspark():
             df = spark.createDataFrame(data).toDF(*columns)
             return df
 
-        @op(required_resource_keys={"pyspark"})
+        @op
         def read_pyspark_df(df: DataFrame):
             assert set(df.schema.fields) == {"foo", "quux"}
             assert df.count() == 2
 
         @job(
-            resource_defs={"snowflake": snowflake_pyspark_io_manager, "pyspark": pyspark_resource},
+            resource_defs={"snowflake": snowflake_pyspark_io_manager},
             config={
                 "resources": {
                     "snowflake": {
