@@ -264,3 +264,74 @@ def test_no_run_results_job():
 
         assert dbt_cloud_output.result == {}  # run_result.json not available
         assert dbt_cloud_output.run_details == sample_run_details()["data"]
+
+
+@responses.activate
+def test_get_environment_variables():
+    dc_resource = get_dbt_cloud_resource()
+    project_id = 1000
+
+    responses.add(
+        responses.GET,
+        f"{dc_resource.api_v3_base_url}{SAMPLE_ACCOUNT_ID}/projects/{project_id}/environment-variables/job",
+        json={
+            "status": {
+                "code": 200,
+                "is_success": True,
+                "user_message": "Success!",
+                "developer_message": "",
+            },
+            "data": {
+                "DBT_DAGSTER_ENV_VAR": {
+                    "project": {"id": 1, "value": "-1"},
+                    "environment": {"id": 2, "value": "-1"},
+                    "job": {"id": 3, "value": "100"},
+                },
+            },
+        },
+    )
+
+    dc_resource.get_job_environment_variables(project_id=project_id, job_id=SAMPLE_JOB_ID)
+
+
+@responses.activate
+def test_set_environment_variable():
+    dc_resource = get_dbt_cloud_resource()
+    project_id = 1000
+    environment_variable_id = 1
+
+    responses.add(
+        responses.POST,
+        f"{dc_resource.api_v3_base_url}{SAMPLE_ACCOUNT_ID}/projects/{project_id}/environment-variables/{environment_variable_id}",
+        json={
+            "status": {
+                "code": 200,
+                "is_success": True,
+                "user_message": "Success!",
+                "developer_message": "",
+            },
+            "data": {
+                "account_id": SAMPLE_ACCOUNT_ID,
+                "project_id": project_id,
+                "name": "DBT_DAGSTER_ENV_VAR",
+                "type": "job",
+                "state": 1,
+                "user_id": None,
+                "environment_id": None,
+                "job_definition_id": SAMPLE_JOB_ID,
+                "environment": None,
+                "display_value": "2000",
+                "id": 1,
+                "created_at": "2023-01-01 10:00:00.000000+00:00",
+                "updated_at": "2023-01-02 10:00:00.000000+00:00",
+            },
+        },
+    )
+
+    dc_resource.set_job_environment_variable(
+        project_id=project_id,
+        job_id=SAMPLE_JOB_ID,
+        environment_variable_id=environment_variable_id,
+        name="DBT_DAGSTER_ENV_VAR",
+        value=2000,
+    )
