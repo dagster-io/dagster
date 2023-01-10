@@ -26,7 +26,6 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
     Plugin for the Snowflake I/O Manager that can store and load PySpark DataFrames as Snowflake tables.
 
     Examples:
-
     .. code-block:: python
 
         from dagster_snowflake import build_snowflake_io_manager
@@ -59,6 +58,10 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
         self, context: OutputContext, table_slice: TableSlice, obj: DataFrame
     ) -> Mapping[str, RawMetadataValue]:
         options = _get_sf_options(context.resource_config, table_slice)
+        SparkSession.builder.config(
+            key="spark.jars.packages",
+            value="net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
+        ).getOrCreate()
 
         obj.write.format(SNOWFLAKE_CONNECTOR).options(**options).mode("append").save()
 
@@ -77,7 +80,10 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
     def load_input(self, context: InputContext, table_slice: TableSlice) -> DataFrame:
         options = _get_sf_options(context.resource_config, table_slice)
 
-        spark = SparkSession.builder.getOrCreate()
+        spark = SparkSession.builder.config(
+            key="spark.jars.packages",
+            value="net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
+        ).getOrCreate()
         return spark.read.format(SNOWFLAKE_CONNECTOR).options(**options).load()
 
     @property

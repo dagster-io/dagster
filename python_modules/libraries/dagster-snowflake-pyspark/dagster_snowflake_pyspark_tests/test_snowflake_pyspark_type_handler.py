@@ -138,8 +138,8 @@ def test_io_manager_with_snowflake_pyspark():
         )
         def emit_pyspark_df(_):
             spark = SparkSession.builder.config(
-                "spark.jars.packages",
-                "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
+                key="spark.jars.packages",
+                value="net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
             ).getOrCreate()
             columns = ["foo", "quux"]
             data = [("bar", 1), ("baz", 2)]
