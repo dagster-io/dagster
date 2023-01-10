@@ -212,7 +212,7 @@ class CachingProjectedLogicalVersionResolver:
         self._key_to_node_map = check.opt_mapping_param(key_to_node_map, "key_to_node_map")
         self._repositories = repositories
 
-    def get(self, asset_key: AssetKey) -> str:
+    def get(self, asset_key: AssetKey) -> LogicalVersion:
         return self._get_version(key=asset_key)
 
     @cached_method
