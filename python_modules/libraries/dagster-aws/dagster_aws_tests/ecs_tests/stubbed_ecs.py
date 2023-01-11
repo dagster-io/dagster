@@ -301,7 +301,7 @@ class StubbedEcs:
                 ),
                 expected_params={**kwargs},
             )
-            client_error=True
+            client_error = True
         else:
             # Sleep for long enough that we hit the lock
             time.sleep(0.2)
@@ -332,19 +332,24 @@ class StubbedEcs:
 
             # Secrets and environment variables can't overlap
             for container_definition in new_container_definitions:
-                secret_names = set(secret.get("name") for secret in container_definition.get("secrets", []))
-                env_names = set(env.get("name") for env in container_definition.get("environment", []))
+                secret_names = set(
+                    secret.get("name") for secret in container_definition.get("secrets", [])
+                )
+                env_names = set(
+                    env.get("name") for env in container_definition.get("environment", [])
+                )
 
                 for overlap in secret_names.intersection(env_names):
                     self.stubber.add_client_error(
                         method="register_task_definition",
                         service_message=(
-                            f"The secret name must be unique and not shared with any new or existing environment variables set on the container, such as '{overlap}'."
+                            "The secret name must be unique and not shared with any new or"
+                            " existing environment variables set on the container, such as"
+                            f" '{overlap}'."
                         ),
                         expected_params={**kwargs},
                     )
                     client_error = True
-
 
             if self._valid_cpu_and_memory(cpu=cpu, memory=memory):
                 task_definition = {
