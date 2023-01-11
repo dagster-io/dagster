@@ -8,7 +8,6 @@ from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.instance import DagsterInstance
-from dagster._utils.backcompat import experimental_arg_warning
 from dagster._utils.cached_method import cached_method
 
 from .assets import AssetsDefinition, SourceAsset
@@ -114,7 +113,48 @@ def _create_repository_using_definitions_args(
 
 class Definitions:
     """
-    A set of definitions to be explicitly available and loadable by Dagster tools.
+    A set of definitions explicitly available and loadable by Dagster tools.
+
+    Parameters:
+        assets (Optional[Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]]):
+            A list of assets for this repository. Assets can be created by annotating
+            a function with :py:func:`@asset <asset>` or
+            :py:func:`@observable_source_asset <observable_source_asset>`.
+            Or they can by directly instantiating :py:class:`AssetsDefinition`,
+            :py:class:`SourceAsset`, or :py:class:`CacheableAssetsDefinition`.
+
+        schedules (Optional[Iterable[ScheduleDefinition]]):
+            List of schedules.
+
+        sensors (Optional[Iterable[SensorDefinition]]):
+            List of sensors, typically created with :py:func:`@sensor <sensor>`.
+
+        jobs (Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]]):
+            List of jobs. Typically created with :py:func:`define_asset_job <define_asset_job>`
+            or with :py:func:`@job <job>` for jobs defined in terms of ops directly.
+            Jobs created with :py:func:`@job <job>` must already have resources bound
+            at job creation time. They do not respect the `resources` argument here.
+
+        resources (Optional[Mapping[str, Any]]): Dictionary of resources to bind to assets.
+            The resources dictionary takes raw Python objects,
+            not just instances of :py:class:`ResourceDefinition`. If that raw object inherits from
+            :py:class:`IOManager`, it gets coerced to an :py:class:`IOManagerDefinition`.
+            Any other object is coerced to a :py:class:`ResourceDefinition`.
+            These resources will be automatically bound
+            to any assets passed to this Definitions instance using
+            :py:func:`with_resources <with_resources>`. Assets passed to Definitions with
+            resources already bound using :py:func:`with_resources <with_resources>` will
+            override this dictionary.
+
+        executor (Optional[ExecutorDefinition]):
+            Default executor for jobs. Individual jobs
+            can override this and define their own executors by setting the executor
+            on :py:func:`@job <job>` or :py:func:`define_asset_job <define_asset_job>`
+            explicitly.
+
+        loggers (Optional[Mapping[str, LoggerDefinition]):
+            Default loggers for jobs. Individual jobs
+            can define their own loggers by setting them explictly.
 
     Example usage:
 
@@ -168,12 +208,6 @@ class Definitions:
         executor: Optional[ExecutorDefinition] = None,
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     ):
-        if executor:
-            experimental_arg_warning("executor", "Definitions.__init__")
-
-        if loggers:
-            experimental_arg_warning("loggers", "Definitions.__init__")
-
         self._created_pending_or_normal_repo = _create_repository_using_definitions_args(
             name=SINGLETON_REPOSITORY_NAME,
             assets=assets,
