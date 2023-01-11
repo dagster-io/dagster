@@ -65,6 +65,17 @@ TELEMETRY_WHITELISTED_FUNCTIONS = {
     "_daemon_run_command",
 }
 
+KNOWN_CI_ENV_VAR_KEYS = {
+    "GITLAB_CI",  # https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
+    "GITHUB_ACTION",  # https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
+    "BITBUCKET_BUILD_NUMBER",  # https://support.atlassian.com/bitbucket-cloud/docs/variables-and-secrets/
+    "JENKINS_URL",  # https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
+    "CODEBUILD_BUILD_ID"  # https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
+    "CIRCLECI",  # https://circleci.com/docs/variables/#built-in-environment-variables
+    "TRAVIS",  # https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
+    "BUILDKITE",  # https://buildkite.com/docs/pipelines/environment-variables
+}
+
 
 def telemetry_wrapper(metadata):
     """
@@ -133,6 +144,19 @@ def get_python_version():
     return "{}.{}.{}".format(version.major, version.minor, version.micro)
 
 
+def get_is_known_ci_env():
+    # Many CI tools will use `CI` key which lets us know for sure it's a CI env
+    if os.environ.get("CI") is True:
+        return True
+
+    # Otherwise looking for predefined env var keys of known CI tools
+    for env_var_key in KNOWN_CI_ENV_VAR_KEYS:
+        if env_var_key in os.environ:
+            return True
+
+    return False
+
+
 class TelemetryEntry(
     NamedTuple(
         "_TelemetryEntry",
@@ -148,6 +172,7 @@ class TelemetryEntry(
             ("os_desc", str),
             ("os_platform", str),
             ("run_storage_id", str),
+            ("is_known_ci_env", bool),
         ],
     )
 ):
@@ -192,6 +217,8 @@ class TelemetryEntry(
         metadata = check.opt_mapping_param(metadata, "metadata")
         run_storage_id = check.opt_str_param(run_storage_id, "run_storage_id", default="")
 
+        print("!!!!!!!!!", get_is_known_ci_env())
+
         return super(TelemetryEntry, cls).__new__(
             cls,
             action=action,
@@ -205,6 +232,7 @@ class TelemetryEntry(
             os_desc=OS_DESC,
             os_platform=OS_PLATFORM,
             run_storage_id=run_storage_id,
+            is_known_ci_env=get_is_known_ci_env(),
         )
 
 
