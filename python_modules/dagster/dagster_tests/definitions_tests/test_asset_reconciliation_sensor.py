@@ -381,6 +381,9 @@ multi_asset_in_middle_subsettable = (
 )
 
 # freshness policy
+nothing_dep_freshness = [
+    asset_def("asset1", ["some_undefined_source"], freshness_policy=freshness_30m)
+]
 many_to_one_freshness = [
     asset_def("asset1"),
     asset_def("asset2"),
@@ -903,6 +906,11 @@ scenarios = {
         assets=diamond_freshness,
         unevaluated_runs=[run(["asset1", "asset2"])],
         expected_run_requests=[run_request(asset_keys=["asset3", "asset4"])],
+    ),
+    "freshness_nothing_dep": AssetReconciliationScenario(
+        assets=nothing_dep_freshness,
+        unevaluated_runs=[],
+        expected_run_requests=[run_request(asset_keys=["asset1"])],
     ),
     "freshness_many_to_one_some_updated": AssetReconciliationScenario(
         assets=many_to_one_freshness,

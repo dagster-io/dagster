@@ -391,7 +391,7 @@ def get_freshness_constraints_by_key(
     # upstream of another asset.
     for level in reversed(asset_graph.toposort_asset_keys()):
         for key in level:
-            if key in asset_graph.source_asset_keys:
+            if asset_graph.is_source(key):
                 continue
             for upstream_key in asset_graph.get_parents(key):
                 # pass along all of your constraints to your parents
@@ -541,7 +541,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
     ] = defaultdict(dict)
     for level in asset_graph.toposort_asset_keys():
         for key in level:
-            if key in asset_graph.source_asset_keys:
+            if asset_graph.is_source(key):
                 continue
             # no need to evaluate this key, as it has no constraints
             constraints = constraints_by_key[key]
