@@ -246,13 +246,17 @@ def fetch_sources(graph: DependencyGraph, within_selection: AbstractSet[T]) -> A
     A source is a node that has no upstream dependencies within the provided selection.
     It can have other dependencies outside of the selection.
     """
-    traverser = Traverser(graph)
-    sources = set()
-    for item in within_selection:
-        upstream = traverser.fetch_upstream(item, depth=MAX_NUM) & within_selection
-        if len(upstream) == 0 or upstream == {item}:
-            sources.add(item)
-    return sources
+    dp = {}
+
+    def has_upstream_within_selection(node):
+        if node not in dp:
+            dp[node] = any(
+                parent_node in within_selection or has_upstream_within_selection(parent_node)
+                for parent_node in graph["upstream"].get(node, set())
+            )
+        return dp[node]
+
+    return {node for node in within_selection if not has_upstream_within_selection(node)}
 
 
 def fetch_connected_assets_definitions(

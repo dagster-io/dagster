@@ -177,6 +177,25 @@ def test_upstream_include_self(all_assets):
     assert selection.resolve(all_assets) == _asset_keys_of({danny})
 
 
+def test_sources():
+    @asset
+    def a():
+        pass
+
+    @asset
+    def b(a):
+        pass
+
+    @asset
+    def c(b):
+        pass
+
+    assert AssetSelection.keys("a", "b", "c").sources().resolve([a, b, c]) == {a.key}
+    assert AssetSelection.keys("a", "c").sources().resolve([a, b, c]) == {a.key}
+    assert AssetSelection.keys("b", "c").sources().resolve([a, b, c]) == {b.key}
+    assert AssetSelection.keys("c").sources().resolve([a, b, c]) == {c.key}
+
+
 def test_self_dep():
     @asset(
         partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
