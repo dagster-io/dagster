@@ -35,6 +35,7 @@ from dagster._core.definitions.reconstruct import (
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.system import PlanOrchestrationContext
+from dagster._core.execution.plan.objects import StepSuccessData
 from dagster._core.instance import DagsterInstance
 from dagster._utils.merger import merge_dicts
 from dagster.version import __version__ as dagster_module_version
@@ -529,37 +530,29 @@ def log_action(
 
 
 def log_step_event(event: DagsterEvent, pipeline_context: PlanOrchestrationContext):
+    if not any((event.is_step_start, event.is_step_success, event.is_step_failure)):
+        return
+
+    metadata = {
+        "run_id_hash": hash_name(pipeline_context.run_id),
+        "step_key_hash": hash_name(event.step_key),
+    }
+
     if event.is_step_start:
-        log_action(
-            instance=pipeline_context.instance,
-            action=STEP_START_EVENT,
-            client_time=datetime.datetime.now(),
-            metadata={
-                "run_id_hash": hash_name(pipeline_context.run_id),
-                "step_key_hash": hash_name(event.step_key),
-            },
-        )
-    elif event.is_step_success:
-        log_action(
-            instance=pipeline_context.instance,
-            action=STEP_SUCCESS_EVENT,
-            client_time=datetime.datetime.now(),
-            metadata={
-                "run_id_hash": hash_name(pipeline_context.run_id),
-                "step_key_hash": hash_name(event.step_key),
-                "duration_ms": event.event_specific_data.duration_ms,
-            },
-        )
-    elif event.is_step_failure:
-        log_action(
-            instance=pipeline_context.instance,
-            action=STEP_FAILURE_EVENT,
-            client_time=datetime.datetime.now(),
-            metadata={
-                "run_id_hash": hash_name(pipeline_context.run_id),
-                "step_key_hash": hash_name(event.step_key),
-            },
-        )
+        action = STEP_START_EVENT
+    if event.is_step_success:
+        action = STEP_SUCCESS_EVENT
+        if isinstance(event.event_specific_data, StepSuccessData):  # make mypy happy
+            metadata["duration_ms"] = event.event_specific_data.duration_ms
+    if event.is_step_failure:
+        action = STEP_FAILURE_EVENT
+
+    log_action(
+        instance=pipeline_context.instance,
+        action=action,
+        client_time=datetime.datetime.now(),
+        metadata=metadata,
+    )
 
 
 TELEMETRY_TEXT = """

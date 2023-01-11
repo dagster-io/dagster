@@ -67,7 +67,7 @@ def test_dagster_telemetry_enabled(caplog):
                         get_ephemeral_repository_name(job_name)
                     )
                 assert set(message.keys()) == EXPECTED_KEYS
-            assert len(caplog.records) == 5
+            assert len(caplog.records) == 9
             assert result.exit_code == 0
 
         # Needed to avoid file contention issues on windows with the telemetry log file
@@ -119,7 +119,7 @@ def test_dagster_telemetry_unset(caplog):
                         )
                     assert set(message.keys()) == EXPECTED_KEYS
 
-                assert len(caplog.records) == 5
+                assert len(caplog.records) == 9
                 assert result.exit_code == 0
 
             # Needed to avoid file contention issues on windows with the telemetry log file
@@ -160,7 +160,7 @@ def test_repo_stats(caplog):
                         assert metadata.get("repo_hash") == hash_name("dagster_test_repository")
                     assert set(message.keys()) == EXPECTED_KEYS
 
-                assert len(caplog.records) == 5
+                assert len(caplog.records) == 7
                 assert result.exit_code == 0
 
             # Needed to avoid file contention issues on windows with the telemetry log file
