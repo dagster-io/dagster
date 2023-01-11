@@ -1,4 +1,3 @@
-import base64
 import sys
 import warnings
 from contextlib import closing, contextmanager
@@ -39,35 +38,45 @@ class SnowflakeConnection:
         self.connector = config.get("connector", None)
         self.sqlalchemy_engine_args = {}
 
+        # there are three different ways to authenticate with snowflake, we need to ensure that only
+        # one method is provided
+        auths_set = 0
+        auths_set += 1 if config.get("password", None) is not None else 0
+        auths_set += 1 if config.get("private_key", None) is not None else 0
+        auths_set += 1 if config.get("private_key_path", None) is not None else 0
+
+        print(auths_set)
+
+        # ensure at least 1 method is provided
         check.invariant(
-            not (
-                config.get("password", None) is None
-                and (
-                    config.get("private_key", None) is None
-                    and config.get("private_key_path", None) is None
-                    and config.get("private_key_password", None) is None
-                )
-            ),
+            auths_set > 0,
             (
                 "Missing config: Password or private key authentication required for Snowflake"
                 " resource."
             ),
         )
 
+        # ensure that no more than 1 method is provided
         check.invariant(
-            not (
-                config.get("password", None) is not None
-                and (
-                    config.get("private_key", None) is not None
-                    or config.get("private_key_path", None) is not None
-                    or config.get("private_key_password", None) is not None
-                )
-            ),
+            auths_set == 1,
             (
                 "Incorrect config: Cannot provide both password and private key authentication to"
                 " Snowflake Resource."
             ),
         )
+
+        # if private key auth is used, ensure the password is provided
+        if (
+            config.get("private_key", None) is not None
+            or config.get("private_key_path", None) is not None
+        ):
+            check.invariant(
+                config.get("private_key_password", None) is not None,
+                (
+                    "Incorrect config: Must provide private_key_password for private key"
+                    " authentication with Snowflake resource."
+                ),
+            )
 
         if self.connector == "sqlalchemy":
             self.conn_args = {
@@ -86,7 +95,10 @@ class SnowflakeConnection:
                 if config.get(k) is not None
             }
 
-            if config.get("private_key", None) is not None:
+            if (
+                config.get("private_key", None) is not None
+                or config.get("private_key_path", None) is not None
+            ):
                 # sqlalchemy passes private key args separately, so store them in a new dict
                 self.sqlalchemy_engine_args["private_key"] = self.__snowflake_private_key(config)
 
@@ -114,7 +126,10 @@ class SnowflakeConnection:
                 )
                 if config.get(k) is not None
             }
-            if config.get("private_key", None) is not None:
+            if (
+                config.get("private_key", None) is not None
+                or config.get("private_key_path", None) is not None
+            ):
                 self.conn_args["private_key"] = self.__snowflake_private_key(config)
 
         self.autocommit = self.conn_args.get("autocommit", False)
@@ -129,7 +144,7 @@ class SnowflakeConnection:
                 private_key = key.read()
 
         p_key = serialization.load_pem_private_key(
-            base64.b64decode(private_key),
+            private_key,
             password=config.get("private_key_password", None).encode(),
             backend=default_backend(),
         )
@@ -170,7 +185,7 @@ class SnowflakeConnection:
             from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
             from sqlalchemy import create_engine
 
-            engine = create_engine(URL(**self.conn_args), **self.sqlalchemy_engine_args)
+            engine = create_engine(URL(**self.conn_args), connect_args=self.sqlalchemy_engine_args)
             conn = engine.raw_connection() if raw_conn else engine.connect()
 
             yield conn

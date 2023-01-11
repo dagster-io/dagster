@@ -155,3 +155,34 @@ def test_snowflake_resource_duplicate_auth(snowflake_connect):
                 }
             }
         )
+
+
+@mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
+def test_snowflake_resource_missing_private_key_password(snowflake_connect):
+    @op(required_resource_keys={"snowflake"})
+    def snowflake_op(context):
+        assert context.resources.snowflake
+        with context.resources.snowflake.get_connection() as _:
+            pass
+
+    @job(resource_defs={"snowflake": snowflake_resource})
+    def snowflake_job():
+        snowflake_op()
+
+    with pytest.raises(DagsterResourceFunctionError):
+        snowflake_job.execute_in_process(
+            run_config={
+                "resources": {
+                    "snowflake": {
+                        "config": {
+                            "account": "foo",
+                            "user": "bar",
+                            "database": "TESTDB",
+                            "schema": "TESTSCHEMA",
+                            "warehouse": "TINY_WAREHOUSE",
+                            "private_key": "TESTKEY",
+                        }
+                    }
+                }
+            }
+        )
