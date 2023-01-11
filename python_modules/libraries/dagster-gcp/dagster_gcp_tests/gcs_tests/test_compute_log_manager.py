@@ -53,6 +53,7 @@ def test_compute_log_manager(gcs_bucket):
                 run_coordinator=DefaultRunCoordinator(),
                 run_launcher=DefaultRunLauncher(),
                 ref=InstanceRef.from_dir(temp_dir),
+                settings={"telemetry": {"enabled": False}},
             )
             result = simple.execute_in_process(instance=instance)
             capture_events = [
@@ -146,6 +147,7 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                     run_coordinator=DefaultRunCoordinator(),
                     run_launcher=DefaultRunLauncher(),
                     ref=InstanceRef.from_dir(temp_dir),
+                    settings={"telemetry": {"enabled": False}},
                 )
                 result = simple.execute_in_process(instance=instance)
                 capture_events = [
