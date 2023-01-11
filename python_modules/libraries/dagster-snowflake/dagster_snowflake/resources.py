@@ -1,7 +1,7 @@
 import sys
 import warnings
 from contextlib import closing, contextmanager
-from typing import Any, Mapping, Optional, Sequence, Union
+from typing import Any, Dict, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 from cryptography.hazmat.backends import default_backend
@@ -77,7 +77,7 @@ class SnowflakeConnection:
             )
 
         if self.connector == "sqlalchemy":
-            self.conn_args = {
+            self.conn_args: Dict[str, Any] = {
                 k: config.get(k)
                 for k in (
                     "account",
@@ -101,7 +101,7 @@ class SnowflakeConnection:
                 self.sqlalchemy_engine_args["private_key"] = self.__snowflake_private_key(config)
 
         else:
-            self.conn_args = {
+            self.conn_args: Dict[str, Any] = {
                 k: config.get(k)
                 for k in (
                     "account",
