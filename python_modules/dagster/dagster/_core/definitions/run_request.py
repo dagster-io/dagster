@@ -75,7 +75,7 @@ class RunRequest(
             launched with this run.
         stale_assets_only (Optional[Sequence[AssetKey]]): Set to true to further narrow the asset
             selection to stale assets. If passed without an asset selection, all stale assets in the
-            workspace will be materialized.
+            job will be materialized. If the job does not materialize assets, this flag is ignored.
     """
 
     def __new__(

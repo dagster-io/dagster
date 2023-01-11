@@ -23,13 +23,11 @@ def resolve_asset_selection(
         request_context = context.create_request_context()
         repositories = _get_repositories(request_context)
         key_to_node_map = _get_asset_nodes_by_asset_key(repositories)
-        print(run_request)
         asset_selection = (
             run_request.asset_selection
             if run_request.asset_selection is not None
             else _get_assets_for_job(job_name, key_to_node_map.values())
         )
-        print("ASSET SELECTION: ", asset_selection)
         resolver = CachingProjectedLogicalVersionResolver(
             context.instance, repositories, key_to_node_map
         )
@@ -87,5 +85,4 @@ def _get_current_logical_version(
 def _get_assets_for_job(
     job_name: str, all_nodes: Iterable[ExternalAssetNode]
 ) -> Sequence[AssetKey]:
-    print("GETTING ASSETS FOR JOB")
     return [node.asset_key for node in all_nodes if job_name in node.job_names]
