@@ -274,12 +274,10 @@ def can_materialize_candidates_unit(
 
     partitions_def = asset_graph.get_partitions_def(representative_candidate.asset_key)
     partition_key = representative_candidate.partition_key
-    if (
-        partitions_def is None
-        or not isinstance(partitions_def, TimeWindowPartitionsDefinition)
-        or not partition_key
-    ):
+    if not isinstance(partitions_def, TimeWindowPartitionsDefinition) or not partition_key:
         return True
+
+    partitions_def = cast(TimeWindowPartitionsDefinition, partitions_def)
 
     latest_partition_window = partitions_def.get_last_partition_window()
     if latest_partition_window is None:
