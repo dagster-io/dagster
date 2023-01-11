@@ -25,6 +25,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.host_representation.external_data import external_asset_graph_from_defs
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -306,3 +307,18 @@ def test_required_multi_asset_sets_same_op_in_different_assets():
     for asset_graph in [AssetGraph.from_assets(assets), to_external_asset_graph(assets)]:
         for asset_def in assets:
             assert asset_graph.get_required_multi_asset_keys(asset_def.key) == set()
+
+
+def test_get_non_source_roots_missing_source():
+    @asset
+    def foo():
+        pass
+
+    @asset(non_argument_deps={"this_source_is_fake", "source_asset"})
+    def bar(foo):
+        pass
+
+    source_asset = SourceAsset("source_asset")
+
+    asset_graph = AssetGraph.from_assets([foo, bar, source_asset])
+    assert asset_graph.get_non_source_roots(AssetKey("bar")) == {AssetKey("foo")}
