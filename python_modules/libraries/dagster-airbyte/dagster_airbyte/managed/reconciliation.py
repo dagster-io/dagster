@@ -120,6 +120,7 @@ def conn_dict(conn: Optional[AirbyteConnection]) -> Mapping[str, Any]:
         "destination namespace": conn.destination_namespace.name
         if isinstance(conn.destination_namespace, AirbyteDestinationNamespace)
         else conn.destination_namespace,
+        "prefix": conn.prefix,
     }
 
 
@@ -603,6 +604,9 @@ def reconcile_connections_post(
         else:
             connection_base_json["namespaceDefinition"] = "customformat"
             connection_base_json["namespaceFormat"] = cast(str, config_conn.destination_namespace)
+
+        if config_conn.prefix:
+            connection_base_json["prefix"] = config_conn.prefix
 
         if existing_conn:
             if not dry_run:
