@@ -117,7 +117,7 @@ class Definitions:
 
     Parameters:
         assets (Optional[Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]]):
-            A list of assets for this repository. Assets can be created by annotating
+            A list of assets. Assets can be created by annotating
             a function with :py:func:`@asset <asset>` or
             :py:func:`@observable_source_asset <observable_source_asset>`.
             Or they can by directly instantiating :py:class:`AssetsDefinition`,
@@ -150,7 +150,9 @@ class Definitions:
             Default executor for jobs. Individual jobs
             can override this and define their own executors by setting the executor
             on :py:func:`@job <job>` or :py:func:`define_asset_job <define_asset_job>`
-            explicitly.
+            explicitly. This executor will also be used for materializing assets directly
+            outside of the context of jobs.
+
 
         loggers (Optional[Mapping[str, LoggerDefinition]):
             Default loggers for jobs. Individual jobs
