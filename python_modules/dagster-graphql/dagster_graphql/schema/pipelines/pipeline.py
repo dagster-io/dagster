@@ -87,47 +87,66 @@ def parse_time_range_args(args):
     return before_timestamp, after_timestamp
 
 
-class GrapheneMaterializedPartitionRange1D(graphene.ObjectType):
+class GrapheneTimePartitionRange(graphene.ObjectType):
     start = graphene.NonNull(graphene.String)
     end = graphene.NonNull(graphene.String)
+    length = graphene.NonNull(graphene.Int)
 
     class Meta:
-        name = "MaterializedPartitionRange1D"
+        name = "TimePartitionRange"
 
 
-class GrapheneMaterializedPartitions1D(graphene.ObjectType):
-    ranges = non_null_list(GrapheneMaterializedPartitionRange1D)
+class GrapheneTimeWindowPartitionStatus1D(graphene.ObjectType):
+    materializedRanges = non_null_list(GrapheneTimePartitionRange)
+    unmaterializedRanges = non_null_list(GrapheneTimePartitionRange)
 
     class Meta:
-        name = "MaterializedPartitions1D"
+        name = "TimeWindowPartitionStatus1D"
 
 
-class GrapheneMaterializedPartitionRange2D(graphene.ObjectType):
+class GrapheneDefaultPartitionStatus1D(graphene.ObjectType):
+    materializedPartitions = non_null_list(graphene.String)
+    unmaterializedPartitions = non_null_list(graphene.String)
+
+    class Meta:
+        name = "DefaultPartitionStatus1D"
+
+
+class GraphenePartitionStatus1D(graphene.Union):
+    class Meta:
+        types = (GrapheneTimeWindowPartitionStatus1D, GrapheneDefaultPartitionStatus1D)
+        name = "PartitionStatus1D"
+
+
+class GraphenePartitionStatusPrimaryKey(graphene.ObjectType):
     """
-    The primary dimension of a multipartitioned asset is the time-partitioned dimension.
+    The primary dimension of a multipartitioned asset is the static-partitioned dimension.
     If both dimensions of the asset are static or time-partitioned, the primary dimension is
     the first defined dimension.
     """
 
-    primaryDimStart = graphene.NonNull(graphene.String)
-    primaryDimEnd = graphene.NonNull(graphene.String)
-    secondaryDimRanges = non_null_list(GrapheneMaterializedPartitionRange1D)
+    primaryDimKey = graphene.NonNull(graphene.String)
+    secondaryDimStatus = non_null_list(GraphenePartitionStatus1D)
 
     class Meta:
-        name = "MaterializedPartitionRange2D"
+        name = "PartitionStatusPrimaryKey"
 
 
-class GrapheneMaterializedPartitions2D(graphene.ObjectType):
-    ranges = non_null_list(GrapheneMaterializedPartitionRange2D)
+class GraphenePartitionStatus2D(graphene.ObjectType):
+    primaryDimKeyStatuses = non_null_list(GraphenePartitionStatusPrimaryKey)
 
     class Meta:
-        name = "MaterializedPartitions2D"
+        name = "PartitionStatus2D"
 
 
-class GrapheneMaterializedPartitions(graphene.Union):
+class GraphenePartitionMaterializationStatus(graphene.Union):
     class Meta:
-        types = (GrapheneMaterializedPartitions1D, GrapheneMaterializedPartitions2D)
-        name = "MaterializedPartitions"
+        types = (
+            GraphenePartitionStatus2D,
+            GrapheneTimeWindowPartitionStatus1D,
+            GrapheneDefaultPartitionStatus1D,
+        )
+        name = "PartitionMaterializationStatus"
 
 
 class GrapheneAsset(graphene.ObjectType):

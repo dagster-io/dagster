@@ -1,6 +1,17 @@
 import datetime
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple, cast
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    cast,
+    Union,
+)
 
 import dagster._seven as seven
 from dagster import (
@@ -12,14 +23,21 @@ from dagster import (
     EventRecordsFilter,
     MultiPartitionKey,
     MultiPartitionsDefinition,
+    PartitionKeyRange,
 )
 from dagster import _check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.multi_dimensional_partitions import PartitionDimensionDefinition
-from dagster._core.definitions.partition import PartitionsSubset
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.multi_dimensional_partitions import (
+    PartitionDimensionDefinition,
+    MultiPartitionsSubset,
+)
+from dagster._core.definitions.partition import PartitionsSubset, DefaultPartitionsSubset
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindowPartitionsDefinition,
+    TimeWindowPartitionsSubset,
+)
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.external_data import ExternalAssetNode
@@ -44,8 +62,9 @@ if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetNode
     from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
     from ..schema.pipelines.pipeline import (
-        GrapheneMaterializedPartitions1D,
-        GrapheneMaterializedPartitions2D,
+        GrapheneTimeWindowPartitionStatus1D,
+        GrapheneDefaultPartitionStatus1D,
+        GraphenePartitionStatus2D,
     )
     from ..schema.util import HasContext
 
@@ -342,102 +361,155 @@ def get_materialized_partitions_subset(
         return partitions_def.empty_subset().with_partition_keys(materialized_keys)
 
 
-def get_1d_run_length_encoded_materialized_partitions(
-    partitions_subset: PartitionsSubset,
-) -> "GrapheneMaterializedPartitions1D":
+def build_partition_materialization_status(
+    materialized_partitions_subset: PartitionsSubset,
+) -> Union[
+    "GrapheneTimeWindowPartitionStatus1D",
+    "GrapheneDefaultPartitionStatus1D",
+    "GraphenePartitionStatus2D",
+]:
     from ..schema.pipelines.pipeline import (
-        GrapheneMaterializedPartitionRange1D,
-        GrapheneMaterializedPartitions1D,
+        GrapheneTimePartitionRange,
+        GrapheneTimeWindowPartitionStatus1D,
+        GrapheneDefaultPartitionStatus1D,
+        GraphenePartitionStatusPrimaryKey,
+        GraphenePartitionStatus2D,
     )
 
-    return GrapheneMaterializedPartitions1D(
-        ranges=[
-            GrapheneMaterializedPartitionRange1D(start=range.start, end=range.end)
-            for range in partitions_subset.get_partition_key_ranges()
-        ]
-    )
+    if isinstance(materialized_partitions_subset, TimeWindowPartitionsSubset):
 
+        def _build_range(range_and_len: Tuple[PartitionKeyRange, int]):
+            return GrapheneTimePartitionRange(
+                start=range_and_len[0].start,
+                end=range_and_len[0].end,
+                length=range_and_len[1],
+            )
 
-def _get_primary_and_secondary_dims(
-    partitions_def: MultiPartitionsDefinition,
-) -> Tuple[PartitionDimensionDefinition, PartitionDimensionDefinition]:
-    time_dimensions = [
-        dim
-        for dim in partitions_def.partitions_defs
-        if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
-    ]
-    if len(time_dimensions) == 1:
-        primary_dimension, secondary_dimension = time_dimensions[0], next(
-            iter([dim for dim in partitions_def.partitions_defs if dim != time_dimensions[0]])
+        inverse = materialized_partitions_subset.get_inverse_subset()
+        return GrapheneTimeWindowPartitionStatus1D(
+            materializedRanges=[
+                _build_range(range_and_len)
+                for range_and_len in materialized_partitions_subset.get_partition_key_ranges_and_lengths()
+            ],
+            unmaterializedRanges=[
+                _build_range(range_and_len)
+                for range_and_len in inverse.get_partition_key_ranges_and_lengths()
+            ],
+        )
+    elif isinstance(materialized_partitions_subset, DefaultPartitionsSubset):
+        return GrapheneDefaultPartitionStatus1D(
+            materializedPartitions=materialized_partitions_subset.get_partition_keys(),
+            unmaterializedPartitions=materialized_partitions_subset.get_inverse_subset().get_partition_keys(),
+        )
+    elif isinstance(materialized_partitions_subset, MultiPartitionsSubset):  # Multidimensional
+        return GraphenePartitionStatus2D(
+            primaryDimKeyStatuses=[
+                GraphenePartitionStatusPrimaryKey(
+                    primary_key, build_partition_materialization_status(secondary_subset)
+                )
+                for primary_key, secondary_subset in materialized_partitions_subset.subsets_by_primary_dimension_partition_key.items()
+            ]
         )
     else:
-        primary_dimension, secondary_dimension = (
-            partitions_def.partitions_defs[0],
-            partitions_def.partitions_defs[1],
-        )
-
-    return primary_dimension, secondary_dimension
+        check.failed("Should not reach this point")
 
 
-def get_2d_run_length_encoded_materialized_partitions(
-    partitions_subset: PartitionsSubset,
-) -> "GrapheneMaterializedPartitions2D":
-    from ..schema.pipelines.pipeline import (
-        GrapheneMaterializedPartitionRange1D,
-        GrapheneMaterializedPartitionRange2D,
-        GrapheneMaterializedPartitions2D,
-    )
+# def get_1d_run_length_encoded_materialized_partitions(
+#     partitions_subset: PartitionsSubset,
+# ) -> "GrapheneMaterializedPartitions1D":
+#     from ..schema.pipelines.pipeline import (
+#         GrapheneMaterializedPartitionRange1D,
+#         GrapheneMaterializedPartitions1D,
+#     )
 
-    if not isinstance(partitions_subset.partitions_def, MultiPartitionsDefinition):
-        check.failed("Can only fetch 2D run length encoded partitions for multipartitioned assets")
+#     return GrapheneMaterializedPartitions1D(
+#         ranges=[
+#             GrapheneMaterializedPartitionRange1D(start=range.start, end=range.end)
+#             for range in partitions_subset.get_partition_key_ranges()
+#         ]
+#     )
 
-    primary_dim, secondary_dim = _get_primary_and_secondary_dims(partitions_subset.partitions_def)
 
-    dim2_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
-        lambda: secondary_dim.partitions_def.empty_subset()  # pylint: disable=unnecessary-lambda
-    )
-    for partition_key in partitions_subset.get_partition_keys():
-        partition_key = cast(MultiPartitionKey, partition_key)
-        dim2_partition_subset_by_dim1[
-            partition_key.keys_by_dimension[primary_dim.name]
-        ] = dim2_partition_subset_by_dim1[
-            partition_key.keys_by_dimension[primary_dim.name]
-        ].with_partition_keys(
-            [partition_key.keys_by_dimension[secondary_dim.name]]
-        )
+# def _get_primary_and_secondary_dims(
+#     partitions_def: MultiPartitionsDefinition,
+# ) -> Tuple[PartitionDimensionDefinition, PartitionDimensionDefinition]:
+#     time_dimensions = [
+#         dim
+#         for dim in partitions_def.partitions_defs
+#         if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
+#     ]
+#     if len(time_dimensions) == 1:
+#         primary_dimension, secondary_dimension = time_dimensions[0], next(
+#             iter([dim for dim in partitions_def.partitions_defs if dim != time_dimensions[0]])
+#         )
+#     else:
+#         primary_dimension, secondary_dimension = (
+#             partitions_def.partitions_defs[0],
+#             partitions_def.partitions_defs[1],
+#         )
 
-    materialized_2d_ranges = []
+#     return primary_dimension, secondary_dimension
 
-    dim1_keys = primary_dim.partitions_def.get_partition_keys()
-    unevaluated_idx = 0
-    range_start_idx = 0  # pointer to first dim1 partition with same dim2 materialization status
 
-    while unevaluated_idx <= len(dim1_keys):
-        if (
-            unevaluated_idx == len(dim1_keys)
-            or dim2_partition_subset_by_dim1[dim1_keys[unevaluated_idx]]
-            != dim2_partition_subset_by_dim1[dim1_keys[range_start_idx]]
-        ):
-            if len(dim2_partition_subset_by_dim1[dim1_keys[range_start_idx]]) > 0:
-                # Do not add to materialized_2d_ranges if the dim2 partition subset is empty
-                materialized_2d_ranges.append(
-                    GrapheneMaterializedPartitionRange2D(
-                        primaryDimStart=dim1_keys[range_start_idx],
-                        primaryDimEnd=dim1_keys[unevaluated_idx - 1],
-                        secondaryDimRanges=[
-                            GrapheneMaterializedPartitionRange1D(
-                                start=curr_range.start, end=curr_range.end
-                            )
-                            for curr_range in dim2_partition_subset_by_dim1[
-                                dim1_keys[range_start_idx]
-                            ].get_partition_key_ranges()
-                        ],
-                    )
-                )
-            range_start_idx = unevaluated_idx
-        unevaluated_idx += 1
+# def get_2d_run_length_encoded_materialized_partitions(
+#     partitions_subset: PartitionsSubset,
+# ) -> "GrapheneMaterializedPartitions2D":
+#     from ..schema.pipelines.pipeline import (
+#         GrapheneMaterializedPartitionRange1D,
+#         GrapheneMaterializedPartitionRange2D,
+#         GrapheneMaterializedPartitions2D,
+#     )
 
-    return GrapheneMaterializedPartitions2D(ranges=materialized_2d_ranges)
+#     if not isinstance(partitions_subset.partitions_def, MultiPartitionsDefinition):
+#         check.failed("Can only fetch 2D run length encoded partitions for multipartitioned assets")
+
+#     primary_dim, secondary_dim = _get_primary_and_secondary_dims(partitions_subset.partitions_def)
+
+#     dim2_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
+#         lambda: secondary_dim.partitions_def.empty_subset()  # pylint: disable=unnecessary-lambda
+#     )
+#     for partition_key in partitions_subset.get_partition_keys():
+#         partition_key = cast(MultiPartitionKey, partition_key)
+#         dim2_partition_subset_by_dim1[
+#             partition_key.keys_by_dimension[primary_dim.name]
+#         ] = dim2_partition_subset_by_dim1[
+#             partition_key.keys_by_dimension[primary_dim.name]
+#         ].with_partition_keys(
+#             [partition_key.keys_by_dimension[secondary_dim.name]]
+#         )
+
+#     materialized_2d_ranges = []
+
+#     dim1_keys = primary_dim.partitions_def.get_partition_keys()
+#     unevaluated_idx = 0
+#     range_start_idx = 0  # pointer to first dim1 partition with same dim2 materialization status
+
+#     while unevaluated_idx <= len(dim1_keys):
+#         if (
+#             unevaluated_idx == len(dim1_keys)
+#             or dim2_partition_subset_by_dim1[dim1_keys[unevaluated_idx]]
+#             != dim2_partition_subset_by_dim1[dim1_keys[range_start_idx]]
+#         ):
+#             if len(dim2_partition_subset_by_dim1[dim1_keys[range_start_idx]]) > 0:
+#                 # Do not add to materialized_2d_ranges if the dim2 partition subset is empty
+#                 materialized_2d_ranges.append(
+#                     GrapheneMaterializedPartitionRange2D(
+#                         primaryDimStart=dim1_keys[range_start_idx],
+#                         primaryDimEnd=dim1_keys[unevaluated_idx - 1],
+#                         secondaryDimRanges=[
+#                             GrapheneMaterializedPartitionRange1D(
+#                                 start=curr_range.start, end=curr_range.end
+#                             )
+#                             for curr_range in dim2_partition_subset_by_dim1[
+#                                 dim1_keys[range_start_idx]
+#                             ].get_partition_key_ranges()
+#                         ],
+#                     )
+#                 )
+#             range_start_idx = unevaluated_idx
+#         unevaluated_idx += 1
+
+#     return GrapheneMaterializedPartitions2D(ranges=materialized_2d_ranges)
 
 
 def get_freshness_info(

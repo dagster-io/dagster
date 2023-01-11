@@ -183,20 +183,33 @@ const PARTITION_HEALTH_QUERY = gql`
           name
           partitionKeys
         }
-        materializedPartitions {
-          ... on MaterializedPartitions1D {
-            ranges {
+        partitionMaterializationStatus {
+          ... on TimeWindowPartitionStatus1D {
+            materializedRanges {
               start
               end
+              length
             }
           }
-          ... on MaterializedPartitions2D {
-            ranges {
-              primaryDimStart
-              primaryDimEnd
-              secondaryDimRanges {
-                start
-                end
+          ... on DefaultPartitionStatus1D {
+            materializedPartitions
+            unmaterializedPartitions
+          }
+          ... on PartitionStatus2D {
+            primaryDimKeyStatuses {
+              primaryDimKey
+              secondaryDimStatus {
+                ... on TimeWindowPartitionStatus1D {
+                  materializedRanges {
+                    start
+                    end
+                    length
+                  }
+                }
+                ... on DefaultPartitionStatus1D {
+                  materializedPartitions
+                  unmaterializedPartitions
+                }
               }
             }
           }

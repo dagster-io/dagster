@@ -662,7 +662,7 @@ type AssetNode {
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
-  materializedPartitions: MaterializedPartitions!
+  partitionMaterializationStatus: PartitionMaterializationStatus!
   metadataEntries: [MetadataEntry!]!
   op: SolidDefinition
   opName: String
@@ -698,25 +698,36 @@ type FreshnessPolicy {
   cronSchedule: String
 }
 
-union MaterializedPartitions = MaterializedPartitions1D | MaterializedPartitions2D
+union PartitionMaterializationStatus =
+    PartitionStatus2D
+  | TimeWindowPartitionStatus1D
+  | DefaultPartitionStatus1D
 
-type MaterializedPartitions1D {
-  ranges: [MaterializedPartitionRange1D!]!
+type PartitionStatus2D {
+  primaryDimKeyStatuses: [PartitionStatusPrimaryKey!]!
 }
 
-type MaterializedPartitionRange1D {
+type PartitionStatusPrimaryKey {
+  primaryDimKey: String!
+  secondaryDimStatus: [PartitionStatus1D!]!
+}
+
+union PartitionStatus1D = TimeWindowPartitionStatus1D | DefaultPartitionStatus1D
+
+type TimeWindowPartitionStatus1D {
+  materializedRanges: [TimePartitionRange!]!
+  unmaterializedRanges: [TimePartitionRange!]!
+}
+
+type TimePartitionRange {
   start: String!
   end: String!
+  length: Int!
 }
 
-type MaterializedPartitions2D {
-  ranges: [MaterializedPartitionRange2D!]!
-}
-
-type MaterializedPartitionRange2D {
-  primaryDimStart: String!
-  primaryDimEnd: String!
-  secondaryDimRanges: [MaterializedPartitionRange1D!]!
+type DefaultPartitionStatus1D {
+  materializedPartitions: [String!]!
+  unmaterializedPartitions: [String!]!
 }
 
 type PartitionDefinition {
