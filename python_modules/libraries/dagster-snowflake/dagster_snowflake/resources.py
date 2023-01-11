@@ -45,8 +45,6 @@ class SnowflakeConnection:
         auths_set += 1 if config.get("private_key", None) is not None else 0
         auths_set += 1 if config.get("private_key_path", None) is not None else 0
 
-        print(auths_set)
-
         # ensure at least 1 method is provided
         check.invariant(
             auths_set > 0,
@@ -56,7 +54,7 @@ class SnowflakeConnection:
             ),
         )
 
-        # ensure that no more than 1 method is provided
+        # ensure that only 1 method is provided
         check.invariant(
             auths_set == 1,
             (

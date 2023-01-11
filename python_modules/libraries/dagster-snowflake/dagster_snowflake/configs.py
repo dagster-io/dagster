@@ -67,8 +67,8 @@ def define_snowflake_config():
         StringSource,
         description=(
             "Raw private key password to use. See"
-            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Alternately,"
-            " set the raw private key as private_key."
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Required for"
+            " both private_key and private_key_path."
         ),
         is_required=False,
     )
