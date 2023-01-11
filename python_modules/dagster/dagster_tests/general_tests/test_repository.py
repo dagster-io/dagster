@@ -6,8 +6,8 @@ import pytest
 from dagster import (
     AssetKey,
     GraphDefinition,
-    IOManager,
     Int,
+    IOManager,
     JobDefinition,
     asset,
     graph,
