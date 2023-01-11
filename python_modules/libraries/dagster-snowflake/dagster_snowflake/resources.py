@@ -3,10 +3,10 @@ import sys
 import warnings
 from contextlib import closing, contextmanager
 from typing import Any, Mapping, Optional, Sequence, Union
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
 
 import dagster._check as check
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 from dagster import resource
 from dagster._annotations import public
 
@@ -37,9 +37,39 @@ class SnowflakeConnection:
         # snowflake.connector.connect() because they will override the default values set within the
         # connector; remove them from the conn_args dict.
         self.connector = config.get("connector", None)
+        self.sqlalchemy_engine_args = {}
+
+        check.invariant(
+            not (
+                config.get("password", None) is None
+                and (
+                    config.get("private_key", None) is None
+                    and config.get("private_key_path", None) is None
+                    and config.get("private_key_password", None) is None
+                )
+            ),
+            (
+                "Missing config: Password or private key authentication required for Snowflake"
+                " resource."
+            ),
+        )
+
+        check.invariant(
+            not (
+                config.get("password", None) is not None
+                and (
+                    config.get("private_key", None) is not None
+                    or config.get("private_key_path", None) is not None
+                    or config.get("private_key_password", None) is not None
+                )
+            ),
+            (
+                "Incorrect config: Cannot provide both password and private key authentication to"
+                " Snowflake Resource."
+            ),
+        )
 
         if self.connector == "sqlalchemy":
-            # If a private key is provided, we do not need to check for a password.
             self.conn_args = {
                 k: config.get(k)
                 for k in (
@@ -57,8 +87,8 @@ class SnowflakeConnection:
             }
 
             if config.get("private_key", None) is not None:
-                # Now we can build the connect args.
-                self.conn_args.connect_args = {"private_key": self.__snowflake_private_key(config)}
+                # sqlalchemy passes private key args separately, so store them in a new dict
+                self.sqlalchemy_engine_args["private_key"] = self.__snowflake_private_key(config)
 
         else:
             self.conn_args = {
@@ -140,7 +170,7 @@ class SnowflakeConnection:
             from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
             from sqlalchemy import create_engine
 
-            engine = create_engine(URL(**self.conn_args))
+            engine = create_engine(URL(**self.conn_args), **self.sqlalchemy_engine_args)
             conn = engine.raw_connection() if raw_conn else engine.connect()
 
             yield conn

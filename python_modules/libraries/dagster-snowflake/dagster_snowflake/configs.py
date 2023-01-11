@@ -55,19 +55,28 @@ def define_snowflake_config():
 
     private_key = Field(
         StringSource,
-        description="Raw private key to use. See https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details",
+        description=(
+            "Raw private key to use. See"
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+        ),
         is_required=False,
     )
 
     private_key_password = Field(
         StringSource,
-        description="Raw private key password to use. See https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details",
+        description=(
+            "Raw private key password to use. See"
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+        ),
         is_required=False,
     )
 
     private_key_path = Field(
         StringSource,
-        description="Raw private key path to use. See https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details.",
+        description=(
+            "Raw private key path to use. See"
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+        ),
         is_required=False,
     )
 

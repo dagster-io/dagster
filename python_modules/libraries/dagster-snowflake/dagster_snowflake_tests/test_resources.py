@@ -1,7 +1,8 @@
 from unittest import mock
 
+import pytest
+from dagster import DagsterResourceFunctionError, job, op
 from dagster._core.test_utils import environ
-from dagster._legacy import ModeDefinition, execute_solid, solid
 from dagster_snowflake import snowflake_resource
 
 from .utils import create_mock_connector
@@ -9,14 +10,17 @@ from .utils import create_mock_connector
 
 @mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
 def test_snowflake_resource(snowflake_connect):
-    @solid(required_resource_keys={"snowflake"})
-    def snowflake_solid(context):
+    @op(required_resource_keys={"snowflake"})
+    def snowflake_op(context):
         assert context.resources.snowflake
         with context.resources.snowflake.get_connection() as _:
             pass
 
-    result = execute_solid(
-        snowflake_solid,
+    @job(resource_defs={"snowflake": snowflake_resource})
+    def snowflake_job():
+        snowflake_op()
+
+    result = snowflake_job.execute_in_process(
         run_config={
             "resources": {
                 "snowflake": {
@@ -30,8 +34,7 @@ def test_snowflake_resource(snowflake_connect):
                     }
                 }
             }
-        },
-        mode_def=ModeDefinition(resource_defs={"snowflake": snowflake_resource}),
+        }
     )
     assert result.success
     snowflake_connect.assert_called_once_with(
@@ -46,11 +49,15 @@ def test_snowflake_resource(snowflake_connect):
 
 @mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
 def test_snowflake_resource_from_envvars(snowflake_connect):
-    @solid(required_resource_keys={"snowflake"})
-    def snowflake_solid(context):
+    @op(required_resource_keys={"snowflake"})
+    def snowflake_op(context):
         assert context.resources.snowflake
         with context.resources.snowflake.get_connection() as _:
             pass
+
+    @job(resource_defs={"snowflake": snowflake_resource})
+    def snowflake_job():
+        snowflake_op()
 
     env_vars = {
         "SNOWFLAKE_ACCOUNT": "foo",
@@ -61,8 +68,7 @@ def test_snowflake_resource_from_envvars(snowflake_connect):
         "SNOWFLAKE_WAREHOUSE": "TINY_WAREHOUSE",
     }
     with environ(env_vars):
-        result = execute_solid(
-            snowflake_solid,
+        result = snowflake_job.execute_in_process(
             run_config={
                 "resources": {
                     "snowflake": {
@@ -77,7 +83,6 @@ def test_snowflake_resource_from_envvars(snowflake_connect):
                     }
                 }
             },
-            mode_def=ModeDefinition(resource_defs={"snowflake": snowflake_resource}),
         )
         assert result.success
         snowflake_connect.assert_called_once_with(
@@ -87,4 +92,66 @@ def test_snowflake_resource_from_envvars(snowflake_connect):
             database="TESTDB",
             schema="TESTSCHEMA",
             warehouse="TINY_WAREHOUSE",
+        )
+
+
+@mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
+def test_snowflake_resource_no_auth(snowflake_connect):
+    @op(required_resource_keys={"snowflake"})
+    def snowflake_op(context):
+        assert context.resources.snowflake
+        with context.resources.snowflake.get_connection() as _:
+            pass
+
+    @job(resource_defs={"snowflake": snowflake_resource})
+    def snowflake_job():
+        snowflake_op()
+
+    with pytest.raises(DagsterResourceFunctionError):
+        snowflake_job.execute_in_process(
+            run_config={
+                "resources": {
+                    "snowflake": {
+                        "config": {
+                            "account": "foo",
+                            "user": "bar",
+                            "database": "TESTDB",
+                            "schema": "TESTSCHEMA",
+                            "warehouse": "TINY_WAREHOUSE",
+                        }
+                    }
+                }
+            }
+        )
+
+
+@mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
+def test_snowflake_resource_duplicate_auth(snowflake_connect):
+    @op(required_resource_keys={"snowflake"})
+    def snowflake_op(context):
+        assert context.resources.snowflake
+        with context.resources.snowflake.get_connection() as _:
+            pass
+
+    @job(resource_defs={"snowflake": snowflake_resource})
+    def snowflake_job():
+        snowflake_op()
+
+    with pytest.raises(DagsterResourceFunctionError):
+        snowflake_job.execute_in_process(
+            run_config={
+                "resources": {
+                    "snowflake": {
+                        "config": {
+                            "account": "foo",
+                            "user": "bar",
+                            "database": "TESTDB",
+                            "password": "baz",
+                            "schema": "TESTSCHEMA",
+                            "warehouse": "TINY_WAREHOUSE",
+                            "private_key": "TESTKEY",
+                        }
+                    }
+                }
+            }
         )

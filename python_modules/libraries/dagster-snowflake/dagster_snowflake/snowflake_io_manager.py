@@ -93,17 +93,32 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
                 StringSource, description="Name of the warehouse to use.", is_required=False
             ),
             "schema": Field(
-                StringSource, description="Name of the schema to use", is_required=False
+                StringSource, description="Name of the schema to use.", is_required=False
             ),
-            "role": Field(StringSource, description="Name of the role to use", is_required=False),
+            "role": Field(StringSource, description="Name of the role to use.", is_required=False),
             "private_key": Field(
-                StringSource, description="Raw private key to use", is_required=False
+                StringSource,
+                description=(
+                    "Raw private key to use. See"
+                    " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+                ),
+                is_required=False,
             ),
             "private_key_path": Field(
-                StringSource, description="Path to the private key", is_required=False
+                StringSource,
+                description=(
+                    "Path to the private key. See"
+                    " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+                ),
+                is_required=False,
             ),
             "private_key_password": Field(
-                StringSource, description="The password of the private key", is_required=False
+                StringSource,
+                description=(
+                    "The password of the private key. See"
+                    " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+                ),
+                is_required=False,
             ),
         }
     )
