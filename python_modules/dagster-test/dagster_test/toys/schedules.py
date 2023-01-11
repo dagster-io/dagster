@@ -1,6 +1,6 @@
 import datetime
 
-from dagster import build_schedule_from_partitioned_job
+from dagster import build_schedule_from_partitioned_job, job, schedule
 from dagster._core.definitions.time_window_partitions import (
     daily_partitioned_config,
     hourly_partitioned_config,
@@ -86,6 +86,23 @@ def longitudinal_schedule():
     return build_schedule_from_partitioned_job(job_def)
 
 
+def flaky_schedule():
+    @job
+    def flaky_schedule_job():
+        pass
+
+    @schedule(job=flaky_schedule_job, cron_schedule="* * * * *")
+    def _flaky_schedule():
+        import random
+
+        num = random.uniform(0, 1)
+        if num < 0.5:
+            raise Exception("oh no! flaky failure")
+        return None
+
+    return _flaky_schedule
+
+
 def get_toys_schedules():
     return [
         unreliable_job_test_schedule(),
@@ -94,4 +111,5 @@ def get_toys_schedules():
         weekly_materialization_schedule(),
         monthly_materialization_schedule(),
         longitudinal_schedule(),
+        flaky_schedule(),
     ]

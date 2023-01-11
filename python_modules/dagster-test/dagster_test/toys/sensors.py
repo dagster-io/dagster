@@ -7,6 +7,7 @@ from dagster import (
     SkipReason,
     _check as check,
     asset_sensor,
+    job,
     run_failure_sensor,
     sensor,
 )
@@ -138,10 +139,27 @@ def get_toys_sensors():
             },
         )
 
+    @job
+    def flaky_sensor_job():
+        pass
+
+    @sensor(job=flaky_sensor_job)
+    def flaky_sensor():
+        import random
+
+        num = random.uniform(0, 1)
+        if num < 0.33:
+            raise Exception("oh no! flaky failure")
+        elif num < 0.66:
+            yield SkipReason("flaky sensor skipped")
+        else:
+            yield RunRequest()
+
     return [
         toy_file_sensor,
         toy_asset_sensor,
         toy_s3_sensor,
         custom_slack_on_job_failure,
         built_in_slack_on_run_failure_sensor,
+        flaky_sensor,
     ]
