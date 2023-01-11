@@ -265,6 +265,28 @@ def find_never_materialized_or_requested_root_asset_partitions(
     )
 
 
+def can_materialize_candidates_unit(
+    asset_graph: AssetGraph, candidates_unit: Iterable[AssetKeyPartitionKey]
+):
+    representative_candidate = next(iter(candidates_unit), None)
+    if not representative_candidate:
+        return True
+
+    partitions_def = asset_graph.get_partitions_def(representative_candidate.asset_key)
+    partition_key = representative_candidate.partition_key
+    if not isinstance(partitions_def, TimeWindowPartitionsDefinition) or not partition_key:
+        return True
+
+    latest_partition_window = partitions_def.get_last_partition_window()
+    if latest_partition_window is None:
+        return False
+
+    candidate_partition_window = partitions_def.time_window_for_partition_key(partition_key)
+    time_delta = latest_partition_window.end - candidate_partition_window.end
+
+    return time_delta < datetime.timedelta(days=1)
+
+
 def determine_asset_partitions_to_reconcile(
     instance_queryer: CachingInstanceQueryer,
     cursor: AssetReconciliationCursor,
@@ -322,22 +344,8 @@ def determine_asset_partitions_to_reconcile(
         candidates_unit: Iterable[AssetKeyPartitionKey],
         to_reconcile: AbstractSet[AssetKeyPartitionKey],
     ) -> bool:
-        # do not attempt to materialize partitions more than one day older than the latest partition
-        for candidate in candidates_unit:
-            partitions_def = asset_graph.get_partitions_def(candidate.asset_key)
-            if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-                latest_partition = partitions_def.get_last_partition_key()
-                if latest_partition is None or candidate.partition_key is None:
-                    continue
-                latest_partition_end = partitions_def.time_window_for_partition_key(
-                    latest_partition
-                ).end
-                candidate_partition_end = partitions_def.time_window_for_partition_key(
-                    candidate.partition_key
-                ).end
-                time_delta = latest_partition_end - candidate_partition_end
-                if time_delta >= datetime.timedelta(days=1):
-                    return False
+        if not can_materialize_candidates_unit(asset_graph, candidates_unit):
+            return False
 
         if any(
             candidate in eventual_asset_partitions_to_reconcile_for_freshness
