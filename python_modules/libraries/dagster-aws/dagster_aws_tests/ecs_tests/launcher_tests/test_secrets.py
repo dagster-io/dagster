@@ -150,7 +150,7 @@ def test_environment_with_container_context(
 ):
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
 
-    # Secrets config is pulled from container context on the run, rather than run launcher config
+    # Envvar config is pulled from container context on the run, rather than run launcher config
     config = {"env_vars": ["RUN_LAUNCHER_NAME=RUN_LAUNCHER_VALUE"]}
 
     with instance_cm(config) as instance:
@@ -233,3 +233,41 @@ def test_empty_secrets(
 
     # No secrets
     assert not task_definition["containerDefinitions"][0].get("secrets")
+
+
+def test_overlapping_secrets_and_envvar(
+    ecs,
+    secrets_manager,
+    instance_cm,
+    launch_run,
+    environment,
+):
+    initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+
+    overlapping_name = environment[0].get("name")
+
+    config = {
+        "secrets": [
+            {
+                "name": overlapping_name,
+                "valueFrom": "overridden",
+            }
+        ],
+    }
+
+    with instance_cm(config) as instance:
+        launch_run(instance)
+
+    # A new task definition is created
+    task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    assert len(task_definitions) == len(initial_task_definitions) + 1
+    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
+    task_definition = task_definition["taskDefinition"]
+
+    # It prefers the secret to the envvar
+    secrets = task_definition["containerDefinitions"][0]["secrets"]
+    assert {"name": overlapping_name, "valueFrom": "overridden"} in secrets
+
+    environment = task_definition["containerDefinitions"][0]["environment"]
+    assert overlapping_name not in [env.get("name") for env in environment]
