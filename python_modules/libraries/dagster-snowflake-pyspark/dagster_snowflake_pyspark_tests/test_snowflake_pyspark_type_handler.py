@@ -142,7 +142,7 @@ def test_io_manager_with_snowflake_pyspark():
         @op(
             out={
                 table_name: Out(
-                    io_manager_key="snowflake", metadata={"schema": "SNOWFLAKE_IO_MANAGER_SCHEMA"}
+                    dagster_type=DataFrame, io_manager_key="snowflake", metadata={"schema": "SNOWFLAKE_IO_MANAGER_SCHEMA"}
                 )
             },
         )
@@ -162,17 +162,12 @@ def test_io_manager_with_snowflake_pyspark():
             assert df.count() == 2
 
         @job(
-            resource_defs={"snowflake": snowflake_pyspark_io_manager},
-            config={
-                "resources": {
-                    "snowflake": {
-                        "config": {
-                            **SHARED_BUILDKITE_SNOWFLAKE_CONF,
-                            "database": "TEST_SNOWFLAKE_IO_MANAGER",
-                        }
-                    },
+            resource_defs={"snowflake": snowflake_pyspark_io_manager.configured(
+                {
+                    **SHARED_BUILDKITE_SNOWFLAKE_CONF,
+                    "database": "TEST_SNOWFLAKE_IO_MANAGER",
                 }
-            },
+            )}
         )
         def io_manager_test_pipeline():
             read_pyspark_df(emit_pyspark_df())
