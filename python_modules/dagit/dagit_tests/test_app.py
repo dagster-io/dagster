@@ -141,8 +141,7 @@ def test_successful_host_dagit_ui_from_workspace():
                 log_level="warning",
             )
 
-        call_args = server_call.call_args
-        assert call_args.kwargs["port"] == 2343
+        assert server_call.called_with(mock.ANY, host="127.0.0.1", port=2343, log_level="warning")
 
 
 @pytest.fixture
@@ -175,8 +174,9 @@ def test_host_dagit_ui_choose_port(mock_is_port_in_use, mock_find_free_port):
                 log_level="warning",
             )
 
-        call_args = server_call.call_args
-        assert call_args.kwargs["port"] == DEFAULT_DAGIT_PORT
+        assert server_call.called_with(
+            mock.ANY, host="127.0.0.1", port=DEFAULT_DAGIT_PORT, log_level="warning"
+        )
 
         mock_is_port_in_use.return_value = True
         with load_workspace_process_context_from_yaml_paths(
@@ -190,8 +190,7 @@ def test_host_dagit_ui_choose_port(mock_is_port_in_use, mock_find_free_port):
                 log_level="warning",
             )
 
-        call_args = server_call.call_args
-        assert call_args.kwargs["port"] == 1234
+        assert server_call.called_with(mock.ANY, host="127.0.0.1", port=1234, log_level="warning")
 
 
 def test_successful_host_dagit_ui_from_multiple_workspace_files():
