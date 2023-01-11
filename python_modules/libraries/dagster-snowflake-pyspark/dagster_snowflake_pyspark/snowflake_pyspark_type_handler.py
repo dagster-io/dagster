@@ -58,10 +58,10 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
         self, context: OutputContext, table_slice: TableSlice, obj: DataFrame
     ) -> Mapping[str, RawMetadataValue]:
         options = _get_sf_options(context.resource_config, table_slice)
-        # SparkSession.builder.config(
-        #     key="spark.jars.packages",
-        #     value="net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
-        # ).getOrCreate()
+        SparkSession.builder.config(
+            key="spark.jars.packages",
+            value="net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
+        ).getOrCreate()
 
         obj.write.format(SNOWFLAKE_CONNECTOR).options(**options).mode("append").save()
 
