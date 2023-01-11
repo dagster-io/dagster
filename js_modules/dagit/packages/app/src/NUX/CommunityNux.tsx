@@ -33,9 +33,12 @@ const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
     };
   }, []);
 
+  const [width, setWidth] = React.useState(680);
+  const [height, setHeight] = React.useState(462);
+
   const {preloadElement, loaded, renderInto, iframeRef} = useCommuniyNuxIframe({
-    height: '462px',
-    width: '680px',
+    height: `${height}px`,
+    width: `${width}px`,
   });
 
   React.useEffect(() => {
@@ -44,10 +47,12 @@ const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
       return () => {};
     }
     const messageListener = (event: MessageEvent) => {
-      switch (event.data) {
-        case 'dismiss':
-          dismiss();
-          break;
+      if (event.data === 'dismiss') {
+        dismiss();
+      } else if (event.data?.startsWith?.('dimensions_')) {
+        const [_, width, height] = event.data.split('_');
+        setHeight(Math.ceil(height));
+        setWidth(Math.ceil(width));
       }
     };
 
@@ -68,12 +73,18 @@ const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
     <>
       <Dialog
         isOpen={shouldShowNux && loaded}
-        style={{width: '680px', background: 'transparent', overflow: 'hidden', height: '462px'}}
+        style={{
+          width: `${width}px`,
+          background: 'transparent',
+          overflow: 'hidden',
+          height: `${height}px`,
+        }}
       >
         <div
           ref={(element: HTMLDivElement) => {
             setTarget(element);
           }}
+          style={{overflow: 'hidden'}}
         />
       </Dialog>
       {/** We create a portal after the dialog so that the dialog can be positioned over the blueprint overlay */}
@@ -145,6 +156,7 @@ const useCommuniyNuxIframe = ({width, height}: Props) => {
                 left: parentRect.left,
                 top: parentRect.top,
                 zIndex: 21,
+                overflow: 'hidden',
               }
             : {width, height, left: '-999999px', position: 'absolute', zIndex: 0}
         }
